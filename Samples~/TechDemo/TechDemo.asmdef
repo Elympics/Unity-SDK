@@ -1,0 +1,15 @@
+{
+    "name": "TechDemo",
+    "references": [
+        "GUID:08727d9d89e804ea586e95cfc1848258"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

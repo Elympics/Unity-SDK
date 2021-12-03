@@ -1,0 +1,113 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+
+namespace Elympics
+{
+	internal class ElympicsBehaviourStateChangeFrequencyCalculator
+	{
+		public class ElympicsBehaviourStateChangeFrequencyStageInTicks
+		{ 
+			public int StateDurationInTicks { get; private set; }
+			public int UpdateFrequencyInTicks { get; private set; }
+
+			public ElympicsBehaviourStateChangeFrequencyStageInTicks(int stateDurationInTicks, int updateFrequencyInTicks)
+			{
+				this.StateDurationInTicks = stateDurationInTicks;
+				this.UpdateFrequencyInTicks = updateFrequencyInTicks;
+			}
+		}
+
+		private ElympicsBehaviourStateChangeFrequencyStageInTicks currentStateUpdateFrequencyStage;
+		private ElympicsBehaviourStateChangeFrequencyStageInTicks[] stateUpdateFrequencyStages;
+		private int currentStageIndex = 0;
+		private int currentSendingSnapshotCalls = 0;
+		private byte[] previousState = null;
+
+		private Func<byte[], byte[], bool> areStatesEqualsFunc = null;
+
+		public ElympicsBehaviourStateChangeFrequencyCalculator(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStages, Func<byte[], byte[], bool> areStatesEqualsFunc)
+		{
+			this.areStatesEqualsFunc = areStatesEqualsFunc;
+
+			CreateStateUpdateFrequencyStagesInTicks(stateUpdateFrequencyStages, ElympicsConfig.LoadCurrentElympicsGameConfig().TicksPerSecond);
+		}
+
+		private bool CanSkipStateSynchronizingInCurrentSnapshotCall()
+		{
+			return currentSendingSnapshotCalls % currentStateUpdateFrequencyStage.UpdateFrequencyInTicks != 0;
+		}
+
+		private void IncreaseSendingSnapshotCalls()
+		{
+			currentSendingSnapshotCalls++;
+
+			TryToSetNextStateUpdateFrequencyStage();
+		}
+
+		private void TryToSetNextStateUpdateFrequencyStage()
+		{
+			if (currentSendingSnapshotCalls < currentStateUpdateFrequencyStage.StateDurationInTicks)
+				return;
+
+			if (currentStageIndex + 1 < stateUpdateFrequencyStages.Length)
+				currentStageIndex++;
+
+			currentStateUpdateFrequencyStage = stateUpdateFrequencyStages[currentStageIndex];
+			currentSendingSnapshotCalls = 0;
+		}
+
+		internal void ResetStateUpdateFrequencyStage()
+		{
+			currentStageIndex = 0;
+			currentStateUpdateFrequencyStage = stateUpdateFrequencyStages[currentStageIndex];
+			currentSendingSnapshotCalls = 0;
+		}
+
+		internal bool UpdateNextStateAndCheckIfSendCanBeSkipped(byte[] currentState)
+		{
+			IncreaseSendingSnapshotCalls();
+
+			bool statesEqual = previousState != null && areStatesEqualsFunc(currentState, previousState);
+			bool canSkipStateSynchronization = CanSkipStateSynchronizingInCurrentSnapshotCall();
+
+			if (!statesEqual)
+				ResetStateUpdateFrequencyStage();
+
+			bool sendCanBeSkipped = statesEqual && canSkipStateSynchronization;
+
+			if (!sendCanBeSkipped)
+				SetPreviousState(currentState);
+
+			return sendCanBeSkipped;
+		}
+
+		private void SetPreviousState(byte[] currentState)
+		{
+			previousState = currentState;
+		}
+
+		private void CreateStateUpdateFrequencyStagesInTicks(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStagesInMiliseconds, int ticksPerSecond)
+		{
+			stateUpdateFrequencyStages = new ElympicsBehaviourStateChangeFrequencyStageInTicks[stateUpdateFrequencyStagesInMiliseconds.Length];
+
+			for (int i = 0; i < stateUpdateFrequencyStagesInMiliseconds.Length; i++)
+			{
+				stateUpdateFrequencyStages[i] = new ElympicsBehaviourStateChangeFrequencyStageInTicks(
+					MsToTicks(stateUpdateFrequencyStagesInMiliseconds[i].StageDurationInMiliseconds, ticksPerSecond),
+					MsToTicks(stateUpdateFrequencyStagesInMiliseconds[i].FrequencyInMiliseconds, ticksPerSecond));
+			}
+
+			ResetStateUpdateFrequencyStage();
+		}
+
+		private int MsToTicks(int milliseconds, int ticksPerSecond)
+		{
+			return (int)Math.Round(ticksPerSecond * milliseconds / 1000.0);
+		}
+
+	}
+}

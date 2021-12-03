@@ -1,0 +1,10 @@
+{
+  "name": "com.daftmobile.elympics",
+  "version": "0.1.15",
+  "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
+  "displayName": "Elympics",
+  "unity": "2018.3",
+  "dependencies": {
+    "com.unity.cinemachine": "2.7.8"
+  }
+}

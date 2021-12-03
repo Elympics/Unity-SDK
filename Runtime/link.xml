@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+    <assembly fullname="ElympicsApiModels-packed" preserve="all"/>
+
+    <assembly fullname="MatchTcpClients" preserve="all"/>
+    <assembly fullname="MatchTcpLibrary" preserve="all"/>
+    <assembly fullname="MatchTcpModels" preserve="all"/>
+
+    <assembly fullname="Daftmobile.Api" preserve="all"/>
+    <assembly fullname="LobbyPublicApiClients.Abstraction" preserve="all"/>
+    <assembly fullname="LobbyPublicApiModels" preserve="all"/>
+
+    <assembly fullname="UnityConnectors-packed2.0" preserve="all"/>
+    <assembly fullname="UnityConnectors-packed2.1" preserve="all"/>
+</linker>

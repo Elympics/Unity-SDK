@@ -7,6 +7,7 @@ namespace Elympics
 	[CreateAssetMenu(fileName = "ElympicsConfig", menuName = "Elympics/Config")]
 	public class ElympicsConfig : ScriptableObject
 	{
+		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
 		public const string PATH_IN_RESOURCES = "Elympics/ElympicsConfig";
 
 		#region ElympicsPrefs Keys

@@ -1,7 +1,5 @@
 //  Copyright 2021 DaftMobile Sp. z o.o. All rights reserved.
 //
-//  Wszystkie prawa zastrzeżone, właścicielem jest DaftMobile Sp. z o. o.
-//  W szczególności zabrania się: powielania, modyfikowania, reverse-engineeringu, udostępniania.
+//  License to use this repository is issued only as a separate document with an account on https://elympics.cc/
+//  It is illegal to duplicate, modify, reverse-engineer and share this code without a written permission from DaftMobile.
 //
-//  Autor udziela licencji na wykorzystanie jedynie na potrzeby konkursu DaftJAM odbywającego się w datach 10.09.2021 - 12.09.2021 w Warszawie.
-//  Użycie tego repozytorium poza tymi datami lub w innym celu niż zamierzony w tej licencji jest zabronione.

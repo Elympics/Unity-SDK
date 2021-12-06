@@ -22,7 +22,7 @@ var LibraryWebRtc = {
         console.log("[WebRTC] Allocating client");
 
         // Check UnityAdapters for this code, it's tested there ~pprzestrzelski 04.11.2021
-        function WebRtcClient(received, receivingEnded, receivingError, offerCallback) {
+        function WebRtcClient(received, receivingError, receivingEnded, offerCallback) {
             this.pc = new RTCPeerConnection()
             this.dc = this.pc.createDataChannel('data')
             this.received = received;

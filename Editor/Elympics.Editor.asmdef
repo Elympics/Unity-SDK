@@ -2,7 +2,7 @@
     "name": "Elympics.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:08727d9d89e804ea586e95cfc1848258"
+        "GUID:98c20d83c9beb3344bdbd3db8ff8d852"
     ],
     "includePlatforms": [
         "Editor"

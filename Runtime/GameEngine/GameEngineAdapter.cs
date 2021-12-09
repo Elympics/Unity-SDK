@@ -24,7 +24,6 @@ namespace Elympics
 		public event Action<byte[], string>       InGameDataForPlayerOnUnreliableChannelGenerated;
 		public event Action<byte[]>               InGameDataForSpectatorsOnReliableChannelGenerated;
 		public event Action<byte[]>               InGameDataForSpectatorsOnUnreliableChannelGenerated;
-		public event Action                       GameStarted;
 		public event Action<ResultMatchUserDatas> GameEnded;
 		public event Action<ElympicsPlayer>       PlayerConnected;
 		public event Action<ElympicsPlayer>       PlayerDisconnected;
@@ -183,8 +182,6 @@ namespace Elympics
 			}
 		}
 
-		public void StartGame() => GameStarted?.Invoke();
-
 		public void EndGame(ResultMatchPlayerDatas result = null)
 		{
 			try
@@ -222,6 +219,7 @@ namespace Elympics
 			}
 		}
 
+		public event Action                  GameStarted;
 		public event Action<List<GameEvent>> GameEventsGathered;
 
 		event Action<GameEngineCore.V1._1.MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded

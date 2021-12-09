@@ -5,6 +5,9 @@ namespace Elympics
 {
 	internal class LocalGameServerInitializer : GameServerInitializer
 	{
+		protected override bool HandlingBotsOverride    => true;
+		protected override bool HandlingClientsOverride => true;
+
 		private GameEngineAdapter _localGameEngineAdapter;
 
 		protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)

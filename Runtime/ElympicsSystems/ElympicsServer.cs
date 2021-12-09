@@ -18,8 +18,10 @@ namespace Elympics
 		public override bool           IsBot    => _currentIsBot;
 		public override bool           IsClient => _currentIsClient;
 
-		private bool HandlingBotsInServer    => Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots || Config.BotsInServer;
-		private bool HandlingClientsInServer => Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots;
+		private bool _handlingBotsOverride;
+		private bool _handlingClientsOverride;
+		private bool HandlingBotsInServer    => _handlingBotsOverride || Config.BotsInServer;
+		private bool HandlingClientsInServer => _handlingClientsOverride;
 
 		private GameEngineAdapter _gameEngineAdapter;
 		private ElympicsPlayer[]  _playersOfBots;
@@ -28,9 +30,11 @@ namespace Elympics
 		private bool _initialized;
 		private int  _tick;
 
-		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
+		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
 		{
 			SwitchBehaviourToServer();
+			_handlingBotsOverride = handlingBotsOverride;
+			_handlingClientsOverride = handlingClientsOverride;
 			base.InitializeInternal(elympicsGameConfig);
 			_gameEngineAdapter = gameEngineAdapter;
 			_tick = 0;
@@ -168,7 +172,6 @@ namespace Elympics
 
 		#region IElympics
 
-		public override void StartGame()                                   => _gameEngineAdapter.StartGame();
 		public override void EndGame(ResultMatchPlayerDatas result = null) => _gameEngineAdapter.EndGame(result);
 
 		#endregion

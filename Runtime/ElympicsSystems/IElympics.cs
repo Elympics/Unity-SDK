@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elympics
 {
@@ -41,7 +40,6 @@ namespace Elympics
 
 		#region Server
 
-		void StartGame();
 		void EndGame(ResultMatchPlayerDatas result = null);
 
 		#endregion

@@ -69,7 +69,6 @@ namespace Elympics
 				return;
 
 			_gameStarted = true;
-			Elympics.StartGame();
 		}
 	}
 }

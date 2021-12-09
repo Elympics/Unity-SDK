@@ -14,7 +14,8 @@ namespace Elympics
 		[SerializeField] internal ElympicsLateFixedUpdate   elympicsLateFixedUpdate   = null;
 		[SerializeField] internal AsyncEventsDispatcher     asyncEventsDispatcher     = null;
 
-		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")] [SerializeField]
+		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")]
+		[SerializeField]
 		private GameObject[] linkedLogic = null;
 
 		private protected ElympicsGameConfig Config;
@@ -107,7 +108,6 @@ namespace Elympics
 
 		#region Server
 
-		public virtual void StartGame()                                   => throw new NotImplementedException("This method is supported only for server");
 		public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new NotImplementedException("This method is supported only for server");
 
 		#endregion

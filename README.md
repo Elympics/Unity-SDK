@@ -4,11 +4,11 @@
 ![Platforms](https://img.shields.io/badge/Platform-Unity-black.svg?logo=unity&style=flat)
 ![License: Commercial](https://img.shields.io/badge/License-Commercial-white.svg?style=flat)
 ![Language](https://img.shields.io/badge/Language-CSharp-239120.svg?logo=csharp&style=flat)
-[![Discord](https://img.shields.io/badge/Discord-Elympics-white?logo=Discord&style=flat)](https://discord.gg/nauhjjcg)
+[![Discord](https://img.shields.io/badge/Discord-Elympics-white?logo=Discord&style=flat)](https://discord.gg/Xh6AR2mceg)
 
 # Elympics
 
-> Remember to as all questions on our [Discord server](https://discord.gg/nauhjjcg)!
+> Remember to as all questions on our [Discord server](https://discord.gg/Xh6AR2mceg)!
 
 ## What is Elympics?
 

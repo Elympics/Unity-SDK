@@ -8,40 +8,50 @@ using UnityEngine;
 public class ManageGamesInElympicsWindow : EditorWindow
 {
 	#region Labels
-	private const string windowTitle = "Manage games in Elympics";
-	private const string loginHeaderInfo = "<i>You have to be logged in to manage games in Elympics!</i>";
-	private const string loggedAsInfo = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
+
+	private const string windowTitle           = "Manage games in Elympics";
+	private const string loginHeaderInfo       = "<i>You have to be logged in to manage games in Elympics!</i>";
+	private const string loggedAsInfo          = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
 	private const string createGameSummaryInfo = "Create new game in Elympics with current name and overwrite current config with new game id. It's required to first created game before upload a new version";
+
 	private const string uploadSummaryInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. " +
-											   "It's required to first upload a game version if you want to play it in online mode.";
-	private const string noGameSetupsInfo = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
+	                                         "It's required to first upload a game version if you want to play it in online mode.";
+
+	private const string noGameSetupsInfo         = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
+	private const string importExistingsGamesInfo = "<i>or import existing games (e.g. samples)</i>";
+
 	#endregion
 
 	#region Colors
-	private bool colorsConverted = false;
+
+	private       bool   colorsConverted  = false;
 	private const string elympicsColorHex = "#2EACFF";
-	private Color elympicsColor = Color.blue;
+	private       Color  elympicsColor    = Color.blue;
+
 	#endregion
 
 	#region Data Received From Elympics Config
-	private static SerializedObject elympicsConfigSerializedObject;
-	private static SerializedProperty currentGameIndex;
-	private static SerializedProperty availableGames;
-	private static SerializedProperty elympicsWebEndPoint;
+
+	private static SerializedObject      elympicsConfigSerializedObject;
+	private static SerializedProperty    currentGameIndex;
+	private static SerializedProperty    availableGames;
+	private static SerializedProperty    elympicsWebEndPoint;
 	private static EditorEndpointChecker elympicsWebEndpointChecker;
-	private static SerializedProperty elympicsEndPoint;
+	private static SerializedProperty    elympicsEndPoint;
 	private static EditorEndpointChecker elympicsEndpointChecker;
+
 	#endregion
 
-	private CustomInspectorDrawer customInspectorDrawer = null;
-	private ElympicsGameConfigGeneralInfoDrawer elympicsGameConfigInfoDrawer = null;
-	private GUIStyle guiStyleWrappedTextCalculator = null;
+	private CustomInspectorDrawer               customInspectorDrawer         = null;
+	private ElympicsGameConfigGeneralInfoDrawer elympicsGameConfigInfoDrawer  = null;
+	private GUIStyle                            guiStyleWrappedTextCalculator = null;
 
 	private int resizibleCenteredLabelWidth = 0;
 
 	private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData = null;
 
-	public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsWebEndPoint, SerializedProperty elympicsEndPoint)
+	public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsWebEndPoint,
+		SerializedProperty elympicsEndPoint)
 	{
 		ManageGamesInElympicsWindow.elympicsConfigSerializedObject = elympicsConfigSerializedObject;
 		ManageGamesInElympicsWindow.currentGameIndex = currentGameIndex;
@@ -77,7 +87,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		ManageGamesInElympicsWindow.elympicsConfigSerializedObject = new UnityEditor.SerializedObject(manageGamesInElympicsWindowData.objectToSerialize);
 		ManageGamesInElympicsWindow.currentGameIndex = elympicsConfigSerializedObject.FindProperty("currentGame");
 		ManageGamesInElympicsWindow.availableGames = elympicsConfigSerializedObject.FindProperty("availableGames");
-		ManageGamesInElympicsWindow.elympicsWebEndPoint = elympicsConfigSerializedObject.FindProperty("elympicsWebEndpoint"); ;
+		ManageGamesInElympicsWindow.elympicsWebEndPoint = elympicsConfigSerializedObject.FindProperty("elympicsWebEndpoint");
 		ManageGamesInElympicsWindow.elympicsEndPoint = elympicsConfigSerializedObject.FindProperty("elympicsEndpoint");
 
 		if (elympicsWebEndpointChecker == null || elympicsEndpointChecker == null)
@@ -146,7 +156,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			customInspectorDrawer.PrepareToDraw(position);
 		}
 
-		resizibleCenteredLabelWidth = (int)(position.width * 0.80f);
+		resizibleCenteredLabelWidth = (int) (position.width * 0.80f);
 	}
 
 	private void PrepareGUIStyleCalculator()
@@ -190,7 +200,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		customInspectorDrawer.DrawEndpoint("Elympics Endpoint", elympicsEndPoint, elympicsEndpointChecker, 0.3f, 0.3f, out bool endpointChanged);
 		elympicsEndpointChecker.UpdateUri(elympicsEndPoint.stringValue);
 
-		if (customInspectorDrawer.DrawButtonCentered("Synchronize", (int)(position.width * 0.80f), 20))
+		if (customInspectorDrawer.DrawButtonCentered("Synchronize", (int) (position.width * 0.80f), 20))
 		{
 			if (!elympicsWebEndpointChecker.IsRequestSuccessful)
 			{
@@ -218,11 +228,11 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 		if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 		{
-			currentGameIndex.intValue = customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>)availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
+			currentGameIndex.intValue = customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>) availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
 			customInspectorDrawer.DrawSerializedProperty("Available games", availableGames);
 			customInspectorDrawer.Space();
 
-			ElympicsGameConfig activeGameConfig = ((List<ElympicsGameConfig>)availableGames.GetValue())[currentGameIndex.intValue];
+			ElympicsGameConfig activeGameConfig = ((List<ElympicsGameConfig>) availableGames.GetValue())[currentGameIndex.intValue];
 
 			PrepareElympicsGameConfigDrawer(activeGameConfig);
 			elympicsGameConfigInfoDrawer.DrawGeneralGameConfigInfo();
@@ -251,6 +261,25 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			value.objectReferenceValue = config;
 			currentGameIndex.intValue = availableGames.arraySize - 1;
 		}
+
+		var configs = AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}");
+		customInspectorDrawer.DrawLabelCentered(importExistingsGamesInfo, resizibleCenteredLabelWidth, 20, true);
+		if (customInspectorDrawer.DrawButtonCentered($"Find and import games ({configs.Length})", resizibleCenteredLabelWidth, 20))
+		{
+			if (configs.Length <= 0)
+			{
+				Debug.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
+				return;
+			}
+
+			foreach (var config in configs)
+			{
+				availableGames.InsertArrayElementAtIndex(availableGames.arraySize);
+				var value = availableGames.GetArrayElementAtIndex(availableGames.arraySize - 1);
+				value.objectReferenceValue = AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(config));
+			}
+			currentGameIndex.intValue = availableGames.arraySize - 1;
+		}
 	}
 
 	private void PrepareElympicsGameConfigDrawer(ElympicsGameConfig activeGameConfig)
@@ -267,8 +296,13 @@ public class ManageGamesInElympicsWindow : EditorWindow
 	private SerializedProperty GetChosenGameProperty()
 	{
 		var chosen = currentGameIndex.intValue;
-		if (chosen < 0 || chosen >= availableGames.arraySize)
+		if (availableGames.arraySize == 0)
 			return null;
+
+		if (chosen < 0)
+			chosen = 0;
+		if (chosen >= availableGames.arraySize)
+			chosen = availableGames.arraySize - 1;
 
 		return availableGames.GetArrayElementAtIndex(chosen);
 	}
@@ -294,7 +328,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			ElympicsWebIntegration.CreateGame(gameName, gameId);
 		}
 
-		int wrappedLabelHeight = (int)guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(createGameSummaryInfo), position.width * 0.8f);
+		int wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(createGameSummaryInfo), position.width * 0.8f);
 		customInspectorDrawer.DrawLabelCentered(createGameSummaryInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
 
 		customInspectorDrawer.Space();
@@ -308,7 +342,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			GUIUtility.ExitGUI();
 		}
 
-		wrappedLabelHeight = (int)guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadSummaryInfo), position.width * 0.8f);
+		wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadSummaryInfo), position.width * 0.8f);
 		customInspectorDrawer.DrawLabelCentered(uploadSummaryInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
 	}
 

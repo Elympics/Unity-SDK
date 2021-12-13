@@ -1,10 +1,33 @@
 {
   "name": "com.daftmobile.elympics",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
   "displayName": "Elympics",
   "unity": "2018.3",
   "dependencies": {
     "com.unity.cinemachine": "2.7.8"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Empty",
+      "description": "Empty project with Elympics included on scene",
+      "path": "Samples~/Empty"
+    },
+    {
+      "displayName": "Hello World",
+      "description": "Empty with additional synchronized button",
+      "path": "Samples~/HelloWorld"
+    },
+    {
+      "displayName": "Tech Demo",
+      "description": "Sample with 2 players throwing instantiable balls",
+      "path": "Samples~/TechDemo"
+    },
+    {
+      "displayName": "TicTacToe and more (Draft)",
+      "description": "TicTacToe with bot and all of the Elympics stuff",
+      "path": "Samples~/TicTacToe",
+      "interactiveImport": true
+    }
+  ]
 }

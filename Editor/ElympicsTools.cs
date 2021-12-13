@@ -6,10 +6,23 @@ using UnityEditor;
 
 namespace Elympics
 {
-	public class ElympicsTools
+	public static class ElympicsTools
 	{
-		[MenuItem(ElympicsEditorMenuPaths.SETUP_MENU_PATH, priority = 1)]
-		public static void SelectOrCreateConfig()
+		[MenuItem(ElympicsEditorMenuPaths.MANAGE_GAMES_IN_ELYMPICS, priority = 1)]
+		private static void OpenManageGamesInElympicsWindow()
+		{
+			var elympicsConfig = LoadOrCreateConfig();
+			var serializedElympicsConfig = new SerializedObject(elympicsConfig);
+
+			var elympicsWebEndpoint = serializedElympicsConfig.FindProperty("elympicsWebEndpoint");
+			var elympicsEndpoint = serializedElympicsConfig.FindProperty("elympicsEndpoint");
+			var currentGameIndex = serializedElympicsConfig.FindProperty("currentGame");
+			var availableGames = serializedElympicsConfig.FindProperty("availableGames");
+
+			ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig, currentGameIndex, availableGames, elympicsWebEndpoint, elympicsEndpoint);
+		}
+
+		private static ElympicsConfig LoadOrCreateConfig()
 		{
 			var config = ElympicsConfig.Load();
 			if (config == null)
@@ -17,11 +30,19 @@ namespace Elympics
 				config = CreateNewConfig();
 			}
 
+			return config;
+		}
+
+		[MenuItem(ElympicsEditorMenuPaths.SETUP_MENU_PATH, priority = 2)]
+		public static void SelectOrCreateConfig()
+		{
+			var config = LoadOrCreateConfig();
+
 			EditorUtility.FocusProjectWindow();
 			Selection.activeObject = config;
 		}
 
-		[MenuItem(ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH, priority = 2)]
+		[MenuItem(ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH, priority = 3)]
 		public static void ResetIds()
 		{
 			NetworkIdEnumerator.Instance.Reset();
@@ -81,7 +102,6 @@ namespace Elympics
 
 		private static ElympicsConfig CreateNewConfig()
 		{
-			
 			if (!Directory.Exists(ElympicsConfig.ELYMPICS_RESOURCES_PATH))
 			{
 				Debug.Log("Creting elympics resources directory...");
@@ -100,24 +120,10 @@ namespace Elympics
 			return newConfig;
 		}
 
-		[MenuItem(ElympicsEditorMenuPaths.BUILD_WINDOWS_SERVER, priority = 3)]
+		[MenuItem(ElympicsEditorMenuPaths.BUILD_WINDOWS_SERVER, priority = 4)]
 		private static void BuildServerWindows() => BuildTools.BuildServerWindows();
 
-		[MenuItem(ElympicsEditorMenuPaths.BUILD_LINUX_SERVER, priority = 4)]
+		[MenuItem(ElympicsEditorMenuPaths.BUILD_LINUX_SERVER, priority = 5)]
 		private static void BuildServerLinux() => BuildTools.BuildServerLinux();
-
-		[MenuItem(ElympicsEditorMenuPaths.MANAGE_GAMES_IN_ELYMPICS, priority = 5)]
-		private static void OpenManageGamesInElympicsWindow()
-		{
-			ElympicsConfig elympicsConfig = ElympicsConfig.Load();
-			SerializedObject serializedElympicsConfig = new UnityEditor.SerializedObject(elympicsConfig);
-
-			SerializedProperty elympicsWebEndpoint = serializedElympicsConfig.FindProperty("elympicsWebEndpoint");
-			SerializedProperty elympicsEndpoint = serializedElympicsConfig.FindProperty("elympicsEndpoint");
-			SerializedProperty currentGameIndex = serializedElympicsConfig.FindProperty("currentGame");
-			SerializedProperty availableGames = serializedElympicsConfig.FindProperty("availableGames");
-
-			ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig, currentGameIndex, availableGames, elympicsWebEndpoint, elympicsEndpoint);
-		}
 	}
 }

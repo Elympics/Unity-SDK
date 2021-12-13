@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using Cinemachine;
 using Elympics;
 
 namespace TechDemo
@@ -7,10 +6,11 @@ namespace TechDemo
 	[RequireComponent(typeof(PlayerBehaviour))]
 	public class PlayerInputController : ElympicsMonoBehaviour, IInitializable, IInputHandler
 	{
-		[SerializeField] private CinemachineVirtualCamera    virtualCamera         = null;
+		[SerializeField] private Camera                      cam                   = null;
 		[SerializeField] private PlayerJoystickInputProvider joystickInputProvider = null;
 		[SerializeField] private PlayerBotInputProvider      botInputProvider      = null;
 
+		private bool            _cameraFollowing;
 		private PlayerBehaviour _playerBehaviour;
 
 		// Handling only one player through this input handlers, every player has the same player input controller
@@ -50,18 +50,28 @@ namespace TechDemo
 		public void Initialize()
 		{
 			_playerBehaviour = GetComponent<PlayerBehaviour>();
-			InitializeVirtualCamera();
+			InitializeCameraFollowing();
 		}
 
-		private void InitializeVirtualCamera()
+		private void InitializeCameraFollowing()
 		{
 			// Initialize camera only to player played by us
-			if (Elympics.Player != _playerBehaviour.PredictableFor)
+			if (CurrentPlayerControlsThis() || IsServerAndThisIsPlayer0()) 
+				_cameraFollowing = true;
+		}
+
+		private bool CurrentPlayerControlsThis() => Elympics.Player == _playerBehaviour.PredictableFor;
+		private bool IsServerAndThisIsPlayer0() => Elympics.Player == ElympicsPlayer.World && _playerBehaviour.PredictableFor == ElympicsPlayer.FromIndex(0);
+
+		private void Update()
+		{
+			if (!_cameraFollowing)
 				return;
 
-			var target = _playerBehaviour.transform;
-			virtualCamera.LookAt = target;
-			virtualCamera.Follow = target;
+			var playerTransform = _playerBehaviour.transform;
+			var camTransform = cam.transform;
+
+			camTransform.LookAt(playerTransform);
 		}
 	}
 }

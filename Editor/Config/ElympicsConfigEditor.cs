@@ -13,15 +13,10 @@ namespace Elympics
 		private SerializedProperty _currentGameIndex;
 		private SerializedProperty _availableGames;
 
-		private Object                _lastChosenGamePropertyObject;
-		private Editor                _lastChosenGameEditor;
-		private EditorEndpointChecker _elympicsWebEndpointChecker;
-		private EditorEndpointChecker _elympicsEndpointChecker;
-		private SerializedProperty    _elympicsWebEndpoint;
-		private SerializedProperty    _elympicsEndpoint;
-
-		private GUIStyle     _indentation;
-		private Stack<float> _labelWidthStack;
+		private Object             _lastChosenGamePropertyObject;
+		private Editor             _lastChosenGameEditor;
+		private SerializedProperty _elympicsWebEndpoint;
+		private SerializedProperty _elympicsEndpoint;
 
 		private void OnEnable()
 		{
@@ -30,36 +25,8 @@ namespace Elympics
 			_currentGameIndex = serializedObject.FindProperty("currentGame");
 			_availableGames = serializedObject.FindProperty("availableGames");
 
-			_elympicsWebEndpointChecker = new EditorEndpointChecker();
-			_elympicsEndpointChecker = new EditorEndpointChecker();
-			_elympicsWebEndpointChecker.UpdateUri(_elympicsWebEndpoint.stringValue);
-			_elympicsEndpointChecker.UpdateUri(_elympicsEndpoint.stringValue);
-
-			_indentation = new GUIStyle { margin = new RectOffset(10, 0, 0, 0) };
-			_labelWidthStack = new Stack<float>();
-
-			Undo.undoRedoPerformed += UpdateUriOnUndoRedo;
-			EditorApplication.update += EditorUpdate;
-
 			var chosenGameProperty = GetChosenGameProperty();
 			CreateChosenGameEditorIfChanged(chosenGameProperty);
-		}
-
-		private void OnDisable()
-		{
-			Undo.undoRedoPerformed -= UpdateUriOnUndoRedo;
-		}
-
-		private void EditorUpdate()
-		{
-			_elympicsWebEndpointChecker.Update();
-			_elympicsEndpointChecker.Update();
-		}
-
-		private void UpdateUriOnUndoRedo()
-		{
-			serializedObject.Update();
-			_elympicsWebEndpointChecker.UpdateUri(_elympicsWebEndpoint.stringValue);
 		}
 
 		private SerializedProperty GetChosenGameProperty()

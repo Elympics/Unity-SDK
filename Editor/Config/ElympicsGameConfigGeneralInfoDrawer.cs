@@ -9,12 +9,13 @@ namespace Elympics
 	internal class ElympicsGameConfigGeneralInfoDrawer
 	{
 		private ElympicsGameConfig gameConfig = null;
-		public ElympicsGameConfig GameConfig => gameConfig;
+		public  ElympicsGameConfig GameConfig => gameConfig;
 
 		private CustomInspectorDrawer customInspectorDrawer = null;
-		private Color themeColor = Color.blue;
+		private Color                 themeColor            = Color.blue;
 
 		private Object previousSceneAsset = null;
+		private bool   _verifyGameScenePath;
 
 		public ElympicsGameConfigGeneralInfoDrawer(CustomInspectorDrawer inspectorDrawer, Color themeColor)
 		{
@@ -27,6 +28,7 @@ namespace Elympics
 			this.gameConfig = gameConfig;
 
 			previousSceneAsset = gameConfig.gameplaySceneAsset;
+			_verifyGameScenePath = true;
 		}
 
 		public void DrawGeneralGameConfigInfo()
@@ -35,6 +37,7 @@ namespace Elympics
 		}
 
 		#region Game Config Settings Section
+
 		private void DrawSettingsSection()
 		{
 			customInspectorDrawer.DrawHeader(gameConfig.GameName + " settings", 20, themeColor);
@@ -46,7 +49,7 @@ namespace Elympics
 			gameConfig.players = customInspectorDrawer.DrawIntField("Players Count", gameConfig.Players, 0.25f, true);
 
 			gameConfig.gameplaySceneAsset = customInspectorDrawer.DrawSceneFieldWithOpenSceneButton("Gameplay scene", gameConfig.gameplaySceneAsset, 0.25f, 0.5f, out bool sceneFieldChanged, out bool openSceneButtonPressed);
-			if (sceneFieldChanged)
+			if (sceneFieldChanged || _verifyGameScenePath)
 				CheckGameplaySceneAndUpdatePath();
 			if (openSceneButtonPressed)
 				OpenSceneFromGameConfig();
@@ -61,6 +64,7 @@ namespace Elympics
 
 		private void CheckGameplaySceneAndUpdatePath()
 		{
+			_verifyGameScenePath = false;
 			var newSceneAsset = gameConfig.gameplaySceneAsset;
 
 			if (!(newSceneAsset is SceneAsset scene))
@@ -73,6 +77,7 @@ namespace Elympics
 			var scenePath = AssetDatabase.GetAssetOrScenePath(scene);
 			gameConfig.gameplayScene = scenePath;
 		}
+
 		#endregion
 	}
 }

@@ -35,7 +35,13 @@ namespace Elympics
 					return _elympics;
 
 				_elympics = ElympicsBehaviour.ElympicsBase;
-				return _elympics;
+
+				if (_elympics != null)
+					return _elympics;
+
+				var elympicsBaseNullReferenceMessage = $"Calling for Elympics in ElympicsMonoBehaviour before Elympics field is initialized. Check Script Execution Order!";
+				Debug.LogError(elympicsBaseNullReferenceMessage, this);
+				throw new UnassignedReferenceException(elympicsBaseNullReferenceMessage);
 			}
 		}
 

@@ -21,8 +21,10 @@ namespace Elympics
 		private const string ServerBuildAppNameLinux   = "Unity";
 		private const string ServerBuildAppNameWindows = "Unity.exe";
 
-		private static readonly string ServerWrapperPath            = Path.Combine("Assets", "Plugins", "Elympics", "GameEngine", "Wrapper");
-		private static readonly string GameBotNoopPath              = Path.Combine("Assets", "Plugins", "Elympics", "GameEngine", "GameBotNoop");
+		private static readonly string GUIDofAssetsPathPointer		= AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
+		private static readonly string BuildAssetsPath				= Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GUIDofAssetsPathPointer));
+		private static readonly string ServerWrapperPath			= Path.Combine(BuildAssetsPath, "Wrapper");
+		private static readonly string GameBotNoopPath				= Path.Combine(BuildAssetsPath, "GameBotNoop");
 		private const           string ServerWrapperFilesPattern    = "*.dll_";
 		private const           string ServerWrapperTargetExtension = ".dll";
 

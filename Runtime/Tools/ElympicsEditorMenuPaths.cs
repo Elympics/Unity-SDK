@@ -9,5 +9,7 @@
 		public const string BUILD_LINUX_SERVER		 = TOOLS_MENU_PATH + "Build Linux Server";
 		public const string BUILD_AND_UPLOAD_SERVER  = TOOLS_MENU_PATH + "Build and Upload Server";
 		public const string MANAGE_GAMES_IN_ELYMPICS = TOOLS_MENU_PATH + "Manage games in Elympics";
+
+		public const string MOUSE_ACTION_CREATE_ELYMPICS_SYSTEM = "GameObject/ElympicsSystem";
 	}
 }

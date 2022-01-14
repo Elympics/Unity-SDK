@@ -1,11 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
 {
-	public class ElympicsMouseActions : MonoBehaviour
+	public static class ElympicsMouseActions
 	{
 		private const string pathToElympicsSystem = "Elympics";
 

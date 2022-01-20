@@ -65,7 +65,12 @@ namespace Elympics
 
 		public void GetMatchLongPollingAsync(GetMatchModel.Request request, Action<GetMatchModel.Response, Exception> callback, CancellationToken ct = default)
 		{
-			var requestOp = ElympicsWebClient.SendJsonPostRequest(GetMatchmakingUriWithBase(MatchmakingRoutes.GetMatchLongPolling), request, _authToken);
+			var requestJsonUtility = new GetMatchModelRequestForJsonUtility
+			{
+				MatchId = request.MatchId,
+				DesiredState = request.DesiredState.Value
+			};
+			var requestOp = ElympicsWebClient.SendJsonPostRequest(GetMatchmakingUriWithBase(MatchmakingRoutes.GetMatchLongPolling), requestJsonUtility, _authToken);
 			CallCallbackOnCompleted(requestOp, callback, ct);
 		}
 
@@ -104,6 +109,13 @@ namespace Elympics
 				Debug.Log($"[Elympics] Received response from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
 				callback(response, null);
 			};
+		}
+
+		[Serializable]
+		private class GetMatchModelRequestForJsonUtility
+		{
+			public string               MatchId;
+			public GetMatchDesiredState DesiredState;
 		}
 	}
 }

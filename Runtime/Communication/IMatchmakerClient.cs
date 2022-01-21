@@ -36,6 +36,6 @@ namespace Elympics
 		event Action<string>                                                                                                                MatchmakingError;
 		event Action                                                                                                                        MatchmakingCancelled;
 
-		void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect = false, float[] matchmakerData = null, byte[] gameEngineData = null, CancellationToken ct = default);
+		void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect = false, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, CancellationToken ct = default);
 	}
 }

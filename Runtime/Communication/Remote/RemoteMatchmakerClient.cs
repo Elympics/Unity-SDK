@@ -54,7 +54,7 @@ namespace Elympics
 			WaitingForMatchStateRunningError += result => MatchmakingError?.Invoke(result.Error);
 		}
 
-		public void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect, float[] matchmakerData = null, byte[] gameEngineData = null, CancellationToken ct = default)
+		public void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, CancellationToken ct = default)
 		{
 			MatchmakingStarted?.Invoke();
 
@@ -63,7 +63,7 @@ namespace Elympics
 				if (!string.IsNullOrEmpty(matchId))
 					OnMatchCreated(matchId);
 				else
-					WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, ct);
+					WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, ct);
 			}
 
 			void OnMatchCreated(string matchId)
@@ -84,7 +84,7 @@ namespace Elympics
 			if (tryReconnect)
 				GetFirstUnfinishedMatchId(OnUnfinishedMatchResolved, gameId, gameVersion, ct);
 			else
-				WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, ct);
+				WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, ct);
 		}
 
 		private void GetFirstUnfinishedMatchId(Action<string> callback, string gameId, string gameVersion, CancellationToken ct)
@@ -119,14 +119,15 @@ namespace Elympics
 			_userApiClient.GetUnfinishedMatchesAsync(new GetUnfinishedMatchesModel.Request(), OnUnfinishedMatchesResult, ct);
 		}
 
-		private void WaitForMatch(Action<string> callback, string gameId, string gameVersion, float[] matchmakerData = null, byte[] gameEngineData = null, CancellationToken ct = default)
+		private void WaitForMatch(Action<string> callback, string gameId, string gameVersion, float[] matchmakerData, byte[] gameEngineData, string queueName, CancellationToken ct)
 		{
 			var getPendingMatchRequest = new JoinMatchmakerAndWaitForMatchModel.Request
 			{
 				GameId = gameId,
 				GameVersion = gameVersion,
 				MatchmakerData = matchmakerData,
-				GameEngineData = gameEngineData
+				GameEngineData = gameEngineData,
+				QueueName = queueName
 			};
 
 			WaitingForMatchStarted?.Invoke((gameId, gameVersion));

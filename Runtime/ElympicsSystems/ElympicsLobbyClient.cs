@@ -33,6 +33,7 @@ namespace Elympics
 		private string  _authToken;
 		private float[] _matchmakerData;
 		private byte[]  _gameEngineData;
+		private string  _queueName;
 
 		private void Awake()
 		{
@@ -58,7 +59,7 @@ namespace Elympics
 
 		private void SetMatchDataOnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
 		{
-			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData);
+			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData, _queueName);
 		}
 
 		private void LoadConfig()
@@ -100,7 +101,7 @@ namespace Elympics
 			Authenticated?.Invoke(result.Success, result.UserId, result.JwtToken, result.Error);
 		}
 
-		public void JoinMatch(float[] matchmakerData = null, byte[] gameEngineData = null, bool loadGameplaySceneOnFinished = true)
+		public void JoinMatch(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true)
 		{
 			if (!IsAuthenticated)
 			{
@@ -119,7 +120,7 @@ namespace Elympics
 				Matchmaker.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
 			}
 
-			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, CancellationToken.None);
+			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, queueName, CancellationToken.None);
 		}
 
 		private void LoadGameplayScene((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) obj)

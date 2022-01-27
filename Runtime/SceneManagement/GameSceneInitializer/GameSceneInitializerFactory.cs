@@ -5,7 +5,7 @@ namespace Elympics
 {
 	internal static class GameSceneInitializerFactory
 	{
-		private const string ElympicsEnvironmentVariable    = "ELYMPICS";
+		private const string ElympicsEnvironmentVariable = "ELYMPICS";
 		private const string ElympicsBotEnvironmentVariable = "ELYMPICS_BOT";
 
 		public static GameSceneInitializer Create(ElympicsGameConfig elympicsGameConfig)
@@ -16,13 +16,11 @@ namespace Elympics
 				return new OnlineGameBotInitializer();
 			if (ShouldLoadElympicsOnlineServer())
 				return new OnlineGameServerInitializer();
-			if (ShouldLoadElympicsOnlineClient())
-				return new OnlineGameClientInitializer();
+			if (ShouldLoadFromLobbyClient())
+				return LoadFromLobbyClient();
 
 			if (ShouldLoadHalfRemoteServer())
 				return new HalfRemoteGameServerInitializer();
-			if (ShouldLoadHalfRemoteClient())
-				return new HalfRemoteGameClientInitializer();
 
 			#endregion
 
@@ -39,8 +37,23 @@ namespace Elympics
 			}
 		}
 
-		private static GameSceneInitializer         InitializeLocalPlayerAndBots() => new LocalGameServerInitializer();
-		private static DebugOnlineClientInitializer InitializeDebugOnlinePlayer()  => new DebugOnlineClientInitializer();
+		private static GameSceneInitializer LoadFromLobbyClient()
+		{
+			switch (ElympicsLobbyClient.Instance.MatchMode)
+			{
+				case ElympicsLobbyClient.JoinedMatchMode.Online:
+					return new OnlineGameClientInitializer();
+				case ElympicsLobbyClient.JoinedMatchMode.HalfRemote:
+					return new HalfRemoteGameClientInitializer();
+				case ElympicsLobbyClient.JoinedMatchMode.Local:
+					return InitializeLocalPlayerAndBots();
+				default:
+					throw new ArgumentOutOfRangeException(nameof(ElympicsLobbyClient.Instance.MatchMode));
+			}
+		}
+
+		private static GameSceneInitializer InitializeLocalPlayerAndBots() => new LocalGameServerInitializer();
+		private static DebugOnlineClientInitializer InitializeDebugOnlinePlayer() => new DebugOnlineClientInitializer();
 
 		private static GameSceneInitializer InitializeHalfRemotePlayers(ElympicsGameConfig elympicsGameConfig)
 		{

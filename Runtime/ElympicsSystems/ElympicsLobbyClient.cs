@@ -8,6 +8,13 @@ namespace Elympics
 {
 	public class ElympicsLobbyClient : MonoBehaviour
 	{
+		internal enum JoinedMatchMode
+		{
+			Online,
+			HalfRemote,
+			Local
+		}
+
 		private const string AUTH_TOKEN_PLAYER_PREFS_KEY = "Elympics/AuthToken";
 
 		public static ElympicsLobbyClient Instance { get; private set; }
@@ -25,6 +32,7 @@ namespace Elympics
 		public JoinedMatchData       MatchData       { get; set; }
 		public IAuthenticationClient Auth            { get; private set; }
 		public IMatchmakerClient     Matchmaker      { get; private set; }
+		internal JoinedMatchMode MatchMode { get; private set; }
 
 		private ElympicsConfig     _config;
 		private ElympicsGameConfig _gameConfig;
@@ -101,6 +109,19 @@ namespace Elympics
 			Authenticated?.Invoke(result.Success, result.UserId, result.JwtToken, result.Error);
 		}
 
+		public void PlayOffline()
+		{
+			SetUpMatch(JoinedMatchMode.Local);
+			LoadGameplayScene();
+		}
+
+		public void PlayHalfRemote(int playerId)
+		{
+			Environment.SetEnvironmentVariable(ApplicationParameters.HalfRemote.PlayerIndexEnvironmentVariable, playerId.ToString());
+			SetUpMatch(JoinedMatchMode.HalfRemote);
+			LoadGameplayScene();
+		}
+
 		public void JoinMatch(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true)
 		{
 			if (!IsAuthenticated)
@@ -109,13 +130,14 @@ namespace Elympics
 				return;
 			}
 
-			_gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+			SetUpMatch(JoinedMatchMode.Online);
+
 			_matchmakerData = matchmakerData;
 			_gameEngineData = gameEngineData;
 
 			if (loadGameplaySceneOnFinished)
 			{
-				Matchmaker.MatchmakingFinished += LoadGameplayScene;
+				Matchmaker.MatchmakingFinished += HandleMatchmakingFinished;
 				Matchmaker.MatchmakingFinished += _ => Debug.Log("Matchmaking finished successfully");
 				Matchmaker.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
 			}
@@ -123,11 +145,20 @@ namespace Elympics
 			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, queueName, CancellationToken.None);
 		}
 
-		private void LoadGameplayScene((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) obj)
+		private void SetUpMatch(JoinedMatchMode mode)
 		{
-			Matchmaker.MatchmakingFinished -= LoadGameplayScene;
-			SceneManager.LoadScene(_gameConfig.GameplayScene);
+			_gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+			MatchMode = mode;
 		}
+
+		private void HandleMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) obj)
+		{
+			Matchmaker.MatchmakingFinished -= HandleMatchmakingFinished;
+			LoadGameplayScene();
+		}
+
+		private void LoadGameplayScene()
+			=> SceneManager.LoadScene(_gameConfig.GameplayScene);
 
 		private void SetAuthToken()
 		{

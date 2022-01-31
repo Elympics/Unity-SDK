@@ -9,7 +9,7 @@ namespace Elympics
 
 			public static bool ShouldLoadElympicsOnlineServer() => IsElympicsEnvironmentVariableDefined() && !IsElympicsBotEnvironmentVariableDefined();
 			public static bool ShouldLoadElympicsOnlineBot()    => IsElympicsEnvironmentVariableDefined() && IsElympicsBotEnvironmentVariableDefined();
-			public static bool ShouldLoadElympicsOnlineClient() => IsElympicsLobbyInitialized();
+			public static bool ShouldLoadFromLobbyClient() => IsElympicsLobbyInitialized();
 			public static bool ShouldLoadHalfRemoteServer()     => IsUnityServer() && !IsUnityEditor();
 			public static bool ShouldLoadHalfRemoteClient()     => !IsUnityEditor();
 
@@ -20,7 +20,7 @@ namespace Elympics
 
 		public static class HalfRemote
 		{
-			private const string PlayerIndexEnvironmentVariable = "ELYMPICS_HALF_REMOTE_PLAYER_INDEX";
+			internal const string PlayerIndexEnvironmentVariable = "ELYMPICS_HALF_REMOTE_PLAYER_INDEX";
 			private const int    PlayerIndexArgsIndex           = 1;
 			private const string PlayerIndexQueryParameter      = "playerIndex";
 

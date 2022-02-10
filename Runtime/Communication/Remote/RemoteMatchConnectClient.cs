@@ -281,5 +281,7 @@ namespace Elympics
 			DisconnectedByServer?.Invoke();
 			_connected = false;
 		}
+
+		public void Dispose() => Disconnect();
 	}
 }

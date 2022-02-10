@@ -7,7 +7,7 @@ using MatchTcpClients.Synchronizer;
 
 namespace Elympics
 {
-	public interface IMatchConnectClient
+	public interface IMatchConnectClient : IDisposable
 	{
 		event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
 		event Action                          ConnectingFailed;

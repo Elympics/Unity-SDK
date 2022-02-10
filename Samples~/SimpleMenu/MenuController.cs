@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
+#if UNITY_EDITOR
 using ParrelSync;
+
+#endif
 
 public class MenuController : MonoBehaviour
 {
@@ -13,11 +16,13 @@ public class MenuController : MonoBehaviour
 		ElympicsLobbyClient.Instance.Authenticated += HandleAuthenticated;
 		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
 
+#if UNITY_EDITOR
 		if (ClonesManager.IsClone())
 		{
 			halfRemotePlayerId.text = ElympicsGameConfig.GetHalfRemotePlayerIndex(0).ToString();
 			halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
 		}
+#endif
 	}
 
 	private void HandleAuthenticated(bool success, string userId, string jwtToken, string error)

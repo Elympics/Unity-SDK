@@ -1,22 +1,25 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using HybridWebSocket;
+using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using Proto.ProtoClient.NetworkClient;
+using UnityConnectors.HalfRemote;
 using UnityEngine;
+using WebRtcWrapper;
 using Debug = UnityEngine.Debug;
 
 namespace Elympics
 {
 	public class HalfRemoteMatchConnectClient : IMatchConnectClient
 	{
-		private const           int      ConnectMaxRetries         = 50;
-		private static readonly TimeSpan WaitTimeToRetryConnect    = TimeSpan.FromSeconds(1);
-		private static readonly TimeSpan WebSocketHandshakeTimeout = TimeSpan.FromSeconds(5);
+		private const           int            ConnectMaxRetries      = 50;
+		private static readonly WaitForSeconds WaitTimeToRetryConnect = new WaitForSeconds(1);
+
+		private static readonly WaitForSeconds OfferWaitingInterval     = new WaitForSeconds(1);
+		private const           int            MaxOfferWaitingIntervals = 5;
 
 		public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
 		public event Action                          ConnectingFailed;
@@ -34,27 +37,28 @@ namespace Elympics
 		private readonly string                       _ip;
 		private readonly int                          _port;
 		private readonly string                       _userId;
-		private readonly bool                         _useWebSockets;
-		private readonly bool                         _useWebRtc;
+		private readonly bool                         _useWeb;
+		private readonly SimpleHttpSignalingClient    _signalingClient;
 
-		private TcpClient _tcpClient;
-		private WebSocket _websocket;
+		private TcpClient     _tcpClient;
+		private IWebRtcClient _webRtcClient;
 
-		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWebSockets, bool useWebRtc)
+		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWeb)
 		{
 			_halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
 			_ip = ip;
 			_port = port;
 			_userId = userId;
-			_useWebSockets = useWebSockets;
-			_useWebRtc = useWebRtc;
+			_useWeb = useWeb;
+			if (useWeb)
+				_signalingClient = new SimpleHttpSignalingClient(new Uri($"http://{_ip}:{_port}"));
 		}
 
 		public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
 		{
-			if (_useWebSockets)
-				return ConnectUsingWebSocket(ConnectedCallback, ct);
-			return ConnectUsingTcpClient(ConnectedCallback, ct);
+			return _useWeb
+				? ConnectUsingWeb(ConnectedCallback, ct)
+				: ConnectUsingTcp(ConnectedCallback, ct);
 
 			void ConnectedCallback(bool connected)
 			{
@@ -62,15 +66,13 @@ namespace Elympics
 					return;
 
 				_halfRemoteMatchClientAdapter.PlayerConnected();
-				if (_useWebRtc)
-					_halfRemoteMatchClientAdapter.UpgradeWebRtc();
 				ConnectedWithSynchronizationData?.Invoke(new TimeSynchronizationData {LocalClockOffset = TimeSpan.Zero, RoundTripDelay = TimeSpan.Zero, UnreliableReceivedAnyPing = false, UnreliableWaitingForFirstPing = true});
 				AuthenticatedUserMatchWithUserId?.Invoke(_userId);
 				MatchJoinedWithMatchId?.Invoke(MatchId);
 			}
 		}
 
-		private IEnumerator ConnectUsingTcpClient(Action<bool> connectedCallback, CancellationToken ct)
+		private IEnumerator ConnectUsingTcp(Action<bool> connectedCallback, CancellationToken ct)
 		{
 			for (var i = 0; i < ConnectMaxRetries; i++)
 			{
@@ -89,7 +91,7 @@ namespace Elympics
 					Debug.LogException(e);
 				}
 
-				yield return new WaitForSeconds((float) WaitTimeToRetryConnect.TotalSeconds);
+				yield return WaitTimeToRetryConnect;
 			}
 
 			if (_tcpClient == null)
@@ -98,58 +100,69 @@ namespace Elympics
 				yield break;
 			}
 
-			_halfRemoteMatchClientAdapter.ConnectToServer(new ProtoNetworkStreamClient(_tcpClient.GetStream()), _userId);
-			connectedCallback?.Invoke(true);
+			var client = new HalfRemoteMatchClient(_userId, new ProtoNetworkStreamClient(_tcpClient.GetStream()));
+			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId, client);
 		}
 
-		private IEnumerator ConnectUsingWebSocket(Action<bool> connectedCallback, CancellationToken ct)
+		private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
 		{
-			var url = $"ws://{_ip}:{_port}";
+			_webRtcClient = WebRtcFactory.CreateInstance();
+			string offer = null;
+			var offerSet = false;
+			_webRtcClient.Offer += s =>
+			{
+				offer = s;
+				offerSet = true;
+			};
+			_webRtcClient.CreateOffer();
+
+			for (var i = 0; i < MaxOfferWaitingIntervals; i++)
+			{
+				if (offerSet)
+					break;
+				yield return OfferWaitingInterval;
+			}
+
+			if (!offerSet)
+				throw new ArgumentException("Offer not received from WebRTC client");
+			if (string.IsNullOrEmpty(offer))
+				throw new ArgumentException("Offer is null or empty");
+
+			string answer = null;
 			for (var i = 0; i < ConnectMaxRetries; i++)
 			{
 				if (!Application.isPlaying)
 					yield break;
-				bool? connected = null;
-				_websocket = WebSocketFactory.CreateInstance(url);
-				_websocket.OnOpen += () =>
-				{
-					Debug.Log($"Web socket connected to {url}");
-					connected = true;
-				};
-				_websocket.OnError += e =>
-				{
-					Debug.LogError("Web socket error! " + e);
-					connected = false;
-				};
-				_websocket.OnClose += e =>
-				{
-					Debug.Log("Web socket closed! " + e);
-					connected = false;
-				};
 
-				_websocket.Connect();
-
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
-				while (!connected.HasValue && stopwatch.Elapsed < WebSocketHandshakeTimeout)
-					yield return null;
-
-				if (connected == true)
+				yield return _signalingClient.PostOfferAsync(offer);
+				if (_signalingClient.Request.isNetworkError)
+				{
+					Debug.Log(_signalingClient.Request.error);
+				}
+				else if (_signalingClient.Request.isHttpError)
+				{
+					Debug.Log(_signalingClient.Request.downloadHandler.text);
+				}
+				else
+				{
+					answer = _signalingClient.Request.downloadHandler.text;
 					break;
+				}
 
-				_websocket = null;
-				yield return new WaitForSeconds((float) WaitTimeToRetryConnect.TotalSeconds);
+				yield return WaitTimeToRetryConnect;
 			}
 
-			if (_websocket == null)
+			if (string.IsNullOrEmpty(answer))
 			{
+				Debug.LogError("Empty answer");
 				connectedCallback.Invoke(false);
 				yield break;
 			}
+			
+			_webRtcClient.OnAnswer(answer);
 
-			var receiver = new WebSocketCommunicationWrapper(_websocket);
-			_halfRemoteMatchClientAdapter.ConnectToServer(new ProtoNetworkDatagramClient(receiver), _userId, _useWebRtc);
-			connectedCallback.Invoke(true);
+			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);
+			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId, client);
 		}
 
 		public IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct)
@@ -161,9 +174,11 @@ namespace Elympics
 		public void Disconnect()
 		{
 			_halfRemoteMatchClientAdapter.PlayerDisconnected();
-			_tcpClient?.Close();
-			_websocket?.Close();
-			DisconnectedByServer?.Invoke();
+			_tcpClient?.Dispose();
+			_webRtcClient?.Dispose();
+			DisconnectedByClient?.Invoke();
 		}
+
+		public void Dispose() => Disconnect();
 	}
 }

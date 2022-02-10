@@ -20,7 +20,7 @@ namespace Elympics
 			var gameEngineData = playersList[playerIndex].GameEngineData;
 
 			_halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, ip, port, userId, elympicsGameConfig.UseWebSocketsInHalfRemote, elympicsGameConfig.UseWebRtcInHalfRemote);
+			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, ip, port, userId, elympicsGameConfig.UseWebInHalfRemote);
 			client.InitializeInternal(elympicsGameConfig, _halfRemoteMatchConnectClient, _halfRemoteMatchClient,
 				new InitialMatchPlayerData
 				{
@@ -34,8 +34,7 @@ namespace Elympics
 
 		public override void Dispose()
 		{
-			_halfRemoteMatchConnectClient?.Disconnect();
-			_halfRemoteMatchClient?.Dispose();
+			_halfRemoteMatchConnectClient?.Dispose();
 		}
 	}
 }

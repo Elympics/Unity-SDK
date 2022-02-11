@@ -16,7 +16,7 @@ MonoBehaviour:
   gameId: 6d7687ae-3094-467d-bfe1-88e44b58ae9a
   gameVersion: 14
   players: 2
-  gameplayScene: Assets/Plugins/Elympics/Examples/TechDemo/TechDemo.unity
+  gameplayScene: Assets/Samples/TechDemo/TechDemo.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 69dd9c1d70a588c4fba23ad579800771,
     type: 3}
   botsInServer: 1

@@ -62,13 +62,14 @@ public class ElympicsGameSelectionMenu : MonoBehaviour
 				Instantiate(gameButtonPrefab, transform);
 #endif
 			button.LinkWithGame(index++, game.GameId, game.GameName, elympicsConfig);
+			buttonsList.Add(button);
 		}
 	}
 
 	private void UpdateButtonsInteractability()
 	{
 		string currentGameId = elympicsConfig.GetCurrentGameConfig().GameId;
-		foreach (var button in buttonsList)
+		foreach (var button in buttonsList) 
 			button.SetInteractable(button.LinkedId != currentGameId);
 	}
 

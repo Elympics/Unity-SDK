@@ -4,10 +4,12 @@
   "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
   "displayName": "Elympics",
   "unity": "2018.3",
-  "dependencies": {
-    "com.unity.cinemachine": "2.7.8"
-  },
   "samples": [
+    {
+      "displayName": "Simple Menu",
+      "description": "Simple menu scene with all play modes and available games choose buttons",
+      "path": "Samples~/SimpleMenu"
+    },
     {
       "displayName": "Empty",
       "description": "Empty project with Elympics included on scene",

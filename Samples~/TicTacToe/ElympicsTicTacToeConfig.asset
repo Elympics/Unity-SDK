@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsTicTacToeConfig
   m_EditorClassIdentifier: 
-  elympicsEndpoint: http://3.65.204.121:9101
   gameName: TicTacToe
   gameId: 3ce0f9ef-704b-4753-be91-c688314dfecf
   gameVersion: 12
   players: 2
-  gameplayScene: Assets/Plugins/Elympics/Examples/TicTacToe/Scenes/TicTacToe.unity
+  gameplayScene: Assets/Samples/TicTacToe/Scenes/TicTacToe.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 1440b25fcad41344cb39cfb4c1df3ff5,
     type: 3}
   botsInServer: 1
+  useWeb: 0
   enableReconnect: 0
   connectOnGameplaySceneLoad: 1
   ticksPerSecond: 20
@@ -32,8 +32,10 @@ MonoBehaviour:
   mode: 1
   halfRemoteMode: 0
   useWebSocketsInHalfRemote: 0
+  useWebRtcInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
-  portForHalfRemoteMode: 9101
+  tcpPortForHalfRemoteMode: 9101
+  webPortForHalfRemoteMode: 9102
   playerIndexForHalfRemoteMode: 1
   testPlayers:
   - userId: p0

@@ -17,7 +17,7 @@ MonoBehaviour:
   gameId: 04fa614a-4526-40f9-84a4-e25e70e705f2
   gameVersion: 1
   players: 2
-  gameplayScene: Assets/Plugins/Elympics/Examples/HelloWorld/HelloWorld.unity
+  gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1

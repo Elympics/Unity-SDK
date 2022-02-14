@@ -109,7 +109,7 @@ namespace Elympics
 			_webRtcClient = WebRtcFactory.CreateInstance();
 			string offer = null;
 			var offerSet = false;
-			_webRtcClient.Offer += s =>
+			_webRtcClient.OfferCreated += s =>
 			{
 				offer = s;
 				offerSet = true;
@@ -137,7 +137,7 @@ namespace Elympics
 				yield return _signalingClient.PostOfferAsync(offer);
 				if (_signalingClient.Request.isNetworkError)
 				{
-					Debug.Log(_signalingClient.Request.error);
+					Debug.LogError(_signalingClient.Request.error);
 				}
 				else if (_signalingClient.Request.isHttpError)
 				{
@@ -154,7 +154,7 @@ namespace Elympics
 
 			if (string.IsNullOrEmpty(answer))
 			{
-				Debug.LogError("Empty answer");
+				Debug.LogError("WebRTC Answer empty - connection error or signaling server problem");
 				connectedCallback.Invoke(false);
 				yield break;
 			}

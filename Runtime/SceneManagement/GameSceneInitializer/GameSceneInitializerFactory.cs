@@ -43,8 +43,10 @@ namespace Elympics
 			{
 				case ElympicsLobbyClient.JoinedMatchMode.Online:
 					return new OnlineGameClientInitializer();
-				case ElympicsLobbyClient.JoinedMatchMode.HalfRemote:
+				case ElympicsLobbyClient.JoinedMatchMode.HalfRemoteClient:
 					return new HalfRemoteGameClientInitializer();
+				case ElympicsLobbyClient.JoinedMatchMode.HalfRemoteServer:
+					return new HalfRemoteGameServerInitializer();
 				case ElympicsLobbyClient.JoinedMatchMode.Local:
 					return InitializeLocalPlayerAndBots();
 				default:

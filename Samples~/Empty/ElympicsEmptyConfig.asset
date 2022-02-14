@@ -17,7 +17,7 @@ MonoBehaviour:
   gameId: 00ab967f-6d5d-470c-8e9a-4118ea99f637
   gameVersion: 1
   players: 2
-  gameplayScene: Assets/Plugins/Elympics/Examples/Empty/EmptyScene.unity
+  gameplayScene: Assets/Samples/Empty/EmptyScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a4c4aa9df07fed148970250e0ae1a0a1,
     type: 3}
   botsInServer: 1

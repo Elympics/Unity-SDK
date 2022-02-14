@@ -11,8 +11,9 @@ namespace Elympics
 		internal enum JoinedMatchMode
 		{
 			Online,
-			HalfRemote,
-			Local
+			Local,
+			HalfRemoteClient,
+			HalfRemoteServer
 		}
 
 		private const string AUTH_TOKEN_PLAYER_PREFS_KEY = "Elympics/AuthToken";
@@ -27,12 +28,12 @@ namespace Elympics
 
 		public event AuthenticationCallback Authenticated;
 
-		public string                UserId          { get; set; }
-		public bool                  IsAuthenticated { get; private set; }
-		public JoinedMatchData       MatchData       { get; set; }
-		public IAuthenticationClient Auth            { get; private set; }
-		public IMatchmakerClient     Matchmaker      { get; private set; }
-		internal JoinedMatchMode MatchMode { get; private set; }
+		public   string                UserId          { get; set; }
+		public   bool                  IsAuthenticated { get; private set; }
+		public   JoinedMatchData       MatchData       { get; set; }
+		public   IAuthenticationClient Auth            { get; private set; }
+		public   IMatchmakerClient     Matchmaker      { get; private set; }
+		internal JoinedMatchMode       MatchMode       { get; private set; }
 
 		private ElympicsConfig     _config;
 		private ElympicsGameConfig _gameConfig;
@@ -118,11 +119,17 @@ namespace Elympics
 		public void PlayHalfRemote(int playerId)
 		{
 			Environment.SetEnvironmentVariable(ApplicationParameters.HalfRemote.PlayerIndexEnvironmentVariable, playerId.ToString());
-			SetUpMatch(JoinedMatchMode.HalfRemote);
+			SetUpMatch(JoinedMatchMode.HalfRemoteClient);
 			LoadGameplayScene();
 		}
 
-		public void JoinMatch(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true)
+		public void StartHalfRemoteServer()
+		{
+			SetUpMatch(JoinedMatchMode.HalfRemoteServer);
+			LoadGameplayScene();
+		}
+
+		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true)
 		{
 			if (!IsAuthenticated)
 			{
@@ -134,6 +141,7 @@ namespace Elympics
 
 			_matchmakerData = matchmakerData;
 			_gameEngineData = gameEngineData;
+			_queueName = queueName;
 
 			if (loadGameplaySceneOnFinished)
 			{

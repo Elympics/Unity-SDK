@@ -43,7 +43,7 @@ namespace Elympics.Libraries
 			public event Action<string> UnreliableReceivingError;
 			public event Action         UnreliableReceivingEnded;
 
-			public event Action<string> Offer;
+			public event Action<string> OfferCreated;
 
 			public void Dispose()
 			{
@@ -81,7 +81,7 @@ namespace Elympics.Libraries
 			public void OnUnreliableError(string error)   => UnreliableReceivingError?.Invoke(error);
 			public void OnUnreliableEnded()               => UnreliableReceivingEnded?.Invoke();
 
-			public void OnOffer(string offerJson) => Offer?.Invoke(offerJson);
+			public void OnOffer(string offerJson) => OfferCreated?.Invoke(offerJson);
 		}
 
 		private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new Dictionary<int, WebRtcClientAdapter>();

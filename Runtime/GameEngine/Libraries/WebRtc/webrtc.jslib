@@ -26,13 +26,13 @@ var LibraryWebRtc = {
 
         // Test in UnityConnectors.WebRtcTestServer ~pprzestrzelski 07.02.2021
         function WebRtcClient(reliableReceived, reliableError, reliableEnded, unreliableReceived, unreliableError, unreliableEnded, offerCallback) {
-            this.pc = new RTCPeerConnection()
-            
-            this.reliableDc = this.pc.createDataChannel('reliable')
+            this.pc = new RTCPeerConnection();
+
+            this.reliableDc = this.pc.createDataChannel('reliable');
             this.reliableReceived = reliableReceived;
             this.reliableError = reliableError;
             this.reliableEnded = reliableEnded;
-            
+
             this.reliableDc.onopen = function () {
                 var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
                 console.log(selectedPair);
@@ -46,8 +46,11 @@ var LibraryWebRtc = {
             this.reliableDc.onclose = function () {
                 this.reliableEnded();
             }.bind(this);
-            
-            this.unreliableDc = this.pc.createDataChannel('unreliable')
+
+            this.unreliableDc = this.pc.createDataChannel('unreliable', {
+                maxRetransmits: 0,
+                ordered: false
+            });
             this.unreliableReceived = unreliableReceived;
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;
@@ -65,7 +68,7 @@ var LibraryWebRtc = {
             this.unreliableDc.onclose = function () {
                 this.unreliableEnded();
             }.bind(this);
-            
+
             this.createOffer = function () {
                 this.pc.createOffer()
                     .then(function (offer) {
@@ -84,19 +87,19 @@ var LibraryWebRtc = {
                 var answer = JSON.parse(answerJson);
                 this.pc.setRemoteDescription(answer);
             }.bind(this);
-            
+
             this.sendReliable = function (message) {
                 if (this.reliableDc.readyState !== "open")
                     return;
                 this.reliableDc.send(message);
             }.bind(this);
-            
+
             this.sendUnreliable = function (message) {
                 if (this.reliableDc.readyState !== "open")
                     return;
                 this.unreliableDc.send(message);
             }.bind(this);
-            
+
             this.close = function () {
                 this.reliableDc.close();
                 this.pc.close();

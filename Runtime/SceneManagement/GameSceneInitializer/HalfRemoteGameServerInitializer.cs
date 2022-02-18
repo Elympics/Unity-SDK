@@ -26,7 +26,7 @@ namespace Elympics
 			_halfRemoteGameEngineProtoConnector.UnreliableClientReceivingError += (clientId, error) => Debug.Log($"Unreliable client {clientId} receiving error - {error}");
 			_halfRemoteGameEngineProtoConnector.UnreliableClientReceivingEnded += (clientId) => Debug.Log($"Unreliable client {clientId} receiving ended");
 			_halfRemoteGameEngineProtoConnector.ListeningEnded += (source) => Debug.Log($"{source} Listening ended");
-			_halfRemoteGameEngineProtoConnector.ListeningError += (source, error) => Debug.Log($"{source} Listening error {error}");
+			_halfRemoteGameEngineProtoConnector.ListeningError += ((string Source, string Error) x) => Debug.Log($"{x.Source} Listening error {x.Error}");
 
 			var initialMatchData = new InitialMatchUserDatas(DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig));
 			gameEngineAdapter.Init(new LoggerNoop(), null);

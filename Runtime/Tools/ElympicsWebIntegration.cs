@@ -20,7 +20,7 @@ namespace Elympics
 		private const string EngineSubdirectory    = "Engine";
 		private const string BotSubdirectory       = "Bot";
 
-		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsWebEndpoint;
+		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
 
 		public static void Login()
 		{
@@ -69,6 +69,13 @@ namespace Elympics
 		}
 
 		[Serializable]
+		public class ElympicsEndpointsModel
+		{
+			public string Lobby;
+			public string GameServers;
+		}
+
+		[Serializable]
 		public class GameResponseModel
 		{
 			public string Id;
@@ -107,17 +114,17 @@ namespace Elympics
 			}
 		}
 
-		public static void GetElympicsEndpoint(Action<string> updateProperty)
+		public static void GetElympicsEndpoints(Action<ElympicsEndpointsModel> updateProperty)
 		{
 			var uri = GetCombinedUrl(ElympicsWebEndpoint, Routes.BaseRoute, Routes.EndpointRoutes);
 			var response = ElympicsWebClient.SendJsonGetRequest(uri);
 
 			response.completed += _ =>
 			{
-				if (ElympicsWebClient.TryDeserializeResponse(response, "Login", out string endpoint))
+				if (ElympicsWebClient.TryDeserializeResponse(response, "Get Elympics Endpoints", out ElympicsEndpointsModel endpoints))
 				{
-					updateProperty.Invoke(endpoint);
-					Debug.Log($"Set {endpoint} elympics endpoint");
+					updateProperty.Invoke(endpoints);
+					Debug.Log($"Set {endpoints} elympics endpoint");
 				}
 			};
 		}

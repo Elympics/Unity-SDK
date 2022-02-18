@@ -29,7 +29,8 @@ namespace Elympics
 		public event Action DisconnectedByServer;
 		public event Action DisconnectedByClient;
 
-		private readonly IGameServerClient _gameServerClient;
+		private readonly IGameServerClient   _gameServerClient;
+		private readonly HttpSignalingClient _signalingClient;
 
 		private readonly string _tcpUdpServerAddress;
 		private readonly string _webServerAddress;
@@ -42,9 +43,12 @@ namespace Elympics
 		private Action _disconnectedCallback;
 		private Action _matchJoinedCallback;
 
-		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false)
+		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false)
 		{
 			_gameServerClient = gameServerClient;
+			Debug.Log(matchId);
+			var webSignalingEndpoint = GameServerClient.GetWebSignalingEndpoint(ElympicsConfig.Load().ElympicsGameServersEndpoint, webServerAddress, matchId);
+			_signalingClient = new HttpSignalingClient(webSignalingEndpoint);
 			_tcpUdpServerAddress = tcpUdpServerAddress;
 			_webServerAddress = webServerAddress;
 			_userSecret = userSecret;
@@ -176,8 +180,9 @@ namespace Elympics
 				Debug.Log($"[Elympics] Connecting to game server by WebSocket/WebRTC on {_webServerAddress}");
 
 				IEnumerator<double> synchronizer = null;
-				_gameServerClient.ConnectWebAsync(_webServerAddress, ConnectedCallback, s => synchronizer = s, ct);
+				yield return EnumerateNestedWithSimpleTypes(_gameServerClient.ConnectWebAsync(_signalingClient, ConnectedCallback, s => synchronizer = s, ct));
 
+				// Add timeout to this ~pprzestrzelski 18.02.2022
 				while (_connecting)
 					yield return 0;
 				while (_connected && synchronizer != null && synchronizer.MoveNext())
@@ -193,6 +198,28 @@ namespace Elympics
 					else
 						ConnectedCallback(t.Result);
 				}, ct);
+			}
+		}
+
+		private IEnumerator EnumerateNestedWithSimpleTypes(IEnumerator enumerator)
+		{
+			while (enumerator.MoveNext())
+			{
+				switch (enumerator.Current)
+				{
+					case double timeD:
+						yield return new WaitForSeconds((float) timeD);
+						break;
+					case int timeI:
+						yield return new WaitForSeconds(timeI);
+						break;
+					case IEnumerator nested:
+						yield return EnumerateNestedWithSimpleTypes(nested);
+						break;
+					default:
+						yield return enumerator.Current;
+						break;
+				}
 			}
 		}
 

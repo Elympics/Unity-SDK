@@ -3,9 +3,12 @@ var LibraryWebRtc = {
         instances: {},
         lastId: 0,
 
-        onReceived: null,
-        onReceivingError: null,
-        onReceivingEnded: null,
+        onReliableReceived: null,
+        onReliableError: null,
+        onReliableEnded: null,
+        onUnreliableReceived: null,
+        onUnreliableError: null,
+        onUnreliableEnded: null,
         onOffer: null
     },
 
@@ -21,26 +24,48 @@ var LibraryWebRtc = {
 
         console.log("[WebRTC] Allocating client");
 
-        // Check UnityAdapters for this code, it's tested there ~pprzestrzelski 04.11.2021
-        function WebRtcClient(received, receivingError, receivingEnded, offerCallback) {
+        // Test in UnityConnectors.WebRtcTestServer ~pprzestrzelski 07.02.2021
+        function WebRtcClient(reliableReceived, reliableError, reliableEnded, unreliableReceived, unreliableError, unreliableEnded, offerCallback) {
             this.pc = new RTCPeerConnection()
-            this.dc = this.pc.createDataChannel('data')
-            this.received = received;
-            this.receivingEnded = receivingEnded;
-            this.receivingError = receivingError;
-            this.dc.onopen = function () {
+            
+            this.reliableDc = this.pc.createDataChannel('reliable')
+            this.reliableReceived = reliableReceived;
+            this.reliableError = reliableError;
+            this.reliableEnded = reliableEnded;
+            
+            this.reliableDc.onopen = function () {
                 var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
                 console.log(selectedPair);
             }.bind(this);
-            this.dc.onmessage = function (message) {
-                this.received(new Uint8Array(message.data));
+            this.reliableDc.onmessage = function (message) {
+                this.reliableReceived(new Uint8Array(message.data));
             }.bind(this);
-            this.dc.onerror = function (error) {
-                this.receivingError(error.error.toString());
+            this.reliableDc.onerror = function (error) {
+                this.reliableError(error.error.toString());
             }.bind(this);
-            this.dc.onclose = function () {
-                this.receivingEnded();
+            this.reliableDc.onclose = function () {
+                this.reliableEnded();
             }.bind(this);
+            
+            this.unreliableDc = this.pc.createDataChannel('unreliable')
+            this.unreliableReceived = unreliableReceived;
+            this.unreliableError = unreliableError;
+            this.unreliableEnded = unreliableEnded;
+
+            this.unreliableDc.onopen = function () {
+                var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
+                console.log(selectedPair);
+            }.bind(this);
+            this.unreliableDc.onmessage = function (message) {
+                this.unreliableReceived(new Uint8Array(message.data));
+            }.bind(this);
+            this.unreliableDc.onerror = function (error) {
+                this.unreliableError(error.error.toString());
+            }.bind(this);
+            this.unreliableDc.onclose = function () {
+                this.unreliableEnded();
+            }.bind(this);
+            
             this.createOffer = function () {
                 this.pc.createOffer()
                     .then(function (offer) {
@@ -59,33 +84,41 @@ var LibraryWebRtc = {
                 var answer = JSON.parse(answerJson);
                 this.pc.setRemoteDescription(answer);
             }.bind(this);
-            this.send = function (message) {
-                if (this.dc.readyState !== "open")
+            
+            this.sendReliable = function (message) {
+                if (this.reliableDc.readyState !== "open")
                     return;
-                this.dc.send(message);
+                this.reliableDc.send(message);
             }.bind(this);
+            
+            this.sendUnreliable = function (message) {
+                if (this.reliableDc.readyState !== "open")
+                    return;
+                this.unreliableDc.send(message);
+            }.bind(this);
+            
             this.close = function () {
-                this.dc.close();
+                this.reliableDc.close();
                 this.pc.close();
             }.bind(this);
         }
 
-        var WebRtcReceived = function (msg) {
-            if (webRtcState.onReceived === null)
+        var WebRtcReliableReceived = function (msg) {
+            if (webRtcState.onReliableReceived === null)
                 return;
 
             var buffer = _malloc(msg.length);
             HEAPU8.set(msg, buffer);
 
             try {
-                Runtime.dynCall('viii', webRtcState.onReceived, [id, buffer, msg.length]);
+                Runtime.dynCall('viii', webRtcState.onReliableReceived, [id, buffer, msg.length]);
             } finally {
                 _free(buffer);
             }
         };
 
-        var WebRtcReceivingError = function (msg) {
-            if (webRtcState.onReceivingError === null)
+        var WebRtcReliableError = function (msg) {
+            if (webRtcState.onReliableError === null)
                 return
 
             var msgBytes = lengthBytesUTF8(msg) + 1;
@@ -93,17 +126,53 @@ var LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Runtime.dynCall('vii', webRtcState.onReceivingError, [id, msgBuffer]);
+                Runtime.dynCall('vii', webRtcState.onReliableError, [id, msgBuffer]);
             } finally {
                 _free(msgBuffer);
             }
         }
 
-        var WebRtcReceivingEnded = function () {
-            if (webRtcState.onReceivingEnded === null)
+        var WebRtcReliableEnded = function () {
+            if (webRtcState.onReliableEnded === null)
                 return
 
-            Runtime.dynCall('vi', webRtcState.onReceivingEnded, [id]);
+            Runtime.dynCall('vi', webRtcState.onReliableEnded, [id]);
+        }
+
+        var WebRtcUnreliableReceived = function (msg) {
+            if (webRtcState.onUnreliableReceived === null)
+                return;
+
+            var buffer = _malloc(msg.length);
+            HEAPU8.set(msg, buffer);
+
+            try {
+                Runtime.dynCall('viii', webRtcState.onUnreliableReceived, [id, buffer, msg.length]);
+            } finally {
+                _free(buffer);
+            }
+        };
+
+        var WebRtcUnreliableError = function (msg) {
+            if (webRtcState.onUnreliableError === null)
+                return
+
+            var msgBytes = lengthBytesUTF8(msg) + 1;
+            var msgBuffer = _malloc(msgBytes);
+            stringToUTF8(msg, msgBuffer, msgBytes);
+
+            try {
+                Runtime.dynCall('vii', webRtcState.onUnreliableError, [id, msgBuffer]);
+            } finally {
+                _free(msgBuffer);
+            }
+        }
+
+        var WebRtcUnreliableEnded = function () {
+            if (webRtcState.onUnreliableEnded === null)
+                return
+
+            Runtime.dynCall('vi', webRtcState.onUnreliableEnded, [id]);
         }
 
         var WebRtcOfferCallback = function (msg) {
@@ -123,7 +192,7 @@ var LibraryWebRtc = {
 
         console.log("[WebRTC] Receiving callbacks created");
 
-        webRtcState.instances[id] = new WebRtcClient(WebRtcReceived, WebRtcReceivingError, WebRtcReceivingEnded, WebRtcOfferCallback);
+        webRtcState.instances[id] = new WebRtcClient(WebRtcReliableReceived, WebRtcReliableError, WebRtcReliableEnded, WebRtcUnreliableReceived, WebRtcUnreliableError, WebRtcUnreliableEnded, WebRtcOfferCallback);
 
         console.log("[WebRTC] Client allocated");
 
@@ -140,16 +209,28 @@ var LibraryWebRtc = {
         instance.close();
     },
 
-    WebRtcSetOnReceived: function (callback) {
-        webRtcState.onReceived = callback;
+    WebRtcSetOnReliableReceived: function (callback) {
+        webRtcState.onReliableReceived = callback;
     },
 
-    WebRtcSetOnReceivingError: function (callback) {
-        webRtcState.onReceivingError = callback;
+    WebRtcSetOnReliableError: function (callback) {
+        webRtcState.onReliableError = callback;
     },
 
-    WebRtcSetOnReceivingEnded: function (callback) {
-        webRtcState.onReceivingEnded = callback;
+    WebRtcSetOnReliableEnded: function (callback) {
+        webRtcState.onReliableEnded = callback;
+    },
+
+    WebRtcSetOnUnreliableReceived: function (callback) {
+        webRtcState.onUnreliableReceived = callback;
+    },
+
+    WebRtcSetOnUnreliableError: function (callback) {
+        webRtcState.onUnreliableError = callback;
+    },
+
+    WebRtcSetOnUnreliableEnded: function (callback) {
+        webRtcState.onUnreliableEnded = callback;
     },
 
     WebRtcSetOnOffer: function (callback) {
@@ -180,12 +261,20 @@ var LibraryWebRtc = {
         instance.onAnswer(answerStr);
     },
 
-    WebRtcSend: function (id, bufferPtr, length) {
+    WebRtcSendReliable: function (id, bufferPtr, length) {
         var instance = webRtcState.instances[id];
         if (!instance)
             return;
 
-        instance.send(HEAPU8.buffer.slice(bufferPtr, bufferPtr + length));
+        instance.sendReliable(HEAPU8.buffer.slice(bufferPtr, bufferPtr + length));
+    },
+
+    WebRtcSendUnreliable: function (id, bufferPtr, length) {
+        var instance = webRtcState.instances[id];
+        if (!instance)
+            return;
+
+        instance.sendUnreliable(HEAPU8.buffer.slice(bufferPtr, bufferPtr + length));
     },
 
     WebRtcClose: function (id) {

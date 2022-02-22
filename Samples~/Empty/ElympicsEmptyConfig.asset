@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsEmptyConfig
   m_EditorClassIdentifier: 
-  elympicsEndpoint: http://127.0.0.1:9101
   gameName: Game
   gameId: 00ab967f-6d5d-470c-8e9a-4118ea99f637
   gameVersion: 1
@@ -21,6 +20,7 @@ MonoBehaviour:
   gameplaySceneAsset: {fileID: 102900000, guid: a4c4aa9df07fed148970250e0ae1a0a1,
     type: 3}
   botsInServer: 1
+  useWeb: 0
   enableReconnect: 0
   connectOnGameplaySceneLoad: 1
   ticksPerSecond: 50
@@ -29,11 +29,13 @@ MonoBehaviour:
   maxAllowedLagInTicks: 25
   prediction: 1
   predictionLimitInTicks: 25
-  mode: 0
+  mode: 1
   halfRemoteMode: 0
+  useWebInHalfRemote: 1
   ipForHalfRemoteMode: 127.0.0.1
-  portForHalfRemoteMode: 9101
-  playerIdForHalfRemoteMode: 1
+  tcpPortForHalfRemoteMode: 9101
+  webPortForHalfRemoteMode: 9102
+  playerIndexForHalfRemoteMode: 1
   testPlayers:
   - userId: 0
     isBot: 0

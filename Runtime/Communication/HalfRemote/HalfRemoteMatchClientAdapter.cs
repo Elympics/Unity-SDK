@@ -1,21 +1,19 @@
 ﻿using System;
+using System.Collections;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
-using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityConnectors.HalfRemote.Ntp;
 using UnityEngine;
-using WebRtcWrapper;
 using Random = System.Random;
 
 namespace Elympics
 {
-	public class HalfRemoteMatchClientAdapter : IMatchClient, IDisposable
+	public class HalfRemoteMatchClientAdapter : IMatchClient
 	{
-		private static readonly TimeSpan SynchronizationDelay = TimeSpan.FromSeconds(1);
-		private const           int      MaxJitterMultiplier     = 3;
+		private static readonly WaitForSeconds SynchronizationDelay = new WaitForSeconds(1);
+		private const           int            MaxJitterMultiplier  = 3;
 
 		public event Action<TimeSynchronizationData> Synchronized;
 		public event Action<ElympicsSnapshot>        SnapshotReceived;
@@ -37,39 +35,32 @@ namespace Elympics
 			_lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
 		}
 
-		internal void ConnectToServer(IProtoNetworkClient networkClient, string userId, bool useWebRtc = false)
+		internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
 		{
 			_userId = userId;
 
-			Func<IWebRtcClient> webRtcClientFactory = null;
-			Debug.Log($"Use webrtc {useWebRtc}");
-			if (useWebRtc) 
-				webRtcClientFactory = WebRtcFactory.CreateInstance;
-			_client = new HalfRemoteMatchClient(networkClient, userId, webRtcClientFactory);
+			_client = client;
 			_client.ReliableReceivingError += Debug.LogError;
 			_client.ReliableReceivingEnded += () =>
 			{
 				_playerDisconnected = true;
 				Debug.Log("Reliable receiving ended");
-			};			
-			_client.UnreliableReceivingError += Debug.LogError;
-			_client.UnreliableReceivingEnded += () =>
-			{
-				Debug.Log("Unreliable receiving ended");
 			};
+			_client.UnreliableReceivingError += Debug.LogError;
+			_client.UnreliableReceivingEnded += () => { Debug.Log("Unreliable receiving ended"); };
 			_client.WebRtcUpgraded += () => Debug.Log("WebRtc upgraded");
 			_client.NtpReceived += OnNtpReceived;
 			_client.InGameDataForPlayerOnReliableChannelGenerated += OnInGameDataForPlayerOnReliableChannelGenerated;
 			_client.InGameDataForPlayerOnUnreliableChannelGenerated += OnInGameDataForPlayerOnUnreliableChannelGenerated;
 
 			Debug.Log("Connected with half remote client");
+			connectedCallback?.Invoke(true);
 
-			_ = Synchronization();
+			return Synchronization();
 		}
 
 		public void PlayerConnected()    => _client.PlayerConnected();
 		public void PlayerDisconnected() => _client?.PlayerDisconnected();
-		public void UpgradeWebRtc()      => _client.UpgradeWebRtc();
 
 		public async Task SendInputReliable(ElympicsInput input)   => SendRawInputReliable(input.Serialize());
 		public async Task SendInputUnreliable(ElympicsInput input) => SendRawInputUnreliable(input.Serialize());
@@ -132,12 +123,12 @@ namespace Elympics
 			return mean + stdDev * randStdNormal;
 		}
 
-		private async UniTask Synchronization()
+		private IEnumerator Synchronization()
 		{
 			while (NotDisconnected())
 			{
 				_client.SendNtp();
-				await UniTask.Delay(SynchronizationDelay);
+				yield return SynchronizationDelay;
 			}
 		}
 
@@ -164,10 +155,5 @@ namespace Elympics
 		}
 
 		private bool NotDisconnected() => !_playerDisconnected;
-
-		public void Dispose()
-		{
-			_client?.Dispose();
-		}
 	}
 }

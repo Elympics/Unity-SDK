@@ -16,7 +16,7 @@
 		{
 			base.Dispose();
 			if (_client != null && _client.Initialized)
-				_client.MatchConnectClient.Disconnect();
+				_client.MatchConnectClient.Dispose();
 		}
 
 		protected abstract void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig);

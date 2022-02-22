@@ -38,7 +38,7 @@ namespace Elympics
 
 			private static int GetPortBasedOnWebUsage(ElympicsGameConfig config)
 			{
-				return config.UseWebSocketsInHalfRemote
+				return config.UseWebInHalfRemote
 					? config.WebPortForHalfRemoteMode
 					: config.TcpPortForHalfRemoteMode;
 			}

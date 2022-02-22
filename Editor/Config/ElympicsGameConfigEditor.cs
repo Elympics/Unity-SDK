@@ -42,8 +42,7 @@ namespace Elympics
 
 		private SerializedProperty _mode;
 		private SerializedProperty _halfRemoteMode;
-		private SerializedProperty _useWebSocketsInHalfRemote;
-		private SerializedProperty _useWebRtcInHalfRemote;
+		private SerializedProperty _useWebInHalfRemote;
 		private SerializedProperty _ipForHalfRemoteMode;
 		private SerializedProperty _tcpPortForHalfRemoteMode;
 		private SerializedProperty _webPortForHalfRemoteMode;
@@ -87,8 +86,7 @@ namespace Elympics
 
 			_mode = serializedObject.FindProperty("mode");
 			_halfRemoteMode = serializedObject.FindProperty("halfRemoteMode");
-			_useWebSocketsInHalfRemote = serializedObject.FindProperty("useWebSocketsInHalfRemote");
-			_useWebRtcInHalfRemote = serializedObject.FindProperty("useWebRtcInHalfRemote");
+			_useWebInHalfRemote = serializedObject.FindProperty("useWebInHalfRemote");
 			_ipForHalfRemoteMode = serializedObject.FindProperty("ipForHalfRemoteMode");
 			_tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
 			_webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
@@ -229,12 +227,12 @@ namespace Elympics
 			if (ElympicsGameConfig.IsOverridenByWebGL())
 			{
 				EditorGUI.BeginDisabledGroup(true);
-				EditorGUILayout.Toggle("Use WebSocket/WebRTC (forced by WebGL)", ElympicsGameConfig.GetUseWeb(_useWeb.boolValue));
+				EditorGUILayout.Toggle("Use HTTPS/WebRTC (forced by WebGL)", ElympicsGameConfig.GetUseWeb(_useWeb.boolValue));
 				EditorGUI.EndDisabledGroup();
 			}
 			else
 			{
-				EditorGUILayout.PropertyField(_useWeb, new GUIContent("Use WebSocket/WebRTC"));
+				EditorGUILayout.PropertyField(_useWeb, new GUIContent("Use HTTPS/WebRTC"));
 				if (_useWeb.boolValue)
 					EditorGUILayout.LabelField(Label_WebClientWarning, summaryLabelStyle);
 			}
@@ -265,18 +263,16 @@ namespace Elympics
 				case ElympicsGameConfig.HalfRemoteModeEnum.Server:
 					EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("Port TCP server listens on"));
 					EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Port Web server listens on"));
-					EditorGUILayout.PropertyField(_useWebRtcInHalfRemote, new GUIContent("Use WebRtc"));
 					break;
 				case ElympicsGameConfig.HalfRemoteModeEnum.Client:
 				case ElympicsGameConfig.HalfRemoteModeEnum.Bot:
 					if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
 						EditorGUI.EndDisabledGroup();
 
-					DrawUseWebSocketsInHalfRemoteClient();
-					DrawUseWebRtcInHalfRemoteClient();
+					DrawUseWebInHalfRemoteClient();
 
 					EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
-					if (ElympicsGameConfig.GetUseWebSocketsInHalfRemote(_useWebSocketsInHalfRemote.boolValue))
+					if (ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue))
 					{
 						EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Web port of server"));
 					}
@@ -327,22 +323,16 @@ namespace Elympics
 			EditorGUILayout.Separator();
 		}
 
-		private void DrawUseWebSocketsInHalfRemoteClient()
+		private void DrawUseWebInHalfRemoteClient()
 		{
 			if (ElympicsGameConfig.IsOverridenByWebGL())
 			{
 				EditorGUI.BeginDisabledGroup(true);
-				EditorGUILayout.Toggle("Use WebSocket (forced by WebGL)", ElympicsGameConfig.GetUseWebSocketsInHalfRemote(_useWebSocketsInHalfRemote.boolValue));
+				EditorGUILayout.Toggle("Use HTTPS/WebRTC (forced by WebGL)", ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue));
 				EditorGUI.EndDisabledGroup();
 			}
 			else
-				EditorGUILayout.PropertyField(_useWebSocketsInHalfRemote, new GUIContent("Use WebSocket"));
-		}
-
-		private void DrawUseWebRtcInHalfRemoteClient()
-		{
-			if (ElympicsGameConfig.GetUseWebSocketsInHalfRemote(_useWebSocketsInHalfRemote.boolValue))
-				EditorGUILayout.PropertyField(_useWebRtcInHalfRemote, new GUIContent("Use WebRtc"));
+				EditorGUILayout.PropertyField(_useWebInHalfRemote, new GUIContent("Use HTTPS/WebRTC"));
 		}
 
 		private void DrawInitialUserDatas()

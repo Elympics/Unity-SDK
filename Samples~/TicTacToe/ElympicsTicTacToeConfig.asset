@@ -31,8 +31,7 @@ MonoBehaviour:
   predictionLimitInTicks: 20
   mode: 1
   halfRemoteMode: 0
-  useWebSocketsInHalfRemote: 0
-  useWebRtcInHalfRemote: 0
+  useWebInHalfRemote: 1
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102

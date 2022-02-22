@@ -27,7 +27,7 @@ namespace Elympics
 			};
 
 			_halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, userId, elympicsGameConfig.UseWebSocketsInHalfRemote, elympicsGameConfig.UseWebRtcInHalfRemote);
+			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, userId, elympicsGameConfig.UseWebInHalfRemote);
 
 			_halfRemoteMatchClient.RawSnapshotReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
 			gameBotAdapter.InGameDataForReliableChannelGenerated += data => _halfRemoteMatchClient.SendRawInputReliable(data);
@@ -42,8 +42,7 @@ namespace Elympics
 
 		public override void Dispose()
 		{
-			_halfRemoteMatchConnectClient?.Disconnect();
-			_halfRemoteMatchClient?.Dispose();
+			_halfRemoteMatchConnectClient?.Dispose();
 		}
 	}
 }

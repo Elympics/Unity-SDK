@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: HelloWorldConfig
   m_EditorClassIdentifier: 
-  elympicsEndpoint: http://127.0.0.1:9101
   gameName: HelloWorld
   gameId: 04fa614a-4526-40f9-84a4-e25e70e705f2
   gameVersion: 1
@@ -21,6 +20,7 @@ MonoBehaviour:
   gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1
+  useWeb: 0
   enableReconnect: 0
   connectOnGameplaySceneLoad: 1
   ticksPerSecond: 30
@@ -31,9 +31,11 @@ MonoBehaviour:
   predictionLimitInTicks: 15
   mode: 0
   halfRemoteMode: 0
+  useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
-  portForHalfRemoteMode: 9101
-  playerIdForHalfRemoteMode: 1
+  tcpPortForHalfRemoteMode: 9101
+  webPortForHalfRemoteMode: 9102
+  playerIndexForHalfRemoteMode: 1
   testPlayers:
   - userId: 0
     isBot: 0

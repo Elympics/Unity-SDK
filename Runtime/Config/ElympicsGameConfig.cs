@@ -34,17 +34,22 @@ namespace Elympics
 		[SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.LocalPlayerAndBots;
 
 		[SerializeField] private HalfRemoteModeEnum    halfRemoteMode               = HalfRemoteModeEnum.Server;
-		[SerializeField] private bool                  useWebSocketsInHalfRemote    = false;
-		[SerializeField] private bool                  useWebRtcInHalfRemote        = false;
+		[SerializeField] private bool                  useWebInHalfRemote           = false;
 		[SerializeField] private string                ipForHalfRemoteMode          = "127.0.0.1";
 		[SerializeField] private int                   tcpPortForHalfRemoteMode     = 9101;
 		[SerializeField] private int                   webPortForHalfRemoteMode     = 9102;
 		[SerializeField] private int                   playerIndexForHalfRemoteMode = 1;
 		[SerializeField] private List<InitialUserData> testPlayers;
 
-		public string GameName      => gameName;
-		public string GameId        => gameId;
-		public string GameVersion   { get => gameVersion; set => gameVersion = value; }
+		public string GameName => gameName;
+		public string GameId   => gameId;
+
+		public string GameVersion
+		{
+			get => gameVersion;
+			set => gameVersion = value;
+		}
+
 		public int    Players       => players;
 		public string GameplayScene => gameplayScene;
 
@@ -60,8 +65,7 @@ namespace Elympics
 
 		internal GameplaySceneDebugModeEnum GameplaySceneDebugMode       => mode;
 		internal HalfRemoteModeEnum         HalfRemoteMode               => GetHalfRemoteMode(halfRemoteMode);
-		public   bool                       UseWebSocketsInHalfRemote    => GetUseWebSocketsInHalfRemote(useWebSocketsInHalfRemote);
-		public   bool                       UseWebRtcInHalfRemote        => UseWebSocketsInHalfRemote && useWebRtcInHalfRemote;
+		public   bool                       UseWebInHalfRemote           => GetUseWebInHalfRemote(useWebInHalfRemote);
 		public   string                     IpForHalfRemoteMode          => ipForHalfRemoteMode;
 		public   int                        TcpPortForHalfRemoteMode     => tcpPortForHalfRemoteMode;
 		public   int                        WebPortForHalfRemoteMode     => webPortForHalfRemoteMode;
@@ -82,7 +86,7 @@ namespace Elympics
 			return defaultUseWeb;
 #endif
 		}
-		
+
 		public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone()
 			? ElympicsClonesManager.IsBot() ? HalfRemoteModeEnum.Bot : HalfRemoteModeEnum.Client
 			: defaultHalfRemoteMode;
@@ -102,12 +106,12 @@ namespace Elympics
 #endif
 		}
 
-		public static bool GetUseWebSocketsInHalfRemote(bool defaultUseWebSocketsInHalfRemote)
+		public static bool GetUseWebInHalfRemote(bool defaultUseWebInHalfRemote)
 		{
 #if UNITY_WEBGL
 			return true;
 #else
-			return defaultUseWebSocketsInHalfRemote;
+			return defaultUseWebInHalfRemote;
 #endif
 		}
 

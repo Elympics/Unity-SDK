@@ -1,9 +1,13 @@
+// Should stay commented - uncomment for static analysis, and comment Compile Remove line from csproj
 // #undef UNITY_EDITOR
 // #define UNITY_WEBGL
+
+#if UNITY_WEBGL && !UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
+#endif
 using UnityEngine;
 using WebRtcWrapper;
 
@@ -21,14 +25,24 @@ namespace Elympics.Libraries
 				_instanceId = instanceId;
 			}
 
-			public void Send(byte[] data)
+			public void SendReliable(byte[] data)
 			{
-				WebRtcSend(_instanceId, data, data.Length);
+				WebRtcSendReliable(_instanceId, data, data.Length);
 			}
 
-			public event Action<byte[]> Received;
-			public event Action<string> ReceivingError;
-			public event Action         ReceivingEnded;
+			public void SendUnreliable(byte[] data)
+			{
+				WebRtcSendUnreliable(_instanceId, data, data.Length);
+			}
+
+			public event Action<byte[]> ReliableReceived;
+			public event Action<string> ReliableReceivingError;
+			public event Action         ReliableReceivingEnded;
+
+			public event Action<byte[]> UnreliableReceived;
+			public event Action<string> UnreliableReceivingError;
+			public event Action         UnreliableReceivingEnded;
+
 			public event Action<string> Offer;
 
 			public void Dispose()
@@ -46,7 +60,11 @@ namespace Elympics.Libraries
 				WebRtcOnAnswer(_instanceId, answerJson);
 			}
 
-			public void Receive()
+			public void ReceiveReliable()
+			{
+			}
+
+			public void ReceiveUnreliable()
 			{
 			}
 
@@ -55,10 +73,15 @@ namespace Elympics.Libraries
 				WebRtcClose(_instanceId);
 			}
 
-			public void OnReceived(byte[] data)        => Received?.Invoke(data);
-			public void OnReceivingError(string error) => ReceivingError?.Invoke(error);
-			public void OnReceivingEnded()             => ReceivingEnded?.Invoke();
-			public void OnOffer(string offerJson)      => Offer?.Invoke(offerJson);
+			public void OnReliableReceived(byte[] data) => ReliableReceived?.Invoke(data);
+			public void OnReliableError(string error)   => ReliableReceivingError?.Invoke(error);
+			public void OnReliableEnded()               => ReliableReceivingEnded?.Invoke();
+
+			public void OnUnreliableReceived(byte[] data) => UnreliableReceived?.Invoke(data);
+			public void OnUnreliableError(string error)   => UnreliableReceivingError?.Invoke(error);
+			public void OnUnreliableEnded()               => UnreliableReceivingEnded?.Invoke();
+
+			public void OnOffer(string offerJson) => Offer?.Invoke(offerJson);
 		}
 
 		private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new Dictionary<int, WebRtcClientAdapter>();
@@ -78,13 +101,22 @@ namespace Elympics.Libraries
 		public static extern void WebRtcFree(int instanceId);
 
 		[DllImport("__Internal")]
-		public static extern void WebRtcSetOnReceived(OnReceivedCallback callback);
+		public static extern void WebRtcSetOnReliableReceived(OnReceivedCallback callback);
 
 		[DllImport("__Internal")]
-		public static extern void WebRtcSetOnReceivingError(OnReceivingErrorCallback callback);
+		public static extern void WebRtcSetOnReliableError(OnReceivingErrorCallback callback);
 
 		[DllImport("__Internal")]
-		public static extern void WebRtcSetOnReceivingEnded(OnReceivingEndedCallback callback);
+		public static extern void WebRtcSetOnReliableEnded(OnReceivingEndedCallback callback);
+
+		[DllImport("__Internal")]
+		public static extern void WebRtcSetOnUnreliableReceived(OnReceivedCallback callback);
+
+		[DllImport("__Internal")]
+		public static extern void WebRtcSetOnUnreliableError(OnReceivingErrorCallback callback);
+
+		[DllImport("__Internal")]
+		public static extern void WebRtcSetOnUnreliableEnded(OnReceivingEndedCallback callback);
 
 		[DllImport("__Internal")]
 		public static extern void WebRtcSetOnOffer(OnOfferCallback callback);
@@ -96,7 +128,10 @@ namespace Elympics.Libraries
 		public static extern void WebRtcOnAnswer(int instanceId, string answer);
 
 		[DllImport("__Internal")]
-		public static extern int WebRtcSend(int instanceId, byte[] dataPtr, int dataLength);
+		public static extern int WebRtcSendReliable(int instanceId, byte[] dataPtr, int dataLength);
+
+		[DllImport("__Internal")]
+		public static extern int WebRtcSendUnreliable(int instanceId, byte[] dataPtr, int dataLength);
 
 		[DllImport("__Internal")]
 		public static extern int WebRtcClose(int instanceId);
@@ -105,9 +140,12 @@ namespace Elympics.Libraries
 
 		private static void Initialize()
 		{
-			WebRtcSetOnReceived(DelegateOnReceived);
-			WebRtcSetOnReceivingError(DelegateOnReceivingError);
-			WebRtcSetOnReceivingEnded(DelegateOnReceivingEnded);
+			WebRtcSetOnReliableReceived(DelegateOnReliableReceived);
+			WebRtcSetOnReliableError(DelegateOnReliableError);
+			WebRtcSetOnReliableEnded(DelegateOnReliableEnded);
+			WebRtcSetOnUnreliableReceived(DelegateOnUnreliableReceived);
+			WebRtcSetOnUnreliableError(DelegateOnUnreliableError);
+			WebRtcSetOnUnreliableEnded(DelegateOnUnreliableEnded);
 			WebRtcSetOnOffer(DelegateOnOffer);
 
 			_isInitialized = true;
@@ -120,7 +158,7 @@ namespace Elympics.Libraries
 		}
 
 		[MonoPInvokeCallback(typeof(OnReceivedCallback))]
-		public static void DelegateOnReceived(int instanceId, IntPtr msgPtr, int msgSize)
+		public static void DelegateOnReliableReceived(int instanceId, IntPtr msgPtr, int msgSize)
 		{
 			if (!Instances.TryGetValue(instanceId, out var instanceRef))
 				return;
@@ -128,26 +166,57 @@ namespace Elympics.Libraries
 			var msg = new byte[msgSize];
 			Marshal.Copy(msgPtr, msg, 0, msgSize);
 
-			instanceRef.OnReceived(msg);
+			instanceRef.OnReliableReceived(msg);
 		}
 
 		[MonoPInvokeCallback(typeof(OnReceivingErrorCallback))]
-		public static void DelegateOnReceivingError(int instanceId, IntPtr errorPtr)
+		public static void DelegateOnReliableError(int instanceId, IntPtr errorPtr)
 		{
 			if (!Instances.TryGetValue(instanceId, out var instanceRef))
 				return;
 
 			var errorMsg = Marshal.PtrToStringAuto(errorPtr);
-			instanceRef.OnReceivingError(errorMsg);
+			instanceRef.OnReliableError(errorMsg);
 		}
 
 		[MonoPInvokeCallback(typeof(OnReceivingEndedCallback))]
-		public static void DelegateOnReceivingEnded(int instanceId)
+		public static void DelegateOnReliableEnded(int instanceId)
 		{
 			if (!Instances.TryGetValue(instanceId, out var instanceRef))
 				return;
 
-			instanceRef.OnReceivingEnded();
+			instanceRef.OnReliableEnded();
+		}
+
+		[MonoPInvokeCallback(typeof(OnReceivedCallback))]
+		public static void DelegateOnUnreliableReceived(int instanceId, IntPtr msgPtr, int msgSize)
+		{
+			if (!Instances.TryGetValue(instanceId, out var instanceRef))
+				return;
+
+			var msg = new byte[msgSize];
+			Marshal.Copy(msgPtr, msg, 0, msgSize);
+
+			instanceRef.OnUnreliableReceived(msg);
+		}
+
+		[MonoPInvokeCallback(typeof(OnReceivingErrorCallback))]
+		public static void DelegateOnUnreliableError(int instanceId, IntPtr errorPtr)
+		{
+			if (!Instances.TryGetValue(instanceId, out var instanceRef))
+				return;
+
+			var errorMsg = Marshal.PtrToStringAuto(errorPtr);
+			instanceRef.OnUnreliableError(errorMsg);
+		}
+
+		[MonoPInvokeCallback(typeof(OnReceivingEndedCallback))]
+		public static void DelegateOnUnreliableEnded(int instanceId)
+		{
+			if (!Instances.TryGetValue(instanceId, out var instanceRef))
+				return;
+
+			instanceRef.OnUnreliableEnded();
 		}
 
 		[MonoPInvokeCallback(typeof(OnOfferCallback))]

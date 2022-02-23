@@ -15,13 +15,15 @@ namespace Elympics
 
 		private Object             _lastChosenGamePropertyObject;
 		private Editor             _lastChosenGameEditor;
-		private SerializedProperty _elympicsWebEndpoint;
-		private SerializedProperty _elympicsEndpoint;
+		private SerializedProperty _elympicsApiEndpoint;
+		private SerializedProperty _elympicsLobbyEndpoint;
+		private SerializedProperty _elympicsGameServersEndpoint;
 
 		private void OnEnable()
 		{
-			_elympicsWebEndpoint = serializedObject.FindProperty("elympicsWebEndpoint");
-			_elympicsEndpoint = serializedObject.FindProperty("elympicsEndpoint");
+			_elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
+			_elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
+			_elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
 			_currentGameIndex = serializedObject.FindProperty("currentGame");
 			_availableGames = serializedObject.FindProperty("availableGames");
 
@@ -92,7 +94,7 @@ namespace Elympics
 		{
 			if (GUILayout.Button("Manage games in Elympics"))
 			{
-				ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames, _elympicsWebEndpoint, _elympicsEndpoint);
+				ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames, _elympicsApiEndpoint, _elympicsLobbyEndpoint, _elympicsGameServersEndpoint);
 			}
 
 			EditorGUILayout.Separator();
@@ -100,8 +102,9 @@ namespace Elympics
 
 		private void DrawEndpointsSection()
 		{
-			EditorEndpointCheckerEditor.DrawEndpointField(_elympicsWebEndpoint, "ElympicsWeb endpoint");
-			EditorEndpointCheckerEditor.DrawEndpointField(_elympicsEndpoint, "Elympics endpoint");
+			EditorEndpointCheckerEditor.DrawEndpointField(_elympicsApiEndpoint, "API endpoint");
+			EditorEndpointCheckerEditor.DrawEndpointField(_elympicsLobbyEndpoint, "Lobby endpoint");
+			EditorEndpointCheckerEditor.DrawEndpointField(_elympicsGameServersEndpoint, "GameServers endpoint");
 			EditorGUILayout.Separator();
 		}
 

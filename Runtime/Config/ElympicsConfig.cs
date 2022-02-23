@@ -8,7 +8,7 @@ namespace Elympics
 	public class ElympicsConfig : ScriptableObject
 	{
 		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
-		public const string PATH_IN_RESOURCES = "Elympics/ElympicsConfig";
+		public const string PATH_IN_RESOURCES       = "Elympics/ElympicsConfig";
 
 		#region ElympicsPrefs Keys
 
@@ -20,14 +20,16 @@ namespace Elympics
 
 		#endregion
 
-		[SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
-		[SerializeField] private string elympicsEndpoint    = "http://127.0.0.1:9101";
+		[SerializeField] private string elympicsApiEndpoint         = "https://api.elympics.cc";
+		[SerializeField] private string elympicsLobbyEndpoint       = "https://lobby.elympics.cc";
+		[SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
 
 		[SerializeField] internal int                      currentGame = -1;
 		[SerializeField] internal List<ElympicsGameConfig> availableGames;
 
-		internal string ElympicsWebEndpoint => elympicsWebEndpoint;
-		internal string ElympicsEndpoint    => elympicsEndpoint;
+		internal string ElympicsApiEndpoint         => elympicsApiEndpoint;
+		internal string ElympicsLobbyEndpoint       => elympicsLobbyEndpoint;
+		internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;
 
 		public event Action CurrentGameSwitched;
 
@@ -68,7 +70,7 @@ namespace Elympics
 			if (!Uri.IsWellFormedUriString(elympicsEndpoint, UriKind.Absolute))
 				throw new NullReferenceException("Invalid elympics endpoint format. Please use an absolute uri");
 
-			this.elympicsEndpoint = elympicsEndpoint;
+			this.elympicsLobbyEndpoint = elympicsEndpoint;
 		}
 	}
 }

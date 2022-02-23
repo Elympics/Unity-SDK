@@ -39,7 +39,7 @@ namespace Elympics
 			try
 			{
 				var userSecret = Guid.NewGuid().ToString();
-				_myAuthenticationClient.AuthenticateWithAuthTokenAsync(ElympicsConfig.Load().ElympicsEndpoint, userSecret, OnAuthenticated);
+				_myAuthenticationClient.AuthenticateWithAuthTokenAsync(ElympicsConfig.Load().ElympicsLobbyEndpoint, userSecret, OnAuthenticated);
 			}
 			catch (Exception e)
 			{
@@ -76,9 +76,9 @@ namespace Elympics
 					ContinuousSynchronizationMinimumInterval = TimeSpan.FromSeconds(1)
 				}
 			);
-			gameServerClient.OverrideWebClientsFactories(WebSocketNetworkClientFactory.CreateInstance, WebRtcFactory.CreateInstance);
+			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);
 
-			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
+			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
 			var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
 
 			_client.InitializeInternal(_elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerData

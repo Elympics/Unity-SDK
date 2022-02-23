@@ -14,12 +14,13 @@ namespace Elympics
 			var elympicsConfig = LoadOrCreateConfig();
 			var serializedElympicsConfig = new SerializedObject(elympicsConfig);
 
-			var elympicsWebEndpoint = serializedElympicsConfig.FindProperty("elympicsWebEndpoint");
-			var elympicsEndpoint = serializedElympicsConfig.FindProperty("elympicsEndpoint");
+			var elympicsApiEndpoint = serializedElympicsConfig.FindProperty("elympicsApiEndpoint");
+			var elympicsLobbyEndpoint = serializedElympicsConfig.FindProperty("elympicsLobbyEndpoint");
+			var elympicsGameServersEndpoint = serializedElympicsConfig.FindProperty("elympicsGameServersEndpoint");
 			var currentGameIndex = serializedElympicsConfig.FindProperty("currentGame");
 			var availableGames = serializedElympicsConfig.FindProperty("availableGames");
 
-			ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig, currentGameIndex, availableGames, elympicsWebEndpoint, elympicsEndpoint);
+			ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig, currentGameIndex, availableGames, elympicsApiEndpoint, elympicsLobbyEndpoint, elympicsGameServersEndpoint);
 		}
 
 		private static ElympicsConfig LoadOrCreateConfig()

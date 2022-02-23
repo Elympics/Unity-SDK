@@ -47,6 +47,9 @@ namespace Elympics
 			{
 				timeout = DefaultTimeout
 			};
+			
+			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(_request);
+
 			_request.SendWebRequest();
 		}
 

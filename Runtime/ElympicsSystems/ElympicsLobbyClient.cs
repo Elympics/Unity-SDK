@@ -68,6 +68,7 @@ namespace Elympics
 
 		private void SetMatchDataOnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
 		{
+			Debug.Log($"Received match id {result.MatchId}");
 			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData, _queueName);
 		}
 
@@ -84,7 +85,7 @@ namespace Elympics
 				return;
 			}
 
-			var authenticationEndpoint = _config.ElympicsEndpoint;
+			var authenticationEndpoint = _config.ElympicsLobbyEndpoint;
 			if (string.IsNullOrEmpty(authenticationEndpoint))
 			{
 				Debug.LogError($"[Elympics] Elympics authentication endpoint not set. Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}]");

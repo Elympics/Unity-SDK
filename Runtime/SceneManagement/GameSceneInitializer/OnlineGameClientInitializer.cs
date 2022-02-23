@@ -32,8 +32,8 @@ namespace Elympics
 					ContinuousSynchronizationMinimumInterval = TimeSpan.FromSeconds(1),
 				}
 			);
-			gameServerClient.OverrideWebClientsFactories(WebSocketNetworkClientFactory.CreateInstance, WebRtcFactory.CreateInstance);
-			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, elympicsGameConfig.UseWeb);
+			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);
+			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, elympicsGameConfig.UseWeb);
 			var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
 
 			client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerData

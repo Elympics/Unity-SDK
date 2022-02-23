@@ -38,7 +38,7 @@ namespace Elympics
 		private readonly int                          _port;
 		private readonly string                       _userId;
 		private readonly bool                         _useWeb;
-		private readonly SimpleHttpSignalingClient    _signalingClient;
+		private readonly HttpSignalingClient          _signalingClient;
 
 		private TcpClient     _tcpClient;
 		private IWebRtcClient _webRtcClient;
@@ -51,7 +51,10 @@ namespace Elympics
 			_userId = userId;
 			_useWeb = useWeb;
 			if (useWeb)
-				_signalingClient = new SimpleHttpSignalingClient(new Uri($"http://{_ip}:{_port}"));
+			{
+				var baseUri = new Uri($"http://{_ip}:{_port}");
+				_signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"));
+			}
 		}
 
 		public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
@@ -135,17 +138,13 @@ namespace Elympics
 					yield break;
 
 				yield return _signalingClient.PostOfferAsync(offer);
-				if (_signalingClient.Request.isNetworkError)
+				if (_signalingClient.IsError)
 				{
-					Debug.LogError(_signalingClient.Request.error);
-				}
-				else if (_signalingClient.Request.isHttpError)
-				{
-					Debug.Log(_signalingClient.Request.downloadHandler.text);
+					Debug.LogError(_signalingClient.Error);
 				}
 				else
 				{
-					answer = _signalingClient.Request.downloadHandler.text;
+					answer = _signalingClient.Answer;
 					break;
 				}
 
@@ -158,7 +157,7 @@ namespace Elympics
 				connectedCallback.Invoke(false);
 				yield break;
 			}
-			
+
 			_webRtcClient.OnAnswer(answer);
 
 			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);

@@ -55,12 +55,6 @@ namespace Elympics
 		}
 
 		[Serializable]
-		private class CreateGameModel
-		{
-			public string GameName;
-		}
-
-		[Serializable]
 		private class LoggedInTokenResponseModel
 		{
 			public string UserName;
@@ -125,27 +119,6 @@ namespace Elympics
 				{
 					updateProperty.Invoke(endpoints);
 					Debug.Log($"Set {endpoints} elympics endpoint");
-				}
-			};
-		}
-
-		public static void CreateGame(SerializedProperty gameName, SerializedProperty gameId)
-		{
-			var request = new CreateGameModel
-			{
-				GameName = gameName.stringValue
-			};
-
-			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute);
-			var response = ElympicsWebClient.SendJsonPostRequestApi(url, request);
-
-			response.completed += _ =>
-			{
-				if (ElympicsWebClient.TryDeserializeResponse(response, "Create game", out GameResponseModel responseModel))
-				{
-					gameId.SetValue(responseModel.Id);
-					gameName.SetValue(responseModel.Name);
-					Debug.Log($"Created game {responseModel.Name} with id {responseModel.Id}");
 				}
 			};
 		}

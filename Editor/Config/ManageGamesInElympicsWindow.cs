@@ -9,15 +9,15 @@ public class ManageGamesInElympicsWindow : EditorWindow
 {
 	#region Labels
 
-	private const string windowTitle           = "Manage games in Elympics";
-	private const string loginHeaderInfo       = "<i>You have to be logged in to manage games in Elympics!</i>";
-	private const string loggedAsInfo          = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
-	private const string createGameSummaryInfo = "Create new game in Elympics with current name and overwrite current config with new game id. It's required to first created game before upload a new version";
+	private const string windowTitle     = "Manage games in Elympics";
+	private const string loginHeaderInfo = "<i>You have to be logged in to manage games in Elympics!</i>";
+	private const string loggedAsInfo    = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
 
-	private const string uploadSummaryInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. " +
-	                                         "It's required to first upload a game version if you want to play it in online mode.";
+	private const string noGameSetupsInfo = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
 
-	private const string noGameSetupsInfo         = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
+	private const string uploadGameInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. " +
+	                                      "It's required to first upload a game version if you want to play it in online mode.";
+
 	private const string importExistingsGamesInfo = "<i>or import existing games (e.g. samples)</i>";
 
 	#endregion
@@ -333,25 +333,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 	private void DrawGameManagmentInElympicsSection(ElympicsGameConfig activeGameConfig)
 	{
 		customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, elympicsColor);
-
-		if (customInspectorDrawer.DrawButtonCentered("Create", resizibleCenteredLabelWidth, 20))
-		{
-			SerializedObject serializedGameConfig = new UnityEditor.SerializedObject(activeGameConfig);
-
-			SerializedProperty gameName = serializedGameConfig.FindProperty("gameName");
-			SerializedProperty gameId = serializedGameConfig.FindProperty("gameId");
-
-			if (!ElympicsWebIntegration.IsConnectedToElympics())
-				return;
-
-			ElympicsWebIntegration.CreateGame(gameName, gameId);
-		}
-
-		int wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(createGameSummaryInfo), position.width * 0.8f);
-		customInspectorDrawer.DrawLabelCentered(createGameSummaryInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
-
 		customInspectorDrawer.Space();
-
 		if (customInspectorDrawer.DrawButtonCentered("Upload", resizibleCenteredLabelWidth, 20))
 		{
 			if (!ElympicsWebIntegration.IsConnectedToElympics())
@@ -361,8 +343,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			GUIUtility.ExitGUI();
 		}
 
-		wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadSummaryInfo), position.width * 0.8f);
-		customInspectorDrawer.DrawLabelCentered(uploadSummaryInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
+		var wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadGameInfo), position.width * 0.8f);
+		customInspectorDrawer.DrawLabelCentered(uploadGameInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
 	}
 
 	#endregion

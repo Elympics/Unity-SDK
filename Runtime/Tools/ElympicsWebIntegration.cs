@@ -108,6 +108,27 @@ namespace Elympics
 			}
 		}
 
+		public static void GetAvailableGames(Action<List<GameResponseModel>> updateProperty)
+		{
+			Debug.Log($"Getting available games");
+
+			var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute);
+			var response = ElympicsWebClient.SendJsonGetRequest(uri);
+			if (response.isDone)
+				GetAvailableGamesHandler(updateProperty, response);
+			else
+				response.completed += _ => GetAvailableGamesHandler(updateProperty, response);
+		}
+
+		private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequestAsyncOperation response)
+		{
+			Debug.Log($"Get available games response code: {response.webRequest.responseCode}");
+			if (!ElympicsWebClient.TryDeserializeResponse(response, "GetAvailableGames", out List<GameResponseModel> availableGames))
+				return;
+
+			updateProperty.Invoke(availableGames);
+		}
+
 		public static void GetElympicsEndpoints(Action<ElympicsEndpointsModel> updateProperty)
 		{
 			var uri = GetCombinedUrl(ElympicsWebEndpoint, Routes.BaseRoute, Routes.EndpointRoutes);

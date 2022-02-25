@@ -80,13 +80,25 @@ namespace Elympics
 				return false;
 			}
 
-			if (typeof(T) == typeof(string))
+			var jsonBody = response.webRequest.downloadHandler.text;
+			var type = typeof(T);
+			if (type == typeof(string))
 			{
-				deserializedResponse = (T) (object) response.webRequest.downloadHandler.text;
+				deserializedResponse = (T) (object) jsonBody;
+			}
+			else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+			{
+				var replacedJsonForWrapper = "";
+				if (jsonBody.Contains("$values"))
+					replacedJsonForWrapper = jsonBody.Replace("$values", "List");
+				else if (jsonBody.StartsWith("["))
+					replacedJsonForWrapper = $"{{ \"List\": {jsonBody} }}";
+				var deserializedWrapper = JsonUtility.FromJson<ListWrapper<T>>(replacedJsonForWrapper);
+				deserializedResponse = deserializedWrapper.List;
 			}
 			else
 			{
-				deserializedResponse = JsonUtility.FromJson<T>(response.webRequest.downloadHandler.text);
+				deserializedResponse = JsonUtility.FromJson<T>(jsonBody);
 			}
 
 			return true;
@@ -135,6 +147,12 @@ namespace Elympics
 		}
 
 		[Serializable]
+		public class ListWrapper<T>
+		{
+			public T List;
+		}
+
+		[Serializable]
 		private class ErrorModel
 		{
 			public Dictionary<string, string[]> Errors;
@@ -142,11 +160,12 @@ namespace Elympics
 
 		public class AcceptTestCertificateHandler : CertificateHandler
 		{
-			private const string TestDomain = ".test";
+			private const string TestDomain          = ".test";
+			private const string VagrantTestHostPart = "vagrant";
 
 			public static void SetOnRequestIfNeeded(UnityWebRequest request)
 			{
-				if (!request.uri.Host.Contains(TestDomain))
+				if (!request.uri.Host.Contains(TestDomain) && !request.uri.Host.Contains(VagrantTestHostPart))
 					return;
 
 				Debug.Log($"Test domain cert handler set for domain {request.uri.Host}");

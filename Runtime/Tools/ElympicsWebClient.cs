@@ -88,13 +88,7 @@ namespace Elympics
 			}
 			else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
 			{
-				var replacedJsonForWrapper = "";
-				if (jsonBody.Contains("$values"))
-					replacedJsonForWrapper = jsonBody.Replace("$values", "List");
-				else if (jsonBody.StartsWith("["))
-					replacedJsonForWrapper = $"{{ \"List\": {jsonBody} }}";
-				var deserializedWrapper = JsonUtility.FromJson<ListWrapper<T>>(replacedJsonForWrapper);
-				deserializedResponse = deserializedWrapper.List;
+				DeserializeToList(out deserializedResponse, jsonBody);
 			}
 			else
 			{
@@ -102,6 +96,21 @@ namespace Elympics
 			}
 
 			return true;
+		}
+
+		private static void DeserializeToList<T>(out T deserializedResponse, string jsonBody)
+		{
+			var replacedJsonForWrapper = "";
+			if (jsonBody.Contains("$values"))
+			{
+				replacedJsonForWrapper = jsonBody.Replace("$values", "List");
+			}
+			else if (jsonBody.StartsWith("["))
+			{
+				replacedJsonForWrapper = $"{{ \"List\": {jsonBody} }}";
+			}
+			var deserializedWrapper = JsonUtility.FromJson<ListWrapper<T>>(replacedJsonForWrapper);
+			deserializedResponse = deserializedWrapper.List;
 		}
 
 		public static void LogResponseErrors(string actionName, UnityWebRequest request)

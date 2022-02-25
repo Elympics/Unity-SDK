@@ -139,7 +139,7 @@ namespace Elympics
 				if (ElympicsWebClient.TryDeserializeResponse(response, "Get Elympics Endpoints", out ElympicsEndpointsModel endpoints))
 				{
 					updateProperty.Invoke(endpoints);
-					Debug.Log($"Set {endpoints} elympics endpoint");
+					Debug.Log($"Set {endpoints.Lobby} {endpoints.GameServers} elympics endpoints");
 				}
 			};
 		}

@@ -223,7 +223,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			});
 			ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
 			{
-				Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline)}");
+				Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
 				accountGames = availableGamesOnline;
 			});
 			GUI.FocusControl(null);

@@ -1,5 +1,4 @@
 ﻿using Elympics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -12,6 +11,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 	private const string windowTitle     = "Manage games in Elympics";
 	private const string loginHeaderInfo = "<i>You have to be logged in to manage games in Elympics!</i>";
 	private const string loggedAsInfo    = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
+
+	private const string synchronizeInfo = "Synchronize endpoints and games available for your account";
 
 	private const string noGameSetupsInfo = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
 
@@ -44,9 +45,10 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	#endregion
 
-	private CustomInspectorDrawer               customInspectorDrawer         = null;
-	private ElympicsGameConfigGeneralInfoDrawer elympicsGameConfigInfoDrawer  = null;
-	private GUIStyle                            guiStyleWrappedTextCalculator = null;
+	private List<ElympicsWebIntegration.GameResponseModel> accountGames;
+	private CustomInspectorDrawer                          customInspectorDrawer         = null;
+	private ElympicsGameConfigGeneralInfoDrawer            elympicsGameConfigInfoDrawer  = null;
+	private GUIStyle                                       guiStyleWrappedTextCalculator = null;
 
 	private int resizibleCenteredLabelWidth = 0;
 
@@ -206,15 +208,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (apiEndpointChanged)
 			elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
 
-		customInspectorDrawer.DrawEndpoint("Lobby Endpoint", elympicsLobbyEndpoint, elympicsLobbyEndpointChecker, 0.3f, 0.3f, out bool lobbyEndpointChanged);
-		if (lobbyEndpointChanged)
-			elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
-
-		customInspectorDrawer.DrawEndpoint("Game Servers Endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out bool gameServersEndpointChanged);
-		if (gameServersEndpointChanged)
-			elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
-
-		if (customInspectorDrawer.DrawButtonCentered("Synchronize", (int) (position.width * 0.80f), 20))
+		if (customInspectorDrawer.DrawButtonCentered("Synchronize", resizibleCenteredLabelWidth, 20))
 		{
 			if (!elympicsApiEndpointChecker.IsRequestSuccessful)
 			{
@@ -227,8 +221,26 @@ public class ManageGamesInElympicsWindow : EditorWindow
 				elympicsLobbyEndpoint.SetValue(endpoint.Lobby);
 				elympicsGameServersEndpoint.SetValue(endpoint.GameServers);
 			});
+			ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
+			{
+				Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
+				accountGames = availableGamesOnline;
+			});
 			GUI.FocusControl(null);
 		}
+
+		customInspectorDrawer.DrawLabelCentered(synchronizeInfo, resizibleCenteredLabelWidth, 20, true);
+		customInspectorDrawer.Space();
+
+		customInspectorDrawer.DrawEndpoint("Lobby Endpoint", elympicsLobbyEndpoint, elympicsLobbyEndpointChecker, 0.3f, 0.3f, out bool lobbyEndpointChanged);
+		if (lobbyEndpointChanged)
+			elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
+
+		customInspectorDrawer.DrawEndpoint("Game Servers Endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out bool gameServersEndpointChanged);
+		if (gameServersEndpointChanged)
+			elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
+
+		customInspectorDrawer.DrawAccountGames(accountGames);
 	}
 
 	#endregion
@@ -237,7 +249,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawAvailableGamesSection()
 	{
-		customInspectorDrawer.DrawHeader("Available games", 20, elympicsColor);
+		customInspectorDrawer.DrawHeader("Local games configurations", 20, elympicsColor);
 
 		var chosenGameProperty = GetChosenGameProperty();
 
@@ -247,7 +259,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 		{
 			currentGameIndex.intValue = customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>) availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
-			customInspectorDrawer.DrawSerializedProperty("Available games", availableGames);
+			customInspectorDrawer.DrawSerializedProperty("Local games configurations", availableGames);
 			customInspectorDrawer.Space();
 
 			ElympicsGameConfig activeGameConfig = ((List<ElympicsGameConfig>) availableGames.GetValue())[currentGameIndex.intValue];
@@ -334,6 +346,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 	{
 		customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, elympicsColor);
 		customInspectorDrawer.Space();
+
 		if (customInspectorDrawer.DrawButtonCentered("Upload", resizibleCenteredLabelWidth, 20))
 		{
 			if (!ElympicsWebIntegration.IsConnectedToElympics())

@@ -69,7 +69,7 @@ namespace Elympics
 			if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 			{
 				EditorGUI.BeginDisabledGroup(true);
-				EditorGUILayout.PropertyField(_availableGames, new GUIContent("Available games"), true);
+				EditorGUILayout.PropertyField(_availableGames, new GUIContent("Local games configurations"), true);
 
 				EditorGUILayout.Popup(new GUIContent("Active game"), _currentGameIndex.intValue, ((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{x?.GameName} - {x?.GameId}").ToArray());
 				EditorGUI.EndDisabledGroup();

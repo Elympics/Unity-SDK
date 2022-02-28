@@ -409,19 +409,26 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
 		customInspectorDrawer.DrawLabelCentered(loginHeaderInfo, 400, 20, false);
 
-		DrawLoginKey(ElympicsConfig.UsernameKey);
-		DrawLoginKey(ElympicsConfig.PasswordKey);
+		DrawLoginUsernameKey(ElympicsConfig.UsernameKey);
+		DrawLoginPasswordKey(ElympicsConfig.PasswordKey);
 
 		customInspectorDrawer.Space();
 
 		DrawLoginButton();
 	}
 
-	private void DrawLoginKey(string key)
+	private void DrawLoginUsernameKey(string key)
 	{
 		customInspectorDrawer.DrawLabelCentered(key, 200, 20, false);
 		EditorPrefs.SetString(key,
 			customInspectorDrawer.DrawTextFieldCentered(EditorPrefs.GetString(key), 200, 20));
+	}
+
+	private void DrawLoginPasswordKey(string key)
+	{
+		customInspectorDrawer.DrawLabelCentered(key, 200, 20, false);
+		EditorPrefs.SetString(key,
+			customInspectorDrawer.DrawPasswordFieldCentered(EditorPrefs.GetString(key), 200, 20));
 	}
 
 	private void DrawLoginButton()

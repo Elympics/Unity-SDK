@@ -16,6 +16,7 @@ namespace Elympics
 		public const string PasswordKey     = "Password";
 		public const string RefreshTokenKey = "RefreshToken";
 		public const string AuthTokenKey    = "AuthToken";
+		public const string AuthTokenExpKey = "AuthTokenExp";
 		public const string IsLoginKey      = "IsLogin";
 
 		#endregion

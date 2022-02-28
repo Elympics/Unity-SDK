@@ -17,7 +17,7 @@ namespace Elympics
 	public static class ElympicsWebClient
 	{
 #if UNITY_EDITOR
-		public static UnityWebRequestAsyncOperation SendEnginePostRequest(string url, string gameVersion, string[] filesPath)
+		public static void SendEnginePostRequestApi(string url, string gameVersion, string[] filesPath, Action<UnityWebRequest> completed)
 		{
 			var formData = new List<IMultipartFormSection>();
 			foreach (var path in filesPath)
@@ -29,10 +29,19 @@ namespace Elympics
 
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
-			return request.SendWebRequest();
+			var asyncOperation = request.SendWebRequest();
+			AttachCompletedCallback(completed, asyncOperation);
 		}
 
-		public static UnityWebRequestAsyncOperation SendJsonGetRequest(string url)
+		private static void AttachCompletedCallback(Action<UnityWebRequest> completed, UnityWebRequestAsyncOperation asyncOperation)
+		{
+			if (asyncOperation.isDone)
+				completed.Invoke(asyncOperation.webRequest);
+			else
+				asyncOperation.completed += _ => completed?.Invoke(asyncOperation.webRequest);
+		}
+
+		public static void SendJsonGetRequestApi(string url, Action<UnityWebRequest> completed)
 		{
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Get(uri);
@@ -44,12 +53,15 @@ namespace Elympics
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
 			Debug.Log($"[Elympics] Sending request GET {url}");
-			return request.SendWebRequest();
+
+			var asyncOperation = request.SendWebRequest();
+			AttachCompletedCallback(completed, asyncOperation);
 		}
 
-		public static UnityWebRequestAsyncOperation SendJsonPostRequestApi(string url, object body)
+		public static void SendJsonPostRequestApi(string url, object body, Action<UnityWebRequest> completed, bool auth = true)
 		{
-			return SendJsonPostRequest(url, body, $"Bearer {EditorPrefs.GetString(ElympicsConfig.AuthTokenKey)}");
+			var asyncOperation = SendJsonPostRequest(url, body, auth ? $"Bearer {EditorPrefs.GetString(ElympicsConfig.AuthTokenKey)}" : null);
+			AttachCompletedCallback(completed, asyncOperation);
 		}
 #endif
 
@@ -61,7 +73,9 @@ namespace Elympics
 			var bodyRaw = Encoding.ASCII.GetBytes(bodyString);
 			request.uploadHandler = new UploadHandlerRaw(bodyRaw);
 			request.downloadHandler = new DownloadHandlerBuffer();
-			request.SetRequestHeader("Authorization", auth);
+
+			if (!string.IsNullOrEmpty(auth))
+				request.SetRequestHeader("Authorization", auth);
 			request.SetRequestHeader("Content-Type", "application/json");
 			request.SetRequestHeader("Accept", "application/json");
 
@@ -71,16 +85,16 @@ namespace Elympics
 			return request.SendWebRequest();
 		}
 
-		public static bool TryDeserializeResponse<T>(UnityWebRequestAsyncOperation response, string actionName, out T deserializedResponse)
+		public static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse)
 		{
 			deserializedResponse = default;
-			if (response.webRequest.responseCode != 200)
+			if (webRequest.isHttpError || webRequest.isNetworkError)
 			{
-				LogResponseErrors(actionName, response.webRequest);
+				LogResponseErrors(actionName, webRequest);
 				return false;
 			}
 
-			var jsonBody = response.webRequest.downloadHandler.text;
+			var jsonBody = webRequest.downloadHandler.text;
 			var type = typeof(T);
 			if (type == typeof(string))
 			{
@@ -109,6 +123,7 @@ namespace Elympics
 			{
 				replacedJsonForWrapper = $"{{ \"List\": {jsonBody} }}";
 			}
+
 			var deserializedWrapper = JsonUtility.FromJson<ListWrapper<T>>(replacedJsonForWrapper);
 			deserializedResponse = deserializedWrapper.List;
 		}
@@ -125,7 +140,7 @@ namespace Elympics
 
 			if (request.responseCode == 401)
 			{
-				Debug.LogError("Unauthorized, please login to your ElympicsWeb accout");
+				Debug.LogError("Unauthorized, please login to your ElympicsWeb account");
 				return;
 			}
 

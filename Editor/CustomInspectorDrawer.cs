@@ -87,6 +87,14 @@ namespace Elympics
 			return result;
 		}
 
+		public string DrawPasswordFieldCentered(string content, int width, int height)
+		{
+			var result = EditorGUI.PasswordField(new Rect((position.width / 2) - (width / 2), currentSpaceBetweenElements, width, height), content, centeredStyleTextField);
+			IncreaseSpacingManually(height + spacingBetweenElements);
+
+			return result;
+		}
+
 		public bool DrawButtonCentered(string content, int width, int height)
 		{
 			var result = GUI.Button(new Rect((position.width / 2) - (width / 2), currentSpaceBetweenElements, width, height), content);

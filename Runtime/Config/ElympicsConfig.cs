@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
@@ -9,17 +10,6 @@ namespace Elympics
 	{
 		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
 		public const string PATH_IN_RESOURCES       = "Elympics/ElympicsConfig";
-
-		#region ElympicsPrefs Keys
-
-		public const string UsernameKey     = "Username";
-		public const string PasswordKey     = "Password";
-		public const string RefreshTokenKey = "RefreshToken";
-		public const string AuthTokenKey    = "AuthToken";
-		public const string AuthTokenExpKey = "AuthTokenExp";
-		public const string IsLoginKey      = "IsLogin";
-
-		#endregion
 
 		[SerializeField] private string elympicsApiEndpoint         = "https://api.elympics.cc";
 		[SerializeField] private string elympicsLobbyEndpoint       = "https://lobby.elympics.cc";
@@ -73,5 +63,56 @@ namespace Elympics
 
 			this.elympicsLobbyEndpoint = elympicsEndpoint;
 		}
+
+#if UNITY_EDITOR
+
+		#region EditorPrefs
+
+		private const string UsernameKey     = "Username";
+		private const string PasswordKey     = "Password";
+		private const string RefreshTokenKey = "RefreshToken";
+		private const string AuthTokenKey    = "AuthToken";
+		private const string AuthTokenExpKey = "AuthTokenExp";
+		private const string IsLoginKey      = "IsLogin";
+
+		public static string Username
+		{
+			get => EditorPrefs.GetString(UsernameKey);
+			set => EditorPrefs.SetString(UsernameKey, value);
+		}
+
+		public static string Password
+		{
+			get => EditorPrefs.GetString(PasswordKey);
+			set => EditorPrefs.SetString(PasswordKey, value);
+		}
+
+		public static string RefreshToken
+		{
+			get => EditorPrefs.GetString(RefreshTokenKey);
+			set => EditorPrefs.SetString(RefreshTokenKey, value);
+		}
+
+		public static string AuthToken
+		{
+			get => EditorPrefs.GetString(AuthTokenKey);
+			set => EditorPrefs.SetString(AuthTokenKey, value);
+		}
+
+		public static string AuthTokenExp
+		{
+			get => EditorPrefs.GetString(AuthTokenExpKey);
+			set => EditorPrefs.SetString(AuthTokenExpKey, value);
+		}
+
+		public static bool IsLogin
+		{
+			get => EditorPrefs.GetBool(IsLoginKey);
+			set => EditorPrefs.SetBool(IsLoginKey, value);
+		}
+
+		#endregion
+
+#endif
 	}
 }

@@ -141,7 +141,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		PrepareDrawer();
 		PrepareGUIStyleCalculator();
 
-		if (!EditorPrefs.GetBool(ElympicsConfig.IsLoginKey))
+		if (!ElympicsConfig.IsLogin)
 		{
 			DrawLoginToElympicsContent();
 		}
@@ -220,7 +220,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			{
 				elympicsLobbyEndpoint.SetValue(endpoint.Lobby);
 				elympicsGameServersEndpoint.SetValue(endpoint.GameServers);
-				
+
 				ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
 				{
 					Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
@@ -368,7 +368,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 	private void DrawAccountSection()
 	{
 		customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
-		DrawHeaderLoggedAs(EditorPrefs.GetString(ElympicsConfig.UsernameKey));
+		DrawHeaderLoggedAs(ElympicsConfig.Username);
 		customInspectorDrawer.Space();
 		DrawLogoutButtonCentered();
 		customInspectorDrawer.Space();
@@ -410,26 +410,24 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
 		customInspectorDrawer.DrawLabelCentered(loginHeaderInfo, 400, 20, false);
 
-		DrawLoginUsernameKey(ElympicsConfig.UsernameKey);
-		DrawLoginPasswordKey(ElympicsConfig.PasswordKey);
+		DrawLoginUsername();
+		DrawLoginPassword();
 
 		customInspectorDrawer.Space();
 
 		DrawLoginButton();
 	}
 
-	private void DrawLoginUsernameKey(string key)
+	private void DrawLoginUsername()
 	{
-		customInspectorDrawer.DrawLabelCentered(key, 200, 20, false);
-		EditorPrefs.SetString(key,
-			customInspectorDrawer.DrawTextFieldCentered(EditorPrefs.GetString(key), 200, 20));
+		customInspectorDrawer.DrawLabelCentered("Username", 200, 20, false);
+		ElympicsConfig.Username = customInspectorDrawer.DrawTextFieldCentered(ElympicsConfig.Username, 200, 20);
 	}
 
-	private void DrawLoginPasswordKey(string key)
+	private void DrawLoginPassword()
 	{
-		customInspectorDrawer.DrawLabelCentered(key, 200, 20, false);
-		EditorPrefs.SetString(key,
-			customInspectorDrawer.DrawPasswordFieldCentered(EditorPrefs.GetString(key), 200, 20));
+		customInspectorDrawer.DrawLabelCentered("Password", 200, 20, false);
+		ElympicsConfig.Password = customInspectorDrawer.DrawPasswordFieldCentered(ElympicsConfig.Password, 200, 20);
 	}
 
 	private void DrawLoginButton()

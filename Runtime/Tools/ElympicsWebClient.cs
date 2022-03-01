@@ -25,7 +25,7 @@ namespace Elympics
 			formData.Add(new MultipartFormDataSection("gameVersion", gameVersion));
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Post(uri, formData);
-			request.SetRequestHeader("Authorization", $"Bearer {EditorPrefs.GetString(ElympicsConfig.AuthTokenKey)}");
+			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
 
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
@@ -46,7 +46,7 @@ namespace Elympics
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Get(uri);
 			request.downloadHandler = new DownloadHandlerBuffer();
-			request.SetRequestHeader("Authorization", $"Bearer {EditorPrefs.GetString(ElympicsConfig.AuthTokenKey)}");
+			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
 			request.SetRequestHeader("Content-Type", "application/json");
 			request.SetRequestHeader("Accept", "application/json");
 
@@ -60,7 +60,7 @@ namespace Elympics
 
 		public static void SendJsonPostRequestApi(string url, object body, Action<UnityWebRequest> completed, bool auth = true)
 		{
-			var asyncOperation = SendJsonPostRequest(url, body, auth ? $"Bearer {EditorPrefs.GetString(ElympicsConfig.AuthTokenKey)}" : null);
+			var asyncOperation = SendJsonPostRequest(url, body, auth ? $"Bearer {ElympicsConfig.AuthToken}" : null);
 			AttachCompletedCallback(completed, asyncOperation);
 		}
 #endif

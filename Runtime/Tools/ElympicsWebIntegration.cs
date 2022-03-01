@@ -27,23 +27,23 @@ namespace Elympics
 
 		public static void Login()
 		{
-			Login(EditorPrefs.GetString(ElympicsConfig.UsernameKey), EditorPrefs.GetString(ElympicsConfig.PasswordKey));
+			Login(ElympicsConfig.Username, ElympicsConfig.Password);
 		}
 
 		public static void Logout()
 		{
 			SetAsLoggedOut();
-			EditorPrefs.SetString(ElympicsConfig.PasswordKey, string.Empty);
-			EditorPrefs.SetString(ElympicsConfig.RefreshTokenKey, string.Empty);
-			EditorPrefs.SetString(ElympicsConfig.AuthTokenKey, string.Empty);
-			EditorPrefs.SetString(ElympicsConfig.UsernameKey, string.Empty);
+			ElympicsConfig.Password = string.Empty;
+			ElympicsConfig.RefreshToken = string.Empty;
+			ElympicsConfig.AuthToken = string.Empty;
+			ElympicsConfig.Username = string.Empty;
 		}
 
-		private static void SetAsLoggedOut() => EditorPrefs.SetBool(ElympicsConfig.IsLoginKey, false);
+		private static void SetAsLoggedOut() => ElympicsConfig.IsLogin = false;
 
 		public static bool IsConnectedToElympics()
 		{
-			if (!EditorPrefs.GetBool(ElympicsConfig.IsLoginKey))
+			if (!ElympicsConfig.IsLogin)
 			{
 				Debug.LogError("Cannot connect with ElympicsWeb, check ElympicsWeb endpoint");
 				return false;
@@ -128,10 +128,10 @@ namespace Elympics
 					var authToken = responseModel.AuthToken;
 
 					Debug.Log($"Logged to ElympicsWeb as {responseModel.UserName}");
-					EditorPrefs.SetString(ElympicsConfig.AuthTokenKey, authToken);
-					EditorPrefs.SetString(ElympicsConfig.AuthTokenExpKey, GetAuthTokenMid(authToken).exp.ToString());
-					EditorPrefs.SetString(ElympicsConfig.RefreshTokenKey, responseModel.RefreshToken);
-					EditorPrefs.SetBool(ElympicsConfig.IsLoginKey, true);
+					ElympicsConfig.AuthToken = authToken;
+					ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+					ElympicsConfig.RefreshToken = responseModel.RefreshToken;
+					ElympicsConfig.IsLogin = true;
 				}
 				catch (Exception e)
 				{
@@ -210,10 +210,11 @@ namespace Elympics
 			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			string enginePath;
 			string botPath;
+			var waitingForContinuation = false;
 			try
 			{
 				EditorUtility.DisplayProgressBar(title, "", 0f);
-				if (!EditorPrefs.GetBool(ElympicsConfig.IsLoginKey))
+				if (!ElympicsConfig.IsLogin)
 				{
 					Debug.LogError("You must be logged in Elympics to upload games");
 					return;
@@ -226,22 +227,23 @@ namespace Elympics
 				EditorUtility.DisplayProgressBar(title, "Packing bot", 0.4f);
 				if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out botPath))
 					return;
+
+				EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
+				CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+				waitingForContinuation = true;
 			}
 			finally
 			{
-				EditorUtility.ClearProgressBar();
+				if (!waitingForContinuation)
+					EditorUtility.ClearProgressBar();
 			}
-
-			EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
-
-			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
 			void OnContinuation(bool success)
 			{
 				if (!success)
 				{
-					EditorUtility.DisplayProgressBar(title, "Upload fail", 1f);
 					EditorUtility.ClearProgressBar();
+					EditorUtility.DisplayDialog(title, "Auth failed", "Ok");
 					return;
 				}
 
@@ -249,8 +251,8 @@ namespace Elympics
 				ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] {enginePath, botPath}, webRequest =>
 				{
 					var handlerResponse = UploadHandler(currentGameConfig, webRequest);
-					EditorUtility.DisplayProgressBar(title, handlerResponse ? "Uploaded" : "Upload fail", 1f);
 					EditorUtility.ClearProgressBar();
+					EditorUtility.DisplayDialog(title, handlerResponse ? $"Uploaded {currentGameConfig.gameName} with version {currentGameConfig.gameVersion}" : "Upload failed - check logs", "Ok");
 					completed?.Invoke(webRequest);
 				});
 			}
@@ -283,7 +285,7 @@ namespace Elympics
 			void OnLogin(UnityWebRequest webRequest)
 			{
 				Debug.Log("Login operation done");
-				if (!EditorPrefs.GetBool(ElympicsConfig.IsLoginKey))
+				if (!ElympicsConfig.IsLogin)
 				{
 					tcs.TrySetException(new InvalidOperationException("Login operation failed. Check log for details"));
 					return;
@@ -335,7 +337,7 @@ namespace Elympics
 
 		private static void CheckAuthTokenAndRefreshIfNeeded(Action<bool> continuation)
 		{
-			var authTokenExpStr = EditorPrefs.GetString(ElympicsConfig.AuthTokenExpKey);
+			var authTokenExpStr = ElympicsConfig.AuthTokenExp;
 			if (string.IsNullOrEmpty(authTokenExpStr))
 			{
 				SetAsLoggedOut();
@@ -351,7 +353,7 @@ namespace Elympics
 			}
 
 			Debug.Log("Auth token expired. Refreshing using refresh token...");
-			var refreshToken = EditorPrefs.GetString(ElympicsConfig.RefreshTokenKey);
+			var refreshToken = ElympicsConfig.RefreshToken;
 			ElympicsWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel {RefreshToken = refreshToken}, OnCompleted, false);
 
 			void OnCompleted(UnityWebRequest webRequest)
@@ -360,9 +362,9 @@ namespace Elympics
 				if (deserialized)
 				{
 					var authToken = responseModel.AuthToken;
-					EditorPrefs.SetString(ElympicsConfig.AuthTokenKey, authToken);
-					EditorPrefs.SetString(ElympicsConfig.AuthTokenExpKey, GetAuthTokenMid(authToken).exp.ToString());
-					EditorPrefs.SetString(ElympicsConfig.RefreshTokenKey, responseModel.RefreshToken);
+					ElympicsConfig.AuthToken = authToken;
+					ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+					ElympicsConfig.RefreshToken = responseModel.RefreshToken;
 				}
 				else
 				{

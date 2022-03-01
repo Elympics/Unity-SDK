@@ -220,11 +220,12 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			{
 				elympicsLobbyEndpoint.SetValue(endpoint.Lobby);
 				elympicsGameServersEndpoint.SetValue(endpoint.GameServers);
-			});
-			ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
-			{
-				Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
-				accountGames = availableGamesOnline;
+				
+				ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
+				{
+					Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
+					accountGames = availableGamesOnline;
+				});
 			});
 			GUI.FocusControl(null);
 		}

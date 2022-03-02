@@ -40,23 +40,24 @@ namespace Elympics
 			config.UpdateGameVersion(newGameVersion);
 		}
 
-		internal static void BuildServerWindows()
+		internal static bool BuildServerWindows()
 		{
-			BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
+			return BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
 		}
 
-		internal static void BuildServerLinux()
+		internal static bool BuildServerLinux()
 		{
-			BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
+			return BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
 		}
 
 		internal static void BuildElympicsServerLinux()
 		{
-			BuildServerLinux();
+			if (!BuildServerLinux())
+				return;
 			RemoveHalfRemoteServerFilesFromElympicsBuild();
 		}
 
-		private static void BuildServer(string appName, BuildTarget target)
+		private static bool BuildServer(string appName, BuildTarget target)
 		{
 			try
 			{
@@ -99,8 +100,9 @@ namespace Elympics
 				PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
 
 				if (report.summary.result != BuildResult.Succeeded)
-					return;
+					return false;
 
+				// Copy and pack
 
 				EditorUtility.DisplayProgressBar(title, "Copying engine wrapper to build path", 0.6f);
 				CopyWrapperToBuildPath(BotWrapperFilename, EngineSubdirectory);
@@ -112,6 +114,8 @@ namespace Elympics
 					CopyWrapperToBuildPath(EngineWrapperFilename, BotSubdirectory);
 
 				EditorUtility.DisplayProgressBar(title, $"Build finished at {ServerBuildPath}", 1f);
+
+				return true;
 			}
 			finally
 			{

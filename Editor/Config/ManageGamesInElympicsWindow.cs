@@ -353,7 +353,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			if (!ElympicsWebIntegration.IsConnectedToElympics())
 				return;
 
-			ElympicsWebIntegration.UploadGame();
+			ElympicsWebIntegration.BuildAndUploadGame();
 			GUIUtility.ExitGUI();
 		}
 

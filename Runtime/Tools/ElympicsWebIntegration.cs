@@ -27,7 +27,7 @@ namespace Elympics
 
 		public static void Login()
 		{
-			Login(ElympicsConfig.Username, ElympicsConfig.Password);
+			Login(ElympicsConfig.Username, ElympicsConfig.Password, LoginHandler);
 		}
 
 		public static void Logout()
@@ -100,7 +100,7 @@ namespace Elympics
 			public long exp;
 		}
 
-		private static void Login(string username, string password, Action<UnityWebRequest> completed = null)
+		private static UnityWebRequestAsyncOperation Login(string username, string password, Action<UnityWebRequest> completed = null)
 		{
 			Debug.Log($"Logging in as {username} using password");
 
@@ -111,11 +111,8 @@ namespace Elympics
 			};
 
 			var uri = GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.LoginRoute);
-			ElympicsWebClient.SendJsonPostRequestApi(uri, model, request =>
-			{
-				LoginHandler(request);
-				completed?.Invoke(request);
-			}, false);
+
+			return ElympicsWebClient.SendJsonPostRequestApi(uri, model, completed, false);
 		}
 
 		private static void LoginHandler(UnityWebRequest webRequest)
@@ -202,7 +199,7 @@ namespace Elympics
 			}
 		}
 
-		public static void UploadGame(Action<UnityWebRequest> completed = null)
+		public static void BuildAndUploadGame(Action<UnityWebRequest> completed = null)
 		{
 			BuildTools.BuildElympicsServerLinux();
 
@@ -278,32 +275,31 @@ namespace Elympics
 			if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
 				throw new ArgumentNullException($"Login credentials not found.");
 
-			Login(username, password, OnLogin);
+			var loginOp = Login(username, password);
 
-			void OnLogin(UnityWebRequest webRequest)
-			{
-				Debug.Log("Login operation done");
-				if (!ElympicsConfig.IsLogin)
-				{
-					Debug.LogError("Login operation failed. Check log for details");
-					EditorApplication.Exit(1);
-					return;
-				}
+			while (!loginOp.isDone) ;
 
-				UploadGame(OnUploadGame);
-			}
+			LoginHandler(loginOp.webRequest);
 
-			void OnUploadGame(UnityWebRequest webRequest)
-			{
-				if (webRequest.isHttpError || webRequest.isNetworkError)
-				{
-					Debug.LogError("Game upload failed. Check log for details");
-					EditorApplication.Exit(1);
-					return;
-				}
+			if (!ElympicsConfig.IsLogin)
+				throw new Exception("Login operation failed. Check log for details");
 
-				EditorApplication.Exit(0);
-			}
+			BuildTools.BuildElympicsServerLinux();
+			
+			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
+				throw new Exception("Problem with packing engine");
+
+			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out var botPath))
+				throw new Exception("Problem with packing bot");
+
+			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
+			var uploadOp = ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] {enginePath, botPath});
+			
+			while (!uploadOp.isDone) ;
+
+			if (!UploadHandler(currentGameConfig, uploadOp.webRequest))
+				throw new Exception("Upload problem");
 		}
 
 		private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)

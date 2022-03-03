@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ElympicsTicTacToeConfig
   m_EditorClassIdentifier: 
   gameName: TicTacToe
-  gameId: 1ba14dc3-e45c-4087-9a4d-cf2412015221
-  gameVersion: 12
+  gameId: 4c6b0b25-4fcd-4a2d-9a31-e944b0e173ff
+  gameVersion: 13
   players: 2
   gameplayScene: Assets/Samples/TicTacToe/Scenes/TicTacToe.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 1440b25fcad41344cb39cfb4c1df3ff5,

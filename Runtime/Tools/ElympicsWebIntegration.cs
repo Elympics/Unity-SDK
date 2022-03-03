@@ -278,8 +278,6 @@ namespace Elympics
 			if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
 				throw new ArgumentNullException($"Login credentials not found.");
 
-			var tcs = new TaskCompletionSource<object>();
-
 			Login(username, password, OnLogin);
 
 			void OnLogin(UnityWebRequest webRequest)
@@ -287,7 +285,8 @@ namespace Elympics
 				Debug.Log("Login operation done");
 				if (!ElympicsConfig.IsLogin)
 				{
-					tcs.TrySetException(new InvalidOperationException("Login operation failed. Check log for details"));
+					Debug.LogError("Login operation failed. Check log for details");
+					EditorApplication.Exit(1);
 					return;
 				}
 
@@ -297,10 +296,14 @@ namespace Elympics
 			void OnUploadGame(UnityWebRequest webRequest)
 			{
 				if (webRequest.isHttpError || webRequest.isNetworkError)
-					tcs.TrySetException(new InvalidOperationException("Game upload failed. Check log for details"));
-			}
+				{
+					Debug.LogError("Game upload failed. Check log for details");
+					EditorApplication.Exit(1);
+					return;
+				}
 
-			tcs.Task.Wait();
+				EditorApplication.Exit(0);
+			}
 		}
 
 		private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)

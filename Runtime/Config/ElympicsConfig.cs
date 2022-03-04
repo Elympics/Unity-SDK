@@ -22,6 +22,8 @@ namespace Elympics
 		internal string ElympicsLobbyEndpoint       => elympicsLobbyEndpoint;
 		internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;
 
+		public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;
+
 		public event Action CurrentGameSwitched;
 
 		public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PATH_IN_RESOURCES);

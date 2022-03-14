@@ -34,8 +34,11 @@ var LibraryWebRtc = {
             this.reliableEnded = reliableEnded;
 
             this.reliableDc.onopen = function () {
-                var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
-                console.log(selectedPair);
+                console.log("Reliable data channel opened");
+                if (this.pc.sctp != null) {
+                    var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
+                    console.log(selectedPair);
+                }
             }.bind(this);
             this.reliableDc.onmessage = function (message) {
                 this.reliableReceived(new Uint8Array(message.data));
@@ -56,8 +59,11 @@ var LibraryWebRtc = {
             this.unreliableEnded = unreliableEnded;
 
             this.unreliableDc.onopen = function () {
-                var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
-                console.log(selectedPair);
+                console.log("Unreliable data channel opened");
+                if (this.pc.sctp != null) {
+                    var selectedPair = this.pc.sctp.transport.iceTransport.getSelectedCandidatePair();
+                    console.log(selectedPair);
+                }
             }.bind(this);
             this.unreliableDc.onmessage = function (message) {
                 this.unreliableReceived(new Uint8Array(message.data));

@@ -28,8 +28,9 @@ namespace Elympics
 				new ClientSynchronizerConfig
 				{
 					// Todo use config ~pprzestrzelski 11.03.2021
-					TimeoutTime = TimeSpan.FromSeconds(5),
+					TimeoutTime = TimeSpan.FromSeconds(10),
 					ContinuousSynchronizationMinimumInterval = TimeSpan.FromSeconds(1),
+					UnreliablePingTimeoutInMilliseconds = TimeSpan.FromSeconds(5)
 				}
 			);
 			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);

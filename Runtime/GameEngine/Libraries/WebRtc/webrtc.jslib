@@ -51,7 +51,7 @@ var LibraryWebRtc = {
             }.bind(this);
 
             this.unreliableDc = this.pc.createDataChannel('unreliable', {
-                maxRetransmits: 0,
+                maxPacketLifeTime: 0,
                 ordered: false
             });
             this.unreliableReceived = unreliableReceived;
@@ -101,13 +101,16 @@ var LibraryWebRtc = {
             }.bind(this);
 
             this.sendUnreliable = function (message) {
-                if (this.reliableDc.readyState !== "open")
+                if (this.unreliableDc.readyState !== "open")
+                    return;
+                if (this.unreliableDc.bufferedAmount > 5120)
                     return;
                 this.unreliableDc.send(message);
             }.bind(this);
 
             this.close = function () {
                 this.reliableDc.close();
+                this.unreliableDc.close();
                 this.pc.close();
             }.bind(this);
         }

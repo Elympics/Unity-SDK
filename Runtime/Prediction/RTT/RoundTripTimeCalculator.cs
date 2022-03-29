@@ -25,8 +25,9 @@ namespace Elympics
 
 		public void OnSynchronized(TimeSynchronizationData data)
 		{
-			LastRoundTripTime = TimeSpan.FromTicks(data.RoundTripDelay.Ticks);
-			CalculateNewAverageRoundTripTime(data.RoundTripDelay.Ticks);
+			var rtt = data.UnreliableReceivedPingLately ? data.UnreliableRoundTripDelay : data.RoundTripDelay;
+			LastRoundTripTime = TimeSpan.FromTicks(rtt.Value.Ticks);
+			CalculateNewAverageRoundTripTime(rtt.Value.Ticks);
 		}
 
 		private void CalculateNewAverageRoundTripTime(long rtt)

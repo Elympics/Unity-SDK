@@ -19,21 +19,22 @@ namespace Elympics
 	{
 		internal const int UndefinedNetworkId = -1;
 
-		[SerializeField] internal bool											forceNetworkId		 = false;
-		[SerializeField] internal int											networkId			 = UndefinedNetworkId;
-		[SerializeField] internal ElympicsPlayer								predictableFor		 = ElympicsPlayer.World;
-		[SerializeField] internal ElympicsPlayer								visibleFor			 = ElympicsPlayer.All;
-		[SerializeField] internal ElympicsBehaviourStateChangeFrequencyStage[]  stateFrequencyStages =
+		[SerializeField] internal bool           forceNetworkId = false;
+		[SerializeField] internal int            networkId      = UndefinedNetworkId;
+		[SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
+		[SerializeField] internal ElympicsPlayer visibleFor     = ElympicsPlayer.All;
+		[SerializeField]
+		internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
 		{
 			new ElympicsBehaviourStateChangeFrequencyStage(500, 30),
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 200),
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 1000)
 		};
 
-		private ElympicsComponentsContainer     _componentsContainer;
-		private List<ElympicsVar>               _backingFields;
-		private Dictionary<ElympicsVar, string> _backingFieldsNames;
-		private ElympicsBehaviourStateChangeFrequencyCalculator	_behaviourStateChangeFrequencyCalculator;
+		private ElympicsComponentsContainer                     _componentsContainer;
+		private List<ElympicsVar>                               _backingFields;
+		private Dictionary<ElympicsVar, string>                 _backingFieldsNames;
+		private ElympicsBehaviourStateChangeFrequencyCalculator _behaviourStateChangeFrequencyCalculator;
 
 		internal bool HasAnyState => _componentsContainer.Observables.Length > 0;
 		internal bool HasAnyInput => _componentsContainer.InputHandlers.Length > 0;
@@ -44,9 +45,15 @@ namespace Elympics
 			internal set => networkId = value;
 		}
 
-		internal ElympicsBase ElympicsBase                           { get; private set; }
+		internal ElympicsBase ElympicsBase { get; private set; }
 		public   bool         IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
 		internal bool         IsVisibleTo(ElympicsPlayer player)     => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
+
+		private MemoryStream _memoryStream1;
+		private MemoryStream _memoryStream2;
+		private BinaryReader _binaryReader1;
+		private BinaryReader _binaryReader2;
+		private BinaryWriter _binaryWriter1;
 
 #if UNITY_EDITOR
 		private void OnValidate()
@@ -86,6 +93,12 @@ namespace Elympics
 
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{
+			_memoryStream1 = new MemoryStream();
+			_memoryStream2 = new MemoryStream();
+			_binaryReader1 = new BinaryReader(_memoryStream1);
+			_binaryReader2 = new BinaryReader(_memoryStream2);
+			_binaryWriter1 = new BinaryWriter(_memoryStream1);
+
 			ElympicsBase = elympicsBase;
 
 			_behaviourStateChangeFrequencyCalculator = new ElympicsBehaviourStateChangeFrequencyCalculator(stateFrequencyStages, AreStatesEqual);
@@ -127,14 +140,12 @@ namespace Elympics
 			foreach (var synchronizable in _componentsContainer.SerializationHandlers)
 				synchronizable.OnPreStateSerialize();
 
-			using (var ms = new MemoryStream())
-			using (var bw = new BinaryWriter(ms))
-			{
-				foreach (var backingField in _backingFields)
-					backingField.Serialize(bw);
+			foreach (var backingField in _backingFields)
+				backingField.Serialize(_binaryWriter1);
 
-				return ms.ToArray();
-			}
+			var bytes = _memoryStream1.ToArray();
+			_memoryStream1.Seek(0, SeekOrigin.Begin);
+			return bytes;
 		}
 
 		internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState)
@@ -144,12 +155,11 @@ namespace Elympics
 
 		internal void ApplyState(byte[] data, bool ignoreTolerance = false)
 		{
-			using (var ms = new MemoryStream(data))
-			using (var br = new BinaryReader(ms))
-			{
-				foreach (var backingField in _backingFields)
-					backingField.Deserialize(br, ignoreTolerance);
-			}
+			_memoryStream1.Write(data);
+			_memoryStream1.Seek(0, SeekOrigin.Begin);
+			foreach (var backingField in _backingFields)
+				backingField.Deserialize(_binaryReader1, ignoreTolerance);
+			_memoryStream1.Seek(0, SeekOrigin.Begin);
 
 			foreach (var synchronizable in _componentsContainer.SerializationHandlers)
 				synchronizable.OnPostStateDeserialize();
@@ -157,23 +167,15 @@ namespace Elympics
 
 		internal bool AreStatesEqual(byte[] data1, byte[] data2)
 		{
-			using (var ms1 = new MemoryStream(data1))
-			using (var br1 = new BinaryReader(ms1))
-			using (var ms2 = new MemoryStream(data2))
-			using (var br2 = new BinaryReader(ms2))
-			{
-				return _backingFields.All(backingField => backingField.Equals(br1, br2));
-				// foreach (var backingField in _backingFields)
-				// {
-				// 	if (!backingField.Equals(br1, br2))
-				// 	{
-				// 		Debug.LogWarning($"Not equal on {backingField.GetType().Name} {_backingFieldsNames[backingField]}", this);
-				// 		return false;
-				// 	}
-				// }
-				//
-				// return true;
-			}
+			_memoryStream1.Write(data1);
+			_memoryStream1.Seek(0, SeekOrigin.Begin);
+			_memoryStream2.Write(data2);
+			_memoryStream2.Seek(0, SeekOrigin.Begin);
+
+			bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
+			_memoryStream1.Seek(0, SeekOrigin.Begin);
+			_memoryStream2.Seek(0, SeekOrigin.Begin);
+			return areEqual;
 		}
 
 		internal void GetInputForClient(BinaryInputWriter inputWriter)

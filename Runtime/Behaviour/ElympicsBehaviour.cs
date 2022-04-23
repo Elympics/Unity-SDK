@@ -155,7 +155,7 @@ namespace Elympics
 
 		internal void ApplyState(byte[] data, bool ignoreTolerance = false)
 		{
-			_memoryStream1.Write(data);
+			_memoryStream1.Write(data, 0, data.Length);
 			_memoryStream1.Seek(0, SeekOrigin.Begin);
 			foreach (var backingField in _backingFields)
 				backingField.Deserialize(_binaryReader1, ignoreTolerance);
@@ -167,9 +167,9 @@ namespace Elympics
 
 		internal bool AreStatesEqual(byte[] data1, byte[] data2)
 		{
-			_memoryStream1.Write(data1);
+			_memoryStream1.Write(data1, 0, data1.Length);
 			_memoryStream1.Seek(0, SeekOrigin.Begin);
-			_memoryStream2.Write(data2);
+			_memoryStream2.Write(data2, 0, data2.Length);
 			_memoryStream2.Seek(0, SeekOrigin.Begin);
 
 			bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));

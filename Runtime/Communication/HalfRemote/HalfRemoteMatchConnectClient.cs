@@ -158,9 +158,40 @@ namespace Elympics
 				yield break;
 			}
 
+
+			var channelOpened = false;
+			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);
+
+			void ChannelOpenedHandler(byte[] data, string playerId)
+			{
+				channelOpened = true;
+			}
+
+			client.InGameDataForPlayerOnUnreliableChannelGenerated += ChannelOpenedHandler;
+
 			_webRtcClient.OnAnswer(answer);
 
-			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);
+			for (var i = 0; i < ConnectMaxRetries; i++)
+			{
+				if (!Application.isPlaying)
+					yield break;
+
+				if (channelOpened)
+					break;
+				yield return WaitTimeToRetryConnect;
+			}
+
+			client.InGameDataForPlayerOnUnreliableChannelGenerated -= ChannelOpenedHandler;
+
+			if (!channelOpened)
+			{
+				Debug.LogError("WebRTC channel not opened after time");
+				connectedCallback.Invoke(false);
+				yield break;
+			}
+
+			Debug.Log("WebRTC received channel opened");
+
 			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId, client);
 		}
 

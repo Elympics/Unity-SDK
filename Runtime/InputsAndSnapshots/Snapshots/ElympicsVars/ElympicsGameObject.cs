@@ -8,35 +8,27 @@ namespace Elympics
 	[Serializable]
 	public class ElympicsGameObject : ElympicsVar<ElympicsBehaviour>
 	{
-		private const int nullReferenceNetworkId = -1;
+		private const int NullReferenceNetworkId = -1;
 
 		public ElympicsGameObject(ElympicsBehaviour value = default, bool enableSynchronization = true)
-			: base(value, enableSynchronization)
+			: base(value, enableSynchronization, new ElympicsGameObjectEqualityComparer())
 		{
 		}
 
 		public override void Serialize(BinaryWriter bw)
 		{
-			bw.Write(Value != null ? Value.networkId : nullReferenceNetworkId);
+			bw.Write(Value?.networkId ?? NullReferenceNetworkId);
 		}
 
 		protected override ElympicsBehaviour DeserializeInternal(BinaryReader br)
 		{
-			int valueNetworkId = br.ReadInt32();
+			var valueNetworkId = br.ReadInt32();
 
-			if (valueNetworkId == nullReferenceNetworkId)
-			{
-				Value = null;
-			}
-			else if (Value == null || Value.networkId != valueNetworkId)
-			{
-				if (Elympics.TryGetBehaviour(valueNetworkId, out ElympicsBehaviour elympicsBehaviour))
-				{
-					Value = elympicsBehaviour;
-				}
-			}
+			if (valueNetworkId == NullReferenceNetworkId)
+				return null;
 
-			return Value;
+			// todo for elympics debug mode add information that null here means that client has access to ElympicsGameObject not visible to this client and therefore trigger reconciliation ~pprzestrzelski 15.06.2022
+			return Elympics.TryGetBehaviour(valueNetworkId, out var elympicsBehaviour) ? elympicsBehaviour : null;
 		}
 	}
 }

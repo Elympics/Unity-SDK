@@ -18,11 +18,9 @@ namespace Elympics
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
 		private          ElympicsBase                _elympics;
 		private          BinaryInputWriter           _inputWriter;
-		private          BinaryInputReader           _inputReader;
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{
 			_inputWriter = new BinaryInputWriter();
-			_inputReader = new BinaryInputReader();
 
 			_elympics = elympicsBase;
 			factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
@@ -52,7 +50,6 @@ namespace Elympics
 		private void OnDestroy()
 		{
 			_inputWriter?.Dispose();
-			_inputReader?.Dispose();
 		}
 
 		private void InitializeElympicsBehaviour(ElympicsBehaviour elympicsBehaviour)
@@ -76,13 +73,13 @@ namespace Elympics
 			return _elympicsBehaviours.Behaviours.TryGetValue(networkId, out elympicsBehaviour);
 		}
 
-		internal ElympicsInput GetInputForClient() => GetInput(ClientInputGetter);
-		internal ElympicsInput GetInputForBot()    => GetInput(BotInputGetter);
+		internal ElympicsInput OnInputForClient() => OnInput(ClientInputGetter);
+		internal ElympicsInput OnInputForBot()    => OnInput(BotInputGetter);
 
-		private static void ClientInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer) => behaviour.GetInputForClient(writer);
-		private static void BotInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer)    => behaviour.GetInputForBot(writer);
+		private static void ClientInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer) => behaviour.OnInputForClient(writer);
+		private static void BotInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer)    => behaviour.OnInputForBot(writer);
 
-		private ElympicsInput GetInput(Action<ElympicsBehaviour, BinaryInputWriter> getInput)
+		private ElympicsInput OnInput(Action<ElympicsBehaviour, BinaryInputWriter> onInput)
 		{
 			var input = new ElympicsInput
 			{
@@ -94,7 +91,7 @@ namespace Elympics
 				if (!elympicsBehaviour.HasAnyInput)
 					continue;
 
-				getInput(elympicsBehaviour, _inputWriter);
+				onInput(elympicsBehaviour, _inputWriter);
 
 				var serializedData = _inputWriter.GetData();
 				if (serializedData != null && serializedData.Length != 0)
@@ -105,26 +102,17 @@ namespace Elympics
 			return input;
 		}
 
-		internal void ApplyInput(ElympicsInput input)
+		internal void SetCurrentInputs(List<ElympicsInput> inputs)
 		{
-			foreach (var data in input.Data)
-			{
-				if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(data.Key, out var elympicsBehaviour))
-				{
-					_inputReader.FeedDataForReading(data.Value);
-					try
-					{
-						elympicsBehaviour.ApplyInput(input.Player, _inputReader);
-					}
-					catch (EndOfStreamException)
-					{
-						throw new ReadTooMuchException(elympicsBehaviour);
-					}
+			foreach (var behaviour in _elympicsBehaviours.BehavioursWithInput.Values)
+				behaviour.ClearInputs();
 
-					if (!_inputReader.AllBytesRead())
-						throw new ReadNotEnoughException(elympicsBehaviour);
+			foreach (var input in inputs)
+				foreach (var data in input.Data)
+				{
+					if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(data.Key, out var elympicsBehaviour))
+						elympicsBehaviour.SetCurrentInput(input.Player, data.Value);
 				}
-			}
 		}
 
 		internal ElympicsSnapshot GetLocalSnapshot()
@@ -285,7 +273,7 @@ namespace Elympics
 			_bufferForIteration.Clear();
 			_bufferForIteration.AddRange(_elympicsBehaviours.Behaviours.Values);
 			foreach (var elympicsBehaviour in _bufferForIteration)
-				elympicsBehaviour.ElympicsUpdate();
+					elympicsBehaviour.ElympicsUpdate();
 			IsInElympicsUpdate = false;
 		}
 

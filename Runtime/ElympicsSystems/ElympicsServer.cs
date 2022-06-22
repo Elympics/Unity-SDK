@@ -30,6 +30,8 @@ namespace Elympics
 		private bool _initialized;
 		private int  _tick;
 
+		private List<ElympicsInput> _inputList;
+
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
 		{
 			SwitchBehaviourToServer();
@@ -38,6 +40,7 @@ namespace Elympics
 			base.InitializeInternal(elympicsGameConfig);
 			_gameEngineAdapter = gameEngineAdapter;
 			_tick = 0;
+			_inputList = new List<ElympicsInput>();
 			elympicsBehavioursManager.InitializeInternal(this);
 			SetupCallbacks();
 		}
@@ -90,33 +93,22 @@ namespace Elympics
 			if (HandlingClientsInServer)
 				GatherInputsFromServerBotsOrClient(_playersOfClients, SwitchBehaviourToClient, ClientInputGetter);
 
+			_inputList.Clear();
 			foreach (var inputBufferPair in _gameEngineAdapter.PlayerInputBuffers)
 				if (inputBufferPair.Value.TryGetDataForTick(_tick, out var input))
-					ApplyInput(input);
+					_inputList.Add(input);
+			elympicsBehavioursManager.SetCurrentInputs(_inputList);
 		}
 
-		private void ApplyInput(ElympicsInput input)
-		{
-			try
-			{
-				elympicsBehavioursManager.ApplyInput(input);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-				Debug.LogError("An exception occured when applying inputs. This might be a result of faulty code or a hacking attempt.");
-			}
-		}
+		private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForClient();
+		private static ElympicsInput BotInputGetter(ElympicsBehavioursManager manager)    => manager.OnInputForBot();
 
-		private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.GetInputForClient();
-		private static ElympicsInput BotInputGetter(ElympicsBehavioursManager manager)    => manager.GetInputForBot();
-
-		private void GatherInputsFromServerBotsOrClient(ElympicsPlayer[] players, Action<ElympicsPlayer> switchElympicsBaseBehaviour, Func<ElympicsBehavioursManager, ElympicsInput> getInput)
+		private void GatherInputsFromServerBotsOrClient(ElympicsPlayer[] players, Action<ElympicsPlayer> switchElympicsBaseBehaviour, Func<ElympicsBehavioursManager, ElympicsInput> onInput)
 		{
 			foreach (var playerOfBotOrClient in players)
 			{
 				switchElympicsBaseBehaviour(playerOfBotOrClient);
-				var input = getInput(elympicsBehavioursManager);
+				var input = onInput(elympicsBehavioursManager);
 				input.Tick = _tick;
 				input.Player = playerOfBotOrClient;
 				_gameEngineAdapter.AddBotsOrClientsInServerInputToBuffer(input, playerOfBotOrClient);

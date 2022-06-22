@@ -50,7 +50,7 @@ namespace Elympics
 			SendInput(input);
 		}
 
-		private ElympicsInput CollectRawInput() => elympicsBehavioursManager.GetInputForBot();
+		private ElympicsInput CollectRawInput() => elympicsBehavioursManager.OnInputForBot();
 
 		private void AddMetadataToInput(ElympicsInput input, long snapshotTick)
 		{

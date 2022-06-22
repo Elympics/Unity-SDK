@@ -4,7 +4,7 @@ using Elympics;
 namespace TechDemo
 {
 	[RequireComponent(typeof(PlayerBehaviour))]
-	public class PlayerInputController : ElympicsMonoBehaviour, IInitializable, IInputHandler
+	public class PlayerInputController : ElympicsMonoBehaviour, IInitializable, IInputHandler, IUpdatable
 	{
 		[SerializeField] private Camera                      cam                   = null;
 		[SerializeField] private PlayerJoystickInputProvider joystickInputProvider = null;
@@ -14,13 +14,13 @@ namespace TechDemo
 		private PlayerBehaviour _playerBehaviour;
 
 		// Handling only one player through this input handlers, every player has the same player input controller
-		public void GetInputForClient(IInputWriter inputSerializer)
+		public void OnInputForClient(IInputWriter inputSerializer)
 		{
 			joystickInputProvider.GetRawInput(out var forwardMovement, out var rightMovement, out var fire);
 			SerializeInput(inputSerializer, forwardMovement, rightMovement, fire);
 		}
 
-		public void GetInputForBot(IInputWriter inputSerializer)
+		public void OnInputForBot(IInputWriter inputSerializer)
 		{
 			botInputProvider.GetRawInput(out var forwardMovement, out var rightMovement, out var fire);
 			SerializeInput(inputSerializer, forwardMovement, rightMovement, fire);
@@ -33,14 +33,14 @@ namespace TechDemo
 			inputWriter.Write(fire);
 		}
 
-		public void ApplyInput(ElympicsPlayer player, IInputReader inputReader)
+		public void ElympicsUpdate()
 		{
+			if (!ElympicsBehaviour.TryGetInput(_playerBehaviour.PredictableFor, out var inputReader))
+				return;
+
 			inputReader.Read(out float forwardMovement);
 			inputReader.Read(out float rightMovement);
 			inputReader.Read(out bool fire);
-
-			if (player != _playerBehaviour.PredictableFor)
-				return;
 
 			if (fire)
 				_playerBehaviour.Fire();

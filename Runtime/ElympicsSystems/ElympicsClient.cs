@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
@@ -38,6 +39,8 @@ namespace Elympics
 
 		private ElympicsSnapshot _lastReceivedSnapshot;
 
+		private List<ElympicsInput> _inputList;
+
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerData initialMatchPlayerData)
 		{
 			base.InitializeInternal(elympicsGameConfig);
@@ -52,6 +55,8 @@ namespace Elympics
 
 			SetupCallbacks();
 			OnStandaloneClientInit(initialMatchPlayerData);
+
+			_inputList = new List<ElympicsInput>(1);
 
 			Initialized = true;
 			if (connectOnStart)
@@ -131,7 +136,7 @@ namespace Elympics
 
 		private void ProcessInput()
 		{
-			var input = elympicsBehavioursManager.GetInputForClient();
+			var input = elympicsBehavioursManager.OnInputForClient();
 			AddMetadataToInput(input);
 			SendInput(input);
 			_predictionBuffer.AddInputToBuffer(input);
@@ -147,8 +152,10 @@ namespace Elympics
 
 		private void ApplyPredictedInput()
 		{
+			_inputList.Clear();
 			if (_predictionBuffer.TryGetInputFromBuffer(_clientTickCalculator.PredictionTick, out var predictedInput))
-				elympicsBehavioursManager.ApplyInput(predictedInput);
+				_inputList.Add(predictedInput);
+			elympicsBehavioursManager.SetCurrentInputs(_inputList);
 		}
 
 		private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot)
@@ -183,8 +190,10 @@ namespace Elympics
 				if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
 					elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
 
+				_inputList.Clear();
 				if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
-					elympicsBehavioursManager.ApplyInput(resimulatedInput);
+					_inputList.Add(resimulatedInput);
+				elympicsBehavioursManager.SetCurrentInputs(_inputList);
 				elympicsBehavioursManager.ElympicsUpdate();
 
 				var newResimulatedSnapshot = elympicsBehavioursManager.GetLocalSnapshot();

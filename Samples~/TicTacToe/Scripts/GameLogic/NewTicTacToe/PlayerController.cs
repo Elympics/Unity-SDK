@@ -5,7 +5,7 @@ using MatchTcpClients.Synchronizer;
 
 namespace GameLogic.NewTicTacToe
 {
-	public class PlayerController : ElympicsMonoBehaviour, IInputHandler, IClientHandler, IBotHandler
+	public class PlayerController : ElympicsMonoBehaviour, IInputHandler, IClientHandler, IBotHandler, IUpdatable
 	{
 		[SerializeField] public GameStateObject     gameState           = null;
 		[SerializeField] public PlayerInputProvider playerInputProvider = null;
@@ -14,14 +14,14 @@ namespace GameLogic.NewTicTacToe
 
 		private PlayerSide MyPlayerSide => gameState.GetSide((int) Elympics.Player);
 
-		public void GetInputForClient(IInputWriter inputWriter)
+		public void OnInputForClient(IInputWriter inputWriter)
 		{
 			var input = playerInputProvider.GetAndClearLastClickedInput();
 			SerializeInput(inputWriter, input);
 		}
 
 		// Handling all bots through this input handler
-		public void GetInputForBot(IInputWriter inputSerializer)
+		public void OnInputForBot(IInputWriter inputSerializer)
 		{
 			var input = _botControllers[(int) Elympics.Player].ChosenField;
 			SerializeInput(inputSerializer, input);
@@ -34,20 +34,6 @@ namespace GameLogic.NewTicTacToe
 
 			inputSerializer.Write(input.FieldIndex);
 			inputSerializer.Write(MyPlayerSide);
-		}
-
-		public void ApplyInput(ElympicsPlayer player, IInputReader inputReader)
-		{
-			inputReader.Read(out int fieldIndex);
-			inputReader.Read(out PlayerSide playerSide);
-
-			var validated = Validate((int) player, fieldIndex, playerSide);
-			if (!validated)
-				return;
-
-			gameState.fields[fieldIndex].SetOwnership(playerSide);
-			gameState.fields[fieldIndex].transform.localPosition += new Vector3(100, 0, 0);
-			gameState.ChangeTurn();
 		}
 
 		private bool Validate(int playerIndex, int fieldIndex, PlayerSide playerSide)
@@ -129,5 +115,25 @@ namespace GameLogic.NewTicTacToe
 			Debug.Log($"Match ended");
 			gameState.SetGameOver(true);
 		}
-	}
+
+        public void ElympicsUpdate()
+		{
+			for (var playerId = 0; playerId < 2; playerId++)
+			{
+				if (!ElympicsBehaviour.TryGetInput(ElympicsPlayer.FromIndex(playerId), out var inputReader))
+					continue;
+
+				inputReader.Read(out int fieldIndex);
+				inputReader.Read(out PlayerSide playerSide);
+
+				var validated = Validate(playerId, fieldIndex, playerSide);
+				if (!validated)
+					continue;
+
+				gameState.fields[fieldIndex].SetOwnership(playerSide);
+				gameState.fields[fieldIndex].transform.localPosition += new Vector3(100, 0, 0);
+				gameState.ChangeTurn();
+			}
+		}
+    }
 }

@@ -37,7 +37,7 @@ namespace Elympics
 		private ElympicsBehaviourStateChangeFrequencyCalculator _behaviourStateChangeFrequencyCalculator;
 
 		internal bool HasAnyState => _componentsContainer.Observables.Length > 0;
-		internal bool HasAnyInput => _componentsContainer.InputHandlers.Length > 0;
+		internal bool HasAnyInput => _componentsContainer.InputHandler != null;
 
 		public int NetworkId
 		{
@@ -47,13 +47,45 @@ namespace Elympics
 
 		internal ElympicsBase ElympicsBase { get; private set; }
 		public   bool         IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
-		internal bool         IsVisibleTo(ElympicsPlayer player)     => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
+		internal bool         IsVisibleTo(ElympicsPlayer player) => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
 
-		private MemoryStream _memoryStream1;
-		private MemoryStream _memoryStream2;
-		private BinaryReader _binaryReader1;
-		private BinaryReader _binaryReader2;
-		private BinaryWriter _binaryWriter1;
+		private MemoryStream      _memoryStream1;
+		private MemoryStream      _memoryStream2;
+		private BinaryReader      _binaryReader1;
+		private BinaryReader      _binaryReader2;
+		private BinaryWriter      _binaryWriter1;
+		private BinaryInputReader _inputReader;
+
+		private Dictionary<ElympicsPlayer, byte[]> _inputByPlayer;
+		internal void ClearInputs()
+        {
+			_inputByPlayer.Clear();
+        }
+
+		/// <summary>
+		/// Retrieves received input for a player.
+		/// </summary>
+		/// <param name="player">Identifier of a player that the input is retrieved for.</param>
+		/// <param name="inputDeserializer">Input deserializer. Use its <c>Read</c> methods to parse data from the received input.</param>
+		/// <returns>If there is any input to retrieve for the given player.</returns>
+		/// <seealso cref="IInputHandler.OnInputForClient"/>
+		/// <seealso cref="IInputHandler.OnInputForBot"/>
+		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader)
+		{
+			if (!ElympicsBase.elympicsBehavioursManager.IsInElympicsUpdate)
+				throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
+			if (!HasAnyInput)
+				throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");
+			if (!_inputReader.AllBytesRead())
+				throw new ReadNotEnoughException(this);
+
+			inputReader = null;
+			if (!_inputByPlayer.ContainsKey(player))
+				return false;
+			_inputReader.FeedDataForReading(_inputByPlayer[player]);
+			inputReader = _inputReader;
+			return true;
+		}
 
 #if UNITY_EDITOR
 		private void OnValidate()
@@ -133,6 +165,14 @@ namespace Elympics
 					}
 				}
 			}
+
+			_inputReader = new BinaryInputReader();
+			_inputByPlayer = new Dictionary<ElympicsPlayer, byte[]>();
+		}
+
+		private void OnDestroy()
+		{
+			_inputReader?.Dispose();
 		}
 
 		internal byte[] GetState()
@@ -188,28 +228,33 @@ namespace Elympics
 			return areEqual;
 		}
 
-		internal void GetInputForClient(BinaryInputWriter inputWriter)
+		internal void OnInputForClient(BinaryInputWriter inputWriter)
 		{
-			foreach (var handler in _componentsContainer.InputHandlers)
-				handler.GetInputForClient(inputWriter);
+			_componentsContainer.InputHandler?.OnInputForClient(inputWriter);
 		}
 
-		internal void GetInputForBot(BinaryInputWriter inputWriter)
+		internal void OnInputForBot(BinaryInputWriter inputWriter)
 		{
-			foreach (var handler in _componentsContainer.InputHandlers)
-				handler.GetInputForBot(inputWriter);
+			_componentsContainer.InputHandler?.OnInputForBot(inputWriter);
 		}
 
-		internal void ApplyInput(ElympicsPlayer player, BinaryInputReader inputReader)
+		internal void SetCurrentInput(ElympicsPlayer player, byte[] rawInput)
 		{
-			foreach (var handler in _componentsContainer.InputHandlers)
-				handler.ApplyInput(player, inputReader);
+			_inputByPlayer[player] = rawInput;
 		}
 
 		internal void ElympicsUpdate()
 		{
-			foreach (var predictable in _componentsContainer.Updatables)
-				predictable.ElympicsUpdate();
+			foreach (var updatable in _componentsContainer.Updatables)
+				try
+                {
+					updatable.ElympicsUpdate();
+				}
+				catch (Exception e) when (e is EndOfStreamException || e is ReadNotEnoughException)
+                {
+					Debug.LogException(e);
+					Debug.LogError("An exception occured when applying inputs. This might be a result of faulty code or a hacking attempt.");
+				}
 		}
 
 		internal void OnPreReconcile()

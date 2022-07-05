@@ -1,12 +1,9 @@
-﻿using System;
-
-namespace Elympics
+﻿namespace Elympics
 {
-	[Serializable]
 	public class ParameterSynchronizationStatus
 	{
-		public int  HashName;
-		public bool Enabled;
-		public bool Updated;
+		public string Name;
+		public int    HashName;
+		public bool   Enabled;
 	}
 }

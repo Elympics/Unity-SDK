@@ -8,25 +8,20 @@ namespace Elympics
 	[RequireComponent(typeof(Animator))]
 	public class ElympicsAnimatorSynchronizer : ElympicsMonoBehaviour, IInitializable, IStateSerializationHandler
 	{
-		[SerializeField, HideInInspector] private bool ShowLayerWeights = true;
+		[SerializeField, HideInInspector] private List<string> disabledParameters = new List<string>();
+		[SerializeField, HideInInspector] private List<string> disabledLayers     = new List<string>();
 
-		[SerializeField, HideInInspector] private bool ShowParameters = true;
-
-		[SerializeField, HideInInspector] private List<ParameterSynchronizationStatus> _boolStatuses = new List<ParameterSynchronizationStatus>();
-
-		[SerializeField, HideInInspector] private List<ParameterSynchronizationStatus> _intStatuses = new List<ParameterSynchronizationStatus>();
-
-		[SerializeField, HideInInspector] private List<ParameterSynchronizationStatus> _floatStatuses = new List<ParameterSynchronizationStatus>();
-
-		[SerializeField, HideInInspector] private List<ParameterSynchronizationStatus> _triggersStatuses = new List<ParameterSynchronizationStatus>();
-
-		[SerializeField, HideInInspector] private List<LayerSynchronizationStatus> _layersStatuses = new List<LayerSynchronizationStatus>();
+		private List<ParameterSynchronizationStatus> _boolStatuses;
+		private List<ParameterSynchronizationStatus> _intStatuses;
+		private List<ParameterSynchronizationStatus> _floatStatuses;
+		private List<ParameterSynchronizationStatus> _triggerStatuses;
+		private LayerSynchronizationStatus[]         _layerStatuses;
 
 		private ElympicsArray<ElympicsBool>  _boolParams;
 		private ElympicsArray<ElympicsInt>   _intParams;
 		private ElympicsArray<ElympicsFloat> _floatParams;
 		private ElympicsArray<ElympicsBool>  _triggerParams;
-		private ElympicsArray<ElympicsFloat> _layersWeights;
+		private ElympicsArray<ElympicsFloat> _layerWeights;
 
 		private readonly List<int> _triggerCache = new List<int>();
 
@@ -35,89 +30,30 @@ namespace Elympics
 
 		public void Initialize()
 		{
+			var parameters = Animator.parameters;
+			var layerNames = new string[Animator.layerCount];
+			for (var i = 0; i < layerNames.Length; i++)
+				layerNames[i] = Animator.GetLayerName(i);
+			_boolStatuses = new List<ParameterSynchronizationStatus>(parameters.Count(x => x.type == AnimatorControllerParameterType.Bool));
+			_intStatuses = new List<ParameterSynchronizationStatus>(parameters.Count(x => x.type == AnimatorControllerParameterType.Int));
+			_floatStatuses = new List<ParameterSynchronizationStatus>(parameters.Count(x => x.type == AnimatorControllerParameterType.Float));
+			_triggerStatuses = new List<ParameterSynchronizationStatus>(parameters.Count(x => x.type == AnimatorControllerParameterType.Trigger));
+			_layerStatuses = new LayerSynchronizationStatus[Animator.layerCount];
+
+			InitializeDeserializedStatuses(layerNames, parameters);
+
 			_boolParams = new ElympicsArray<ElympicsBool>(_boolStatuses.Count, () => new ElympicsBool());
 			_intParams = new ElympicsArray<ElympicsInt>(_intStatuses.Count, () => new ElympicsInt());
 			_floatParams = new ElympicsArray<ElympicsFloat>(_floatStatuses.Count, () => new ElympicsFloat());
-			_triggerParams = new ElympicsArray<ElympicsBool>(_triggersStatuses.Count, () => new ElympicsBool());
-			_layersWeights = new ElympicsArray<ElympicsFloat>(_layersStatuses.Count, () => new ElympicsFloat());
-		}
-
-		public void PrepareStatusesToUpdate()
-		{
-			_boolStatuses.ForEach(r => r.Updated = false);
-			_intStatuses.ForEach(r => r.Updated = false);
-			_floatStatuses.ForEach(r => r.Updated = false);
-			_triggersStatuses.ForEach(r => r.Updated = false);
-			_layersStatuses.ForEach(r => r.Updated = false);
-		}
-
-		public void RemoveOutdatedStatuses()
-		{
-			_boolStatuses.RemoveAll(r => r.Updated == false);
-			_intStatuses.RemoveAll(r => r.Updated == false);
-			_floatStatuses.RemoveAll(r => r.Updated == false);
-			_triggersStatuses.RemoveAll(r => r.Updated == false);
-			_layersStatuses.RemoveAll(r => r.Updated == false);
-		}
-
-		public void SetLayer(int index, bool isEnabled) => _layersStatuses.First(r => r.Index == index).Enabled = isEnabled;
-
-		public bool GetLayer(int layerIndex)
-		{
-			int index = _layersStatuses.FindIndex(r => r.Index == layerIndex);
-			if (index == -1)
-			{
-				_layersStatuses.Add(new LayerSynchronizationStatus { Enabled = true, Index = layerIndex, Updated = true });
-				return true;
-			}
-
-			_layersStatuses[index].Updated = true;
-			return _layersStatuses[index].Enabled;
-		}
-
-		public void SetParameter(AnimatorControllerParameterType type, int hashName, bool isEnabled)
-		{
-			var statuses = GetListByParameterType(type);
-			statuses.First(r => r.HashName == hashName).Enabled = isEnabled;
-		}
-
-		public bool GetParameter(AnimatorControllerParameterType type, int hashName)
-		{
-			var statuses = GetListByParameterType(type);
-			int index = statuses.FindIndex(x => x.HashName == hashName);
-
-			if (index == -1)
-			{
-				statuses.Add(new ParameterSynchronizationStatus { Enabled = true, HashName = hashName, Updated = true });
-				return true;
-			}
-
-			statuses[index].Updated = true;
-			return statuses[index].Enabled;
-		}
-
-		private List<ParameterSynchronizationStatus> GetListByParameterType(AnimatorControllerParameterType type)
-		{
-			switch (type)
-			{
-				case AnimatorControllerParameterType.Bool:
-					return _boolStatuses;
-				case AnimatorControllerParameterType.Int:
-					return _intStatuses;
-				case AnimatorControllerParameterType.Float:
-					return _floatStatuses;
-				case AnimatorControllerParameterType.Trigger:
-					return _triggersStatuses;
-				default:
-					return null;
-			}
+			_triggerParams = new ElympicsArray<ElympicsBool>(_triggerStatuses.Count, () => new ElympicsBool());
+			_layerWeights = new ElympicsArray<ElympicsFloat>(_layerStatuses.Length, () => new ElympicsFloat());
 		}
 
 		private void Update()
 		{
-			for (int i = 0; i < _triggersStatuses.Count; i++)
+			for (int i = 0; i < _triggerStatuses.Count; i++)
 			{
-				var triggerKey = _triggersStatuses[i];
+				var triggerKey = _triggerStatuses[i];
 				if (Animator.GetBool(triggerKey.HashName) && !_triggerCache.Contains(triggerKey.HashName))
 					_triggerCache.Add(triggerKey.HashName);
 			}
@@ -125,8 +61,8 @@ namespace Elympics
 
 		public void OnPreStateSerialize()
 		{
-			for (int i = 0; i < _layersStatuses.Count; i++)
-				_layersWeights.Values[i].Value = Animator.GetLayerWeight(i);
+			for (int i = 0; i < _layerStatuses.Length; i++)
+				_layerWeights.Values[i].Value = Animator.GetLayerWeight(i);
 
 			for (int i = 0; i < _boolStatuses.Count; i++)
 				_boolParams.Values[i].Value = Animator.GetBool(_boolStatuses[i].HashName);
@@ -137,17 +73,17 @@ namespace Elympics
 			for (int i = 0; i < _intStatuses.Count; i++)
 				_intParams.Values[i].Value = Animator.GetInteger(_intStatuses[i].HashName);
 
-			for (int i = 0; i < _triggersStatuses.Count; i++)
-				_triggerParams.Values[i].Value = _triggerCache.Contains(_triggersStatuses[i].HashName);
+			for (int i = 0; i < _triggerStatuses.Count; i++)
+				_triggerParams.Values[i].Value = _triggerCache.Contains(_triggerStatuses[i].HashName);
 
 			_triggerCache.Clear();
 		}
 
 		public void OnPostStateDeserialize()
 		{
-			for (int i = 0; i < _layersStatuses.Count; i++)
-				if (_layersStatuses[i].Enabled)
-					Animator.SetLayerWeight(i, _layersWeights.Values[i]);
+			for (int i = 0; i < _layerStatuses.Length; i++)
+				if (_layerStatuses[i].Enabled)
+					Animator.SetLayerWeight(i, _layerWeights.Values[i]);
 
 			for (int i = 0; i < _boolStatuses.Count; i++)
 				if (_boolStatuses[i].Enabled)
@@ -161,9 +97,50 @@ namespace Elympics
 				if (_intStatuses[i].Enabled)
 					Animator.SetInteger(_intStatuses[i].HashName, _intParams.Values[i].Value);
 
-			for (int i = 0; i < _triggersStatuses.Count; i++)
-				if (_triggerParams.Values[i].Value && _triggersStatuses[i].Enabled)
-					Animator.SetTrigger(_triggersStatuses[i].HashName);
+			for (int i = 0; i < _triggerStatuses.Count; i++)
+				if (_triggerParams.Values[i].Value && _triggerStatuses[i].Enabled)
+					Animator.SetTrigger(_triggerStatuses[i].HashName);
+		}
+
+		private void InitializeDeserializedStatuses(string[] layerNames, AnimatorControllerParameter[] parameters)
+		{
+			var disabledLayersSet = new HashSet<string>(disabledLayers);
+			var disabledParametersSet = new HashSet<string>(disabledParameters);
+
+			for (var i = 0; i < layerNames.Length; i++)
+				_layerStatuses[i] = new LayerSynchronizationStatus { Name = layerNames[i], Enabled = !disabledLayersSet.Contains(layerNames[i]) };
+
+			_boolStatuses.Clear();
+			_intStatuses.Clear();
+			_floatStatuses.Clear();
+			_triggerStatuses.Clear();
+			for (var i = 0; i < parameters.Length; i++)
+			{
+				var mappedParameter = new ParameterSynchronizationStatus
+				{
+					Name = parameters[i].name,
+					HashName = parameters[i].nameHash,
+					Enabled = !disabledParametersSet.Contains(parameters[i].name)
+				};
+				GetStatusesForType(parameters[i].type).Add(mappedParameter);
+			}
+		}
+
+		private List<ParameterSynchronizationStatus> GetStatusesForType(AnimatorControllerParameterType type)
+		{
+			switch (type)
+			{
+				case AnimatorControllerParameterType.Bool:
+					return _boolStatuses;
+				case AnimatorControllerParameterType.Int:
+					return _intStatuses;
+				case AnimatorControllerParameterType.Float:
+					return _floatStatuses;
+				case AnimatorControllerParameterType.Trigger:
+					return _triggerStatuses;
+				default:
+					return null;
+			}
 		}
 	}
 }

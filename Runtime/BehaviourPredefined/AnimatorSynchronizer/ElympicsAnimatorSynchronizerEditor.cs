@@ -1,4 +1,6 @@
 ﻿#if UNITY_EDITOR
+using Plugins.Elympics.Plugins.ParrelSync;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -9,89 +11,121 @@ namespace Elympics
 	internal partial class ElympicsAnimatorSynchronizerEditor : Editor
 	{
 		private ElympicsAnimatorSynchronizer _animatorSynchronizer;
-		private AnimatorController           _controller;
-		private Animator                     _animator;
+		private AnimatorController _controller;
+		private Animator _animator;
 
-		private GUIStyle summaryLabelStyle;
+		private NamedSyncStatusArrayWrapper _disabledParameters;
+		private NamedSyncStatusArrayWrapper _disabledLayers;
+
+		private bool _showLayerWeights = true;
+		private bool _showParameters   = true;
+
+		private GUIStyle _summaryLabelStyle;
 
 		private void OnEnable()
 		{
-			_animatorSynchronizer = (ElympicsAnimatorSynchronizer)this.target;
+			_animatorSynchronizer = (ElympicsAnimatorSynchronizer)target;
 			_animator = _animatorSynchronizer.GetComponent<Animator>();
 
 			if (_animator)
-				_controller = this.GetEffectiveController(_animator) as AnimatorController;
+				_controller = GetEffectiveController(_animator) as AnimatorController;
+
+			_disabledParameters = new NamedSyncStatusArrayWrapper(serializedObject.FindProperty("disabledParameters"));
+			_disabledLayers = new NamedSyncStatusArrayWrapper(serializedObject.FindProperty("disabledLayers"));
+			UpdateLayersAndParameters();
 		}
 
 		public override void OnInspectorGUI()
 		{
-			summaryLabelStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true };
+			_summaryLabelStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true };
 			base.OnInspectorGUI();
 
+			var isPlayingOrClone = EditorApplication.isPlaying || ElympicsClonesManager.IsClone();
+
 			if (_animator == null)
+			{
 				EditorGUILayout.HelpBox(Label_GameObjectNullWarning, MessageType.Warning);
+				return;
+			}
 
-			if (GetLayerCount() == 0)
-				EditorGUILayout.HelpBox(Label_NoAnimatorLayersWarning, MessageType.Warning);
+			if (_controller == null)
+			{
+				EditorGUILayout.HelpBox(Label_AnimatorControllerMissingWarning, MessageType.Warning);
+				return;
+			}
 
-			if (GetParameterCount() == 0)
-				EditorGUILayout.HelpBox(Label_NoAnimatorParametersWarning, MessageType.Warning);
+			if (EditorApplication.isPlaying)
+				EditorGUILayout.HelpBox(Label_PlayModeModificationWarning, MessageType.Warning);
+			if (ElympicsClonesManager.IsClone())
+				EditorGUILayout.HelpBox(Label_CloneModificationWarning, MessageType.Warning);
 
-			_animatorSynchronizer.PrepareStatusesToUpdate();
+			EditorGUI.BeginDisabledGroup(isPlayingOrClone);
+
+			if (GUILayout.Button(Label_RefreshButton))
+				UpdateLayersAndParameters();
+
+			EditorGUI.BeginChangeCheck();
 			DrawLayers();
 			EditorGUILayout.Space();
 			DrawParameters();
-			_animatorSynchronizer.RemoveOutdatedStatuses();
+			if (EditorGUI.EndChangeCheck())
+				serializedObject.ApplyModifiedProperties();
 
+			EditorGUI.EndDisabledGroup();
+		}
+
+		private void UpdateLayersAndParameters()
+		{
+			_disabledLayers.UpdateList(_controller.layers.Select(x => x.name));
+			_disabledParameters.UpdateList(_controller.parameters.Select(x => x.name));
 			serializedObject.ApplyModifiedProperties();
 		}
 
-
 		private void DrawLayers()
 		{
-			SerializedProperty showLayersWeight = this.serializedObject.FindProperty(ShowLayersWeightPropertyName);
-			showLayersWeight.boolValue = EditorGUILayout.Foldout(showLayersWeight.boolValue, Label_Layers);
-			EditorGUILayout.LabelField(Label_LayersTooltip, summaryLabelStyle);
+			_showLayerWeights = EditorGUILayout.Foldout(_showLayerWeights, Label_Layers);
+			EditorGUILayout.LabelField(Label_LayersTooltip, _summaryLabelStyle);
 
-			if (showLayersWeight.boolValue)
-				for (int i = 0; i < _controller.layers.Length; i++)
-					DrawLayer(_controller.layers[i], i);
-		}
+			if (_controller.layers.Length == 0)
+			{
+				EditorGUILayout.HelpBox(Label_NoAnimatorLayersWarning, MessageType.Warning);
+				return;
+			}
 
-		private void DrawLayer(AnimatorControllerLayer layer, int index)
-		{
-			EditorGUILayout.BeginVertical();
-			EditorGUILayout.BeginHorizontal();
-			var changedValue = EditorGUILayout.Toggle(new GUIContent(layer.name), _animatorSynchronizer.GetLayer(index));
-			_animatorSynchronizer.SetLayer(index, changedValue);
-			EditorGUILayout.EndHorizontal();
-			EditorGUILayout.EndVertical();
+			if (_showLayerWeights)
+				DrawNamedSyncStatusArray(_disabledLayers);
 		}
 
 		private void DrawParameters()
 		{
-			SerializedProperty showParameters = this.serializedObject.FindProperty(ShowParametersPropertyName);
-			showParameters.boolValue = EditorGUILayout.Foldout(showParameters.boolValue, Label_Parameters);
-			EditorGUILayout.LabelField(Label_ParametersTooltip, summaryLabelStyle);
+			_showParameters = EditorGUILayout.Foldout(_showParameters, Label_Parameters);
+			EditorGUILayout.LabelField(Label_ParametersTooltip, _summaryLabelStyle);
 
-			if (showParameters.boolValue)
-				for (int i = 0; i < _controller.parameters.Length; i++)
-					DrawParameter(_controller.parameters[i], i);
+			if (_controller.parameters.Length == 0)
+			{
+				EditorGUILayout.HelpBox(Label_NoAnimatorParametersWarning, MessageType.Warning);
+				return;
+			}
+
+			if (_showParameters)
+				DrawNamedSyncStatusArray(_disabledParameters);
 		}
 
-		private void DrawParameter(AnimatorControllerParameter parameter, int index)
+		private static void DrawNamedSyncStatusArray(NamedSyncStatusArrayWrapper arrayWrapper)
 		{
-			EditorGUILayout.BeginVertical();
-			EditorGUILayout.BeginHorizontal();
-			var parameterMode = _animatorSynchronizer.GetParameter(_controller.parameters[index].type, Animator.StringToHash(parameter.name));
-			var changedValue = EditorGUILayout.Toggle(new GUIContent(parameter.name), parameterMode);
-			_animatorSynchronizer.SetParameter(_controller.parameters[index].type, Animator.StringToHash(parameter.name), changedValue);
-			EditorGUILayout.EndHorizontal();
-			EditorGUILayout.EndVertical();
+			foreach (var syncStatus in arrayWrapper.Elements)
+			{
+				EditorGUILayout.BeginVertical();
+				EditorGUILayout.BeginHorizontal();
+				var enabled = EditorGUILayout.Toggle(new GUIContent(syncStatus.Name), syncStatus.Enabled);
+				if (enabled != syncStatus.Enabled)
+					arrayWrapper.SetEnabled(syncStatus.Name, enabled);
+				EditorGUILayout.EndHorizontal();
+				EditorGUILayout.EndVertical();
+			}
 		}
 
-
-		private RuntimeAnimatorController GetEffectiveController(Animator animator)
+		private static RuntimeAnimatorController GetEffectiveController(Animator animator)
 		{
 			RuntimeAnimatorController controller = animator.runtimeAnimatorController;
 			AnimatorOverrideController overrideController = controller as AnimatorOverrideController;
@@ -103,9 +137,6 @@ namespace Elympics
 
 			return controller;
 		}
-
-		private int GetLayerCount()     => _controller == null ? 0 : _controller.layers.Length;
-		private int GetParameterCount() => _controller == null ? 0 : _controller.parameters.Length;
 	}
 }
 #endif

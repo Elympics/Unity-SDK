@@ -1,12 +1,8 @@
-﻿using System;
-
-namespace Elympics
+﻿namespace Elympics
 {
-	[Serializable]
 	public class LayerSynchronizationStatus
 	{
-		public int  Index;
-		public bool Enabled;
-		public bool Updated;
+		public string Name;
+		public bool   Enabled;
 	}
 }

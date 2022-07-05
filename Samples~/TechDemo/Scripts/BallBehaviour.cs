@@ -8,8 +8,6 @@ namespace TechDemo
 
 		public void ElympicsUpdate()
 		{
-			if (!IsPredictableForMe)
-				return;
 			_ticksAlive.Value++;
 			if (_ticksAlive > 60)
 				ElympicsDestroy(gameObject);

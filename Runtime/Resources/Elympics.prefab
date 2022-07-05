@@ -57,20 +57,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 999999
+  networkId: 2000000100
   predictableFor:
-    playerIndex: -2
+    playerIndex: -3
+  isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
   stateFrequencyStages:
-  - stageDurationInTicks: 30
-    frequencyInTicks: 1
+  - stageDurationInMiliseconds: 500
+    frequencyInMiliseconds: 30
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 60
-    frequencyInTicks: 15
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 200
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 150
-    frequencyInTicks: 50
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 1000
     maxStageDurationInMiliseconds: 5000
 --- !u!1 &66269131989871612
 GameObject:
@@ -117,20 +118,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 999998
+  networkId: 2000000001
   predictableFor:
     playerIndex: -2
+  isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
   stateFrequencyStages:
-  - stageDurationInTicks: 30
-    frequencyInTicks: 1
+  - stageDurationInMiliseconds: 500
+    frequencyInMiliseconds: 30
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 60
-    frequencyInTicks: 15
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 200
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 150
-    frequencyInTicks: 50
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 1000
     maxStageDurationInMiliseconds: 5000
 --- !u!114 &2302576099153469726
 MonoBehaviour:
@@ -192,20 +194,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 999997
+  networkId: 2000000000
   predictableFor:
     playerIndex: -2
+  isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
   stateFrequencyStages:
-  - stageDurationInTicks: 30
-    frequencyInTicks: 1
+  - stageDurationInMiliseconds: 500
+    frequencyInMiliseconds: 30
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 60
-    frequencyInTicks: 15
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 200
     maxStageDurationInMiliseconds: 5000
-  - stageDurationInTicks: 150
-    frequencyInTicks: 50
+  - stageDurationInMiliseconds: 1000
+    frequencyInMiliseconds: 1000
     maxStageDurationInMiliseconds: 5000
 --- !u!114 &1662540664021179433
 MonoBehaviour:

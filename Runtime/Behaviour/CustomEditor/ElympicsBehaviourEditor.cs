@@ -17,6 +17,8 @@ namespace Elympics
 
 		private SerializedProperty _predictableToPlayers;
 
+		private SerializedProperty _isUpdatableForNonOwners;
+
 		private SerializedProperty _visibleToPlayers;
 
 		private SerializedProperty _stateUpdateFrequencyStages;
@@ -34,6 +36,7 @@ namespace Elympics
 			_useAutoId = !_forceNetworkId.boolValue;
 
 			_predictableToPlayers = serializedObject.FindProperty(nameof(_behaviour.predictableFor));
+			_isUpdatableForNonOwners = serializedObject.FindProperty(nameof(_behaviour.isUpdatableForNonOwners));
 			_visibleToPlayers = serializedObject.FindProperty(nameof(_behaviour.visibleFor));
 			_stateUpdateFrequencyStages = serializedObject.FindProperty(nameof(_behaviour.stateFrequencyStages));
 			
@@ -85,6 +88,7 @@ namespace Elympics
 		private void DrawPredictability()
 		{
 			EditorGUILayout.PropertyField(_predictableToPlayers, new GUIContent(Label_PredictableFor, Label_PredictabilityTooltip), true);
+			EditorGUILayout.PropertyField(_isUpdatableForNonOwners, new GUIContent(Label_UpdatableForNonOwners, Label_UpdatableForNonOwnersTooltip), true);
 			EditorGUILayout.LabelField(Label_PredictabilitySummary, summaryLabelStyle);
 			EditorGUILayout.Space();
 		}

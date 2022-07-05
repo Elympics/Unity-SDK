@@ -19,10 +19,11 @@ namespace Elympics
 	{
 		internal const int UndefinedNetworkId = -1;
 
-		[SerializeField] internal bool           forceNetworkId = false;
-		[SerializeField] internal int            networkId      = UndefinedNetworkId;
-		[SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
-		[SerializeField] internal ElympicsPlayer visibleFor     = ElympicsPlayer.All;
+		[SerializeField] internal bool           forceNetworkId          = false;
+		[SerializeField] internal int            networkId               = UndefinedNetworkId;
+		[SerializeField] internal ElympicsPlayer predictableFor          = ElympicsPlayer.World;
+		[SerializeField] internal bool           isUpdatableForNonOwners = false;
+		[SerializeField] internal ElympicsPlayer visibleFor              = ElympicsPlayer.All;
 		[SerializeField]
 		internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
 		{
@@ -47,6 +48,7 @@ namespace Elympics
 
 		internal ElympicsBase ElympicsBase { get; private set; }
 		public   bool         IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
+		public   bool         IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);
 		internal bool         IsVisibleTo(ElympicsPlayer player) => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
 
 		private MemoryStream      _memoryStream1;
@@ -245,6 +247,9 @@ namespace Elympics
 
 		internal void ElympicsUpdate()
 		{
+			if (!isUpdatableForNonOwners && !IsPredictableTo(ElympicsBase.Player))
+				return;
+
 			foreach (var updatable in _componentsContainer.Updatables)
 				try
                 {

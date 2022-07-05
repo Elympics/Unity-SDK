@@ -24,6 +24,10 @@
 
 		private const string Label_PredictabilityTooltip = "Choose for which players this object will be predicted. Other players will only see updates coming from the server.";
 
+		private const string Label_UpdatableForNonOwners = "Updatable for others: ";
+
+		private const string Label_UpdatableForNonOwnersTooltip = "(Advanced) Run prediction even for clients that don't own the behaviour.";
+
 		private const string Label_VisibleFor = "Visible for: ";
 
 		// TODO: link to docs

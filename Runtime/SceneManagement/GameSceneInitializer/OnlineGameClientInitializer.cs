@@ -29,7 +29,7 @@ namespace Elympics
 				{
 					// Todo use config ~pprzestrzelski 11.03.2021
 					TimeoutTime = TimeSpan.FromSeconds(10),
-					ContinuousSynchronizationMinimumInterval = TimeSpan.FromSeconds(1),
+					ContinuousSynchronizationMinimumInterval = TimeSpan.FromMilliseconds(100),
 					UnreliablePingTimeoutInMilliseconds = TimeSpan.FromSeconds(5)
 				}
 			);

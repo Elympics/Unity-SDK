@@ -27,6 +27,9 @@ namespace Elympics
 
 		/// <value>The interval in seconds at which network synchronization occurs. It is equal to <see cref="UnityEngine.Time.fixedDeltaTime"/>.</value>
 		float TickDuration { get; }
+		
+		/// <value>Number of current tick</value>>
+		long Tick { get; }
 
 		bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour);
 

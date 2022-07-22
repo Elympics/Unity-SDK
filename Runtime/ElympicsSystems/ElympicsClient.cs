@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -10,6 +9,10 @@ namespace Elympics
 {
 	public class ElympicsClient : ElympicsBase
 	{
+		private const int PrintNetworkConditionsIntervalSeconds = 5;
+		private const int MaxInputsToSendOnPredictionJump       = 5;
+		private const int MaxTicksToTickOnPredictionJump        = 3;
+
 		[SerializeField] private bool connectOnStart = true;
 
 		private         ElympicsPlayer _player;
@@ -38,6 +41,7 @@ namespace Elympics
 		private PredictionBuffer         _predictionBuffer;
 
 		private ElympicsSnapshot _lastReceivedSnapshot;
+		private DateTime?        _lastClientPrintNetworkConditions;
 
 		private List<ElympicsInput> _inputList;
 
@@ -60,7 +64,7 @@ namespace Elympics
 
 			Initialized = true;
 			if (connectOnStart)
-				StartCoroutine(ConnectAndJoinAsPlayer(_ => {}, default));
+				StartCoroutine(ConnectAndJoinAsPlayer(_ => { }, default));
 		}
 
 		private void SetupCallbacks()
@@ -104,47 +108,73 @@ namespace Elympics
 
 		protected override void DoFixedUpdate()
 		{
+			var clientTickStart = DateTime.Now;
+			LogNetworkConditionsInInterval(clientTickStart);
+
 			var receivedSnapshot = _lastReceivedSnapshot;
-			_clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick);
+			_clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, clientTickStart);
 			_predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
 
-			ProcessInput();
+			var lastDelayedInputTick = _clientTickCalculator.LastDelayedInputTick;
+			var delayedInputTick = _clientTickCalculator.DelayedInputTick;
+			var lastPredictionTick = _clientTickCalculator.LastPredictionTick;
+			var predictionTick = _clientTickCalculator.PredictionTick;
+
+			var startDelayedInputTick = Math.Max(lastDelayedInputTick + 1, delayedInputTick - MaxInputsToSendOnPredictionJump);
+			for (var i = startDelayedInputTick; i <= delayedInputTick; i++)
+				ProcessInput(i);
 
 			if (Config.Prediction)
 			{
 				ReconcileIfRequired(receivedSnapshot);
-				ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
-				ApplyPredictedInput();
+
+				var tickDiff = predictionTick - (lastPredictionTick + 1);
+				var startPredictionTick = tickDiff <= MaxTicksToTickOnPredictionJump ? lastPredictionTick + 1 : predictionTick;
+
+				for (var i = startPredictionTick; i <= predictionTick; i++)
+				{
+					Tick = i;
+					ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
+					ApplyPredictedInput();
+					elympicsBehavioursManager.ElympicsUpdate();
+					ProcessSnapshot(i);
+				}
 			}
 			else
 			{
 				ApplyFullSnapshot(receivedSnapshot);
 			}
 		}
-
-		protected override void LateFixedUpdate() => ProcessSnapshot();
-
-		private void ProcessSnapshot()
+		private void LogNetworkConditionsInInterval(DateTime clientTickStart)
 		{
-			if (Config.Prediction)
-			{
-				var snapshot = elympicsBehavioursManager.GetLocalSnapshot();
-				snapshot.Tick = _clientTickCalculator.PredictionTick;
-				_predictionBuffer.AddSnapshotToBuffer(snapshot);
-			}
+			if (!_lastClientPrintNetworkConditions.HasValue)
+				_lastClientPrintNetworkConditions = clientTickStart;
+
+			if (!((clientTickStart - _lastClientPrintNetworkConditions.Value).TotalSeconds > PrintNetworkConditionsIntervalSeconds))
+				return;
+
+			_clientTickCalculator.LogNetworkConditions();
+			_lastClientPrintNetworkConditions = clientTickStart;
 		}
 
-		private void ProcessInput()
+		private void ProcessSnapshot(long predictionTick)
+		{
+			var snapshot = elympicsBehavioursManager.GetLocalSnapshot();
+			snapshot.Tick = predictionTick;
+			_predictionBuffer.AddSnapshotToBuffer(snapshot);
+		}
+
+		private void ProcessInput(long delayedInputTick)
 		{
 			var input = elympicsBehavioursManager.OnInputForClient();
-			AddMetadataToInput(input);
+			AddMetadataToInput(input, delayedInputTick);
 			SendInput(input);
 			_predictionBuffer.AddInputToBuffer(input);
 		}
 
-		private void AddMetadataToInput(ElympicsInput input)
+		private void AddMetadataToInput(ElympicsInput input, long delayedInputTick)
 		{
-			input.Tick = (int) _clientTickCalculator.DelayedInputTick;
+			input.Tick = delayedInputTick;
 			input.Player = Player;
 		}
 
@@ -173,11 +203,12 @@ namespace Elympics
 			    Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
 				return;
 
-			Debug.LogWarning($"[Player {Player}] Reconciliation on {receivedSnapshot.Tick}");
+			Debug.LogWarning($"[Elympics] >>> Reconciliation on {receivedSnapshot.Tick} >>>");
 
 			elympicsBehavioursManager.OnPreReconcile();
 
 			// Debug.Log($"[{_player}] Applying snapshot {_lastReceivedSnapshot.Tick} with {JsonConvert.SerializeObject(_lastReceivedSnapshot, Formatting.Indented)}");
+			Tick = receivedSnapshot.Tick;
 			elympicsBehavioursManager.ApplySnapshot(receivedSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
 			elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
 
@@ -187,6 +218,7 @@ namespace Elympics
 
 			for (var resimulationTick = receivedSnapshot.Tick + 1; resimulationTick < _clientTickCalculator.PredictionTick; resimulationTick++)
 			{
+				Tick = resimulationTick;
 				if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
 					elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
 
@@ -204,7 +236,7 @@ namespace Elympics
 
 			elympicsBehavioursManager.OnPostReconcile();
 
-			Debug.LogWarning($"[Player {Player}] Reconciliation on {receivedSnapshot.Tick} finished");
+			Debug.LogWarning($"[Elympics] <<< Reconciliation on {receivedSnapshot.Tick} finished <<<");
 		}
 
 		private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot) => elympicsBehavioursManager.ApplySnapshot(receivedSnapshot);

@@ -1,4 +1,6 @@
-﻿namespace Elympics
+﻿using UnityEngine;
+
+namespace Elympics
 {
 	internal abstract class GameClientInitializer : GameSceneInitializer
 	{
@@ -6,6 +8,9 @@
 
 		public override void Initialize(ElympicsClient client, ElympicsBot bot, ElympicsServer server, ElympicsGameConfig elympicsGameConfig)
 		{
+			Time.fixedDeltaTime = elympicsGameConfig.TickDuration;
+			Time.maximumDeltaTime = elympicsGameConfig.TickDuration * 2;
+
 			_client = client;
 			bot.Destroy();
 			server.Destroy();

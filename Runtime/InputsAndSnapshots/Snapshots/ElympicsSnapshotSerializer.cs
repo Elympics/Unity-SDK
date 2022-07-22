@@ -1,4 +1,5 @@
 using System.IO;
+using MatchTcpLibrary.Ntp;
 
 namespace Elympics
 {
@@ -19,6 +20,9 @@ namespace Elympics
 			bw.Write(elympicsSnapshot.Tick);
 			elympicsSnapshot.Factory.Serialize(bw);
 			bw.Write(elympicsSnapshot.Data);
+			var createdAt = new byte[8];
+			NtpUtils.DateTimeToNtpDataTimeStamp(elympicsSnapshot.TickStartUtc, createdAt);
+			bw.Write(createdAt);
 		}
 
 		internal static ElympicsSnapshot Deserialize(byte[] data)
@@ -40,6 +44,8 @@ namespace Elympics
 			elympicsSnapshot.Tick = br.ReadInt64();
 			elympicsSnapshot.Factory = FactoryStateSerializer.Deserialize(br);
 			elympicsSnapshot.Data = br.ReadListWithKvpIntToByteArray();
+			var createdAt = br.ReadBytes(8);
+			elympicsSnapshot.TickStartUtc = NtpUtils.NtpDataTimeStampToDateTime(createdAt);
 		}
 	}
 }

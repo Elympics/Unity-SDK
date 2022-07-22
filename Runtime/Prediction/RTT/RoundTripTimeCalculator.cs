@@ -1,21 +1,21 @@
 using System;
 using MatchTcpClients.Synchronizer;
-using UnityEngine;
 
 namespace Elympics
 {
 	public class RoundTripTimeCalculator : IRoundTripTimeCalculator
 	{
-		public TimeSpan LastRoundTripTime { get; private set; }
+		public TimeSpan LastRoundTripTime    { get; private set; }
+		public TimeSpan LastLocalClockOffset { get; private set; }
 
+		private const    int        MaxRttSamples  = 10;
+		private readonly RunningAvg _rttRunningAvg = new RunningAvg(MaxRttSamples);
 
-		private          long   _lastRtt;
-		private          bool   _lastRttJitterIncrease;
-		private          bool   _lastRttJitterDecrease;
-		private const    double MaxJitterIncrease = 1.5;
-		private const    double MaxJitterDecrease = 1.0 / MaxJitterIncrease;
+		private const    int           MaxLcoSamples     = 10;
+		private readonly RunningMedian _lcoRunningMedian = new RunningMedian(MaxLcoSamples);
 
-		public TimeSpan AverageRoundTripTime { get; private set; }
+		public TimeSpan AverageRoundTripTime    { get; private set; }
+		public TimeSpan AverageLocalClockOffset { get; private set; }
 
 		public RoundTripTimeCalculator(IMatchClient matchClient, IMatchConnectClient matchConnectClient)
 		{
@@ -25,54 +25,26 @@ namespace Elympics
 
 		public void OnSynchronized(TimeSynchronizationData data)
 		{
-			var rtt = data.UnreliableReceivedPingLately ? data.UnreliableRoundTripDelay : data.RoundTripDelay;
-			LastRoundTripTime = TimeSpan.FromTicks(rtt.Value.Ticks);
-			CalculateNewAverageRoundTripTime(rtt.Value.Ticks);
+			var rtt = data.UnreliableReceivedPingLately ? data.UnreliableRoundTripDelay.Value : data.RoundTripDelay;
+			LastRoundTripTime = TimeSpan.FromTicks(rtt.Ticks);
+			CalculateNewAverageRoundTripTime(rtt);
+			var lco = data.UnreliableReceivedPingLately ? data.UnreliableLocalClockOffset.Value : data.LocalClockOffset;
+			LastLocalClockOffset = TimeSpan.FromTicks(lco.Ticks);
+			CalculateNewAverageLocalClockOffset(lco);
 		}
 
-		private void CalculateNewAverageRoundTripTime(long rtt)
+		private void CalculateNewAverageRoundTripTime(TimeSpan rtt)
 		{
-			if (_lastRtt == 0)
-			{
-				_lastRtt = rtt;
-				return;
-			}
+			// Log-normal distribution
+			var rttLn = Math.Log(rtt.TotalMilliseconds);
+			var newRttAvg = _rttRunningAvg.AddAndGetAvg(rttLn);
+			AverageRoundTripTime = TimeSpan.FromMilliseconds(Math.Exp(newRttAvg));
+		}
 
-			var jitterIncrease = false;
-			var jitterDecrease = false;
-			var div = (double) rtt / _lastRtt;
-			if (div > MaxJitterIncrease)
-				jitterIncrease = true;
-			if (div < MaxJitterDecrease)
-				jitterDecrease = true;
-
-			// Constant change
-			if (jitterIncrease && _lastRttJitterIncrease || jitterDecrease && _lastRttJitterDecrease)
-			{
-				// Update rtt to jittered
-				_lastRtt = rtt;
-				AverageRoundTripTime = TimeSpan.FromTicks(rtt);
-				_lastRttJitterDecrease = false;
-				_lastRttJitterIncrease = false;
-			}
-			// Not constant change (last decreased, now increased etc.) or jitter just appeared - hold rtt
-			else if (jitterIncrease || jitterDecrease)
-			{
-				_lastRttJitterIncrease = jitterIncrease;
-				_lastRttJitterDecrease = jitterDecrease;
-			}
-			// No jitter, slowly change average rtt
-			else
-			{
-				_lastRttJitterIncrease = false;
-				_lastRttJitterDecrease = false;
-
-				var currentAvg = AverageRoundTripTime.Ticks;
-				currentAvg *= 2;
-				currentAvg += rtt;
-				currentAvg /= 3;
-				AverageRoundTripTime = TimeSpan.FromTicks(currentAvg);
-			}
+		private void CalculateNewAverageLocalClockOffset(TimeSpan lcoTicks)
+		{
+			var newLco = _lcoRunningMedian.AddAndGetMedian(lcoTicks.TotalMilliseconds);
+			AverageLocalClockOffset = TimeSpan.FromMilliseconds(newLco);
 		}
 	}
 }

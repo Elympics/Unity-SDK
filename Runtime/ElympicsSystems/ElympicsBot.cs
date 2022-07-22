@@ -41,6 +41,7 @@ namespace Elympics
 			var snapshot = _lastReceivedSnapshot;
 			elympicsBehavioursManager.ApplySnapshot(snapshot);
 			ProcessInput(snapshot.Tick);
+			elympicsBehavioursManager.ElympicsUpdate();
 		}
 
 		private void ProcessInput(long snapshotTick)

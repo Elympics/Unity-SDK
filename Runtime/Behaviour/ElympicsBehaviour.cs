@@ -214,17 +214,18 @@ namespace Elympics
 			_memoryStream2.Write(data2, 0, data2.Length);
 			_memoryStream2.Seek(0, SeekOrigin.Begin);
 
-			bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
+			// bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
 			// todo use in future for debug mode ~pprzestrzelski 06.06.2022
-			// var areEqual = true;
-			// foreach (var backingField in _backingFields)
-			// {
-			// 	if (!backingField.Equals(_binaryReader1, _binaryReader2))
-			// 	{
-			// 		Debug.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
-			// 		areEqual = false;
-			// 	}
-			// }
+			var areEqual = true;
+			foreach (var backingField in _backingFields)
+			{
+				if (!backingField.Equals(_binaryReader1, _binaryReader2))
+				{
+					if (!ElympicsBase.IsServer)
+						Debug.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
+					areEqual = false;
+				}
+			}
 			_memoryStream1.Seek(0, SeekOrigin.Begin);
 			_memoryStream2.Seek(0, SeekOrigin.Begin);
 			return areEqual;

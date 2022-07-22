@@ -27,8 +27,8 @@ namespace Elympics
 		private ElympicsPlayer[]  _playersOfBots;
 		private ElympicsPlayer[]  _playersOfClients;
 
-		private bool _initialized;
-		private int  _tick;
+		private bool     _initialized;
+		private DateTime _tickStartUtc;
 
 		private List<ElympicsInput> _inputList;
 
@@ -39,7 +39,7 @@ namespace Elympics
 			_handlingClientsOverride = handlingClientsOverride;
 			base.InitializeInternal(elympicsGameConfig);
 			_gameEngineAdapter = gameEngineAdapter;
-			_tick = 0;
+			Tick = 0;
 			_inputList = new List<ElympicsInput>();
 			elympicsBehavioursManager.InitializeInternal(this);
 			SetupCallbacks();
@@ -88,6 +88,8 @@ namespace Elympics
 
 		protected override void DoFixedUpdate()
 		{
+			_tickStartUtc = DateTime.UtcNow;
+
 			if (HandlingBotsInServer)
 				GatherInputsFromServerBotsOrClient(_playersOfBots, SwitchBehaviourToBot, BotInputGetter);
 			if (HandlingClientsInServer)
@@ -95,9 +97,10 @@ namespace Elympics
 
 			_inputList.Clear();
 			foreach (var inputBufferPair in _gameEngineAdapter.PlayerInputBuffers)
-				if (inputBufferPair.Value.TryGetDataForTick(_tick, out var input))
+				if (inputBufferPair.Value.TryGetDataForTick(Tick, out var input))
 					_inputList.Add(input);
 			elympicsBehavioursManager.SetCurrentInputs(_inputList);
+			elympicsBehavioursManager.ElympicsUpdate();
 		}
 
 		private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForClient();
@@ -109,7 +112,7 @@ namespace Elympics
 			{
 				switchElympicsBaseBehaviour(playerOfBotOrClient);
 				var input = onInput(elympicsBehavioursManager);
-				input.Tick = _tick;
+				input.Tick = Tick;
 				input.Player = playerOfBotOrClient;
 				_gameEngineAdapter.AddBotsOrClientsInServerInputToBuffer(input, playerOfBotOrClient);
 			}
@@ -119,26 +122,29 @@ namespace Elympics
 
 		protected override void LateFixedUpdate()
 		{
-			if (ShouldSendSnapshot(_tick))
+			if (ShouldSendSnapshot())
 			{
 				// gather state info from scene and send to clients
 				var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_gameEngineAdapter.Players);
-				AddMetadataToSnapshots(snapshots, _tick);
+				AddMetadataToSnapshots(snapshots, _tickStartUtc);
 				_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
 			}
 
-			_tick++;
+			Tick++;
 
 			foreach (var (_, inputBuffer) in _gameEngineAdapter.PlayerInputBuffers)
-				inputBuffer.UpdateMinTick(_tick);
+				inputBuffer.UpdateMinTick(Tick);
 		}
 
-		private bool ShouldSendSnapshot(int tick) => tick % Config.SnapshotSendingPeriodInTicks == 0;
+		private bool ShouldSendSnapshot() => Tick % Config.SnapshotSendingPeriodInTicks == 0;
 
-		private void AddMetadataToSnapshots(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots, int tick)
+		private void AddMetadataToSnapshots(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots, DateTime tickStart)
 		{
 			foreach (var (_, snapshot) in snapshots)
-				snapshot.Tick = tick;
+			{
+				snapshot.TickStartUtc = tickStart;
+				snapshot.Tick = Tick;
+			}
 		}
 
 		private void SwitchBehaviourToServer()

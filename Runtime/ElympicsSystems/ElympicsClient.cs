@@ -9,11 +9,13 @@ namespace Elympics
 {
 	public class ElympicsClient : ElympicsBase
 	{
-		private const int PrintNetworkConditionsIntervalSeconds = 5;
 		private const int MaxInputsToSendOnPredictionJump       = 5;
 		private const int MaxTicksToTickOnPredictionJump        = 3;
 
 		[SerializeField] private bool connectOnStart = true;
+
+		[SerializeField, Range(1, 60), Tooltip("In seconds")]
+		private int networkConditionsLogInterval = 5;
 
 		private         ElympicsPlayer _player;
 		public override ElympicsPlayer Player   => _player;
@@ -109,7 +111,8 @@ namespace Elympics
 		protected override void DoFixedUpdate()
 		{
 			var clientTickStart = DateTime.Now;
-			LogNetworkConditionsInInterval(clientTickStart);
+			if (Config.DetailedNetworkLog)
+				LogNetworkConditionsInInterval(clientTickStart);
 
 			var receivedSnapshot = _lastReceivedSnapshot;
 			_clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, clientTickStart);
@@ -150,7 +153,7 @@ namespace Elympics
 			if (!_lastClientPrintNetworkConditions.HasValue)
 				_lastClientPrintNetworkConditions = clientTickStart;
 
-			if (!((clientTickStart - _lastClientPrintNetworkConditions.Value).TotalSeconds > PrintNetworkConditionsIntervalSeconds))
+			if (!((clientTickStart - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
 				return;
 
 			_clientTickCalculator.LogNetworkConditions();

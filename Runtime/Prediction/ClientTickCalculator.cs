@@ -99,7 +99,8 @@ namespace Elympics
 				{
 					ForceUpdateNextTick(calculatedNextTick);
 					ResetTicksDiffSum();
-					LogForceUpdatesAndPrintCalculateNetworkConditionsChange();
+					if (_config.DetailedNetworkLog)
+						LogForceUpdatesAndPrintCalculateNetworkConditionsChange();
 					return;
 				}
 			}

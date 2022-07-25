@@ -40,6 +40,7 @@ namespace Elympics
 		private SerializedProperty _prediction;
 		private SerializedProperty _predictionLimitInTicks;
 
+		private SerializedProperty _detailedNetworkLog;
 		private SerializedProperty _mode;
 		private SerializedProperty _halfRemoteMode;
 		private SerializedProperty _useWebInHalfRemote;
@@ -84,6 +85,7 @@ namespace Elympics
 			_prediction = serializedObject.FindProperty("prediction");
 			_predictionLimitInTicks = serializedObject.FindProperty("predictionLimitInTicks");
 
+			_detailedNetworkLog = serializedObject.FindProperty("detailedNetworkLog");
 			_mode = serializedObject.FindProperty("mode");
 			_halfRemoteMode = serializedObject.FindProperty("halfRemoteMode");
 			_useWebInHalfRemote = serializedObject.FindProperty("useWebInHalfRemote");
@@ -152,6 +154,8 @@ namespace Elympics
 			EditorGUILayout.Separator();
 
 			BeginSection("Development");
+			EditorGUILayout.PropertyField(_detailedNetworkLog, new GUIContent("Detailed network log", "The log contains errors and warnings to differentiate between slight and serious throttle"));
+
 			EditorGUILayout.PropertyField(_mode, new GUIContent("Mode"));
 			switch ((ElympicsGameConfig.GameplaySceneDebugModeEnum) _mode.enumValueIndex)
 			{
@@ -273,13 +277,9 @@ namespace Elympics
 
 					EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
 					if (ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue))
-					{
 						EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Web port of server"));
-					}
 					else
-					{
 						EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("TCP port of server"));
-					}
 
 					if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
 						EditorGUI.BeginDisabledGroup(true);

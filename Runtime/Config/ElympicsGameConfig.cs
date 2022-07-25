@@ -31,6 +31,8 @@ namespace Elympics
 		[SerializeField] private bool prediction                   = true;
 		[SerializeField] private int  predictionLimitInTicks       = 8;
 
+		[SerializeField] private bool detailedNetworkLog = false;
+
 		[SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.LocalPlayerAndBots;
 
 		[SerializeField] private HalfRemoteModeEnum    halfRemoteMode               = HalfRemoteModeEnum.Server;
@@ -63,6 +65,7 @@ namespace Elympics
 		public float TickDuration                 => 1.0f / ticksPerSecond;
 		public int   InputLagTicks                => inputLagTicks;
 
+		public   bool                       DetailedNetworkLog           => detailedNetworkLog;
 		internal GameplaySceneDebugModeEnum GameplaySceneDebugMode       => mode;
 		internal HalfRemoteModeEnum         HalfRemoteMode               => GetHalfRemoteMode(halfRemoteMode);
 		public   bool                       UseWebInHalfRemote           => GetUseWebInHalfRemote(useWebInHalfRemote);

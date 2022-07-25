@@ -40,14 +40,16 @@ namespace Elympics
 				return;
 
 			_elympicsUpdateStopwatch.Stop();
-			LogFixedUpdateThrottle();
+			if (Config.DetailedNetworkLog)
+				LogFixedUpdateThrottle();
 			_elympicsUpdateStopwatch.Reset();
 			_elympicsUpdateStopwatch.Start();
 
 			DoFixedUpdate();
 
 			_elympicsUpdateStopwatch.Stop();
-			LogElympicsTickThrottle();
+			if (Config.DetailedNetworkLog)
+				LogElympicsTickThrottle();
 			_elympicsUpdateStopwatch.Start();
 
 			elympicsLateFixedUpdate.LateFixedUpdateAction = LateFixedUpdate;

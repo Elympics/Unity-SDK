@@ -36,7 +36,11 @@ namespace Elympics
 		private ElympicsBool       _isKinematic;
 
 		private Rigidbody _rigidbody;
+#if UNITY_EDITOR
+		private Rigidbody Rigidbody => _rigidbody ? _rigidbody : _rigidbody = GetComponent<Rigidbody>();
+#else
 		private Rigidbody Rigidbody => _rigidbody ?? (_rigidbody = GetComponent<Rigidbody>());
+#endif
 
 		public void Initialize()
 		{

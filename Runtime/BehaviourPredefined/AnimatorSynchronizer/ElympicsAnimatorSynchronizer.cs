@@ -26,7 +26,11 @@ namespace Elympics
 		private readonly List<int> _triggerCache = new List<int>();
 
 		private Animator _animator;
+#if UNITY_EDITOR
+		private Animator Animator => _animator ? _animator : _animator = GetComponent<Animator>();
+#else
 		private Animator Animator => _animator ?? (_animator = GetComponent<Animator>());
+#endif
 
 		private bool _initialized;
 

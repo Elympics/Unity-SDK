@@ -41,7 +41,11 @@ namespace Elympics
 		private bool SynchronizeMass => _mass.EnabledSynchronization && !Rigidbody2D.useAutoMass;
 
 		private Rigidbody2D _rigidbody2D;
+#if UNITY_EDITOR
+		private Rigidbody2D Rigidbody2D => _rigidbody2D ? _rigidbody2D : _rigidbody2D = GetComponent<Rigidbody2D>();
+#else
 		private Rigidbody2D Rigidbody2D => _rigidbody2D ?? (_rigidbody2D = GetComponent<Rigidbody2D>());
+#endif
 
 		public void Initialize()
 		{

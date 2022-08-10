@@ -4,7 +4,7 @@ using Elympics;
 
 namespace GameLogic.NewTicTacToe
 {
-	public class GameStateObject : MonoBehaviour, IObservable
+	public class GameStateObject : ElympicsMonoBehaviour
 	{
 		[SerializeField] private GameObject            gameOverObject        = null;
 		[SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher = null;

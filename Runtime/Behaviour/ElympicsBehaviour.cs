@@ -74,7 +74,7 @@ namespace Elympics
 		/// <seealso cref="IInputHandler.OnInputForBot"/>
 		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader)
 		{
-			if (!ElympicsBase.elympicsBehavioursManager.IsInElympicsUpdate)
+			if (ElympicsBase.elympicsBehavioursManager.CurrentlyRunCallback != ElympicsBehavioursManager.ElympicsCallback.ElympicsUpdate)
 				throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
 			if (!HasAnyInput)
 				throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");

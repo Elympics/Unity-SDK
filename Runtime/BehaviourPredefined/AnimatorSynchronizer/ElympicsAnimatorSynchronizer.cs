@@ -51,12 +51,12 @@ namespace Elympics
 
 		private void Update()
 		{
-			for (int i = 0; i < _triggerStatuses.Count; i++)
-			{
-				var triggerKey = _triggerStatuses[i];
+			if (_triggerStatuses == null)
+				return;
+
+			foreach (var triggerKey in _triggerStatuses)
 				if (Animator.GetBool(triggerKey.HashName) && !_triggerCache.Contains(triggerKey.HashName))
 					_triggerCache.Add(triggerKey.HashName);
-			}
 		}
 
 		public void OnPreStateSerialize()

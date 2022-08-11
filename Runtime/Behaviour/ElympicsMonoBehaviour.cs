@@ -88,11 +88,11 @@ namespace Elympics
 			GetFactory().DestroyInstance(createdGameObject);
 		}
 
-
 		private void ThrowIfCalledInWrongContext([CallerMemberName] string caller = "")
 		{
-			if (!ElympicsBase.elympicsBehavioursManager.IsInElympicsUpdate)
-				throw new ElympicsException($"You cannot use {caller} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
+			if (ElympicsBehaviour.CurrentCallContext != ElympicsBehaviour.CallContext.ElympicsUpdate
+					&& ElympicsBehaviour.CurrentCallContext != ElympicsBehaviour.CallContext.Initialize)
+				throw new ElympicsException($"You cannot use {caller} outside of {nameof(IUpdatable.ElympicsUpdate)} or {nameof(IInitializable.Initialize)}");
 		}
 
 		private ElympicsFactory GetFactory() => _factory ?? (_factory = FindObjectOfType<ElympicsFactory>());

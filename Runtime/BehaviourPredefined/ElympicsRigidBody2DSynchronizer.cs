@@ -43,13 +43,8 @@ namespace Elympics
 		private Rigidbody2D _rigidbody2D;
 		private Rigidbody2D Rigidbody2D => _rigidbody2D ?? (_rigidbody2D = GetComponent<Rigidbody2D>());
 
-		private bool _initialized;
-
 		public void Initialize()
 		{
-			if (_initialized)
-				return;
-
 			_position = new ElympicsVector2(default, positionConfig);
 			_rotation = new ElympicsFloat(default, rotationConfig);
 			_velocity = new ElympicsVector2(default, velocityConfig);
@@ -60,8 +55,6 @@ namespace Elympics
 			_mass = new ElympicsFloat(default, massConfig);
 			_gravityScale = new ElympicsFloat(default, gravityScaleConfig);
 			_isKinematic = new ElympicsBool(default, isKinematicConfig);
-
-			_initialized = true;
 		}
 
 		public void OnPostStateDeserialize()

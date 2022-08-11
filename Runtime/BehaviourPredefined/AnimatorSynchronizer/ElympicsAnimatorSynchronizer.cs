@@ -28,6 +28,8 @@ namespace Elympics
 		private Animator _animator;
 		private Animator Animator => _animator ?? (_animator = GetComponent<Animator>());
 
+		private bool _initialized;
+
 		public void Initialize()
 		{
 			var parameters = Animator.parameters;
@@ -47,11 +49,13 @@ namespace Elympics
 			_floatParams = new ElympicsArray<ElympicsFloat>(_floatStatuses.Count, () => new ElympicsFloat());
 			_triggerParams = new ElympicsArray<ElympicsBool>(_triggerStatuses.Count, () => new ElympicsBool());
 			_layerWeights = new ElympicsArray<ElympicsFloat>(_layerStatuses.Length, () => new ElympicsFloat());
+
+			_initialized = true;
 		}
 
 		private void Update()
 		{
-			if (_triggerStatuses == null)
+			if (!_initialized)
 				return;
 
 			foreach (var triggerKey in _triggerStatuses)
@@ -61,19 +65,19 @@ namespace Elympics
 
 		public void OnPreStateSerialize()
 		{
-			for (int i = 0; i < _layerStatuses.Length; i++)
+			for (var i = 0; i < _layerStatuses.Length; i++)
 				_layerWeights.Values[i].Value = Animator.GetLayerWeight(i);
 
-			for (int i = 0; i < _boolStatuses.Count; i++)
+			for (var i = 0; i < _boolStatuses.Count; i++)
 				_boolParams.Values[i].Value = Animator.GetBool(_boolStatuses[i].HashName);
 
-			for (int i = 0; i < _floatStatuses.Count; i++)
+			for (var i = 0; i < _floatStatuses.Count; i++)
 				_floatParams.Values[i].Value = Animator.GetFloat(_floatStatuses[i].HashName);
 
-			for (int i = 0; i < _intStatuses.Count; i++)
+			for (var i = 0; i < _intStatuses.Count; i++)
 				_intParams.Values[i].Value = Animator.GetInteger(_intStatuses[i].HashName);
 
-			for (int i = 0; i < _triggerStatuses.Count; i++)
+			for (var i = 0; i < _triggerStatuses.Count; i++)
 				_triggerParams.Values[i].Value = _triggerCache.Contains(_triggerStatuses[i].HashName);
 
 			_triggerCache.Clear();
@@ -81,23 +85,23 @@ namespace Elympics
 
 		public void OnPostStateDeserialize()
 		{
-			for (int i = 0; i < _layerStatuses.Length; i++)
+			for (var i = 0; i < _layerStatuses.Length; i++)
 				if (_layerStatuses[i].Enabled)
 					Animator.SetLayerWeight(i, _layerWeights.Values[i]);
 
-			for (int i = 0; i < _boolStatuses.Count; i++)
+			for (var i = 0; i < _boolStatuses.Count; i++)
 				if (_boolStatuses[i].Enabled)
 					Animator.SetBool(_boolStatuses[i].HashName, _boolParams.Values[i].Value);
 
-			for (int i = 0; i < _floatStatuses.Count; i++)
+			for (var i = 0; i < _floatStatuses.Count; i++)
 				if (_floatStatuses[i].Enabled)
 					Animator.SetFloat(_floatStatuses[i].HashName, _floatParams.Values[i].Value);
 
-			for (int i = 0; i < _intStatuses.Count; i++)
+			for (var i = 0; i < _intStatuses.Count; i++)
 				if (_intStatuses[i].Enabled)
 					Animator.SetInteger(_intStatuses[i].HashName, _intParams.Values[i].Value);
 
-			for (int i = 0; i < _triggerStatuses.Count; i++)
+			for (var i = 0; i < _triggerStatuses.Count; i++)
 				if (_triggerParams.Values[i].Value && _triggerStatuses[i].Enabled)
 					Animator.SetTrigger(_triggerStatuses[i].HashName);
 		}
@@ -114,15 +118,15 @@ namespace Elympics
 			_intStatuses.Clear();
 			_floatStatuses.Clear();
 			_triggerStatuses.Clear();
-			for (var i = 0; i < parameters.Length; i++)
+			foreach (var parameter in parameters)
 			{
 				var mappedParameter = new ParameterSynchronizationStatus
 				{
-					Name = parameters[i].name,
-					HashName = parameters[i].nameHash,
-					Enabled = !disabledParametersSet.Contains(parameters[i].name)
+					Name = parameter.name,
+					HashName = parameter.nameHash,
+					Enabled = !disabledParametersSet.Contains(parameter.name)
 				};
-				GetStatusesForType(parameters[i].type).Add(mappedParameter);
+				GetStatusesForType(parameter.type).Add(mappedParameter);
 			}
 		}
 

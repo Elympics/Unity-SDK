@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Elympics
 {
 	[RequireComponent(typeof(ElympicsBehaviour))]
-	public class ElympicsMonoBehaviour : MonoBehaviour
+	public class ElympicsMonoBehaviour : MonoBehaviour, IObservable
 	{
 		private ElympicsBehaviour _elympicsBehaviour;
 		private ElympicsBase      _elympics;

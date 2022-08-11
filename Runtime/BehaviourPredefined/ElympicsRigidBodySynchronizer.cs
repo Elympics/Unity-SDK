@@ -22,6 +22,8 @@ namespace Elympics
 		private ElympicsVarConfig angularDragConfig = new ElympicsVarConfig(false);
 		[SerializeField, ConfigForVar(nameof(_useGravity))]
 		private ElympicsVarConfig useGravityConfig = new ElympicsVarConfig(false, 0f);
+		[SerializeField, ConfigForVar(nameof(_isKinematic))]
+		private ElympicsVarConfig isKinematicConfig = new ElympicsVarConfig(false, 0f);
 
 		private ElympicsVector3    _position;
 		private ElympicsQuaternion _rotation;
@@ -31,6 +33,7 @@ namespace Elympics
 		private ElympicsFloat      _drag;
 		private ElympicsFloat      _angularDrag;
 		private ElympicsBool       _useGravity;
+		private ElympicsBool       _isKinematic;
 
 		private Rigidbody _rigidbody;
 		private Rigidbody Rigidbody => _rigidbody ?? (_rigidbody = GetComponent<Rigidbody>());
@@ -50,6 +53,7 @@ namespace Elympics
 			_drag = new ElympicsFloat(default, dragConfig);
 			_angularDrag = new ElympicsFloat(default, angularDragConfig);
 			_useGravity = new ElympicsBool(default, useGravityConfig);
+			_isKinematic = new ElympicsBool(default, isKinematicConfig);
 
 			_initialized = true;
 		}
@@ -72,6 +76,8 @@ namespace Elympics
 				Rigidbody.angularDrag = _angularDrag;
 			if (_useGravity.EnabledSynchronization)
 				Rigidbody.useGravity = _useGravity;
+			if (_isKinematic.EnabledSynchronization)
+				Rigidbody.isKinematic = _isKinematic;
 		}
 
 		public void OnPreStateSerialize()
@@ -92,6 +98,8 @@ namespace Elympics
 				_angularDrag.Value = Rigidbody.angularDrag;
 			if (_useGravity.EnabledSynchronization)
 				_useGravity.Value = Rigidbody.useGravity;
+			if (_isKinematic.EnabledSynchronization)
+				_isKinematic.Value = Rigidbody.isKinematic;
 		}
 	}
 }

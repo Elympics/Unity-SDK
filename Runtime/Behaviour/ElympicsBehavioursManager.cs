@@ -11,8 +11,6 @@ namespace Elympics
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
 		[SerializeField] private ElympicsFactory                          factory;
 
-		internal ElympicsCallback CurrentlyRunCallback { get; private set; } = ElympicsCallback.None;
-
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
 		private          ElympicsBase                _elympics;
@@ -53,9 +51,7 @@ namespace Elympics
 
 		private void InitializeElympicsBehaviour(ElympicsBehaviour elympicsBehaviour)
 		{
-			CurrentlyRunCallback = ElympicsCallback.Initialize;
 			elympicsBehaviour.InitializeInternal(_elympics);
-			CurrentlyRunCallback = ElympicsCallback.None;
 		}
 
 		internal void AddNewBehaviour(ElympicsBehaviour elympicsBehaviour)
@@ -269,13 +265,11 @@ namespace Elympics
 
 		internal void ElympicsUpdate()
 		{
-			CurrentlyRunCallback = ElympicsCallback.ElympicsUpdate;
 			// copy behaviours to list before iterating because the collection might be modified by Instantiate/Destroy
 			_bufferForIteration.Clear();
 			_bufferForIteration.AddRange(_elympicsBehaviours.Behaviours.Values);
 			foreach (var elympicsBehaviour in _bufferForIteration)
 					elympicsBehaviour.ElympicsUpdate();
-			CurrentlyRunCallback = ElympicsCallback.None;
 		}
 
 		internal void OnPreReconcile()
@@ -426,13 +420,6 @@ namespace Elympics
 			Predictable,
 			Unpredictable,
 			Both
-		}
-
-		internal enum ElympicsCallback
-		{
-			None,
-			ElympicsUpdate,
-			Initialize
 		}
 	}
 }

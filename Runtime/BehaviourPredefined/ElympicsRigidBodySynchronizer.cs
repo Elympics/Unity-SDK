@@ -35,15 +35,12 @@ namespace Elympics
 		private ElympicsBool       _useGravity;
 		private ElympicsBool       _isKinematic;
 
-		private Rigidbody _rigidbody;
-#if UNITY_EDITOR
-		private Rigidbody Rigidbody => _rigidbody ? _rigidbody : _rigidbody = GetComponent<Rigidbody>();
-#else
-		private Rigidbody Rigidbody => _rigidbody ?? (_rigidbody = GetComponent<Rigidbody>());
-#endif
+		private Rigidbody Rigidbody { get; set; }
 
 		public void Initialize()
 		{
+			Rigidbody = GetComponent<Rigidbody>();
+
 			_position = new ElympicsVector3(default, positionConfig);
 			_rotation = new ElympicsQuaternion(default, rotationConfig);
 			_velocity = new ElympicsVector3(default, velocityConfig);

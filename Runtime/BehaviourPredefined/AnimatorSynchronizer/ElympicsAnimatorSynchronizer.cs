@@ -25,13 +25,14 @@ namespace Elympics
 
 		private readonly List<int> _triggerCache = new List<int>();
 
-		private Animator _animator;
-		private Animator Animator => _animator ?? (_animator = GetComponent<Animator>());
+		private Animator Animator { get; set; }
 
 		private bool _initialized;
 
 		public void Initialize()
 		{
+			Animator = GetComponent<Animator>();
+
 			var parameters = Animator.parameters;
 			var layerNames = new string[Animator.layerCount];
 			for (var i = 0; i < layerNames.Length; i++)

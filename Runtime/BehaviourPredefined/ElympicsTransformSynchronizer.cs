@@ -16,18 +16,11 @@ namespace Elympics
 		private ElympicsVector3    _localScale;
 		private ElympicsQuaternion _localRotation;
 
-		private bool _initialized;
-
 		public void Initialize()
 		{
-			if (_initialized)
-				return;
-
 			_localPosition = new ElympicsVector3(default, localPositionConfig);
 			_localScale = new ElympicsVector3(default, localScaleConfig);
 			_localRotation = new ElympicsQuaternion(default, localRotationConfig);
-
-			_initialized = true;
 		}
 
 		public void OnPostStateDeserialize()

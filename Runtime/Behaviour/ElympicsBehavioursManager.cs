@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -11,8 +10,6 @@ namespace Elympics
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
 		[SerializeField] private ElympicsFactory                          factory;
-		
-		internal bool IsInElympicsUpdate { get; private set; }
 
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
@@ -268,13 +265,11 @@ namespace Elympics
 
 		internal void ElympicsUpdate()
 		{
-			IsInElympicsUpdate = true;
 			// copy behaviours to list before iterating because the collection might be modified by Instantiate/Destroy
 			_bufferForIteration.Clear();
 			_bufferForIteration.AddRange(_elympicsBehaviours.Behaviours.Values);
 			foreach (var elympicsBehaviour in _bufferForIteration)
 					elympicsBehaviour.ElympicsUpdate();
-			IsInElympicsUpdate = false;
 		}
 
 		internal void OnPreReconcile()

@@ -24,6 +24,8 @@ namespace Elympics
 		private ElympicsVarConfig massConfig = new ElympicsVarConfig(false);
 		[SerializeField, ConfigForVar(nameof(_gravityScale))]
 		private ElympicsVarConfig gravityScaleConfig = new ElympicsVarConfig(false);
+		[SerializeField, ConfigForVar(nameof(_isKinematic))]
+		private ElympicsVarConfig isKinematicConfig = new ElympicsVarConfig(false, 0f);
 
 		private ElympicsVector2 _position;
 		private ElympicsFloat   _rotation;
@@ -34,18 +36,15 @@ namespace Elympics
 		private ElympicsFloat   _inertia;
 		private ElympicsFloat   _mass;
 		private ElympicsFloat   _gravityScale;
+		private ElympicsBool   _isKinematic;
 
 		private bool SynchronizeMass => _mass.EnabledSynchronization && !Rigidbody2D.useAutoMass;
 
-		private Rigidbody2D _rigidbody2D;
-		private Rigidbody2D Rigidbody2D => _rigidbody2D ?? (_rigidbody2D = GetComponent<Rigidbody2D>());
-
-		private bool _initialized;
+		private Rigidbody2D Rigidbody2D { get; set; }
 
 		public void Initialize()
 		{
-			if (_initialized)
-				return;
+			Rigidbody2D = GetComponent<Rigidbody2D>();
 
 			_position = new ElympicsVector2(default, positionConfig);
 			_rotation = new ElympicsFloat(default, rotationConfig);
@@ -56,8 +55,7 @@ namespace Elympics
 			_inertia = new ElympicsFloat(default, inertiaConfig);
 			_mass = new ElympicsFloat(default, massConfig);
 			_gravityScale = new ElympicsFloat(default, gravityScaleConfig);
-
-			_initialized = true;
+			_isKinematic = new ElympicsBool(default, isKinematicConfig);
 		}
 
 		public void OnPostStateDeserialize()
@@ -80,6 +78,8 @@ namespace Elympics
 				Rigidbody2D.mass = _mass;
 			if (_gravityScale.EnabledSynchronization)
 				Rigidbody2D.gravityScale = _gravityScale;
+			if (_isKinematic.EnabledSynchronization)
+				Rigidbody2D.isKinematic = _isKinematic;
 		}
 
 		public void OnPreStateSerialize()
@@ -102,6 +102,8 @@ namespace Elympics
 				_mass.Value = Rigidbody2D.mass;
 			if (_gravityScale.EnabledSynchronization)
 				_gravityScale.Value = Rigidbody2D.gravityScale;
+			if (_isKinematic.EnabledSynchronization)
+				_isKinematic.Value = Rigidbody2D.isKinematic;
 		}
 	}
 }

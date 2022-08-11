@@ -49,12 +49,13 @@ namespace Elympics
 		{
 			_gameEngineAdapter.PlayerConnected += OnPlayerConnected;
 			_gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
-			_gameEngineAdapter.InitializedWithMatchPlayerDatas += OnServerInit;
-			_gameEngineAdapter.InitializedWithMatchPlayerDatas += InitializeBotsAndClientInServer;
-			_gameEngineAdapter.InitializedWithMatchPlayerDatas += SetServerInitializedWithinAsyncQueue;
+			_gameEngineAdapter.InitializedWithMatchPlayerDatas += data =>
+			{
+				OnServerInit(data);
+				InitializeBotsAndClientInServer(data);
+				Enqueue(() => _initialized = true);
+			};
 		}
-
-		private void SetServerInitializedWithinAsyncQueue(InitialMatchPlayerDatas _) => Enqueue(() => _initialized = true);
 
 		private void InitializeBotsAndClientInServer(InitialMatchPlayerDatas data)
 		{

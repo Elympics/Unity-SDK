@@ -26,5 +26,5 @@ Simply add this package in Unity (using Unity Package Manager and git) with `htt
 
 The idea behind parallel simulation execution is available [here](https://elympics.medium.com/elympics-multiplayer-services-how-it-works-3205bff2b2ff)
 
-Find out more after gaining access [here](https://docs.google.com/document/d/1_RbW-ruPsodZZ6U-41gu1oAPLYZFUDEtv89t8KRRziE/edit#). Detailed documentation coming soon.
+Find out more in our official documentation: https://docs.elympics.cc/.
 

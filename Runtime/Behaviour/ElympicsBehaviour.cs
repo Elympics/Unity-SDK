@@ -19,6 +19,8 @@ namespace Elympics
 	{
 		internal const int UndefinedNetworkId = -1;
 
+		internal CallContext CurrentCallContext { get; private set; } = CallContext.None;
+
 		[SerializeField] internal bool           forceNetworkId          = false;
 		[SerializeField] internal int            networkId               = UndefinedNetworkId;
 		[SerializeField] internal ElympicsPlayer predictableFor          = ElympicsPlayer.World;
@@ -74,7 +76,7 @@ namespace Elympics
 		/// <seealso cref="IInputHandler.OnInputForBot"/>
 		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader)
 		{
-			if (!ElympicsBase.elympicsBehavioursManager.IsInElympicsUpdate)
+			if (CurrentCallContext != CallContext.ElympicsUpdate)
 				throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
 			if (!HasAnyInput)
 				throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");
@@ -139,8 +141,10 @@ namespace Elympics
 
 			_componentsContainer = new ElympicsComponentsContainer(this);
 
+			CurrentCallContext = CallContext.Initialize;
 			foreach (var initializable in _componentsContainer.Initializables)
 				initializable.Initialize();
+			CurrentCallContext = CallContext.None;
 
 			var elympicsVarType = typeof(ElympicsVar);
 			_backingFields = new List<ElympicsVar>();
@@ -154,7 +158,9 @@ namespace Elympics
 						var value = field.GetValue(observable) as ElympicsVar;
 						if (value != null)
 						{
+							CurrentCallContext = CallContext.Initialize;
 							value.Initialize(elympicsBase);
+							CurrentCallContext = CallContext.None;
 
 							if (value.EnabledSynchronization)
 							{
@@ -253,13 +259,18 @@ namespace Elympics
 
 			foreach (var updatable in _componentsContainer.Updatables)
 				try
-                {
+				{
+					CurrentCallContext = CallContext.ElympicsUpdate;
 					updatable.ElympicsUpdate();
 				}
 				catch (Exception e) when (e is EndOfStreamException || e is ReadNotEnoughException)
                 {
 					Debug.LogException(e);
 					Debug.LogError("An exception occured when applying inputs. This might be a result of faulty code or a hacking attempt.");
+				}
+				finally
+				{
+					CurrentCallContext = CallContext.None;
 				}
 		}
 
@@ -397,6 +408,13 @@ namespace Elympics
 			}
 
 			return false;
+		}
+
+		internal enum CallContext
+		{
+			None,
+			ElympicsUpdate,
+			Initialize
 		}
 	}
 }

@@ -38,13 +38,8 @@ namespace Elympics
 		private Rigidbody _rigidbody;
 		private Rigidbody Rigidbody => _rigidbody ?? (_rigidbody = GetComponent<Rigidbody>());
 
-		private bool _initialized;
-
 		public void Initialize()
 		{
-			if (_initialized)
-				return;
-
 			_position = new ElympicsVector3(default, positionConfig);
 			_rotation = new ElympicsQuaternion(default, rotationConfig);
 			_velocity = new ElympicsVector3(default, velocityConfig);
@@ -54,8 +49,6 @@ namespace Elympics
 			_angularDrag = new ElympicsFloat(default, angularDragConfig);
 			_useGravity = new ElympicsBool(default, useGravityConfig);
 			_isKinematic = new ElympicsBool(default, isKinematicConfig);
-
-			_initialized = true;
 		}
 
 		public void OnPostStateDeserialize()

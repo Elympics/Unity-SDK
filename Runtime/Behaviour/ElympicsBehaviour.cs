@@ -19,7 +19,7 @@ namespace Elympics
 	{
 		internal const int UndefinedNetworkId = -1;
 
-		internal CallContext CurrentCallContext { get; private set; } = CallContext.None;
+		internal static CallContext CurrentCallContext { get; private set; } = CallContext.None;
 
 		[SerializeField] internal bool           forceNetworkId          = false;
 		[SerializeField] internal int            networkId               = UndefinedNetworkId;

@@ -8,16 +8,17 @@ namespace Elympics
 {
 	public class DefaultServerHandler : ElympicsMonoBehaviour, IServerHandler
 	{
-		private          int                     _playersNumber;
-		private readonly HashSet<ElympicsPlayer> _playersConnected = new HashSet<ElympicsPlayer>();
-
 		private static readonly TimeSpan StartGameTimeout = TimeSpan.FromSeconds(30);
-		private                 DateTime _waitToStartFinishTime;
-		private                 bool     _gameStarted;
+
+		private int      _playersNumber;
+		private DateTime _waitToStartFinishTime;
+		private bool     _gameStarted;
+
+		private readonly HashSet<ElympicsPlayer> _playersConnected = new HashSet<ElympicsPlayer>();
 
 		public void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
 		{
-			if (!enabled)
+			if (!isActiveAndEnabled)
 				return;
 
 			_playersNumber = initialMatchPlayerDatas.Count;
@@ -33,13 +34,10 @@ namespace Elympics
 
 			while (DateTime.Now < _waitToStartFinishTime)
 			{
-				Debug.Log("Waiting for game to start");
 				if (_gameStarted)
-				{
-					Debug.Log("Game started!");
 					yield break;
-				}
 
+				Debug.Log("Waiting for game to start");
 				yield return new WaitForSeconds(5);
 			}
 
@@ -49,7 +47,7 @@ namespace Elympics
 
 		public void OnPlayerDisconnected(ElympicsPlayer player)
 		{
-			if (!enabled)
+			if (!isActiveAndEnabled)
 				return;
 
 			Debug.Log($"Player {player} disconnected");
@@ -59,7 +57,7 @@ namespace Elympics
 
 		public void OnPlayerConnected(ElympicsPlayer player)
 		{
-			if (!enabled)
+			if (!isActiveAndEnabled)
 				return;
 
 			Debug.Log($"Player {player} connected");
@@ -69,6 +67,13 @@ namespace Elympics
 				return;
 
 			_gameStarted = true;
+			Debug.Log("Game started!");
 		}
+
+		// This Unity event method is necessary for the script to have a checkbox in Inspector.
+		// https://forum.unity.com/threads/why-do-some-components-have-enable-disable-checkboxes-in-the-inspector-while-others-dont.390770/#post-2547484
+		// ReSharper disable once Unity.RedundantEventFunction
+		private void Start()
+		{ }
 	}
 }

@@ -79,6 +79,8 @@ namespace Elympics
 			_matchConnectClient.ConnectingFailed += OnConnectingFailed;
 			_matchConnectClient.AuthenticatedUserMatchWithUserId += OnAuthenticated;
 			_matchConnectClient.AuthenticatedUserMatchFailedWithError += OnAuthenticatedFailed;
+			_matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(null);
+			_matchConnectClient.AuthenticatedAsSpectatorWithError += OnAuthenticatedFailed;
 			_matchConnectClient.MatchJoinedWithMatchId += OnMatchJoined;
 			_matchConnectClient.MatchJoinedWithError += OnMatchJoinedFailed;
 			_matchConnectClient.MatchEndedWithMatchId += OnMatchEnded;

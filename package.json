@@ -26,6 +26,11 @@
       "path": "Samples~/TechDemo"
     },
     {
+      "displayName": "Match events",
+      "description": "A sample to illustrate the lifecycle of Elympics match",
+      "path": "Samples~/MatchEvents"
+    },
+    {
       "displayName": "TicTacToe and more (Draft)",
       "description": "TicTacToe with bot and all of the Elympics stuff",
       "path": "Samples~/TicTacToe",

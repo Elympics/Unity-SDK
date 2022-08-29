@@ -8,28 +8,50 @@ namespace Elympics
 {
 	internal class ElympicsGameConfigGeneralInfoDrawer
 	{
-		private ElympicsGameConfig gameConfig = null;
-		public  ElympicsGameConfig GameConfig => gameConfig;
+		private ElympicsGameConfig _gameConfig;
+		private SerializedProperty _gameConfigSp;
+		private SerializedObject   _gameConfigSo;
 
-		private CustomInspectorDrawer customInspectorDrawer = null;
-		private Color                 themeColor            = Color.blue;
+		private SerializedProperty _gameName;
+		private SerializedProperty _gameId;
+		private SerializedProperty _gameVersion;
+		private SerializedProperty _players;
+		private SerializedProperty _gameplayScene;
+		private SerializedProperty _gameplaySceneAsset;
 
-		private Object previousSceneAsset = null;
+		private readonly CustomInspectorDrawer _customInspectorDrawer;
+		private readonly Color                 _themeColor;
+
+		private Object _previousSceneAsset;
 		private bool   _verifyGameScenePath;
 
 		public ElympicsGameConfigGeneralInfoDrawer(CustomInspectorDrawer inspectorDrawer, Color themeColor)
 		{
-			this.customInspectorDrawer = inspectorDrawer;
-			this.themeColor = themeColor;
+			_customInspectorDrawer = inspectorDrawer;
+			_themeColor = themeColor;
 		}
 
-		public void SetGameConfigProperty(ElympicsGameConfig gameConfig)
+		public void UpdateGameConfigProperty(SerializedProperty gameConfigSp)
 		{
-			this.gameConfig = gameConfig;
+			if (gameConfigSp.objectReferenceValue == _gameConfig)
+				return;
 
-			previousSceneAsset = gameConfig.gameplaySceneAsset;
+			_gameConfigSp = gameConfigSp;
+			_gameConfig = _gameConfigSp.objectReferenceValue as ElympicsGameConfig;
+			_gameConfigSo = new SerializedObject(_gameConfig);
+
+			_gameName = _gameConfigSo.FindProperty("gameName");
+			_gameId = _gameConfigSo.FindProperty("gameId");
+			_gameVersion = _gameConfigSo.FindProperty("gameVersion");
+			_players = _gameConfigSo.FindProperty("players");
+			_gameplayScene = _gameConfigSo.FindProperty("gameplayScene");
+			_gameplaySceneAsset = _gameConfigSo.FindProperty("gameplaySceneAsset");
+
+			_previousSceneAsset = _gameplaySceneAsset?.objectReferenceValue;
 			_verifyGameScenePath = true;
 		}
+
+		public void ApplyModifications() => _gameConfigSo.ApplyModifiedProperties();
 
 		public void DrawGeneralGameConfigInfo()
 		{
@@ -40,42 +62,42 @@ namespace Elympics
 
 		private void DrawSettingsSection()
 		{
-			customInspectorDrawer.DrawHeader(gameConfig.GameName + " settings", 20, themeColor);
-			customInspectorDrawer.Space();
+			_customInspectorDrawer.DrawHeader(_gameName.stringValue + " settings", 20, _themeColor);
+			_customInspectorDrawer.Space();
 
-			gameConfig.gameName = customInspectorDrawer.DrawStringField("Name", gameConfig.GameName, 0.25f, true);
-			gameConfig.gameId = customInspectorDrawer.DrawStringField("Game Id", gameConfig.GameId, 0.25f, true);
-			gameConfig.gameVersion = customInspectorDrawer.DrawStringField("Version", gameConfig.GameVersion, 0.25f, true);
-			gameConfig.players = customInspectorDrawer.DrawIntField("Players Count", gameConfig.Players, 0.25f, true);
+			_gameName.stringValue = _customInspectorDrawer.DrawStringField("Name", _gameName.stringValue, 0.25f, true);
+			_gameId.stringValue = _customInspectorDrawer.DrawStringField("Game Id", _gameId.stringValue, 0.25f, true);
+			_gameVersion.stringValue = _customInspectorDrawer.DrawStringField("Version", _gameVersion.stringValue, 0.25f, true);
+			_players.intValue = _customInspectorDrawer.DrawIntField("Players Count", _players.intValue, 0.25f, true);
 
-			gameConfig.gameplaySceneAsset = customInspectorDrawer.DrawSceneFieldWithOpenSceneButton("Gameplay scene", gameConfig.gameplaySceneAsset, 0.25f, 0.5f, out bool sceneFieldChanged, out bool openSceneButtonPressed);
+			_gameplaySceneAsset.objectReferenceValue = _customInspectorDrawer.DrawSceneFieldWithOpenSceneButton("Gameplay scene", _gameplaySceneAsset.objectReferenceValue, 0.25f, 0.5f, out var sceneFieldChanged, out var openSceneButtonPressed);
 			if (sceneFieldChanged || _verifyGameScenePath)
 				CheckGameplaySceneAndUpdatePath();
 			if (openSceneButtonPressed)
 				OpenSceneFromGameConfig();
 
-			customInspectorDrawer.DrawStringField("Scene path", gameConfig.GameplayScene, 0.25f, false);
+			_customInspectorDrawer.DrawStringField("Scene path", _gameplayScene.stringValue, 0.25f, false);
 		}
 
 		private void OpenSceneFromGameConfig()
 		{
-			EditorSceneManager.OpenScene(gameConfig.gameplayScene);
+			EditorSceneManager.OpenScene(_gameplayScene.stringValue);
 		}
 
 		private void CheckGameplaySceneAndUpdatePath()
 		{
 			_verifyGameScenePath = false;
-			var newSceneAsset = gameConfig.gameplaySceneAsset;
+			var newSceneAsset = _gameplaySceneAsset.objectReferenceValue;
 
 			if (!(newSceneAsset is SceneAsset scene))
 			{
-				gameConfig.gameplaySceneAsset = previousSceneAsset;
+				_gameplaySceneAsset.objectReferenceValue = _previousSceneAsset;
 				return;
 			}
 
-			previousSceneAsset = gameConfig.gameplaySceneAsset;
+			_previousSceneAsset = _gameplaySceneAsset.objectReferenceValue;
 			var scenePath = AssetDatabase.GetAssetOrScenePath(scene);
-			gameConfig.gameplayScene = scenePath;
+			_gameplayScene.stringValue = scenePath;
 		}
 
 		#endregion

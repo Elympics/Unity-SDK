@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 
 namespace Elympics
@@ -14,6 +12,9 @@ namespace Elympics
 
 		event Action<string> AuthenticatedUserMatchWithUserId;
 		event Action<string> AuthenticatedUserMatchFailedWithError;
+
+		event Action         AuthenticatedAsSpectator;
+		event Action<string> AuthenticatedAsSpectatorWithError;
 
 		event Action<string> MatchJoinedWithError;
 		event Action<string> MatchJoinedWithMatchId;

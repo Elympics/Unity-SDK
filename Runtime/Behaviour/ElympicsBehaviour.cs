@@ -288,73 +288,73 @@ namespace Elympics
 
 		#region ClientCallbacks
 
-		public void OnStandaloneClientInit(InitialMatchPlayerData data)
+		internal void OnStandaloneClientInit(InitialMatchPlayerData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnStandaloneClientInit(data);
 		}
 
-		public void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		internal void OnClientsOnServerInit(InitialMatchPlayerDatas data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnClientsOnServerInit(data);
 		}
 
-		public void OnConnected(TimeSynchronizationData data)
+		internal void OnConnected(TimeSynchronizationData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnected(data);
 		}
 
-		public void OnConnectingFailed()
+		internal void OnConnectingFailed()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnectingFailed();
 		}
 
-		public void OnDisconnectedByServer()
+		internal void OnDisconnectedByServer()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByServer();
 		}
 
-		public void OnDisconnectedByClient()
+		internal void OnDisconnectedByClient()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByClient();
 		}
 
-		public void OnSynchronized(TimeSynchronizationData data)
+		internal void OnSynchronized(TimeSynchronizationData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnSynchronized(data);
 		}
 
-		public void OnAuthenticated(string userId)
+		internal void OnAuthenticated(string userId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnAuthenticated(userId);
 		}
 
-		public void OnAuthenticatedFailed(string errorMessage)
+		internal void OnAuthenticatedFailed(string errorMessage)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnAuthenticatedFailed(errorMessage);
 		}
 
-		public void OnMatchJoined(string matchId)
+		internal void OnMatchJoined(string matchId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchJoined(matchId);
 		}
 
-		public void OnMatchJoinedFailed(string errorMessage)
+		internal void OnMatchJoinedFailed(string errorMessage)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchJoinedFailed(errorMessage);
 		}
 
-		public void OnMatchEnded(string matchId)
+		internal void OnMatchEnded(string matchId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchEnded(matchId);
@@ -364,13 +364,13 @@ namespace Elympics
 
 		#region BotCallbacks
 
-		public void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
+		internal void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
 		{
 			foreach (var handler in _componentsContainer.BotHandlers)
 				handler.OnStandaloneBotInit(initialMatchData);
 		}
 
-		public void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchDatas)
+		internal void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchDatas)
 		{
 			foreach (var handler in _componentsContainer.BotHandlers)
 				handler.OnBotsOnServerInit(initialMatchDatas);
@@ -380,19 +380,19 @@ namespace Elympics
 
 		#region ServerCallbacks
 
-		public void OnServerInit(InitialMatchPlayerDatas initialMatchData)
+		internal void OnServerInit(InitialMatchPlayerDatas initialMatchData)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnServerInit(initialMatchData);
 		}
 
-		public void OnPlayerConnected(ElympicsPlayer player)
+		internal void OnPlayerConnected(ElympicsPlayer player)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerConnected(player);
 		}
 
-		public void OnPlayerDisconnected(ElympicsPlayer player)
+		internal void OnPlayerDisconnected(ElympicsPlayer player)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerDisconnected(player);

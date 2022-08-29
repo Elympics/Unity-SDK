@@ -19,8 +19,6 @@ namespace Elympics
 	{
 		internal const int UndefinedNetworkId = -1;
 
-		internal static CallContext CurrentCallContext { get; private set; } = CallContext.None;
-
 		[SerializeField] internal bool           forceNetworkId          = false;
 		[SerializeField] internal int            networkId               = UndefinedNetworkId;
 		[SerializeField] internal ElympicsPlayer predictableFor          = ElympicsPlayer.World;
@@ -76,7 +74,7 @@ namespace Elympics
 		/// <seealso cref="IInputHandler.OnInputForBot"/>
 		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader)
 		{
-			if (CurrentCallContext != CallContext.ElympicsUpdate)
+			if (ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.ElympicsUpdate)
 				throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
 			if (!HasAnyInput)
 				throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");
@@ -141,10 +139,11 @@ namespace Elympics
 
 			_componentsContainer = new ElympicsComponentsContainer(this);
 
-			CurrentCallContext = CallContext.Initialize;
+			var previousCallContext = ElympicsBase.CurrentCallContext;
+			ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
 			foreach (var initializable in _componentsContainer.Initializables)
 				initializable.Initialize();
-			CurrentCallContext = CallContext.None;
+			ElympicsBase.CurrentCallContext = previousCallContext;
 
 			var elympicsVarType = typeof(ElympicsVar);
 			_backingFields = new List<ElympicsVar>();
@@ -158,9 +157,9 @@ namespace Elympics
 						var value = field.GetValue(observable) as ElympicsVar;
 						if (value != null)
 						{
-							CurrentCallContext = CallContext.Initialize;
+							ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
 							value.Initialize(elympicsBase);
-							CurrentCallContext = CallContext.None;
+							ElympicsBase.CurrentCallContext = previousCallContext;
 
 							if (value.EnabledSynchronization)
 							{
@@ -257,10 +256,11 @@ namespace Elympics
 			if (!isUpdatableForNonOwners && !IsPredictableTo(ElympicsBase.Player))
 				return;
 
+			var previousCallContext = ElympicsBase.CurrentCallContext;
 			foreach (var updatable in _componentsContainer.Updatables)
 				try
 				{
-					CurrentCallContext = CallContext.ElympicsUpdate;
+					ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
 					updatable.ElympicsUpdate();
 				}
 				catch (Exception e) when (e is EndOfStreamException || e is ReadNotEnoughException)
@@ -270,7 +270,7 @@ namespace Elympics
 				}
 				finally
 				{
-					CurrentCallContext = CallContext.None;
+					ElympicsBase.CurrentCallContext = previousCallContext;
 				}
 		}
 
@@ -288,73 +288,73 @@ namespace Elympics
 
 		#region ClientCallbacks
 
-		public void OnStandaloneClientInit(InitialMatchPlayerData data)
+		internal void OnStandaloneClientInit(InitialMatchPlayerData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnStandaloneClientInit(data);
 		}
 
-		public void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		internal void OnClientsOnServerInit(InitialMatchPlayerDatas data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnClientsOnServerInit(data);
 		}
 
-		public void OnConnected(TimeSynchronizationData data)
+		internal void OnConnected(TimeSynchronizationData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnected(data);
 		}
 
-		public void OnConnectingFailed()
+		internal void OnConnectingFailed()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnectingFailed();
 		}
 
-		public void OnDisconnectedByServer()
+		internal void OnDisconnectedByServer()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByServer();
 		}
 
-		public void OnDisconnectedByClient()
+		internal void OnDisconnectedByClient()
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByClient();
 		}
 
-		public void OnSynchronized(TimeSynchronizationData data)
+		internal void OnSynchronized(TimeSynchronizationData data)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnSynchronized(data);
 		}
 
-		public void OnAuthenticated(string userId)
+		internal void OnAuthenticated(string userId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnAuthenticated(userId);
 		}
 
-		public void OnAuthenticatedFailed(string errorMessage)
+		internal void OnAuthenticatedFailed(string errorMessage)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnAuthenticatedFailed(errorMessage);
 		}
 
-		public void OnMatchJoined(string matchId)
+		internal void OnMatchJoined(string matchId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchJoined(matchId);
 		}
 
-		public void OnMatchJoinedFailed(string errorMessage)
+		internal void OnMatchJoinedFailed(string errorMessage)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchJoinedFailed(errorMessage);
 		}
 
-		public void OnMatchEnded(string matchId)
+		internal void OnMatchEnded(string matchId)
 		{
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchEnded(matchId);
@@ -364,13 +364,13 @@ namespace Elympics
 
 		#region BotCallbacks
 
-		public void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
+		internal void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
 		{
 			foreach (var handler in _componentsContainer.BotHandlers)
 				handler.OnStandaloneBotInit(initialMatchData);
 		}
 
-		public void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchDatas)
+		internal void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchDatas)
 		{
 			foreach (var handler in _componentsContainer.BotHandlers)
 				handler.OnBotsOnServerInit(initialMatchDatas);
@@ -380,19 +380,19 @@ namespace Elympics
 
 		#region ServerCallbacks
 
-		public void OnServerInit(InitialMatchPlayerDatas initialMatchData)
+		internal void OnServerInit(InitialMatchPlayerDatas initialMatchData)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnServerInit(initialMatchData);
 		}
 
-		public void OnPlayerConnected(ElympicsPlayer player)
+		internal void OnPlayerConnected(ElympicsPlayer player)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerConnected(player);
 		}
 
-		public void OnPlayerDisconnected(ElympicsPlayer player)
+		internal void OnPlayerDisconnected(ElympicsPlayer player)
 		{
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerDisconnected(player);
@@ -408,13 +408,6 @@ namespace Elympics
 			}
 
 			return false;
-		}
-
-		internal enum CallContext
-		{
-			None,
-			ElympicsUpdate,
-			Initialize
 		}
 	}
 }

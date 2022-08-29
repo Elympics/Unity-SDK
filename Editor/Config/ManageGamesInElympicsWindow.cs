@@ -45,14 +45,14 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	#endregion
 
-	private List<ElympicsWebIntegration.GameResponseModel> accountGames;
-	private CustomInspectorDrawer                          customInspectorDrawer         = null;
-	private ElympicsGameConfigGeneralInfoDrawer            elympicsGameConfigInfoDrawer  = null;
-	private GUIStyle                                       guiStyleWrappedTextCalculator = null;
+	private List<ElympicsWebIntegration.GameResponseModel> _accountGames;
+	private CustomInspectorDrawer                          _customInspectorDrawer;
+	private ElympicsGameConfigGeneralInfoDrawer            _elympicsGameConfigInfoDrawer;
+	private GUIStyle                                       _guiStyleWrappedTextCalculator;
 
-	private int resizibleCenteredLabelWidth = 0;
+	private int _resizibleCenteredLabelWidth;
 
-	private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData = null;
+	private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData;
 
 	public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsApiEndpoint,
 		SerializedProperty elympicsLobbyEndpoint, SerializedProperty elympicsGameServersEndpoint)
@@ -64,18 +64,18 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		ManageGamesInElympicsWindow.elympicsLobbyEndpoint = elympicsLobbyEndpoint;
 		ManageGamesInElympicsWindow.elympicsGameServersEndpoint = elympicsGameServersEndpoint;
 
-		ManageGamesInElympicsWindow.elympicsApiEndpointChecker = new EditorEndpointChecker();
-		ManageGamesInElympicsWindow.elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
-		ManageGamesInElympicsWindow.elympicsLobbyEndpointChecker = new EditorEndpointChecker();
-		ManageGamesInElympicsWindow.elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
-		ManageGamesInElympicsWindow.elympicsGameServersEndpointChecker = new EditorEndpointChecker();
-		ManageGamesInElympicsWindow.elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
+		elympicsApiEndpointChecker = new EditorEndpointChecker();
+		elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
+		elympicsLobbyEndpointChecker = new EditorEndpointChecker();
+		elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
+		elympicsGameServersEndpointChecker = new EditorEndpointChecker();
+		elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
 
 		manageGamesInElympicsWindowData = Resources.Load<ManageGamesInElympicsWindowData>("ManageGamesInElympicsWindowData");
 
 		SaveDataToScriptableObject();
 
-		ManageGamesInElympicsWindow window = GetWindowWithRect<ManageGamesInElympicsWindow>(new Rect(0, 0, 500, 900), false, windowTitle);
+		var window = GetWindowWithRect<ManageGamesInElympicsWindow>(new Rect(0, 0, 500, 900), false, windowTitle);
 		window.minSize = new Vector2(250, 500);
 		window.maxSize = new Vector2(1000, 1800);
 
@@ -91,12 +91,12 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (manageGamesInElympicsWindowData == null)
 			return false;
 
-		ManageGamesInElympicsWindow.elympicsConfigSerializedObject = new UnityEditor.SerializedObject(manageGamesInElympicsWindowData.objectToSerialize);
-		ManageGamesInElympicsWindow.currentGameIndex = elympicsConfigSerializedObject.FindProperty("currentGame");
-		ManageGamesInElympicsWindow.availableGames = elympicsConfigSerializedObject.FindProperty("availableGames");
-		ManageGamesInElympicsWindow.elympicsApiEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsApiEndpoint");
-		ManageGamesInElympicsWindow.elympicsLobbyEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsLobbyEndpoint");
-		ManageGamesInElympicsWindow.elympicsGameServersEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsGameServersEndpoint");
+		elympicsConfigSerializedObject = new SerializedObject(manageGamesInElympicsWindowData.objectToSerialize);
+		currentGameIndex = elympicsConfigSerializedObject.FindProperty("currentGame");
+		availableGames = elympicsConfigSerializedObject.FindProperty("availableGames");
+		elympicsApiEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsApiEndpoint");
+		elympicsLobbyEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsLobbyEndpoint");
+		elympicsGameServersEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsGameServersEndpoint");
 
 		if (elympicsApiEndpointChecker == null || elympicsLobbyEndpointChecker == null || elympicsGameServersEndpointChecker == null)
 		{
@@ -121,10 +121,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void ConvertColorsFromHexToUnity()
 	{
-		if (ColorUtility.TryParseHtmlString(elympicsColorHex, out Color convertedColor))
-		{
+		if (ColorUtility.TryParseHtmlString(elympicsColorHex, out var convertedColor))
 			elympicsColor = convertedColor;
-		}
 
 		colorsConverted = true;
 	}
@@ -142,13 +140,9 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		PrepareGUIStyleCalculator();
 
 		if (!ElympicsConfig.IsLogin)
-		{
 			DrawLoginToElympicsContent();
-		}
 		else
-		{
 			DrawManageGamesContent();
-		}
 
 		elympicsConfigSerializedObject.ApplyModifiedProperties();
 	}
@@ -158,31 +152,33 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (!colorsConverted)
 			ConvertColorsFromHexToUnity();
 
-		if (customInspectorDrawer == null)
+		if (_customInspectorDrawer == null)
 		{
-			customInspectorDrawer = new CustomInspectorDrawer(position, 5, 15);
+			_customInspectorDrawer = new CustomInspectorDrawer(position, 5, 15);
 		}
 		else
 		{
-			customInspectorDrawer.PrepareToDraw(position);
+			_customInspectorDrawer.PrepareToDraw(position);
 		}
 
-		resizibleCenteredLabelWidth = (int) (position.width * 0.80f);
+		_resizibleCenteredLabelWidth = (int) (position.width * 0.80f);
 	}
 
 	private void PrepareGUIStyleCalculator()
 	{
-		if (guiStyleWrappedTextCalculator == null)
+		if (_guiStyleWrappedTextCalculator != null)
+			return;
+
+		_guiStyleWrappedTextCalculator = new GUIStyle
 		{
-			guiStyleWrappedTextCalculator = new GUIStyle();
-			guiStyleWrappedTextCalculator.richText = true;
-			guiStyleWrappedTextCalculator.wordWrap = true;
-		}
+			richText = true,
+			wordWrap = true
+		};
 	}
 
 	private void DrawManageGamesContent()
 	{
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.Space();
 
 		DrawAccountSection();
 		DrawEndpointsSection();
@@ -191,7 +187,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawLoginToElympicsContent()
 	{
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.Space();
 
 		DrawLoginSection();
 		DrawLoginEndpointSection();
@@ -201,14 +197,14 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawEndpointsSection()
 	{
-		customInspectorDrawer.DrawHeader("Endpoints", 20, elympicsColor);
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.DrawHeader("Endpoints", 20, elympicsColor);
+		_customInspectorDrawer.Space();
 
-		customInspectorDrawer.DrawEndpoint("API Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out bool apiEndpointChanged);
+		_customInspectorDrawer.DrawEndpoint("API Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out bool apiEndpointChanged);
 		if (apiEndpointChanged)
 			elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
 
-		if (customInspectorDrawer.DrawButtonCentered("Synchronize", resizibleCenteredLabelWidth, 20))
+		if (_customInspectorDrawer.DrawButtonCentered("Synchronize", _resizibleCenteredLabelWidth, 20))
 		{
 			if (!elympicsApiEndpointChecker.IsRequestSuccessful)
 			{
@@ -224,24 +220,24 @@ public class ManageGamesInElympicsWindow : EditorWindow
 				ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
 				{
 					Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
-					accountGames = availableGamesOnline;
+					_accountGames = availableGamesOnline;
 				});
 			});
 			GUI.FocusControl(null);
 		}
 
-		customInspectorDrawer.DrawLabelCentered(synchronizeInfo, resizibleCenteredLabelWidth, 20, true);
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.DrawLabelCentered(synchronizeInfo, _resizibleCenteredLabelWidth, 20, true);
+		_customInspectorDrawer.Space();
 
-		customInspectorDrawer.DrawEndpoint("Lobby Endpoint", elympicsLobbyEndpoint, elympicsLobbyEndpointChecker, 0.3f, 0.3f, out bool lobbyEndpointChanged);
+		_customInspectorDrawer.DrawEndpoint("Lobby Endpoint", elympicsLobbyEndpoint, elympicsLobbyEndpointChecker, 0.3f, 0.3f, out bool lobbyEndpointChanged);
 		if (lobbyEndpointChanged)
 			elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
 
-		customInspectorDrawer.DrawEndpoint("Game Servers Endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out bool gameServersEndpointChanged);
+		_customInspectorDrawer.DrawEndpoint("Game Servers Endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out bool gameServersEndpointChanged);
 		if (gameServersEndpointChanged)
 			elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
 
-		customInspectorDrawer.DrawAccountGames(accountGames);
+		_customInspectorDrawer.DrawAccountGames(_accountGames);
 	}
 
 	#endregion
@@ -250,7 +246,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawAvailableGamesSection()
 	{
-		customInspectorDrawer.DrawHeader("Local games configurations", 20, elympicsColor);
+		_customInspectorDrawer.DrawHeader("Local games configurations", 20, elympicsColor);
 
 		var chosenGameProperty = GetChosenGameProperty();
 
@@ -259,30 +255,29 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 		if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 		{
-			currentGameIndex.intValue = customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>) availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
-			customInspectorDrawer.DrawSerializedProperty("Local games configurations", availableGames);
-			customInspectorDrawer.Space();
+			currentGameIndex.intValue = _customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue,
+				((List<ElympicsGameConfig>) availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
+			_customInspectorDrawer.DrawSerializedProperty("Local games configurations", availableGames);
+			_customInspectorDrawer.Space();
 
-			ElympicsGameConfig activeGameConfig = ((List<ElympicsGameConfig>) availableGames.GetValue())[currentGameIndex.intValue];
+			PrepareElympicsGameConfigDrawer(chosenGameProperty);
+			_elympicsGameConfigInfoDrawer.DrawGeneralGameConfigInfo();
 
-			PrepareElympicsGameConfigDrawer(activeGameConfig);
-			elympicsGameConfigInfoDrawer.DrawGeneralGameConfigInfo();
+			DrawGameManagmentInElympicsSection(chosenGameProperty.objectReferenceValue as ElympicsGameConfig);
 
-			DrawGameManagmentInElympicsSection(activeGameConfig);
+			_elympicsGameConfigInfoDrawer.ApplyModifications();
 		}
 		else
-		{
 			DrawButtonForCreatingFirstSetup(availableGames, currentGameIndex);
-		}
 
 		elympicsConfigSerializedObject.ApplyModifiedProperties();
 	}
 
 	private void DrawButtonForCreatingFirstSetup(SerializedProperty availableGames, SerializedProperty currentGameIndex)
 	{
-		customInspectorDrawer.DrawLabelCentered(noGameSetupsInfo, resizibleCenteredLabelWidth, 40, true);
+		_customInspectorDrawer.DrawLabelCentered(noGameSetupsInfo, _resizibleCenteredLabelWidth, 40, true);
 
-		if (customInspectorDrawer.DrawButtonCentered("Create first game config!", resizibleCenteredLabelWidth, 20))
+		if (_customInspectorDrawer.DrawButtonCentered("Create first game config!", _resizibleCenteredLabelWidth, 20))
 		{
 			var config = ScriptableObject.CreateInstance<ElympicsGameConfig>();
 			AssetDatabase.CreateAsset(config, "Assets/Resources/Elympics/ElympicsGameConfig.asset");
@@ -294,38 +289,36 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		}
 
 		var configs = AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}");
-		customInspectorDrawer.DrawLabelCentered(importExistingsGamesInfo, resizibleCenteredLabelWidth, 20, true);
-		if (customInspectorDrawer.DrawButtonCentered($"Find and import games ({configs.Length})", resizibleCenteredLabelWidth, 20))
+		_customInspectorDrawer.DrawLabelCentered(importExistingsGamesInfo, _resizibleCenteredLabelWidth, 20, true);
+
+		if (!_customInspectorDrawer.DrawButtonCentered($"Find and import games ({configs.Length})", _resizibleCenteredLabelWidth, 20))
+			return;
+
+		if (configs.Length <= 0)
 		{
-			if (configs.Length <= 0)
-			{
-				Debug.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
-				return;
-			}
-
-			foreach (var config in configs)
-			{
-				availableGames.InsertArrayElementAtIndex(availableGames.arraySize);
-				var value = availableGames.GetArrayElementAtIndex(availableGames.arraySize - 1);
-				value.objectReferenceValue = AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(config));
-			}
-
-			currentGameIndex.intValue = availableGames.arraySize - 1;
+			Debug.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
+			return;
 		}
+
+		foreach (var config in configs)
+		{
+			availableGames.InsertArrayElementAtIndex(availableGames.arraySize);
+			var value = availableGames.GetArrayElementAtIndex(availableGames.arraySize - 1);
+			value.objectReferenceValue = AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(config));
+		}
+
+		currentGameIndex.intValue = availableGames.arraySize - 1;
 	}
 
-	private void PrepareElympicsGameConfigDrawer(ElympicsGameConfig activeGameConfig)
+	private void PrepareElympicsGameConfigDrawer(SerializedProperty activeGameConfig)
 	{
-		if (elympicsGameConfigInfoDrawer == null)
-		{
-			elympicsGameConfigInfoDrawer = new ElympicsGameConfigGeneralInfoDrawer(customInspectorDrawer, elympicsColor);
-		}
+		if (_elympicsGameConfigInfoDrawer == null)
+			_elympicsGameConfigInfoDrawer = new ElympicsGameConfigGeneralInfoDrawer(_customInspectorDrawer, elympicsColor);
 
-		if (elympicsGameConfigInfoDrawer.GameConfig != activeGameConfig)
-			elympicsGameConfigInfoDrawer.SetGameConfigProperty(activeGameConfig);
+		_elympicsGameConfigInfoDrawer.UpdateGameConfigProperty(activeGameConfig);
 	}
 
-	private SerializedProperty GetChosenGameProperty()
+	private static SerializedProperty GetChosenGameProperty()
 	{
 		var chosen = currentGameIndex.intValue;
 		if (availableGames.arraySize == 0)
@@ -345,10 +338,10 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawGameManagmentInElympicsSection(ElympicsGameConfig activeGameConfig)
 	{
-		customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, elympicsColor);
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, elympicsColor);
+		_customInspectorDrawer.Space();
 
-		if (customInspectorDrawer.DrawButtonCentered("Upload", resizibleCenteredLabelWidth, 20))
+		if (_customInspectorDrawer.DrawButtonCentered("Upload", _resizibleCenteredLabelWidth, 20))
 		{
 			if (!ElympicsWebIntegration.IsConnectedToElympics())
 				return;
@@ -357,8 +350,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			GUIUtility.ExitGUI();
 		}
 
-		var wrappedLabelHeight = (int) guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadGameInfo), position.width * 0.8f);
-		customInspectorDrawer.DrawLabelCentered(uploadGameInfo, resizibleCenteredLabelWidth, wrappedLabelHeight, true);
+		var wrappedLabelHeight = (int) _guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadGameInfo), position.width * 0.8f);
+		_customInspectorDrawer.DrawLabelCentered(uploadGameInfo, _resizibleCenteredLabelWidth, wrappedLabelHeight, true);
 	}
 
 	#endregion
@@ -367,23 +360,23 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawAccountSection()
 	{
-		customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
+		_customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
 		DrawHeaderLoggedAs(ElympicsConfig.Username);
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.Space();
 		DrawLogoutButtonCentered();
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.Space();
 	}
 
 	private void DrawHeaderLoggedAs(string username)
 	{
 		string content = loggedAsInfo + $"<b>{username}</b>";
 
-		customInspectorDrawer.DrawLabelCentered(content, 400, 20, false);
+		_customInspectorDrawer.DrawLabelCentered(content, 400, 20, false);
 	}
 
 	private void DrawLogoutButtonCentered()
 	{
-		if (customInspectorDrawer.DrawButtonCentered("Logout", 150, 30))
+		if (_customInspectorDrawer.DrawButtonCentered("Logout", 150, 30))
 		{
 			ElympicsWebIntegration.Logout();
 			GUI.FocusControl(null);
@@ -396,10 +389,10 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawLoginEndpointSection()
 	{
-		customInspectorDrawer.DrawHeader("Elympics Endpoint", 20, elympicsColor);
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.DrawHeader("Elympics Endpoint", 20, elympicsColor);
+		_customInspectorDrawer.Space();
 
-		customInspectorDrawer.DrawEndpoint("Elympics Web Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out bool endpointChanged);
+		_customInspectorDrawer.DrawEndpoint("Elympics Web Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out bool endpointChanged);
 
 		if (endpointChanged)
 			elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
@@ -407,32 +400,32 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawLoginSection()
 	{
-		customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
-		customInspectorDrawer.DrawLabelCentered(loginHeaderInfo, 400, 20, false);
+		_customInspectorDrawer.DrawHeader("Account", 20, elympicsColor);
+		_customInspectorDrawer.DrawLabelCentered(loginHeaderInfo, 400, 20, false);
 
 		DrawLoginUsername();
 		DrawLoginPassword();
 
-		customInspectorDrawer.Space();
+		_customInspectorDrawer.Space();
 
 		DrawLoginButton();
 	}
 
 	private void DrawLoginUsername()
 	{
-		customInspectorDrawer.DrawLabelCentered("Username", 200, 20, false);
-		ElympicsConfig.Username = customInspectorDrawer.DrawTextFieldCentered(ElympicsConfig.Username, 200, 20);
+		_customInspectorDrawer.DrawLabelCentered("Username", 200, 20, false);
+		ElympicsConfig.Username = _customInspectorDrawer.DrawTextFieldCentered(ElympicsConfig.Username, 200, 20);
 	}
 
 	private void DrawLoginPassword()
 	{
-		customInspectorDrawer.DrawLabelCentered("Password", 200, 20, false);
-		ElympicsConfig.Password = customInspectorDrawer.DrawPasswordFieldCentered(ElympicsConfig.Password, 200, 20);
+		_customInspectorDrawer.DrawLabelCentered("Password", 200, 20, false);
+		ElympicsConfig.Password = _customInspectorDrawer.DrawPasswordFieldCentered(ElympicsConfig.Password, 200, 20);
 	}
 
 	private void DrawLoginButton()
 	{
-		if (customInspectorDrawer.DrawButtonCentered("Login", 150, 30))
+		if (_customInspectorDrawer.DrawButtonCentered("Login", 150, 30))
 		{
 			if (!elympicsApiEndpointChecker.IsRequestSuccessful)
 			{

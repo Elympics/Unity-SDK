@@ -1,9 +1,9 @@
 {
   "name": "com.daftmobile.elympics",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
   "displayName": "Elympics",
-  "unity": "2018.3",
+  "unity": "2019.4",
   "samples": [
     {
       "displayName": "Simple Menu",
@@ -24,6 +24,11 @@
       "displayName": "Tech Demo",
       "description": "Sample with 2 players throwing instantiable balls",
       "path": "Samples~/TechDemo"
+    },
+    {
+      "displayName": "Match events",
+      "description": "A sample to illustrate the lifecycle of Elympics match",
+      "path": "Samples~/MatchEvents"
     },
     {
       "displayName": "TicTacToe and more (Draft)",

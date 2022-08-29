@@ -15,6 +15,7 @@ namespace Elympics
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
 		private          ElympicsBase                _elympics;
 		private          BinaryInputWriter           _inputWriter;
+
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{
 			_inputWriter = new BinaryInputWriter();

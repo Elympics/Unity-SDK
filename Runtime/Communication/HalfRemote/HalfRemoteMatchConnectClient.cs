@@ -25,6 +25,8 @@ namespace Elympics
 		public event Action                          ConnectingFailed;
 		public event Action<string>                  AuthenticatedUserMatchWithUserId;
 		public event Action<string>                  AuthenticatedUserMatchFailedWithError;
+		public event Action                          AuthenticatedAsSpectator;
+		public event Action<string>                  AuthenticatedAsSpectatorWithError;
 		public event Action<string>                  MatchJoinedWithError;
 		public event Action<string>                  MatchJoinedWithMatchId;
 		public event Action<string>                  MatchEndedWithMatchId;

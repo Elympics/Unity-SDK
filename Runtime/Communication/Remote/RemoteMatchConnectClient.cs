@@ -54,6 +54,7 @@ namespace Elympics
 			_userSecret = userSecret;
 			_useWeb = useWeb;
 			_gameServerClient.Disconnected += OnDisconnectedByServer;
+			_gameServerClient.MatchEnded += OnMatchEnded;
 		}
 
 		public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
@@ -100,7 +101,6 @@ namespace Elympics
 			_gameServerClient.ConnectedAndSynchronized += OnConnectedAndSynchronizedAsPlayer;
 			_gameServerClient.UserMatchAuthenticated += OnAuthenticatedMatchUserSecret;
 			_gameServerClient.MatchJoined += OnMatchJoined;
-			_gameServerClient.MatchEnded += OnMatchEnded;
 			_gameServerClient.Disconnected += OnDisconnectedWhileConnectingAndJoining;
 		}
 
@@ -109,7 +109,6 @@ namespace Elympics
 			_gameServerClient.ConnectedAndSynchronized -= OnConnectedAndSynchronizedAsPlayer;
 			_gameServerClient.UserMatchAuthenticated -= OnAuthenticatedMatchUserSecret;
 			_gameServerClient.MatchJoined -= OnMatchJoined;
-			_gameServerClient.MatchEnded -= OnMatchEnded;
 			_gameServerClient.Disconnected -= OnDisconnectedWhileConnectingAndJoining;
 		}
 
@@ -118,7 +117,6 @@ namespace Elympics
 			_gameServerClient.ConnectedAndSynchronized += OnConnectedAndSynchronizedAsSpectator;
 			_gameServerClient.AuthenticatedAsSpectator += OnAuthenticatedAsSpectator;
 			_gameServerClient.MatchJoined += OnMatchJoined;
-			_gameServerClient.MatchEnded += OnMatchEnded;
 			_gameServerClient.Disconnected += OnDisconnectedWhileConnectingAndJoining;
 		}
 
@@ -127,7 +125,6 @@ namespace Elympics
 			_gameServerClient.ConnectedAndSynchronized -= OnConnectedAndSynchronizedAsSpectator;
 			_gameServerClient.AuthenticatedAsSpectator -= OnAuthenticatedAsSpectator;
 			_gameServerClient.MatchJoined -= OnMatchJoined;
-			_gameServerClient.MatchEnded -= OnMatchEnded;
 			_gameServerClient.Disconnected -= OnDisconnectedWhileConnectingAndJoining;
 		}
 

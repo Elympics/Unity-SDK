@@ -10,13 +10,13 @@ namespace Elympics
 {
 	public abstract class ElympicsBase : MonoBehaviour, IElympics
 	{
-		[SerializeField] internal ElympicsBehavioursManager elympicsBehavioursManager = null;
-		[SerializeField] internal ElympicsLateFixedUpdate   elympicsLateFixedUpdate   = null;
-		[SerializeField] internal AsyncEventsDispatcher     asyncEventsDispatcher     = null;
+		[SerializeField] internal ElympicsBehavioursManager elympicsBehavioursManager;
+		[SerializeField] internal ElympicsLateFixedUpdate   elympicsLateFixedUpdate;
+		[SerializeField] internal AsyncEventsDispatcher     asyncEventsDispatcher;
 
 		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")]
 		[SerializeField]
-		private GameObject[] linkedLogic = null;
+		private GameObject[] linkedLogic;
 
 		private readonly Stopwatch _elympicsUpdateStopwatch = new Stopwatch();
 
@@ -124,24 +124,28 @@ namespace Elympics
 
 		#region IElympics
 
-		public virtual ElympicsPlayer Player       { get; } = ElympicsPlayer.Invalid;
-		public virtual bool           IsBot        { get; } = false;
-		public virtual bool           IsServer     { get; } = false;
-		public virtual bool           IsClient     { get; } = false;
-		public         float          TickDuration => Config.TickDuration;
-		public         long           Tick         { get; protected set; }
+		public virtual ElympicsPlayer Player => ElympicsPlayer.Invalid;
+
+		public virtual bool IsBot    => false;
+		public virtual bool IsServer => false;
+		public virtual bool IsClient => false;
+
+		public float TickDuration   => Config.TickDuration;
+		public int   TicksPerSecond => Config.TicksPerSecond;
+
+		public long  Tick { get; protected set; }
 
 		#region Client
 
-		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => throw new NotImplementedException("This method is supported only for client");
-		public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new NotImplementedException("This method is supported only for client");
-		public virtual void        Disconnect()                                                                    => throw new NotImplementedException("This method is supported only for client");
+		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => throw new SupportedOnlyByClientException();
+		public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
+		public virtual void        Disconnect()                                                                    => throw new SupportedOnlyByClientException();
 
 		#endregion
 
 		#region Server
 
-		public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new NotImplementedException("This method is supported only for server");
+		public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new SupportedOnlyByServerException();
 
 		#endregion
 

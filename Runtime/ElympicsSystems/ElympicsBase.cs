@@ -22,6 +22,8 @@ namespace Elympics
 
 		private protected ElympicsGameConfig Config;
 
+		internal CallContext CurrentCallContext { get; set; } = CallContext.None;
+
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig)
 		{
 			Config = elympicsGameConfig;
@@ -150,5 +152,12 @@ namespace Elympics
 		#endregion
 
 		#endregion
+
+		internal enum CallContext
+		{
+			None,
+			ElympicsUpdate,
+			Initialize
+		}
 	}
 }

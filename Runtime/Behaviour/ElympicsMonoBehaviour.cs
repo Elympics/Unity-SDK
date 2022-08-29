@@ -90,8 +90,8 @@ namespace Elympics
 
 		private void ThrowIfCalledInWrongContext([CallerMemberName] string caller = "")
 		{
-			if (ElympicsBehaviour.CurrentCallContext != ElympicsBehaviour.CallContext.ElympicsUpdate
-					&& ElympicsBehaviour.CurrentCallContext != ElympicsBehaviour.CallContext.Initialize)
+			if (ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.ElympicsUpdate
+					&& ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.Initialize)
 				throw new ElympicsException($"You cannot use {caller} outside of {nameof(IUpdatable.ElympicsUpdate)} or {nameof(IInitializable.Initialize)}");
 		}
 

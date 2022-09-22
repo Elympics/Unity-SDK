@@ -18,8 +18,6 @@ namespace MatchEvents
 		private int _totalPlayers;
 		private int _totalBotPlayers;
 
-		[SerializeField] private ElympicsInt test = new ElympicsInt();
-		[SerializeField] private ElympicsString text = new ElympicsString();
 		private readonly Dictionary<ElympicsPlayer, bool> _isBot = new Dictionary<ElympicsPlayer, bool>();
 		private readonly HashSet<ElympicsPlayer> _playersConnected = new HashSet<ElympicsPlayer>();
 		private readonly HashSet<ElympicsPlayer> _botPlayersConnected = new HashSet<ElympicsPlayer>();

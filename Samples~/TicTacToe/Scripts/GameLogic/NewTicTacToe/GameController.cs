@@ -64,13 +64,13 @@ namespace GameLogic.NewTicTacToe
 			{
 				new ResultMatchPlayerData
 				{
-					GameEngineData = new[] {(byte) player1WinnerValue},
-					MatchmakerData = new[] {(float) player1WinnerValue}
+					GameEngineData = new[] { (byte)player1WinnerValue },
+					MatchmakerData = new[] { player1WinnerValue, 0f }
 				},
 				new ResultMatchPlayerData
 				{
-					GameEngineData = new[] {(byte) player2WinnerValue},
-					MatchmakerData = new[] {(float) player2WinnerValue}
+					GameEngineData = new[] { (byte)player2WinnerValue },
+					MatchmakerData = new[] { player2WinnerValue, 0f }
 				}
 			});
 		}

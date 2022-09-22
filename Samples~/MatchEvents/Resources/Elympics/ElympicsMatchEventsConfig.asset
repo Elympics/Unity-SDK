@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: Match events
   gameId: d8781ea6-3aaa-4dcd-b5b9-e6c725210f42
-  gameVersion: 6
+  gameVersion: 7
   players: 2
   gameplayScene: Assets/Samples/MatchEvents/Scenes/MatchEventsGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 2cda990e2423bbf4892e6590ba056729,

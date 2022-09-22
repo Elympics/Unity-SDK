@@ -265,6 +265,7 @@ namespace Elympics
 			switch (halfRemoteMode)
 			{
 				case ElympicsGameConfig.HalfRemoteModeEnum.Server:
+					EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
 					EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("Port TCP server listens on"));
 					EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Port Web server listens on"));
 					break;

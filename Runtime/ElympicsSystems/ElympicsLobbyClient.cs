@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,7 +17,13 @@ namespace Elympics
 			HalfRemoteServer
 		}
 
-		private const string AUTH_TOKEN_PLAYER_PREFS_KEY = "Elympics/AuthToken";
+		private static string GetAuthTokenPlayerPrefsKey()
+		{
+			const string authTokenPlayerPrefsKeyBase = "Elympics/AuthToken";
+			if (ElympicsClonesManager.IsClone())
+				return $"{authTokenPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}";
+			return authTokenPlayerPrefsKeyBase;
+		}
 
 		public static ElympicsLobbyClient Instance { get; private set; }
 
@@ -171,14 +178,15 @@ namespace Elympics
 
 		private void SetAuthToken()
 		{
-			if (!PlayerPrefs.HasKey(AUTH_TOKEN_PLAYER_PREFS_KEY))
-				CreateNewAuthToken();
-			_authToken = PlayerPrefs.GetString(AUTH_TOKEN_PLAYER_PREFS_KEY);
+			var key = GetAuthTokenPlayerPrefsKey();
+			if (!PlayerPrefs.HasKey(key))
+				CreateNewAuthToken(key);
+			_authToken = PlayerPrefs.GetString(key);
 		}
 
-		private static void CreateNewAuthToken()
+		private static void CreateNewAuthToken(string key)
 		{
-			PlayerPrefs.SetString(AUTH_TOKEN_PLAYER_PREFS_KEY, Guid.NewGuid().ToString());
+			PlayerPrefs.SetString(key, Guid.NewGuid().ToString());
 			PlayerPrefs.Save();
 		}
 	}

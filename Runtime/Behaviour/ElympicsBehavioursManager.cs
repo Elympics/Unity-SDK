@@ -9,7 +9,7 @@ namespace Elympics
 	public class ElympicsBehavioursManager : MonoBehaviour
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
-		[SerializeField] private ElympicsFactory                          factory;
+		[SerializeField] private ElympicsFactory                          factory = null;
 
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();

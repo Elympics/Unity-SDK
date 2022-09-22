@@ -5,7 +5,7 @@ namespace TechDemo
 	[RequireComponent(typeof(PlayerBehaviour))]
 	public class PlayerBotInputProvider : MonoBehaviour, IInputProvider
 	{
-		[SerializeField] private PlayerBehaviour followedPlayerBehaviour;
+		[SerializeField] private PlayerBehaviour followedPlayerBehaviour = null;
 
 		private PlayerBehaviour _playerBehaviour;
 

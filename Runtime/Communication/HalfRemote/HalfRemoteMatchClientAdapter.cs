@@ -62,8 +62,17 @@ namespace Elympics
 		public void PlayerConnected()    => _client.PlayerConnected();
 		public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
-		public async Task SendInputReliable(ElympicsInput input)   => SendRawInputReliable(input.Serialize());
-		public async Task SendInputUnreliable(ElympicsInput input) => SendRawInputUnreliable(input.Serialize());
+		public Task SendInputReliable(ElympicsInput input)
+		{
+			SendRawInputReliable(input.Serialize());
+			return Task.CompletedTask;
+		}
+
+		public Task SendInputUnreliable(ElympicsInput input)
+		{
+			SendRawInputUnreliable(input.Serialize());
+			return Task.CompletedTask;
+		}
 
 		public void OnInGameDataForPlayerOnReliableChannelGenerated(byte[] data, string userId)
 		{

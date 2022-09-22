@@ -46,14 +46,14 @@ namespace Elympics
 			return true;
 		}
 
-		private static T[] Populate<T>(T[] array, Func<T> provider)
+		private static T[] Populate(T[] array, Func<T> provider)
 		{
 			for (int i = 0; i < array.Length; i++)
 				array[i] = provider();
 			return array;
 		}
 
-		internal override void Initialize(IElympics elympics) 
+		internal override void Initialize(IElympics elympics)
 		{
 			base.Initialize(elympics);
 

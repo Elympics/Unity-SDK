@@ -16,7 +16,7 @@ namespace Elympics
 
 		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")]
 		[SerializeField]
-		private GameObject[] linkedLogic;
+		private GameObject[] linkedLogic = null;
 
 		private readonly Stopwatch _elympicsUpdateStopwatch = new Stopwatch();
 

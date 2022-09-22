@@ -13,8 +13,9 @@ namespace Elympics
 		[SerializeField] private int stageDurationInMiliseconds = -1;
 		[SerializeField] private int frequencyInMiliseconds = -1;
 
+#pragma warning disable CS0414
 		[SerializeField] private int maxStageDurationInMiliseconds = 5000;
-
+#pragma warning restore CS0414
 		public ElympicsBehaviourStateChangeFrequencyStage(int stageDurationInMiliseconds, int frequencyInMiliseconds)
 		{
 			this.stageDurationInMiliseconds = stageDurationInMiliseconds;

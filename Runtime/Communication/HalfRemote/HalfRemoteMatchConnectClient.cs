@@ -11,6 +11,8 @@ using UnityEngine;
 using WebRtcWrapper;
 using Debug = UnityEngine.Debug;
 
+#pragma warning disable CS0067
+
 namespace Elympics
 {
 	public class HalfRemoteMatchConnectClient : IMatchConnectClient

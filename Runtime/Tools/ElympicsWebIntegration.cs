@@ -62,9 +62,9 @@ namespace Elympics
 		[Serializable]
 		private class LoggedInTokenResponseModel
 		{
-			public string UserName;
-			public string AuthToken;
-			public string RefreshToken;
+			public string UserName = null;
+			public string AuthToken = null;
+			public string RefreshToken = null;
 		}
 
 		[Serializable]
@@ -97,7 +97,7 @@ namespace Elympics
 		[Serializable]
 		private class JwtMidPart
 		{
-			public long exp;
+			public long exp = 0;
 		}
 
 		private static UnityWebRequestAsyncOperation Login(string username, string password, Action<UnityWebRequest> completed = null)
@@ -285,7 +285,7 @@ namespace Elympics
 				throw new Exception("Login operation failed. Check log for details");
 
 			BuildTools.BuildElympicsServerLinux();
-			
+
 			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
 				throw new Exception("Problem with packing engine");
@@ -295,7 +295,7 @@ namespace Elympics
 
 			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
 			var uploadOp = ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] {enginePath, botPath});
-			
+
 			while (!uploadOp.isDone) ;
 
 			if (!UploadHandler(currentGameConfig, uploadOp.webRequest))

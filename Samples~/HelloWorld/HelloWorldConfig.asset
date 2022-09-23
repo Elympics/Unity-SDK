@@ -22,13 +22,13 @@ MonoBehaviour:
   botsInServer: 1
   useWeb: 0
   enableReconnect: 0
-  connectOnGameplaySceneLoad: 1
   ticksPerSecond: 30
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
   maxAllowedLagInTicks: 15
   prediction: 1
   predictionLimitInTicks: 15
+  detailedNetworkLog: 0
   mode: 0
   halfRemoteMode: 0
   useWebInHalfRemote: 0

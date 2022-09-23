@@ -22,7 +22,6 @@ MonoBehaviour:
   botsInServer: 1
   useWeb: 0
   enableReconnect: 0
-  connectOnGameplaySceneLoad: 1
   ticksPerSecond: 30
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2

@@ -265,6 +265,12 @@ namespace Elympics
 			return true;
 		}
 
+		internal void CommitVars()
+		{
+			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+				elympicsBehaviour.CommitVars();
+		}
+
 		internal void ElympicsUpdate()
 		{
 			// copy behaviours to list before iterating because the collection might be modified by Instantiate/Destroy

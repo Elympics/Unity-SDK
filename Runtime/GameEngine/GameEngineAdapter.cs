@@ -10,6 +10,9 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 using IGameEngine = GameEngineCore.V1._3.IGameEngine;
 
+#pragma warning disable CS0618
+#pragma warning disable CS0067
+
 namespace Elympics
 {
 	public class GameEngineAdapter : IGameEngine

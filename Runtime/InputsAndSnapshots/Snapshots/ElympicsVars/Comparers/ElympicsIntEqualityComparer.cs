@@ -9,6 +9,6 @@ namespace Elympics
 		{
 		}
 
-		protected override float Distance(int a, int b) => Math.Abs(a - b);
+		protected override float Distance(int a, int b) => Math.Abs((long)a - b);
 	}
 }

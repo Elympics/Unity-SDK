@@ -16,17 +16,17 @@ namespace Elympics
 
 		public void UpdateUri(string url)
 		{
+			if (_lastUrl == url)
+				return;
+			_lastUrl = url;
+
 			try
 			{
-				if (_lastUrl == url)
-					return;
-
-				_lastUrl = url;
-				var builder = new UriBuilder(url);
-				if (builder.Path != "/")
-					throw new UriFormatException(builder.Path);
-
-				builder.Path = HealthQuery;
+				var validatedUrl = new Uri(url);
+				var builder = new UriBuilder(validatedUrl);
+				builder.Path = $"{builder.Path.TrimEnd('/')}/{HealthQuery}";
+				builder.Query = "";
+				builder.Fragment = "";
 				_uri = builder.Uri;
 				_uriUpdated = true;
 			}
@@ -47,7 +47,7 @@ namespace Elympics
 			{
 				timeout = DefaultTimeout
 			};
-			
+
 			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(_request);
 
 			_request.SendWebRequest();

@@ -184,7 +184,7 @@ namespace Elympics
 		[Serializable]
 		private class ErrorModel
 		{
-			public Dictionary<string, string[]> Errors;
+			public Dictionary<string, string[]> Errors = null;
 		}
 
 		public class AcceptTestCertificateHandler : CertificateHandler

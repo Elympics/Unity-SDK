@@ -9,7 +9,7 @@ namespace Elympics
 	public class ElympicsBehavioursManager : MonoBehaviour
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
-		[SerializeField] private ElympicsFactory                          factory;
+		[SerializeField] private ElympicsFactory                          factory = null;
 
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
@@ -25,6 +25,7 @@ namespace Elympics
 
 			_elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
 			var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
+			foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
 			foreach (var elympicsBehaviour in foundElympicsBehaviours)
 			{
 				var networkId = elympicsBehaviour.NetworkId;
@@ -262,6 +263,12 @@ namespace Elympics
 			}
 
 			return true;
+		}
+
+		internal void CommitVars()
+		{
+			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+				elympicsBehaviour.CommitVars();
 		}
 
 		internal void ElympicsUpdate()

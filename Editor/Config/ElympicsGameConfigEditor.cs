@@ -265,6 +265,7 @@ namespace Elympics
 			switch (halfRemoteMode)
 			{
 				case ElympicsGameConfig.HalfRemoteModeEnum.Server:
+					EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
 					EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("Port TCP server listens on"));
 					EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Port Web server listens on"));
 					break;
@@ -416,9 +417,8 @@ namespace Elympics
 				var botDifficulty = property.FindPropertyRelative("botDifficulty");
 				var gameEngineData = property.FindPropertyRelative("gameEngineData");
 				var matchmakerData = property.FindPropertyRelative("matchmakerData");
-				EditorGUILayout.PropertyField(userId);
-				if (string.IsNullOrEmpty(userId.stringValue))
-					userId.stringValue = index.ToString();
+
+				userId.stringValue = index.ToString();
 
 				EditorGUILayout.PropertyField(isBot);
 				if (isBot.boolValue)

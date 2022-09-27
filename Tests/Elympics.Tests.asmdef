@@ -3,7 +3,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Elympics"
+        "Elympics",
+        "Elympics.Editor"
     ],
     "includePlatforms": [
         "Editor"

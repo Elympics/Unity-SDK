@@ -13,6 +13,8 @@ namespace TechDemo
 		private bool            _cameraFollowing;
 		private PlayerBehaviour _playerBehaviour;
 
+		private ElympicsBool _hasInput = new ElympicsBool();
+
 		// Handling only one player through this input handlers, every player has the same player input controller
 		public void OnInputForClient(IInputWriter inputSerializer)
 		{
@@ -35,8 +37,11 @@ namespace TechDemo
 
 		public void ElympicsUpdate()
 		{
+			_hasInput.Value = false;
 			if (!ElympicsBehaviour.TryGetInput(_playerBehaviour.PredictableFor, out var inputReader))
 				return;
+
+			_hasInput.Value = true;
 
 			inputReader.Read(out float forwardMovement);
 			inputReader.Read(out float rightMovement);
@@ -56,12 +61,12 @@ namespace TechDemo
 		private void InitializeCameraFollowing()
 		{
 			// Initialize camera only to player played by us
-			if (CurrentPlayerControlsThis() || IsServerAndThisIsPlayer0()) 
+			if (CurrentPlayerControlsThis() || IsServerAndThisIsPlayer0())
 				_cameraFollowing = true;
 		}
 
 		private bool CurrentPlayerControlsThis() => Elympics.Player == _playerBehaviour.PredictableFor;
-		private bool IsServerAndThisIsPlayer0() => Elympics.Player == ElympicsPlayer.World && _playerBehaviour.PredictableFor == ElympicsPlayer.FromIndex(0);
+		private bool IsServerAndThisIsPlayer0()  => Elympics.Player == ElympicsPlayer.World && _playerBehaviour.PredictableFor == ElympicsPlayer.FromIndex(0);
 
 		private void Update()
 		{

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -12,32 +11,44 @@ namespace Elympics
 	public abstract class ElympicsVar<T> : ElympicsVar
 		where T : IEquatable<T>
 	{
+		private T _oldValue;
+		private T _currentValue;
+		private bool _valueChanged;
+
 		public T Value
 		{
-			get => currentValue;
+			get => _currentValue;
 			set
 			{
-				var oldValue = currentValue;
-				currentValue = value;
-				if (!Equals(oldValue, currentValue))
-					ValueChanged?.Invoke(oldValue, currentValue);
+				if (!_valueChanged)
+				{
+					_oldValue = _currentValue;
+					_valueChanged = true;
+				}
+				_currentValue = value;
 			}
-		}
-
-		[SerializeField] private T currentValue;
-
-		protected ElympicsVar(T value = default, bool enabledSynchronization = true, ElympicsVarEqualityComparer<T> comparer = null)
-			: base(enabledSynchronization)
-		{
-			currentValue = value;
-			Comparer = comparer ?? new ElympicsDefaultEqualityComparer<T>();
 		}
 
 		public ElympicsVarEqualityComparer<T> Comparer { get; }
 
 		public delegate void ValueChangedCallback(T lastValue, T newValue);
-
 		public event ValueChangedCallback ValueChanged;
+
+		protected ElympicsVar(T value = default, bool enabledSynchronization = true, ElympicsVarEqualityComparer<T> comparer = null)
+			: base(enabledSynchronization)
+		{
+			_currentValue = value;
+			Comparer = comparer ?? new ElympicsDefaultEqualityComparer<T>();
+		}
+
+		internal override void Commit()
+		{
+			if (!_valueChanged)
+				return;
+			_valueChanged = false;
+			if (!Equals(_oldValue, _currentValue))
+				ValueChanged?.Invoke(_oldValue, _currentValue);
+		}
 
 		public override string ToString() => Value.ToString();
 
@@ -71,9 +82,13 @@ namespace Elympics
 		public abstract void Serialize(BinaryWriter bw);
 		public abstract void Deserialize(BinaryReader br, bool ignoreTolerance = false);
 		public abstract bool Equals(BinaryReader br1, BinaryReader br2);
+
+		internal virtual void Commit()
+		{ }
+
 		internal virtual void Initialize(IElympics elympics)
 		{
-			this.Elympics = elympics;
+			Elympics = elympics;
 		}
 	}
 }

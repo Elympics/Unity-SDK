@@ -251,6 +251,12 @@ namespace Elympics
 			_inputByPlayer[player] = rawInput;
 		}
 
+		internal void CommitVars()
+		{
+			foreach (var backingField in _backingFields)
+				backingField.Commit();
+		}
+
 		internal void ElympicsUpdate()
 		{
 			if (!isUpdatableForNonOwners && !IsPredictableTo(ElympicsBase.Player))

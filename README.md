@@ -8,7 +8,7 @@
 
 # Elympics
 
-> Remember to as all questions on our [Discord server](https://discord.gg/Xh6AR2mceg)!
+> Remember to ask all questions on our [Discord server](https://discord.gg/Xh6AR2mceg)!
 
 ## What is Elympics?
 
@@ -27,4 +27,3 @@ Simply add this package in Unity (using Unity Package Manager and git) with `htt
 The idea behind parallel simulation execution is available [here](https://elympics.medium.com/elympics-multiplayer-services-how-it-works-3205bff2b2ff)
 
 Find out more in our official documentation: https://docs.elympics.cc/.
-

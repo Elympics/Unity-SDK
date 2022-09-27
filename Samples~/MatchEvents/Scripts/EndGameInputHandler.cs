@@ -1,4 +1,4 @@
-using System;
+using System.Linq;
 using System.Text;
 using Elympics;
 using UnityEngine;
@@ -26,17 +26,16 @@ namespace MatchEvents
 				if (ElympicsBehaviour.TryGetInput(ElympicsPlayer.FromIndex(i), out var inputDeserializer))
 				{
 					inputDeserializer.Read(out bool shouldGameEnd);
-					if (shouldGameEnd)
-					{
-						Debug.Log("Ending game...");
-						Elympics.EndGame(new ResultMatchPlayerDatas
+					if (!shouldGameEnd)
+						continue;
+					Debug.Log("Ending game...");
+					Elympics.EndGame(new ResultMatchPlayerDatas(
+						Enumerable.Range(0, _totalPlayers).Select(x => new ResultMatchPlayerData
 						{
-							new ResultMatchPlayerData
-							{
-								GameEngineData = Encoding.ASCII.GetBytes("Ended on input")
-							}
-						});
-					}
+							MatchmakerData = new float[] { x, 0 },
+							GameEngineData = Encoding.ASCII.GetBytes("Ended on input")
+						}).ToList()
+					));
 				}
 		}
 

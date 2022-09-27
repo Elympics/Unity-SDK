@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Elympics;
 using UnityEngine;
 
 namespace MatchEvents
@@ -29,7 +30,7 @@ namespace MatchEvents
 
 			var type = obj.GetType();
 
-			if (type.IsPrimitive || obj is IFormattable)
+			if (type.IsPrimitive || obj is IFormattable || obj is ElympicsPlayer)
 				return $"{obj}";
 			if (obj is string s)
 				return $"@\"{s.Replace("\"", "\"\"")}\"";

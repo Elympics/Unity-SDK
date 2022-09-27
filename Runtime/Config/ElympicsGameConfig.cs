@@ -23,7 +23,6 @@ namespace Elympics
 
 		[SerializeField] private bool useWeb                       = false;
 		[SerializeField] private bool enableReconnect              = false;
-		[SerializeField] private bool connectOnGameplaySceneLoad   = true;
 		[SerializeField] private int  ticksPerSecond               = 30;
 		[SerializeField] private int  snapshotSendingPeriodInTicks = 1;
 		[SerializeField] private int  inputLagTicks                = 2;
@@ -41,7 +40,7 @@ namespace Elympics
 		[SerializeField] private int                   tcpPortForHalfRemoteMode     = 9101;
 		[SerializeField] private int                   webPortForHalfRemoteMode     = 9102;
 		[SerializeField] private int                   playerIndexForHalfRemoteMode = 1;
-		[SerializeField] private List<InitialUserData> testPlayers;
+		[SerializeField] private List<InitialUserData> testPlayers                  = null;
 
 		public string GameName => gameName;
 		public string GameId   => gameId;

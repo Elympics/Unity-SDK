@@ -101,13 +101,14 @@ var LibraryWebRtc = {
             }.bind(this);
 
             this.sendUnreliable = function (message) {
-                if (this.reliableDc.readyState !== "open")
+                if (this.unreliableDc.readyState !== "open")
                     return;
                 this.unreliableDc.send(message);
             }.bind(this);
 
             this.close = function () {
                 this.reliableDc.close();
+                this.unreliableDc.close();
                 this.pc.close();
             }.bind(this);
         }

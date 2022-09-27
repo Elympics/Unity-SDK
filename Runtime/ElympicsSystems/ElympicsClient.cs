@@ -122,8 +122,6 @@ namespace Elympics
 
 			var lastDelayedInputTick = _clientTickCalculator.LastDelayedInputTick;
 			var delayedInputTick = _clientTickCalculator.DelayedInputTick;
-			var lastPredictionTick = _clientTickCalculator.LastPredictionTick;
-			var predictionTick = _clientTickCalculator.PredictionTick;
 
 			var startDelayedInputTick = Math.Max(lastDelayedInputTick + 1, delayedInputTick - MaxInputsToSendOnPredictionJump);
 			for (var i = startDelayedInputTick; i <= delayedInputTick; i++)
@@ -133,6 +131,8 @@ namespace Elympics
 			{
 				ReconcileIfRequired(receivedSnapshot);
 
+				var lastPredictionTick = _clientTickCalculator.LastPredictionTick;
+				var predictionTick = _clientTickCalculator.PredictionTick;
 				var tickDiff = predictionTick - (lastPredictionTick + 1);
 				var startPredictionTick = tickDiff <= MaxTicksToTickOnPredictionJump ? lastPredictionTick + 1 : predictionTick;
 
@@ -140,6 +140,7 @@ namespace Elympics
 				{
 					Tick = i;
 					ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
+					elympicsBehavioursManager.CommitVars();
 					ApplyPredictedInput();
 					elympicsBehavioursManager.ElympicsUpdate();
 					ProcessSnapshot(i);
@@ -148,6 +149,7 @@ namespace Elympics
 			else
 			{
 				ApplyFullSnapshot(receivedSnapshot);
+				elympicsBehavioursManager.CommitVars();
 			}
 		}
 		private void LogNetworkConditionsInInterval(DateTime clientTickStart)
@@ -216,6 +218,7 @@ namespace Elympics
 			Tick = receivedSnapshot.Tick;
 			elympicsBehavioursManager.ApplySnapshot(receivedSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
 			elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+			elympicsBehavioursManager.CommitVars();
 
 			var currentSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
 			currentSnapshot.Tick = receivedSnapshot.Tick;
@@ -226,6 +229,7 @@ namespace Elympics
 				Tick = resimulationTick;
 				if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
 					elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+				elympicsBehavioursManager.CommitVars();
 
 				_inputList.Clear();
 				if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))

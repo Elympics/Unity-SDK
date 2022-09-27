@@ -96,6 +96,8 @@ namespace Elympics
 			if (HandlingClientsInServer)
 				GatherInputsFromServerBotsOrClient(_playersOfClients, SwitchBehaviourToClient, ClientInputGetter);
 
+			elympicsBehavioursManager.CommitVars();
+
 			_inputList.Clear();
 			foreach (var inputBufferPair in _gameEngineAdapter.PlayerInputBuffers)
 				if (inputBufferPair.Value.TryGetDataForTick(Tick, out var input))

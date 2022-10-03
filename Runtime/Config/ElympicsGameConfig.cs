@@ -32,7 +32,7 @@ namespace Elympics
 
 		[SerializeField] private bool detailedNetworkLog = false;
 
-		[SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.LocalPlayerAndBots;
+		[SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.HalfRemote;
 
 		[SerializeField] private HalfRemoteModeEnum    halfRemoteMode               = HalfRemoteModeEnum.Server;
 		[SerializeField] private bool                  useWebInHalfRemote           = false;

@@ -16,6 +16,8 @@ namespace Elympics
 		private          ElympicsBase                _elympics;
 		private          BinaryInputWriter           _inputWriter;
 
+		private const int _startIdForInstantiatedObjects = 10000000;
+
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{
 			_inputWriter = new BinaryInputWriter();
@@ -38,6 +40,12 @@ namespace Elympics
 				if (_elympicsBehaviours.Contains(networkId))
 				{
 					Debug.LogError($"Duplicated networkId {networkId} on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}", elympicsBehaviour);
+					return;
+				}
+
+				if (networkId >= _startIdForInstantiatedObjects && !elympicsBehaviour.forceNetworkId)
+				{
+					Debug.LogError($"Auto assign id failed (NetworkId: {networkId}) on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}. Object has id in range for instantiate objects", elympicsBehaviour);
 					return;
 				}
 

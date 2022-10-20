@@ -90,12 +90,17 @@ namespace Elympics
 		}
 
 #if UNITY_EDITOR
+		private bool _previousForceNetworkIdState;
+
 		private void OnValidate()
 		{
-			if (!forceNetworkId && networkId == UndefinedNetworkId)
+			bool shouldUpdateNetworkId = _previousForceNetworkIdState && !forceNetworkId;
+
+			if ((!forceNetworkId && networkId == UndefinedNetworkId) || shouldUpdateNetworkId)
 				UpdateSerializedNetworkId();
 
 			_behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
+			_previousForceNetworkIdState = forceNetworkId;
 		}
 
 		private void OnEnable()

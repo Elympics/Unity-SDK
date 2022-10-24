@@ -16,7 +16,7 @@ namespace Elympics
 		private          ElympicsBase                _elympics;
 		private          BinaryInputWriter           _inputWriter;
 
-		public static readonly int NetworkIdRange = 10000000;
+		internal const int NetworkIdRange = 10000000;
 
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{

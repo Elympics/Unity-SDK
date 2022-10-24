@@ -94,9 +94,7 @@ namespace Elympics
 
 		private void OnValidate()
 		{
-			bool shouldUpdateNetworkId = _previousForceNetworkIdState && !forceNetworkId;
-
-			if ((!forceNetworkId && networkId == UndefinedNetworkId) || shouldUpdateNetworkId)
+			if (!forceNetworkId && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
 				UpdateSerializedNetworkId();
 
 			_behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();

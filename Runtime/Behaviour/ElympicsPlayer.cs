@@ -10,8 +10,7 @@ namespace Elympics
 		private const int WorldValue   = -2;
 		private const int InvalidValue = -1;
 
-		private const int NetworkIdRange = 10000000;
-		internal      int StartNetworkId => (playerIndex + 4) * NetworkIdRange;
+		internal int StartNetworkId => (playerIndex + 4) * ElympicsBehavioursManager.NetworkIdRange;
 
 		public static readonly ElympicsPlayer All     = new ElympicsPlayer {playerIndex = AllValue};
 		public static readonly ElympicsPlayer World   = new ElympicsPlayer {playerIndex = WorldValue};

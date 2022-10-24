@@ -16,7 +16,7 @@ namespace Elympics
 		private          ElympicsBase                _elympics;
 		private          BinaryInputWriter           _inputWriter;
 
-		private const int _startIdForInstantiatedObjects = 10000000;
+		public static readonly int NetworkIdRange = 10000000;
 
 		internal void InitializeInternal(ElympicsBase elympicsBase)
 		{
@@ -43,9 +43,9 @@ namespace Elympics
 					return;
 				}
 
-				if (networkId >= _startIdForInstantiatedObjects && !elympicsBehaviour.forceNetworkId)
+				if (networkId >= NetworkIdRange && !elympicsBehaviour.forceNetworkId)
 				{
-					Debug.LogError($"Auto assign id failed (NetworkId: {networkId}) on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}. Object has id in range for instantiate objects", elympicsBehaviour);
+					Debug.LogError($"Auto assign id failed (NetworkId: {networkId}) on {elympicsBehaviour.gameObject.name} {nameof(ElympicsBehaviour)}. Object has id in range for instantiated objects", elympicsBehaviour);
 					return;
 				}
 

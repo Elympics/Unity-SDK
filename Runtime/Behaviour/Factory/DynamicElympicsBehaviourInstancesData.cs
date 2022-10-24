@@ -119,6 +119,9 @@ namespace Elympics
 			return AreIncomingInstancesTheSame();
 		}
 
+		internal override void Commit()
+		{ }
+
 		[SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Global")]
 		public struct InstanceData
 		{

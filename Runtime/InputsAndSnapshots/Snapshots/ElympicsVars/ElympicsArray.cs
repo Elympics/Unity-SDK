@@ -46,6 +46,12 @@ namespace Elympics
 			return true;
 		}
 
+		internal override void Commit()
+		{
+			foreach (var elympicsVar in Values)
+				elympicsVar.Commit();
+		}
+
 		private static T[] Populate(T[] array, Func<T> provider)
 		{
 			for (int i = 0; i < array.Length; i++)

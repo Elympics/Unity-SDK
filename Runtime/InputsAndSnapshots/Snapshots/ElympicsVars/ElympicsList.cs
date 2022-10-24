@@ -75,6 +75,12 @@ namespace Elympics
 			return true;
 		}
 
+		internal override void Commit()
+		{
+			foreach (var elympicsVar in _values)
+				elympicsVar.Commit();
+		}
+
 		public int IndexOf(T item)
 		{
 			return _values.IndexOf(item);

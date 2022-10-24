@@ -24,6 +24,9 @@ namespace Elympics
 
 		public override bool Equals(BinaryReader br1, BinaryReader br2) => br1.ReadInt32() == br2.ReadInt32();
 
+		internal override void Commit()
+		{ }
+
 		public int  GetCurrent()            => _enumerator.GetCurrent();
 		public void MoveTo(int to)          => _enumerator.MoveTo(to);
 		public int  MoveNextAndGetCurrent() => _enumerator.MoveNextAndGetCurrent();

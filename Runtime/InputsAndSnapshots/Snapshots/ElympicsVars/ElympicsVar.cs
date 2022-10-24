@@ -83,8 +83,7 @@ namespace Elympics
 		public abstract void Deserialize(BinaryReader br, bool ignoreTolerance = false);
 		public abstract bool Equals(BinaryReader br1, BinaryReader br2);
 
-		internal virtual void Commit()
-		{ }
+		internal abstract void Commit();
 
 		internal virtual void Initialize(IElympics elympics)
 		{

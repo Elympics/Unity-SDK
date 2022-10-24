@@ -55,7 +55,7 @@ namespace Elympics
 					var isElympicsVar = typeof(ElympicsVar).IsAssignableFrom(field.FieldType);
 
 					if (field.IsPrivate && isElympicsVar)
-						Debug.LogWarning($"WARNING! Private ElympicsVars in base {customClass} class isn't synchronized! Try make them instead protected.");
+						Debug.LogWarning($"WARNING! Private ElympicsVars in base {customClass} class aren't synchronized! Try making them protected instead.");
 				}
 			}
 		}

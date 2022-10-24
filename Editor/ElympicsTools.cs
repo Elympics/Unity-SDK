@@ -3,6 +3,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
+using System.Reflection;
 
 namespace Elympics
 {
@@ -32,6 +33,31 @@ namespace Elympics
 			}
 
 			return config;
+		}
+
+		[UnityEditor.Callbacks.DidReloadScripts]
+		private static void CheckElympicsVars()
+		{
+			var baseSynchronizationClassesInApplication = SceneObjectsFinder.FindObjectsOfType<IObservable>(SceneManager.GetActiveScene(), true);
+			foreach (var customClass in baseSynchronizationClassesInApplication)
+			{
+				var type = customClass.GetType();
+				if (type.BaseType == null)
+					continue;
+
+				FieldInfo[] fields = type.BaseType
+						.GetFields(
+						 BindingFlags.NonPublic |
+						 BindingFlags.Instance);
+
+				foreach (var field in fields)
+				{
+					var isElympicsVar = typeof(ElympicsVar).IsAssignableFrom(field.FieldType);
+
+					if (field.IsPrivate && isElympicsVar)
+						Debug.LogWarning($"WARNING! Private ElympicsVars in base {customClass} class isn't synchronized! Try make them instead protected.");
+				}
+			}
 		}
 
 		[MenuItem(ElympicsEditorMenuPaths.SETUP_MENU_PATH, priority = 2)]

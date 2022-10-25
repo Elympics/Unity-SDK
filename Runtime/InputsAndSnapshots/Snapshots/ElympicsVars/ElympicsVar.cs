@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using UnityEngine;
 
 namespace Elympics
 {
@@ -12,20 +13,20 @@ namespace Elympics
 		where T : IEquatable<T>
 	{
 		private T _oldValue;
-		private T _currentValue;
+		[SerializeField] private T currentValue;
 		private bool _valueChanged;
 
 		public T Value
 		{
-			get => _currentValue;
+			get => currentValue;
 			set
 			{
 				if (!_valueChanged)
 				{
-					_oldValue = _currentValue;
+					_oldValue = currentValue;
 					_valueChanged = true;
 				}
-				_currentValue = value;
+				currentValue = value;
 			}
 		}
 
@@ -37,7 +38,7 @@ namespace Elympics
 		protected ElympicsVar(T value = default, bool enabledSynchronization = true, ElympicsVarEqualityComparer<T> comparer = null)
 			: base(enabledSynchronization)
 		{
-			_currentValue = value;
+			currentValue = value;
 			Comparer = comparer ?? new ElympicsDefaultEqualityComparer<T>();
 		}
 
@@ -46,8 +47,8 @@ namespace Elympics
 			if (!_valueChanged)
 				return;
 			_valueChanged = false;
-			if (!Equals(_oldValue, _currentValue))
-				ValueChanged?.Invoke(_oldValue, _currentValue);
+			if (!Equals(_oldValue, currentValue))
+				ValueChanged?.Invoke(_oldValue, currentValue);
 		}
 
 		public override string ToString() => Value.ToString();

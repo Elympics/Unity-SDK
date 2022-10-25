@@ -3,7 +3,6 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
-using System.Reflection;
 
 namespace Elympics
 {

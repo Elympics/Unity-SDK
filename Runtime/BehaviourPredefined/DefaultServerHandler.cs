@@ -18,7 +18,7 @@ namespace Elympics
 
 		public void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
 		{
-			if (!isActiveAndEnabled)
+			if (!IsEnabledAndActive)
 				return;
 
 			_playersNumber = initialMatchPlayerDatas.Count;
@@ -47,7 +47,7 @@ namespace Elympics
 
 		public void OnPlayerDisconnected(ElympicsPlayer player)
 		{
-			if (!isActiveAndEnabled)
+			if (!IsEnabledAndActive)
 				return;
 
 			Debug.Log($"Player {player} disconnected");
@@ -57,7 +57,7 @@ namespace Elympics
 
 		public void OnPlayerConnected(ElympicsPlayer player)
 		{
-			if (!isActiveAndEnabled)
+			if (!IsEnabledAndActive)
 				return;
 
 			Debug.Log($"Player {player} connected");

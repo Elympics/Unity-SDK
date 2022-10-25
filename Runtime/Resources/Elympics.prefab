@@ -141,12 +141,11 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 66269131989871612}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 039fffaf291756646a4f476ab6670d90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  disableInEditor: 1
   verbosity: 0
   serverLogPrefix: '[Elympics::Server]'
 --- !u!1 &2826778636150675420
@@ -319,6 +318,7 @@ MonoBehaviour:
   linkedLogic:
   - {fileID: 0}
   connectOnStart: 1
+  networkConditionsLogInterval: 5
 --- !u!1 &7529846740173844773
 GameObject:
   m_ObjectHideFlags: 0

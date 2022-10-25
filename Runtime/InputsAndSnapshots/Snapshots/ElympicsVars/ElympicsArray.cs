@@ -1,44 +1,46 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace Elympics
 {
 	[Serializable]
 	public class ElympicsArray<T>: ElympicsVar where T : ElympicsVar
 	{
-		public IReadOnlyList<T> Values;
+		[SerializeField] private T[] values;
+		public IReadOnlyList<T> Values => values;
 
 		public ElympicsArray(int capacity, Func<T> factory, bool enableSynchronization = true) : base(enableSynchronization)
 		{
-			Values = Populate(new T[capacity], factory);
+			values = Populate(new T[capacity], factory);
 		}
 
 		public ElympicsArray(params T[] elems) : this(true, elems)
 		{
-			Values = elems;
+			values = elems;
 		}
 
 		public ElympicsArray(bool enableSynchronization, params T[] elems) : base(enableSynchronization)
 		{
-			Values = elems;
+			values = elems;
 		}
 
 		public override void Serialize(BinaryWriter bw)
 		{
-			foreach (var elympicsVar in Values)
+			foreach (var elympicsVar in values)
 				elympicsVar.Serialize(bw);
 		}
 
 		public override void Deserialize(BinaryReader br, bool ignoreTolerance = false)
 		{
-			foreach (var elympicsVar in Values)
+			foreach (var elympicsVar in values)
 				elympicsVar.Deserialize(br, ignoreTolerance);
 		}
 
 		public override bool Equals(BinaryReader br1, BinaryReader br2)
 		{
-			foreach (var elympicsVar in Values)
+			foreach (var elympicsVar in values)
 			{
 				if (!elympicsVar.Equals(br1, br2))
 					return false;
@@ -46,9 +48,15 @@ namespace Elympics
 			return true;
 		}
 
+		internal override void Commit()
+		{
+			foreach (var elympicsVar in values)
+				elympicsVar.Commit();
+		}
+
 		private static T[] Populate(T[] array, Func<T> provider)
 		{
-			for (int i = 0; i < array.Length; i++)
+			for (var i = 0; i < array.Length; i++)
 				array[i] = provider();
 			return array;
 		}
@@ -57,7 +65,7 @@ namespace Elympics
 		{
 			base.Initialize(elympics);
 
-			foreach (T element in Values)
+			foreach (var element in values)
 				element.Initialize(elympics);
 		}
 	}

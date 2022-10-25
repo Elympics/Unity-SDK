@@ -104,8 +104,8 @@ namespace Elympics
 		public override void OnInspectorGUI()
 		{
 			serializedObject.Update();
-			var summaryLabelStyle = new GUIStyle(GUI.skin.label) {fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true};
 
+			var summaryLabelStyle = new GUIStyle(GUI.skin.label) {fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true};
 			var cachedWordWrap = EditorStyles.label.wordWrap;
 			EditorStyles.label.wordWrap = true;
 
@@ -160,11 +160,16 @@ namespace Elympics
 			switch ((ElympicsGameConfig.GameplaySceneDebugModeEnum) _mode.enumValueIndex)
 			{
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots:
-					break;
-				case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
+					EditorGUILayout.LabelField("Run the server, a single player and bots locally with no networking. Good for anything outside of gameplay, such as UI, graphics and sound design.", summaryLabelStyle);
+					EditorGUILayout.HelpBox("This mode is not fit for gameplay development!", MessageType.Warning, true);
 					break;
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote:
+					EditorGUILayout.LabelField("Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server, user or bot, use ParrelSync to create more instances.", summaryLabelStyle);
+					EditorGUILayout.HelpBox("This mode is only a simulation of production environment!", MessageType.Warning, true);
 					DrawHalfRemote();
+					break;
+				case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
+					EditorGUILayout.LabelField("Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.", summaryLabelStyle);
 					break;
 			}
 

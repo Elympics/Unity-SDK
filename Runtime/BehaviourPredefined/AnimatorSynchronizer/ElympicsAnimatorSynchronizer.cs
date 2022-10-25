@@ -67,19 +67,24 @@ namespace Elympics
 		public void OnPreStateSerialize()
 		{
 			for (var i = 0; i < _layerStatuses.Length; i++)
-				_layerWeights.Values[i].Value = Animator.GetLayerWeight(i);
+				if (_layerStatuses[i].Enabled)
+					_layerWeights.Values[i].Value = Animator.GetLayerWeight(i);
 
 			for (var i = 0; i < _boolStatuses.Count; i++)
-				_boolParams.Values[i].Value = Animator.GetBool(_boolStatuses[i].HashName);
+				if (_boolStatuses[i].Enabled)
+					_boolParams.Values[i].Value = Animator.GetBool(_boolStatuses[i].HashName);
 
 			for (var i = 0; i < _floatStatuses.Count; i++)
-				_floatParams.Values[i].Value = Animator.GetFloat(_floatStatuses[i].HashName);
+				if (_floatStatuses[i].Enabled)
+					_floatParams.Values[i].Value = Animator.GetFloat(_floatStatuses[i].HashName);
 
 			for (var i = 0; i < _intStatuses.Count; i++)
-				_intParams.Values[i].Value = Animator.GetInteger(_intStatuses[i].HashName);
+				if (_intStatuses[i].Enabled)
+					_intParams.Values[i].Value = Animator.GetInteger(_intStatuses[i].HashName);
 
 			for (var i = 0; i < _triggerStatuses.Count; i++)
-				_triggerParams.Values[i].Value = _triggerCache.Contains(_triggerStatuses[i].HashName);
+				if (_triggerStatuses[i].Enabled)
+					_triggerParams.Values[i].Value = _triggerCache.Contains(_triggerStatuses[i].HashName);
 
 			_triggerCache.Clear();
 		}

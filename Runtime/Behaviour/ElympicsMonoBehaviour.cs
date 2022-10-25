@@ -48,6 +48,13 @@ namespace Elympics
 		public bool           IsPredictableForMe => ElympicsBehaviour.IsPredictableTo(Elympics.Player);
 		public ElympicsPlayer PredictableFor     => ElympicsBehaviour.predictableFor;
 
+		/// <summary>Checks if Behaviour is enabled and its Game Object is active in hierarchy.</summary>
+		/// <remarks>
+		/// Works before OnEnabled is called and should be used instead of <see cref="Behaviour.isActiveAndEnabled"/>
+		/// for example in <see cref="IInitializable.Initialize"/>.
+		/// </remarks>
+		public bool IsEnabledAndActive => enabled && gameObject.activeInHierarchy;
+
 		/// <summary>
 		/// Provides Elympics-specific game instance data and methods.
 		/// </summary>

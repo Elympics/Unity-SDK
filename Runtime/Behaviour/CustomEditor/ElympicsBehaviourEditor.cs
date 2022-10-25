@@ -9,11 +9,22 @@ namespace Elympics
 	[CustomEditor(typeof(ElympicsBehaviour))]
 	internal partial class ElympicsBehaviourEditor : Editor
 	{
+		[Flags]
+		enum ElympicsComponentsToSync
+		{
+			None = 0x0,
+			GameObject_Active = 0x1,
+			Transform = 0x2,
+			Rigidbody = 0x4,
+			Rigidbody2D = 0x8,
+			Animator = 0x16,
+		}
+
 		private ElympicsBehaviour _behaviour;
 
 		private SerializedProperty _networkId;
 		private SerializedProperty _forceNetworkId;
-		private bool               _useAutoId = true;
+		private bool _useAutoId = true;
 
 		private SerializedProperty _predictableToPlayers;
 
@@ -27,6 +38,10 @@ namespace Elympics
 
 		private GUIStyle summaryLabelStyle;
 
+		private GUIStyle _warningStyle;
+
+		private ElympicsComponentsToSync _selectedComponentsToSync;
+
 		void OnEnable()
 		{
 			_behaviour = serializedObject.targetObject as ElympicsBehaviour;
@@ -39,13 +54,14 @@ namespace Elympics
 			_isUpdatableForNonOwners = serializedObject.FindProperty(nameof(_behaviour.isUpdatableForNonOwners));
 			_visibleToPlayers = serializedObject.FindProperty(nameof(_behaviour.visibleFor));
 			_stateUpdateFrequencyStages = serializedObject.FindProperty(nameof(_behaviour.stateFrequencyStages));
-			
+
 			_stringBuilder = new StringBuilder();
 		}
 
 		public override void OnInspectorGUI()
 		{
 			summaryLabelStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true };
+			_warningStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Normal, wordWrap = true, richText = true };
 			EditorStyles.label.wordWrap = true;
 			serializedObject.Update();
 			if (IgnoreComponent(_behaviour))
@@ -110,12 +126,12 @@ namespace Elympics
 		private void DrawObservedMonoBehaviours()
 		{
 			var allMonos = _behaviour.GetComponents<MonoBehaviour>();
-			EditorGUILayout.BeginVertical(new GUIStyle {padding = new RectOffset(20, 0, 0, 0)});
+			EditorGUILayout.BeginVertical(new GUIStyle { padding = new RectOffset(20, 0, 0, 0) });
 			EditorGUILayout.LabelField(Label_ObservedMonoBehaviours);
 			foreach (var mono in allMonos)
 			{
 				if (mono is IObservable)
-					EditorGUILayout.LabelField($"- {mono.GetType().Name} ({GetInterfaceNames(mono)})", new GUIStyle(GUI.skin.label) {padding = new RectOffset(20, 0, 0, 0)});
+					EditorGUILayout.LabelField($"- {mono.GetType().Name} ({GetInterfaceNames(mono)})", new GUIStyle(GUI.skin.label) { padding = new RectOffset(20, 0, 0, 0) });
 			}
 
 			EditorGUILayout.EndVertical();
@@ -151,39 +167,111 @@ namespace Elympics
 
 		private void DrawSynchronizationButtons()
 		{
-			AddSynchronizationButton<ElympicsGameObjectActiveSynchronizer>(Label_GameObjectSynchronizer);
-			AddSynchronizationButton<ElympicsTransformSynchronizer>(Label_TransformSynchronizer);
-			if (_behaviour.TryGetComponent<Rigidbody>(out _))
-				AddSynchronizationButton<ElympicsRigidBodySynchronizer>(Label_RigidbodySynchronizer);
-			if (_behaviour.TryGetComponent<Rigidbody2D>(out _))
-				AddSynchronizationButton<ElympicsRigidBody2DSynchronizer>(Label_Rigidbody2DSynchronizer);
-			if(_behaviour.TryGetComponent<Animator>(out _))
-				AddSynchronizationButton<ElympicsAnimatorSynchronizer>(Label_AnimatorSynchronizer);
+			AddSynchronizationButton<ElympicsGameObjectActiveSynchronizer>(ElympicsComponentsToSync.GameObject_Active);
+			AddSynchronizationButton<ElympicsTransformSynchronizer>(ElympicsComponentsToSync.Transform);
+
+			var hasRigidbody = _behaviour.TryGetComponent<Rigidbody>(out _);
+			var hasRigidbody2D = _behaviour.TryGetComponent<Rigidbody2D>(out _);
+
+			if (hasRigidbody)
+				AddSynchronizationButton<ElympicsRigidBodySynchronizer>(ElympicsComponentsToSync.Rigidbody);
+			if (hasRigidbody2D)
+				AddSynchronizationButton<ElympicsRigidBody2DSynchronizer>(ElympicsComponentsToSync.Rigidbody2D);
+			if (_behaviour.TryGetComponent<Animator>(out _))
+				AddSynchronizationButton<ElympicsAnimatorSynchronizer>(ElympicsComponentsToSync.Animator);
+
+			if (hasRigidbody || hasRigidbody2D)
+				AddSynchronizationWarnings();
+		}
+
+		private void AddSynchronizationWarnings()
+		{
+			if (HasComponent(ElympicsComponentsToSync.Transform) && (HasComponent(ElympicsComponentsToSync.Rigidbody) || HasComponent(ElympicsComponentsToSync.Rigidbody2D)))
+			{
+				AddSynchronizationWarningForComponent(Label_TransformAndRigidBodyExistWarning, ElympicsDocumentationUrls.Link_RigidBodySynchronizerDocumentation);
+			}
+			else if (HasComponent(ElympicsComponentsToSync.Transform))
+			{
+				AddSynchronizationWarningForComponent(Label_TransformExistRigidbodyWarning, ElympicsDocumentationUrls.Link_RigidBodySynchronizerDocumentation);
+			}
+			else if (HasComponent(ElympicsComponentsToSync.Rigidbody) || HasComponent(ElympicsComponentsToSync.Rigidbody2D))
+			{
+				AddSynchronizationWarningForComponent(Label_RigidBodyExistExistTransformWarning, ElympicsDocumentationUrls.Link_TransfromSynchronizerDocumentation);
+			}
+
+		}
+
+		private void AddSynchronizationWarningForComponent(string warning, string documentationUrl)
+		{
+			EditorGUILayout.Space(10);
+			EditorGUILayout.BeginVertical();
+			EditorGUILayout.LabelField(warning, _warningStyle);
+			if (GUILayout.Button(ElympicsDocumentationUrls.Label_Documentation, GUILayout.ExpandWidth(false)))
+			{
+				Application.OpenURL(documentationUrl);
+			}
+			EditorGUILayout.EndVertical();
 		}
 
 		private bool IgnoreThisBehaviour(ElympicsBehaviour behaviour)
 			=> behaviour.TryGetComponent<ElympicsFactory>(out _)
 			   || behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out _);
 
-		private void AddSynchronizationButton<TComponent>(string name) where TComponent : MonoBehaviour
+		private void AddSynchronizationButton<TComponent>(ElympicsComponentsToSync buttonType) where TComponent : MonoBehaviour
 		{
-			GUILayoutOption height = GUILayout.Height(40);
+			var height = GUILayout.Height(40);
+			ColorizeButton(buttonType);
 			if (!_behaviour.TryGetComponent<TComponent>(out _))
 			{
-				if (GUILayout.Button($"Add {name} Synchronization", height))
+				UnregisterComponentForSync(buttonType);
+				if (GUILayout.Button($"Add {buttonType} Synchronization", height))
 				{
 					_behaviour.gameObject.AddComponent<TComponent>();
+					RegisterComponentForSync(buttonType);
 					EditorUtility.SetDirty(_behaviour.gameObject);
 				}
 			}
 			else
 			{
-				if (GUILayout.Button($"Remove {name} Synchronization", height))
+				RegisterComponentForSync(buttonType);
+				if (GUILayout.Button($"Remove {buttonType} Synchronization", height))
 				{
+					UnregisterComponentForSync(buttonType);
 					DestroyImmediate(_behaviour.gameObject.GetComponent<TComponent>(), true);
 					EditorUtility.SetDirty(_behaviour.gameObject);
 				}
 			}
+			GUI.color = Color.white;
+		}
+
+		private void ColorizeButton(ElympicsComponentsToSync buttonType)
+		{
+			var changeColor = (buttonType == ElympicsComponentsToSync.Rigidbody2D || buttonType == ElympicsComponentsToSync.Rigidbody) && HasComponent(ElympicsComponentsToSync.Transform) ||
+				buttonType == ElympicsComponentsToSync.Transform && (HasComponent(ElympicsComponentsToSync.Rigidbody) || HasComponent(ElympicsComponentsToSync.Rigidbody2D));
+
+			if (changeColor)
+				GUI.color = Color.yellow;
+		}
+
+		private void RegisterComponentForSync(ElympicsComponentsToSync component)
+		{
+			if ((_selectedComponentsToSync & component) == 0)
+			{
+				_selectedComponentsToSync |= component;
+			}
+		}
+
+		private void UnregisterComponentForSync(ElympicsComponentsToSync component)
+		{
+			if ((_selectedComponentsToSync & component) != 0)
+			{
+				_selectedComponentsToSync &= (~component);
+			}
+		}
+
+		private bool HasComponent(ElympicsComponentsToSync component)
+		{
+			return (_selectedComponentsToSync & component) == component;
 		}
 	}
 }

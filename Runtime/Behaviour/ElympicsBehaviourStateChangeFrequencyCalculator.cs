@@ -38,7 +38,10 @@ namespace Elympics
 
 		private bool CanSkipStateSynchronizingInCurrentSnapshotCall()
 		{
-			return currentSendingSnapshotCalls % currentStateUpdateFrequencyStage.UpdateFrequencyInTicks != 0;
+			if (currentStateUpdateFrequencyStage.UpdateFrequencyInTicks >= 1)
+				return currentSendingSnapshotCalls % currentStateUpdateFrequencyStage.UpdateFrequencyInTicks != 0;
+			else
+				return false;
 		}
 
 		private void IncreaseSendingSnapshotCalls()

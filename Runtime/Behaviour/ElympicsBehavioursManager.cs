@@ -115,10 +115,10 @@ namespace Elympics
 				behaviour.ClearInputs();
 
 			foreach (var input in inputs)
-				foreach (var data in input.Data)
+				foreach (var (networkId, inputBuffer) in input.Data)
 				{
-					if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(data.Key, out var elympicsBehaviour))
-						elympicsBehaviour.SetCurrentInput(input.Player, data.Value);
+					if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(networkId, out var elympicsBehaviour))
+						elympicsBehaviour.SetCurrentInput(input.Player, input.Tick, inputBuffer);
 				}
 		}
 
@@ -285,7 +285,7 @@ namespace Elympics
 			_bufferForIteration.Clear();
 			_bufferForIteration.AddRange(_elympicsBehaviours.Behaviours.Values);
 			foreach (var elympicsBehaviour in _bufferForIteration)
-					elympicsBehaviour.ElympicsUpdate();
+				elympicsBehaviour.ElympicsUpdate();
 		}
 
 		internal void OnPreReconcile()

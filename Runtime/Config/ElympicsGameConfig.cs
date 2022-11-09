@@ -42,6 +42,8 @@ namespace Elympics
 		[SerializeField] private int                   playerIndexForHalfRemoteMode = 1;
 		[SerializeField] private List<InitialUserData> testPlayers                  = null;
 
+		internal event Action DataChanged;
+
 		public string GameName => gameName;
 		public string GameId   => gameId;
 
@@ -79,6 +81,11 @@ namespace Elympics
 
 		[field: NonSerialized] public HalfRemoteLagConfig         HalfRemoteLagConfig     { get; }      = new HalfRemoteLagConfig();
 		[field: NonSerialized] public ReconciliationFrequencyEnum ReconciliationFrequency { get; set; } = ReconciliationFrequencyEnum.OnlyIfNeeded;
+
+		internal void ProcessElympicsConfigDataChanged()
+		{
+			DataChanged?.Invoke();
+		}
 
 		public static bool GetUseWeb(bool defaultUseWeb)
 		{

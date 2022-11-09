@@ -55,12 +55,16 @@ namespace Elympics
 
 		private bool _verifyGameScenePath;
 		private bool _showGameSetup;
+		private bool _currentGameVersionIsUploadedStatusUnknown = true;
 
 		private void OnEnable()
 		{
 			try
 			{
 				_config = serializedObject.targetObject as ElympicsGameConfig;
+
+				CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged += (isCheckingGameVersions) => _currentGameVersionIsUploadedStatusUnknown = isCheckingGameVersions;
+				CurrentGameVersionUploadedToTheCloudStatus.Initialize(_config);
 			}
 			catch (Exception)
 			{
@@ -99,6 +103,11 @@ namespace Elympics
 			_labelWidthStack = new Stack<float>();
 
 			_verifyGameScenePath = true;
+		}
+
+		private void OnDestroy()
+		{
+			CurrentGameVersionUploadedToTheCloudStatus.Disable();
 		}
 
 		public override void OnInspectorGUI()
@@ -170,6 +179,7 @@ namespace Elympics
 					break;
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
 					EditorGUILayout.LabelField("Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.", summaryLabelStyle);
+					DisplayGameVersionInfo();
 					break;
 			}
 
@@ -178,6 +188,14 @@ namespace Elympics
 			EndSection();
 
 			EditorStyles.label.wordWrap = cachedWordWrap;
+		}
+
+		private void DisplayGameVersionInfo()
+		{
+			if (_currentGameVersionIsUploadedStatusUnknown)
+				EditorGUILayout.HelpBox($"Checking if current game version is uploaded to the Elympics cloud...", MessageType.Info, true);
+			else if (!CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded)
+				EditorGUILayout.HelpBox($"Current game version is not uploaded to the Elympics cloud! Upload your game first in \"{ElympicsEditorMenuPaths.MANAGE_GAMES_IN_ELYMPICS}\" games in Elympics window!", MessageType.Error, true);
 		}
 
 		private void BeginSection(string header)

@@ -27,6 +27,8 @@ namespace Elympics
 
 		private static string RefreshEndpoint => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
 
+		internal static event Action GameUploadedToTheCloud;
+
 		public static void Login()
 		{
 			Login(ElympicsConfig.Username, ElympicsConfig.Password, LoginHandler);
@@ -97,6 +99,33 @@ namespace Elympics
 		}
 
 		[Serializable]
+		public class GamesResponseModel
+		{
+			public List<GameResponseModel> List;
+		}
+
+
+		[Serializable]
+		public class GameVersionResponseModel
+		{
+			public string Id;
+			public string Version;
+			public bool Uploaded;
+			public string UploadedTime;
+			public bool Blocked;
+			public bool DebugMode;
+			public bool DebugModeWithBots;
+		}
+
+		[Serializable]
+		public class GameVersionsResponseModel
+		{
+			public string GameName;
+			public List<GameVersionResponseModel> Versions;
+		}
+
+
+		[Serializable]
 		public class RegionResponseModel
 		{
 			public string Id;
@@ -160,6 +189,7 @@ namespace Elympics
 		public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
 		{
 			Debug.Log("Getting available regions");
+
 			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
 			void OnContinuation(bool success)
@@ -177,7 +207,33 @@ namespace Elympics
 			}
 		}
 
-		public static void GetAvailableGames(Action<List<GameResponseModel>> updateProperty)
+		private static UnityWebRequest gameVersionsWebRequest = null;
+
+		public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty)
+		{
+			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+
+			void OnContinuation(bool success)
+			{
+				var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+				var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
+
+				var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+				gameVersionsWebRequest?.Abort();
+				gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
+
+				void OnCompleted(UnityWebRequest webRequest)
+				{
+					if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions))
+					{
+						updateProperty?.Invoke(gameVersions);
+						return;
+					}
+				}
+			}
+		}
+
+		public static void GetGames(Action<GamesResponseModel> updateProperty)
 		{
 			Debug.Log($"Getting available games");
 
@@ -198,10 +254,10 @@ namespace Elympics
 			}
 		}
 
-		private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
+		private static void GetAvailableGamesHandler(Action<GamesResponseModel> updateProperty, UnityWebRequest webRequest)
 		{
 			Debug.Log($"Get available games response code: {webRequest.responseCode}");
-			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
+			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out GamesResponseModel availableGames))
 				return;
 
 			updateProperty.Invoke(availableGames);
@@ -304,6 +360,7 @@ namespace Elympics
 
 					EditorUtility.ClearProgressBar();
 					completed?.Invoke(webRequest);
+					GameUploadedToTheCloud?.Invoke();
 				});
 			}
 

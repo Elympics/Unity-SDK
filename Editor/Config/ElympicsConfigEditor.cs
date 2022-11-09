@@ -13,22 +13,30 @@ namespace Elympics
 		private SerializedProperty _currentGameIndex;
 		private SerializedProperty _availableGames;
 
-		private Object             _lastChosenGamePropertyObject;
-		private Editor             _lastChosenGameEditor;
+		private Object _lastChosenGamePropertyObject;
+		private Editor _lastChosenGameEditor;
 		private SerializedProperty _elympicsApiEndpoint;
 		private SerializedProperty _elympicsLobbyEndpoint;
 		private SerializedProperty _elympicsGameServersEndpoint;
+		private SerializedProperty _elympicVersion;
+
 
 		private void OnEnable()
 		{
+			ElympicsVersionRetriever.GetVersion((version) => { _elympicVersion.SetValue(version); });
 			_elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
 			_elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
+			_elympicVersion = serializedObject.FindProperty("elympicsVersion");
 			_elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
 			_currentGameIndex = serializedObject.FindProperty("currentGame");
 			_availableGames = serializedObject.FindProperty("availableGames");
-
 			var chosenGameProperty = GetChosenGameProperty();
 			CreateChosenGameEditorIfChanged(chosenGameProperty);
+		}
+
+		private void OnValidate()
+		{
+			ElympicsVersionRetriever.GetVersion((version) => { _elympicVersion.SetValue(version); });
 		}
 
 		private SerializedProperty GetChosenGameProperty()
@@ -53,8 +61,11 @@ namespace Elympics
 
 		// TODO: make a user friendly version if there is no available game config (for example, during first time elympics setup)
 		//       https://gitlab.app.daftmobile.com/elympics/unity-sdk/-/issues/112
+
 		public override void OnInspectorGUI()
 		{
+			EditorGUILayout.LabelField($"Elympics SDK Version: {_elympicVersion.stringValue} ");
+			EditorGUILayout.Space(5);
 			serializedObject.Update();
 			EditorStyles.label.wordWrap = true;
 

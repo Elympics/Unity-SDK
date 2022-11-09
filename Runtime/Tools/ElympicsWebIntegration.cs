@@ -23,6 +23,7 @@ namespace Elympics
 		private const string BotSubdirectory       = "Bot";
 
 		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
+
 		private static string RefreshEndpoint     => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
 
 		public static void Login()

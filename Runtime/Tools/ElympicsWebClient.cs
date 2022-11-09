@@ -16,6 +16,8 @@ namespace Elympics
 {
 	public static class ElympicsWebClient
 	{
+
+		private static string sdkVersion = ElympicsConfig.Load().ElympicsVersion;
 #if UNITY_EDITOR
 		public static UnityWebRequestAsyncOperation SendEnginePostRequestApi(string url, string gameVersion, string[] filesPath, Action<UnityWebRequest> completed = null)
 		{
@@ -26,6 +28,7 @@ namespace Elympics
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Post(uri, formData);
 			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
+			request.SetRequestHeader("elympics-sdk-version", sdkVersion);
 
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
@@ -52,6 +55,7 @@ namespace Elympics
 			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
 			request.SetRequestHeader("Content-Type", "application/json");
 			request.SetRequestHeader("Accept", "application/json");
+			request.SetRequestHeader("elympics-sdk-version", sdkVersion);
 
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
@@ -83,6 +87,7 @@ namespace Elympics
 				request.SetRequestHeader("Authorization", auth);
 			request.SetRequestHeader("Content-Type", "application/json");
 			request.SetRequestHeader("Accept", "application/json");
+			request.SetRequestHeader("elympics-sdk-version", sdkVersion);
 
 			AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 

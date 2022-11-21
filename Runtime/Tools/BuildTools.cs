@@ -50,11 +50,35 @@ namespace Elympics
 			return BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
 		}
 
-		internal static void BuildElympicsServerLinux()
+		private static bool? IsLinuxModuleInstalled()
 		{
-			if (!BuildServerLinux())
-				return;
+			var moduleManager = System.Type.GetType("UnityEditor.Modules.ModuleManager,UnityEditor.dll");
+			var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+			return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
+		}
+
+		internal static bool BuildElympicsServerLinux()
+		{
+			if (IsLinuxModuleInstalled() is false)
+			{
+				string errorMassage = SetupLinuxServerErrorMassage();
+				Debug.LogError(errorMassage);
+				return false;
+			}
+
+			var isBuildSuccess = BuildServerLinux();
 			RemoveHalfRemoteServerFilesFromElympicsBuild();
+
+			return isBuildSuccess;
+		}
+
+		private static string SetupLinuxServerErrorMassage()
+		{
+			var errorMassage = "Installation unity module is required: Linux Build Support (Mono)";
+#if UNITY_2021_2_OR_NEWER
+			errorMassage += " and Linux Dedicated Server Build Support";
+#endif
+			return errorMassage;
 		}
 
 		private static bool BuildServer(string appName, BuildTarget target)
@@ -67,7 +91,7 @@ namespace Elympics
 				if (config == null)
 					throw new Exception("[Elympics] Elympics config not found");
 
-				var sceneToBuild = new[] {config.GameplayScene};
+				var sceneToBuild = new[] { config.GameplayScene };
 				EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
 				var buildTargetGroup = BuildTargetGroup.Standalone;
@@ -86,7 +110,7 @@ namespace Elympics
 					targetGroup = buildTargetGroup,
 					target = target,
 #if UNITY_2021_2_OR_NEWER
-					subtarget = (int) StandaloneBuildSubtarget.Server,
+					subtarget = (int)StandaloneBuildSubtarget.Server,
 					options = BuildOptions.CompressWithLz4HC
 #else
 					options = BuildOptions.EnableHeadlessMode | BuildOptions.CompressWithLz4HC
@@ -155,7 +179,29 @@ namespace Elympics
 			if (report.summary.result == BuildResult.Succeeded)
 				Debug.Log($"Server build succeeded on {report.summary.outputPath}");
 			else
+			{
 				Debug.LogError($"Server build failed with {report.summary.totalErrors} errors");
+
+				StepReportMessage(report.steps.Last().name);
+			}
+		}
+
+		private static void StepReportMessage(string reportMassage)
+		{
+			string report;
+			switch (reportMassage)
+			{
+				case "Prepare For Build":
+					{
+						report = SetupLinuxServerErrorMassage();
+						break;
+					}
+				default:
+					report = reportMassage;
+					break;
+			}
+
+			Debug.LogError($"Error occurred during build preparation. {report}");
 		}
 
 		// Required - linux server not working in headless mode with WebRTC library ~pprzestrzelski 08.11.2021
@@ -165,7 +211,7 @@ namespace Elympics
 
 			var webRtcLibPath = Path.Combine(pluginsPath, "webrtc.so");
 			if (!File.Exists(webRtcLibPath))
-				throw new FileNotFoundException($"Did not found {webRtcLibPath}. Is it moved? Server won't work on elympics with this");
+				return;
 			File.Delete(webRtcLibPath);
 		}
 	}

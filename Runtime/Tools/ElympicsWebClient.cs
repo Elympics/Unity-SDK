@@ -7,6 +7,8 @@ using System.Text;
 using ElympicsApiModels.ApiModels.Games;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 #if UNITY_EDITOR
 using UnityEditor;
 
@@ -100,7 +102,8 @@ namespace Elympics
 			deserializedResponse = default;
 			if (webRequest.isHttpError || webRequest.isNetworkError)
 			{
-				LogResponseErrors(actionName, webRequest);
+				var errorMassage = ParseResponseErrors(webRequest);
+				Debug.LogError($"Error occuert on {actionName}: {errorMassage}");
 				return false;
 			}
 
@@ -108,7 +111,7 @@ namespace Elympics
 			var type = typeof(T);
 			if (type == typeof(string))
 			{
-				deserializedResponse = (T) (object) jsonBody;
+				deserializedResponse = (T)(object)jsonBody;
 			}
 			else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
 			{
@@ -138,32 +141,23 @@ namespace Elympics
 			deserializedResponse = deserializedWrapper.List;
 		}
 
-		public static void LogResponseErrors(string actionName, UnityWebRequest request)
+		public static string ParseResponseErrors(UnityWebRequest request)
 		{
-			Debug.LogError("Received error in response for action " + actionName);
+			string errorMassage;
 
 			if (request.responseCode == 403)
-			{
-				Debug.LogError("Requested resource is forbidden for this account");
-				return;
-			}
+				errorMassage = "Requested resource is forbidden for this account";
 
 			if (request.responseCode == 401)
-			{
-				Debug.LogError("Unauthorized, please login to your ElympicsWeb account");
-				return;
-			}
+				errorMassage = "Unauthorized, please login to your ElympicsWeb account";
 
 			if (request.isNetworkError)
-			{
-				Debug.LogError($"Network error - {request.error}");
-				return;
-			}
+				errorMassage = $"Network error - {request.error}";
 
 			ErrorModel errorModel = null;
 			try
 			{
-				errorModel = JsonUtility.FromJson<ErrorModel>(request.downloadHandler.text);
+				errorModel = JsonConvert.DeserializeObject<ErrorModel>(request.downloadHandler.text);
 			}
 			catch (ArgumentException)
 			{
@@ -171,13 +165,16 @@ namespace Elympics
 
 			if (errorModel?.Errors == null)
 			{
-				Debug.LogError($"Received error response code {request.responseCode} with error\n{request.downloadHandler.text}");
+				errorMassage = $"Received error response code {request.responseCode} with error\n{request.downloadHandler.text}";
 			}
 			else
 			{
 				var errors = string.Join(", ", errorModel.Errors.SelectMany(r => r.Value.Select(x => x)));
-				Debug.LogError($"Received error response code {request.responseCode} with errors\n{errors}");
+				errorMassage = $"Received error response code {request.responseCode} with errors\n{errors}";
 			}
+
+			Debug.LogError(errorMassage);
+			return (errorMassage);
 		}
 
 		[Serializable]
@@ -194,7 +191,7 @@ namespace Elympics
 
 		public class AcceptTestCertificateHandler : CertificateHandler
 		{
-			private const string TestDomain          = ".test";
+			private const string TestDomain = ".test";
 			private const string VagrantTestHostPart = "vagrant";
 
 			public static void SetOnRequestIfNeeded(UnityWebRequest request)

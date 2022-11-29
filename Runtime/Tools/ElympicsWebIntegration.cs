@@ -211,7 +211,7 @@ namespace Elympics
 				if (!success)
 				{
 					EditorUtility.ClearProgressBar();
-					EditorUtility.DisplayDialog(title, "Auth failed", "Ok");
+					EditorUtility.DisplayDialog(title, "Auth failed", "Check login state");
 					return;
 				}
 
@@ -248,44 +248,34 @@ namespace Elympics
 						EditorUtility.ClearProgressBar();
 				}
 
-				CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
-				void OnContinuation(bool success)
+				var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
+				ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
 				{
-					if (!success)
+					try
 					{
-						EditorUtility.ClearProgressBar();
-						EditorUtility.DisplayDialog(title, "Auth failed", "Check login state");
-						return;
+						HandleUploadResults(currentGameConfig, webRequest);
 					}
-
-					var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-					ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
+					catch (Exception e)
 					{
-						var handlerResponse = UploadHandler(currentGameConfig, webRequest);
-						EditorUtility.ClearProgressBar();
-
-						EditorUtility.DisplayDialog(title, $"Upload failed: \n{handlerResponse}", "Ok");
-
-						completed?.Invoke(webRequest);
-					});
-				}
+						EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "Ok");
+					}
+					EditorUtility.ClearProgressBar();
+					completed?.Invoke(webRequest);
+				});
 			}
 
 		}
 
-		private static string UploadHandler(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
+		private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
 		{
 			if (webRequest.isHttpError || webRequest.isNetworkError)
 			{
 				var errorMessage = ElympicsWebClient.ParseResponseErrors(webRequest);
 				Debug.LogError($"Upload failed for game {currentGameConfig.GameName} with version: {currentGameConfig.GameVersion}\nGame ID: {currentGameConfig.GameId}");
-				return errorMessage;
-				throw new Exception("Upload problem");
+				throw new ElympicsException(errorMessage);
 			}
 
-			var successMessage = $"Uploaded {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}";
-			Debug.Log(successMessage);
-			return successMessage;
+			Debug.Log($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}");
 		}
 
 		public static void BuildAndUploadServerInBatchmode(string username, string password)
@@ -320,7 +310,7 @@ namespace Elympics
 
 			while (!uploadOp.isDone) ;
 
-			UploadHandler(currentGameConfig, uploadOp.webRequest);
+			HandleUploadResults(currentGameConfig, uploadOp.webRequest);
 		}
 
 		private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)

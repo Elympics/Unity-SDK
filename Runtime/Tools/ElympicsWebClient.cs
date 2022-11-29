@@ -7,8 +7,6 @@ using System.Text;
 using ElympicsApiModels.ApiModels.Games;
 using UnityEngine;
 using UnityEngine.Networking;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 #if UNITY_EDITOR
 using UnityEditor;
 
@@ -143,38 +141,28 @@ namespace Elympics
 
 		public static string ParseResponseErrors(UnityWebRequest request)
 		{
-			string errorMassage;
-
 			if (request.responseCode == 403)
-				errorMassage = "Requested resource is forbidden for this account";
+				return "Requested resource is forbidden for this account";
 
 			if (request.responseCode == 401)
-				errorMassage = "Unauthorized, please login to your ElympicsWeb account";
+				return "Unauthorized, please login to your ElympicsWeb account";
 
 			if (request.isNetworkError)
-				errorMassage = $"Network error - {request.error}";
+				return $"Network error - {request.error}";
 
 			ErrorModel errorModel = null;
 			try
 			{
-				errorModel = JsonConvert.DeserializeObject<ErrorModel>(request.downloadHandler.text);
+				errorModel = JsonUtility.FromJson<ErrorModel>(request.downloadHandler.text);
 			}
 			catch (ArgumentException)
-			{
-			}
+			{ }
 
 			if (errorModel?.Errors == null)
-			{
-				errorMassage = $"Received error response code {request.responseCode} with error\n{request.downloadHandler.text}";
-			}
-			else
-			{
-				var errors = string.Join(", ", errorModel.Errors.SelectMany(r => r.Value.Select(x => x)));
-				errorMassage = $"Received error response code {request.responseCode} with errors\n{errors}";
-			}
+				return $"Received error response code {request.responseCode} with error\n{request.downloadHandler.text}";
 
-			Debug.LogError(errorMassage);
-			return (errorMassage);
+			var errors = string.Join(", ", errorModel.Errors.SelectMany(r => r.Value.Select(x => x)));
+			return $"Received error response code {request.responseCode} with errors\n{errors}";
 		}
 
 		[Serializable]

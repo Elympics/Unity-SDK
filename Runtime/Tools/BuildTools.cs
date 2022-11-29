@@ -31,6 +31,13 @@ namespace Elympics
 		internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
 		internal static string BotPath    => Path.Combine(ServerBuildPath, BotSubdirectory);
 
+		private const string MissingModuleErrorMessage =
+#if UNITY_2021_2_OR_NEWER
+			"Installation unity module is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
+#else
+			"Installation unity module is required: Linux Build Support (Mono)";
+#endif
+
 		public static void UpdateElympicsGameVersion(string newGameVersion)
 		{
 			var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -61,24 +68,15 @@ namespace Elympics
 		{
 			if (IsLinuxModuleInstalled() is false)
 			{
-				string errorMassage = SetupLinuxServerErrorMassage();
-				Debug.LogError(errorMassage);
+				Debug.LogError(MissingModuleErrorMessage);
 				return false;
 			}
 
 			var isBuildSuccess = BuildServerLinux();
-			RemoveHalfRemoteServerFilesFromElympicsBuild();
+			if (isBuildSuccess)
+				RemoveHalfRemoteServerFilesFromElympicsBuild();
 
 			return isBuildSuccess;
-		}
-
-		private static string SetupLinuxServerErrorMassage()
-		{
-			var errorMassage = "Installation unity module is required: Linux Build Support (Mono)";
-#if UNITY_2021_2_OR_NEWER
-			errorMassage += " and Linux Dedicated Server Build Support";
-#endif
-			return errorMassage;
 		}
 
 		private static bool BuildServer(string appName, BuildTarget target)
@@ -118,7 +116,7 @@ namespace Elympics
 				};
 
 				var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
-				LogReport(report);
+				LogBuildResult(report);
 
 				// Restore
 				PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
@@ -174,34 +172,30 @@ namespace Elympics
 			}
 		}
 
-		private static void LogReport(BuildReport report)
+		private static void LogBuildResult(BuildReport report)
 		{
 			if (report.summary.result == BuildResult.Succeeded)
 				Debug.Log($"Server build succeeded on {report.summary.outputPath}");
 			else
 			{
 				Debug.LogError($"Server build failed with {report.summary.totalErrors} errors");
-
-				StepReportMessage(report.steps.Last().name);
+				ProcessBuildErrors(report);
 			}
 		}
 
-		private static void StepReportMessage(string reportMassage)
+		private static void ProcessBuildErrors(BuildReport report)
 		{
-			string report;
-			switch (reportMassage)
-			{
-				case "Prepare For Build":
-					{
-						report = SetupLinuxServerErrorMassage();
-						break;
-					}
-				default:
-					report = reportMassage;
-					break;
-			}
+			if (report.summary.totalErrors == 0)
+				return;
 
-			Debug.LogError($"Error occurred during build preparation. {report}");
+			foreach (var step in report.steps)
+				foreach (var message in step.messages)
+				{
+					if (message.type != LogType.Error && message.type != LogType.Exception)
+						continue;
+					if (message.content.Contains("build target was unsupported"))
+						Debug.Log(MissingModuleErrorMessage);
+				}
 		}
 
 		// Required - linux server not working in headless mode with WebRTC library ~pprzestrzelski 08.11.2021
@@ -210,9 +204,8 @@ namespace Elympics
 			var pluginsPath = Path.Combine(ServerBuildPath, EngineSubdirectory, ServerBuildAppNameLinux, $"{ServerBuildAppNameLinux}_Data", "Plugins");
 
 			var webRtcLibPath = Path.Combine(pluginsPath, "webrtc.so");
-			if (!File.Exists(webRtcLibPath))
-				return;
-			File.Delete(webRtcLibPath);
+			if (Directory.Exists(pluginsPath))
+				File.Delete(webRtcLibPath);
 		}
 	}
 }

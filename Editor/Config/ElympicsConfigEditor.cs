@@ -19,14 +19,15 @@ namespace Elympics
 		private SerializedProperty _elympicsLobbyEndpoint;
 		private SerializedProperty _elympicsGameServersEndpoint;
 		private SerializedProperty _elympicVersion;
+		private string _cachedSdkVersion = string.Empty;
 
 
 		private void OnEnable()
 		{
-			ElympicsVersionRetriever.GetVersion((version) => { _elympicVersion.SetValue(version); });
+			CheckSdkVersion();
+			_cachedSdkVersion = _elympicVersion.stringValue;
 			_elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
 			_elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
-			_elympicVersion = serializedObject.FindProperty("elympicsVersion");
 			_elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
 			_currentGameIndex = serializedObject.FindProperty("currentGame");
 			_availableGames = serializedObject.FindProperty("availableGames");
@@ -36,7 +37,22 @@ namespace Elympics
 
 		private void OnValidate()
 		{
-			ElympicsVersionRetriever.GetVersion((version) => { _elympicVersion.SetValue(version); });
+			CheckSdkVersion();
+			_cachedSdkVersion = _elympicVersion.stringValue;
+		}
+
+		private void CheckSdkVersion()
+		{
+			if (_elympicVersion == null)
+			{
+				_elympicVersion = serializedObject.FindProperty("elympicsVersion");
+			}
+
+			if (!EditorApplication.isPlayingOrWillChangePlaymode)
+			{
+				ElympicsVersionRetriever.GetVersion((version) => { _cachedSdkVersion = version; }
+				);
+			}
 		}
 
 		private SerializedProperty GetChosenGameProperty()
@@ -64,11 +80,11 @@ namespace Elympics
 
 		public override void OnInspectorGUI()
 		{
-			EditorGUILayout.LabelField($"Elympics SDK Version: {_elympicVersion.stringValue} ");
 			EditorGUILayout.Space(5);
 			serializedObject.Update();
 			EditorStyles.label.wordWrap = true;
 
+			DrawSdkVersion();
 			DrawEndpointsSection();
 			DrawButtonManageGamesInElympics();
 
@@ -77,12 +93,16 @@ namespace Elympics
 			if (_availableGames.GetValue() == null)
 				_availableGames.SetValue(new List<ElympicsGameConfig>());
 
+			
+
 			if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 			{
 				EditorGUI.BeginDisabledGroup(true);
 				EditorGUILayout.PropertyField(_availableGames, new GUIContent("Local games configurations"), true);
 
-				EditorGUILayout.Popup(new GUIContent("Active game"), _currentGameIndex.intValue, ((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{x?.GameName} - {x?.GameId}").ToArray());
+				EditorGUILayout.Popup(new GUIContent("Active game"), _currentGameIndex.intValue,
+					((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{x?.GameName} - {x?.GameId}")
+					.ToArray());
 				EditorGUI.EndDisabledGroup();
 
 				DrawTitle(chosenGameProperty);
@@ -96,16 +116,29 @@ namespace Elympics
 			serializedObject.ApplyModifiedProperties();
 		}
 
+		private void DrawSdkVersion()
+		{
+			var currentVersion = _elympicVersion.stringValue;
+			if (string.IsNullOrEmpty(currentVersion) || currentVersion != _cachedSdkVersion)
+			{
+				_elympicVersion.SetValue(_cachedSdkVersion);
+			}
+			EditorGUILayout.LabelField($"Elympics SDK Version: {_elympicVersion.stringValue} ");
+		}
+
 		private void DrawNoAvailableGamesLabel()
 		{
-			GUILayout.Label("You don't have any available game config yet. Create one in Manage Games in Elympics window!", EditorStyles.wordWrappedLabel);
+			GUILayout.Label(
+				"You don't have any available game config yet. Create one in Manage Games in Elympics window!",
+				EditorStyles.wordWrappedLabel);
 		}
 
 		public void DrawButtonManageGamesInElympics()
 		{
 			if (GUILayout.Button("Manage games in Elympics"))
 			{
-				ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames, _elympicsApiEndpoint, _elympicsLobbyEndpoint, _elympicsGameServersEndpoint);
+				ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames,
+					_elympicsApiEndpoint, _elympicsLobbyEndpoint, _elympicsGameServersEndpoint);
 			}
 
 			EditorGUILayout.Separator();

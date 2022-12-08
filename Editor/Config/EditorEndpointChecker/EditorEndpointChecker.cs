@@ -55,6 +55,6 @@ namespace Elympics
 
 		public bool IsUriCorrect        => _uri != null;
 		public bool IsRequestDone       => _request?.isDone ?? false;
-		public bool IsRequestSuccessful => !(_request?.isHttpError | _request?.isNetworkError) ?? false;
+		public bool IsRequestSuccessful => !_request.IsProtocolError() && !_request.IsConnectionError();
 	}
 }

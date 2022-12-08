@@ -268,7 +268,7 @@ namespace Elympics
 
 		private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
 		{
-			if (webRequest.isHttpError || webRequest.isNetworkError)
+			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
 				var errorMessage = ElympicsWebClient.ParseResponseErrors(webRequest);
 				Debug.LogError($"Upload failed for game {currentGameConfig.GameName} with version: {currentGameConfig.GameVersion}\nGame ID: {currentGameConfig.GameId}");

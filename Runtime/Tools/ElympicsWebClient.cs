@@ -16,7 +16,6 @@ namespace Elympics
 {
 	public static class ElympicsWebClient
 	{
-
 		private static string sdkVersion = ElympicsConfig.Load().ElympicsVersion;
 #if UNITY_EDITOR
 		public static UnityWebRequestAsyncOperation SendEnginePostRequestApi(string url, string gameVersion, string[] filesPath, Action<UnityWebRequest> completed = null)
@@ -98,7 +97,7 @@ namespace Elympics
 		public static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse)
 		{
 			deserializedResponse = default;
-			if (webRequest.isHttpError || webRequest.isNetworkError)
+			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
 				var errorMassage = ParseResponseErrors(webRequest);
 				Debug.LogError($"Error occuert on {actionName}: {errorMassage}");
@@ -147,16 +146,21 @@ namespace Elympics
 			if (request.responseCode == 401)
 				return "Unauthorized, please login to your ElympicsWeb account";
 
-			if (request.isNetworkError)
-				return $"Network error - {request.error}";
+			if (request.IsConnectionError())
+				return $"Connection error - {request.error}";
+
+			if (request.IsProtocolError())
+				return $"Protocol error - {request.error}";
 
 			ErrorModel errorModel = null;
 			try
 			{
 				errorModel = JsonUtility.FromJson<ErrorModel>(request.downloadHandler.text);
 			}
-			catch (ArgumentException)
-			{ }
+			catch (ArgumentException e)
+			{
+				Debug.LogException(e);
+			}
 
 			if (errorModel?.Errors == null)
 				return $"Received error response code {request.responseCode} with error\n{request.downloadHandler.text}";
@@ -179,7 +183,7 @@ namespace Elympics
 
 		public class AcceptTestCertificateHandler : CertificateHandler
 		{
-			private const string TestDomain = ".test";
+			private const string TestDomain          = ".test";
 			private const string VagrantTestHostPart = "vagrant";
 
 			public static void SetOnRequestIfNeeded(UnityWebRequest request)

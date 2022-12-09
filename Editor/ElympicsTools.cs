@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -128,3 +129,4 @@ namespace Elympics
 		private static void BuildServerLinux() => BuildTools.BuildServerLinux();
 	}
 }
+#endif

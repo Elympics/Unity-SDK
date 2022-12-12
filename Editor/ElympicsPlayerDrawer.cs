@@ -23,7 +23,7 @@ namespace Elympics
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			var playerIndexProperty = property.FindPropertyRelative(nameof(ElympicsPlayer.playerIndex));
+			var playerIndexProperty = property.FindPropertyRelative(nameof(ElympicsPlayer.PlayerIndex));
 			var player = new ElympicsPlayer { playerIndex = playerIndexProperty.intValue };
 
 			int previousChosenOption;
@@ -69,8 +69,8 @@ namespace Elympics
 		private static void DrawDisabledPlayerTextField(Rect position, SerializedProperty playerIndexProperty, ElympicsPlayer player)
 		{
 			EditorGUI.BeginDisabledGroup(true);
-			EditorGUI.TextField(position, player.playerIndex.ToString());
-			playerIndexProperty.intValue = player.playerIndex;
+			EditorGUI.TextField(position, player.PlayerIndex.ToString());
+			playerIndexProperty.intValue = player.PlayerIndex;
 			EditorGUI.EndDisabledGroup();
 		}
 
@@ -86,7 +86,7 @@ namespace Elympics
 			if (int.TryParse(newPlayerIndexStr, out var newPlayerIndex))
 			{
 				var newPlayer = ElympicsPlayer.FromIndex(newPlayerIndex);
-				playerIndexProperty.intValue = newPlayer.playerIndex;
+				playerIndexProperty.intValue = newPlayer.PlayerIndex;
 			}
 		}
 	}

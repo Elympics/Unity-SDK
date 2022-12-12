@@ -1,8 +1,9 @@
 {
     "name": "Elympics",
+    "rootNamespace": "",
     "references": [
-        "ParrelSync",
-        "UniTask"
+        "UniTask",
+        "ParrelSync"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

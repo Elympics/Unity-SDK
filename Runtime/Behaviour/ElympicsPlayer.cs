@@ -19,7 +19,7 @@ namespace Elympics
 
 		[SerializeField] internal int playerIndex;
 
-		private ElympicsPlayer(int playerIndex)
+		public ElympicsPlayer(int playerIndex)
 		{
 			this.playerIndex = playerIndex;
 		}

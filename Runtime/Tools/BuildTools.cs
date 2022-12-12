@@ -10,26 +10,26 @@ namespace Elympics
 {
 	public static class BuildTools
 	{
-		private const string ServerBuildPath    = "serverbuild";
+		private const string ServerBuildPath = "serverbuild";
 		private const string EngineSubdirectory = "Engine";
-		private const string BotSubdirectory    = "Bot";
-		private const string UnityBuildPath     = "Unity";
+		private const string BotSubdirectory = "Bot";
+		private const string UnityBuildPath = "Unity";
 
 		private const string EngineWrapperFilename = "GameEngine.dll";
-		private const string BotWrapperFilename    = "GameBot.dll";
+		private const string BotWrapperFilename = "GameBot.dll";
 
-		private const string ServerBuildAppNameLinux   = "Unity";
+		private const string ServerBuildAppNameLinux = "Unity";
 		private const string ServerBuildAppNameWindows = "Unity.exe";
 
-		private static readonly string GUIDofAssetsPathPointer		= AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
-		private static readonly string BuildAssetsPath				= Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GUIDofAssetsPathPointer));
-		private static readonly string ServerWrapperPath			= Path.Combine(BuildAssetsPath, "Wrapper");
-		private static readonly string GameBotNoopPath				= Path.Combine(BuildAssetsPath, "GameBotNoop");
-		private const           string ServerWrapperFilesPattern    = "*.dll_";
-		private const           string ServerWrapperTargetExtension = ".dll";
+		private static readonly string GUIDofAssetsPathPointer = AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
+		private static readonly string BuildAssetsPath = Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GUIDofAssetsPathPointer));
+		private static readonly string ServerWrapperPath = Path.Combine(BuildAssetsPath, "Wrapper");
+		private static readonly string GameBotNoopPath = Path.Combine(BuildAssetsPath, "GameBotNoop");
+		private const string ServerWrapperFilesPattern = "*.dll_";
+		private const string ServerWrapperTargetExtension = ".dll";
 
 		internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
-		internal static string BotPath    => Path.Combine(ServerBuildPath, BotSubdirectory);
+		internal static string BotPath => Path.Combine(ServerBuildPath, BotSubdirectory);
 
 		private const string MissingModuleErrorMessage =
 #if UNITY_2021_2_OR_NEWER
@@ -47,12 +47,12 @@ namespace Elympics
 			config.UpdateGameVersion(newGameVersion);
 		}
 
-		internal static bool BuildServerWindows()
+		public static bool BuildServerWindows()
 		{
 			return BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
 		}
 
-		internal static bool BuildServerLinux()
+		public static bool BuildServerLinux()
 		{
 			return BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
 		}

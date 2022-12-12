@@ -24,7 +24,7 @@ namespace Elympics
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			var playerIndexProperty = property.FindPropertyRelative(nameof(ElympicsPlayer.PlayerIndex));
-			var player = new ElympicsPlayer { playerIndex = playerIndexProperty.intValue };
+			var player = new ElympicsPlayer(playerIndexProperty.intValue);
 
 			int previousChosenOption;
 			if (player == ElympicsPlayer.All)

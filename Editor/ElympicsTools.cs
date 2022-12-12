@@ -61,7 +61,7 @@ namespace Elympics
 			var sortedBehaviours = new List<ElympicsBehaviour>();
 			foreach (var behaviour in behaviours)
 			{
-				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && !behaviour.forceNetworkId)
+				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && !behaviour.ForceNetworkId)
 					sortedBehaviours.Add(behaviour);
 			}
 

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Elympics
 {
-	internal class BinaryInputReader : BinaryReader, IBinaryInputReader
+	public class BinaryInputReader : BinaryReader, IBinaryInputReader
 	{
 		private readonly MemoryStream memoryStream;
 		private readonly BinaryReader binaryReader;
@@ -20,7 +20,7 @@ namespace Elympics
 			memoryStream.Seek(0, SeekOrigin.Begin);
 		}
 
-		public bool AllBytesRead() 
+		public bool AllBytesRead()
 			=> memoryStream.Position == memoryStream.Length;
 
 		protected override void Dispose(bool disposing)
@@ -29,7 +29,7 @@ namespace Elympics
 				memoryStream.Dispose();
 		}
 
-		public TEnum ReadEnumFromInt32<TEnum>() where TEnum : Enum 
+		public TEnum ReadEnumFromInt32<TEnum>() where TEnum : Enum
 			=> (TEnum)(object)ReadInt32();
 
 		#region public void Read(out value)

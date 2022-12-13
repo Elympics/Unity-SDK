@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using UnityEditor;
 using UnityEngine;
@@ -7,23 +8,23 @@ namespace Elympics
 	[CustomPropertyDrawer(typeof(ElympicsPlayer))]
 	public class ElympicsPlayerDrawer : PropertyDrawer
 	{
-		private const string AllOption     = "All";
-		private const string NoneOption    = "None";
-		private const string PlayerOption  = "Player";
+		private const string AllOption = "All";
+		private const string NoneOption = "None";
+		private const string PlayerOption = "Player";
 		private const string InvalidOption = "Invalid";
 
-		private static readonly string[] Options            = {AllOption, NoneOption, PlayerOption};
-		private static readonly string[] OptionsWithInvalid = {AllOption, NoneOption, PlayerOption, InvalidOption};
+		private static readonly string[] Options = { AllOption, NoneOption, PlayerOption };
+		private static readonly string[] OptionsWithInvalid = { AllOption, NoneOption, PlayerOption, InvalidOption };
 
-		private readonly int _allOptionIndex     = Array.IndexOf(Options, AllOption);
-		private readonly int _noneOptionIndex    = Array.IndexOf(Options, NoneOption);
-		private readonly int _playerOptionIndex  = Array.IndexOf(Options, PlayerOption);
+		private readonly int _allOptionIndex = Array.IndexOf(Options, AllOption);
+		private readonly int _noneOptionIndex = Array.IndexOf(Options, NoneOption);
+		private readonly int _playerOptionIndex = Array.IndexOf(Options, PlayerOption);
 		private readonly int _invalidOptionIndex = Array.IndexOf(OptionsWithInvalid, InvalidOption);
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			var playerIndexProperty = property.FindPropertyRelative(nameof(ElympicsPlayer.playerIndex));
-			var player = new ElympicsPlayer {playerIndex = playerIndexProperty.intValue};
+			var playerIndexProperty = property.FindPropertyRelative(nameof(ElympicsPlayer.PlayerIndex));
+			var player = new ElympicsPlayer(playerIndexProperty.intValue);
 
 			int previousChosenOption;
 			if (player == ElympicsPlayer.All)
@@ -68,8 +69,8 @@ namespace Elympics
 		private static void DrawDisabledPlayerTextField(Rect position, SerializedProperty playerIndexProperty, ElympicsPlayer player)
 		{
 			EditorGUI.BeginDisabledGroup(true);
-			EditorGUI.TextField(position, player.playerIndex.ToString());
-			playerIndexProperty.intValue = player.playerIndex;
+			EditorGUI.TextField(position, player.PlayerIndex.ToString());
+			playerIndexProperty.intValue = player.PlayerIndex;
 			EditorGUI.EndDisabledGroup();
 		}
 
@@ -79,14 +80,15 @@ namespace Elympics
 			if (previousChosenOption != _playerOptionIndex)
 				playerIndex = 0;
 			else
-				playerIndex = (int) player;
+				playerIndex = (int)player;
 
 			var newPlayerIndexStr = EditorGUI.TextField(position, playerIndex.ToString());
 			if (int.TryParse(newPlayerIndexStr, out var newPlayerIndex))
 			{
 				var newPlayer = ElympicsPlayer.FromIndex(newPlayerIndex);
-				playerIndexProperty.intValue = newPlayer.playerIndex;
+				playerIndexProperty.intValue = newPlayer.PlayerIndex;
 			}
 		}
 	}
 }
+#endif

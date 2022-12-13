@@ -6,19 +6,20 @@ namespace Elympics
 	[Serializable]
 	public struct ElympicsPlayer : IEquatable<ElympicsPlayer>, IComparable<ElympicsPlayer>
 	{
-		private const int AllValue     = -3;
-		private const int WorldValue   = -2;
+		private const int AllValue = -3;
+		private const int WorldValue = -2;
 		private const int InvalidValue = -1;
 
 		internal int StartNetworkId => (playerIndex + 4) * ElympicsBehavioursManager.NetworkIdRange;
 
-		public static readonly ElympicsPlayer All     = new ElympicsPlayer {playerIndex = AllValue};
-		public static readonly ElympicsPlayer World   = new ElympicsPlayer {playerIndex = WorldValue};
-		public static readonly ElympicsPlayer Invalid = new ElympicsPlayer {playerIndex = InvalidValue};
+		public static readonly ElympicsPlayer All = new ElympicsPlayer { playerIndex = AllValue };
+		public static readonly ElympicsPlayer World = new ElympicsPlayer { playerIndex = WorldValue };
+		public static readonly ElympicsPlayer Invalid = new ElympicsPlayer { playerIndex = InvalidValue };
+		public readonly int PlayerIndex => playerIndex;
 
 		[SerializeField] internal int playerIndex;
 
-		private ElympicsPlayer(int playerIndex)
+		public ElympicsPlayer(int playerIndex)
 		{
 			this.playerIndex = playerIndex;
 		}
@@ -41,8 +42,8 @@ namespace Elympics
 
 		public override string ToString() => playerIndex.ToString();
 
-		public          bool Equals(ElympicsPlayer other) => playerIndex == other.playerIndex;
-		public override bool Equals(object obj)           => obj is ElympicsPlayer other && Equals(other);
+		public bool Equals(ElympicsPlayer other) => playerIndex == other.playerIndex;
+		public override bool Equals(object obj) => obj is ElympicsPlayer other && Equals(other);
 
 		public static bool operator ==(ElympicsPlayer lhs, ElympicsPlayer rhs) => lhs.Equals(rhs);
 		public static bool operator !=(ElympicsPlayer lhs, ElympicsPlayer rhs) => !(lhs == rhs);

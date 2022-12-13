@@ -1,6 +1,6 @@
 ﻿namespace Elympics
 {
-	public interface IBinaryInputWriter : IInputWriter
+	internal interface IBinaryInputWriter : IInputWriter
 	{
 		void ResetStream();
 		byte[] GetData();

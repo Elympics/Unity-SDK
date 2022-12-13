@@ -17,14 +17,14 @@ namespace Elympics
 	[ExecuteInEditMode]
 	public sealed class ElympicsBehaviour : MonoBehaviour, IEquatable<ElympicsBehaviour>
 	{
-		private const int undefinedNetworkId = -1;
+		internal const int UndefinedNetworkId = -1;
 		private const int DefaultAbsenceTickParameter = 0;
 
-		[SerializeField] private bool forceNetworkId = false;
-		[SerializeField] internal int networkId = UndefinedNetworkId;
-		[SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
-		[SerializeField] internal bool isUpdatableForNonOwners = false;
-		[SerializeField] internal ElympicsPlayer visibleFor = ElympicsPlayer.All;
+		[SerializeField] internal bool           forceNetworkId          = false;
+		[SerializeField] internal int            networkId               = UndefinedNetworkId;
+		[SerializeField] internal ElympicsPlayer predictableFor          = ElympicsPlayer.World;
+		[SerializeField] internal bool           isUpdatableForNonOwners = false;
+		[SerializeField] internal ElympicsPlayer visibleFor              = ElympicsPlayer.All;
 		[SerializeField]
 		internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
 		{
@@ -33,9 +33,9 @@ namespace Elympics
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 1000)
 		};
 
-		private ElympicsComponentsContainer _componentsContainer;
-		private List<ElympicsVar> _backingFields;
-		private Dictionary<ElympicsVar, string> _backingFieldsNames;
+		private ElympicsComponentsContainer                     _componentsContainer;
+		private List<ElympicsVar>                               _backingFields;
+		private Dictionary<ElympicsVar, string>                 _backingFieldsNames;
 		private ElympicsBehaviourStateChangeFrequencyCalculator _behaviourStateChangeFrequencyCalculator;
 
 		internal bool HasAnyState => _componentsContainer.Observables.Length > 0;
@@ -48,19 +48,15 @@ namespace Elympics
 		}
 
 		internal ElympicsBase ElympicsBase { get; private set; }
+		public   bool         IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
+		public   bool         IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);
+		internal bool         IsVisibleTo(ElympicsPlayer player) => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
 
-		public static int UndefinedNetworkId => undefinedNetworkId;
-		public bool ForceNetworkId => forceNetworkId;
-
-		public bool IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
-		public bool IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);
-		internal bool IsVisibleTo(ElympicsPlayer player) => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
-
-		private MemoryStream _memoryStream1;
-		private MemoryStream _memoryStream2;
-		private BinaryReader _binaryReader1;
-		private BinaryReader _binaryReader2;
-		private BinaryWriter _binaryWriter1;
+		private MemoryStream      _memoryStream1;
+		private MemoryStream      _memoryStream2;
+		private BinaryReader      _binaryReader1;
+		private BinaryReader      _binaryReader2;
+		private BinaryWriter      _binaryWriter1;
 		private BinaryInputReader _inputReader;
 
 		private Dictionary<ElympicsPlayer, (long Tick, byte[] Data)> _tickBasedInputByPlayer;
@@ -126,7 +122,7 @@ namespace Elympics
 				.Contains(networkId);
 		}
 
-		public void UpdateSerializedNetworkId()
+		internal void UpdateSerializedNetworkId()
 		{
 			networkId = NetworkIdEnumerator.Instance.MoveNextAndGetCurrent();
 			EditorUtility.SetDirty(this);

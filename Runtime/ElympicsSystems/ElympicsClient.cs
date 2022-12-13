@@ -9,8 +9,8 @@ namespace Elympics
 {
 	public class ElympicsClient : ElympicsBase
 	{
-		private const int MaxInputsToSendOnPredictionJump       = 5;
-		private const int MaxTicksToTickOnPredictionJump        = 3;
+		private const int MaxInputsToSendOnPredictionJump = 5;
+		private const int MaxTicksToTickOnPredictionJump  = 3;
 
 		[SerializeField] private bool connectOnStart = true;
 
@@ -41,9 +41,8 @@ namespace Elympics
 		private IRoundTripTimeCalculator _roundTripTimeCalculator;
 		private ClientTickCalculator     _clientTickCalculator;
 		private PredictionBuffer         _predictionBuffer;
-
-		private ElympicsSnapshot _lastReceivedSnapshot;
-		private DateTime?        _lastClientPrintNetworkConditions;
+		private ElympicsSnapshot         _lastReceivedSnapshot;
+		private DateTime?                _lastClientPrintNetworkConditions;
 
 		private List<ElympicsInput> _inputList;
 
@@ -100,7 +99,8 @@ namespace Elympics
 
 		private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
 		{
-			if (!_started) StartClient();
+			if (!_started)
+				StartClient();
 
 			if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
 				_lastReceivedSnapshot = elympicsSnapshot;
@@ -152,6 +152,7 @@ namespace Elympics
 				elympicsBehavioursManager.CommitVars();
 			}
 		}
+
 		private void LogNetworkConditionsInInterval(DateTime clientTickStart)
 		{
 			if (!_lastClientPrintNetworkConditions.HasValue)
@@ -195,22 +196,25 @@ namespace Elympics
 			elympicsBehavioursManager.SetCurrentInputs(_inputList);
 		}
 
-		private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot)
-			=> elympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
+		private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot) => elympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
 
 		private void ReconcileIfRequired(ElympicsSnapshot receivedSnapshot)
 		{
 			if (Config.ReconciliationFrequency == ElympicsGameConfig.ReconciliationFrequencyEnum.Never)
 				return;
 
-			if (!_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out var historySnapshot))
+			bool forceSnapShot = receivedSnapshot.Tick > Tick;
+
+			ElympicsSnapshot historySnapshot = null;
+
+			if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
 				return;
 
-			if (elympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot) &&
-			    Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
+			if (!forceSnapShot && elympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot) && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
 				return;
 
-			Debug.LogWarning($"[Elympics] >>> Reconciliation on {receivedSnapshot.Tick} >>>");
+			if (forceSnapShot)
+				historySnapshot = receivedSnapshot;
 
 			elympicsBehavioursManager.OnPreReconcile();
 

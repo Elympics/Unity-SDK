@@ -5,8 +5,10 @@ using UnityEngine;
 
 namespace Elympics
 {
-	internal class ProjectVersionPostprocessing : AssetPostprocessor
+	internal class ProjectVersionPostprocessing
 	{
+		private string assetPath = "";
+
 		[Serializable]
 		private struct SimplifiedPackageInfo
 		{

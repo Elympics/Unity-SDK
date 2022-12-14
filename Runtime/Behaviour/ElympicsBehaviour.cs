@@ -18,6 +18,7 @@ namespace Elympics
 	public sealed class ElympicsBehaviour : MonoBehaviour, IEquatable<ElympicsBehaviour>
 	{
 		internal const int UndefinedNetworkId = -1;
+		private const int DefaultAbsenceTickParameter = 0;
 
 		[SerializeField] internal bool           forceNetworkId          = false;
 		[SerializeField] internal int            networkId               = UndefinedNetworkId;
@@ -58,21 +59,22 @@ namespace Elympics
 		private BinaryWriter      _binaryWriter1;
 		private BinaryInputReader _inputReader;
 
-		private Dictionary<ElympicsPlayer, byte[]> _inputByPlayer;
+		private Dictionary<ElympicsPlayer, (long Tick, byte[] Data)> _tickBasedInputByPlayer;
 		internal void ClearInputs()
-        {
-			_inputByPlayer.Clear();
-        }
+		{
+			_tickBasedInputByPlayer.Clear();
+		}
 
 		/// <summary>
 		/// Retrieves received input for a player.
 		/// </summary>
 		/// <param name="player">Identifier of a player that the input is retrieved for.</param>
 		/// <param name="inputDeserializer">Input deserializer. Use its <c>Read</c> methods to parse data from the received input.</param>
+		/// <param name="absenceTick"> How many ticks will be predicted due to lack of input from player.</param>
 		/// <returns>If there is any input to retrieve for the given player.</returns>
 		/// <seealso cref="IInputHandler.OnInputForClient"/>
 		/// <seealso cref="IInputHandler.OnInputForBot"/>
-		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader)
+		public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader, int absenceTick = DefaultAbsenceTickParameter)
 		{
 			if (ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.ElympicsUpdate)
 				throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
@@ -82,11 +84,14 @@ namespace Elympics
 				throw new ReadNotEnoughException(this);
 
 			inputReader = null;
-			if (!_inputByPlayer.ContainsKey(player))
+			if (_tickBasedInputByPlayer.TryGetValue(player, out var tickBasedInput) && ((ElympicsBase.Tick - tickBasedInput.Tick) <= absenceTick))
+			{
+				_inputReader.FeedDataForReading(tickBasedInput.Data);
+				inputReader = _inputReader;
+				return true;
+			}
+			else
 				return false;
-			_inputReader.FeedDataForReading(_inputByPlayer[player]);
-			inputReader = _inputReader;
-			return true;
 		}
 
 #if UNITY_EDITOR
@@ -177,7 +182,7 @@ namespace Elympics
 			}
 
 			_inputReader = new BinaryInputReader();
-			_inputByPlayer = new Dictionary<ElympicsPlayer, byte[]>();
+			_tickBasedInputByPlayer = new Dictionary<ElympicsPlayer, (long Tick, byte[] Data)>();
 		}
 
 		private void OnDestroy()
@@ -249,9 +254,9 @@ namespace Elympics
 			_componentsContainer.InputHandler?.OnInputForBot(inputWriter);
 		}
 
-		internal void SetCurrentInput(ElympicsPlayer player, byte[] rawInput)
+		internal void SetCurrentInput(ElympicsPlayer player, long inputTick, byte[] rawInput)
 		{
-			_inputByPlayer[player] = rawInput;
+			_tickBasedInputByPlayer[player] = (inputTick, rawInput);
 		}
 
 		internal void CommitVars()
@@ -273,7 +278,7 @@ namespace Elympics
 					updatable.ElympicsUpdate();
 				}
 				catch (Exception e) when (e is EndOfStreamException || e is ReadNotEnoughException)
-                {
+				{
 					Debug.LogException(e);
 					Debug.LogError("An exception occured when applying inputs. This might be a result of faulty code or a hacking attempt.");
 				}

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Text;
 using MatchTcpLibrary;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Elympics
@@ -29,24 +28,26 @@ namespace Elympics
 			_request = new UnityWebRequest(_uri, "POST")
 			{
 				timeout = RequestTimeout,
-				uploadHandler = new UploadHandlerRaw(rawOffer) {contentType = "application/json"},
+				uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
 				downloadHandler = new DownloadHandlerBuffer()
 			};
-			
+
 			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(_request);
 
 			yield return _request.SendWebRequest();
 		}
 
-		public bool IsError => _request.isNetworkError || _request.isHttpError;
+		public bool IsError => _request.IsConnectionError() || _request.IsProtocolError();
+
+
 
 		public string Error
 		{
 			get
 			{
-				if (_request.isNetworkError)
+				if (_request.IsConnectionError())
 					return _request.error;
-				if (_request.isHttpError)
+				if (_request.IsProtocolError())
 					return _request.downloadHandler.text;
 				return null;
 			}

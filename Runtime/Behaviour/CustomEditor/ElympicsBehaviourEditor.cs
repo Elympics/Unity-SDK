@@ -42,10 +42,13 @@ namespace Elympics
 
 		private ElympicsComponentsToSync _selectedComponentsToSync;
 
+		private static string MakeWarning(string text) => $"<color=yellow>{text}</color>";
+		private bool IsPredictableForAnyone => ((ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.Invalid || (ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.World) && !IsPredictableForEveryone;
+		private bool IsPredictableForEveryone => (ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.All || (bool)_isUpdatableForNonOwners.GetValue();
+
 		void OnEnable()
 		{
 			_behaviour = serializedObject.targetObject as ElympicsBehaviour;
-
 			_networkId = serializedObject.FindProperty(nameof(_behaviour.networkId));
 			_forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.forceNetworkId));
 			_useAutoId = !_forceNetworkId.boolValue;
@@ -131,20 +134,27 @@ namespace Elympics
 			foreach (var mono in allMonos)
 			{
 				if (mono is IObservable)
-					EditorGUILayout.LabelField($"- {mono.GetType().Name} ({GetInterfaceNames(mono)})", new GUIStyle(GUI.skin.label) { padding = new RectOffset(20, 0, 0, 0) });
+					EditorGUILayout.LabelField($"- {mono.GetType().Name} ({GetInterfaceNames(mono)})", new GUIStyle(GUI.skin.label) { padding = new RectOffset(20, 0, 0, 0), richText = true });
+				if (mono is IUpdatable)
+					if (IsPredictableForAnyone)
+						EditorGUILayout.LabelField($"{MakeWarning("Warning!")} Elympics Update doesn't execute on clients for non-predictable objects.", new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
+					else
+					{
+						var markedPase = IsPredictableForEveryone ? "every client" : "client " + _predictableToPlayers.GetValue().ToString();
+						EditorGUILayout.LabelField($"Elympics Update for this object executes on {MakeWarning(markedPase)}.", new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
+					}
 			}
 
 			EditorGUILayout.EndVertical();
 			EditorGUILayout.Space();
 		}
 
-
 		private string GetInterfaceNames(MonoBehaviour mono)
 		{
 			_stringBuilder.Clear();
 			bool singleName = true;
 			singleName = AddInterfaceNameIfPresent<IInputHandler>(mono, _stringBuilder, singleName);
-			singleName = AddInterfaceNameIfPresent<IUpdatable>(mono, _stringBuilder, singleName);
+			singleName = AddInterfaceNameIfPresent<IUpdatable>(mono, _stringBuilder, singleName, IsPredictableForAnyone);
 			singleName = AddInterfaceNameIfPresent<IInitializable>(mono, _stringBuilder, singleName);
 			singleName = AddInterfaceNameIfPresent<IStateSerializationHandler>(mono, _stringBuilder, singleName);
 			if (singleName)
@@ -152,13 +162,20 @@ namespace Elympics
 			return _stringBuilder.ToString();
 		}
 
-		private static bool AddInterfaceNameIfPresent<TInterface>(MonoBehaviour mono, StringBuilder sb, bool singleName)
+		private static bool AddInterfaceNameIfPresent<TInterface>(MonoBehaviour mono, StringBuilder sb, bool singleName, bool warning = false)
 		{
 			if (mono is TInterface)
 			{
 				if (!singleName)
 					sb.Append(", ");
-				sb.Append(typeof(TInterface).Name);
+
+				var name = typeof(TInterface).Name;
+
+				if (warning)
+					sb.Append(MakeWarning(name));
+				else
+					sb.Append(name);
+
 				singleName = false;
 			}
 

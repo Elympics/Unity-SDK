@@ -31,6 +31,13 @@ namespace Elympics
 		internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
 		internal static string BotPath    => Path.Combine(ServerBuildPath, BotSubdirectory);
 
+		private const string MissingModuleErrorMessage =
+#if UNITY_2021_2_OR_NEWER
+			"Installation unity module is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
+#else
+			"Installation unity module is required: Linux Build Support (Mono)";
+#endif
+
 		public static void UpdateElympicsGameVersion(string newGameVersion)
 		{
 			var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -50,11 +57,26 @@ namespace Elympics
 			return BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
 		}
 
-		internal static void BuildElympicsServerLinux()
+		private static bool? IsLinuxModuleInstalled()
 		{
-			if (!BuildServerLinux())
-				return;
-			RemoveHalfRemoteServerFilesFromElympicsBuild();
+			var moduleManager = System.Type.GetType("UnityEditor.Modules.ModuleManager,UnityEditor.dll");
+			var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+			return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
+		}
+
+		internal static bool BuildElympicsServerLinux()
+		{
+			if (IsLinuxModuleInstalled() is false)
+			{
+				Debug.LogError(MissingModuleErrorMessage);
+				return false;
+			}
+
+			var isBuildSuccess = BuildServerLinux();
+			if (isBuildSuccess)
+				RemoveHalfRemoteServerFilesFromElympicsBuild();
+
+			return isBuildSuccess;
 		}
 
 		private static bool BuildServer(string appName, BuildTarget target)
@@ -67,7 +89,7 @@ namespace Elympics
 				if (config == null)
 					throw new Exception("[Elympics] Elympics config not found");
 
-				var sceneToBuild = new[] {config.GameplayScene};
+				var sceneToBuild = new[] { config.GameplayScene };
 				EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
 				var buildTargetGroup = BuildTargetGroup.Standalone;
@@ -86,7 +108,7 @@ namespace Elympics
 					targetGroup = buildTargetGroup,
 					target = target,
 #if UNITY_2021_2_OR_NEWER
-					subtarget = (int) StandaloneBuildSubtarget.Server,
+					subtarget = (int)StandaloneBuildSubtarget.Server,
 					options = BuildOptions.CompressWithLz4HC
 #else
 					options = BuildOptions.EnableHeadlessMode | BuildOptions.CompressWithLz4HC
@@ -94,7 +116,7 @@ namespace Elympics
 				};
 
 				var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
-				LogReport(report);
+				LogBuildResult(report);
 
 				// Restore
 				PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
@@ -150,12 +172,30 @@ namespace Elympics
 			}
 		}
 
-		private static void LogReport(BuildReport report)
+		private static void LogBuildResult(BuildReport report)
 		{
 			if (report.summary.result == BuildResult.Succeeded)
 				Debug.Log($"Server build succeeded on {report.summary.outputPath}");
 			else
+			{
 				Debug.LogError($"Server build failed with {report.summary.totalErrors} errors");
+				ProcessBuildErrors(report);
+			}
+		}
+
+		private static void ProcessBuildErrors(BuildReport report)
+		{
+			if (report.summary.totalErrors == 0)
+				return;
+
+			foreach (var step in report.steps)
+				foreach (var message in step.messages)
+				{
+					if (message.type != LogType.Error && message.type != LogType.Exception)
+						continue;
+					if (message.content.Contains("build target was unsupported"))
+						Debug.Log(MissingModuleErrorMessage);
+				}
 		}
 
 		// Required - linux server not working in headless mode with WebRTC library ~pprzestrzelski 08.11.2021
@@ -164,9 +204,8 @@ namespace Elympics
 			var pluginsPath = Path.Combine(ServerBuildPath, EngineSubdirectory, ServerBuildAppNameLinux, $"{ServerBuildAppNameLinux}_Data", "Plugins");
 
 			var webRtcLibPath = Path.Combine(pluginsPath, "webrtc.so");
-			if (!File.Exists(webRtcLibPath))
-				throw new FileNotFoundException($"Did not found {webRtcLibPath}. Is it moved? Server won't work on elympics with this");
-			File.Delete(webRtcLibPath);
+			if (Directory.Exists(pluginsPath))
+				File.Delete(webRtcLibPath);
 		}
 	}
 }

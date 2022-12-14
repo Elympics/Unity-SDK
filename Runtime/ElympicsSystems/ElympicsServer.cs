@@ -99,9 +99,16 @@ namespace Elympics
 			elympicsBehavioursManager.CommitVars();
 
 			_inputList.Clear();
-			foreach (var inputBufferPair in _gameEngineAdapter.PlayerInputBuffers)
-				if (inputBufferPair.Value.TryGetDataForTick(Tick, out var input))
+			foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
+			{
+				ElympicsInput input = null;
+				var currentTick = Tick;
+				if (elympicDataWithTickBuffer.TryGetDataForTick(currentTick, out input) || _gameEngineAdapter.LatestSimulatedTickInput.TryGetValue(elympicPlayer, out input))
+				{
 					_inputList.Add(input);
+					_gameEngineAdapter.SetLatestSimulatedInputTick(input.Player, input);
+				}
+			}
 			elympicsBehavioursManager.SetCurrentInputs(_inputList);
 			elympicsBehavioursManager.ElympicsUpdate();
 		}

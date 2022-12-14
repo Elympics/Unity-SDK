@@ -118,7 +118,7 @@ namespace Elympics
 		private void UseNextTick()
 		{
 			DelayedInputTick += 1;
-			PredictionTick = GetLimitedPredictionTick(PredictionTick + 1);
+			PredictionTick = GetLimitedPredictionTick(DelayedInputTick);
 		}
 
 		private void CalculateTickingAberrations(long receivedTick, DateTime clientTickStart, DateTime receivedTickStart)

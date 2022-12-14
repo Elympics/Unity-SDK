@@ -1,5 +1,6 @@
 ﻿using Elympics;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -8,16 +9,16 @@ public class ManageGamesInElympicsWindow : EditorWindow
 {
 	#region Labels
 
-	private const string windowTitle     = "Manage games in Elympics";
+	private const string windowTitle = "Manage games in Elympics";
 	private const string loginHeaderInfo = "<i>You have to be logged in to manage games in Elympics!</i>";
-	private const string loggedAsInfo    = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
+	private const string loggedAsInfo = "Logged in <color=#2EACFF>ElympicsWeb</color> as ";
 
 	private const string synchronizeInfo = "Synchronize endpoints and games available for your account";
 
 	private const string noGameSetupsInfo = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
 
 	private const string uploadGameInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. " +
-	                                      "It's required to first upload a game version if you want to play it in online mode.";
+										  "It's required to first upload a game version if you want to play it in online mode.";
 
 	private const string importExistingsGamesInfo = "<i>or import existing games (e.g. samples)</i>";
 
@@ -25,30 +26,30 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	#region Colors
 
-	private       bool   colorsConverted  = false;
+	private bool colorsConverted = false;
 	private const string elympicsColorHex = "#2EACFF";
-	private       Color  elympicsColor    = Color.blue;
+	private Color elympicsColor = Color.blue;
 
 	#endregion
 
 	#region Data Received From Elympics Config
 
-	private static SerializedObject      elympicsConfigSerializedObject;
-	private static SerializedProperty    currentGameIndex;
-	private static SerializedProperty    availableGames;
-	private static SerializedProperty    elympicsApiEndpoint;
+	private static SerializedObject elympicsConfigSerializedObject;
+	private static SerializedProperty currentGameIndex;
+	private static SerializedProperty availableGames;
+	private static SerializedProperty elympicsApiEndpoint;
 	private static EditorEndpointChecker elympicsApiEndpointChecker;
-	private static SerializedProperty    elympicsLobbyEndpoint;
+	private static SerializedProperty elympicsLobbyEndpoint;
 	private static EditorEndpointChecker elympicsLobbyEndpointChecker;
-	private static SerializedProperty    elympicsGameServersEndpoint;
+	private static SerializedProperty elympicsGameServersEndpoint;
 	private static EditorEndpointChecker elympicsGameServersEndpointChecker;
 
 	#endregion
 
 	private List<ElympicsWebIntegration.GameResponseModel> _accountGames;
-	private CustomInspectorDrawer                          _customInspectorDrawer;
-	private ElympicsGameConfigGeneralInfoDrawer            _elympicsGameConfigInfoDrawer;
-	private GUIStyle                                       _guiStyleWrappedTextCalculator;
+	private CustomInspectorDrawer _customInspectorDrawer;
+	private ElympicsGameConfigGeneralInfoDrawer _elympicsGameConfigInfoDrawer;
+	private GUIStyle _guiStyleWrappedTextCalculator;
 
 	private int _resizibleCenteredLabelWidth;
 
@@ -161,7 +162,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			_customInspectorDrawer.PrepareToDraw(position);
 		}
 
-		_resizibleCenteredLabelWidth = (int) (position.width * 0.80f);
+		_resizibleCenteredLabelWidth = (int)(position.width * 0.80f);
 	}
 
 	private void PrepareGUIStyleCalculator()
@@ -256,7 +257,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 		{
 			currentGameIndex.intValue = _customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue,
-				((List<ElympicsGameConfig>) availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
+				((List<ElympicsGameConfig>)availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
 			_customInspectorDrawer.DrawSerializedProperty("Local games configurations", availableGames);
 			_customInspectorDrawer.Space();
 
@@ -280,7 +281,12 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (_customInspectorDrawer.DrawButtonCentered("Create first game config!", _resizibleCenteredLabelWidth, 20))
 		{
 			var config = ScriptableObject.CreateInstance<ElympicsGameConfig>();
-			AssetDatabase.CreateAsset(config, "Assets/Resources/Elympics/ElympicsGameConfig.asset");
+			if (!Directory.Exists(ElympicsConfig.ELYMPICS_RESOURCES_PATH))
+			{
+				Debug.Log("Creating Elympics resources directory...");
+				Directory.CreateDirectory(ElympicsConfig.ELYMPICS_RESOURCES_PATH);
+			}
+			AssetDatabase.CreateAsset(config, ElympicsConfig.ELYMPICS_RESOURCES_PATH + "/ElympicsGameConfig.asset");
 			AssetDatabase.SaveAssets();
 			availableGames.InsertArrayElementAtIndex(availableGames.arraySize);
 			var value = availableGames.GetArrayElementAtIndex(availableGames.arraySize - 1);
@@ -350,7 +356,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			GUIUtility.ExitGUI();
 		}
 
-		var wrappedLabelHeight = (int) _guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadGameInfo), position.width * 0.8f);
+		var wrappedLabelHeight = (int)_guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(uploadGameInfo), position.width * 0.8f);
 		_customInspectorDrawer.DrawLabelCentered(uploadGameInfo, _resizibleCenteredLabelWidth, wrappedLabelHeight, true);
 	}
 

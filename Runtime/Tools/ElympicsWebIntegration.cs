@@ -17,13 +17,14 @@ namespace Elympics
 {
 	public static class ElympicsWebIntegration
 	{
-		private const string PackFileName          = "pack.zip";
+		private const string PackFileName = "pack.zip";
 		private const string DirectoryNameToUpload = "Games";
-		private const string EngineSubdirectory    = "Engine";
-		private const string BotSubdirectory       = "Bot";
+		private const string EngineSubdirectory = "Engine";
+		private const string BotSubdirectory = "Bot";
 
 		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
-		private static string RefreshEndpoint     => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
+
+		private static string RefreshEndpoint => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
 
 		public static void Login()
 		{
@@ -201,70 +202,80 @@ namespace Elympics
 
 		public static void BuildAndUploadGame(Action<UnityWebRequest> completed = null)
 		{
-			BuildTools.BuildElympicsServerLinux();
-
-			const string title = "Uploading to Elympics Cloud";
-			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-			string enginePath;
-			string botPath;
-			var waitingForContinuation = false;
-			try
-			{
-				EditorUtility.DisplayProgressBar(title, "", 0f);
-				if (!ElympicsConfig.IsLogin)
-				{
-					Debug.LogError("You must be logged in Elympics to upload games");
-					return;
-				}
-
-				EditorUtility.DisplayProgressBar(title, "Packing engine", 0.2f);
-				if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out enginePath))
-					return;
-
-				EditorUtility.DisplayProgressBar(title, "Packing bot", 0.4f);
-				if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out botPath))
-					return;
-
-				EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
-				CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
-				waitingForContinuation = true;
-			}
-			finally
-			{
-				if (!waitingForContinuation)
-					EditorUtility.ClearProgressBar();
-			}
+			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
 			void OnContinuation(bool success)
 			{
+				const string title = "Uploading to Elympics Cloud";
+
 				if (!success)
 				{
 					EditorUtility.ClearProgressBar();
-					EditorUtility.DisplayDialog(title, "Auth failed", "Ok");
+					EditorUtility.DisplayDialog(title, "Auth failed", "Check login state");
 					return;
 				}
 
-				var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-				ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] {enginePath, botPath}, webRequest =>
+				if (!BuildTools.BuildElympicsServerLinux())
+					return;
+
+				var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+				string enginePath;
+				string botPath;
+				var waitingForContinuation = false;
+				try
 				{
-					var handlerResponse = UploadHandler(currentGameConfig, webRequest);
+					EditorUtility.DisplayProgressBar(title, "", 0f);
+					if (!ElympicsConfig.IsLogin)
+					{
+						Debug.LogError("You must be logged in Elympics to upload games");
+						return;
+					}
+
+					EditorUtility.DisplayProgressBar(title, "Packing engine", 0.2f);
+					if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out enginePath))
+						return;
+
+					EditorUtility.DisplayProgressBar(title, "Packing bot", 0.4f);
+					if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out botPath))
+						return;
+
+					EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
+					waitingForContinuation = true;
+				}
+				finally
+				{
+					if (!waitingForContinuation)
+						EditorUtility.ClearProgressBar();
+				}
+
+				var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
+				ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
+				{
+					try
+					{
+						HandleUploadResults(currentGameConfig, webRequest);
+					}
+					catch (Exception e)
+					{
+						EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "Ok");
+					}
 					EditorUtility.ClearProgressBar();
-					EditorUtility.DisplayDialog(title, handlerResponse ? $"Uploaded {currentGameConfig.gameName} with version {currentGameConfig.gameVersion}" : "Upload failed - check logs", "Ok");
 					completed?.Invoke(webRequest);
 				});
 			}
+
 		}
 
-		private static bool UploadHandler(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
+		private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
 		{
-			if (webRequest.isHttpError || webRequest.isNetworkError)
+			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
-				ElympicsWebClient.LogResponseErrors("Upload game version", webRequest);
-				return false;
+				var errorMessage = ElympicsWebClient.ParseResponseErrors(webRequest);
+				Debug.LogError($"Upload failed for game {currentGameConfig.GameName} with version: {currentGameConfig.GameVersion}\nGame ID: {currentGameConfig.GameId}");
+				throw new ElympicsException(errorMessage);
 			}
 
-			Debug.Log($"Uploaded {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}");
-			return true;
+			Debug.Log($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}");
 		}
 
 		public static void BuildAndUploadServerInBatchmode(string username, string password)
@@ -284,7 +295,8 @@ namespace Elympics
 			if (!ElympicsConfig.IsLogin)
 				throw new Exception("Login operation failed. Check log for details");
 
-			BuildTools.BuildElympicsServerLinux();
+			if (!BuildTools.BuildElympicsServerLinux())
+				return;
 
 			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
@@ -294,12 +306,11 @@ namespace Elympics
 				throw new Exception("Problem with packing bot");
 
 			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-			var uploadOp = ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] {enginePath, botPath});
+			var uploadOp = ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });
 
 			while (!uploadOp.isDone) ;
 
-			if (!UploadHandler(currentGameConfig, uploadOp.webRequest))
-				throw new Exception("Upload problem");
+			HandleUploadResults(currentGameConfig, uploadOp.webRequest);
 		}
 
 		private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)
@@ -353,7 +364,7 @@ namespace Elympics
 
 			Debug.Log("Auth token expired. Refreshing using refresh token...");
 			var refreshToken = ElympicsConfig.RefreshToken;
-			ElympicsWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel {RefreshToken = refreshToken}, OnCompleted, false);
+			ElympicsWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel { RefreshToken = refreshToken }, OnCompleted, false);
 
 			void OnCompleted(UnityWebRequest webRequest)
 			{

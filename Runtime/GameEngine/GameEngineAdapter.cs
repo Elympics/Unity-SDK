@@ -41,8 +41,10 @@ namespace Elympics
 
 		private readonly int _playerInputBufferSize;
 
+		public ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new ConcurrentDictionary<ElympicsPlayer, ElympicsInput>();
 		public ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } =
 			new ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>>();
+
 
 		public GameEngineAdapter(ElympicsGameConfig elympicsGameConfig)
 		{
@@ -166,6 +168,11 @@ namespace Elympics
 		{
 			// _logger.Info($"Hello from unity tick {tick}");
 			/* Using unity FixedUpdate */
+		}
+
+		public void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicInput)
+		{
+			LatestSimulatedTickInput[player] = elympicInput;
 		}
 
 		public void SendSnapshotUnreliable(ElympicsSnapshot snapshot)

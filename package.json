@@ -1,12 +1,21 @@
 {
   "name": "com.daftmobile.elympics",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
   "displayName": "Elympics",
   "unity": "2019.4",
+  "author": {
+    "name": "Elympics",
+    "email": "hello@elympics.cc",
+    "url": "https://www.elympics.cc/"
+  },
   "documentationUrl": "https://docs.elympics.cc/",
   "changelogUrl": "https://github.com/Elympics/Unity-SDK/releases",
   "license": "See LICENSE.md file",
+  "keywords": [
+    "multiplayer",
+    "networking"
+  ],
   "samples": [
     {
       "displayName": "Simple Menu",

@@ -10,7 +10,7 @@ namespace Elympics
 
 		public static NetworkIdEnumerator Instance => instance ?? (instance = new NetworkIdEnumerator());
 
-		private int _current;
+		private int          _current;
 		private HashSet<int> _usedForcedIdsCached;
 
 
@@ -33,7 +33,7 @@ namespace Elympics
 			var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(activeScene, true);
 			foreach (var behaviour in behaviours)
 			{
-				if (behaviour.ForceNetworkId)
+				if (behaviour.forceNetworkId)
 					continue;
 
 				if (behaviour.NetworkId > _current)
@@ -52,7 +52,7 @@ namespace Elympics
 			_usedForcedIdsCached = new HashSet<int>();
 			foreach (var behaviour in behaviours)
 			{
-				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && behaviour.ForceNetworkId)
+				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && behaviour.forceNetworkId)
 				{
 					if (!_usedForcedIdsCached.Add(behaviour.NetworkId))
 						Debug.LogError($"Repetition for FORCED network id {behaviour.NetworkId} in {behaviour.gameObject.name} {behaviour.GetType().Name}");
@@ -83,7 +83,7 @@ namespace Elympics
 			_current = GetNext();
 			return _current;
 		}
-
+		
 		public void MoveTo(int newCurrent) => _current = newCurrent;
 
 		public void Reset()

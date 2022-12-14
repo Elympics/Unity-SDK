@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -61,7 +60,7 @@ namespace Elympics
 			var sortedBehaviours = new List<ElympicsBehaviour>();
 			foreach (var behaviour in behaviours)
 			{
-				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && !behaviour.ForceNetworkId)
+				if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && !behaviour.forceNetworkId)
 					sortedBehaviours.Add(behaviour);
 			}
 
@@ -129,4 +128,3 @@ namespace Elympics
 		private static void BuildServerLinux() => BuildTools.BuildServerLinux();
 	}
 }
-#endif

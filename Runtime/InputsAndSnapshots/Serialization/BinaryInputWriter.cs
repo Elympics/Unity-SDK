@@ -3,13 +3,13 @@ using System.IO;
 
 namespace Elympics
 {
-	public class BinaryInputWriter : BinaryWriter, IBinaryInputWriter, IDisposable
+	internal class BinaryInputWriter : BinaryWriter, IBinaryInputWriter, IDisposable
 	{
 		private readonly MemoryStream memoryStream;
 
 		public BinaryInputWriter() : base(new MemoryStream())
 		{
-			memoryStream = (MemoryStream)OutStream;
+			memoryStream = (MemoryStream) OutStream;
 		}
 
 		protected override void Dispose(bool disposing)
@@ -31,6 +31,6 @@ namespace Elympics
 			return memoryStream.ToArray();
 		}
 
-		public void Write<TEnum>(TEnum value) where TEnum : Enum => base.Write((int)(object)value);
+		public void Write<TEnum>(TEnum value) where TEnum : Enum => base.Write((int) (object) value);
 	}
 }

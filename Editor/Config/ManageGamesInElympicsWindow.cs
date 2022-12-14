@@ -344,7 +344,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	private void DrawGameManagmentInElympicsSection(ElympicsGameConfig activeGameConfig)
 	{
-		_customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.GameName + " in Elympics", 20, elympicsColor);
+		_customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, elympicsColor);
 		_customInspectorDrawer.Space();
 
 		if (_customInspectorDrawer.DrawButtonCentered("Upload", _resizibleCenteredLabelWidth, 20))

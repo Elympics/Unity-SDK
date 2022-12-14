@@ -50,7 +50,7 @@ namespace Elympics
 		{
 			_behaviour = serializedObject.targetObject as ElympicsBehaviour;
 			_networkId = serializedObject.FindProperty(nameof(_behaviour.networkId));
-			_forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.ForceNetworkId));
+			_forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.forceNetworkId));
 			_useAutoId = !_forceNetworkId.boolValue;
 
 			_predictableToPlayers = serializedObject.FindProperty(nameof(_behaviour.predictableFor));

@@ -9,12 +9,12 @@ namespace Elympics
 	public class ElympicsBehavioursManager : MonoBehaviour
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
-		[SerializeField] private ElympicsFactory factory = null;
+		[SerializeField] private ElympicsFactory                          factory = null;
 
-		private ElympicsBehavioursContainer _elympicsBehaviours;
-		private readonly List<ElympicsBehaviour> _bufferForIteration = new List<ElympicsBehaviour>();
-		private ElympicsBase _elympics;
-		private BinaryInputWriter _inputWriter;
+		private          ElympicsBehavioursContainer _elympicsBehaviours;
+		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
+		private          ElympicsBase                _elympics;
+		private          BinaryInputWriter           _inputWriter;
 
 		internal const int NetworkIdRange = 10000000;
 
@@ -43,7 +43,7 @@ namespace Elympics
 					return;
 				}
 
-				if (networkId >= NetworkIdRange && !elympicsBehaviour.ForceNetworkId)
+				if (networkId >= NetworkIdRange && !elympicsBehaviour.forceNetworkId)
 				{
 					Debug.LogError($"Auto assign id failed (NetworkId: {networkId}) on {elympicsBehaviour.gameObject.name} {nameof(ElympicsBehaviour)}. Object has id in range for instantiated objects", elympicsBehaviour);
 					return;
@@ -81,10 +81,10 @@ namespace Elympics
 		}
 
 		internal ElympicsInput OnInputForClient() => OnInput(ClientInputGetter);
-		internal ElympicsInput OnInputForBot() => OnInput(BotInputGetter);
+		internal ElympicsInput OnInputForBot()    => OnInput(BotInputGetter);
 
 		private static void ClientInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer) => behaviour.OnInputForClient(writer);
-		private static void BotInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer) => behaviour.OnInputForBot(writer);
+		private static void BotInputGetter(ElympicsBehaviour behaviour, BinaryInputWriter writer)    => behaviour.OnInputForBot(writer);
 
 		private ElympicsInput OnInput(Action<ElympicsBehaviour, BinaryInputWriter> onInput)
 		{

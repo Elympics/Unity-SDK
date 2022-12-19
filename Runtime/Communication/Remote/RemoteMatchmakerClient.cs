@@ -54,7 +54,7 @@ namespace Elympics
 			WaitingForMatchStateRunningError += result => MatchmakingError?.Invoke(result.Error);
 		}
 
-		public void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, CancellationToken ct = default)
+		public void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, CancellationToken ct = default, string regionName = null)
 		{
 			MatchmakingStarted?.Invoke();
 
@@ -63,7 +63,7 @@ namespace Elympics
 				if (!string.IsNullOrEmpty(matchId))
 					OnMatchCreated(matchId);
 				else
-					WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, ct);
+					WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, regionName, ct);
 			}
 
 			void OnMatchCreated(string matchId)
@@ -84,7 +84,7 @@ namespace Elympics
 			if (tryReconnect)
 				GetFirstUnfinishedMatchId(OnUnfinishedMatchResolved, gameId, gameVersion, ct);
 			else
-				WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, ct);
+				WaitForMatch(OnMatchCreated, gameId, gameVersion, matchmakerData, gameEngineData, queueName, regionName, ct);
 		}
 
 		private void GetFirstUnfinishedMatchId(Action<string> callback, string gameId, string gameVersion, CancellationToken ct)
@@ -119,7 +119,7 @@ namespace Elympics
 			_userApiClient.GetUnfinishedMatchesAsync(new GetUnfinishedMatchesModel.Request(), OnUnfinishedMatchesResult, ct);
 		}
 
-		private void WaitForMatch(Action<string> callback, string gameId, string gameVersion, float[] matchmakerData, byte[] gameEngineData, string queueName, CancellationToken ct)
+		private void WaitForMatch(Action<string> callback, string gameId, string gameVersion, float[] matchmakerData, byte[] gameEngineData, string queueName, string regionName, CancellationToken ct)
 		{
 			var getPendingMatchRequest = new JoinMatchmakerAndWaitForMatchModel.Request
 			{
@@ -127,7 +127,8 @@ namespace Elympics
 				GameVersion = gameVersion,
 				MatchmakerData = matchmakerData,
 				GameEngineData = gameEngineData,
-				QueueName = queueName
+				QueueName = queueName,
+				RegionName = regionName,
 			};
 
 			WaitingForMatchStarted?.Invoke((gameId, gameVersion));
@@ -177,8 +178,7 @@ namespace Elympics
 			return response != null && !response.IsSuccess && response.ErrorMessage == JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound;
 		}
 
-		private void WaitForMatchState(Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers)> callback, string matchId, GetMatchDesiredState desiredState,
-			CancellationToken ct)
+		private void WaitForMatchState(Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers)> callback, string matchId, GetMatchDesiredState desiredState, CancellationToken ct)
 		{
 			var getMatchRequest = new GetMatchModel.Request
 			{

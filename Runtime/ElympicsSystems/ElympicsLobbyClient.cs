@@ -137,7 +137,7 @@ namespace Elympics
 			LoadGameplayScene();
 		}
 
-		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true)
+		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, string regionName = null)
 		{
 			if (!IsAuthenticated)
 			{
@@ -158,7 +158,7 @@ namespace Elympics
 				Matchmaker.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
 			}
 
-			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, queueName, CancellationToken.None);
+			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, queueName, CancellationToken.None, regionName);
 		}
 
 		private void SetUpMatch(JoinedMatchMode mode)
@@ -173,8 +173,7 @@ namespace Elympics
 			LoadGameplayScene();
 		}
 
-		private void LoadGameplayScene()
-			=> SceneManager.LoadScene(_gameConfig.GameplayScene);
+		private void LoadGameplayScene() => SceneManager.LoadScene(_gameConfig.GameplayScene);
 
 		private void SetAuthToken()
 		{

@@ -50,6 +50,7 @@ namespace Elympics
 		private float[] _matchmakerData;
 		private byte[]  _gameEngineData;
 		private string  _queueName;
+		private string  _regionName;
 
 		private void Awake()
 		{
@@ -76,7 +77,7 @@ namespace Elympics
 		private void SetMatchDataOnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
 		{
 			Debug.Log($"Received match id {result.MatchId}");
-			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData, _queueName);
+			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData, _queueName, _regionName);
 		}
 
 		private void LoadConfig()
@@ -150,6 +151,7 @@ namespace Elympics
 			_matchmakerData = matchmakerData;
 			_gameEngineData = gameEngineData;
 			_queueName = queueName;
+			_regionName = regionName;
 
 			if (loadGameplaySceneOnFinished)
 			{

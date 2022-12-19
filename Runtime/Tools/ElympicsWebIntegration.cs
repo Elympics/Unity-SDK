@@ -17,10 +17,10 @@ namespace Elympics
 {
 	public static class ElympicsWebIntegration
 	{
-		private const string PackFileName = "pack.zip";
+		private const string PackFileName          = "pack.zip";
 		private const string DirectoryNameToUpload = "Games";
-		private const string EngineSubdirectory = "Engine";
-		private const string BotSubdirectory = "Bot";
+		private const string EngineSubdirectory    = "Engine";
+		private const string BotSubdirectory       = "Bot";
 
 		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
 
@@ -63,8 +63,8 @@ namespace Elympics
 		[Serializable]
 		private class LoggedInTokenResponseModel
 		{
-			public string UserName = null;
-			public string AuthToken = null;
+			public string UserName     = null;
+			public string AuthToken    = null;
 			public string RefreshToken = null;
 		}
 
@@ -93,6 +93,15 @@ namespace Elympics
 		{
 			public string Id;
 			public string Name;
+		}
+
+		[Serializable]
+		public class RegionResponseModel
+		{
+			public string Id;
+			public string Name;
+			public string OrganizationId;
+			public string Comment;
 		}
 
 		[Serializable]
@@ -147,6 +156,28 @@ namespace Elympics
 			return authTokenMid;
 		}
 
+		private const string RegionRoute = "regions/game";
+
+		public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
+		{
+			Debug.Log("Getting available regions");
+			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+
+			void OnContinuation(bool success)
+			{
+				if (!success)
+					return;
+
+				var uri = GetCombinedUrl(ElympicsWebEndpoint, RegionRoute, gameId);
+				ElympicsWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+
+				void OnCompleted(UnityWebRequest webRequest)
+				{
+					GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
+				}
+			}
+		}
+
 		public static void GetAvailableGames(Action<List<GameResponseModel>> updateProperty)
 		{
 			Debug.Log($"Getting available games");
@@ -175,6 +206,17 @@ namespace Elympics
 				return;
 
 			updateProperty.Invoke(availableGames);
+		}
+
+		private static void GetAvailableRegionsHandler(Action<List<RegionResponseModel>> updateProperty, UnityWebRequest webRequest, Action onFailure)
+		{
+			Debug.Log($"Get available regions response code: {webRequest.responseCode}");
+			if (ElympicsWebClient.TryDeserializeResponse(webRequest, "GetAvailableRegions", out List<RegionResponseModel> availableRegions))
+			{
+				updateProperty?.Invoke(availableRegions);
+				return;
+			}
+			onFailure?.Invoke();
 		}
 
 		public static void GetElympicsEndpoints(Action<ElympicsEndpointsModel> updateProperty)
@@ -259,11 +301,11 @@ namespace Elympics
 					{
 						EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "Ok");
 					}
+
 					EditorUtility.ClearProgressBar();
 					completed?.Invoke(webRequest);
 				});
 			}
-
 		}
 
 		private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)

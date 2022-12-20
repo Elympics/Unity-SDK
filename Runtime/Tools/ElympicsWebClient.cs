@@ -100,7 +100,7 @@ namespace Elympics
 			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
 				var errorMassage = ParseResponseErrors(webRequest);
-				Debug.LogError($"Error occuert on {actionName}: {errorMassage}");
+				Debug.LogError($"Error occurred on {actionName}: {errorMassage}");
 				return false;
 			}
 

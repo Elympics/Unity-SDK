@@ -51,7 +51,7 @@ namespace Elympics
 			if (!string.IsNullOrEmpty(regionName))
 			{
 				var uriBuilder = new UriBuilder(webSignalingEndpoint);
-				uriBuilder.Host = regionName + "." + uriBuilder.Host;
+				uriBuilder.Host = regionName + "-" + uriBuilder.Host;
 				webSignalingEndpoint = uriBuilder.Uri;
 			}
 			_signalingClient = new HttpSignalingClient(webSignalingEndpoint);

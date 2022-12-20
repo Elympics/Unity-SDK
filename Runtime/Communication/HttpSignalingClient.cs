@@ -40,7 +40,6 @@ namespace Elympics
 		public bool IsError => _request.IsConnectionError() || _request.IsProtocolError();
 
 
-
 		public string Error
 		{
 			get

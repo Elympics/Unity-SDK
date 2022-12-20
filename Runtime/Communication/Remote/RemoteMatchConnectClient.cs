@@ -43,11 +43,17 @@ namespace Elympics
 		private Action _disconnectedCallback;
 		private Action _matchJoinedCallback;
 
-		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false)
+		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false, string regionName = null)
 		{
 			_gameServerClient = gameServerClient;
 			Debug.Log(matchId);
 			var webSignalingEndpoint = GameServerClient.GetWebSignalingEndpoint(ElympicsConfig.Load().ElympicsGameServersEndpoint, webServerAddress, matchId);
+			if (!string.IsNullOrEmpty(regionName))
+			{
+				var uriBuilder = new UriBuilder(webSignalingEndpoint);
+				uriBuilder.Host = regionName + "-" + uriBuilder.Host;
+				webSignalingEndpoint = uriBuilder.Uri;
+			}
 			_signalingClient = new HttpSignalingClient(webSignalingEndpoint);
 			_tcpUdpServerAddress = tcpUdpServerAddress;
 			_webServerAddress = webServerAddress;
@@ -183,7 +189,7 @@ namespace Elympics
 				while (_connecting)
 					yield return 0;
 				while (_connected && synchronizer != null && synchronizer.MoveNext())
-					yield return new WaitForSeconds((float) synchronizer.Current);
+					yield return new WaitForSeconds((float)synchronizer.Current);
 			}
 			else
 			{
@@ -205,7 +211,7 @@ namespace Elympics
 				switch (enumerator.Current)
 				{
 					case double timeD:
-						yield return new WaitForSeconds((float) timeD);
+						yield return new WaitForSeconds((float)timeD);
 						break;
 					case int timeI:
 						yield return new WaitForSeconds(timeI);

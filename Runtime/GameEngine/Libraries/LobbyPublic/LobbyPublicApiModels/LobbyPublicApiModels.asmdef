@@ -1,9 +1,7 @@
 {
-    "name": "Elympics",
+    "name": "LobbyPublicApiModels",
     "references": [
-        "ParrelSync",
-        "UniTask",
-        "LobbyPublicApiModels"
+        "GUID:9597ea5893422ca46b3012274d1ad97e"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

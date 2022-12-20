@@ -126,7 +126,7 @@ namespace Elympics
 
 		public void DrawSerializedProperty(string content, SerializedProperty property)
 		{
-			int height = (int) EditorGUI.GetPropertyHeight(property, true);
+			int height = (int)EditorGUI.GetPropertyHeight(property, true);
 
 			EditorGUI.PropertyField(new Rect(horizontalMargin, currentSpaceBetweenElements, position.width - HorizontalMarginsWidth, height), property, new GUIContent(content), true);
 			IncreaseSpacingManually(height + spacingBetweenElements);
@@ -171,14 +171,13 @@ namespace Elympics
 			return result;
 		}
 
-		public UnityEngine.Object DrawSceneFieldWithOpenSceneButton(string header, UnityEngine.Object scene, float headerWidthPercentage01, float openeSceneButtonWidthPercentage01, out bool sceneFieldChanged,
-			out bool openSceneButtonPressed)
+		public UnityEngine.Object DrawSceneFieldWithOpenSceneButton(string header, UnityEngine.Object scene, float headerWidthPercentage01, float openSceneButtonWidthPercentage01, out bool sceneFieldChanged, out bool openSceneButtonPressed)
 		{
 			headerWidthPercentage01 = Mathf.Clamp(headerWidthPercentage01, 0.0f, 1.0f);
 			float headerWidth = position.width * headerWidthPercentage01;
 
-			openeSceneButtonWidthPercentage01 = Mathf.Clamp(openeSceneButtonWidthPercentage01, 0.0f, 1.0f);
-			float openSceneButtonWidth = (position.width - headerWidth) * openeSceneButtonWidthPercentage01;
+			openSceneButtonWidthPercentage01 = Mathf.Clamp(openSceneButtonWidthPercentage01, 0.0f, 1.0f);
+			float openSceneButtonWidth = (position.width - headerWidth) * openSceneButtonWidthPercentage01;
 
 			EditorGUI.LabelField(new Rect(horizontalMargin, currentSpaceBetweenElements, headerWidth - horizontalMargin, defaultOneLineHeight), header, centeredStyleLabel);
 
@@ -186,8 +185,7 @@ namespace Elympics
 			var result = EditorGUI.ObjectField(new Rect(headerWidth + horizontalMargin, currentSpaceBetweenElements, (position.width - headerWidth) - openSceneButtonWidth, defaultOneLineHeight), scene, typeof(SceneAsset), true);
 			sceneFieldChanged = EditorGUI.EndChangeCheck();
 
-			openSceneButtonPressed =
-				GUI.Button(new Rect(headerWidth + horizontalMargin + ((position.width - headerWidth) - openSceneButtonWidth), currentSpaceBetweenElements, openSceneButtonWidth - HorizontalMarginsWidth, defaultOneLineHeight), "Open Scene");
+			openSceneButtonPressed = GUI.Button(new Rect(headerWidth + horizontalMargin + ((position.width - headerWidth) - openSceneButtonWidth), currentSpaceBetweenElements, openSceneButtonWidth - HorizontalMarginsWidth, defaultOneLineHeight), "Open Scene");
 
 			IncreaseSpacingManually(defaultOneLineHeight + spacingBetweenElements);
 
@@ -196,7 +194,7 @@ namespace Elympics
 
 		public void DrawEndpoint(string content, SerializedProperty endpoint, EditorEndpointChecker endpointChecker, float headerWidthPercentage01, float callbackIndicatorWidthPercentage01, out bool endpointChanged)
 		{
-			int height = (int) EditorGUI.GetPropertyHeight(endpoint, true);
+			int height = (int)EditorGUI.GetPropertyHeight(endpoint, true);
 
 			headerWidthPercentage01 = Mathf.Clamp(headerWidthPercentage01, 0.0f, 1.0f);
 			float headerWidth = position.width * headerWidthPercentage01;
@@ -210,8 +208,7 @@ namespace Elympics
 			endpoint.stringValue = EditorGUI.TextField(new Rect(headerWidth + horizontalMargin, currentSpaceBetweenElements, (position.width - headerWidth) - callbackIndicatorWidth, height), endpoint.stringValue);
 			endpointChanged = EditorGUI.EndChangeCheck();
 
-			EditorGUI.LabelField(new Rect(headerWidth + horizontalMargin + ((position.width - headerWidth) - callbackIndicatorWidth), currentSpaceBetweenElements, callbackIndicatorWidth - HorizontalMarginsWidth, height),
-				GetEndpointIndicator(endpointChecker), centeredStyleLabel);
+			EditorGUI.LabelField(new Rect(headerWidth + horizontalMargin + ((position.width - headerWidth) - callbackIndicatorWidth), currentSpaceBetweenElements, callbackIndicatorWidth - HorizontalMarginsWidth, height), GetEndpointIndicator(endpointChecker), centeredStyleLabel);
 
 			IncreaseSpacingManually(height + spacingBetweenElements);
 		}
@@ -271,6 +268,33 @@ namespace Elympics
 
 				IncreaseSpacingManually(linesInGroup * defaultOneLineHeight + spacingBetweenElements);
 			}
+		}
+
+		public void DrawAvailableRegions(List<string> availableRegions)
+		{
+			if (availableRegions == null)
+			{
+				EditorGUI.LabelField(new Rect(horizontalMargin, currentSpaceBetweenElements, position.width - horizontalMargin * 2, defaultOneLineHeight), "Click Synchronize button to retrieve available regions for active game.", headerStyleLabel);
+			}
+			else if (availableRegions.Count == 0)
+			{
+				EditorGUI.LabelField(new Rect(horizontalMargin, currentSpaceBetweenElements, position.width - horizontalMargin * 2, defaultOneLineHeight), "No available regions for active game.", headerStyleLabel);
+			}
+			else
+			{
+				EditorGUI.LabelField(new Rect(horizontalMargin, currentSpaceBetweenElements, position.width - horizontalMargin * 2, defaultOneLineHeight), "Available regions for active game:", headerStyleLabel);
+				foreach (var region in availableRegions)
+				{
+					if (string.IsNullOrEmpty(region))
+					{
+						continue;
+					}
+
+					DrawStringField(string.Empty, region, 0f, true);
+				}
+			}
+
+			IncreaseSpacingManually(defaultOneLineHeight + spacingBetweenElements);
 		}
 	}
 }

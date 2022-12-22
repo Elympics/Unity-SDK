@@ -20,7 +20,7 @@ namespace Elympics
 
 		public void SetServerUri(string host, int port)
 		{
-			var builder = new UriBuilder(host) {Port = port};
+			var builder = new UriBuilder(host) { Port = port };
 			_lobbyUrl = builder.Uri.ToString();
 		}
 
@@ -82,14 +82,11 @@ namespace Elympics
 			var requestOp = ElympicsWebClient.SendJsonPostRequest(GetMatchmakingUriWithBase(MatchmakingRoutes.GetUnfinishedMatches), request, _authToken);
 			CallCallbackOnCompleted(requestOp, callback, ct);
 		}
+		private string GetUserUriWithBase(string methodEndpoint)            => ConcatenatePathToLobbyUri($"{AuthRoutes.Base}/{methodEndpoint}");
+		private string GetMatchmakingUriWithBase(string methodEndpoint)     => ConcatenatePathToLobbyUri($"{MatchmakingRoutes.Base}/{methodEndpoint}");
+		private string GetClientProfilingUriWithBase(string methodEndpoint) => ConcatenatePathToLobbyUri($"{ClientProfilingRoutes.Base}/{methodEndpoint}");
 
-		private string GetUserUriWithBase(string methodEndpoint)            => new Uri(new Uri(_lobbyUrl), $"{AuthRoutes.Base}/{methodEndpoint}").ToString();
-		private string GetMatchmakingUriWithBase(string methodEndpoint)     => new Uri(new Uri(_lobbyUrl), $"{MatchmakingRoutes.Base}/{methodEndpoint}").ToString();
-		private string GetClientProfilingUriWithBase(string methodEndpoint) => new Uri(new Uri(_lobbyUrl), $"{ClientProfilingRoutes.Base}/{methodEndpoint}").ToString();
-
-
-		private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<T, Exception> callback, CancellationToken ct)
-			where T : class
+		private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<T, Exception> callback, CancellationToken ct) where T : class
 		{
 			var ctRegistration = ct.Register(() =>
 			{
@@ -109,6 +106,13 @@ namespace Elympics
 				Debug.Log($"[Elympics] Received response from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
 				callback(response, null);
 			};
+		}
+
+		private string ConcatenatePathToLobbyUri(string path)
+		{
+			var uriBuilder = new UriBuilder(_lobbyUrl);
+			uriBuilder.Path = String.Join("/", uriBuilder.Path.TrimEnd('/'), path);
+			return uriBuilder.Uri.ToString();
 		}
 
 		[Serializable]

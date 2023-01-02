@@ -11,6 +11,7 @@ using UnityEngine;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
 using AuthRoutes = ElympicsApiModels.ApiModels.Auth.Routes;
 using Routes = ElympicsApiModels.ApiModels.Users.Routes;
+using Regions = ElympicsApiModels.ApiModels.Regions.Routes;
 using UnityEngine.Networking;
 
 namespace Elympics
@@ -156,8 +157,6 @@ namespace Elympics
 			return authTokenMid;
 		}
 
-		private const string RegionRoute = "regions/game";
-
 		public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
 		{
 			Debug.Log("Getting available regions");
@@ -168,7 +167,7 @@ namespace Elympics
 				if (!success)
 					return;
 
-				var uri = GetCombinedUrl(ElympicsWebEndpoint, RegionRoute, gameId);
+				var uri = GetCombinedUrl(ElympicsWebEndpoint, Regions.BaseRoute, gameId);
 				ElympicsWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
 				void OnCompleted(UnityWebRequest webRequest)

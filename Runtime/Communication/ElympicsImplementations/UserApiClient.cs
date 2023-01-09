@@ -98,7 +98,7 @@ namespace Elympics
 				ctRegistration.Dispose();
 				if (requestOp.webRequest.responseCode != 200)
 				{
-					callback(null, new Exception($"[Elympics] {requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}"));
+					callback(null, new ElympicsException($"{requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}"));
 					return;
 				}
 

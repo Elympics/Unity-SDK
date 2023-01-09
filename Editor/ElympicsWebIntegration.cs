@@ -1,11 +1,11 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
@@ -18,10 +18,10 @@ namespace Elympics
 {
 	public static class ElympicsWebIntegration
 	{
-		private const string PackFileName          = "pack.zip";
+		private const string PackFileName = "pack.zip";
 		private const string DirectoryNameToUpload = "Games";
-		private const string EngineSubdirectory    = "Engine";
-		private const string BotSubdirectory       = "Bot";
+		private const string EngineSubdirectory = "Engine";
+		private const string BotSubdirectory = "Bot";
 
 		private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
 
@@ -64,8 +64,8 @@ namespace Elympics
 		[Serializable]
 		private class LoggedInTokenResponseModel
 		{
-			public string UserName     = null;
-			public string AuthToken    = null;
+			public string UserName = null;
+			public string AuthToken = null;
 			public string RefreshToken = null;
 		}
 
@@ -123,13 +123,13 @@ namespace Elympics
 
 			var uri = GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.LoginRoute);
 
-			return ElympicsWebClient.SendJsonPostRequestApi(uri, model, completed, false);
+			return ElympicsEditorWebClient.SendJsonPostRequestApi(uri, model, completed, false);
 		}
 
 		private static void LoginHandler(UnityWebRequest webRequest)
 		{
 			Debug.Log($"Login response code: {webRequest.responseCode}");
-			if (ElympicsWebClient.TryDeserializeResponse(webRequest, "Login", out LoggedInTokenResponseModel responseModel))
+			if (TryDeserializeResponse(webRequest, "Login", out LoggedInTokenResponseModel responseModel))
 			{
 				try
 				{
@@ -153,7 +153,7 @@ namespace Elympics
 			var authTokenParts = authToken.Split('.');
 			var authTokenMidPadded = authTokenParts[1].PadRight(4 * ((authTokenParts[1].Length + 3) / 4), '=');
 			var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded));
-			var authTokenMid = JsonUtility.FromJson<JwtMidPart>(authTokenMidStr);
+			var authTokenMid = JsonConvert.DeserializeObject<JwtMidPart>(authTokenMidStr);
 			return authTokenMid;
 		}
 
@@ -168,7 +168,7 @@ namespace Elympics
 					return;
 
 				var uri = GetCombinedUrl(ElympicsWebEndpoint, Regions.BaseRoute, gameId);
-				ElympicsWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+				ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
 				void OnCompleted(UnityWebRequest webRequest)
 				{
@@ -189,7 +189,7 @@ namespace Elympics
 					return;
 
 				var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute);
-				ElympicsWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+				ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
 				void OnCompleted(UnityWebRequest webRequest)
 				{
@@ -201,7 +201,7 @@ namespace Elympics
 		private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
 		{
 			Debug.Log($"Get available games response code: {webRequest.responseCode}");
-			if (!ElympicsWebClient.TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
+			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
 				return;
 
 			updateProperty.Invoke(availableGames);
@@ -210,7 +210,7 @@ namespace Elympics
 		private static void GetAvailableRegionsHandler(Action<List<RegionResponseModel>> updateProperty, UnityWebRequest webRequest, Action onFailure)
 		{
 			Debug.Log($"Get available regions response code: {webRequest.responseCode}");
-			if (ElympicsWebClient.TryDeserializeResponse(webRequest, "GetAvailableRegions", out List<RegionResponseModel> availableRegions))
+			if (TryDeserializeResponse(webRequest, "GetAvailableRegions", out List<RegionResponseModel> availableRegions))
 			{
 				updateProperty?.Invoke(availableRegions);
 				return;
@@ -228,11 +228,11 @@ namespace Elympics
 					return;
 
 				var uri = GetCombinedUrl(ElympicsWebEndpoint, Routes.BaseRoute, Routes.EndpointRoutes);
-				ElympicsWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+				ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
 				void OnCompleted(UnityWebRequest webRequest)
 				{
-					if (ElympicsWebClient.TryDeserializeResponse(webRequest, "Get Elympics Endpoints", out ElympicsEndpointsModel endpoints))
+					if (TryDeserializeResponse(webRequest, "Get Elympics Endpoints", out ElympicsEndpointsModel endpoints))
 					{
 						updateProperty.Invoke(endpoints);
 						Debug.Log($"Set {endpoints.Lobby} {endpoints.GameServers} elympics endpoints");
@@ -290,28 +290,30 @@ namespace Elympics
 				}
 
 				var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-				ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
+				ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
 				{
 					try
 					{
 						HandleUploadResults(currentGameConfig, webRequest);
 					}
-					catch (Exception e)
+					catch (ElympicsException e)
 					{
 						EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "Ok");
+						Debug.LogError(e.Message);
 					}
 
 					EditorUtility.ClearProgressBar();
 					completed?.Invoke(webRequest);
 				});
 			}
+
 		}
 
 		private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
 		{
 			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
-				var errorMessage = ElympicsWebClient.ParseResponseErrors(webRequest);
+				var errorMessage = ParseResponseErrors(webRequest);
 				Debug.LogError($"Upload failed for game {currentGameConfig.GameName} with version: {currentGameConfig.GameVersion}\nGame ID: {currentGameConfig.GameId}");
 				throw new ElympicsException(errorMessage);
 			}
@@ -347,7 +349,7 @@ namespace Elympics
 				throw new Exception("Problem with packing bot");
 
 			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-			var uploadOp = ElympicsWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });
+			var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });
 
 			while (!uploadOp.isDone) ;
 
@@ -405,11 +407,11 @@ namespace Elympics
 
 			Debug.Log("Auth token expired. Refreshing using refresh token...");
 			var refreshToken = ElympicsConfig.RefreshToken;
-			ElympicsWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel { RefreshToken = refreshToken }, OnCompleted, false);
+			ElympicsEditorWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel { RefreshToken = refreshToken }, OnCompleted, false);
 
 			void OnCompleted(UnityWebRequest webRequest)
 			{
-				var deserialized = ElympicsWebClient.TryDeserializeResponse(webRequest, "Refresh auth token", out RefreshedTokensResponseModel responseModel);
+				var deserialized = TryDeserializeResponse(webRequest, "Refresh auth token", out RefreshedTokensResponseModel responseModel);
 				if (deserialized)
 				{
 					var authToken = responseModel.AuthToken;
@@ -418,16 +420,69 @@ namespace Elympics
 					ElympicsConfig.RefreshToken = responseModel.RefreshToken;
 				}
 				else
-				{
-					Debug.LogError("Can't deserialize auth token");
 					SetAsLoggedOut();
-				}
 
 				continuation?.Invoke(deserialized);
 			}
 		}
 
 		private static string GetCombinedUrl(params string[] urlParts) => string.Join("/", urlParts);
+
+		private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse)
+		{
+			deserializedResponse = default;
+			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
+			{
+				var errorMessage = ParseResponseErrors(webRequest);
+				Debug.LogError($"Error occurred for action {actionName}: {errorMessage}");
+				return false;
+			}
+
+			var jsonBody = webRequest.downloadHandler.text;
+			if (typeof(T) == typeof(string))
+				deserializedResponse = (T)(object)jsonBody;
+			else
+				try
+				{
+					deserializedResponse = JsonConvert.DeserializeObject<T>(jsonBody);
+				}
+				catch (JsonException e)
+				{
+					Debug.LogException(e);
+					return false;
+				}
+
+			return true;
+		}
+
+		private static string ParseResponseErrors(UnityWebRequest request)
+		{
+			if (request.responseCode == 401)
+				return "Not authenticated, please login to your ElympicsWeb account";
+			if (request.responseCode == 403)
+				return "This account is not authorized to access the requested resource";
+
+			ErrorModel errorModel = null;
+			try
+			{
+				errorModel = JsonConvert.DeserializeObject<ErrorModel>(request.downloadHandler.text);
+			}
+			catch (JsonException e)
+			{
+				Debug.LogException(e);
+			}
+
+			if (errorModel?.Errors == null || errorModel.Errors.Count == 0)
+				return $"Received error response code {request.responseCode} with error:\n{request.downloadHandler.text}";
+
+			var errors = string.Join("\n", errorModel.Errors.SelectMany(r => r.Value.Select(x => $"[{r.Key}] {x}")));
+			return $"Received error response code {request.responseCode} with errors:\n{errors}";
+		}
+
+		[Serializable]
+		private class ErrorModel
+		{
+			public Dictionary<string, string[]> Errors = new Dictionary<string, string[]>();
+		}
 	}
 }
-#endif

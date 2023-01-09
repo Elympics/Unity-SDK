@@ -45,11 +45,11 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 	#endregion
 
-	private List<string>                                   _availableRegions;
-	private List<ElympicsWebIntegration.GameResponseModel> _accountGames;
-	private CustomInspectorDrawer                          _customInspectorDrawer;
-	private ElympicsGameConfigGeneralInfoDrawer            _elympicsGameConfigInfoDrawer;
-	private GUIStyle                                       _guiStyleWrappedTextCalculator;
+	private List<string>									_availableRegions;
+	private List<ElympicsWebIntegration.GameResponseModel>	_accountGames;
+	private CustomInspectorDrawer							_customInspectorDrawer;
+	private ElympicsGameConfigGeneralInfoDrawer				_elympicsGameConfigInfoDrawer;
+	private GUIStyle										_guiStyleWrappedTextCalculator;
 
 	private int _resizableCenteredLabelWidth;
 
@@ -223,10 +223,10 @@ public class ManageGamesInElympicsWindow : EditorWindow
 				elympicsLobbyEndpoint.SetValue(endpoint.Lobby);
 				elympicsGameServersEndpoint.SetValue(endpoint.GameServers);
 
-				ElympicsWebIntegration.GetAvailableGames(availableGamesOnline =>
+				ElympicsWebIntegration.GetGames(availableGamesOnline =>
 				{
-					Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
-					_accountGames = availableGamesOnline;
+					Debug.Log($"Received {availableGamesOnline.List.Count} games - {string.Join(", ", availableGamesOnline.List.Select(x => x.Name))}");
+					_accountGames = availableGamesOnline.List;
 				});
 				var gameId = ((List<ElympicsGameConfig>)availableGames.GetValue())[currentGameIndex.intValue].gameId;
 				ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId, regionsResponse =>
@@ -277,6 +277,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 			_customInspectorDrawer.Space();
 
 			PrepareElympicsGameConfigDrawer(chosenGameProperty);
+
 			_elympicsGameConfigInfoDrawer.DrawGeneralGameConfigInfo();
 
 			DrawGameManagementInElympicsSection(chosenGameProperty.objectReferenceValue as ElympicsGameConfig);
@@ -337,9 +338,15 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (_elympicsGameConfigInfoDrawer == null)
 		{
 			_elympicsGameConfigInfoDrawer = new ElympicsGameConfigGeneralInfoDrawer(_customInspectorDrawer, elympicsColor);
+			_elympicsGameConfigInfoDrawer.DataChanged += () => ProcessElympicsGameConfigDataChanged(activeGameConfig);
 		}
 
 		_elympicsGameConfigInfoDrawer.UpdateGameConfigProperty(activeGameConfig);
+	}
+
+	private void ProcessElympicsGameConfigDataChanged(SerializedProperty activeGameConfig)
+	{
+		((ElympicsGameConfig)activeGameConfig.objectReferenceValue).ProcessElympicsConfigDataChanged();
 	}
 
 	private static SerializedProperty GetChosenGameProperty()

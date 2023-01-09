@@ -22,8 +22,14 @@ namespace Elympics
 		private readonly CustomInspectorDrawer _customInspectorDrawer;
 		private readonly Color                 _themeColor;
 
+		private string _previousGameName;
+		private string _previousGameId;
+		private string _previousGameVersion;
+		private int    _previousPlayers;
 		private Object _previousSceneAsset;
 		private bool   _verifyGameScenePath;
+
+		public event System.Action DataChanged;
 
 		public ElympicsGameConfigGeneralInfoDrawer(CustomInspectorDrawer inspectorDrawer, Color themeColor)
 		{
@@ -56,6 +62,24 @@ namespace Elympics
 		public void DrawGeneralGameConfigInfo()
 		{
 			DrawSettingsSection();
+			CheckIfFieldDataChanged();
+		}
+
+		private void CheckIfFieldDataChanged()
+		{
+			bool dataChanged = false;
+			dataChanged |= _previousGameName != _gameName.stringValue;
+			dataChanged |= _previousGameId != _gameId.stringValue;
+			dataChanged |= _previousGameVersion != _gameVersion.stringValue;
+			dataChanged |= _previousPlayers != _players.intValue;
+
+			if (dataChanged)
+				DataChanged?.Invoke();
+
+			_previousGameName = _gameName.stringValue;
+			_previousGameId = _gameId.stringValue;
+			_previousGameVersion = _gameVersion.stringValue;
+			_previousPlayers = _players.intValue;
 		}
 
 		#region Game Config Settings Section

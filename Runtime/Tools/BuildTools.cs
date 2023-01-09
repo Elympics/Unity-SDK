@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -21,8 +22,8 @@ namespace Elympics
 		private const string ServerBuildAppNameLinux   = "Unity";
 		private const string ServerBuildAppNameWindows = "Unity.exe";
 
-		private static readonly string GUIDofAssetsPathPointer		= AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
-		private static readonly string BuildAssetsPath				= Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GUIDofAssetsPathPointer));
+		private static readonly string GuidOfAssetsPathPointer		= AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
+		private static readonly string BuildAssetsPath				= Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GuidOfAssetsPathPointer));
 		private static readonly string ServerWrapperPath			= Path.Combine(BuildAssetsPath, "Wrapper");
 		private static readonly string GameBotNoopPath				= Path.Combine(BuildAssetsPath, "GameBotNoop");
 		private const           string ServerWrapperFilesPattern    = "*.dll_";
@@ -31,11 +32,14 @@ namespace Elympics
 		internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
 		internal static string BotPath    => Path.Combine(ServerBuildPath, BotSubdirectory);
 
+		private static readonly Regex MissingModuleRegex = new Regex(
+			@"build target (was )?unsupported|LinuxStandalone|scripting backend (\(\w+\) )?(is )?not installed",
+			RegexOptions.IgnoreCase | RegexOptions.Compiled);
 		private const string MissingModuleErrorMessage =
 #if UNITY_2021_2_OR_NEWER
-			"Installation unity module is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
+			"Installation of Unity modules is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
 #else
-			"Installation unity module is required: Linux Build Support (Mono)";
+			"Installation of Unity module is required: Linux Build Support (Mono)";
 #endif
 
 		public static void UpdateElympicsGameVersion(string newGameVersion)
@@ -193,8 +197,11 @@ namespace Elympics
 				{
 					if (message.type != LogType.Error && message.type != LogType.Exception)
 						continue;
-					if (message.content.Contains("build target was unsupported"))
-						Debug.Log(MissingModuleErrorMessage);
+					if (MissingModuleRegex.IsMatch(message.content))
+					{
+						Debug.LogError(MissingModuleErrorMessage);
+						return;
+					}
 				}
 		}
 

@@ -54,6 +54,7 @@ namespace Elympics
 			{
 				_myUserId = result.UserId;
 				_myMatchmakerClient.MatchmakingFinished += OnMatchmakingFinished;
+				_myMatchmakerClient.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
 				_myMatchmakerClient.JoinMatchmakerAsync(_elympicsGameConfig.GameId, _elympicsGameConfig.GameVersion, false, _matchmakerData, _gameEngineData);
 			}
 			else

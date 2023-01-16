@@ -37,7 +37,7 @@ namespace Elympics
 
 		public   string                UserId          { get; set; }
 		public   bool                  IsAuthenticated { get; private set; }
-		public   JoinedMatchData       MatchData       { get; set; }
+		public   JoinedMatchData       MatchData => Matchmaker.MatchData;
 		public   IAuthenticationClient Auth            { get; private set; }
 		public   IMatchmakerClient     Matchmaker      { get; private set; }
 		internal JoinedMatchMode       MatchMode       { get; private set; }
@@ -47,10 +47,6 @@ namespace Elympics
 		private UserApiClient      _lobbyPublicApiClient;
 
 		private string  _authToken;
-		private float[] _matchmakerData;
-		private byte[]  _gameEngineData;
-		private string  _queueName;
-		private string  _regionName;
 
 		private void Awake()
 		{
@@ -68,16 +64,10 @@ namespace Elympics
 			_lobbyPublicApiClient = new UserApiClient();
 			Auth = new RemoteAuthenticationClient(_lobbyPublicApiClient);
 			Matchmaker = new RemoteMatchmakerClient(_lobbyPublicApiClient);
-			Matchmaker.MatchmakingFinished += SetMatchDataOnMatchmakingFinished;
+			Matchmaker.MatchmakingFinished += result => Debug.Log($"Received match id {result.MatchId}");
 
 			if (authenticateOnAwake)
 				Authenticate();
-		}
-
-		private void SetMatchDataOnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
-		{
-			Debug.Log($"Received match id {result.MatchId}");
-			MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, _matchmakerData, _gameEngineData, _queueName, _regionName);
 		}
 
 		private void LoadConfig()
@@ -147,11 +137,6 @@ namespace Elympics
 			}
 
 			SetUpMatch(JoinedMatchMode.Online);
-
-			_matchmakerData = matchmakerData;
-			_gameEngineData = gameEngineData;
-			_queueName = queueName;
-			_regionName = regionName;
 
 			if (loadGameplaySceneOnFinished)
 			{

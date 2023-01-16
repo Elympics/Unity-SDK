@@ -40,7 +40,8 @@ namespace Elympics
 		[SerializeField] private int                   tcpPortForHalfRemoteMode     = 9101;
 		[SerializeField] private int                   webPortForHalfRemoteMode     = 9102;
 		[SerializeField] private int                   playerIndexForHalfRemoteMode = 1;
-		[SerializeField] private List<InitialUserData> testPlayers                  = null;
+		[SerializeField] private InitialMatchData      testMatchData;
+		[SerializeField] private List<InitialUserData> testPlayers;
 
 		internal event Action DataChanged;
 
@@ -77,6 +78,7 @@ namespace Elympics
 		public   int                        PredictionBufferSize         => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
 		public   int                        TotalPredictionLimitInTicks  => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
 		public   int                        PlayerIndexForHalfRemoteMode => GetHalfRemotePlayerIndex(playerIndexForHalfRemoteMode);
+		public   InitialMatchData           TestMatchData                => testMatchData;
 		public   List<InitialUserData>      TestPlayers                  => testPlayers;
 
 		[field: NonSerialized] public HalfRemoteLagConfig         HalfRemoteLagConfig     { get; }      = new HalfRemoteLagConfig();
@@ -160,6 +162,13 @@ namespace Elympics
 			public double  botDifficulty;
 			public byte[]  gameEngineData;
 			public float[] matchmakerData;
+		}
+
+		[Serializable]
+		public class InitialMatchData
+		{
+			public string queueName;
+			public string regionName;
 		}
 	}
 }

@@ -48,6 +48,8 @@ namespace Elympics
 		private SerializedProperty _tcpPortForHalfRemoteMode;
 		private SerializedProperty _webPortForHalfRemoteMode;
 		private SerializedProperty _playerIndexForHalfRemoteMode;
+		private SerializedProperty _testMatchDataQueue;
+		private SerializedProperty _testMatchDataRegion;
 		private SerializedProperty _testPlayers;
 
 		private GUIStyle     _indentation;
@@ -97,6 +99,9 @@ namespace Elympics
 			_tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
 			_webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
 			_playerIndexForHalfRemoteMode = serializedObject.FindProperty("playerIndexForHalfRemoteMode");
+			var testMatchData = serializedObject.FindProperty("testMatchData");
+			_testMatchDataQueue = testMatchData.FindPropertyRelative(nameof(ElympicsGameConfig.InitialMatchData.queueName));
+			_testMatchDataRegion = testMatchData.FindPropertyRelative(nameof(ElympicsGameConfig.InitialMatchData.regionName));
 			_testPlayers = serializedObject.FindProperty("testPlayers");
 
 			_indentation = new GUIStyle {margin = new RectOffset(10, 0, 0, 0)};
@@ -180,6 +185,7 @@ namespace Elympics
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
 					EditorGUILayout.LabelField("Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.", summaryLabelStyle);
 					DisplayGameVersionInfo();
+					DrawInitialMatchData();
 					break;
 			}
 
@@ -357,6 +363,14 @@ namespace Elympics
 			}
 			else
 				EditorGUILayout.PropertyField(_useWebInHalfRemote, new GUIContent("Use HTTPS/WebRTC"));
+		}
+
+		private void DrawInitialMatchData()
+		{
+			EditorGUILayout.LabelField("Test match data", new GUIStyle(GUI.skin.label) {fontStyle = FontStyle.Italic});
+			EditorGUILayout.PropertyField(_testMatchDataQueue);
+			EditorGUILayout.PropertyField(_testMatchDataRegion);
+			EditorGUILayout.Separator();
 		}
 
 		private void DrawInitialUserDatas()

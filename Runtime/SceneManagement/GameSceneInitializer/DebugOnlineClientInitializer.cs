@@ -47,7 +47,6 @@ namespace Elympics
 			}
 		}
 
-
 		private void OnAuthenticated((bool Success, string UserId, string JwtToken, string Error) result)
 		{
 			if (result.Success)
@@ -55,7 +54,9 @@ namespace Elympics
 				_myUserId = result.UserId;
 				_myMatchmakerClient.MatchmakingFinished += OnMatchmakingFinished;
 				_myMatchmakerClient.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
-				_myMatchmakerClient.JoinMatchmakerAsync(_elympicsGameConfig.GameId, _elympicsGameConfig.GameVersion, false, _matchmakerData, _gameEngineData);
+				_myMatchmakerClient.JoinMatchmakerAsync(_elympicsGameConfig.GameId, _elympicsGameConfig.GameVersion,
+					false, _matchmakerData, _gameEngineData, _elympicsGameConfig.TestMatchData.queueName, default,
+					_elympicsGameConfig.TestMatchData.regionName);
 			}
 			else
 			{
@@ -63,8 +64,9 @@ namespace Elympics
 			}
 		}
 
-		private void OnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) matchData)
+		private void OnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) _)
 		{
+			var matchData = _myMatchmakerClient.MatchData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_myUserId];
 
 			var gameServerClient = new GameServerClient(
@@ -79,7 +81,10 @@ namespace Elympics
 			);
 			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);
 
-			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
+
+			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId,
+				matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,
+				_elympicsGameConfig.UseWeb, matchData.RegionName);
 			var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
 
 			_client.InitializeInternal(_elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerData

@@ -80,7 +80,7 @@ namespace Elympics
 				return;
 			_ = RunWithLag(() =>
 			{
-				SnapshotReceived?.Invoke(ElympicsSnapshotSerializer.Deserialize(data));
+				SnapshotReceived?.Invoke( data.Deserialize<ElympicsSnapshot>());
 				RawSnapshotReceived?.Invoke(data);
 			});
 		}
@@ -91,7 +91,7 @@ namespace Elympics
 				return;
 			_ = RunWithLag(() =>
 			{
-				SnapshotReceived?.Invoke(ElympicsSnapshotSerializer.Deserialize(data));
+				SnapshotReceived?.Invoke(data.Deserialize<ElympicsSnapshot>());
 				RawSnapshotReceived?.Invoke(data);
 			});
 		}
@@ -101,7 +101,7 @@ namespace Elympics
 		public void SendRawInputUnreliable(byte[] data)
 		{
 			_inputRingBuffer.PushBack(data);
-			var serializedInputs = ElympicsInputSerializer.MergeInputsToPackage(_inputRingBuffer.ToArray());
+			var serializedInputs = _inputRingBuffer.ToArray().MergeBytePackage();
 			_ = RunWithLag(() => _client.SendInputUnreliable(serializedInputs));
 		}
 

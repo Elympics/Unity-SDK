@@ -28,13 +28,13 @@ namespace Elympics
 
 		private void OnInGameDataReliableReceived(InGameDataMessage message)
 		{
-			var snapshot = ElympicsSnapshotSerializer.Deserialize(Convert.FromBase64String(message.Data));
+			var snapshot = Convert.FromBase64String(message.Data).Deserialize<ElympicsSnapshot>();
 			SnapshotReceived?.Invoke(snapshot);
 		}
 
 		private void OnInGameDataUnreliableReceived(InGameDataMessage message)
 		{
-			var snapshot = ElympicsSnapshotSerializer.Deserialize(Convert.FromBase64String(message.Data));
+			var snapshot = Convert.FromBase64String(message.Data).Deserialize<ElympicsSnapshot>();
 			SnapshotReceived?.Invoke(snapshot);
 		}
 
@@ -47,7 +47,7 @@ namespace Elympics
 		public async Task SendInputUnreliable(ElympicsInput input)
 		{
 			_inputRingBuffer.PushBack(input.Serialize());
-			var serializedInputs = ElympicsInputSerializer.MergeInputsToPackage(_inputRingBuffer.ToArray());
+			var serializedInputs = _inputRingBuffer.ToArray().MergeBytePackage();
 			await _gameServerClient.SendInGameDataUnreliableAsync(serializedInputs);
 		}
 	}

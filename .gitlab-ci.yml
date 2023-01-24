@@ -12,7 +12,7 @@ cache: {}
 stages:
   - prepare
   - test
-  - prepare-release
+  - pre-release
   - release
 
 default:
@@ -27,6 +27,18 @@ default:
 .cond.release.auto:
   rules:
     - if: $CI_COMMIT_BRANCH == 'main'
+      when: always
+
+.cond.release.always:
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+      when: always
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+      when: always
+
+.cond.release.post:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
       when: always
 
 .cond.release.manual:
@@ -135,13 +147,13 @@ get-activation-file:
   coverage: /<Linecoverage>(.*?)</Linecoverage>/
 
 
-test-playmode:
+test:playmode:
   <<: *test
   variables:
     TEST_PLATFORM: playmode
     TESTING_TYPE: JUNIT
 
-test-editmode:
+test:editmode:
   <<: *test
   variables:
     TEST_PLATFORM: editmode
@@ -149,7 +161,7 @@ test-editmode:
 
 create-changelog:
   <<: *node_defaults
-  stage: prepare-release
+  stage: pre-release
   extends:
     - .cond.releasebranch
   needs:
@@ -171,11 +183,15 @@ create-changelog:
 get-changelog-for-release:
   <<: *node_defaults
   extends:
-    - .cond.release.auto
-  stage: prepare-release
+    - .cond.release.always
+  stage: pre-release
   needs:
     - job: get-package-version
       artifacts: true
+    - job: test:playmode
+      artifacts: false
+    - job: test:editmode
+      artifacts: false
   variables:
     GIT_DEPTH: 1
   script:
@@ -193,10 +209,14 @@ check-if-release-possible:
   <<: *ubuntu_defaults
   extends:
     - .cond.release.auto
-  stage: prepare-release
+  stage: pre-release
   needs:
     - job: get-package-version
       artifacts: true
+    - job: test:playmode
+      artifacts: false
+    - job: test:editmode
+      artifacts: false
   script:
     - ./scripts/ci/ensure_tag_does_not_exist.sh $RELEASE_TAG_VERSION
 
@@ -210,8 +230,21 @@ release:gitlab:
       artifacts: true
     - job: get-package-version
       artifacts: true
+    - job: check-if-release-possible
+      artifacts: false
   script:
     - echo "Releasing tag for version $RELEASE_TAG_VERSION"
   release:
     tag_name: $RELEASE_TAG_VERSION
     description: ./release.description
+
+release:github:
+  stage: release
+  image: ghcr.io/supportpal/github-gh-cli:latest
+  extends:
+    - .cond.release.post
+  needs:
+    - job: get-changelog-for-release
+      artifacts: true
+  script:
+    - gh release create $CI_COMMIT_TAG -F ./release.description --repo $GH_REPO --verify-tag

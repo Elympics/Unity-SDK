@@ -2,6 +2,7 @@
 using System.Threading;
 using GameEngineCore.V1._3;
 using UnityConnectors.HalfRemote;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
 
@@ -12,7 +13,6 @@ namespace Elympics
 		private SimpleHttpSignalingServer          _signalingServer;
 		private CancellationTokenSource            _signalingServerCts;
 		private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
-
 		protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
 		{
 			_halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(

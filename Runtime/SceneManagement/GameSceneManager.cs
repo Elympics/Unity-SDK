@@ -10,7 +10,7 @@ namespace Elympics
 		[SerializeField] private ElympicsBot    elympicsBot    = null;
 		[SerializeField] private ElympicsServer elympicsServer = null;
 
-		private GameSceneInitializer _gameSceneInitializer;
+		private GameSceneInitializer              _gameSceneInitializer;
 
 		public void Awake()
 		{

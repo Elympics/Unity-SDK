@@ -20,13 +20,13 @@ namespace Elympics
 
 		public void OnInGameDataUnreliableReceived(byte[] data)
 		{
-			var snapshot = ElympicsSnapshotSerializer.Deserialize(data);
+			var snapshot = data.Deserialize<ElympicsSnapshot>();
 			SnapshotReceived?.Invoke(snapshot);
 		}
 
 		public void OnInGameDataReliableReceived(byte[] data)
 		{
-			var snapshot = ElympicsSnapshotSerializer.Deserialize(data);
+			var snapshot = data.Deserialize<ElympicsSnapshot>();
 			SnapshotReceived?.Invoke(snapshot);
 		}
 

@@ -33,8 +33,11 @@ namespace Elympics
 		private List<ElympicsInput> _inputList;
 		private Dictionary<int,TickToPlayerInput> _tickToPlayerInputHolder;
 
+		private ElympicsGameConfig _currentGameConfig;
+
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
 		{
+			_currentGameConfig = elympicsGameConfig;
 			_tickToPlayerInputHolder = new Dictionary<int, TickToPlayerInput>();
 			SwitchBehaviourToServer();
 			_handlingBotsOverride = handlingBotsOverride;
@@ -45,6 +48,8 @@ namespace Elympics
 			_inputList = new List<ElympicsInput>();
 			elympicsBehavioursManager.InitializeInternal(this);
 			SetupCallbacks();
+			if(_currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
+				Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
 		}
 
 		private void SetupCallbacks()
@@ -199,6 +204,18 @@ namespace Elympics
 			_currentPlayer = player;
 			_currentIsClient = true;
 			_currentIsBot = false;
+		}
+
+		private void OnApplicationPause(bool pauseStatus)
+		{
+			if (pauseStatus && !Application.runInBackground && _currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
+				Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+		}
+
+		private void OnApplicationFocus(bool hasFocus)
+		{
+			if (!hasFocus && !Application.runInBackground && _currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
+				Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
 		}
 
 		#region IElympics

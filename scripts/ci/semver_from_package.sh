@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 0 ]; then
-  echo "Usage: ./semver_from_package.sh"
+if [ $# -ne 1 ]; then
+  echo "Usage: ./semver_from_package.sh path/to/package.json"
   exit 1
 fi
 
-cat ${PACKAGE_DIR:-.}/package.json | grep "\"version\":" | head -1 | awk '{split($0,a,"\""); print a[4]}'
+PACKAGE_PATH=$1
+
+cat ${PACKAGE_DIR:-.}/$PACKAGE_PATH | jq -r '.version'

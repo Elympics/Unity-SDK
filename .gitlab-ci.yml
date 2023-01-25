@@ -70,6 +70,10 @@ default:
   before_script:
     - apt update && apt install git -y
 
+.bash_before_script: &bash_before_script
+  before_script:
+    - apt update && apt install jq -y
+
 .license: &license
   rules:
     - if: '$UNITY_LICENSE != null'
@@ -94,6 +98,7 @@ default:
 .bash_defaults: &bash_defaults
   <<:
     - *env_bash
+    - *bash_before_script
 
 get-package-version:
   <<: *bash_defaults
@@ -101,7 +106,7 @@ get-package-version:
   variables:
     GIT_DEPTH: 1
   script:
-    - export PACKAGE_VERSION=$(./scripts/ci/semver_from_package.sh)
+    - export PACKAGE_VERSION=$(./scripts/ci/semver_from_package.sh package.json)
     - echo PACKAGE_VERSION=$PACKAGE_VERSION | tee prepare.env
     - echo RELEASE_TAG_VERSION="v$PACKAGE_VERSION" | tee -a prepare.env
     - cat prepare.env

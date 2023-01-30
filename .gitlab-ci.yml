@@ -12,6 +12,7 @@ cache: {}
 stages:
   - prepare
   - test
+  - trigger
   - pre-release
   - release
 
@@ -72,7 +73,7 @@ default:
 
 .bash_before_script: &bash_before_script
   before_script:
-    - apt update && apt install jq -y
+    - apk add --no-cache jq
 
 .license: &license
   rules:
@@ -151,7 +152,6 @@ get-activation-file:
     expire_in: 2 weeks
   coverage: /<Linecoverage>(.*?)</Linecoverage>/
 
-
 test:playmode:
   <<: *test
   variables:
@@ -163,6 +163,30 @@ test:editmode:
   variables:
     TEST_PLATFORM: editmode
     TESTING_TYPE: JUNIT
+
+.trigger:
+  extends: .cond.releasebranch
+  stage: trigger
+  needs:
+    - job: test:playmode
+      artifacts: false
+    - job: test:editmode
+      artifacts: false
+  variables:
+    CI_ELYMPICS_SDK_VERSION_OVERRIDE: $CI_COMMIT_SHA
+    CI_ELYMPICS_SDK_SOURCE_OVERRIDE: "$CI_PROJECT_URL.git"
+
+trigger:tanks:
+  extends: .trigger
+  trigger:
+    project: unity/tanks
+    strategy: depend
+
+trigger:spellz:
+  extends: .trigger
+  trigger:
+    project: unity/spellz/gameplay
+    strategy: depend
 
 create-changelog:
   <<: *node_defaults

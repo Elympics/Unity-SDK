@@ -200,12 +200,12 @@ create-changelog:
       artifacts: true
   script:
     - |
-      if [ $PACKAGE_VERSION = $BRANCH_VERSION ]; then exit 137; fi
+      ./scripts/ci/bump_version_and_generate_changelog.sh || exit 137
       git config user.email "bot@elympics.cc"
       git config user.name "Elympics Bot"
       git remote remove gitlab_origin || true
       git remote add gitlab_origin https://oauth2:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
-      ./scripts/ci/changelog.sh
+      ./scripts/ci/commit_changelog_and_version.sh
   allow_failure:
     exit_codes: 137
 

@@ -8,7 +8,6 @@ namespace Elympics
 	[CreateAssetMenu(fileName = "ElympicsConfig", menuName = "Elympics/Config")]
 	public class ElympicsConfig : ScriptableObject
 	{
-
 		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
 		public const string PATH_IN_RESOURCES       = "Elympics/ElympicsConfig";
 
@@ -20,7 +19,18 @@ namespace Elympics
 		[SerializeField] internal int                      currentGame = -1;
 		[SerializeField] internal List<ElympicsGameConfig> availableGames;
 
-		internal string ElympicsVersion             => elympicsVersion;
+		internal string ElympicsVersion
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(elympicsVersion))
+				{
+					elympicsVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
+				}
+				return elympicsVersion;
+			}
+		}
+		
 		internal string ElympicsApiEndpoint         => elympicsApiEndpoint;
 		internal string ElympicsLobbyEndpoint       => elympicsLobbyEndpoint;
 		internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;
@@ -73,7 +83,7 @@ namespace Elympics
 
 		#region EditorPrefs
 
-		private const string UsernameKey = "Username";
+		private const string UsernameKey     = "Username";
 		private const string PasswordKey     = "Password";
 		private const string RefreshTokenKey = "RefreshToken";
 		private const string AuthTokenKey    = "AuthToken";

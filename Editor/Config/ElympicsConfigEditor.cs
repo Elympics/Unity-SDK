@@ -7,6 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace Elympics
 {
+	[InitializeOnLoad]
 	[CustomEditor(typeof(ElympicsConfig))]
 	public class ElympicsConfigEditor : Editor
 	{
@@ -19,13 +20,16 @@ namespace Elympics
 		private SerializedProperty _elympicsLobbyEndpoint;
 		private SerializedProperty _elympicsGameServersEndpoint;
 		private SerializedProperty _elympicVersion;
-		private string _cachedSdkVersion = string.Empty;
+		private static string _cachedSdkVersion = string.Empty;
 
+		static  ElympicsConfigEditor()
+		{
+			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
+		}
 
 		private void OnEnable()
 		{
-			CheckSdkVersion();
-			_cachedSdkVersion = _elympicVersion.stringValue;
+			_elympicVersion = serializedObject.FindProperty("elympicsVersion");
 			_elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
 			_elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
 			_elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
@@ -37,22 +41,7 @@ namespace Elympics
 
 		private void OnValidate()
 		{
-			CheckSdkVersion();
-			_cachedSdkVersion = _elympicVersion.stringValue;
-		}
-
-		private void CheckSdkVersion()
-		{
-			if (_elympicVersion == null)
-			{
-				_elympicVersion = serializedObject.FindProperty("elympicsVersion");
-			}
-
-			if (!EditorApplication.isPlayingOrWillChangePlaymode)
-			{
-				ElympicsVersionRetriever.GetVersion((version) => { _cachedSdkVersion = version; }
-				);
-			}
+			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
 		}
 
 		private SerializedProperty GetChosenGameProperty()

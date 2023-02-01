@@ -99,13 +99,6 @@ namespace Elympics
 		}
 
 		[Serializable]
-		public class GamesResponseModel
-		{
-			public List<GameResponseModel> List;
-		}
-
-
-		[Serializable]
 		public class GameVersionResponseModel
 		{
 			public string Id;
@@ -233,7 +226,7 @@ namespace Elympics
 			}
 		}
 
-		public static void GetGames(Action<GamesResponseModel> updateProperty)
+		public static void GetGames(Action<List<GameResponseModel>> updateProperty)
 		{
 			Debug.Log($"Getting available games");
 
@@ -254,10 +247,10 @@ namespace Elympics
 			}
 		}
 
-		private static void GetAvailableGamesHandler(Action<GamesResponseModel> updateProperty, UnityWebRequest webRequest)
+		private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
 		{
 			Debug.Log($"Get available games response code: {webRequest.responseCode}");
-			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out GamesResponseModel availableGames))
+			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
 				return;
 
 			updateProperty.Invoke(availableGames);

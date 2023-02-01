@@ -3,13 +3,13 @@
 
 ### Bug Fixes 🪲
 
-* allow for specifying queue and region for Debug Online mode ([d1988ab](https://github.com/Elympics/Unity-SDK/commit/d1988ab50b3ed8075777e201443394af3fac7adf))
-* Log Error Message when HalfRemote mode game is run with Application.RunInBackround set to false. ([c76b2d2](https://github.com/Elympics/Unity-SDK/commit/c76b2d2781ebdce80fffe5a1941f9d317d853b8e))
+* Allow for specifying queue and region for Debug Online mode ([d1988ab](https://github.com/Elympics/Unity-SDK/commit/d1988ab50b3ed8075777e201443394af3fac7adf))
+* Print an error when Half Remote server is run with Application.RunInBackground set to false ([c76b2d2](https://github.com/Elympics/Unity-SDK/commit/c76b2d2781ebdce80fffe5a1941f9d317d853b8e))
 
 
 ### Features
 
-* include the player's input in the snapshot data. ([1cc4712](https://github.com/Elympics/Unity-SDK/commit/1cc471240315ae8702ccb4fdebeeda2a628838f4))
+* Include the player's input in the snapshot data ([1cc4712](https://github.com/Elympics/Unity-SDK/commit/1cc471240315ae8702ccb4fdebeeda2a628838f4))
 
 
 

@@ -15,7 +15,7 @@ fi
 
 echo "Running changelog generation..."
 
-node ./scripts/ci/update_version.js ../../package.json ../../Runtime/AssemblyInfo.cs $BRANCH_VERSION
+node ./.scripts/ci/update_version.js ../../package.json ../../Runtime/AssemblyInfo.cs $BRANCH_VERSION
 
 echo "Version updated"
 echo "Generating changelog..."

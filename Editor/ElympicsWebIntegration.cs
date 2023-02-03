@@ -27,6 +27,8 @@ namespace Elympics
 
 		private static string RefreshEndpoint => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
 
+		internal static event Action GameUploadedToTheCloud;
+
 		public static void Login()
 		{
 			Login(ElympicsConfig.Username, ElympicsConfig.Password, LoginHandler);
@@ -97,6 +99,26 @@ namespace Elympics
 		}
 
 		[Serializable]
+		public class GameVersionResponseModel
+		{
+			public string Id;
+			public string Version;
+			public bool Uploaded;
+			public string UploadedTime;
+			public bool Blocked;
+			public bool DebugMode;
+			public bool DebugModeWithBots;
+		}
+
+		[Serializable]
+		public class GameVersionsResponseModel
+		{
+			public string GameName;
+			public List<GameVersionResponseModel> Versions;
+		}
+
+
+		[Serializable]
 		public class RegionResponseModel
 		{
 			public string Id;
@@ -160,6 +182,7 @@ namespace Elympics
 		public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
 		{
 			Debug.Log("Getting available regions");
+
 			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
 			void OnContinuation(bool success)
@@ -177,7 +200,30 @@ namespace Elympics
 			}
 		}
 
-		public static void GetAvailableGames(Action<List<GameResponseModel>> updateProperty)
+		private static UnityWebRequest gameVersionsWebRequest = null;
+
+		public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty, bool silent = false)
+		{
+			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+
+			void OnContinuation(bool success)
+			{
+				var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+				var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
+
+				var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
+				gameVersionsWebRequest?.Abort();
+				gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
+
+				void OnCompleted(UnityWebRequest webRequest)
+				{
+					if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions, silent))
+						updateProperty?.Invoke(gameVersions);
+				}
+			}
+		}
+
+		public static void GetGames(Action<List<GameResponseModel>> updateProperty)
 		{
 			Debug.Log($"Getting available games");
 
@@ -304,6 +350,7 @@ namespace Elympics
 
 					EditorUtility.ClearProgressBar();
 					completed?.Invoke(webRequest);
+					GameUploadedToTheCloud?.Invoke();
 				});
 			}
 
@@ -428,13 +475,14 @@ namespace Elympics
 
 		private static string GetCombinedUrl(params string[] urlParts) => string.Join("/", urlParts);
 
-		private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse)
+		private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse, bool silent = false)
 		{
 			deserializedResponse = default;
 			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
-				var errorMessage = ParseResponseErrors(webRequest);
-				Debug.LogError($"Error occurred for action {actionName}: {errorMessage}");
+				var errorMessage = ParseResponseErrors(webRequest, silent);
+				if (!silent)
+					Debug.LogError($"Error occurred for action {actionName}: {errorMessage}");
 				return false;
 			}
 
@@ -448,14 +496,15 @@ namespace Elympics
 				}
 				catch (JsonException e)
 				{
-					Debug.LogException(e);
+					if (!silent)
+						Debug.LogException(e);
 					return false;
 				}
 
 			return true;
 		}
 
-		private static string ParseResponseErrors(UnityWebRequest request)
+		private static string ParseResponseErrors(UnityWebRequest request, bool silent = false)
 		{
 			if (request.responseCode == 401)
 				return "Not authenticated, please login to your ElympicsWeb account";
@@ -469,7 +518,8 @@ namespace Elympics
 			}
 			catch (JsonException e)
 			{
-				Debug.LogException(e);
+				if (!silent)
+					Debug.LogException(e);
 			}
 
 			if (errorModel?.Errors == null || errorModel.Errors.Count == 0)

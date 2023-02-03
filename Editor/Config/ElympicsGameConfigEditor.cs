@@ -48,6 +48,8 @@ namespace Elympics
 		private SerializedProperty _tcpPortForHalfRemoteMode;
 		private SerializedProperty _webPortForHalfRemoteMode;
 		private SerializedProperty _playerIndexForHalfRemoteMode;
+		private SerializedProperty _testMatchDataQueue;
+		private SerializedProperty _testMatchDataRegion;
 		private SerializedProperty _testPlayers;
 
 		private GUIStyle     _indentation;
@@ -55,12 +57,16 @@ namespace Elympics
 
 		private bool _verifyGameScenePath;
 		private bool _showGameSetup;
+		private bool _currentGameVersionIsUploadedStatusUnknown = true;
 
 		private void OnEnable()
 		{
 			try
 			{
 				_config = serializedObject.targetObject as ElympicsGameConfig;
+
+				CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged += (isCheckingGameVersions) => _currentGameVersionIsUploadedStatusUnknown = isCheckingGameVersions;
+				CurrentGameVersionUploadedToTheCloudStatus.Initialize(_config);
 			}
 			catch (Exception)
 			{
@@ -93,19 +99,27 @@ namespace Elympics
 			_tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
 			_webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
 			_playerIndexForHalfRemoteMode = serializedObject.FindProperty("playerIndexForHalfRemoteMode");
+			var testMatchData = serializedObject.FindProperty("testMatchData");
+			_testMatchDataQueue = testMatchData.FindPropertyRelative(nameof(ElympicsGameConfig.InitialMatchData.queueName));
+			_testMatchDataRegion = testMatchData.FindPropertyRelative(nameof(ElympicsGameConfig.InitialMatchData.regionName));
 			_testPlayers = serializedObject.FindProperty("testPlayers");
 
-			_indentation = new GUIStyle {margin = new RectOffset(10, 0, 0, 0)};
+			_indentation = new GUIStyle { margin = new RectOffset(10, 0, 0, 0) };
 			_labelWidthStack = new Stack<float>();
 
 			_verifyGameScenePath = true;
+		}
+
+		private void OnDestroy()
+		{
+			CurrentGameVersionUploadedToTheCloudStatus.Disable();
 		}
 
 		public override void OnInspectorGUI()
 		{
 			serializedObject.Update();
 
-			var summaryLabelStyle = new GUIStyle(GUI.skin.label) {fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true};
+			var summaryLabelStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true };
 			var cachedWordWrap = EditorStyles.label.wordWrap;
 			EditorStyles.label.wordWrap = true;
 
@@ -137,27 +151,28 @@ namespace Elympics
 			DrawUseWeb(summaryLabelStyle);
 			EditorGUILayout.PropertyField(_enableReconnect, new GUIContent("Reconnect to match"));
 			_ticksPerSecond.intValue = TickSlider("Ticks per second", _ticksPerSecond.intValue, MinTicks, MaxTicks);
-			_snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue,
-				MinTicks, _ticksPerSecond.intValue);
+			_snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
 			_inputLagTicks.intValue = TickSliderConvertedToMs("Input lag", _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
-			_maxAllowedLagInTicks.intValue = Math.Max(
-				TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)),
-				0
-			);
+			_maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
 			EditorGUILayout.PropertyField(_prediction, new GUIContent("Prediction"));
-			_predictionLimitInTicks.intValue = TickSliderConvertedToMs("Prediction limit", _predictionLimitInTicks.intValue,
-				0, _maxAllowedLagInTicks.intValue);
+			_predictionLimitInTicks.intValue = TickSliderConvertedToMs("Prediction limit", _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
 			serializedObject.ApplyModifiedProperties();
-			EditorGUILayout.LabelField(new GUIContent("Total prediction limit", "With input lag and snapshot sending period included"),
-				new GUIContent($"{TicksToMs(_config.TotalPredictionLimitInTicks)} ms"), new GUIStyle(EditorStyles.label) {alignment = TextAnchor.MiddleRight});
+			EditorGUILayout.LabelField(new GUIContent("Total prediction limit", "With input lag and snapshot sending period included"), new GUIContent($"{TicksToMs(_config.TotalPredictionLimitInTicks)} ms"), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
 			EndSection();
 			EditorGUILayout.Separator();
 
 			BeginSection("Development");
 			EditorGUILayout.PropertyField(_detailedNetworkLog, new GUIContent("Detailed network log", "The log contains errors and warnings to differentiate between slight and serious throttle"));
 
+			var previousMode = _mode.enumValueIndex;
 			EditorGUILayout.PropertyField(_mode, new GUIContent("Mode"));
-			switch ((ElympicsGameConfig.GameplaySceneDebugModeEnum) _mode.enumValueIndex)
+			if (previousMode != _mode.enumValueIndex)
+			{
+				if ((ElympicsGameConfig.GameplaySceneDebugModeEnum)_mode.enumValueIndex == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
+					Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+			}
+
+			switch ((ElympicsGameConfig.GameplaySceneDebugModeEnum)_mode.enumValueIndex)
 			{
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots:
 					EditorGUILayout.LabelField("Run the server, a single player and bots locally with no networking. Good for anything outside of gameplay, such as UI, graphics and sound design.", summaryLabelStyle);
@@ -170,6 +185,8 @@ namespace Elympics
 					break;
 				case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
 					EditorGUILayout.LabelField("Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.", summaryLabelStyle);
+					DisplayGameVersionInfo();
+					DrawInitialMatchData();
 					break;
 			}
 
@@ -178,6 +195,14 @@ namespace Elympics
 			EndSection();
 
 			EditorStyles.label.wordWrap = cachedWordWrap;
+		}
+
+		private void DisplayGameVersionInfo()
+		{
+			if (_currentGameVersionIsUploadedStatusUnknown)
+				EditorGUILayout.HelpBox($"Checking if current game version is uploaded to the Elympics cloud...", MessageType.Info, true);
+			else if (!CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded)
+				EditorGUILayout.HelpBox($"Current game version is not uploaded to the Elympics cloud! Upload your game first in \"{ElympicsEditorMenuPaths.MANAGE_GAMES_IN_ELYMPICS}\" games in Elympics window!", MessageType.Error, true);
 		}
 
 		private void BeginSection(string header)
@@ -257,14 +282,14 @@ namespace Elympics
 			ElympicsGameConfig.HalfRemoteModeEnum halfRemoteMode;
 			if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
 			{
-				halfRemoteMode = (ElympicsGameConfig.HalfRemoteModeEnum) _halfRemoteMode.enumValueIndex;
+				halfRemoteMode = (ElympicsGameConfig.HalfRemoteModeEnum)_halfRemoteMode.enumValueIndex;
 				halfRemoteMode = ElympicsGameConfig.GetHalfRemoteMode(halfRemoteMode);
 				EditorGUILayout.EnumPopup(remoteModeDescription, halfRemoteMode);
 			}
 			else
 			{
 				EditorGUILayout.PropertyField(_halfRemoteMode, new GUIContent(remoteModeDescription));
-				halfRemoteMode = (ElympicsGameConfig.HalfRemoteModeEnum) _halfRemoteMode.enumValueIndex;
+				halfRemoteMode = (ElympicsGameConfig.HalfRemoteModeEnum)_halfRemoteMode.enumValueIndex;
 			}
 
 			switch (halfRemoteMode)
@@ -322,8 +347,7 @@ namespace Elympics
 				EditorGUILayout.EndVertical();
 				EditorGUILayout.Separator();
 
-				_config.ReconciliationFrequency =
-					(ElympicsGameConfig.ReconciliationFrequencyEnum) EditorGUILayout.EnumPopup("Reconcile", _config.ReconciliationFrequency);
+				_config.ReconciliationFrequency = (ElympicsGameConfig.ReconciliationFrequencyEnum)EditorGUILayout.EnumPopup("Reconcile", _config.ReconciliationFrequency);
 			}
 
 			EditorGUILayout.Separator();
@@ -341,9 +365,17 @@ namespace Elympics
 				EditorGUILayout.PropertyField(_useWebInHalfRemote, new GUIContent("Use HTTPS/WebRTC"));
 		}
 
+		private void DrawInitialMatchData()
+		{
+			EditorGUILayout.LabelField("Test match data", new GUIStyle(GUI.skin.label) {fontStyle = FontStyle.Italic});
+			EditorGUILayout.PropertyField(_testMatchDataQueue);
+			EditorGUILayout.PropertyField(_testMatchDataRegion);
+			EditorGUILayout.Separator();
+		}
+
 		private void DrawInitialUserDatas()
 		{
-			EditorGUILayout.LabelField("Test players", new GUIStyle(GUI.skin.label) {fontStyle = FontStyle.Italic});
+			EditorGUILayout.LabelField("Test players", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Italic });
 			if (!_testPlayers.isArray)
 				_testPlayers.SetValue(new List<ElympicsGameConfig.InitialUserData>());
 
@@ -387,18 +419,18 @@ namespace Elympics
 
 		private int TicksToMs(int ticks)
 		{
-			return (int) Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
+			return (int)Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
 		}
 
 		private int MsToTicks(int milliseconds)
 		{
-			return (int) Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
+			return (int)Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
 		}
 
 		[CustomPropertyDrawer(typeof(ElympicsGameConfig.InitialUserData))]
 		public class InitialUserDataPropertyDrawer : PropertyDrawer
 		{
-			private static readonly string[] GameEngineDataShowTypes = {"Base64", "String"};
+			private static readonly string[] GameEngineDataShowTypes = { "Base64", "String" };
 
 			private readonly Dictionary<int, bool> _showPlayers            = new Dictionary<int, bool>();
 			private readonly Dictionary<int, int>  _gameEngineDataShowType = new Dictionary<int, int>();
@@ -411,7 +443,7 @@ namespace Elympics
 				if (!_showPlayers.TryGetValue(index, out var showPlayer))
 					_showPlayers.Add(index, default);
 
-				showPlayer = EditorGUI.Foldout(position, showPlayer, $"Player {index}", new GUIStyle(EditorStyles.foldout) {margin = new RectOffset(10, 0, 0, 0)});
+				showPlayer = EditorGUI.Foldout(position, showPlayer, $"Player {index}", new GUIStyle(EditorStyles.foldout) { margin = new RectOffset(10, 0, 0, 0) });
 				_showPlayers[index] = showPlayer;
 				if (!showPlayer)
 					return;
@@ -454,26 +486,22 @@ namespace Elympics
 
 				try
 				{
-					var gameEngineDataValue = (byte[]) gameEngineData.GetValue();
+					var gameEngineDataValue = (byte[])gameEngineData.GetValue();
 					byte[] newGameEngineDataValue = null;
 					switch (GameEngineDataShowTypes[gameEngineDataShowTypeChosen])
 					{
 						case "Base64":
 						{
 							var gameEngineDataAsByte64 = Convert.ToBase64String(gameEngineDataValue);
-							var newGameEngineDataAsByte64 = EditorGUILayout.TextArea(gameEngineDataAsByte64, new GUIStyle(GUI.skin.textArea) {fixedHeight = 0, stretchWidth = true, stretchHeight = true});
-							newGameEngineDataValue = newGameEngineDataAsByte64.Length != 0
-								? Convert.FromBase64String(newGameEngineDataAsByte64)
-								: new byte[0];
+							var newGameEngineDataAsByte64 = EditorGUILayout.TextArea(gameEngineDataAsByte64, new GUIStyle(GUI.skin.textArea) { fixedHeight = 0, stretchWidth = true, stretchHeight = true });
+							newGameEngineDataValue = newGameEngineDataAsByte64.Length != 0 ? Convert.FromBase64String(newGameEngineDataAsByte64) : new byte[0];
 							break;
 						}
 						case "String":
 						{
 							var gameEngineDataAsString = Encoding.ASCII.GetString(gameEngineDataValue);
-							var newGameEngineDataAsString = EditorGUILayout.TextArea(gameEngineDataAsString, new GUIStyle(GUI.skin.textArea) {fixedHeight = 0, stretchWidth = true, stretchHeight = true});
-							newGameEngineDataValue = newGameEngineDataAsString.Length != 0
-								? Encoding.ASCII.GetBytes(newGameEngineDataAsString)
-								: new byte[0];
+							var newGameEngineDataAsString = EditorGUILayout.TextArea(gameEngineDataAsString, new GUIStyle(GUI.skin.textArea) { fixedHeight = 0, stretchWidth = true, stretchHeight = true });
+							newGameEngineDataValue = newGameEngineDataAsString.Length != 0 ? Encoding.ASCII.GetBytes(newGameEngineDataAsString) : new byte[0];
 							break;
 						}
 					}
@@ -488,14 +516,12 @@ namespace Elympics
 
 			private static void DrawMatchmakerData(SerializedProperty matchmakerData)
 			{
-				var mmDataValue = (float[]) matchmakerData.GetValue();
+				var mmDataValue = (float[])matchmakerData.GetValue();
 				EditorGUI.BeginChangeCheck();
 				var newMmDataValueString = EditorGUILayout.TextField("Matchmaker data", string.Join(" ", mmDataValue.Select(x => x.ToString(CultureInfo.InvariantCulture))));
 				if (EditorGUI.EndChangeCheck())
 				{
-					var newMmDataValue = newMmDataValueString.Length != 0
-						? newMmDataValueString.Split(' ').Select(x => float.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f).ToArray()
-						: new float[0];
+					var newMmDataValue = newMmDataValueString.Length != 0 ? newMmDataValueString.Split(' ').Select(x => float.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f).ToArray() : new float[0];
 					matchmakerData.SetValue(newMmDataValue);
 				}
 			}

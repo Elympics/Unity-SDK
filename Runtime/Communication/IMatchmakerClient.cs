@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elympics
 {
@@ -35,6 +34,8 @@ namespace Elympics
 		event Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers)> MatchmakingFinished;
 		event Action<string>                                                                                                                MatchmakingError;
 		event Action                                                                                                                        MatchmakingCancelled;
+
+		JoinedMatchData MatchData { get; }
 
 		void JoinMatchmakerAsync(string gameId, string gameVersion, bool tryReconnect = false, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, CancellationToken ct = default, string regionName = null);
 	}

@@ -33,11 +33,12 @@ namespace Elympics
 		public event Action<(string MatchId, string Error)>                                                                     WaitingForMatchStateRunningError;
 		public event Action<string>                                                                                             WaitingForMatchStateRunningCancelledWithMatchId;
 
-
 		public event Action                                                                                                                        MatchmakingStarted;
 		public event Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers)> MatchmakingFinished;
 		public event Action<string>                                                                                                                MatchmakingError;
 		public event Action                                                                                                                        MatchmakingCancelled;
+
+		public JoinedMatchData MatchData { get; private set; }
 
 		public RemoteMatchmakerClient(IUserApiClient userApiClient)
 		{
@@ -78,6 +79,7 @@ namespace Elympics
 
 			void OnMatchRunning((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
 			{
+				MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, matchmakerData, gameEngineData, queueName, regionName);
 				MatchmakingFinished?.Invoke((result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers));
 			}
 

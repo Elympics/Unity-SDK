@@ -134,14 +134,15 @@ namespace Elympics
 		private void AddReliableInputToBuffer(byte[] data, string userId)
 		{
 			var player = _userIdsToPlayers[userId];
-			var input = ElympicsInputSerializer.Deserialize(data);
+			var input = data.Deserialize<ElympicsInput>();
 			AddInputToBuffer(input, player);
 		}
 
 		private void AddUnreliableInputsToBuffer(byte[] data, string userId)
 		{
 			var player = _userIdsToPlayers[userId];
-			var inputs = ElympicsInputSerializer.DeserializePackage(data);
+			
+			var inputs = data.DeserializeList<ElympicsInput>();;
 
 			foreach (var input in inputs)
 				AddInputToBuffer(input, player);

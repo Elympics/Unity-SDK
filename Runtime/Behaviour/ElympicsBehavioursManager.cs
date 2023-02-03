@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace Elympics
 	public class ElympicsBehavioursManager : MonoBehaviour
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
-		[SerializeField] private ElympicsFactory                          factory = null;
+		[SerializeField] private ElympicsFactory                          factory                = null;
 
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
@@ -115,11 +116,11 @@ namespace Elympics
 				behaviour.ClearInputs();
 
 			foreach (var input in inputs)
-				foreach (var (networkId, inputBuffer) in input.Data)
-				{
-					if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(networkId, out var elympicsBehaviour))
-						elympicsBehaviour.SetCurrentInput(input.Player, input.Tick, inputBuffer);
-				}
+			foreach (var (networkId, inputBuffer) in input.Data)
+			{
+				if (_elympicsBehaviours.BehavioursWithInput.TryGetValue(networkId, out var elympicsBehaviour))
+					elympicsBehaviour.SetCurrentInput(input.Player, input.Tick, inputBuffer);
+			}
 		}
 
 		internal ElympicsSnapshot GetLocalSnapshot()
@@ -141,16 +142,22 @@ namespace Elympics
 			return snapshot;
 		}
 
-		internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(params ElympicsPlayer[] players)
+		internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(Dictionary<int, TickToPlayerInput> playerInputs, params ElympicsPlayer[] players)
 		{
 			var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 			var factoryState = factory.GetState();
+
 			foreach (var player in players)
-				snapshots[player] = new ElympicsSnapshot
+			{
+				var snapshot = new ElympicsSnapshot
 				{
 					Factory = factoryState,
-					Data = new List<KeyValuePair<int, byte[]>>()
+					Data = new List<KeyValuePair<int, byte[]>>(),
+					TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(playerInputs),
 				};
+				snapshot.TickToPlayersInputData.Remove((int)player);
+				snapshots[player] = snapshot;
+			}
 
 			foreach (var (networkId, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 			{

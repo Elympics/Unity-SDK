@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 namespace Elympics
@@ -16,7 +15,7 @@ namespace Elympics
 			// ElympicsBot has to setup callbacks BEFORE initializing GameBotAdapter - possible loss of events like Init ~pprzestrzelski 27.08.2021
 			bot.InitializeInternal(elympicsGameConfig, gameBotAdapter);
 			InitializeBot(bot, elympicsGameConfig, gameBotAdapter);
-			
+
 			client.Destroy();
 			server.Destroy();
 		}

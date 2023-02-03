@@ -51,7 +51,7 @@ namespace Elympics
 				ValueChanged?.Invoke(_oldValue, currentValue);
 		}
 
-		public override string ToString() => Value.ToString();
+		public override string ToString() => Value?.ToString() ?? "null";
 
 		public static implicit operator T(ElympicsVar<T> v) => v.Value;
 

@@ -22,9 +22,9 @@ namespace Elympics
 		private SerializedProperty _elympicVersion;
 		private static string _cachedSdkVersion = string.Empty;
 
-		static  ElympicsConfigEditor()
+		static ElympicsConfigEditor()
 		{
-			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
+			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 		}
 
 		private void OnEnable()
@@ -41,7 +41,7 @@ namespace Elympics
 
 		private void OnValidate()
 		{
-			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
+			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 		}
 
 		private SerializedProperty GetChosenGameProperty()
@@ -82,7 +82,7 @@ namespace Elympics
 			if (_availableGames.GetValue() == null)
 				_availableGames.SetValue(new List<ElympicsGameConfig>());
 
-			
+
 
 			if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
 			{

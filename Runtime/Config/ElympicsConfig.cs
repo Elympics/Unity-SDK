@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Elympics
 {
@@ -24,13 +27,11 @@ namespace Elympics
 			get
 			{
 				if (string.IsNullOrEmpty(elympicsVersion))
-				{
-					elympicsVersion = ElympicsVersionRetriever.GetVersionFromAssembly();
-				}
+					elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 				return elympicsVersion;
 			}
 		}
-		
+
 		internal string ElympicsApiEndpoint         => elympicsApiEndpoint;
 		internal string ElympicsLobbyEndpoint       => elympicsLobbyEndpoint;
 		internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;

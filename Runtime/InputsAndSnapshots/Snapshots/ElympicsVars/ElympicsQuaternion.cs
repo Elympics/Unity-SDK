@@ -27,5 +27,7 @@ namespace Elympics
 
 		protected override Quaternion DeserializeInternal(BinaryReader br) =>
 			new Quaternion(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+		
+		public override string ToString() => Value.ToString("G");
 	}
 }

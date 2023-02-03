@@ -16,13 +16,55 @@ namespace Elympics
 
 		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")]
 		[SerializeField]
-		private GameObject[] linkedLogic = null;
+		private GameObject[] linkedLogic;
 
 		private readonly Stopwatch _elympicsUpdateStopwatch = new Stopwatch();
+		private long _fixedUpdatesCounter;
+		protected DateTime _tickStartUtc;
 
 		private protected ElympicsGameConfig Config;
 
 		internal CallContext CurrentCallContext { get; set; } = CallContext.None;
+
+		internal bool Initialized { get; private set; }
+		internal void SetInitialized()
+		{
+			Initialized = true;
+			Instance = this;
+		}
+
+		private static ElympicsBase instance;
+		private static ElympicsBase Instance
+		{
+			get => instance;
+			set
+			{
+				instance = value;
+				TickAnalysis?.Detach();
+				instance?.TryAttachTickAnalysis();
+			}
+		}
+
+		#region TickAnalysis
+
+		private static ITickAnalysis tickAnalysis;
+		internal static ITickAnalysis TickAnalysis
+		{
+			private protected get => tickAnalysis;
+			set
+			{
+				tickAnalysis?.Detach();
+				tickAnalysis = value;
+				Instance?.TryAttachTickAnalysis();
+			}
+		}
+
+		private protected virtual void TryAttachTickAnalysis()
+		{
+			TickAnalysis?.Attach(snapshot => elympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true));
+		}
+
+		#endregion TickAnalysis
 
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig)
 		{
@@ -55,6 +97,17 @@ namespace Elympics
 			_elympicsUpdateStopwatch.Start();
 
 			elympicsLateFixedUpdate.LateFixedUpdateAction = LateFixedUpdate;
+			_fixedUpdatesCounter++;
+		}
+
+		protected ElympicsSnapshotWithMetadata CreateLocalSnapshotWithMetadata()
+		{
+			var localSnapshotWithMetadata = elympicsBehavioursManager.GetLocalSnapshotWithMetadata();
+			localSnapshotWithMetadata.Tick = Tick;
+			localSnapshotWithMetadata.TickStartUtc = _tickStartUtc;
+			localSnapshotWithMetadata.TickEndUtc = DateTime.UtcNow;
+			localSnapshotWithMetadata.FixedUpdateNumber = _fixedUpdatesCounter;
+			return localSnapshotWithMetadata;
 		}
 
 		private void LogFixedUpdateThrottle()
@@ -135,7 +188,7 @@ namespace Elympics
 		public float TickDuration   => Config.TickDuration;
 		public int   TicksPerSecond => Config.TicksPerSecond;
 
-		public long  Tick { get; protected set; }
+		public long  Tick { get; internal set; }
 
 		#region Client
 

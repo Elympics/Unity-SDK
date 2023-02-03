@@ -98,7 +98,8 @@ namespace Elympics
 			foreach (var behaviour in elympicsBehaviours)
 			{
 				behaviour.NetworkId = _currentNetworkId.MoveNextAndGetCurrent();
-				behaviour.predictableFor = _player;
+				behaviour.PredictableFor = _player;
+				behaviour.PrefabName = pathInResources;
 				AddBehaviour?.Invoke(behaviour);
 			}
 

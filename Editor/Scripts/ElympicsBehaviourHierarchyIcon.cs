@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
@@ -54,4 +53,3 @@ namespace Elympics
 		}
 	}
 }
-#endif

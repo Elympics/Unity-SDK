@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace Elympics
 {
@@ -15,47 +17,26 @@ namespace Elympics
 				bw.Write(data);
 			}
 		}
-
-		public static Dictionary<int, byte[]> ReadDictionaryIntToByteArray(this BinaryReader br)
+		public static void Write(this BinaryWriter bw, Dictionary<string, string> dict)
 		{
-			var dataDictCount = br.ReadInt32();
-			var dict = new Dictionary<int, byte[]>(dataDictCount);
-			for (var i = 0; i < dataDictCount; i++)
+			bw.Write(dict.Count);
+			foreach (var (key, val) in dict)
 			{
-				var id = br.ReadInt32();
-				var dataLength = br.ReadInt32();
-				var data = br.ReadBytes(dataLength);
-				dict.Add(id, data);
+				bw.Write(key);
+				bw.Write(val);
 			}
-
-			return dict;
 		}
 
-		public static List<KeyValuePair<int, byte[]>> ReadListWithKvpIntToByteArray(this BinaryReader br)
+		public static void Write<T>(this BinaryWriter bw, List<T> list, Action<BinaryWriter, T> write)
 		{
-			var dataListCount = br.ReadInt32();
-			var list = new List<KeyValuePair<int, byte[]>>(dataListCount);
-			for (var i = 0; i < dataListCount; i++)
+			if (list == null)
 			{
-				var id = br.ReadInt32();
-				var dataLength = br.ReadInt32();
-				var data = br.ReadBytes(dataLength);
-				list.Add(new KeyValuePair<int, byte[]>(id, data));
+				bw.Write(-1);
+				return;
 			}
-
-			return list;
-		}
-
-		public static void ReadIntoDictionaryIntToByteArray(this BinaryReader br, Dictionary<int, byte[]> dict)
-		{
-			var dataDictCount = br.ReadInt32();
-			for (var i = 0; i < dataDictCount; i++)
-			{
-				var id = br.ReadInt32();
-				var dataLength = br.ReadInt32();
-				var data = br.ReadBytes(dataLength);
-				dict.Add(id, data);
-			}
+			bw.Write(list.Count);
+			foreach (var t in list)
+				write(bw, t);
 		}
 	}
 }

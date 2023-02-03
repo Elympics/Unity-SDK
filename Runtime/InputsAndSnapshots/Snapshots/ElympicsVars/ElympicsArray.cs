@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEngine;
 
 namespace Elympics
@@ -67,6 +68,22 @@ namespace Elympics
 
 			foreach (var element in values)
 				element.Initialize(elympics);
+		}
+
+		public override string ToString()
+		{
+			var sb = new StringBuilder();
+			sb.Append($"Array({values.Length}) [");
+			var first = true;
+			foreach (var elympicsVar in values)
+			{
+				if (!first) sb.Append(", ");
+				first = false;
+				sb.Append(elympicsVar);
+			}
+
+			sb.Append("]");
+			return sb.ToString();
 		}
 	}
 }

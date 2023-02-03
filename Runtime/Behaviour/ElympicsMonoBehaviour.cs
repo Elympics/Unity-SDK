@@ -46,7 +46,7 @@ namespace Elympics
 		}
 
 		public bool           IsPredictableForMe => ElympicsBehaviour.IsPredictableTo(Elympics.Player);
-		public ElympicsPlayer PredictableFor     => ElympicsBehaviour.predictableFor;
+		public ElympicsPlayer PredictableFor     => ElympicsBehaviour.PredictableFor;
 
 		/// <summary>Checks if Behaviour is enabled and its Game Object is active in hierarchy.</summary>
 		/// <remarks>

@@ -25,5 +25,7 @@ namespace Elympics
 		}
 
 		protected override Vector3 DeserializeInternal(BinaryReader br) => new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+		
+		public override string ToString() => Value.ToString("G");
 	}
 }

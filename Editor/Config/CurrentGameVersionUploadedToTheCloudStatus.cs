@@ -42,7 +42,7 @@ namespace Elympics
 				CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
 			}
 
-			ElympicsWebIntegration.GetGameVersions((gameVersions) =>
+			ElympicsWebIntegration.GetGameVersions(gameVersions =>
 			{
 				var gameVersionUploaded = gameVersions.Versions.Any(x => string.Equals(x.Version, activeGameConfig.gameVersion));
 
@@ -50,7 +50,7 @@ namespace Elympics
 				CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
 
 				IsVersionUploaded = gameVersionUploaded;
-			});
+			}, true);
 		}
 	}
 }

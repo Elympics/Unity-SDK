@@ -99,13 +99,6 @@ namespace Elympics
 		}
 
 		[Serializable]
-		public class GamesResponseModel
-		{
-			public List<GameResponseModel> List;
-		}
-
-
-		[Serializable]
 		public class GameVersionResponseModel
 		{
 			public string Id;
@@ -209,7 +202,7 @@ namespace Elympics
 
 		private static UnityWebRequest gameVersionsWebRequest = null;
 
-		public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty)
+		public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty, bool silent = false)
 		{
 			CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
@@ -218,22 +211,19 @@ namespace Elympics
 				var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 				var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
 
-				var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+				var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
 				gameVersionsWebRequest?.Abort();
 				gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
 
 				void OnCompleted(UnityWebRequest webRequest)
 				{
-					if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions))
-					{
+					if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions, silent))
 						updateProperty?.Invoke(gameVersions);
-						return;
-					}
 				}
 			}
 		}
 
-		public static void GetGames(Action<GamesResponseModel> updateProperty)
+		public static void GetGames(Action<List<GameResponseModel>> updateProperty)
 		{
 			Debug.Log($"Getting available games");
 
@@ -254,10 +244,10 @@ namespace Elympics
 			}
 		}
 
-		private static void GetAvailableGamesHandler(Action<GamesResponseModel> updateProperty, UnityWebRequest webRequest)
+		private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
 		{
 			Debug.Log($"Get available games response code: {webRequest.responseCode}");
-			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out GamesResponseModel availableGames))
+			if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
 				return;
 
 			updateProperty.Invoke(availableGames);
@@ -485,13 +475,14 @@ namespace Elympics
 
 		private static string GetCombinedUrl(params string[] urlParts) => string.Join("/", urlParts);
 
-		private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse)
+		private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse, bool silent = false)
 		{
 			deserializedResponse = default;
 			if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
 			{
-				var errorMessage = ParseResponseErrors(webRequest);
-				Debug.LogError($"Error occurred for action {actionName}: {errorMessage}");
+				var errorMessage = ParseResponseErrors(webRequest, silent);
+				if (!silent)
+					Debug.LogError($"Error occurred for action {actionName}: {errorMessage}");
 				return false;
 			}
 
@@ -505,14 +496,15 @@ namespace Elympics
 				}
 				catch (JsonException e)
 				{
-					Debug.LogException(e);
+					if (!silent)
+						Debug.LogException(e);
 					return false;
 				}
 
 			return true;
 		}
 
-		private static string ParseResponseErrors(UnityWebRequest request)
+		private static string ParseResponseErrors(UnityWebRequest request, bool silent = false)
 		{
 			if (request.responseCode == 401)
 				return "Not authenticated, please login to your ElympicsWeb account";
@@ -526,7 +518,8 @@ namespace Elympics
 			}
 			catch (JsonException e)
 			{
-				Debug.LogException(e);
+				if (!silent)
+					Debug.LogException(e);
 			}
 
 			if (errorModel?.Errors == null || errorModel.Errors.Count == 0)

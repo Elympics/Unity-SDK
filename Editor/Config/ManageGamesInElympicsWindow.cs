@@ -225,8 +225,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
 				ElympicsWebIntegration.GetGames(availableGamesOnline =>
 				{
-					Debug.Log($"Received {availableGamesOnline.List.Count} games - {string.Join(", ", availableGamesOnline.List.Select(x => x.Name))}");
-					_accountGames = availableGamesOnline.List;
+					Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
+					_accountGames = availableGamesOnline;
 				});
 				var gameId = ((List<ElympicsGameConfig>)availableGames.GetValue())[currentGameIndex.intValue].gameId;
 				ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId, regionsResponse =>

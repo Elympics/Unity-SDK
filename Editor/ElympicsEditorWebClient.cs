@@ -37,7 +37,7 @@ namespace Elympics
 				asyncOperation.completed += _ => completed?.Invoke(asyncOperation.webRequest);
 		}
 
-		public static UnityWebRequestAsyncOperation SendJsonGetRequestApi(string url, Action<UnityWebRequest> completed = null)
+		public static UnityWebRequestAsyncOperation SendJsonGetRequestApi(string url, Action<UnityWebRequest> completed = null, bool silent = false)
 		{
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Get(uri);
@@ -49,7 +49,8 @@ namespace Elympics
 
 			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
-			Debug.Log($"[Elympics] Sending request GET {url}");
+			if (!silent)
+				Debug.Log($"[Elympics] Sending request GET {url}");
 
 			var asyncOperation = request.SendWebRequest();
 			AttachCompletedCallback(asyncOperation, completed);

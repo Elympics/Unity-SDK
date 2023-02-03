@@ -43,7 +43,7 @@ MonoBehaviour:
     gameEngineData: 
     matchmakerData: []
   - userId: 1
-    isBot: 0
+    isBot: 1
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []

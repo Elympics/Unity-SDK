@@ -1,0 +1,164 @@
+.control-image {
+    width: 100%;
+    height: 100%;
+    flex-grow: 1;
+}
+
+.control-spacing {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 4px;
+    margin-left: 0;
+    min-width: 32px;
+    min-height: 24px;
+}
+
+.toolbar-toggle {
+    flex-direction: column;
+    padding-top: 3px;
+    border-left-color: rgb(48, 48, 48);
+    border-right-color: rgb(48, 48, 48);
+    border-top-color: rgb(48, 48, 48);
+    border-bottom-color: rgb(36, 36, 36);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    left: auto;
+    background-color: rgb(88, 88, 88);
+    margin-left: 0;
+}
+
+.toolbar-toggle:hover {
+    flex-direction: column;
+    padding-top: 3px;
+    border-left-color: rgb(48, 48, 48);
+    border-right-color: rgb(48, 48, 48);
+    border-top-color: rgb(48, 48, 48);
+    border-bottom-color: rgb(36, 36, 36);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    left: auto;
+    background-color: rgb(103, 103, 103);
+    margin-left: 0;
+}
+
+.toolbar-toggle:disabled {
+    flex-direction: column;
+    padding-top: 3px;
+    border-left-color: rgb(48, 48, 48);
+    border-right-color: rgb(48, 48, 48);
+    border-top-color: rgb(48, 48, 48);
+    border-bottom-color: rgb(36, 36, 36);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    left: auto;
+    margin-left: 0;
+    background-color: rgb(88, 88, 88);
+}
+
+.control-base:checked {
+    background-color: rgb(42, 96, 190);
+}
+
+.control-base:active {
+    background-color: rgb(68, 68, 68);
+}
+
+.control-base:focus {
+    border-left-color: rgb(48, 48, 48);
+    border-right-color: rgb(48, 48, 48);
+    border-top-color: rgb(48, 48, 48);
+    border-bottom-color: rgb(36, 36, 36);
+}
+
+.tick-entry-data {
+    width: 135px;
+    height: 18px;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-right: -1px;
+}
+
+.tick-entry {
+    border-left-color: rgb(34, 34, 34);
+    border-right-color: rgb(34, 34, 34);
+    border-top-color: rgb(34, 34, 34);
+    border-bottom-color: rgb(34, 34, 34);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.tick-entry:hover {
+    border-left-color: rgb(34, 34, 34);
+    border-right-color: rgb(34, 34, 34);
+    border-top-color: rgb(34, 34, 34);
+    border-bottom-color: rgb(34, 34, 34);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background-color: rgb(103, 103, 103);
+}
+
+.tick-entry:checked {
+    border-left-color: rgb(34, 34, 34);
+    border-right-color: rgb(34, 34, 34);
+    border-top-color: rgb(34, 34, 34);
+    border-bottom-color: rgb(34, 34, 34);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background-color: rgb(40, 40, 40);
+}
+
+.link {
+    color: rgb(76, 126, 255);
+    -unity-text-align: middle-left;
+    font-size: 14px;
+}
+
+.link:hover {
+    color: rgb(128, 163, 255);
+    -unity-text-align: middle-left;
+    cursor: link;
+    font-size: 14px;
+}

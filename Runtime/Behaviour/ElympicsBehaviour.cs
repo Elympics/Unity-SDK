@@ -33,6 +33,8 @@ namespace Elympics
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 1000)
 		};
 
+		private string _prefabName = null;
+
 		private ElympicsComponentsContainer                     _componentsContainer;
 		private List<ElympicsVar>                               _backingFields;
 		private Dictionary<ElympicsVar, string>                 _backingFieldsNames;
@@ -45,6 +47,18 @@ namespace Elympics
 		{
 			get => networkId;
 			internal set => networkId = value;
+		}
+
+		public string PrefabName
+		{
+			get => _prefabName;
+			internal set => _prefabName = value;
+		}
+
+		public ElympicsPlayer PredictableFor
+		{
+			get => predictableFor;
+			internal set => predictableFor = value;
 		}
 
 		internal ElympicsBase ElympicsBase { get; private set; }
@@ -84,14 +98,13 @@ namespace Elympics
 				throw new ReadNotEnoughException(this);
 
 			inputReader = null;
-			if (_tickBasedInputByPlayer.TryGetValue(player, out var tickBasedInput) && ((ElympicsBase.Tick - tickBasedInput.Tick) <= absenceTick))
+			if (_tickBasedInputByPlayer.TryGetValue(player, out var tickBasedInput) && ElympicsBase.Tick - tickBasedInput.Tick <= absenceTick)
 			{
 				_inputReader.FeedDataForReading(tickBasedInput.Data);
 				inputReader = _inputReader;
 				return true;
 			}
-			else
-				return false;
+			return false;
 		}
 
 #if UNITY_EDITOR
@@ -201,6 +214,17 @@ namespace Elympics
 			var bytes = _memoryStream1.ToArray();
 			_memoryStream1.Seek(0, SeekOrigin.Begin);
 			return bytes;
+		}
+
+		internal Dictionary<string, string> GetStateMetadata()
+		{
+			var metadata = new Dictionary<string, string>();
+			foreach (var (backingField, name) in _backingFieldsNames)
+			{
+				metadata.Add(name, backingField.ToString());
+			}
+
+			return metadata;
 		}
 
 		internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState)

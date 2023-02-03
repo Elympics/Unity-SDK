@@ -1,7 +1,6 @@
 ﻿using Elympics;
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif

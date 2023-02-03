@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 26c7da7266e4335459127c261934c94b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_ViewDataDictionary: {instanceID: 0}
+  - uxml: {fileID: 9197481963319205126, guid: a2a941252dde11b4a97cf508b6650640, type: 3}
+  - tickEntryTemplate: {fileID: 9197481963319205126, guid: 9b0d8b80ebd77b74dacb9d303a914c25, type: 3}
+  - inputDataTemplate: {fileID: 9197481963319205126, guid: 5b63e423e6e956441b8c3ca228454dba, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

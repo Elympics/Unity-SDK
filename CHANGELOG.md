@@ -3,18 +3,11 @@
 
 ### Bug Fixes 🪲
 
-* allow for specifying queue and region for Debug Online mode ([d1988ab](https://github.com/Elympics/Unity-SDK/commit/d1988ab50b3ed8075777e201443394af3fac7adf))
-* Correct GamesResponseModel ([dd8dff9](https://github.com/Elympics/Unity-SDK/commit/dd8dff9ac7bb2058b13fcc6b41f848d20d8bda22))
-* Log Error Message when HalfRemote mode game is run with Application.RunInBackround set to false. ([c76b2d2](https://github.com/Elympics/Unity-SDK/commit/c76b2d2781ebdce80fffe5a1941f9d317d853b8e))
 * Make sure Elympics-SDK-Version HTTP header is not empty ([1bbb97d](https://github.com/Elympics/Unity-SDK/commit/1bbb97df800d8ea1d457a99d66612912d745aced))
-* Silence all errors and info printed while retrieving game version uploaded status ([cac7af4](https://github.com/Elympics/Unity-SDK/commit/cac7af4a8266fdb3d4f3f2eddbe723d542790adc))
-
 
 ### Features
 
 * Implement Networked Simulation Analyzer ([42c0043](https://github.com/Elympics/Unity-SDK/commit/42c00437185f3ee5473904b58a18f24c986e9b5d))
-* include the player's input in the snapshot data. ([1cc4712](https://github.com/Elympics/Unity-SDK/commit/1cc471240315ae8702ccb4fdebeeda2a628838f4))
-
 
 
 ## [0.4.10](https://github.com/Elympics/Unity-SDK/compare/v0.4.9...v0.4.10) (2023-01-31)

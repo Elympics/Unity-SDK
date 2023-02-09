@@ -19,7 +19,6 @@ namespace Elympics
 		private SerializedProperty _elympicsApiEndpoint;
 		private SerializedProperty _elympicsLobbyEndpoint;
 		private SerializedProperty _elympicsGameServersEndpoint;
-		private SerializedProperty _elympicVersion;
 		private static string _cachedSdkVersion = string.Empty;
 
 		static ElympicsConfigEditor()
@@ -29,7 +28,6 @@ namespace Elympics
 
 		private void OnEnable()
 		{
-			_elympicVersion = serializedObject.FindProperty("elympicsVersion");
 			_elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
 			_elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
 			_elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
@@ -107,12 +105,7 @@ namespace Elympics
 
 		private void DrawSdkVersion()
 		{
-			var currentVersion = _elympicVersion.stringValue;
-			if (string.IsNullOrEmpty(currentVersion) || currentVersion != _cachedSdkVersion)
-			{
-				_elympicVersion.SetValue(_cachedSdkVersion);
-			}
-			EditorGUILayout.LabelField($"Elympics SDK Version: {_elympicVersion.stringValue} ");
+			EditorGUILayout.LabelField($"Elympics SDK Version: {_cachedSdkVersion} ");
 		}
 
 		private void DrawNoAvailableGamesLabel()

@@ -8,14 +8,13 @@ namespace Elympics
 {
     public static class ReplayFileManager
     {
-        private const string ElympicsName = "Elympics";
         private const string ElympicsFileFormatName = "ELX";
         private const string ServerIndicator = "S";
         private const string ServerFileReplayExtension = "elxs";
         private const string DefaultOutputFilename = "replay";
 
         // bump every format change
-        private static readonly int ElympicsFileFormatVersion = 1;
+        private static readonly int ElympicsFileFormatVersion = 2;
 
         internal static void SaveServerReplay(TickListDisplayer tickListDisplayer, TickDataDisplayer tickDataDisplayer)
         {

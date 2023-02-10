@@ -157,9 +157,12 @@ namespace Elympics
 				_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
 			}
 
-			var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
-			localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
-			TickAnalysis?.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails());
+			if (TickAnalysis != null)
+            {
+				var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
+				localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
+				TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails());
+			}
 
 			Tick++;
 

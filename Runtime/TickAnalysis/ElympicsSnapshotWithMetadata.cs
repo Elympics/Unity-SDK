@@ -44,7 +44,7 @@ namespace Elympics
 				metadata.NetworkId = br.ReadInt32();
 				metadata.PredictableFor = ElympicsPlayer.FromIndexExtended(br.ReadInt32());
 
-				metadata.StateMetadata = br.ReadList(x => 
+				metadata.StateMetadata = br.ReadList(x =>
 					(x.ReadString(), x.ReadList(y =>
 						(y.ReadString(), y.ReadString()))));
 
@@ -71,10 +71,10 @@ namespace Elympics
 				bw.Write(metadata.NetworkId);
 				bw.Write(metadata.PredictableFor.playerIndex);
 
-				bw.Write(metadata.StateMetadata, (x, metadata) =>
+				bw.Write(metadata.StateMetadata, (x, componentMetadata) =>
 				{
-					x.Write(metadata.Item1);
-					x.Write(metadata.Item2, (y, varWithValue) =>
+					x.Write(componentMetadata.Item1);
+					x.Write(componentMetadata.Item2, (y, varWithValue) =>
 					{
 						y.Write(varWithValue.Item1);
 						y.Write(varWithValue.Item2);

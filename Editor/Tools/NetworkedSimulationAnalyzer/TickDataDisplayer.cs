@@ -80,9 +80,13 @@ namespace Elympics
 
                 _stringBuilder.Clear();
 
-                foreach (var variable in state.StateMetadata)
+                foreach (var (componentName, vars) in state.StateMetadata)
                 {
-                    _stringBuilder.AppendLine($"- {variable.Key} = {variable.Value}");
+                    if (state.StateMetadata.Count > 1)
+                        _stringBuilder.AppendLine($" {componentName}:");
+
+                    foreach (var (elympicsVar, value) in vars)
+                        _stringBuilder.AppendLine($"    - {elympicsVar} = {value}");
                 }
 
                 var variables = new Label();

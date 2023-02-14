@@ -35,10 +35,11 @@ namespace Elympics
 
 		private string _prefabName = null;
 
-		private ElympicsComponentsContainer                     _componentsContainer;
-		private List<ElympicsVar>                               _backingFields;
-		private Dictionary<ElympicsVar, string>                 _backingFieldsNames;
-		private ElympicsBehaviourStateChangeFrequencyCalculator _behaviourStateChangeFrequencyCalculator;
+		private ElympicsComponentsContainer						_componentsContainer;
+		private List<ElympicsVar>								_backingFields;
+		private Dictionary<ElympicsVar, string>					_backingFieldsNames;
+		private List<(string, List<ElympicsVar>)>				_backingFieldsByComponents;
+		private ElympicsBehaviourStateChangeFrequencyCalculator	_behaviourStateChangeFrequencyCalculator;
 
 		internal bool HasAnyState => _componentsContainer.Observables.Length > 0;
 		internal bool HasAnyInput => _componentsContainer.InputHandler != null;
@@ -108,42 +109,42 @@ namespace Elympics
 		}
 
 #if UNITY_EDITOR
-		private bool _previousForceNetworkIdState;
+        private bool _previousForceNetworkIdState;
 
-		private void OnValidate()
-		{
-			if (!forceNetworkId && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
-				UpdateSerializedNetworkId();
+        private void OnValidate()
+        {
+            if (!forceNetworkId && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
+                UpdateSerializedNetworkId();
 
-			_behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
-			_previousForceNetworkIdState = forceNetworkId;
-		}
+            _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
+            _previousForceNetworkIdState = forceNetworkId;
+        }
 
-		private void OnEnable()
-		{
-			if (!forceNetworkId && IsMyNetworkIdTaken())
-				UpdateSerializedNetworkId();
+        private void OnEnable()
+        {
+            if (!forceNetworkId && IsMyNetworkIdTaken())
+                UpdateSerializedNetworkId();
 
-			_behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
-		}
+            _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
+        }
 
-		private bool IsMyNetworkIdTaken()
-		{
-			return FindObjectsOfType<ElympicsBehaviour>()
-				.Where(behaviour => behaviour != this)
-				.Select(behaviour => behaviour.NetworkId)
-				.Contains(networkId);
-		}
+        private bool IsMyNetworkIdTaken()
+        {
+            return FindObjectsOfType<ElympicsBehaviour>()
+                .Where(behaviour => behaviour != this)
+                .Select(behaviour => behaviour.NetworkId)
+                .Contains(networkId);
+        }
 
-		internal void UpdateSerializedNetworkId()
-		{
-			networkId = NetworkIdEnumerator.Instance.MoveNextAndGetCurrent();
-			EditorUtility.SetDirty(this);
-		}
+        internal void UpdateSerializedNetworkId()
+        {
+            networkId = NetworkIdEnumerator.Instance.MoveNextAndGetCurrent();
+            EditorUtility.SetDirty(this);
+        }
 
-		private void OnDrawGizmos()
-		{
-		}
+        private void OnDrawGizmos()
+        {
+        }
 #endif
 
 		internal void InitializeInternal(ElympicsBase elympicsBase)
@@ -169,8 +170,10 @@ namespace Elympics
 			var elympicsVarType = typeof(ElympicsVar);
 			_backingFields = new List<ElympicsVar>();
 			_backingFieldsNames = new Dictionary<ElympicsVar, string>();
+			_backingFieldsByComponents = new List<(string, List<ElympicsVar>)>();
 			foreach (var observable in _componentsContainer.Observables)
 			{
+				var componentVars = new List<ElympicsVar>();
 				foreach (var field in observable.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
 				{
 					if (elympicsVarType.IsAssignableFrom(field.FieldType))
@@ -186,12 +189,15 @@ namespace Elympics
 							{
 								_backingFields.Add(value);
 								_backingFieldsNames.Add(value, field.Name);
+								componentVars.Add(value);
 							}
 						}
 						else
 							Debug.LogError($"Cannot synchronize ElympicsVar {field.Name} in {field.DeclaringType}, because it's null");
 					}
 				}
+				if (componentVars.Count > 0)
+					_backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
 			}
 
 			_inputReader = new BinaryInputReader();
@@ -216,15 +222,18 @@ namespace Elympics
 			return bytes;
 		}
 
-		internal Dictionary<string, string> GetStateMetadata()
+		// returns name list of components and their ElympicsVars with values
+		internal List<(string, List<(string, string)>)> GetStateMetadata()
 		{
-			var metadata = new Dictionary<string, string>();
-			foreach (var (backingField, name) in _backingFieldsNames)
-			{
-				metadata.Add(name, backingField.ToString());
-			}
+			var metadata = new List<(string, List<(string, string)>)>();
+            foreach (var (componentName, vars) in _backingFieldsByComponents)
+            {
+                var varsWithValues = vars.Select(elympicsVar => (_backingFieldsNames[elympicsVar], elympicsVar.ToString())).ToList();
 
-			return metadata;
+                metadata.Add((componentName, varsWithValues));
+            }
+
+            return metadata;
 		}
 
 		internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState)

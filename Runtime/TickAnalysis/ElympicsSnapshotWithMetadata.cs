@@ -43,7 +43,10 @@ namespace Elympics
 				metadata.Name = br.ReadString();
 				metadata.NetworkId = br.ReadInt32();
 				metadata.PredictableFor = ElympicsPlayer.FromIndexExtended(br.ReadInt32());
-				metadata.StateMetadata = br.ReadDictionaryStringToString();
+
+				metadata.StateMetadata = br.ReadList(x =>
+					(x.ReadString(), x.ReadList(y =>
+						(y.ReadString(), y.ReadString()))));
 
 				Metadata.Add(metadata);
 			}
@@ -67,7 +70,16 @@ namespace Elympics
 				bw.Write(metadata.Name);
 				bw.Write(metadata.NetworkId);
 				bw.Write(metadata.PredictableFor.playerIndex);
-				bw.Write(metadata.StateMetadata);
+
+				bw.Write(metadata.StateMetadata, (x, componentMetadata) =>
+				{
+					x.Write(componentMetadata.Item1);
+					x.Write(componentMetadata.Item2, (y, varWithValue) =>
+					{
+						y.Write(varWithValue.Item1);
+						y.Write(varWithValue.Item2);
+					});
+				});
 			}
 			var endedAt = new byte[DateTimeWeight];
 			NtpUtils.DateTimeToNtpDataTimeStamp(TickEndUtc, endedAt);

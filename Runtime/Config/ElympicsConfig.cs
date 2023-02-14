@@ -14,7 +14,7 @@ namespace Elympics
 		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
 		public const string PATH_IN_RESOURCES       = "Elympics/ElympicsConfig";
 
-		[SerializeField] private string elympicsVersion             = string.Empty;
+		private string elympicsVersion             = string.Empty;
 		[SerializeField] private string elympicsApiEndpoint         = "https://api.elympics.cc";
 		[SerializeField] private string elympicsLobbyEndpoint       = "https://lobby.elympics.cc";
 		[SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";

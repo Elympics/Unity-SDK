@@ -91,6 +91,7 @@ namespace Elympics
 			var ctRegistration = ct.Register(() =>
 			{
 				requestOp.webRequest.Abort();
+				requestOp.webRequest.Dispose();
 				callback(null, null);
 			});
 			requestOp.completed += _ =>
@@ -105,6 +106,7 @@ namespace Elympics
 				var response = JsonUtility.FromJson<T>(requestOp.webRequest.downloadHandler.text);
 				Debug.Log($"[Elympics] Received response from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
 				callback(response, null);
+				requestOp.webRequest.Dispose();
 			};
 		}
 

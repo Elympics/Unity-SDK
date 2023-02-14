@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
@@ -30,15 +28,14 @@ namespace Elympics
 		public event Action DisconnectedByClient;
 
 		private readonly IGameServerClient   _gameServerClient;
-		private readonly HttpSignalingClient _signalingClient;
 
 		private readonly string _tcpUdpServerAddress;
 		private readonly string _webServerAddress;
 		private readonly string _userSecret;
 		private readonly bool   _useWeb;
 
-		private bool _connecting = false;
-		private bool _connected  = false;
+		private bool _connecting;
+		private bool _connected;
 
 		private Action _disconnectedCallback;
 		private Action _matchJoinedCallback;
@@ -47,14 +44,6 @@ namespace Elympics
 		{
 			_gameServerClient = gameServerClient;
 			Debug.Log(matchId);
-			var webSignalingEndpoint = GameServerClient.GetWebSignalingEndpoint(ElympicsConfig.Load().ElympicsGameServersEndpoint, webServerAddress, matchId);
-			if (!string.IsNullOrEmpty(regionName))
-			{
-				var uriBuilder = new UriBuilder(webSignalingEndpoint);
-				uriBuilder.Host = regionName + "-" + uriBuilder.Host;
-				webSignalingEndpoint = uriBuilder.Uri;
-			}
-			_signalingClient = new HttpSignalingClient(webSignalingEndpoint);
 			_tcpUdpServerAddress = tcpUdpServerAddress;
 			_webServerAddress = webServerAddress;
 			_userSecret = userSecret;
@@ -68,7 +57,7 @@ namespace Elympics
 			CheckAddress();
 			if (string.IsNullOrEmpty(_userSecret))
 				throw new ArgumentNullException(nameof(_userSecret));
-			return ConnectAndJoin(connectedCallback, ct, SetupCallbacksForJoiningAsPlayer, UnsetCallbacksForJoiningAsPlayer);
+			return ConnectAndJoin(connectedCallback, SetupCallbacksForJoiningAsPlayer, UnsetCallbacksForJoiningAsPlayer, ct);
 		}
 
 		private void CheckAddress()
@@ -88,7 +77,7 @@ namespace Elympics
 		public IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct)
 		{
 			CheckAddress();
-			return ConnectAndJoin(connectedCallback, ct, SetupCallbacksForJoiningAsSpectator, UnsetCallbacksForJoiningAsSpectator);
+			return ConnectAndJoin(connectedCallback, SetupCallbacksForJoiningAsSpectator, UnsetCallbacksForJoiningAsSpectator, ct);
 		}
 
 		public void Disconnect()
@@ -134,7 +123,7 @@ namespace Elympics
 			_gameServerClient.Disconnected -= OnDisconnectedWhileConnectingAndJoining;
 		}
 
-		private IEnumerator ConnectAndJoin(Action<bool> connectedCallback, CancellationToken ct, Action setupCallbacks, Action unsetCallbacks)
+		private IEnumerator ConnectAndJoin(Action<bool> connectedCallback, Action setupCallbacks, Action unsetCallbacks, CancellationToken ct = default)
 		{
 			if (_connecting)
 			{
@@ -178,52 +167,17 @@ namespace Elympics
 			_disconnectedCallback = DisconnectedCallback;
 			_matchJoinedCallback = MatchJoinedCallback;
 
-			if (_useWeb)
-			{
-				Debug.Log($"[Elympics] Connecting to game server by WebSocket/WebRTC on {_webServerAddress}");
+			Debug.Log(_useWeb
+				? $"[Elympics] Connecting to game server by WebSocket/WebRTC on {_webServerAddress}"
+				: $"[Elympics] Connecting to game server by TCP/UDP on {_tcpUdpServerAddress}");
 
-				IEnumerator<double> synchronizer = null;
-				yield return EnumerateNestedWithSimpleTypes(_gameServerClient.ConnectWebAsync(_signalingClient, ConnectedCallback, s => synchronizer = s, ct));
-
-				// Add timeout to this ~pprzestrzelski 18.02.2022
-				while (_connecting)
-					yield return 0;
-				while (_connected && synchronizer != null && synchronizer.MoveNext())
-					yield return new WaitForSeconds((float)synchronizer.Current);
-			}
-			else
+			_gameServerClient.ConnectAsync(ct).ContinueWith(t =>
 			{
-				Debug.Log($"[Elympics] Connecting to game server by TCP/UDP on {_tcpUdpServerAddress}");
-				_gameServerClient.ConnectTcpUdpAsync(_tcpUdpServerAddress).ContinueWith(t =>
-				{
-					if (t.IsFaulted)
-						Debug.LogErrorFormat("[Elympics] Connecting exception\n{0}", t.Exception);
-					else
-						ConnectedCallback(t.Result);
-				}, ct);
-			}
-		}
-
-		private IEnumerator EnumerateNestedWithSimpleTypes(IEnumerator enumerator)
-		{
-			while (enumerator.MoveNext())
-			{
-				switch (enumerator.Current)
-				{
-					case double timeD:
-						yield return new WaitForSeconds((float)timeD);
-						break;
-					case int timeI:
-						yield return new WaitForSeconds(timeI);
-						break;
-					case IEnumerator nested:
-						yield return EnumerateNestedWithSimpleTypes(nested);
-						break;
-					default:
-						yield return enumerator.Current;
-						break;
-				}
-			}
+				if (t.IsFaulted)
+					Debug.LogErrorFormat("[Elympics] Connecting exception\n{0}", t.Exception);
+				else
+					ConnectedCallback(t.Result);
+			}, ct);
 		}
 
 		private void FinishConnecting(Action unsetCallbacks)

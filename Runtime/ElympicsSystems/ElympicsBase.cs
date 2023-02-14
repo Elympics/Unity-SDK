@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -192,9 +193,9 @@ namespace Elympics
 
 		#region Client
 
-		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => throw new SupportedOnlyByClientException();
+		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
 		public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
-		public virtual void        Disconnect()                                                                    => throw new SupportedOnlyByClientException();
+		public virtual void Disconnect() => throw new SupportedOnlyByClientException();
 
 		#endregion
 

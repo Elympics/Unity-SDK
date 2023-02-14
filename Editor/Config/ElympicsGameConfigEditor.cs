@@ -33,6 +33,8 @@ namespace Elympics
 
 		private SerializedProperty _useWeb;
 		private SerializedProperty _enableReconnect;
+		private SerializedProperty _connectionConfig;
+
 		private SerializedProperty _ticksPerSecond;
 		private SerializedProperty _snapshotSendingPeriodInTicks;
 		private SerializedProperty _inputLagTicks;
@@ -84,6 +86,8 @@ namespace Elympics
 
 			_useWeb = serializedObject.FindProperty("useWeb");
 			_enableReconnect = serializedObject.FindProperty("enableReconnect");
+			_connectionConfig = serializedObject.FindProperty("connectionConfig");
+
 			_ticksPerSecond = serializedObject.FindProperty("ticksPerSecond");
 			_snapshotSendingPeriodInTicks = serializedObject.FindProperty("snapshotSendingPeriodInTicks");
 			_inputLagTicks = serializedObject.FindProperty("inputLagTicks");
@@ -150,6 +154,9 @@ namespace Elympics
 			BeginSection("Client");
 			DrawUseWeb(summaryLabelStyle);
 			EditorGUILayout.PropertyField(_enableReconnect, new GUIContent("Reconnect to match"));
+			EditorGUILayout.PropertyField(_connectionConfig, new GUIContent("Client connection config"));
+			EditorGUILayout.Space();
+
 			_ticksPerSecond.intValue = TickSlider("Ticks per second", _ticksPerSecond.intValue, MinTicks, MaxTicks);
 			_snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
 			_inputLagTicks.intValue = TickSliderConvertedToMs("Input lag", _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));

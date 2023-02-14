@@ -3,7 +3,12 @@
     "references": [
         "ParrelSync",
         "UniTask",
-        "LobbyPublicApiModels"
+        "MatchTcpClients",
+        "MatchTcpLibrary",
+        "MatchTcpModels",
+        "LobbyPublicApiClients.Abstraction",
+        "LobbyPublicApiModels",
+        "Daftmobile.Api"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

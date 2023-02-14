@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
+using MatchTcpLibrary;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
@@ -46,6 +47,8 @@ namespace Elympics
 
 		private TcpClient     _tcpClient;
 		private IWebRtcClient _webRtcClient;
+
+		private IGameServerWebSignalingClient.Response _webResponse;
 
 		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWeb)
 		{
@@ -141,18 +144,17 @@ namespace Elympics
 				if (!Application.isPlaying)
 					yield break;
 
-				yield return _signalingClient.PostOfferAsync(offer);
-				if (_signalingClient.IsError)
+				_webResponse = null;
+				_signalingClient.ReceivedResponse += r => _webResponse = r;
+				_signalingClient.PostOfferAsync(offer, 1, ct);
+				yield return WaitTimeToRetryConnect;
+
+				if (_webResponse?.IsError == false)
 				{
-					Debug.LogError(_signalingClient.Error);
-				}
-				else
-				{
-					answer = _signalingClient.Answer;
+					answer = _webResponse.Text;
 					break;
 				}
-
-				yield return WaitTimeToRetryConnect;
+				Debug.LogError(_webResponse?.IsError == true ? _webResponse.Text : "Response not received from WebRTC client");
 			}
 
 			if (string.IsNullOrEmpty(answer))

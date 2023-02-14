@@ -1,0 +1,15 @@
+{
+    "name": "LobbyPublicApiClients.Abstraction",
+    "references": [
+        "GUID:cf53538218ac8c348bf6685fee86c093"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

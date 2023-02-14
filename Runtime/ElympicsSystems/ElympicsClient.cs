@@ -269,9 +269,9 @@ namespace Elympics
 
 		#region IElympics
 
-		public override IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => MatchConnectClient.ConnectAndJoinAsPlayer(connectedCallback, ct);
+		public override IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsPlayer(connectedCallback, ct);
 		public override IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsSpectator(connectedCallback, ct);
-		public override void        Disconnect()                                                                    => MatchConnectClient.Disconnect();
+		public override void Disconnect() => MatchConnectClient.Disconnect();
 
 		#endregion
 	}

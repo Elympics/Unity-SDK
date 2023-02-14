@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -76,6 +77,11 @@ namespace Elympics
 			_elympicsBehaviours.Remove(networkId);
 		}
 
+		internal List<GameObject> GetAllElympicsBehavioursGO()
+		{
+			return _elympicsBehaviours.Behaviours.Values.Select(x => x.gameObject).ToList();
+		}
+
 		internal bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour)
 		{
 			return _elympicsBehaviours.Behaviours.TryGetValue(networkId, out elympicsBehaviour);
@@ -128,7 +134,7 @@ namespace Elympics
 			var snapshot = new ElympicsSnapshot
 			{
 				Factory = factory.GetState(),
-				Data = new List<KeyValuePair<int, byte[]>>()
+				Data = new List<KeyValuePair<int, byte[]>>(),
 			};
 
 			foreach (var (networkId, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
@@ -137,6 +143,28 @@ namespace Elympics
 					continue;
 
 				snapshot.Data.Add(new KeyValuePair<int, byte[]>(networkId, elympicsBehaviour.GetState()));
+			}
+
+			return snapshot;
+		}
+
+		internal ElympicsSnapshotWithMetadata GetLocalSnapshotWithMetadata()
+		{
+			var snapshot = new ElympicsSnapshotWithMetadata(GetLocalSnapshot());
+
+			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+			{
+				if (!elympicsBehaviour.HasAnyState)
+					continue;
+
+				snapshot.Metadata.Add(new ElympicsBehaviourMetadata
+				{
+					Name = elympicsBehaviour.name,
+					NetworkId = elympicsBehaviour.NetworkId,
+					PredictableFor = elympicsBehaviour.PredictableFor,
+					PrefabName = elympicsBehaviour.PrefabName,
+					StateMetadata = elympicsBehaviour.GetStateMetadata()
+				});
 			}
 
 			return snapshot;

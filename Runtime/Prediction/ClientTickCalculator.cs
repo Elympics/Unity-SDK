@@ -28,22 +28,13 @@ namespace Elympics
 		private DateTime? _lastReceivedTickStart;
 		private DateTime? _lastClientTickStart;
 
-		public double ClientTickingAberrationSumTicks { get; private set; }
-		public double ServerTickingAberrationSumTicks { get; private set; }
+		private double _clientTickingAberrationSumTicks;
+		private double _serverTickingAberrationSumTicks;
 
 		private long _ticksDiffSumSinceWaitingBeforeCatchUp;
 
 		public long LastPredictionTick   { get; private set; }
 		public long LastDelayedInputTick { get; private set; }
-
-		#region ForceUpdateNextTick comparison
-
-		private TimeSpan _lastAverageRoundTripTime;
-		private TimeSpan _lastAverageLocalClockOffset;
-		private double   _lastClientTickingAberrationSumTicks;
-		private double   _lastServerTickingAberrationSumTicks;
-
-		#endregion
 
 		private long _predictionTick;
 		private long _delayedInputTick;
@@ -75,9 +66,10 @@ namespace Elympics
 			}
 		}
 
-		public void CalculateNextTick(long receivedTick, DateTime receivedTickStartUtc, DateTime clientTickStart)
+		public ClientTickCalculatorNetworkDetails CalculateNextTick(long receivedTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
 		{
 			var receivedTickStart = receivedTickStartUtc.ToLocalTime();
+			var clientTickStart = clientTickStartUtc.ToLocalTime();
 
 			CalculateTickingAberrations(receivedTick, clientTickStart, receivedTickStart);
 
@@ -87,7 +79,8 @@ namespace Elympics
 			{
 				UseNextTick();
 				ResetTicksDiffSum();
-				return;
+				var details = CreateClientTickCalculateNetworkDetails(true, false);
+				return details;
 			}
 
 			if (IsBiggerThanNextTick(calculatedNextTickExact) || IsLowerThanNextTick(calculatedNextTickExact))
@@ -98,14 +91,14 @@ namespace Elympics
 				if (IsTicksDiffSumBiggerThanMaxBeforeCatchupForward() || IsTicksDiffSumLowerThanMinBeforeCatchupBackwards())
 				{
 					ForceUpdateNextTick(calculatedNextTick);
+					var details = CreateClientTickCalculateNetworkDetails(false, true);
 					ResetTicksDiffSum();
-					if (_config.DetailedNetworkLog)
-						LogForceUpdatesAndPrintCalculateNetworkConditionsChange();
-					return;
+					return details;
 				}
 			}
 
 			UseNextTick();
+			return CreateClientTickCalculateNetworkDetails(false, false);
 		}
 
 		private long GetLimitedPredictionTick(long delayedInputTick)
@@ -129,13 +122,13 @@ namespace Elympics
 				var receivedTicksStartDiffTicks = receivedTicksStartDiff.TotalSeconds * _config.TicksPerSecond;
 				var receivedTicksDiff = receivedTick - _lastReceivedTick.Value;
 				var serverTickingAberrationTicks = receivedTicksStartDiffTicks - receivedTicksDiff;
-				ServerTickingAberrationSumTicks += serverTickingAberrationTicks;
+				_serverTickingAberrationSumTicks += serverTickingAberrationTicks;
 
 				var clientTicksStartDiff = clientTickStart - _lastClientTickStart.Value;
 				var clientTicksStartDiffTicks = clientTicksStartDiff.TotalSeconds * _config.TicksPerSecond;
 				const double clientTicksDiff = 1;
 				var clientTickingAberrationTicks = clientTicksStartDiffTicks - clientTicksDiff;
-				ClientTickingAberrationSumTicks += clientTickingAberrationTicks;
+				_clientTickingAberrationSumTicks += clientTickingAberrationTicks;
 			}
 
 			_lastReceivedTick = receivedTick;
@@ -177,33 +170,34 @@ namespace Elympics
 
 		private void ResetTicksDiffSum() => _ticksDiffSumSinceWaitingBeforeCatchUp = 0;
 
-		private void LogForceUpdatesAndPrintCalculateNetworkConditionsChange()
+		private ClientTickCalculatorNetworkDetails CreateClientTickCalculateNetworkDetails(bool correctTicking, bool forcedTickJump)
 		{
-			var averageRoundTripTime = _roundTripTimeCalculator.AverageRoundTripTime;
-			var averageLocalClockOffset = _roundTripTimeCalculator.AverageLocalClockOffset;
+			var tickJumpStart = LastPredictionTick + 1;
+			var tickJumpEnd = PredictionTick;
+			var inputJumpStart = LastDelayedInputTick + 1;
+			var inputJumpEnd = DelayedInputTick;
+			var ticksDiffSumBeforeCatchUp = _ticksDiffSumSinceWaitingBeforeCatchUp;
+			var inputLagTicks = _config.InputLagTicks;
+			var rttTicks = _roundTripTimeCalculator.AverageRoundTripTime.TotalSeconds * _config.TicksPerSecond;
+			var lcoTicks = _roundTripTimeCalculator.AverageLocalClockOffset.TotalSeconds * _config.TicksPerSecond;
+			var ctasTicks = _clientTickingAberrationSumTicks;
+			var stasTicks = _serverTickingAberrationSumTicks;
 
-			Debug.LogError($"[Elympics] Forcing update next prediction tick with difference {PredictionTick - (LastPredictionTick + 1)} from {LastPredictionTick + 1} to {PredictionTick}\n" +
-			               $"Network conditions:\n" +
-			               $"Input lag - {_config.InputLagTicks:F} ticks\n" +
-			               $"RTT - {_roundTripTimeCalculator.AverageRoundTripTime.TotalSeconds * _config.TicksPerSecond:F} ticks; change - {(_lastAverageRoundTripTime - averageRoundTripTime).TotalSeconds * _config.TicksPerSecond} ticks\n" +
-			               $"Local time offset - {_roundTripTimeCalculator.AverageLocalClockOffset:G}; change - {(_lastAverageLocalClockOffset - averageLocalClockOffset).TotalSeconds * _config.TicksPerSecond} ticks\n" +
-			               $"Client ticking aberration sum - {ClientTickingAberrationSumTicks:F} ticks; change - {ClientTickingAberrationSumTicks - _lastClientTickingAberrationSumTicks} ticks\n" +
-			               $"Server ticking aberration sum - {ServerTickingAberrationSumTicks:F} ticks; change - {ServerTickingAberrationSumTicks - _lastServerTickingAberrationSumTicks} ticks\n");
-
-			_lastAverageRoundTripTime = averageRoundTripTime;
-			_lastAverageLocalClockOffset = averageLocalClockOffset;
-			_lastClientTickingAberrationSumTicks = ClientTickingAberrationSumTicks;
-			_lastServerTickingAberrationSumTicks = ServerTickingAberrationSumTicks;
-		}
-
-		public void LogNetworkConditions()
-		{
-			Debug.Log($"[Elympics] Network conditions:\n" +
-			          $"Input lag - {_config.InputLagTicks:F} ticks\n" +
-			          $"RTT - {_roundTripTimeCalculator.AverageRoundTripTime.TotalSeconds * _config.TicksPerSecond:F} ticks\n" +
-			          $"Local time offset - {_roundTripTimeCalculator.AverageLocalClockOffset:G}\n" +
-			          $"Client ticking aberration sum - {ClientTickingAberrationSumTicks:F} ticks\n" +
-			          $"Server ticking aberration sum - {ServerTickingAberrationSumTicks:F} ticks\n");
+			return new ClientTickCalculatorNetworkDetails
+			{
+				CorrectTicking = correctTicking,
+				ForcedTickJump = forcedTickJump,
+				TicksDiffSumBeforeCatchup = ticksDiffSumBeforeCatchUp,
+				TickJumpStart = tickJumpStart,
+				TickJumpEnd = tickJumpEnd,
+				InputTickJumpStart = inputJumpStart,
+				InputTickJumpEnd = inputJumpEnd,
+				InputLagTicks = inputLagTicks,
+				RttTicks = rttTicks,
+				LcoTicks = lcoTicks,
+				CtasTicks = ctasTicks,
+				StasTicks = stasTicks
+			};
 		}
 	}
 }

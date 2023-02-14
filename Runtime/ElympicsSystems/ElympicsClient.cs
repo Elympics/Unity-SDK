@@ -21,7 +21,6 @@ namespace Elympics
 		public override ElympicsPlayer Player   => _player;
 		public override bool           IsClient => true;
 
-		public  bool Initialized { get; private set; }
 		private bool _started;
 
 		public IMatchConnectClient MatchConnectClient
@@ -29,7 +28,7 @@ namespace Elympics
 			get
 			{
 				if (_matchConnectClient == null)
-					throw new Exception("Elympics not initialized! Did you change ScriptExecutionOrder?");
+					throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
 				return _matchConnectClient;
 			}
 		}
@@ -41,8 +40,11 @@ namespace Elympics
 		private IRoundTripTimeCalculator _roundTripTimeCalculator;
 		private ClientTickCalculator     _clientTickCalculator;
 		private PredictionBuffer         _predictionBuffer;
-		private ElympicsSnapshot         _lastReceivedSnapshot;
-		private DateTime?                _lastClientPrintNetworkConditions;
+
+		private static readonly object LastReceivedSnapshotLock = new object();
+		private ElympicsSnapshot _lastReceivedSnapshot;
+
+		private DateTime? _lastClientPrintNetworkConditions;
 
 		private List<ElympicsInput> _inputList;
 
@@ -63,7 +65,8 @@ namespace Elympics
 
 			_inputList = new List<ElympicsInput>(1);
 
-			Initialized = true;
+			SetInitialized();
+
 			if (connectOnStart)
 				StartCoroutine(ConnectAndJoinAsPlayer(_ => { }, default));
 		}
@@ -99,11 +102,12 @@ namespace Elympics
 
 		private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
 		{
+			lock (LastReceivedSnapshotLock)
+				if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
+					_lastReceivedSnapshot = elympicsSnapshot;
+
 			if (!_started)
 				StartClient();
-
-			if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
-				_lastReceivedSnapshot = elympicsSnapshot;
 		}
 
 		private void StartClient() => _started = true;
@@ -112,12 +116,15 @@ namespace Elympics
 
 		protected override void DoFixedUpdate()
 		{
-			var clientTickStart = DateTime.Now;
-			if (Config.DetailedNetworkLog)
-				LogNetworkConditionsInInterval(clientTickStart);
+			_tickStartUtc = DateTime.UtcNow;
 
-			var receivedSnapshot = _lastReceivedSnapshot;
-			_clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, clientTickStart);
+			ElympicsSnapshot receivedSnapshot;
+			lock (LastReceivedSnapshotLock)
+				receivedSnapshot = _lastReceivedSnapshot;
+
+			var networkDetails = _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, _tickStartUtc);
+			if (Config.DetailedNetworkLog)
+				LogNetworkConditionsInInterval(networkDetails);
 			_predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
 
 			var lastDelayedInputTick = _clientTickCalculator.LastDelayedInputTick;
@@ -139,6 +146,7 @@ namespace Elympics
 				for (var i = startPredictionTick; i <= predictionTick; i++)
 				{
 					Tick = i;
+					_tickStartUtc = DateTime.UtcNow;
 					ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
 					elympicsBehavioursManager.CommitVars();
 					ApplyPredictedInput();
@@ -153,16 +161,16 @@ namespace Elympics
 			}
 		}
 
-		private void LogNetworkConditionsInInterval(DateTime clientTickStart)
+		private void LogNetworkConditionsInInterval(ClientTickCalculatorNetworkDetails details)
 		{
 			if (!_lastClientPrintNetworkConditions.HasValue)
-				_lastClientPrintNetworkConditions = clientTickStart;
+				_lastClientPrintNetworkConditions = _tickStartUtc;
 
-			if (!((clientTickStart - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
+			if (!((_tickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval) && !details.ForcedTickJump)
 				return;
 
-			_clientTickCalculator.LogNetworkConditions();
-			_lastClientPrintNetworkConditions = clientTickStart;
+			Debug.Log($"[Elympics] {details.ToString()}");
+			_lastClientPrintNetworkConditions = _tickStartUtc;
 		}
 
 		private void ProcessSnapshot(long predictionTick)
@@ -244,6 +252,7 @@ namespace Elympics
 				var newResimulatedSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
 				newResimulatedSnapshot.Tick = resimulationTick;
 				_predictionBuffer.AddOrReplaceSnapshotInBuffer(newResimulatedSnapshot);
+
 				// Debug.Log($"[{PlayerId}] Overriding snapshot {resimulationTick} with {JsonConvert.SerializeObject(newResimulatedSnapshot, Formatting.Indented)}");
 			}
 
@@ -252,7 +261,11 @@ namespace Elympics
 			Debug.LogWarning($"[Elympics] <<< Reconciliation on {receivedSnapshot.Tick} finished <<<");
 		}
 
-		private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot) => elympicsBehavioursManager.ApplySnapshot(receivedSnapshot);
+		private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot)
+		{
+			Tick = receivedSnapshot.Tick;
+			elympicsBehavioursManager.ApplySnapshot(receivedSnapshot);
+		}
 
 		#region IElympics
 

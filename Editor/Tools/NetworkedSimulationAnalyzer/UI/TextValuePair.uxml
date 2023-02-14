@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="text-value-pair" style="flex-direction: row;">
+        <ui:Label text="Text:" display-tooltip-when-elided="true" name="text" />
+        <ui:Label text="{value}" display-tooltip-when-elided="true" name="value" />
+    </ui:VisualElement>
+</ui:UXML>

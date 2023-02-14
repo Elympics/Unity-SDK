@@ -24,5 +24,7 @@ namespace Elympics
 		}
 
 		protected override Vector2 DeserializeInternal(BinaryReader br) => new Vector2(br.ReadSingle(), br.ReadSingle());
+
+		public override string ToString() => Value.ToString("G");
 	}
 }

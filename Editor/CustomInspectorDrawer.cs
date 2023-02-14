@@ -233,7 +233,7 @@ namespace Elympics
 			else
 			{
 				//green
-				return "<color=#00E10F>Connected!</color>";
+				return "<color=#63DE4B>Connected!</color>";
 			}
 		}
 

@@ -24,16 +24,24 @@ namespace Elympics
 		private bool HandlingClientsInServer => _handlingClientsOverride;
 
 		private GameEngineAdapter _gameEngineAdapter;
+		private InitialMatchPlayerDatas _playerData;
 		private ElympicsPlayer[]  _playersOfBots;
 		private ElympicsPlayer[]  _playersOfClients;
-
-		private bool     _initialized;
-		private DateTime _tickStartUtc;
 
 		private List<ElympicsInput> _inputList;
 		private Dictionary<int,TickToPlayerInput> _tickToPlayerInputHolder;
 
 		private ElympicsGameConfig _currentGameConfig;
+
+		#region TickAnalysis
+
+		private protected override void TryAttachTickAnalysis()
+		{
+			TickAnalysis?.Attach(snapshot => elympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true),
+				_playerData?.Select(x => x.IsBot).ToArray());
+		}
+
+		#endregion TickAnalysis
 
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
 		{
@@ -58,9 +66,10 @@ namespace Elympics
 			_gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
 			_gameEngineAdapter.InitializedWithMatchPlayerDatas += data =>
 			{
+				Enqueue(() => _playerData = data);
 				OnServerInit(data);
 				InitializeBotsAndClientInServer(data);
-				Enqueue(() => _initialized = true);
+				Enqueue(SetInitialized);
 			};
 		}
 
@@ -92,7 +101,7 @@ namespace Elympics
 				OnPlayerConnected(player);
 		}
 
-		protected override bool ShouldDoFixedUpdate() => _initialized;
+		protected override bool ShouldDoFixedUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
 
 		protected override void DoFixedUpdate()
 		{
@@ -108,9 +117,8 @@ namespace Elympics
 			_inputList.Clear();
 			foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
 			{
-				ElympicsInput input = null;
 				var currentTick = Tick;
-				if (elympicDataWithTickBuffer.TryGetDataForTick(currentTick, out input) || _gameEngineAdapter.LatestSimulatedTickInput.TryGetValue(elympicPlayer, out input))
+				if (elympicDataWithTickBuffer.TryGetDataForTick(currentTick, out var input) || _gameEngineAdapter.LatestSimulatedTickInput.TryGetValue(elympicPlayer, out input))
 				{
 					_inputList.Add(input);
 					_gameEngineAdapter.SetLatestSimulatedInputTick(input.Player, input);
@@ -145,7 +153,15 @@ namespace Elympics
 				PopulateTickToPlayerInputHolder();
 				var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
 				AddMetadataToSnapshots(snapshots, _tickStartUtc);
+
 				_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
+			}
+
+			if (TickAnalysis != null)
+            {
+				var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
+				localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
+				TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails());
 			}
 
 			Tick++;
@@ -153,7 +169,7 @@ namespace Elympics
 			foreach (var (_, inputBuffer) in _gameEngineAdapter.PlayerInputBuffers)
 				inputBuffer.UpdateMinTick(Tick);
 		}
-		
+
 		private void PopulateTickToPlayerInputHolder()
 		{
 			_tickToPlayerInputHolder.Clear();
@@ -179,10 +195,13 @@ namespace Elympics
 		private void AddMetadataToSnapshots(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots, DateTime tickStart)
 		{
 			foreach (var (_, snapshot) in snapshots)
-			{
-				snapshot.TickStartUtc = tickStart;
-				snapshot.Tick = Tick;
-			}
+				AddMetadataToSnapshot(tickStart, snapshot);
+		}
+
+		private void AddMetadataToSnapshot(DateTime tickStart, ElympicsSnapshot snapshot)
+		{
+			snapshot.TickStartUtc = tickStart;
+			snapshot.Tick = Tick;
 		}
 
 		private void SwitchBehaviourToServer()

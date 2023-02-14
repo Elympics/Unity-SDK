@@ -20,7 +20,7 @@ MonoBehaviour:
   gameplaySceneAsset: {fileID: 102900000, guid: 1440b25fcad41344cb39cfb4c1df3ff5,
     type: 3}
   botsInServer: 1
-  useWeb: 1
+  useWeb: 0
   enableReconnect: 0
   ticksPerSecond: 20
   snapshotSendingPeriodInTicks: 1

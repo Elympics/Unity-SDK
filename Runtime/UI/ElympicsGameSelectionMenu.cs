@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System;
 using Elympics;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,7 +68,7 @@ public class ElympicsGameSelectionMenu : MonoBehaviour
 	private void UpdateButtonsInteractability()
 	{
 		string currentGameId = elympicsConfig.GetCurrentGameConfig().GameId;
-		foreach (var button in buttonsList) 
+		foreach (var button in buttonsList)
 			button.SetInteractable(button.LinkedId != currentGameId);
 	}
 

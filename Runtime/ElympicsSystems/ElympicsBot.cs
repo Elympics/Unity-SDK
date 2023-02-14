@@ -9,8 +9,9 @@ namespace Elympics
 		public override ElympicsPlayer Player => _gameBotAdapter.Player;
 		public override bool           IsBot    => true;
 
+		private static readonly object LastReceivedSnapshotLock = new object();
 		private ElympicsSnapshot _lastReceivedSnapshot;
-		private bool             _started;
+		private bool _started;
 
 		private GameBotAdapter _gameBotAdapter;
 
@@ -21,24 +22,31 @@ namespace Elympics
 			_gameBotAdapter = gameBotAdapter;
 			elympicsBehavioursManager.InitializeInternal(this);
 			_gameBotAdapter.SnapshotReceived += OnSnapshotReceived;
-			_gameBotAdapter.InitializedWithMatchPlayerData += OnStandaloneBotInit;
+			_gameBotAdapter.InitializedWithMatchPlayerData += data =>
+			{
+				OnStandaloneBotInit(data);
+				Enqueue(SetInitialized);
+			};
 		}
 
 		private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
 		{
 			if (!_started) StartBot();
 
-			if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
-				_lastReceivedSnapshot = elympicsSnapshot;
+			lock (LastReceivedSnapshotLock)
+				if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
+					_lastReceivedSnapshot = elympicsSnapshot;
 		}
 
 		private void StartBot() => _started = true;
 
-		protected override bool ShouldDoFixedUpdate() => _gameBotAdapter.Initialized && _started;
+		protected override bool ShouldDoFixedUpdate() => Initialized && _started;
 
 		protected override void DoFixedUpdate()
 		{
-			var snapshot = _lastReceivedSnapshot;
+			ElympicsSnapshot snapshot;
+			lock (LastReceivedSnapshotLock)
+				snapshot = _lastReceivedSnapshot;
 			elympicsBehavioursManager.ApplySnapshot(snapshot);
 			ProcessInput(snapshot.Tick);
 			elympicsBehavioursManager.CommitVars();

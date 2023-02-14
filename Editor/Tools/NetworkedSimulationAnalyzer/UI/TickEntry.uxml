@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Plugins/Elympics/Editor/Tools/NetworkedSimulationAnalyzer/UI/ServerAnalyzerEditorStyles.uss?fileID=7433441132597879392&amp;guid=2c62452bbadaedb4bb91ccb0e9ad1e73&amp;type=3#ServerAnalyzerEditorStyles" />
+    <ui:VisualElement name="tick-entry" class="tick-entry-data">
+        <ui:Label text="#000001" display-tooltip-when-elided="true" name="nr" style="width: 60px; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;" />
+        <ui:VisualElement name="time-usage" style="flex-direction: row; align-items: center; width: 48px;">
+            <ui:VisualElement name="time-usage-orb" style="width: 8px; background-color: rgb(255, 255, 255); border-top-left-radius: 6px; border-bottom-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; height: 8px;" />
+            <ui:Label text="00,0ms" display-tooltip-when-elided="true" name="execution-time" style="font-size: 10px; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 4px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

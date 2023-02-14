@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Elympics.Libraries;
 using MatchTcpClients;
-using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
 namespace Elympics
@@ -69,18 +67,17 @@ namespace Elympics
 			var matchData = _myMatchmakerClient.MatchData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_myUserId];
 
-			var gameServerClient = new GameServerClient(
-				new LoggerDebug(),
-				new GameServerJsonSerializer(),
-				new ClientSynchronizerConfig
-				{
-					// Todo use config ~pprzestrzelski 11.03.2021
-					TimeoutTime = TimeSpan.FromSeconds(10),
-					ContinuousSynchronizationMinimumInterval = TimeSpan.FromSeconds(1)
-				}
-			);
-			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);
-
+			var logger = new LoggerDebug();
+			var serializer = new GameServerJsonSerializer();
+			var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
+			var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
+			var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress, matchData.MatchId);
+			var gameServerClient = _elympicsGameConfig.UseWeb
+				? (GameServerClient)new WebGameServerClient(logger, serializer, config,
+					new HttpSignalingClient(webSignalingEndpoint),
+					WebRtcFactory.CreateInstance)
+				: new TcpUdpGameServerClient(logger, serializer, config,
+					IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
 
 			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId,
 				matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,

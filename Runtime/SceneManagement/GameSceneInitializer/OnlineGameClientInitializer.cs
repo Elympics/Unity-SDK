@@ -1,7 +1,6 @@
 ﻿using System;
 using Elympics.Libraries;
 using MatchTcpClients;
-using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
 namespace Elympics
@@ -18,22 +17,21 @@ namespace Elympics
 			}
 
 			var userId = ElympicsLobbyClient.Instance.UserId;
-			var matchmakerData = ElympicsLobbyClient.Instance.MatchData.MatchmakerData;
-			var gameEngineData = ElympicsLobbyClient.Instance.MatchData.GameEngineData;
+			var matchmakerData = matchData.MatchmakerData;
+			var gameEngineData = matchData.GameEngineData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];
 
-			var gameServerClient = new GameServerClient(
-				new LoggerDebug(),
-				new GameServerJsonSerializer(),
-				new ClientSynchronizerConfig
-				{
-					// Todo use config ~pprzestrzelski 11.03.2021
-					TimeoutTime = TimeSpan.FromSeconds(10),
-					ContinuousSynchronizationMinimumInterval = TimeSpan.FromMilliseconds(100),
-					UnreliablePingTimeoutInMilliseconds = TimeSpan.FromSeconds(5)
-				}
-			);
-			gameServerClient.OverrideWebFactories(WebRtcFactory.CreateInstance);
+			var logger = new LoggerDebug();
+			var serializer = new GameServerJsonSerializer();
+			var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
+			var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
+			var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress, matchData.MatchId);
+			var gameServerClient = elympicsGameConfig.UseWeb
+				? (GameServerClient)new WebGameServerClient(logger, serializer, config,
+					new HttpSignalingClient(webSignalingEndpoint),
+					WebRtcFactory.CreateInstance)
+				: new TcpUdpGameServerClient(logger, serializer, config,
+					IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
 			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, elympicsGameConfig.UseWeb, matchData.RegionName);
 			var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
 

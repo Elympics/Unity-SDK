@@ -1,0 +1,16 @@
+{
+    "name": "MatchTcpClients",
+    "references": [
+        "GUID:82078142f93b9c04f974f4f6b5a44d6d",
+        "GUID:eeb62814bea160a4c90e3270ed7414c0"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -24,8 +24,10 @@ namespace Elympics
 
 		[SerializeField] private bool botsInServer = true;
 
-		[SerializeField] private bool useWeb                       = false;
-		[SerializeField] private bool enableReconnect              = false;
+		[SerializeField] private bool useWeb = false;
+		[SerializeField] private bool enableReconnect = false;
+		[SerializeField] private ClientConnectionSettings connectionConfig = new ClientConnectionSettings();
+
 		[SerializeField] private int  ticksPerSecond               = 30;
 		[SerializeField] private int  snapshotSendingPeriodInTicks = 1;
 		[SerializeField] private int  inputLagTicks                = 2;
@@ -62,9 +64,11 @@ namespace Elympics
 
 		public bool BotsInServer => botsInServer;
 
-		public bool  UseWeb                       => GetUseWeb(useWeb);
-		public bool  Prediction                   => prediction;
-		public bool  ReconnectEnabled             => enableReconnect;
+		public bool UseWeb => GetUseWeb(useWeb);
+		public bool Prediction => prediction;
+		public bool ReconnectEnabled => enableReconnect;
+		public ClientConnectionSettings ConnectionConfig => connectionConfig;
+
 		public int   TicksPerSecond               => ticksPerSecond;
 		public int   SnapshotSendingPeriodInTicks => snapshotSendingPeriodInTicks;
 		public float TickDuration                 => 1.0f / ticksPerSecond;

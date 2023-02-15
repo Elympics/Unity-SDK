@@ -1,10 +1,13 @@
 ## [0.5.1](https://github.com/Elympics/Unity-SDK/compare/v0.5.0...v0.5.1) (2023-02-14)
 
 
-### Features
+### Bug Fixes 🪲
 
 * Increase TCP and WebRTC session timeout, refactor GameServerClient ([890e89e](https://github.com/Elympics/Unity-SDK/commit/890e89e9cbf62177dd9667b6c791f88128204971))
 
+### Features
+
+* Make client connection timings configurable from Elympics Game Config ([890e89e](https://github.com/Elympics/Unity-SDK/commit/890e89e9cbf62177dd9667b6c791f88128204971))
 
 
 ## [0.5.0](https://github.com/Elympics/Unity-SDK/compare/v0.4.9...v0.5.0) (2023-02-07)
@@ -45,9 +48,9 @@
 
 ### Features
 
-- Possibility of joining region-specific matchmaking queues.  
-  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.  
-  Empty/null region name means that servers based in Warsaw are used (legacy behavior).  
+- Possibility of joining region-specific matchmaking queues.
+  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.
+  Empty/null region name means that servers based in Warsaw are used (legacy behavior).
   Regions configured for active game can be retrieved using "Synchronize" button in "Manage games in Elympics" window.
 
 

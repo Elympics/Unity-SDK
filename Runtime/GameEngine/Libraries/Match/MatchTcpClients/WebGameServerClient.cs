@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
-using UnityEngine;
 using WebRtcWrapper;
 
 namespace MatchTcpClients
@@ -81,16 +80,16 @@ namespace MatchTcpClients
 			return Task.FromResult(true);
 		}
 
-		private async Task<IGameServerWebSignalingClient.Response> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
+		private async Task<WebSignalingResponse> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
 		{
-			IGameServerWebSignalingClient.Response response = null;
+			WebSignalingResponse response = null;
 			for (var i = 0; i < Config.OfferMaxRetries; i++)
 			{
 				if (ct.IsCancellationRequested)
 					break;
 				var cts = new CancellationTokenSource();
 
-				void OnAnswerReceived(IGameServerWebSignalingClient.Response r)
+				void OnAnswerReceived(WebSignalingResponse r)
 				{
 					signalingClient.ReceivedResponse -= OnAnswerReceived;
 					response = r;

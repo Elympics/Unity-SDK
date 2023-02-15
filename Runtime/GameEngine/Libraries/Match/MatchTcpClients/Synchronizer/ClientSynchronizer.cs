@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +18,7 @@ namespace MatchTcpClients.Synchronizer
 
 		private readonly ClientSynchronizerConfig _config;
 		private          string                   _sessionToken;
-		private          DateTime?                _lastReceivedPingDataTime = null;
+		private          DateTime?                _lastReceivedPingDataTime;
 		private          NtpData                  _lastReceivedUnreliableNtpData;
 		private          bool                     _waitingForFirstUnreliablePing = true;
 

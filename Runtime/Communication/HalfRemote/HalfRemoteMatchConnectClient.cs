@@ -48,7 +48,7 @@ namespace Elympics
 		private TcpClient     _tcpClient;
 		private IWebRtcClient _webRtcClient;
 
-		private IGameServerWebSignalingClient.Response _webResponse;
+		private WebSignalingResponse _webResponse;
 
 		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWeb)
 		{
@@ -67,10 +67,10 @@ namespace Elympics
 		public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
 		{
 			return _useWeb
-				? ConnectUsingWeb(ConnectedCallback, ct)
-				: ConnectUsingTcp(ConnectedCallback, ct);
+				? ConnectUsingWeb(OnConnectedCallback, ct)
+				: ConnectUsingTcp(OnConnectedCallback, ct);
 
-			void ConnectedCallback(bool connected)
+			void OnConnectedCallback(bool connected)
 			{
 				if (!connected)
 					return;
@@ -168,12 +168,12 @@ namespace Elympics
 			var channelOpened = false;
 			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);
 
-			void ChannelOpenedHandler(byte[] data, string playerId)
+			void OnChannelOpened(byte[] data, string playerId)
 			{
 				channelOpened = true;
 			}
 
-			client.InGameDataForPlayerOnUnreliableChannelGenerated += ChannelOpenedHandler;
+			client.InGameDataForPlayerOnUnreliableChannelGenerated += OnChannelOpened;
 
 			_webRtcClient.OnAnswer(answer);
 
@@ -187,7 +187,7 @@ namespace Elympics
 				yield return WaitTimeToRetryConnect;
 			}
 
-			client.InGameDataForPlayerOnUnreliableChannelGenerated -= ChannelOpenedHandler;
+			client.InGameDataForPlayerOnUnreliableChannelGenerated -= OnChannelOpened;
 
 			if (!channelOpened)
 			{

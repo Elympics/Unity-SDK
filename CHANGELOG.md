@@ -48,9 +48,9 @@
 
 ### Features
 
-- Possibility of joining region-specific matchmaking queues.
-  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.
-  Empty/null region name means that servers based in Warsaw are used (legacy behavior).
+- Possibility of joining region-specific matchmaking queues.  
+  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.  
+  Empty/null region name means that servers based in Warsaw are used (legacy behavior).  
   Regions configured for active game can be retrieved using "Synchronize" button in "Manage games in Elympics" window.
 
 

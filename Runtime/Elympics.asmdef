@@ -2,13 +2,7 @@
     "name": "Elympics",
     "references": [
         "ParrelSync",
-        "UniTask",
-        "MatchTcpClients",
-        "MatchTcpLibrary",
-        "MatchTcpModels",
-        "LobbyPublicApiClients.Abstraction",
-        "LobbyPublicApiModels",
-        "Daftmobile.Api"
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

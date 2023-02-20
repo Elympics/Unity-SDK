@@ -50,6 +50,7 @@ namespace MatchTcpClients
 
 		protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
 		{
+			_webRtcClient.ReceiveWithThread();
 			_answer = null;
 			var (offer, offerSet) = await TryCreateOfferAsync();
 			if (!offerSet)
@@ -81,16 +82,16 @@ namespace MatchTcpClients
 			return Task.FromResult(true);
 		}
 
-		private async Task<IGameServerWebSignalingClient.Response> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
+		private async Task<WebSignalingClientResponse> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
 		{
-			IGameServerWebSignalingClient.Response response = null;
+			WebSignalingClientResponse response = null;
 			for (var i = 0; i < Config.OfferMaxRetries; i++)
 			{
 				if (ct.IsCancellationRequested)
 					break;
 				var cts = new CancellationTokenSource();
 
-				void OnAnswerReceived(IGameServerWebSignalingClient.Response r)
+				void OnAnswerReceived(WebSignalingClientResponse r)
 				{
 					signalingClient.ReceivedResponse -= OnAnswerReceived;
 					response = r;

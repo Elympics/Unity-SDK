@@ -5,14 +5,14 @@ namespace MatchTcpLibrary
 {
 	public interface IGameServerWebSignalingClient
 	{
-		event Action<Response> ReceivedResponse;
+		event Action<WebSignalingClientResponse> ReceivedResponse;
 
 		void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default);
+	}
 
-		public class Response
-		{
-			public bool IsError { get; set; }
-			public string Text { get; set; }
-		}
+	public class WebSignalingClientResponse
+	{
+		public bool   IsError { get; set; }
+		public string Text    { get; set; }
 	}
 }

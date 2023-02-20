@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using WebRtcWrapper;
 
-#pragma warning disable CS0067
-
 namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
 	public class WebRtcUnreliableNetworkClient : IUnreliableNetworkClient
@@ -38,7 +36,6 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 				Disconnected?.Invoke();
 			};
 			_webRtcClient.UnreliableReceived += data => DataReceived?.Invoke(data);
-			_webRtcClient.ReceiveUnreliable();
 		}
 
 		public void       CreateAndBind(int port)                 => throw new NotImplementedException();

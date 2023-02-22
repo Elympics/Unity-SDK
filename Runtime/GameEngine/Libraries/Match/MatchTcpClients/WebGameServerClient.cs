@@ -101,13 +101,15 @@ namespace MatchTcpClients
 				signalingClient.ReceivedResponse += OnAnswerReceived;
 				signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
-				await Task.Delay(Config.OfferRetryDelay, linkedCts.Token).ContinueWith(_ => { }, CancellationToken.None);
+				await Task.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();
 				signalingClient.ReceivedResponse -= OnAnswerReceived;
 				cts.Cancel();
 
 				if (response?.IsError == false)
 					break;
 				Logger.Error("[Elympics] WebRTC answer error: {0}", response?.Text);
+
+				await Task.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
 			}
 
 			return response;

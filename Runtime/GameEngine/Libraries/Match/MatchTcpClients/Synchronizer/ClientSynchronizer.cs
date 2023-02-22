@@ -57,7 +57,7 @@ namespace MatchTcpClients.Synchronizer
 					stopwatch.Reset();
 
 					if (timeToWait > TimeSpan.Zero)
-						await Task.Delay(timeToWait, ct).ContinueWith(_ => { }, CancellationToken.None);
+						await Task.Delay(timeToWait, ct).CatchOperationCanceledException();
 				}
 			}
 		}
@@ -73,7 +73,7 @@ namespace MatchTcpClients.Synchronizer
 			SendSynchronizeRequest();
 
 			var pingCompletionTask = pingCompletionSource.Task;
-			var timeoutTask = Task.Delay(_config.TimeoutTime, ct).ContinueWith(_ => { }, CancellationToken.None);
+			var timeoutTask = Task.Delay(_config.TimeoutTime, ct).CatchOperationCanceledException();
 
 			var firstFinishedTask = await Task.WhenAny(pingCompletionTask, timeoutTask);
 			_pingResponseCallback = null;

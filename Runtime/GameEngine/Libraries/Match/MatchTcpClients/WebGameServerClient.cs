@@ -129,7 +129,7 @@ namespace MatchTcpClients
 
 			_webRtcClient.OfferCreated += OnOfferCreated;
 			_webRtcClient.CreateOffer();
-			await Task.Delay(Config.OfferTimeout, cts.Token).ContinueWith(_ => { }, CancellationToken.None);
+			await Task.Delay(Config.OfferTimeout, cts.Token).CatchOperationCanceledException();
 			_webRtcClient.OfferCreated -= OnOfferCreated;
 			return (offer, offerSet);
 		}

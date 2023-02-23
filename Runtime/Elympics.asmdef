@@ -2,8 +2,7 @@
     "name": "Elympics",
     "references": [
         "ParrelSync",
-        "UniTask",
-        "LobbyPublicApiModels"
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

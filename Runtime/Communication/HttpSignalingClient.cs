@@ -1,7 +1,8 @@
 using System;
-using System.Collections;
 using System.Text;
+using System.Threading;
 using MatchTcpLibrary;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Elympics
@@ -10,48 +11,60 @@ namespace Elympics
 	{
 		private readonly Uri _uri;
 
-		private const int RequestTimeout = 5;
+		private UnityWebRequestAsyncOperation _requestAsyncOperation;
+		private CancellationTokenRegistration? _ctr;
 
-		private UnityWebRequest _request;
+		public event Action<WebSignalingResponse> ReceivedResponse;
 
 		public HttpSignalingClient(Uri uri)
 		{
 			_uri = uri;
 		}
 
-		public IEnumerator PostOfferAsync(string offer)
+		public void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
 		{
-			_request?.Abort();
-
+			Reset();
 			var rawOffer = Encoding.UTF8.GetBytes(offer);
-
-			_request = new UnityWebRequest(_uri, "POST")
+			var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
 			{
-				timeout = RequestTimeout,
+				timeout = timeoutSeconds,
 				uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
 				downloadHandler = new DownloadHandlerBuffer()
 			};
 
-			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(_request);
+			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
 
-			yield return _request.SendWebRequest();
+			_requestAsyncOperation = request.SendWebRequest();
+			_requestAsyncOperation.completed += HandleCompleted;
+			_ctr = ct.Register(Reset);
 		}
 
-		public bool IsError => _request.IsConnectionError() || _request.IsProtocolError();
-
-
-		public string Error
+		private void Reset()
 		{
-			get
+			if (_requestAsyncOperation != null)
 			{
-				if (_request.IsConnectionError())
-					return _request.error;
-				if (_request.IsProtocolError())
-					return _request.downloadHandler.text;
-				return null;
+				_requestAsyncOperation.completed -= HandleCompleted;
+				_requestAsyncOperation.webRequest?.Abort();
 			}
+			_requestAsyncOperation = null;
+			_ctr?.Dispose();
 		}
 
-		public string Answer => !IsError ? _request.downloadHandler.text : null;
+		private void HandleCompleted(AsyncOperation asyncOp)
+		{
+			asyncOp.completed -= HandleCompleted;
+			if (!(asyncOp is UnityWebRequestAsyncOperation webAsyncOp) || webAsyncOp.webRequest == null)
+				return;
+			var request = webAsyncOp.webRequest;
+			var isError = request.IsConnectionError() || request.IsProtocolError();
+			var text = request.IsConnectionError()
+				? request.error
+				: request.downloadHandler.text;
+			ReceivedResponse?.Invoke(new WebSignalingResponse
+			{
+				IsError = isError,
+				Text = text
+			});
+		}
 	}
 }

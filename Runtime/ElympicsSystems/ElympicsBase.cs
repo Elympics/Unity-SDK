@@ -192,9 +192,9 @@ namespace Elympics
 
 		#region Client
 
-		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => throw new SupportedOnlyByClientException();
+		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
 		public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
-		public virtual void        Disconnect()                                                                    => throw new SupportedOnlyByClientException();
+		public virtual void Disconnect() => throw new SupportedOnlyByClientException();
 
 		#endregion
 

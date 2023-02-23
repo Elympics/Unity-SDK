@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elympics
 {
@@ -39,9 +40,9 @@ namespace Elympics
 
 		#region Client
 
-		IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct);
-		IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct);
-		void        Disconnect();
+		IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback = null, CancellationToken ct = default);
+		IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback = null, CancellationToken ct = default);
+		void Disconnect();
 
 		#endregion
 

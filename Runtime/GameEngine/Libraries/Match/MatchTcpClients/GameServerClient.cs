@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
@@ -119,7 +117,7 @@ namespace MatchTcpClients
 					return false;
 
 				var sessionConnectedCompletionTask = sessionConnectedCompletionSource.Task;
-				var timeoutTask = Task.Delay(Config.SessionConnectTimeout, ct).ContinueWith(_ => { }, CancellationToken.None);
+				var timeoutTask = Task.Delay(Config.SessionConnectTimeout, ct).CatchOperationCanceledException();
 
 				return await Task.WhenAny(sessionConnectedCompletionTask, timeoutTask) != timeoutTask;
 			}

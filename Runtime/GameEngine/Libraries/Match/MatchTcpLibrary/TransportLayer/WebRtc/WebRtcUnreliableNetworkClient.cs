@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using WebRtcWrapper;
 
+#pragma warning disable CS0067
+
 namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
 	public class WebRtcUnreliableNetworkClient : IUnreliableNetworkClient

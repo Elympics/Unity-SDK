@@ -25,7 +25,7 @@ namespace Elympics
 		{
 			_player = player;
 
-			_currentNetworkId = new FactoryNetworkIdEnumerator(player.StartNetworkId);
+			_currentNetworkId = new FactoryNetworkIdEnumerator(player.StartNetworkId, player.EndNetworkId);
 			_instancesData = new DynamicElympicsBehaviourInstancesData(player.StartNetworkId);
 			_createdInstanceWrappersCache = new Dictionary<int, CreatedInstanceWrapper>();
 			_createdGameObjectsIds = new Dictionary<GameObject, int>();
@@ -129,12 +129,14 @@ namespace Elympics
 				throw new ArgumentException($"Fatal error! Created game object with id {instanceId}, doesn't have cached instance", nameof(instanceId));
 
 			foreach (var instanceNetworkId in instance.NetworkIds)
+			{
 				RemoveBehaviour?.Invoke(instanceNetworkId);
+				_currentNetworkId.ReleaseId(instanceNetworkId);
+			}
 
 			_instancesData.Remove(instanceId);
 			_createdGameObjectsIds.Remove(instance.GameObject);
 			_createdInstanceWrappersCache.Remove(instanceId);
-
 			Destroy(_player, instance.GameObject);
 		}
 

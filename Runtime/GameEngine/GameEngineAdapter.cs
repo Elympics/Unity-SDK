@@ -17,11 +17,7 @@ namespace Elympics
 {
 	public class GameEngineAdapter : IGameEngine
 	{
-		private const int    LogsSkipCallbackFrames     = 3;
-		private const string LogsAtUnityEngineNamespace = "  at " + nameof(UnityEngine);
-		private const int    MaxStackFramesToLog        = 5;
-
-		internal ElympicsPlayer[] Players { get; private set; } = new ElympicsPlayer[0];
+		internal ElympicsPlayer[] Players { get; private set; } = Array.Empty<ElympicsPlayer>();
 
 		public event Action<byte[], string>       InGameDataForPlayerOnReliableChannelGenerated;
 		public event Action<byte[], string>       InGameDataForPlayerOnUnreliableChannelGenerated;
@@ -34,73 +30,29 @@ namespace Elympics
 		public event Action<InitialMatchPlayerDatas> InitializedWithMatchPlayerDatas;
 
 		private IGameEngineLogger                  _logger;
-		private StringBuilder                      _loggerSb;
 		private InitialMatchUserDatas              _initialMatchUserDatas;
 		private Dictionary<string, ElympicsPlayer> _userIdsToPlayers;
 		private Dictionary<ElympicsPlayer, string> _playersToUserIds;
 
+		private readonly LogHandler _logHandler;
 		private readonly int _playerInputBufferSize;
 
-		public ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new ConcurrentDictionary<ElympicsPlayer, ElympicsInput>();
+		public readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput =
+			new ConcurrentDictionary<ElympicsPlayer, ElympicsInput>();
 		public ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } =
 			new ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>>();
 
 
-		public GameEngineAdapter(ElympicsGameConfig elympicsGameConfig)
+		public GameEngineAdapter(ElympicsGameConfig elympicsGameConfig, LogHandler logHandler)
 		{
 			_playerInputBufferSize = elympicsGameConfig.PredictionBufferSize;
+			_logHandler = logHandler;
 		}
 
 		public void Init(IGameEngineLogger logger, InitialMatchData initialMatchData)
 		{
 			_logger = logger;
-			_loggerSb = new StringBuilder();
-			Application.logMessageReceived += OnLogMessageReceived;
-		}
-
-		private void OnLogMessageReceived(string condition, string trace, LogType type)
-		{
-			switch (type)
-			{
-				case LogType.Error:
-					_logger.Error("{0}\n{1}", condition, GetStackTraceForLog());
-					break;
-				case LogType.Assert:
-					_logger.Fatal("{0}\n{1}", condition, trace);
-					break;
-				case LogType.Warning:
-					_logger.Warning("{0}\n{1}", condition, GetStackTraceForLog());
-					break;
-				case LogType.Log:
-					_logger.Info("{0}", condition);
-					break;
-				case LogType.Exception:
-					_logger.Error("{0}\n{1}", condition, trace);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException(nameof(type), type, null);
-			}
-		}
-
-		private string GetStackTraceForLog()
-		{
-			var stackTrace = SplitToLines(Environment.StackTrace);
-			stackTrace = stackTrace.Skip(LogsSkipCallbackFrames).SkipWhile(x => x.StartsWith(LogsAtUnityEngineNamespace)).Take(MaxStackFramesToLog);
-			_loggerSb.Clear();
-			foreach (var frame in stackTrace)
-				_loggerSb.AppendLine(frame);
-
-			return _loggerSb.ToString();
-		}
-
-		private static IEnumerable<string> SplitToLines(string input)
-		{
-			using (var reader = new StringReader(input))
-			{
-				string line;
-				while ((line = reader.ReadLine()) != null)
-					yield return line;
-			}
+			_logHandler.Logger = _logger;
 		}
 
 		public void Init2(InitialMatchUserDatas initialMatchUserDatas)
@@ -141,8 +93,8 @@ namespace Elympics
 		private void AddUnreliableInputsToBuffer(byte[] data, string userId)
 		{
 			var player = _userIdsToPlayers[userId];
-			
-			var inputs = data.DeserializeList<ElympicsInput>();;
+
+			var inputs = data.DeserializeList<ElympicsInput>();
 
 			foreach (var input in inputs)
 				AddInputToBuffer(input, player);

@@ -1,27 +1,11 @@
-## [0.5.2](https://github.com/Elympics/Unity-SDK/compare/v0.4.10...v0.5.2) (2023-03-06)
+## [0.5.2](https://github.com/Elympics/Unity-SDK/compare/v0.5.1...v0.5.2) (2023-03-06)
 
 
 ### Bug Fixes 🪲
 
-* Add a delay before posting WebRTC offer again ([70845eb](https://github.com/Elympics/Unity-SDK/commit/70845eb489d74c524d731d7607101124d842313b))
-* Backport changes to TCP/WebRTC session to Unity 2019.4 ([2d48501](https://github.com/Elympics/Unity-SDK/commit/2d48501eb4fd90a09505dfe3db0f47cf48f1102b))
-* Change duplicated parameter name ([13e82db](https://github.com/Elympics/Unity-SDK/commit/13e82db713c4e0def47e4d53c7508276bf779648))
-* internalized unity connectors to not interfere with external libraries ([eea1277](https://github.com/Elympics/Unity-SDK/commit/eea12776ae4ae792f263e7356ff2de47a4e4d5e5))
-* Log server errors to stderr ([fe383b6](https://github.com/Elympics/Unity-SDK/commit/fe383b6d0e5a6a065f49d16438db7d30cb8fd73d))
-* Make sure Elympics-SDK-Version HTTP header is not empty ([1bbb97d](https://github.com/Elympics/Unity-SDK/commit/1bbb97df800d8ea1d457a99d66612912d745aced))
-* NetworkId generator refactor ([11ca5f0](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
-* Put correct paths in UXML files of Networked Simulation Analyzer ([46b22ce](https://github.com/Elympics/Unity-SDK/commit/46b22ce758ae5a8eb5e9d836378eb582f569af75))
-* Remove superfluous Assembly Definitions ([953640e](https://github.com/Elympics/Unity-SDK/commit/953640e35053e1be89321acb6b4778b99ee091c0))
-* Replace ContinueWith calls with try-catch blocks ([822cf1e](https://github.com/Elympics/Unity-SDK/commit/822cf1e1b7bbedf82b6874927e9a3c31b10546e9))
-* Same name ElympicsVars in one ElympicsBehaviour error of the NSA collecting phase ([e084387](https://github.com/Elympics/Unity-SDK/commit/e084387a84c11b375d04a004d4bf8d70dd30f01a))
-* Use correct Elympics SDK version in web headers ([7715a78](https://github.com/Elympics/Unity-SDK/commit/7715a78e8493ee27ff4d08f94503293bec2f5f4d))
-* webrtc client race condition on receive fixed, compatibility with 2019 unity ([c47765d](https://github.com/Elympics/Unity-SDK/commit/c47765daa966127665550183fa51846e7a1f88df))
-
-
-### Features
-
-* Implement Networked Simulation Analyzer ([42c0043](https://github.com/Elympics/Unity-SDK/commit/42c00437185f3ee5473904b58a18f24c986e9b5d))
-
+* NetworkId will not generate IDs above the declared limit ([11ca5f0d](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
+* If the NetworkId limit will be overflown, the NetworkID generator will reiterate again through min-max limits to find the available IDs. Throw exceptions when failed to do so. ([11ca5f0d](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
+* Log server errors to stderr ([fe383b6d](https://github.com/Elympics/Unity-SDK/commit/fe383b6d0e5a6a065f49d16438db7d30cb8fd73d))
 
 
 ## [0.5.1](https://github.com/Elympics/Unity-SDK/compare/v0.5.0...v0.5.1) (2023-02-14)

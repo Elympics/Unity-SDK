@@ -60,13 +60,12 @@ namespace Elympics.Libraries
 				WebRtcOnAnswer(_instanceId, answerJson);
 			}
 
-			public void ReceiveReliable()
+			public void ReceiveWithThread()
 			{
 			}
 
-			public void ReceiveUnreliable()
-			{
-			}
+			public bool ReceiveReliableOnce()   => true;
+			public bool ReceiveUnreliableOnce() => true;
 
 			public void Close()
 			{

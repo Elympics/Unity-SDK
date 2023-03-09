@@ -6,15 +6,17 @@ namespace Elympics
 	[Serializable]
 	public struct ElympicsPlayer : IEquatable<ElympicsPlayer>, IComparable<ElympicsPlayer>
 	{
-		private const int AllValue     = -3;
-		private const int WorldValue   = -2;
-		private const int InvalidValue = -1;
+		private const int AllValue        = -3;
+		private const int WorldValue      = -2;
+		private const int InvalidValue    = -1;
+		private const int NetworkIdOffset = 4;
 
-		internal int StartNetworkId => (playerIndex + 4) * ElympicsBehavioursManager.NetworkIdRange;
+		internal int StartNetworkId => (playerIndex + NetworkIdOffset) * ElympicsBehavioursManager.NetworkIdRange;
+		internal int EndNetworkId   => StartNetworkId - 1 + ElympicsBehavioursManager.NetworkIdRange;
 
-		public static readonly ElympicsPlayer All     = new ElympicsPlayer {playerIndex = AllValue};
-		public static readonly ElympicsPlayer World   = new ElympicsPlayer {playerIndex = WorldValue};
-		public static readonly ElympicsPlayer Invalid = new ElympicsPlayer {playerIndex = InvalidValue};
+		public static readonly ElympicsPlayer All     = new ElympicsPlayer { playerIndex = AllValue };
+		public static readonly ElympicsPlayer World   = new ElympicsPlayer { playerIndex = WorldValue };
+		public static readonly ElympicsPlayer Invalid = new ElympicsPlayer { playerIndex = InvalidValue };
 
 		[SerializeField] internal int playerIndex;
 

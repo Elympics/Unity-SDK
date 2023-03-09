@@ -1,3 +1,13 @@
+## [0.5.2](https://github.com/Elympics/Unity-SDK/compare/v0.5.1...v0.5.2) (2023-03-06)
+
+
+### Bug Fixes 🪲
+
+* NetworkId will not generate IDs above the declared limit ([11ca5f0d](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
+* If the NetworkId limit will be overflown, the NetworkID generator will reiterate again through min-max limits to find the available IDs. Throw exceptions when failed to do so. ([11ca5f0d](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
+* Log server errors to stderr ([fe383b6d](https://github.com/Elympics/Unity-SDK/commit/fe383b6d0e5a6a065f49d16438db7d30cb8fd73d))
+
+
 ## [0.5.1](https://github.com/Elympics/Unity-SDK/compare/v0.5.0...v0.5.1) (2023-02-14)
 
 

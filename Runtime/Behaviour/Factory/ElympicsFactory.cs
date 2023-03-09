@@ -33,15 +33,15 @@ namespace Elympics
 
 			_elympicsFactoryParts = new SortedDictionary<ElympicsPlayer, ElympicsFactoryPart>();
 
-			_checkEqualsEnumerator = new FactoryNetworkIdEnumerator(_player.StartNetworkId);
+			_checkEqualsEnumerator = new FactoryNetworkIdEnumerator(_player.StartNetworkId, _player.EndNetworkId);
 			_checkEqualsData = new DynamicElympicsBehaviourInstancesData(_player.StartNetworkId);
 
 			_playersObjects = new Dictionary<GameObject, ElympicsPlayer>();
 
 			_predictablePlayers = new HashSet<int>
 			{
-				(int) _player,
-				(int) ElympicsPlayer.All
+				(int)_player,
+				(int)ElympicsPlayer.All
 			};
 			_collectedPlayerIndexes = new HashSet<int>();
 			_elympicsFactoryPartsToRemove = new List<ElympicsPlayer>();
@@ -73,7 +73,7 @@ namespace Elympics
 		{
 			var state = new FactoryState
 			{
-				Parts = _elympicsFactoryParts.Select(x => new KeyValuePair<int, byte[]>((int) x.Key, x.Value.GetState())).ToList()
+				Parts = _elympicsFactoryParts.Select(x => new KeyValuePair<int, byte[]>((int)x.Key, x.Value.GetState())).ToList()
 			};
 
 			return state;
@@ -130,7 +130,7 @@ namespace Elympics
 			_elympicsFactoryPartsToRemove.Clear();
 			foreach (var player in _elympicsFactoryParts.Keys)
 			{
-				if (!playerIndexes.Contains((int) player))
+				if (!playerIndexes.Contains((int)player))
 					_elympicsFactoryPartsToRemove.Add(player);
 			}
 
@@ -172,13 +172,12 @@ namespace Elympics
 
 		internal bool ArePredictableStatesEqual(FactoryState historyState, FactoryState receivedState)
 		{
-			return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player) &&
-			       ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All);
+			return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player) && ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All);
 		}
 
 		private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player)
 		{
-			var playerIndex = (int) player;
+			var playerIndex = (int)player;
 			var historyStateData = FindStateData(historyState, playerIndex);
 			var receivedStateData = FindStateData(receivedState, playerIndex);
 

@@ -6,9 +6,9 @@ namespace Elympics
 	{
 		private readonly NetworkIdEnumerator _enumerator;
 
-		public FactoryNetworkIdEnumerator(int startNetworkId, bool enabledSynchronization = true) : base(enabledSynchronization)
+		public FactoryNetworkIdEnumerator(int startNetworkId, int endNetworkId, bool enabledSynchronization = true) : base(enabledSynchronization)
 		{
-			_enumerator = new NetworkIdEnumerator(startNetworkId);
+			_enumerator = NetworkIdEnumerator.CreateNetworkIdEnumerator(startNetworkId,endNetworkId);
 		}
 
 		public override void Serialize(BinaryWriter bw)
@@ -30,5 +30,6 @@ namespace Elympics
 		public int  GetCurrent()            => _enumerator.GetCurrent();
 		public void MoveTo(int to)          => _enumerator.MoveTo(to);
 		public int  MoveNextAndGetCurrent() => _enumerator.MoveNextAndGetCurrent();
+		public void ReleaseId(int networkId) => _enumerator.ReleaseId(networkId);
 	}
 }

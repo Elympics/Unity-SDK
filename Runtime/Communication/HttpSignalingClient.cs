@@ -14,7 +14,7 @@ namespace Elympics
 		private UnityWebRequestAsyncOperation _requestAsyncOperation;
 		private CancellationTokenRegistration? _ctr;
 
-		public event Action<WebSignalingResponse> ReceivedResponse;
+		public event Action<WebSignalingClientResponse> ReceivedResponse;
 
 		public HttpSignalingClient(Uri uri)
 		{
@@ -60,7 +60,7 @@ namespace Elympics
 			var text = request.IsConnectionError()
 				? request.error
 				: request.downloadHandler.text;
-			ReceivedResponse?.Invoke(new WebSignalingResponse
+			ReceivedResponse?.Invoke(new WebSignalingClientResponse
 			{
 				IsError = isError,
 				Text = text

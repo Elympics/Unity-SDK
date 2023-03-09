@@ -48,7 +48,7 @@ namespace Elympics
 		private TcpClient     _tcpClient;
 		private IWebRtcClient _webRtcClient;
 
-		private WebSignalingResponse _webResponse;
+		private WebSignalingClientResponse _webResponse;
 
 		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWeb)
 		{

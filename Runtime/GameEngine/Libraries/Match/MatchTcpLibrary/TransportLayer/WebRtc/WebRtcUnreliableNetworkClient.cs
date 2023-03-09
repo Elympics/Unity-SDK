@@ -38,7 +38,6 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 				Disconnected?.Invoke();
 			};
 			_webRtcClient.UnreliableReceived += data => DataReceived?.Invoke(data);
-			_webRtcClient.ReceiveUnreliable();
 		}
 
 		public void       CreateAndBind(int port)                 => throw new NotImplementedException();

@@ -276,4 +276,4 @@ release:github:
     - job: get-changelog-for-release
       artifacts: true
   script:
-    - gh release create $CI_COMMIT_TAG -F ./release.description --repo $GH_REPO --verify-tag
+    - gh release create "$CI_COMMIT_TAG" -t "$CI_COMMIT_TAG" -F ./release.description --repo "$GH_REPO" --verify-tag

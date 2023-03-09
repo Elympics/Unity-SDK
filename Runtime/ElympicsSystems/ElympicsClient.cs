@@ -22,7 +22,9 @@ namespace Elympics
 		public override bool           IsClient => true;
 
 		private bool _started;
-
+#if ELYMPICS_DEBUG
+		private ClientTickCalculatorNetworkDetailsToFile logToFile;
+#endif
 		public IMatchConnectClient MatchConnectClient
 		{
 			get
@@ -41,8 +43,8 @@ namespace Elympics
 		private ClientTickCalculator     _clientTickCalculator;
 		private PredictionBuffer         _predictionBuffer;
 
-		private static readonly object LastReceivedSnapshotLock = new object();
-		private ElympicsSnapshot _lastReceivedSnapshot;
+		private static readonly object           LastReceivedSnapshotLock = new object();
+		private                 ElympicsSnapshot _lastReceivedSnapshot;
 
 		private DateTime? _lastClientPrintNetworkConditions;
 
@@ -57,6 +59,9 @@ namespace Elympics
 
 			elympicsBehavioursManager.InitializeInternal(this);
 			_roundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
+#if ELYMPICS_DEBUG
+			logToFile = new ClientTickCalculatorNetworkDetailsToFile();
+#endif
 			_clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator);
 			_predictionBuffer = new PredictionBuffer(elympicsGameConfig);
 
@@ -98,6 +103,10 @@ namespace Elympics
 		{
 			if (_matchClient != null)
 				_matchClient.SnapshotReceived -= OnSnapshotReceived;
+
+#if ELYMPICS_DEBUG
+			logToFile.DeInit();
+#endif
 		}
 
 		private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
@@ -124,7 +133,13 @@ namespace Elympics
 
 			var networkDetails = _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, _tickStartUtc);
 			if (Config.DetailedNetworkLog)
+			{
 				LogNetworkConditionsInInterval(networkDetails);
+#if ELYMPICS_DEBUG
+				logToFile.LogNetworkDetailsToFile(networkDetails);
+#endif
+			}
+
 			_predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
 
 			var lastDelayedInputTick = _clientTickCalculator.LastDelayedInputTick;
@@ -269,9 +284,9 @@ namespace Elympics
 
 		#region IElympics
 
-		public override IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsPlayer(connectedCallback, ct);
+		public override IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => MatchConnectClient.ConnectAndJoinAsPlayer(connectedCallback, ct);
 		public override IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsSpectator(connectedCallback, ct);
-		public override void Disconnect() => MatchConnectClient.Disconnect();
+		public override void        Disconnect()                                                                    => MatchConnectClient.Disconnect();
 
 		#endregion
 	}

@@ -10,8 +10,8 @@ namespace Elympics
 		private static readonly ElympicsPlayer ServerPlayer = ElympicsPlayer.World;
 
 		private ElympicsPlayer _currentPlayer = ElympicsPlayer.Invalid;
-		private bool           _currentIsBot;
-		private bool           _currentIsClient;
+		private bool _currentIsBot;
+		private bool _currentIsClient;
 
 		public override ElympicsPlayer Player => _currentPlayer;
 		public override bool IsServer => true;
@@ -25,11 +25,11 @@ namespace Elympics
 
 		private GameEngineAdapter _gameEngineAdapter;
 		private InitialMatchPlayerDatas _playerData;
-		private ElympicsPlayer[]  _playersOfBots;
-		private ElympicsPlayer[]  _playersOfClients;
+		private ElympicsPlayer[] _playersOfBots;
+		private ElympicsPlayer[] _playersOfClients;
 
 		private List<ElympicsInput> _inputList;
-		private Dictionary<int,TickToPlayerInput> _tickToPlayerInputHolder;
+		private Dictionary<int, TickToPlayerInput> _tickToPlayerInputHolder;
 
 		private ElympicsGameConfig _currentGameConfig;
 
@@ -56,7 +56,7 @@ namespace Elympics
 			_inputList = new List<ElympicsInput>();
 			elympicsBehavioursManager.InitializeInternal(this);
 			SetupCallbacks();
-			if(_currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
+			if (_currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
 				Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
 		}
 
@@ -107,10 +107,13 @@ namespace Elympics
 		{
 			_tickStartUtc = DateTime.UtcNow;
 
-			if (HandlingBotsInServer)
-				GatherInputsFromServerBotsOrClient(_playersOfBots, SwitchBehaviourToBot, BotInputGetter);
-			if (HandlingClientsInServer)
-				GatherInputsFromServerBotsOrClient(_playersOfClients, SwitchBehaviourToClient, ClientInputGetter);
+			using (ElympicsMarkers.Elympics_GatheringClientInputMarker.Auto())
+			{
+				if (HandlingBotsInServer)
+					GatherInputsFromServerBotsOrClient(_playersOfBots, SwitchBehaviourToBot, BotInputGetter);
+				if (HandlingClientsInServer)
+					GatherInputsFromServerBotsOrClient(_playersOfClients, SwitchBehaviourToClient, ClientInputGetter);
+			}
 
 			elympicsBehavioursManager.CommitVars();
 
@@ -125,8 +128,11 @@ namespace Elympics
 				}
 			}
 
-			elympicsBehavioursManager.SetCurrentInputs(_inputList);
-			elympicsBehavioursManager.ElympicsUpdate();
+			using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
+				elympicsBehavioursManager.SetCurrentInputs(_inputList);
+
+			using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
+				elympicsBehavioursManager.ElympicsUpdate();
 		}
 
 		private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForClient();
@@ -147,18 +153,19 @@ namespace Elympics
 		}
 		protected override void LateFixedUpdate()
 		{
-			if (ShouldSendSnapshot())
-			{
-				// gather state info from scene and send to clients
-				PopulateTickToPlayerInputHolder();
-				var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
-				AddMetadataToSnapshots(snapshots, _tickStartUtc);
+			using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
+				if (ShouldSendSnapshot())
+				{
+					// gather state info from scene and send to clients
+					PopulateTickToPlayerInputHolder();
+					var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
+					AddMetadataToSnapshots(snapshots, _tickStartUtc);
 
-				_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
-			}
+					_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
+				}
 
 			if (TickAnalysis != null)
-            {
+			{
 				var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
 				localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
 				TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails());
@@ -173,7 +180,7 @@ namespace Elympics
 		private void PopulateTickToPlayerInputHolder()
 		{
 			_tickToPlayerInputHolder.Clear();
-			foreach (var (player,inputBufferWithTick) in _gameEngineAdapter.PlayerInputBuffers)
+			foreach (var (player, inputBufferWithTick) in _gameEngineAdapter.PlayerInputBuffers)
 			{
 				var tickToPlayerInput = new TickToPlayerInput();
 				tickToPlayerInput.Data = new Dictionary<long, ElympicsSnapshotPlayerInput>();

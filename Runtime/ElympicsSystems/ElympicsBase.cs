@@ -11,22 +11,28 @@ namespace Elympics
 	public abstract class ElympicsBase : MonoBehaviour, IElympics
 	{
 		[SerializeField] internal ElympicsBehavioursManager elympicsBehavioursManager;
-		[SerializeField] internal ElympicsLateFixedUpdate   elympicsLateFixedUpdate;
 		[SerializeField] internal AsyncEventsDispatcher     asyncEventsDispatcher;
 
-		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")]
+		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")] 
 		[SerializeField]
 		private GameObject[] linkedLogic;
 
 		private readonly Stopwatch _elympicsUpdateStopwatch = new Stopwatch();
-		private long _fixedUpdatesCounter;
-		protected DateTime _tickStartUtc;
+		private          long      _fixedUpdatesCounter;
+		private          double    _timer;
+		
+		private DateTime _previousUtcForDeltaTime = DateTime.UtcNow;
+		private double   MaxDeltaTime => 3 * TickDuration;
 
+		protected virtual double MaxUpdateTimeWarningThreshold => ElympicsUpdateDuration;
+		private protected DateTime           TickStartUtc;
 		private protected ElympicsGameConfig Config;
 
-		internal CallContext CurrentCallContext { get; set; } = CallContext.None;
+		internal CallContext CurrentCallContext     { get; set; } = CallContext.None;
+		internal double      ElympicsUpdateDuration { get; private protected set; }
 
 		internal bool Initialized { get; private set; }
+
 		internal void SetInitialized()
 		{
 			Initialized = true;
@@ -34,6 +40,7 @@ namespace Elympics
 		}
 
 		private static ElympicsBase instance;
+
 		private static ElympicsBase Instance
 		{
 			get => instance;
@@ -48,6 +55,7 @@ namespace Elympics
 		#region TickAnalysis
 
 		private static ITickAnalysis tickAnalysis;
+
 		internal static ITickAnalysis TickAnalysis
 		{
 			private protected get => tickAnalysis;
@@ -69,6 +77,7 @@ namespace Elympics
 		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig)
 		{
 			Config = elympicsGameConfig;
+			ElympicsUpdateDuration = TickDuration;
 		}
 
 		public void Destroy()
@@ -78,33 +87,52 @@ namespace Elympics
 			DestroyImmediate(gameObject);
 		}
 
-		private void FixedUpdate()
+
+		private void Update()
 		{
-			if (!ShouldDoFixedUpdate())
-				return;
+			var currentUtc = DateTime.UtcNow;
+			_timer += CalculateDeltaBasedOnUtcNow(currentUtc);
 
-			_elympicsUpdateStopwatch.Stop();
-			if (Config.DetailedNetworkLog)
-				LogFixedUpdateThrottle();
-			_elympicsUpdateStopwatch.Reset();
+			while (_timer >= ElympicsUpdateDuration)
+			{
+				_timer -= ElympicsUpdateDuration;
+				if (!ShouldDoFixedUpdate())
+					continue;
+
+				_elympicsUpdateStopwatch.Stop();
+				if (Config.DetailedNetworkLog)
+					LogFixedUpdateThrottle();
+				_elympicsUpdateStopwatch.Reset();
+				_elympicsUpdateStopwatch.Start();
+
+				// Calculate ideal tick start time based on whats left in timer
+				TickStartUtc = currentUtc.Subtract(TimeSpan.FromSeconds(_timer));
+				ElympicsFixedUpdate();
+
+				_elympicsUpdateStopwatch.Stop();
+				if (Config.DetailedNetworkLog)
+					LogElympicsTickThrottle();
+
+				ElympicsLateFixedUpdate();
+				_fixedUpdatesCounter++;
+			}
+
 			_elympicsUpdateStopwatch.Start();
+		}
 
-			DoFixedUpdate();
-
-			_elympicsUpdateStopwatch.Stop();
-			if (Config.DetailedNetworkLog)
-				LogElympicsTickThrottle();
-			_elympicsUpdateStopwatch.Start();
-
-			elympicsLateFixedUpdate.LateFixedUpdateAction = LateFixedUpdate;
-			_fixedUpdatesCounter++;
+		private double CalculateDeltaBasedOnUtcNow(DateTime currentUtc)
+		{
+			var deltaTime = (currentUtc - _previousUtcForDeltaTime).TotalSeconds;
+			deltaTime = Math.Min(deltaTime, MaxDeltaTime);
+			_previousUtcForDeltaTime = currentUtc;
+			return deltaTime;
 		}
 
 		protected ElympicsSnapshotWithMetadata CreateLocalSnapshotWithMetadata()
 		{
 			var localSnapshotWithMetadata = elympicsBehavioursManager.GetLocalSnapshotWithMetadata();
 			localSnapshotWithMetadata.Tick = Tick;
-			localSnapshotWithMetadata.TickStartUtc = _tickStartUtc;
+			localSnapshotWithMetadata.TickStartUtc = TickStartUtc;
 			localSnapshotWithMetadata.TickEndUtc = DateTime.UtcNow;
 			localSnapshotWithMetadata.FixedUpdateNumber = _fixedUpdatesCounter;
 			return localSnapshotWithMetadata;
@@ -112,9 +140,9 @@ namespace Elympics
 
 		private void LogFixedUpdateThrottle()
 		{
-			if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > Config.TickDuration * 1.2)
+			if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
 				Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
-			else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > Config.TickDuration * 1.9)
+			else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
 				Debug.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
 		}
 
@@ -122,9 +150,9 @@ namespace Elympics
 
 		private void LogElympicsTickThrottle()
 		{
-			if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > Config.TickDuration * 0.66)
+			if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
 				Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
-			else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > Config.TickDuration)
+			else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
 				Debug.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
 		}
 
@@ -136,9 +164,9 @@ namespace Elympics
 		}
 
 		protected virtual  bool ShouldDoFixedUpdate() => true;
-		protected abstract void DoFixedUpdate();
+		protected abstract void ElympicsFixedUpdate();
 
-		protected virtual void LateFixedUpdate()
+		protected virtual void ElympicsLateFixedUpdate()
 		{
 		}
 
@@ -185,13 +213,13 @@ namespace Elympics
 		public float TickDuration   => Config.TickDuration;
 		public int   TicksPerSecond => Config.TicksPerSecond;
 
-		public long  Tick { get; internal set; }
+		public long Tick { get; internal set; }
 
 		#region Client
 
-		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
+		public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)    => throw new SupportedOnlyByClientException();
 		public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
-		public virtual void Disconnect() => throw new SupportedOnlyByClientException();
+		public virtual void        Disconnect()                                                                    => throw new SupportedOnlyByClientException();
 
 		#endregion
 

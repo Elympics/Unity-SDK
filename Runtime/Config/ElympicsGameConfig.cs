@@ -24,12 +24,17 @@ namespace Elympics
 
 		[SerializeField] private bool botsInServer = true;
 
-		[SerializeField] private bool useWeb;
-		[SerializeField] private bool legacyMatchmakingClient;
-		[SerializeField] private bool enableReconnect;
+		[SerializeField] private bool                     useWeb;
+		[SerializeField] private bool                     legacyMatchmakingClient;
+		[SerializeField] private bool                     enableReconnect;
 		[SerializeField] private ClientConnectionSettings connectionConfig = new ClientConnectionSettings();
 
-		[SerializeField] private int  ticksPerSecond               = 30;
+		[SerializeField] private int ticksPerSecond = 30;
+
+		[SerializeField] private float minClientTickRateFactor = 0.8f;
+
+		[SerializeField] private float maxClientTickRateFactor = 1.25f;
+
 		[SerializeField] private int  snapshotSendingPeriodInTicks = 1;
 		[SerializeField] private int  inputLagTicks                = 2;
 		[SerializeField] private int  maxAllowedLagInTicks         = 15;
@@ -65,15 +70,17 @@ namespace Elympics
 
 		public bool BotsInServer => botsInServer;
 
-		public bool UseWeb => GetUseWeb(useWeb);
-		internal bool UseLegacyMatchmaking => legacyMatchmakingClient;
-		public bool Prediction => prediction;
-		public bool ReconnectEnabled => enableReconnect;
-		public ClientConnectionSettings ConnectionConfig => connectionConfig;
+		public   bool                     UseWeb               => GetUseWeb(useWeb);
+		internal bool                     UseLegacyMatchmaking => legacyMatchmakingClient;
+		public   bool                     Prediction           => prediction;
+		public   bool                     ReconnectEnabled     => enableReconnect;
+		public   ClientConnectionSettings ConnectionConfig     => connectionConfig;
 
 		public int   TicksPerSecond               => ticksPerSecond;
 		public int   SnapshotSendingPeriodInTicks => snapshotSendingPeriodInTicks;
 		public float TickDuration                 => 1.0f / ticksPerSecond;
+		public float MinTickRate                  => ticksPerSecond * minClientTickRateFactor;
+		public float MaxTickRate                  => ticksPerSecond * maxClientTickRateFactor;
 		public int   InputLagTicks                => inputLagTicks;
 
 		public   bool                       DetailedNetworkLog           => detailedNetworkLog;
@@ -107,15 +114,11 @@ namespace Elympics
 #endif
 		}
 
-		public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone()
-			? ElympicsClonesManager.IsBot() ? HalfRemoteModeEnum.Bot : HalfRemoteModeEnum.Client
-			: defaultHalfRemoteMode;
+		public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone() ? ElympicsClonesManager.IsBot() ? HalfRemoteModeEnum.Bot : HalfRemoteModeEnum.Client : defaultHalfRemoteMode;
 
 		public static bool IsOverridenInHalfRemoteByClone() => ElympicsClonesManager.IsClone();
 
-		public static int GetHalfRemotePlayerIndex(int defaultPlayerIndex) => IsOverridenInHalfRemoteByClone()
-			? ElympicsClonesManager.GetCloneNumber()
-			: defaultPlayerIndex;
+		public static int GetHalfRemotePlayerIndex(int defaultPlayerIndex) => IsOverridenInHalfRemoteByClone() ? ElympicsClonesManager.GetCloneNumber() : defaultPlayerIndex;
 
 		public static bool IsOverridenByWebGL()
 		{

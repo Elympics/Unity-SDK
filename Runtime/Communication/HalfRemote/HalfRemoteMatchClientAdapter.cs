@@ -12,8 +12,7 @@ namespace Elympics
 {
 	public class HalfRemoteMatchClientAdapter : IMatchClient
 	{
-		private static readonly WaitForSeconds SynchronizationDelay = new WaitForSeconds(1);
-		private const           int            MaxJitterMultiplier  = 3;
+		private const int MaxJitterMultiplier = 3;
 
 		public event Action<TimeSynchronizationData> Synchronized;
 		public event Action<ElympicsSnapshot>        SnapshotReceived;
@@ -21,6 +20,7 @@ namespace Elympics
 
 		private readonly RingBuffer<byte[]> _inputRingBuffer;
 
+		private readonly WaitForSeconds      _synchronizationDelay;
 		private readonly HalfRemoteLagConfig _lagConfig;
 		private readonly Random              _lagRandom;
 
@@ -33,6 +33,7 @@ namespace Elympics
 			_inputRingBuffer = new RingBuffer<byte[]>(config.InputsToSendBufferSize);
 			_lagConfig = config.HalfRemoteLagConfig;
 			_lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
+			_synchronizationDelay = new WaitForSeconds(config.ConnectionConfig.minContinuousSynchronizationInterval);
 		}
 
 		internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
@@ -80,7 +81,7 @@ namespace Elympics
 				return;
 			_ = RunWithLag(() =>
 			{
-				SnapshotReceived?.Invoke( data.Deserialize<ElympicsSnapshot>());
+				SnapshotReceived?.Invoke(data.Deserialize<ElympicsSnapshot>());
 				RawSnapshotReceived?.Invoke(data);
 			});
 		}
@@ -119,7 +120,7 @@ namespace Elympics
 		private void GetNewLag(out bool lost, out int lagMs)
 		{
 			lost = _lagRandom.NextDouble() < _lagConfig.PacketLoss;
-			lagMs = (int) NextGaussian(_lagConfig.DelayMs + _lagConfig.JitterMs, _lagConfig.JitterMs);
+			lagMs = (int)NextGaussian(_lagConfig.DelayMs + _lagConfig.JitterMs, _lagConfig.JitterMs);
 			lagMs = Math.Max(lagMs, _lagConfig.DelayMs);
 			lagMs = Math.Min(lagMs, _lagConfig.DelayMs + MaxJitterMultiplier * _lagConfig.JitterMs);
 		}
@@ -137,7 +138,7 @@ namespace Elympics
 			while (NotDisconnected())
 			{
 				_client.SendNtp();
-				yield return SynchronizationDelay;
+				yield return _synchronizationDelay;
 			}
 		}
 

@@ -4,7 +4,7 @@
 ### Features
 
 * introduction to #LOG_TO_FILE preprocessor directive that allows writing Elympmics simulation data logs into the file ([9cdc0f4](https://github.com/Elympics/Unity-SDK/commit/9cdc0f4f2b70fcd63614da85dd8b8de4f164c587))
-
+* Elympics Markers for Unity Profiler added ([184fb54](https://github.com/Elympics/Unity-SDK/commit/184fb54ba53a060d27d940f166247def12004f44))
 
 
 ## [0.5.2](https://github.com/Elympics/Unity-SDK/compare/v0.5.1...v0.5.2) (2023-03-06)

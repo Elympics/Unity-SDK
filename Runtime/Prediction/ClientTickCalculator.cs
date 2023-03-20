@@ -27,6 +27,7 @@ namespace Elympics
 		private long?     _lastReceivedTick;
 		private DateTime? _lastReceivedTickStart;
 		private DateTime? _lastClientTickStart;
+		private double    _calculatedNextTickExact;
 
 		private double _clientTickingAberrationSumTicks;
 		private double _serverTickingAberrationSumTicks;
@@ -38,6 +39,7 @@ namespace Elympics
 
 		private long _predictionTick;
 		private long _delayedInputTick;
+		private long _calculatedNextTickExactRoundedUp;
 
 		public long PredictionTick
 		{
@@ -73,9 +75,9 @@ namespace Elympics
 
 			CalculateTickingAberrations(receivedTick, clientTickStart, receivedTickStart);
 
-			var calculatedNextTickExact = CalculateTotalDelayInTicks(receivedTick, receivedTickStart, clientTickStart);
-
-			if (IsNextTick(calculatedNextTickExact))
+			_calculatedNextTickExact = CalculateTotalDelayInTicks(receivedTick, receivedTickStart, clientTickStart);
+			_calculatedNextTickExactRoundedUp = (long)Math.Ceiling(_calculatedNextTickExact);
+			if (IsNextTick(_calculatedNextTickExact))
 			{
 				UseNextTick();
 				ResetTicksDiffSum();
@@ -83,14 +85,13 @@ namespace Elympics
 				return details;
 			}
 
-			if (IsBiggerThanNextTick(calculatedNextTickExact) || IsLowerThanNextTick(calculatedNextTickExact))
+			if (IsBiggerThanNextTick(_calculatedNextTickExact) || IsLowerThanNextTick(_calculatedNextTickExact))
 			{
-				var calculatedNextTick = (long) Math.Ceiling(calculatedNextTickExact);
-				UpdateTicksDiffSum(calculatedNextTick);
+				UpdateTicksDiffSum(_calculatedNextTickExactRoundedUp);
 
 				if (IsTicksDiffSumBiggerThanMaxBeforeCatchupForward() || IsTicksDiffSumLowerThanMinBeforeCatchupBackwards())
 				{
-					ForceUpdateNextTick(calculatedNextTick);
+					ForceUpdateNextTick(_calculatedNextTickExactRoundedUp);
 					var details = CreateClientTickCalculateNetworkDetails(false, true);
 					ResetTicksDiffSum();
 					return details;
@@ -103,9 +104,7 @@ namespace Elympics
 
 		private long GetLimitedPredictionTick(long delayedInputTick)
 		{
-			return _lastReceivedTick.HasValue
-				? Math.Min(_lastReceivedTick.Value + _config.TotalPredictionLimitInTicks, delayedInputTick)
-				: delayedInputTick;
+			return _lastReceivedTick.HasValue ? Math.Min(_lastReceivedTick.Value + _config.TotalPredictionLimitInTicks, delayedInputTick) : delayedInputTick;
 		}
 
 		private void UseNextTick()
@@ -140,14 +139,13 @@ namespace Elympics
 		{
 			var receivedTickStartLocal = receivedTickStart.Subtract(_roundTripTimeCalculator.AverageLocalClockOffset);
 			var clientTickStartDelayVsReceived = clientTickStart - receivedTickStartLocal;
-			var tickTotal = (double) _config.InputLagTicks;
+			var tickTotal = (double)_config.InputLagTicks;
 			tickTotal += (clientTickStartDelayVsReceived + _roundTripTimeCalculator.AverageRoundTripTime).TotalSeconds * _config.TicksPerSecond;
 			tickTotal += receivedTick;
 			return tickTotal;
 		}
 
-		private bool IsNextTick(double calculatedNextTickExact) => (long) Math.Ceiling(calculatedNextTickExact) == DelayedInputTick + 1 ||
-		                                                           (long) Math.Ceiling(calculatedNextTickExact + 0.5) == DelayedInputTick + 1;
+		private bool IsNextTick(double calculatedNextTickExact) => (long)Math.Ceiling(calculatedNextTickExact) == DelayedInputTick + 1 || (long)Math.Ceiling(calculatedNextTickExact + 0.5) == DelayedInputTick + 1;
 
 		private bool IsBiggerThanNextTick(double calculatedNextTickExact) => calculatedNextTickExact + 0.5 > DelayedInputTick + 1;
 		private bool IsLowerThanNextTick(double calculatedNextTickExact)  => calculatedNextTickExact < DelayedInputTick + 1;
@@ -173,6 +171,7 @@ namespace Elympics
 		private ClientTickCalculatorNetworkDetails CreateClientTickCalculateNetworkDetails(bool correctTicking, bool forcedTickJump)
 		{
 			var tickJumpStart = LastPredictionTick + 1;
+			var exactTick = _calculatedNextTickExact;
 			var tickJumpEnd = PredictionTick;
 			var inputJumpStart = LastDelayedInputTick + 1;
 			var inputJumpEnd = DelayedInputTick;
@@ -182,10 +181,17 @@ namespace Elympics
 			var lcoTicks = _roundTripTimeCalculator.AverageLocalClockOffset.TotalSeconds * _config.TicksPerSecond;
 			var ctasTicks = _clientTickingAberrationSumTicks;
 			var stasTicks = _serverTickingAberrationSumTicks;
+			var tickDiff = 1L;
+			if (!correctTicking)
+			{
+				tickDiff = _calculatedNextTickExactRoundedUp - DelayedInputTick;
+			}
 
 			return new ClientTickCalculatorNetworkDetails
 			{
 				CorrectTicking = correctTicking,
+				ExactTickCalculated = exactTick,
+				Diff = tickDiff,
 				ForcedTickJump = forcedTickJump,
 				TicksDiffSumBeforeCatchup = ticksDiffSumBeforeCatchUp,
 				TickJumpStart = tickJumpStart,

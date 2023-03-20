@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using MatchTcpClients.Synchronizer;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Elympics
@@ -10,19 +11,21 @@ namespace Elympics
 	public class ElympicsClient : ElympicsBase
 	{
 		private const int MaxInputsToSendOnPredictionJump = 5;
-		private const int MaxTicksToTickOnPredictionJump  = 3;
+		private const int MaxTicksToTickOnPredictionJump = 3;
 
 		[SerializeField] private bool connectOnStart = true;
 
 		[SerializeField, Range(1, 60), Tooltip("In seconds")]
 		private int networkConditionsLogInterval = 5;
 
-		private         ElympicsPlayer _player;
-		public override ElympicsPlayer Player   => _player;
-		public override bool           IsClient => true;
+		private ElympicsPlayer _player;
+		public override ElympicsPlayer Player => _player;
+		public override bool IsClient => true;
 
 		private bool _started;
-
+#if ELYMPICS_DEBUG
+		private ClientTickCalculatorNetworkDetailsToFile logToFile;
+#endif
 		public IMatchConnectClient MatchConnectClient
 		{
 			get
@@ -34,12 +37,12 @@ namespace Elympics
 		}
 
 		private IMatchConnectClient _matchConnectClient;
-		private IMatchClient        _matchClient;
+		private IMatchClient _matchClient;
 
 		// Prediction
 		private IRoundTripTimeCalculator _roundTripTimeCalculator;
-		private ClientTickCalculator     _clientTickCalculator;
-		private PredictionBuffer         _predictionBuffer;
+		private ClientTickCalculator _clientTickCalculator;
+		private PredictionBuffer _predictionBuffer;
 
 		private static readonly object LastReceivedSnapshotLock = new object();
 		private ElympicsSnapshot _lastReceivedSnapshot;
@@ -57,6 +60,9 @@ namespace Elympics
 
 			elympicsBehavioursManager.InitializeInternal(this);
 			_roundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
+#if ELYMPICS_DEBUG
+			logToFile = new ClientTickCalculatorNetworkDetailsToFile();
+#endif
 			_clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator);
 			_predictionBuffer = new PredictionBuffer(elympicsGameConfig);
 
@@ -98,6 +104,10 @@ namespace Elympics
 		{
 			if (_matchClient != null)
 				_matchClient.SnapshotReceived -= OnSnapshotReceived;
+
+#if ELYMPICS_DEBUG
+			logToFile.DeInit();
+#endif
 		}
 
 		private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
@@ -124,35 +134,54 @@ namespace Elympics
 
 			var networkDetails = _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, receivedSnapshot.TickStartUtc, _tickStartUtc);
 			if (Config.DetailedNetworkLog)
+			{
 				LogNetworkConditionsInInterval(networkDetails);
+#if ELYMPICS_DEBUG
+				logToFile.LogNetworkDetailsToFile(networkDetails);
+#endif
+			}
+
 			_predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
 
 			var lastDelayedInputTick = _clientTickCalculator.LastDelayedInputTick;
 			var delayedInputTick = _clientTickCalculator.DelayedInputTick;
 
 			var startDelayedInputTick = Math.Max(lastDelayedInputTick + 1, delayedInputTick - MaxInputsToSendOnPredictionJump);
-			for (var i = startDelayedInputTick; i <= delayedInputTick; i++)
-				ProcessInput(i);
+
+			using (ElympicsMarkers.Elympics_ProcessingInputMarker.Auto())
+				for (var i = startDelayedInputTick; i <= delayedInputTick; i++)
+					ProcessInput(i);
 
 			if (Config.Prediction)
 			{
-				ReconcileIfRequired(receivedSnapshot);
+				using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
+					ReconcileIfRequired(receivedSnapshot);
 
 				var lastPredictionTick = _clientTickCalculator.LastPredictionTick;
 				var predictionTick = _clientTickCalculator.PredictionTick;
 				var tickDiff = predictionTick - (lastPredictionTick + 1);
 				var startPredictionTick = tickDiff <= MaxTicksToTickOnPredictionJump ? lastPredictionTick + 1 : predictionTick;
 
-				for (var i = startPredictionTick; i <= predictionTick; i++)
-				{
-					Tick = i;
-					_tickStartUtc = DateTime.UtcNow;
-					ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
-					elympicsBehavioursManager.CommitVars();
-					ApplyPredictedInput();
-					elympicsBehavioursManager.ElympicsUpdate();
-					ProcessSnapshot(i);
-				}
+				using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
+					for (var i = startPredictionTick; i <= predictionTick; i++)
+					{
+						Tick = i;
+						_tickStartUtc = DateTime.UtcNow;
+
+						using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
+							ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
+
+						elympicsBehavioursManager.CommitVars();
+
+						using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
+							ApplyPredictedInput();
+
+						using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
+							elympicsBehavioursManager.ElympicsUpdate();
+
+						using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
+							ProcessSnapshot(i);
+					}
 			}
 			else
 			{
@@ -175,14 +204,21 @@ namespace Elympics
 
 		private void ProcessSnapshot(long predictionTick)
 		{
-			var snapshot = elympicsBehavioursManager.GetLocalSnapshot();
+			ElympicsSnapshot snapshot;
+
+			snapshot = elympicsBehavioursManager.GetLocalSnapshot();
+
 			snapshot.Tick = predictionTick;
 			_predictionBuffer.AddSnapshotToBuffer(snapshot);
 		}
 
 		private void ProcessInput(long delayedInputTick)
 		{
-			var input = elympicsBehavioursManager.OnInputForClient();
+			ElympicsInput input;
+
+			using (ElympicsMarkers.Elympics_GatheringClientInputMarker.Auto())
+				input = elympicsBehavioursManager.OnInputForClient();
+
 			AddMetadataToInput(input, delayedInputTick);
 			SendInput(input);
 			_predictionBuffer.AddInputToBuffer(input);
@@ -236,25 +272,28 @@ namespace Elympics
 			currentSnapshot.Tick = receivedSnapshot.Tick;
 			_predictionBuffer.AddOrReplaceSnapshotInBuffer(currentSnapshot);
 
-			for (var resimulationTick = receivedSnapshot.Tick + 1; resimulationTick < _clientTickCalculator.PredictionTick; resimulationTick++)
-			{
-				Tick = resimulationTick;
-				if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
-					elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
-				elympicsBehavioursManager.CommitVars();
+			using (ElympicsMarkers.Elympics_ResimulationkMarker.Auto())
+				for (var resimulationTick = receivedSnapshot.Tick + 1; resimulationTick < _clientTickCalculator.PredictionTick; resimulationTick++)
+				{
+					Tick = resimulationTick;
+					if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
+						elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+					elympicsBehavioursManager.CommitVars();
 
-				_inputList.Clear();
-				if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
-					_inputList.Add(resimulatedInput);
-				elympicsBehavioursManager.SetCurrentInputs(_inputList);
-				elympicsBehavioursManager.ElympicsUpdate();
+					_inputList.Clear();
+					if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
+						_inputList.Add(resimulatedInput);
+					elympicsBehavioursManager.SetCurrentInputs(_inputList);
 
-				var newResimulatedSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
-				newResimulatedSnapshot.Tick = resimulationTick;
-				_predictionBuffer.AddOrReplaceSnapshotInBuffer(newResimulatedSnapshot);
+					using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
+						elympicsBehavioursManager.ElympicsUpdate();
 
-				// Debug.Log($"[{PlayerId}] Overriding snapshot {resimulationTick} with {JsonConvert.SerializeObject(newResimulatedSnapshot, Formatting.Indented)}");
-			}
+					var newResimulatedSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
+					newResimulatedSnapshot.Tick = resimulationTick;
+					_predictionBuffer.AddOrReplaceSnapshotInBuffer(newResimulatedSnapshot);
+
+					// Debug.Log($"[{PlayerId}] Overriding snapshot {resimulationTick} with {JsonConvert.SerializeObject(newResimulatedSnapshot, Formatting.Indented)}");
+				}
 
 			elympicsBehavioursManager.OnPostReconcile();
 

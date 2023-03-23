@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Elympics.Libraries;
 using MatchTcpClients;
+using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 
 namespace Elympics
@@ -17,8 +18,8 @@ namespace Elympics
 
 		private string _myUserId;
 
-		private float[] _matchmakerData = null;
-		private byte[]  _gameEngineData = null;
+		private float[] _matchmakerData;
+		private byte[] _gameEngineData;
 
 		protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
 		{
@@ -29,6 +30,10 @@ namespace Elympics
 			_myMatchmakerClient = new RemoteMatchmakerClient(lobbyPublicApiClient);
 
 			_elympicsGameConfig = elympicsGameConfig;
+			var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
+			var testPlayerData = _elympicsGameConfig.TestPlayers[playerIndex];
+			_matchmakerData = testPlayerData.matchmakerData;
+			_gameEngineData = testPlayerData.gameEngineData;
 			Connect();
 		}
 
@@ -57,9 +62,7 @@ namespace Elympics
 					_elympicsGameConfig.TestMatchData.regionName);
 			}
 			else
-			{
 				Debug.LogError("Connecting failed");
-			}
 		}
 
 		private void OnMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) _)
@@ -89,8 +92,8 @@ namespace Elympics
 				Player = player,
 				UserId = _myUserId,
 				IsBot = false,
-				MatchmakerData = _matchmakerData,
-				GameEngineData = _gameEngineData
+				MatchmakerData = matchData.MatchmakerData,
+				GameEngineData = matchData.GameEngineData,
 			});
 		}
 	}

@@ -27,12 +27,13 @@ namespace LobbyPublicApiModels.User.Matchmaking
 		[Serializable]
 		public class Response : ApiResponse
 		{
-			public string       MatchId;
-			public string       ServerAddress;
-			public string       TcpUdpServerAddress;
-			public string       WebServerAddress;
-			public string       UserSecret;
-			public List<string> MatchedPlayersId;
+			public string        MatchId;
+			public string        ServerAddress;
+			public string        TcpUdpServerAddress;
+			public string        WebServerAddress;
+			public string        UserSecret;
+			public List<string>  MatchedPlayersId;
+			public UserOrBotData UserData;
 		}
 	}
 }

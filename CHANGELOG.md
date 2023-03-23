@@ -1,3 +1,12 @@
+## [0.5.4](https://github.com/Elympics/Unity-SDK/compare/v0.5.3...v0.5.4) (2023-03-23)
+
+
+### Bug Fixes 🪲
+
+* Retrieve Matchmaker and Game Engine data modified by EGB ([6c1bc3c](https://github.com/Elympics/Unity-SDK/commit/6c1bc3cffb829b8cb6e8af09a7c8a62a9dacb5e7))
+
+
+
 ## [0.5.3](https://github.com/Elympics/Unity-SDK/compare/v0.5.2...v0.5.3) (2023-03-20)
 
 

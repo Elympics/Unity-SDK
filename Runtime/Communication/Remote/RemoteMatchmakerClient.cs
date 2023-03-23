@@ -72,14 +72,16 @@ namespace Elympics
 				WaitForMatchState(OnMatchInitialized, matchId, GetMatchDesiredState.Initializing, ct);
 			}
 
-			void OnMatchInitialized((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
+			void OnMatchInitialized((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers, UserOrBotData UserData) result)
 			{
 				WaitForMatchState(OnMatchRunning, result.MatchId, GetMatchDesiredState.Running, ct);
 			}
 
-			void OnMatchRunning((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) result)
+			void OnMatchRunning((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers, UserOrBotData UserData) result)
 			{
-				MatchData = new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, matchmakerData, gameEngineData, queueName, regionName);
+				MatchData = string.IsNullOrEmpty(result.UserData?.UserId)  // HACK: Unity initializes all scalars recursively with default values, so it is not certain if GE and MM data has been set to null by backend or omitted in the response
+					? new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, matchmakerData, gameEngineData, queueName, regionName)
+					: new JoinedMatchData(result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers, result.UserData.MatchmakerData, Convert.FromBase64String(result.UserData.GameEngineData), queueName, regionName);
 				MatchmakingFinished?.Invoke((result.MatchId, result.TcpUdpServerAddress, result.WebServerAddress, result.UserSecret, result.MatchedPlayers));
 			}
 
@@ -180,7 +182,7 @@ namespace Elympics
 			return response != null && !response.IsSuccess && response.ErrorMessage == JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound;
 		}
 
-		private void WaitForMatchState(Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers)> callback, string matchId, GetMatchDesiredState desiredState, CancellationToken ct)
+		private void WaitForMatchState(Action<(string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers, UserOrBotData UserData)> callback, string matchId, GetMatchDesiredState desiredState, CancellationToken ct)
 		{
 			var getMatchRequest = new GetMatchModel.Request
 			{
@@ -242,7 +244,7 @@ namespace Elympics
 							break;
 					}
 
-					callback((response.MatchId, response.TcpUdpServerAddress, response.WebServerAddress, response.UserSecret, response.MatchedPlayersId));
+					callback((response.MatchId, response.TcpUdpServerAddress, response.WebServerAddress, response.UserSecret, response.MatchedPlayersId, response.UserData));
 					return;
 				}
 

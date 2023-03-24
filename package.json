@@ -1,6 +1,6 @@
 {
   "name": "com.daftmobile.elympics",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
   "displayName": "Elympics",
   "unity": "2019.4",
@@ -41,6 +41,11 @@
       "displayName": "Match events",
       "description": "A sample to illustrate the lifecycle of Elympics match",
       "path": "Samples~/MatchEvents"
+    },
+    {
+      "displayName": "EGB test",
+      "description": "A sample for checking response data from External Game Backend",
+      "path": "Samples~/EgbTest"
     },
     {
       "displayName": "TicTacToe and more (Draft)",

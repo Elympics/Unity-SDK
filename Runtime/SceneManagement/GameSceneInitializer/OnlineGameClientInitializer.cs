@@ -1,4 +1,5 @@
 ﻿using Elympics.Libraries;
+using Elympics.Models.Authentication;
 using MatchTcpClients;
 using UnityEngine;
 
@@ -14,13 +15,13 @@ namespace Elympics
 				Debug.LogError("[Elympics] Match data not found. Did you try to join an online match without going through matchmaking first?");
 				return;
 			}
-			if (ElympicsLobbyClient.Instance.UserId == null)
+			if (!ElympicsLobbyClient.Instance.IsAuthenticatedWith(ElympicsLobbyClient.Instance.MatchAuthType))
 			{
 				Debug.LogError("[Elympics] User is not authenticated. Did you try to join an online match without going through matchmaking first?");
 				return;
 			}
 
-			var userId = ElympicsLobbyClient.Instance.UserGuid.Value;
+			var userId = ElympicsLobbyClient.Instance.AuthDataByType[ElympicsLobbyClient.Instance.MatchAuthType].UserId;
 			var matchmakerData = matchData.MatchmakerData;
 			var gameEngineData = matchData.GameEngineData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];

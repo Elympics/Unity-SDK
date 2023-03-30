@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elympics;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace MatchEvents
         private void Awake()
         {
             ElympicsLobbyClient.Instance.AuthenticatedGuid += OnAuthenticated;
+            ElympicsLobbyClient.Instance.AuthenticatedWithType += OnAuthenticatedWithType;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingStarted += MatchmakerOnMatchmakingStarted;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingMatchFound += MatchmakerOnMatchFound;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingSucceeded += MatchmakerOnMatchmakingSucceeded;
@@ -29,6 +31,16 @@ namespace MatchEvents
                 { nameof(obj.Value.JwtToken), obj.Value?.JwtToken },
                 { nameof(obj.Error), obj.Error }
             });
+
+        private static void OnAuthenticatedWithType(AuthType type, Result<AuthenticationData, string> obj) => Serializer.PrintCall(
+	        new Dictionary<string, object>
+	        {
+		        { nameof(type), type },
+		        { nameof(obj.IsSuccess), obj.IsSuccess },
+		        { nameof(obj.Value.UserId), obj.Value?.UserId },
+		        { nameof(obj.Value.JwtToken), obj.Value?.JwtToken },
+		        { nameof(obj.Error), obj.Error }
+	        });
 
         #endregion ElympicsLobbyClient
 

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -8,10 +9,18 @@ namespace Elympics
 {
 	public static class ElympicsWebClient
 	{
-		public static void SendJsonPostRequest<T>(string url, object body, string authorization = null, Action<T, Exception> callback = null, CancellationToken ct = default) where T : class
+		public static void SendJsonPostRequest<T>(string url, object body, string authorization = null,
+			Action<Result<T, Exception>> callback = null, CancellationToken ct = default) where T : class =>
+			SendJsonRequest(UnityWebRequest.kHttpVerbPOST, url, body, authorization, callback, ct);
+
+		public static void SendJsonPutRequest<T>(string url, object body, string authorization = null,
+			Action<Result<T, Exception>> callback = null, CancellationToken ct = default) where T : class =>
+			SendJsonRequest(UnityWebRequest.kHttpVerbPUT, url, body, authorization, callback, ct);
+
+		private static void SendJsonRequest<T>(string method, string url, object body, string authorization = null, Action<Result<T, Exception>> callback = null, CancellationToken ct = default) where T : class
 		{
 			var uri = new Uri(url);
-			var request = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
+			var request = new UnityWebRequest(uri, method);
 			var bodyString = JsonUtility.ToJson(body);
 			var bodyRaw = Encoding.ASCII.GetBytes(bodyString);
 			request.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -31,11 +40,11 @@ namespace Elympics
 			CallCallbackOnCompleted(asyncOperation, callback, ct);
 		}
 
-		private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<T, Exception> callback, CancellationToken ct) where T : class
+		private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<Result<T, Exception>> callback, CancellationToken ct) where T : class
 		{
-			void RunCallback(T data, Exception exception)
+			void RunCallback(Result<T, Exception> result)
 			{
-				callback?.Invoke(data, exception);
+				callback?.Invoke(result);
 				requestOp.webRequest.Dispose();
 			}
 
@@ -50,7 +59,7 @@ namespace Elympics
 				ctRegistration.Dispose();
 				if (canceled)
 				{
-					RunCallback(null, new OperationCanceledException());
+					RunCallback(Result<T, Exception>.Failure(new OperationCanceledException()));
 					return;
 				}
 #if ELYMPICS_DEBUG
@@ -58,7 +67,17 @@ namespace Elympics
 #endif
 				if (requestOp.webRequest.responseCode != 200)
 				{
-					RunCallback(null, new ElympicsException($"{requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}"));
+					RunCallback(Result<T, Exception>.Failure(new ElympicsException($"{requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}")));
+					return;
+				}
+
+				// HACK: handling two cases, i.e. JSON-encoded string and plain text
+				if (typeof(T) == typeof(string))
+				{
+					var text = requestOp.webRequest.downloadHandler.text;
+					if (text?.Count(x => x == '"') == 2 && text[0] == '"' && text[text.Length - 1] == '"')
+						text = text.Substring(1, text.Length - 2);
+					RunCallback(Result<T, Exception>.Success((T)(object)text));
 					return;
 				}
 
@@ -69,10 +88,10 @@ namespace Elympics
 				}
 				catch (Exception e)
 				{
-					RunCallback(null, new ElympicsException($"{requestOp.webRequest.responseCode} - {e.Message}\n{requestOp.webRequest.downloadHandler.text}\n{e}"));
+					RunCallback(Result<T, Exception>.Failure(new ElympicsException($"{requestOp.webRequest.responseCode} - {e.Message}\n{requestOp.webRequest.downloadHandler.text}\n{e}")));
 					return;
 				}
-				RunCallback(response, null);
+				RunCallback(Result<T, Exception>.Success(response));
 			};
 		}
 	}

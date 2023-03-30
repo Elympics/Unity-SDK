@@ -4,6 +4,11 @@
 	{
 		public const string Base = "user";
 
-		public const string AuthenticateUserId = "authUserId";
+		public const string ClientSecretAuth = "clientSecretAuth";
+
+		public const string EthAddressNonce = "ethAddressNonce";
+		public const string EthAddressAuth  = "ethAddressAuth";
+
+		public const string LoginStatus = "loginStatus";
 	}
 }

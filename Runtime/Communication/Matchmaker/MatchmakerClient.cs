@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 
 #pragma warning disable CS0067
@@ -10,11 +11,7 @@ namespace Elympics
 {
 	internal abstract class MatchmakerClient : IMatchmakerEvents
 	{
-		protected readonly IUserApiClient UserApiClient;
-
-		internal MatchmakerClient(IUserApiClient userApiClient) => UserApiClient = userApiClient;
-
-		internal abstract void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, CancellationToken ct = default);
+		internal abstract void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthenticationData authData, CancellationToken ct = default);
 
 		#region Matchmaking event emitters
 

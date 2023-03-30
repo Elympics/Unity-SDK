@@ -3,6 +3,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
+using Elympics.Models.Authentication;
 using Plugins.Elympics.Plugins.ParrelSync;
 
 public class MenuController : MonoBehaviour
@@ -19,7 +20,7 @@ public class MenuController : MonoBehaviour
 	private void Start()
 	{
 		ElympicsLobbyClient.Instance.AuthenticatedGuid += HandleAuthenticated;
-		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
+		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticatedWith(AuthType.ClientSecret);
 
 		_playButtonText = playButton.GetComponentInChildren<Text>();
 		_playButtonText.text = PlayOnlineText;

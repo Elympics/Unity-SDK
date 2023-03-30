@@ -1,101 +1,109 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using Elympics.Models;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Models.Matchmaking.LongPolling;
+using MatchmakingRoutes = Elympics.Models.Matchmaking.Routes;
 
 namespace Elympics
 {
 	internal class LongPollingMatchmakerClient : MatchmakerClient
 	{
-		internal LongPollingMatchmakerClient(IUserApiClient userApiClient) : base(userApiClient)
-		{ }
+		private readonly string _getPendingMatchLongPollingUrl;
+		private readonly string _getMatchLongPollingUrl;
 
-		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, CancellationToken ct = default)
+		internal LongPollingMatchmakerClient(string baseUrl)
+		{
+			var uriBuilder = new UriBuilder(baseUrl);
+			var oldPath = uriBuilder.Path.TrimEnd('/');
+			uriBuilder.Path = string.Join("/", oldPath, MatchmakingRoutes.Base, MatchmakingRoutes.GetPendingMatchLongPolling);
+			_getPendingMatchLongPollingUrl = uriBuilder.Uri.ToString();
+			uriBuilder.Path = string.Join("/", oldPath, MatchmakingRoutes.Base, MatchmakingRoutes.GetMatchLongPolling);
+			_getMatchLongPollingUrl = uriBuilder.Uri.ToString();
+		}
+
+		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthenticationData authData, CancellationToken ct = default)
 		{
 			var gameId = joinMatchmakerData.GameId;
 			var gameVersion = joinMatchmakerData.GameVersion;
+			var matchId = (string)null;
+			var matchGuid = Guid.Empty;
 
-			void OnMatched(JoinMatchmakerAndWaitForMatchModel.Response response, Exception exception)
+			void OnMatched(Result<JoinMatchmakerAndWaitForMatchModel.Response, Exception> result)
 			{
-				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
+					EmitMatchmakingCancelled(matchGuid, gameId, gameVersion);
 					return;
 				}
-
-				if (exception != null)
+				if (TryGetErrorMessage(result, out var errorMessage))
 				{
-					EmitMatchmakingFailed(exception.Message, matchId, gameId, gameVersion);
+					EmitMatchmakingFailed(errorMessage, matchGuid, gameId, gameVersion);
 					return;
 				}
 
-				if (IsOpponentNotFound(response))
-				{
-					EmitMatchmakingFailed(JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound, matchId, gameId, gameVersion);
-					return;
-				}
-
-				EmitMatchmakingMatchFound(matchId, gameId, gameVersion);
+				matchId = result.Value.MatchId;
+				matchGuid = new Guid(matchId);
+				EmitMatchmakingMatchFound(matchGuid, gameId, gameVersion);
 
 				var getMatchRequest = new GetMatchModel.Request
 				{
-					MatchId = response.MatchId,
+					MatchId = matchId,
 					DesiredState = GetMatchDesiredState.Initializing,
 				};
-				UserApiClient.GetMatchLongPolling(getMatchRequest, OnServerInitializing, ct);
+				ElympicsWebClient.SendJsonPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
+					authData.BearerAuthorization, OnServerInitializing, ct);
 			}
 
-			void OnServerInitializing(GetMatchModel.Response response, Exception exception)
+			void OnServerInitializing(Result<GetMatchModel.Response, Exception> result)
 			{
-				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
+					EmitMatchmakingCancelled(matchGuid, gameId, gameVersion);
 					return;
 				}
-
-				if (TryGetErrorMessage(response, exception, out var errorMessage))
+				if (TryGetErrorMessage(Result<ApiResponse, Exception>.Generalize(result), out var errorMessage))
 				{
 					errorMessage += $" (waiting for state: {GetMatchDesiredState.Initializing}";
-					EmitMatchmakingFailed(errorMessage, matchId, gameId, gameVersion);
+					EmitMatchmakingFailed(errorMessage, matchGuid, gameId, gameVersion);
 					return;
 				}
 
 				var getMatchRequest = new GetMatchModel.Request
 				{
-					MatchId = response.MatchId,
+					MatchId = matchId,
 					DesiredState = GetMatchDesiredState.Running,
 				};
-				UserApiClient.GetMatchLongPolling(getMatchRequest, OnServerRunning, ct);
+				ElympicsWebClient.SendJsonPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
+					authData.BearerAuthorization, OnServerRunning, ct);
 			}
 
-			void OnServerRunning(GetMatchModel.Response response, Exception exception)
+			void OnServerRunning(Result<GetMatchModel.Response, Exception> result)
 			{
-				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
+					EmitMatchmakingCancelled(matchGuid, gameId, gameVersion);
 					return;
 				}
-
-				if (TryGetErrorMessage(response, exception, out var errorMessage))
+				if (TryGetErrorMessage(Result<ApiResponse, Exception>.Generalize(result), out var errorMessage))
 				{
 					errorMessage += $" (waiting for state: {GetMatchDesiredState.Running}";
-					EmitMatchmakingFailed(errorMessage, matchId, gameId, gameVersion);
+					EmitMatchmakingFailed(errorMessage, matchGuid, gameId, gameVersion);
 					return;
 				}
 
+				var response = result.Value;
 				var matchmakerData = response.UserData?.MatchmakerData;
 				var gameEngineData = Convert.FromBase64String(response.UserData?.GameEngineData ?? "");
-				if (string.IsNullOrEmpty(response.UserData?.UserId)) // HACK: Unity initializes all scalars recursively with default values, so it is not certain if GE and MM data has been set to null by backend or omitted in the response
+				if (string.IsNullOrEmpty(response.UserData?.UserId))  // HACK: Unity initializes all primitives recursively with default values, so it is not certain if GE and MM data has been set to null by backend or omitted in the response
 				{
 					matchmakerData = joinMatchmakerData.MatchmakerData;
 					gameEngineData = joinMatchmakerData.GameEngineData;
 				}
 
-				var matchData = new MatchmakingFinishedData(matchId, response.UserSecret,
+				var matchData = new MatchmakingFinishedData(matchGuid, response.UserSecret,
 					joinMatchmakerData.QueueName, joinMatchmakerData.RegionName, gameEngineData, matchmakerData,
 					response.TcpUdpServerAddress, response.WebServerAddress, response.MatchedPlayersId.Select(x => new Guid(x)).ToArray());
 				EmitMatchmakingSucceeded(matchData);
@@ -110,20 +118,18 @@ namespace Elympics
 			}
 
 			var getPendingMatchRequest = new JoinMatchmakerAndWaitForMatchModel.Request(joinMatchmakerData);
-			UserApiClient.JoinMatchmakerAndWaitForMatch(getPendingMatchRequest, OnMatched, ct);
+			ElympicsWebClient.SendJsonPostRequest<JoinMatchmakerAndWaitForMatchModel.Response>(
+				_getPendingMatchLongPollingUrl, getPendingMatchRequest, authData.BearerAuthorization, OnMatched, ct);
 		}
 
-		private static bool TryGetErrorMessage(GetMatchModel.Response response, Exception exception, out string errorMessage)
+		private static bool TryGetErrorMessage(Result<JoinMatchmakerAndWaitForMatchModel.Response, Exception> result, out string errorMessage)
 		{
-			if (exception != null)
-			{
-				errorMessage = exception.Message;
+			if (TryGetErrorMessage(Result<ApiResponse, Exception>.Generalize(result), out errorMessage))
 				return true;
-			}
 
-			if (IsMatchNotInDesiredState(response))
+			if (string.IsNullOrEmpty(result.Value.MatchId))
 			{
-				errorMessage = response?.ErrorMessage ?? "null response";
+				errorMessage = "Match ID missing from response";
 				return true;
 			}
 
@@ -131,14 +137,22 @@ namespace Elympics
 			return false;
 		}
 
-		private static bool IsOpponentNotFound(JoinMatchmakerAndWaitForMatchModel.Response response) =>
-			response != null
-			&& !response.IsSuccess
-			&& response.ErrorMessage == JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound;
+		private static bool TryGetErrorMessage(Result<ApiResponse, Exception> result, out string errorMessage)
+		{
+			if (result.IsFailure)
+			{
+				errorMessage = result.Error.Message;
+				return true;
+			}
 
-		private static bool IsMatchNotInDesiredState(GetMatchModel.Response response) =>
-			response != null
-			&& !response.IsSuccess
-			&& response.ErrorMessage == GetMatchModel.ErrorCodes.NotInDesiredState;
+			if (!string.IsNullOrEmpty(result.Value.ErrorMessage))
+			{
+				errorMessage = result.Value.ErrorMessage;
+				return true;
+			}
+
+			errorMessage = null;
+			return false;
+		}
 	}
 }

@@ -11,6 +11,13 @@ namespace Elympics
 		public static Result<TValue, TError> Success(TValue value) => new ResultSuccess(value);
 		public static Result<TValue, TError> Failure(TError error) => new ResultFailure(error);
 
+		public static Result<TValue, TError> Generalize<TValueDerived, TErrorDerived>(Result<TValueDerived, TErrorDerived> result)
+			where TValueDerived : TValue
+			where TErrorDerived : TError
+		{
+			return result.IsSuccess ? Success(result.Value) : Failure(result.Error);
+		}
+
 		private class ResultSuccess : Result<TValue, TError>
 		{
 			public override bool IsSuccess => true;

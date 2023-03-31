@@ -1,32 +1,28 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
-#if UNITY_EDITOR
-using ParrelSync;
-#endif
+using Plugins.Elympics.Plugins.ParrelSync;
 
 namespace MatchEvents
 {
 	public class MenuController : MonoBehaviour
 	{
-		[SerializeField] private Button playButton = null;
-		[SerializeField] private InputField halfRemotePlayerId = null;
+		[SerializeField] private Button playButton;
+		[SerializeField] private InputField halfRemotePlayerId;
 
 		private void Start()
 		{
 			ElympicsLobbyClient.Instance.Authenticated += HandleAuthenticated;
 			playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
 
-#if UNITY_EDITOR
-		if (ClonesManager.IsClone())
-		{
+			if (!ElympicsClonesManager.IsClone())
+				return;
 			halfRemotePlayerId.text = ElympicsGameConfig.GetHalfRemotePlayerIndex(0).ToString();
 			halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
 		}
-#endif
-		}
 
-		private void HandleAuthenticated(bool success, string userId, string jwtToken, string error)
+		private void HandleAuthenticated(bool success, Guid userId, string jwtToken, string error)
 		{
 			playButton.interactable = success;
 		}

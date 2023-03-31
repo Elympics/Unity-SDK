@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,10 +10,9 @@ namespace Elympics
 	[CreateAssetMenu(fileName = "ElympicsConfig", menuName = "Elympics/Config")]
 	public class ElympicsConfig : ScriptableObject
 	{
-		public const string ELYMPICS_RESOURCES_PATH = "Assets/Resources/Elympics";
-		public const string PATH_IN_RESOURCES       = "Elympics/ElympicsConfig";
+		public const string ElympicsResourcesPath = "Assets/Resources/Elympics";
+		public const string PathInResources       = "Elympics/ElympicsConfig";
 
-		private string elympicsVersion             = string.Empty;
 		[SerializeField] private string elympicsApiEndpoint         = "https://api.elympics.cc";
 		[SerializeField] private string elympicsLobbyEndpoint       = "https://lobby.elympics.cc";
 		[SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
@@ -22,15 +20,21 @@ namespace Elympics
 		[SerializeField] internal int                      currentGame = -1;
 		[SerializeField] internal List<ElympicsGameConfig> availableGames;
 
-		internal string ElympicsVersion
+		private static string sdkVersion;
+		internal static string SdkVersion
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(elympicsVersion))
-					elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
-				return elympicsVersion;
+				if (string.IsNullOrEmpty(sdkVersion))
+					UpdateSdkVersion();
+				return sdkVersion;
 			}
 		}
+
+#if UNITY_EDITOR
+		[InitializeOnLoadMethod]
+#endif
+		private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 
 		internal string ElympicsApiEndpoint         => elympicsApiEndpoint;
 		internal string ElympicsLobbyEndpoint       => elympicsLobbyEndpoint;
@@ -40,11 +44,11 @@ namespace Elympics
 
 		public event Action CurrentGameSwitched;
 
-		public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PATH_IN_RESOURCES);
+		public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PathInResources);
 
 		public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
 		{
-			var elympicsConfig = Resources.Load<ElympicsConfig>(PATH_IN_RESOURCES);
+			var elympicsConfig = Resources.Load<ElympicsConfig>(PathInResources);
 			return elympicsConfig.GetCurrentGameConfig();
 		}
 

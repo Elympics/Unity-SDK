@@ -1,4 +1,5 @@
-﻿using static Elympics.ApplicationParameters.HalfRemote;
+﻿using System;
+using static Elympics.ApplicationParameters.HalfRemote;
 
 namespace Elympics
 {
@@ -25,7 +26,7 @@ namespace Elympics
 				new InitialMatchPlayerData
 				{
 					Player = ElympicsPlayer.FromIndex(playerIndex),
-					UserId = userId,
+					UserId = new Guid(userId),
 					IsBot = false,
 					MatchmakerData = matchmakerData,
 					GameEngineData = gameEngineData

@@ -1,24 +1,21 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Elympics
 {
-	public static class ElympicsPlayerAssociations
+	internal static class ElympicsPlayerAssociations
 	{
-		public static Dictionary<string, ElympicsPlayer> GetUserIdsToPlayers(List<string> userIds)
-		{
-			var userIdsToPlayers = new Dictionary<string, ElympicsPlayer>();
-			for (var i = 0; i < userIds.Count; i++)
-				userIdsToPlayers.Add(userIds[i], ElympicsPlayer.FromIndex(i));
-			return userIdsToPlayers;
-		}
+		internal static Dictionary<string, ElympicsPlayer> GetUserIdsToPlayers(IEnumerable<string> userIds) =>
+			userIds.Select((x, i) => new KeyValuePair<string, ElympicsPlayer>(x, ElympicsPlayer.FromIndex(i)))
+				.ToDictionary(x => x.Key, x => x.Value);
 
-		public static Dictionary<ElympicsPlayer, string> GetPlayersToUserIds(List<string> userIds)
-		{
-			var playersToUserIds = new Dictionary<ElympicsPlayer, string>();
-			for (var i = 0; i < userIds.Count; i++)
-				playersToUserIds.Add(ElympicsPlayer.FromIndex(i), userIds[i]);
+		internal static Dictionary<Guid, ElympicsPlayer> GetUserIdsToPlayers(IEnumerable<Guid> userIds) =>
+			userIds.Select((x, i) => new KeyValuePair<Guid, ElympicsPlayer>(x, ElympicsPlayer.FromIndex(i)))
+				.ToDictionary(x => x.Key, x => x.Value);
 
-			return playersToUserIds;
-		}
+		internal static Dictionary<ElympicsPlayer, string> GetPlayersToUserIds(IEnumerable<string> userIds) =>
+			userIds.Select((x, i) => new KeyValuePair<ElympicsPlayer, string>(ElympicsPlayer.FromIndex(i), x))
+				.ToDictionary(x => x.Key, x => x.Value);
 	}
 }

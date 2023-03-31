@@ -24,8 +24,9 @@ namespace Elympics
 
 		[SerializeField] private bool botsInServer = true;
 
-		[SerializeField] private bool useWeb = false;
-		[SerializeField] private bool enableReconnect = false;
+		[SerializeField] private bool useWeb;
+		[SerializeField] private bool legacyMatchmakingClient;
+		[SerializeField] private bool enableReconnect;
 		[SerializeField] private ClientConnectionSettings connectionConfig = new ClientConnectionSettings();
 
 		[SerializeField] private int  ticksPerSecond               = 30;
@@ -35,7 +36,7 @@ namespace Elympics
 		[SerializeField] private bool prediction                   = true;
 		[SerializeField] private int  predictionLimitInTicks       = 8;
 
-		[SerializeField] private bool detailedNetworkLog = false;
+		[SerializeField] private bool detailedNetworkLog;
 
 		[SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.HalfRemote;
 
@@ -65,6 +66,7 @@ namespace Elympics
 		public bool BotsInServer => botsInServer;
 
 		public bool UseWeb => GetUseWeb(useWeb);
+		internal bool UseLegacyMatchmaking => legacyMatchmakingClient;
 		public bool Prediction => prediction;
 		public bool ReconnectEnabled => enableReconnect;
 		public ClientConnectionSettings ConnectionConfig => connectionConfig;

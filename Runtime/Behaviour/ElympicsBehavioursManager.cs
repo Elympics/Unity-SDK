@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using MatchTcpClients.Synchronizer;
@@ -11,7 +10,7 @@ namespace Elympics
 	public class ElympicsBehavioursManager : MonoBehaviour
 	{
 		[SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new ElympicsBehavioursSerializableDictionary();
-		[SerializeField] private ElympicsFactory                          factory                = null;
+		[SerializeField] private ElympicsFactory                          factory;
 
 		private          ElympicsBehavioursContainer _elympicsBehaviours;
 		private readonly List<ElympicsBehaviour>     _bufferForIteration = new List<ElympicsBehaviour>();
@@ -66,13 +65,13 @@ namespace Elympics
 			elympicsBehaviour.InitializeInternal(_elympics);
 		}
 
-		internal void AddNewBehaviour(ElympicsBehaviour elympicsBehaviour)
+		private void AddNewBehaviour(ElympicsBehaviour elympicsBehaviour)
 		{
 			InitializeElympicsBehaviour(elympicsBehaviour);
 			_elympicsBehaviours.Add(elympicsBehaviour);
 		}
 
-		internal void RemoveBehaviour(int networkId)
+		private void RemoveBehaviour(int networkId)
 		{
 			_elympicsBehaviours.Remove(networkId);
 		}

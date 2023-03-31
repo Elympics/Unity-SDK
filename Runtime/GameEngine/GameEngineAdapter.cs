@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
 using UnityEngine;
@@ -71,7 +69,7 @@ namespace Elympics
 			InitializedWithMatchPlayerDatas?.Invoke(new InitialMatchPlayerDatas(initialMatchUserDatas.Select(x => new InitialMatchPlayerData
 			{
 				Player = _userIdsToPlayers[x.UserId],
-				UserId = x.UserId,
+				UserId = new Guid(x.UserId),
 				IsBot = x.IsBot,
 				BotDifficulty = x.BotDifficulty,
 				GameEngineData = x.GameEngineData,
@@ -123,9 +121,9 @@ namespace Elympics
 			/* Using unity FixedUpdate */
 		}
 
-		public void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicInput)
+		public void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
 		{
-			LatestSimulatedTickInput[player] = elympicInput;
+			LatestSimulatedTickInput[player] = elympicsInput;
 		}
 
 		public void SendSnapshotUnreliable(ElympicsSnapshot snapshot)
@@ -185,7 +183,7 @@ namespace Elympics
 		public event Action                  GameStarted;
 		public event Action<List<GameEvent>> GameEventsGathered;
 
-		event Action<GameEngineCore.V1._1.MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
+		event Action<MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
 		{
 			add => throw new NotImplementedException();
 			remove => throw new NotImplementedException();

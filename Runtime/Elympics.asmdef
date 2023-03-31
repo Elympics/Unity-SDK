@@ -1,8 +1,11 @@
 {
     "name": "Elympics",
+    "rootNamespace": "",
     "references": [
         "ParrelSync",
-        "UniTask"
+        "UniTask",
+        "MessagePack",
+        "MessagePack.Annotations"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

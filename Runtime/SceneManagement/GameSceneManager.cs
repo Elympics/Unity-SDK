@@ -5,11 +5,11 @@ namespace Elympics
 {
 	public class GameSceneManager : MonoBehaviour
 	{
-		[SerializeField] private ElympicsClient elympicsClient = null;
-		[SerializeField] private ElympicsBot    elympicsBot    = null;
-		[SerializeField] private ElympicsServer elympicsServer = null;
+		[SerializeField] private ElympicsClient elympicsClient;
+		[SerializeField] private ElympicsBot    elympicsBot;
+		[SerializeField] private ElympicsServer elympicsServer;
 
-		private GameSceneInitializer              _gameSceneInitializer;
+		private GameSceneInitializer _gameSceneInitializer;
 
 		public void Awake()
 		{

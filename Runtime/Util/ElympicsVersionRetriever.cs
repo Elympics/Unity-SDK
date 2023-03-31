@@ -5,12 +5,14 @@ namespace Elympics
 {
 	public static class ElympicsVersionRetriever
 	{
-		private static string _elympicsName = "Elympics";
+		private const string ElympicsName = "elympics";
 
 		public static Version GetVersionFromAssembly()
 		{
 			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-			return assemblies.Select(x => x.GetName()).FirstOrDefault(x => x.Name == _elympicsName)?.Version;
+			return assemblies.Select(x => x.GetName())
+				.FirstOrDefault(x => x.Name.ToLowerInvariant() == ElympicsName)?
+				.Version;
 		}
 
 		public static string GetVersionStringFromAssembly()

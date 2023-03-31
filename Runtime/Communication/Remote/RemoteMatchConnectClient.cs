@@ -43,7 +43,6 @@ namespace Elympics
 		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false, string regionName = null)
 		{
 			_gameServerClient = gameServerClient;
-			Debug.Log(matchId);
 			_tcpUdpServerAddress = tcpUdpServerAddress;
 			_webServerAddress = webServerAddress;
 			_userSecret = userSecret;

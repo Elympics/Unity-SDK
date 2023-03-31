@@ -32,7 +32,7 @@ namespace Elympics
 		private SerializedProperty _botsInServer;
 
 		private SerializedProperty _useWeb;
-		private SerializedProperty _enableReconnect;
+		private SerializedProperty _legacyMatchmakingClient;
 		private SerializedProperty _connectionConfig;
 
 		private SerializedProperty _ticksPerSecond;
@@ -85,7 +85,7 @@ namespace Elympics
 			_botsInServer = serializedObject.FindProperty("botsInServer");
 
 			_useWeb = serializedObject.FindProperty("useWeb");
-			_enableReconnect = serializedObject.FindProperty("enableReconnect");
+			_legacyMatchmakingClient = serializedObject.FindProperty("legacyMatchmakingClient");
 			_connectionConfig = serializedObject.FindProperty("connectionConfig");
 
 			_ticksPerSecond = serializedObject.FindProperty("ticksPerSecond");
@@ -153,7 +153,7 @@ namespace Elympics
 
 			BeginSection("Client");
 			DrawUseWeb(summaryLabelStyle);
-			EditorGUILayout.PropertyField(_enableReconnect, new GUIContent("Reconnect to match"));
+			EditorGUILayout.PropertyField(_legacyMatchmakingClient, new GUIContent("Legacy matchmaking", "Use long polling instead of WebSockets"));
 			EditorGUILayout.PropertyField(_connectionConfig, new GUIContent("Client connection config"));
 			EditorGUILayout.Space();
 

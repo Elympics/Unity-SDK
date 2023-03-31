@@ -14,56 +14,68 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+ * With modifications licensed to Elympics Sp. z o.o.
+ */
+
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
 
-/// Author: Pim de Witte (pimdewitte.com) and contributors, https://github.com/PimDeWitte/AsyncEventsDispatcher
-/// <summary>
-/// A thread-safe class which holds a queue with actions to execute on the next Update() method. It can be used to make calls to the main thread for
-/// things such as UI Manipulation in Unity. It was developed for use in combination with the Firebase Unity plugin, which uses separate threads for event handling
-/// </summary>
-public class AsyncEventsDispatcher : MonoBehaviour {
-
-	private readonly Queue<Action> _executionQueue = new Queue<Action>();
-
-	public void Update()
+namespace Elympics
+{
+	/// Author: Pim de Witte (pimdewitte.com) and contributors, https://github.com/PimDeWitte/AsyncEventsDispatcher
+	/// <summary>
+	/// A thread-safe class which holds a queue with actions to execute on the next Update() method. It can be used to make calls to the main thread for
+	/// things such as UI Manipulation in Unity. It was developed for use in combination with the Firebase Unity plugin, which uses separate threads for event handling
+	/// </summary>
+	public class AsyncEventsDispatcher : MonoBehaviour
 	{
-		lock (_executionQueue)
+		public static AsyncEventsDispatcher Instance { get; set; }
+
+		private readonly Queue<Action> _executionQueue = new Queue<Action>();
+
+		private void Awake()
 		{
-			while (_executionQueue.Count > 0)
+			if (Instance == null)
+				Instance = this;
+		}
+
+		private void Update()
+		{
+			lock (_executionQueue)
 			{
-				_executionQueue.Dequeue().Invoke();
+				while (_executionQueue.Count > 0)
+					_executionQueue.Dequeue().Invoke();
 			}
 		}
-	}
 
-	/// <summary>
-	/// Locks the queue and adds the IEnumerator to the queue
-	/// </summary>
-	/// <param name="action">IEnumerator function that will be executed from the main thread.</param>
-	public void Enqueue(IEnumerator action)
-	{
-		lock (_executionQueue)
+		/// <summary>
+		/// Locks the queue and adds the IEnumerator to the queue
+		/// </summary>
+		/// <param name="action">IEnumerator function that will be executed from the main thread.</param>
+		public void Enqueue(IEnumerator action)
 		{
-			_executionQueue.Enqueue(() => {
-				StartCoroutine(action);
-			});
+			lock (_executionQueue)
+			{
+				_executionQueue.Enqueue(() => StartCoroutine(action));
+			}
 		}
-	}
 
-	/// <summary>
-	/// Locks the queue and adds the Action to the queue
-	/// </summary>
-	/// <param name="action">function that will be executed from the main thread.</param>
-	public void Enqueue(Action action)
-	{
-		Enqueue(ActionWrapper(action));
-	}
-	IEnumerator ActionWrapper(Action a)
-	{
-		a();
-		yield return null;
+		/// <summary>
+		/// Locks the queue and adds the Action to the queue
+		/// </summary>
+		/// <param name="action">function that will be executed from the main thread.</param>
+		public void Enqueue(Action action)
+		{
+			Enqueue(ActionWrapper(action));
+		}
+
+		private IEnumerator ActionWrapper(Action a)
+		{
+			a();
+			yield return null;
+		}
 	}
 }

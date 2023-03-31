@@ -10,12 +10,14 @@ namespace Elympics
 {
 	internal class ClientTickCalculatorNetworkDetailsToFile
 	{
-		private readonly int                     _delayInMs        = 5;
-		private readonly string                  _logDirectoryName = "CustomLogs";
-		private readonly StringBuilder           _sb               = new StringBuilder();
-		private readonly Queue<string>           _textToFileQueue  = new Queue<string>();
-		private          CancellationTokenSource _cancellationTokenSource;
-		private          string                  _fileName;
+		private const int    DelayInMs        = 5;
+		private const string LogDirectoryName = "CustomLogs";
+
+		private readonly StringBuilder _sb              = new StringBuilder();
+		private readonly Queue<string> _textToFileQueue = new Queue<string>();
+
+		private CancellationTokenSource _cancellationTokenSource;
+		private string                  _fileName;
 
 		private string _folderPath;
 #if ELYMPICS_DEBUG
@@ -38,9 +40,9 @@ namespace Elympics
 		private void InitializeWriteToFile()
 		{
 #if UNITY_EDITOR
-			_folderPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, _logDirectoryName);
+			_folderPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, LogDirectoryName);
 #elif ELYMPICS_DEBUG
-			_folderPath = Path.Combine(Application.persistentDataPath,_logDirectoryName);
+			_folderPath = Path.Combine(Application.persistentDataPath, LogDirectoryName);
 #endif
 			_fileName = $"###DetailedNetworkLogs_{DateTime.Now:yyyy_MM_dd___HH_mm_ss}.txt";
 
@@ -71,7 +73,7 @@ namespace Elympics
 					if (anythingToSend)
 						await WriteToFile(_sb.ToString(), _cancellationTokenSource.Token);
 
-					await Task.Delay(_delayInMs, _cancellationTokenSource.Token);
+					await Task.Delay(DelayInMs, _cancellationTokenSource.Token);
 				}
 			}, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 		}

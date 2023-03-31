@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -7,7 +6,6 @@ using Object = UnityEngine.Object;
 
 namespace Elympics
 {
-	[InitializeOnLoad]
 	[CustomEditor(typeof(ElympicsConfig))]
 	public class ElympicsConfigEditor : Editor
 	{
@@ -19,12 +17,6 @@ namespace Elympics
 		private SerializedProperty _elympicsApiEndpoint;
 		private SerializedProperty _elympicsLobbyEndpoint;
 		private SerializedProperty _elympicsGameServersEndpoint;
-		private static string _cachedSdkVersion = string.Empty;
-
-		static ElympicsConfigEditor()
-		{
-			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
-		}
 
 		private void OnEnable()
 		{
@@ -35,11 +27,6 @@ namespace Elympics
 			_availableGames = serializedObject.FindProperty("availableGames");
 			var chosenGameProperty = GetChosenGameProperty();
 			CreateChosenGameEditorIfChanged(chosenGameProperty);
-		}
-
-		private void OnValidate()
-		{
-			_cachedSdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 		}
 
 		private SerializedProperty GetChosenGameProperty()
@@ -103,9 +90,9 @@ namespace Elympics
 			serializedObject.ApplyModifiedProperties();
 		}
 
-		private void DrawSdkVersion()
+		private static void DrawSdkVersion()
 		{
-			EditorGUILayout.LabelField($"Elympics SDK Version: {_cachedSdkVersion} ");
+			EditorGUILayout.LabelField($"Elympics SDK Version: {ElympicsConfig.SdkVersion}");
 		}
 
 		private void DrawNoAvailableGamesLabel()
@@ -115,13 +102,11 @@ namespace Elympics
 				EditorStyles.wordWrappedLabel);
 		}
 
-		public void DrawButtonManageGamesInElympics()
+		private void DrawButtonManageGamesInElympics()
 		{
 			if (GUILayout.Button("Manage games in Elympics"))
-			{
 				ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames,
 					_elympicsApiEndpoint, _elympicsLobbyEndpoint, _elympicsGameServersEndpoint);
-			}
 
 			EditorGUILayout.Separator();
 		}

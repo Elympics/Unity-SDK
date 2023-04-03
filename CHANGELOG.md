@@ -1,3 +1,13 @@
+## [0.5.5](https://github.com/Elympics/Unity-SDK/compare/v0.5.4...v0.5.5) (2023-04-03)
+
+
+### Features
+
+* Introduce WebSocket-based communication with Elympics matchmaking ([8088651](https://github.com/Elympics/Unity-SDK/commit/808865125d51c78e866d27ca8aa7f6e41cc7a1ba))
+* provides base class for handle blockchain sending transaction and response ([a923373](https://github.com/Elympics/Unity-SDK/commit/a9233730906ae8470ca5b995fa5d68669b2935fc))
+
+
+
 ## [0.5.4](https://github.com/Elympics/Unity-SDK/compare/v0.5.3...v0.5.4) (2023-03-23)
 
 

@@ -20,10 +20,10 @@ namespace Elympics
 		internal const int UndefinedNetworkId = -1;
 		private const int DefaultAbsenceTickParameter = 0;
 
-		[SerializeField] internal bool           forceNetworkId          = false;
+		[SerializeField] internal bool           forceNetworkId;
 		[SerializeField] internal int            networkId               = UndefinedNetworkId;
 		[SerializeField] internal ElympicsPlayer predictableFor          = ElympicsPlayer.World;
-		[SerializeField] internal bool           isUpdatableForNonOwners = false;
+		[SerializeField] internal bool           isUpdatableForNonOwners;
 		[SerializeField] internal ElympicsPlayer visibleFor              = ElympicsPlayer.All;
 		[SerializeField]
 		internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
@@ -32,8 +32,6 @@ namespace Elympics
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 200),
 			new ElympicsBehaviourStateChangeFrequencyStage(1000, 1000)
 		};
-
-		private string _prefabName = null;
 
 		private ElympicsComponentsContainer						_componentsContainer;
 		private List<ElympicsVar>								_backingFields;
@@ -50,11 +48,7 @@ namespace Elympics
 			internal set => networkId = value;
 		}
 
-		public string PrefabName
-		{
-			get => _prefabName;
-			internal set => _prefabName = value;
-		}
+		public string PrefabName { get; internal set; }
 
 		public ElympicsPlayer PredictableFor
 		{
@@ -84,7 +78,7 @@ namespace Elympics
 		/// Retrieves received input for a player.
 		/// </summary>
 		/// <param name="player">Identifier of a player that the input is retrieved for.</param>
-		/// <param name="inputDeserializer">Input deserializer. Use its <c>Read</c> methods to parse data from the received input.</param>
+		/// <param name="inputReader">Input deserializer. Use its <c>Read</c> methods to parse data from the received input.</param>
 		/// <param name="absenceTick"> How many ticks will be predicted due to lack of input from player.</param>
 		/// <returns>If there is any input to retrieve for the given player.</returns>
 		/// <seealso cref="IInputHandler.OnInputForClient"/>
@@ -178,8 +172,7 @@ namespace Elympics
 				{
 					if (elympicsVarType.IsAssignableFrom(field.FieldType))
 					{
-						var value = field.GetValue(observable) as ElympicsVar;
-						if (value != null)
+						if (field.GetValue(observable) is ElympicsVar value)
 						{
 							ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
 							value.Initialize(elympicsBase);
@@ -335,16 +328,24 @@ namespace Elympics
 
 		#region ClientCallbacks
 
-		internal void OnStandaloneClientInit(InitialMatchPlayerData data)
+		internal void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
 		{
-			foreach (var handler in _componentsContainer.ClientHandlers)
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
 				handler.OnStandaloneClientInit(data);
+#pragma warning disable CS0618
+			foreach (var handler in _componentsContainer.ClientHandlers)
+				handler.OnStandaloneClientInit(new InitialMatchPlayerData(data));
+#pragma warning restore CS0618
 		}
 
-		internal void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		internal void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
 		{
-			foreach (var handler in _componentsContainer.ClientHandlers)
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
 				handler.OnClientsOnServerInit(data);
+#pragma warning disable CS0618
+			foreach (var handler in _componentsContainer.ClientHandlers)
+				handler.OnClientsOnServerInit(new InitialMatchPlayerDatas(data));
+#pragma warning restore CS0618
 		}
 
 		internal void OnConnected(TimeSynchronizationData data)
@@ -377,10 +378,12 @@ namespace Elympics
 				handler.OnSynchronized(data);
 		}
 
-		internal void OnAuthenticated(string userId)
+		internal void OnAuthenticated(Guid userId)
 		{
-			foreach (var handler in _componentsContainer.ClientHandlers)
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
 				handler.OnAuthenticated(userId);
+			foreach (var handler in _componentsContainer.ClientHandlers)
+				handler.OnAuthenticated(userId.ToString());
 		}
 
 		internal void OnAuthenticatedFailed(string errorMessage)
@@ -389,10 +392,12 @@ namespace Elympics
 				handler.OnAuthenticatedFailed(errorMessage);
 		}
 
-		internal void OnMatchJoined(string matchId)
+		internal void OnMatchJoined(Guid matchId)
 		{
-			foreach (var handler in _componentsContainer.ClientHandlers)
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
 				handler.OnMatchJoined(matchId);
+			foreach (var handler in _componentsContainer.ClientHandlers)
+				handler.OnMatchJoined(matchId.ToString());
 		}
 
 		internal void OnMatchJoinedFailed(string errorMessage)
@@ -401,36 +406,50 @@ namespace Elympics
 				handler.OnMatchJoinedFailed(errorMessage);
 		}
 
-		internal void OnMatchEnded(string matchId)
+		internal void OnMatchEnded(Guid matchId)
 		{
-			foreach (var handler in _componentsContainer.ClientHandlers)
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
 				handler.OnMatchEnded(matchId);
+			foreach (var handler in _componentsContainer.ClientHandlers)
+				handler.OnMatchEnded(matchId.ToString());
 		}
 
 		#endregion
 
 		#region BotCallbacks
 
-		internal void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
+		internal void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData)
 		{
-			foreach (var handler in _componentsContainer.BotHandlers)
+			foreach (var handler in _componentsContainer.BotHandlersGuid)
 				handler.OnStandaloneBotInit(initialMatchData);
+#pragma warning disable CS0618
+			foreach (var handler in _componentsContainer.BotHandlers)
+				handler.OnStandaloneBotInit(new InitialMatchPlayerData(initialMatchData));
+#pragma warning restore CS0618
 		}
 
-		internal void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchDatas)
+		internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchDatas)
 		{
-			foreach (var handler in _componentsContainer.BotHandlers)
+			foreach (var handler in _componentsContainer.BotHandlersGuid)
 				handler.OnBotsOnServerInit(initialMatchDatas);
+#pragma warning disable CS0618
+			foreach (var handler in _componentsContainer.BotHandlers)
+				handler.OnBotsOnServerInit(new InitialMatchPlayerDatas(initialMatchDatas));
+#pragma warning restore CS0618
 		}
 
 		#endregion
 
 		#region ServerCallbacks
 
-		internal void OnServerInit(InitialMatchPlayerDatas initialMatchData)
+		internal void OnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
 		{
-			foreach (var handler in _componentsContainer.ServerHandlers)
+			foreach (var handler in _componentsContainer.ServerHandlersGuid)
 				handler.OnServerInit(initialMatchData);
+#pragma warning disable CS0618
+			foreach (var handler in _componentsContainer.ServerHandlers)
+				handler.OnServerInit(new InitialMatchPlayerDatas(initialMatchData));
+#pragma warning restore CS0618
 		}
 
 		internal void OnPlayerConnected(ElympicsPlayer player)
@@ -450,9 +469,7 @@ namespace Elympics
 		public bool Equals(ElympicsBehaviour other)
 		{
 			if (other != null)
-			{
 				return this.networkId == other.networkId;
-			}
 
 			return false;
 		}

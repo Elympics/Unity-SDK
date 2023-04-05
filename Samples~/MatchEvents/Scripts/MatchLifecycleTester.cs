@@ -10,24 +10,24 @@ namespace MatchEvents
     {
         private void Awake()
         {
-            ElympicsLobbyClient.Instance.Authenticated += OnAuthenticated;
+            ElympicsLobbyClient.Instance.AuthenticatedGuid += OnAuthenticated;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingStarted += MatchmakerOnMatchmakingStarted;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingMatchFound += MatchmakerOnMatchFound;
-            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingFinished += MatchmakerOnMatchmakingFinished;
-            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingError += MatchmakerOnMatchmakingError;
+            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingSucceeded += MatchmakerOnMatchmakingSucceeded;
+            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingFailed += MatchmakerOnMatchmakingFailed;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingWarning += MatchmakerOnMatchmakingWarning;
-            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingCancelled += MatchmakerOnMatchmakingCancelled;
+            ElympicsLobbyClient.Instance.Matchmaker.MatchmakingCancelledGuid += MatchmakerOnMatchmakingCancelled;
         }
 
         #region ElympicsLobbyClient
 
-        private static void OnAuthenticated(bool success, Guid userid, string jwttoken, string error) => Serializer.PrintCall(
+        private static void OnAuthenticated(Result<AuthenticationData, string> obj) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
-                { nameof(success), success },
-                { nameof(userid), userid },
-                { nameof(jwttoken), jwttoken },
-                { nameof(error), error }
+                { nameof(obj.IsSuccess), obj.IsSuccess },
+                { nameof(obj.Value.UserId), obj.Value?.UserId },
+                { nameof(obj.Value.JwtToken), obj.Value?.JwtToken },
+                { nameof(obj.Error), obj.Error }
             });
 
         #endregion ElympicsLobbyClient
@@ -36,7 +36,7 @@ namespace MatchEvents
 
         private static void MatchmakerOnMatchmakingStarted() => Serializer.PrintCall();
 
-        private static void MatchmakerOnMatchmakingFinished(MatchmakingFinishedData obj) => Serializer.PrintCall(
+        private static void MatchmakerOnMatchmakingSucceeded(MatchmakingFinishedData obj) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(obj.MatchId), obj.MatchId },
@@ -52,7 +52,7 @@ namespace MatchEvents
 		        { nameof(matchId), matchId }
 	        });
 
-        private static void MatchmakerOnMatchmakingError((string Error, Guid MatchId) obj) => Serializer.PrintCall(
+        private static void MatchmakerOnMatchmakingFailed((string Error, Guid MatchId) obj) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(obj.Error), obj.Error },

@@ -1,15 +1,12 @@
-﻿using System;
-
-namespace Elympics
+﻿namespace Elympics
 {
-	[Obsolete("Use " + nameof(IServerHandlerGuid) + " instead")]
-	public interface IServerHandler : IObservable
+	public interface IServerHandlerGuid : IObservable
 	{
 		/// <summary>
 		/// Called on server initialization (after processing all initial <see cref="ElympicsBehaviour"/>s).
 		/// </summary>
 		/// <param name="initialMatchPlayerDatas">Initialization data of all possible clients and bots.</param>
-		void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas);
+		void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas);
 
 		/// <summary>
 		/// Called when a client/bot disconnects from the server.

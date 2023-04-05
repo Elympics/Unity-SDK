@@ -142,35 +142,35 @@ namespace Elympics
 		{
 		}
 
-		#region ConnectionCallbacks
+		#region ClientCallbacks
 
-		protected void OnStandaloneClientInit(InitialMatchPlayerData data) => Enqueue(() => elympicsBehavioursManager.OnStandaloneClientInit(data));
-		protected void OnClientsOnServerInit(InitialMatchPlayerDatas data) => Enqueue(() => elympicsBehavioursManager.OnClientsOnServerInit(data));
-		protected void OnSynchronized(TimeSynchronizationData data)        => Enqueue(() => elympicsBehavioursManager.OnSynchronized(data));
-		protected void OnDisconnectedByServer()                            => Enqueue(elympicsBehavioursManager.OnDisconnectedByServer);
-		protected void OnDisconnectedByClient()                            => Enqueue(elympicsBehavioursManager.OnDisconnectedByClient);
-		protected void OnConnected(TimeSynchronizationData data)           => Enqueue(() => elympicsBehavioursManager.OnConnected(data));
-		protected void OnConnectingFailed()                                => Enqueue(elympicsBehavioursManager.OnConnectingFailed);
-		protected void OnAuthenticated(string userId)                      => Enqueue(() => elympicsBehavioursManager.OnAuthenticated(userId));
-		protected void OnAuthenticatedFailed(string errorMessage)          => Enqueue(() => elympicsBehavioursManager.OnAuthenticatedFailed(errorMessage));
-		protected void OnMatchJoined(string matchId)                       => Enqueue(() => elympicsBehavioursManager.OnMatchJoined(matchId));
-		protected void OnMatchEnded(string matchId)                        => Enqueue(() => elympicsBehavioursManager.OnMatchEnded(matchId));
-		protected void OnMatchJoinedFailed(string errorMessage)            => Enqueue(() => elympicsBehavioursManager.OnMatchJoinedFailed(errorMessage));
+		protected void OnStandaloneClientInit(InitialMatchPlayerDataGuid data) => Enqueue(() => elympicsBehavioursManager.OnStandaloneClientInit(data));
+		protected void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data) => Enqueue(() => elympicsBehavioursManager.OnClientsOnServerInit(data));
+		protected void OnSynchronized(TimeSynchronizationData data)            => Enqueue(() => elympicsBehavioursManager.OnSynchronized(data));
+		protected void OnDisconnectedByServer()                                => Enqueue(elympicsBehavioursManager.OnDisconnectedByServer);
+		protected void OnDisconnectedByClient()                                => Enqueue(elympicsBehavioursManager.OnDisconnectedByClient);
+		protected void OnConnected(TimeSynchronizationData data)               => Enqueue(() => elympicsBehavioursManager.OnConnected(data));
+		protected void OnConnectingFailed()                                    => Enqueue(elympicsBehavioursManager.OnConnectingFailed);
+		protected void OnAuthenticated(Guid userId)                            => Enqueue(() => elympicsBehavioursManager.OnAuthenticated(userId));
+		protected void OnAuthenticatedFailed(string errorMessage)              => Enqueue(() => elympicsBehavioursManager.OnAuthenticatedFailed(errorMessage));
+		protected void OnMatchJoined(Guid matchId)                             => Enqueue(() => elympicsBehavioursManager.OnMatchJoined(matchId));
+		protected void OnMatchEnded(Guid matchId)                              => Enqueue(() => elympicsBehavioursManager.OnMatchEnded(matchId));
+		protected void OnMatchJoinedFailed(string errorMessage)                => Enqueue(() => elympicsBehavioursManager.OnMatchJoinedFailed(errorMessage));
 
 		#endregion
 
 		#region BotCallbacks
 
-		protected void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnStandaloneBotInit(initialMatchData));
-		protected void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnBotsOnServerInit(initialMatchData));
+		protected void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnStandaloneBotInit(initialMatchData));
+		protected void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnBotsOnServerInit(initialMatchData));
 
 		#endregion
 
 		#region ServerCallbacks
 
-		protected void OnServerInit(InitialMatchPlayerDatas initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnServerInit(initialMatchData));
-		protected void OnPlayerConnected(ElympicsPlayer player)               => Enqueue(() => elympicsBehavioursManager.OnPlayerConnected(player));
-		protected void OnPlayerDisconnected(ElympicsPlayer player)            => Enqueue(() => elympicsBehavioursManager.OnPlayerDisconnected(player));
+		protected void OnServerInit(InitialMatchPlayerDatasGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnServerInit(initialMatchData));
+		protected void OnPlayerConnected(ElympicsPlayer player)                   => Enqueue(() => elympicsBehavioursManager.OnPlayerConnected(player));
+		protected void OnPlayerDisconnected(ElympicsPlayer player)                => Enqueue(() => elympicsBehavioursManager.OnPlayerDisconnected(player));
 
 		#endregion
 

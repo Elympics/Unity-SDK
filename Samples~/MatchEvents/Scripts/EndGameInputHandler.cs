@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MatchEvents
 {
-	public class EndGameInputHandler : ElympicsMonoBehaviour, IInputHandler, IServerHandler, IUpdatable
+	public class EndGameInputHandler : ElympicsMonoBehaviour, IInputHandler, IServerHandlerGuid, IUpdatable
 	{
 		public static bool ShouldGameEnd { get; set; }
 
@@ -39,7 +39,7 @@ namespace MatchEvents
 				}
 		}
 
-		public void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
+		public void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
 		{
 			_totalPlayers = initialMatchPlayerDatas.Count;
 		}

@@ -24,7 +24,7 @@ namespace Elympics
 		private bool HandlingClientsInServer => _handlingClientsOverride;
 
 		private GameEngineAdapter _gameEngineAdapter;
-		private InitialMatchPlayerDatas _playerData;
+		private InitialMatchPlayerDatasGuid _playerData;
 		private ElympicsPlayer[] _playersOfBots;
 		private ElympicsPlayer[] _playersOfClients;
 
@@ -73,12 +73,12 @@ namespace Elympics
 			};
 		}
 
-		private void InitializeBotsAndClientInServer(InitialMatchPlayerDatas data)
+		private void InitializeBotsAndClientInServer(InitialMatchPlayerDatasGuid data)
 		{
 			if (HandlingBotsInServer)
 			{
 				var dataOfBots = data.Where(x => x.IsBot).ToList();
-				OnBotsOnServerInit(new InitialMatchPlayerDatas(dataOfBots));
+				OnBotsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfBots));
 
 				_playersOfBots = dataOfBots.Select(x => x.Player).ToArray();
 				CallPlayerConnectedFromBotsOrClients(_playersOfBots);
@@ -87,7 +87,7 @@ namespace Elympics
 			if (HandlingClientsInServer)
 			{
 				var dataOfClients = data.Where(x => !x.IsBot).ToList();
-				OnClientsOnServerInit(new InitialMatchPlayerDatas(dataOfClients));
+				OnClientsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfClients));
 
 				_playersOfClients = dataOfClients.Select(x => x.Player).ToArray();
 				CallPlayerConnectedFromBotsOrClients(_playersOfClients);

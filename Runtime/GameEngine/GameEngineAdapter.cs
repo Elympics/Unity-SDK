@@ -25,7 +25,7 @@ namespace Elympics
 		public event Action<ElympicsPlayer>       PlayerConnected;
 		public event Action<ElympicsPlayer>       PlayerDisconnected;
 
-		public event Action<InitialMatchPlayerDatas> InitializedWithMatchPlayerDatas;
+		public event Action<InitialMatchPlayerDatasGuid> InitializedWithMatchPlayerDatas;
 
 		private IGameEngineLogger                  _logger;
 		private InitialMatchUserDatas              _initialMatchUserDatas;
@@ -66,7 +66,7 @@ namespace Elympics
 				PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
 			_initialMatchUserDatas = initialMatchUserDatas;
-			InitializedWithMatchPlayerDatas?.Invoke(new InitialMatchPlayerDatas(initialMatchUserDatas.Select(x => new InitialMatchPlayerData
+			InitializedWithMatchPlayerDatas?.Invoke(new InitialMatchPlayerDatasGuid(initialMatchUserDatas.Select(x => new InitialMatchPlayerDataGuid
 			{
 				Player = _userIdsToPlayers[x.UserId],
 				UserId = new Guid(x.UserId),

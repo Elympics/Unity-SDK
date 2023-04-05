@@ -2,6 +2,7 @@ using MessagePack;
 
 namespace Elympics.Models.Matchmaking.WebSocket
 {
+	[MessagePackObject]
 	public readonly struct MatchmakingError : IFromLobby
 	{
 		[Key(0)] public ErrorBlame ErrorBlame { get; }

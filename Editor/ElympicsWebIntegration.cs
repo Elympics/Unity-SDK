@@ -200,7 +200,7 @@ namespace Elympics
 			}
 		}
 
-		private static UnityWebRequest gameVersionsWebRequest = null;
+		private static UnityWebRequest gameVersionsWebRequest;
 
 		public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty, bool silent = false)
 		{
@@ -212,7 +212,9 @@ namespace Elympics
 				var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
 
 				var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
-				gameVersionsWebRequest?.Abort();
+				if (gameVersionsWebRequest != null)
+					if (!gameVersionsWebRequest.isDone)
+						gameVersionsWebRequest.Abort();
 				gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
 
 				void OnCompleted(UnityWebRequest webRequest)

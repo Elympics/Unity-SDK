@@ -18,8 +18,8 @@ namespace Elympics
 		private MatchmakerClient      _matchmakerClient;
 		private IUserApiClient        _userApiClient;
 
-		private ElympicsGameConfig     _elympicsGameConfig;
-		private InitialMatchPlayerData _initialPlayerData;
+		private ElympicsGameConfig         _elympicsGameConfig;
+		private InitialMatchPlayerDataGuid _initialPlayerData;
 
 		protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
 		{
@@ -32,7 +32,7 @@ namespace Elympics
 
 			var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
 			var testPlayerData = _elympicsGameConfig.TestPlayers[playerIndex];
-			_initialPlayerData = new InitialMatchPlayerData
+			_initialPlayerData = new InitialMatchPlayerDataGuid
 			{
 				Player = ElympicsPlayer.FromIndex(playerIndex),
 				GameEngineData = testPlayerData.gameEngineData,
@@ -65,9 +65,9 @@ namespace Elympics
 			_initialPlayerData.UserId = result.UserId;
 
 			var cts = new CancellationTokenSource(MatchmakingTimeout);
-			_matchmakerClient.MatchmakingFinished += OnMatchmakingFinished;
+			_matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
 			_matchmakerClient.MatchmakingMatchFound += matchId => Debug.Log($"Match found: {matchId}");
-			_matchmakerClient.MatchmakingError += args => Debug.LogError($"Matchmaking error: {args.Error}");
+			_matchmakerClient.MatchmakingFailed += args => Debug.LogError($"Matchmaking error: {args.Error}");
 			_matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData
 			{
 				GameId = new Guid(_elympicsGameConfig.GameId),
@@ -79,7 +79,7 @@ namespace Elympics
 			}, cts.Token);
 		}
 
-		private void OnMatchmakingFinished(MatchmakingFinishedData matchData)
+		private void OnMatchmakingSucceeded(MatchmakingFinishedData matchData)
 		{
 			Debug.Log("Matchmaking finished, connecting to the game server...");
 			_initialPlayerData.Player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_initialPlayerData.UserId];
@@ -101,7 +101,7 @@ namespace Elympics
 				_elympicsGameConfig.UseWeb, _elympicsGameConfig.TestMatchData.regionName);
 			var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
 
-			_client.InitializeInternal(_elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerData
+			_client.InitializeInternal(_elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid
 			{
 				Player = _initialPlayerData.Player,
 				UserId = _initialPlayerData.UserId,

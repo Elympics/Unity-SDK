@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Elympics
 {
-	public class DefaultServerHandler : ElympicsMonoBehaviour, IServerHandler
+	public class DefaultServerHandler : ElympicsMonoBehaviour, IServerHandlerGuid
 	{
 		private static readonly TimeSpan StartGameTimeout = TimeSpan.FromSeconds(30);
 
@@ -16,7 +16,7 @@ namespace Elympics
 
 		private readonly HashSet<ElympicsPlayer> _playersConnected = new HashSet<ElympicsPlayer>();
 
-		public void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
+		public void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
 		{
 			if (!IsEnabledAndActive)
 				return;

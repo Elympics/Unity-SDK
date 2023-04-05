@@ -1,6 +1,5 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
 using GameBotCore.V1._3;
 
 namespace Elympics
@@ -27,16 +26,16 @@ namespace Elympics
 			};
 
 			_halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, userId, elympicsGameConfig.UseWebInHalfRemote);
+			_halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, new Guid(userId), elympicsGameConfig.UseWebInHalfRemote);
 
 			_halfRemoteMatchClient.RawSnapshotReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
 			gameBotAdapter.InGameDataForReliableChannelGenerated += data => _halfRemoteMatchClient.SendRawInputReliable(data);
 			gameBotAdapter.InGameDataForUnreliableChannelGenerated += data => _halfRemoteMatchClient.SendRawInputUnreliable(data);
-			
+
 			gameBotAdapter.Init(new LoggerNoop(), null);
 			gameBotAdapter.Init2(null);
 			gameBotAdapter.Init3(botConfiguration);
-			
+
 			_halfRemoteMatchConnectClient.ConnectAndJoinAsPlayer(_ => {}, default);
 		}
 

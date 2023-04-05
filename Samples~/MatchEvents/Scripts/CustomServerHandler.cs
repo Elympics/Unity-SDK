@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace MatchEvents
 {
 	[RequireComponent(typeof(Text))]
-	public class CustomServerHandler : ElympicsMonoBehaviour, IServerHandler, IInitializable
+	public class CustomServerHandler : ElympicsMonoBehaviour, IServerHandlerGuid, IInitializable
 	{
 		[SerializeField] private int startGameTimeout = 30;
 
@@ -29,7 +29,7 @@ namespace MatchEvents
 			text.ValueChanged += (_, newValue) => _text.text = newValue;
 		}
 
-		public void OnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
+		public void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
 		{
 			foreach (var data in initialMatchPlayerDatas)
 				_isBot[data.Player] = data.IsBot;

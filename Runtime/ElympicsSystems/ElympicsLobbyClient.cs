@@ -13,17 +13,21 @@ namespace Elympics
 
 		[SerializeField] private bool authenticateOnAwake = true;
 
-		public delegate void AuthenticationCallback(bool success, Guid userId, string jwtToken, string error);
+		public delegate void AuthenticationCallback(bool success, string userId, string jwtToken, string error);
+		[Obsolete("Use " + nameof(AuthenticatedGuid) + " instead")]
 		public event AuthenticationCallback Authenticated;
+		public event Action<Result<AuthenticationData, string>> AuthenticatedGuid;
 
 		public IMatchmakerEvents Matchmaker => _matchmaker;
 
-		public Guid? UserId         => _authData?.UserId;
+		public Guid? UserGuid => _authData?.UserId;
+		public string UserId => UserGuid?.ToString();
 		public bool IsAuthenticated => _authData != null;
 
 		internal JoinedMatchMode MatchMode { get; private set; }
 
-		public MatchmakingFinishedData MatchData { get; private set; }
+		public MatchmakingFinishedData MatchDataGuid { get; private set; }
+		public JoinedMatchData MatchData { get; private set; }
 
 		private string                _clientSecret;
 		private IAuthenticationClient _auth;
@@ -52,10 +56,11 @@ namespace Elympics
 			_lobbyPublicApiClient = new UserApiClient();
 			_auth = new RemoteAuthenticationClient(_lobbyPublicApiClient);
 			_matchmaker = MatchmakerClientFactory.Create(_gameConfig, _lobbyPublicApiClient);
-			_matchmaker.MatchmakingFinished += HandleMatchmakingFinished;
+			_matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
 			_matchmaker.MatchmakingMatchFound += HandleMatchIdReceived;
-			_matchmaker.MatchmakingCancelled += HandleMatchmakingCancelled;
-			_matchmaker.MatchmakingError += HandleMatchmakingError;
+			_matchmaker.MatchmakingCancelledGuid += HandleMatchmakingCancelled;
+			_matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
+			_matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
 			if (authenticateOnAwake)
 				Authenticate();
@@ -96,11 +101,15 @@ namespace Elympics
 			{
 				Debug.Log($"[Elympics] Authentication successful with user id: {result.UserId}");
 				_authData = new AuthenticationData(result.UserId, result.JwtToken);
+				AuthenticatedGuid?.Invoke(Result<AuthenticationData, string>.Success(_authData));
 			}
 			else
+			{
 				Debug.LogError($"[Elympics] Authentication failed: {result.Error}");
+				AuthenticatedGuid?.Invoke(Result<AuthenticationData, string>.Failure(result.Error));
+			}
 
-			Authenticated?.Invoke(result.Success, result.UserId, result.JwtToken, result.Error);
+			Authenticated?.Invoke(result.Success, result.UserId.ToString(), result.JwtToken, result.Error);
 		}
 
 		public void PlayOffline()
@@ -161,10 +170,15 @@ namespace Elympics
 			CleanUpAfterMatchmaking();
 		}
 
-		private void HandleMatchmakingError((string Error, Guid MatchId) args)
+		private void HandleMatchmakingFailed((string Error, Guid MatchId) args)
 		{
 			Debug.LogError($"Matchmaking error: {args.Error}");
 			CleanUpAfterMatchmaking();
+		}
+
+		private static void HandleMatchmakingWarning((string Warning, Guid MatchId) args)
+		{
+			Debug.LogWarning($"Matchmaking warning: {args.Warning}");
 		}
 
 		private static void HandleMatchIdReceived(Guid matchId)
@@ -172,10 +186,11 @@ namespace Elympics
 			Debug.Log($"Received match id {matchId}");
 		}
 
-		private void HandleMatchmakingFinished(MatchmakingFinishedData matchData)
+		private void HandleMatchmakingSucceeded(MatchmakingFinishedData matchData)
 		{
 			Debug.Log("Matchmaking finished successfully");
-			MatchData = matchData;
+			MatchDataGuid = matchData;
+			MatchData = new JoinedMatchData(matchData);
 			CleanUpAfterMatchmaking();
 			if (_loadingSceneOnFinished)
 				LoadGameplayScene();

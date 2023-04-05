@@ -18,6 +18,8 @@ namespace Elympics
 		private CancellationTokenRegistration _ctRegistration;
 		private byte[] _serializedGameData;
 		private byte[] _serializedJoinRequest;
+		private Guid _gameId;
+		private string _gameVersion;
 		private Guid _matchId;
 
 		private static readonly byte[] SerializedPong = MessagePackSerializer.Serialize<IToLobby>(new Pong());
@@ -29,7 +31,7 @@ namespace Elympics
 
 		private void SetUp(CancellationToken ct)
 		{
-			EmitMatchmakingStarted();
+			EmitMatchmakingStarted(_gameId, _gameVersion);
 			_ctRegistration = ct.Register(CancelConnection);
 
 			_ws = UserApiClient.CreateMatchmakingWebSocket();
@@ -47,6 +49,8 @@ namespace Elympics
 
 			_serializedGameData = MessagePackSerializer.Serialize<IToLobby>(new GameData(ElympicsConfig.SdkVersion, joinMatchmakerData));
 			_serializedJoinRequest = MessagePackSerializer.Serialize<IToLobby>(new JoinMatchmaker(joinMatchmakerData));
+			_gameId = joinMatchmakerData.GameId;
+			_gameVersion = joinMatchmakerData.GameVersion;
 
 			SetUp(ct);
 		}
@@ -67,7 +71,7 @@ namespace Elympics
 
 			_onMessage = ReceiveMatchReady;
 			_matchId = matchFound.MatchId;
-			EmitMatchmakingMatchFound(_matchId);
+			EmitMatchmakingMatchFound(_matchId, _gameId, _gameVersion);
 		}
 
 		private void ReceiveMatchReady(IFromLobby message)
@@ -77,13 +81,13 @@ namespace Elympics
 
 			_onMessage = null;
 			CleanUp();
-			EmitMatchmakingFinished(new MatchmakingFinishedData(matchData));
+			EmitMatchmakingSucceeded(new MatchmakingFinishedData(matchData));
 		}
 
 		private void CancelConnection()
 		{
 			var matchId = CleanUp((WebSocketCloseCode.Normal, CanceledByUserCloseReason));
-			EmitMatchmakingCancelled(matchId);
+			EmitMatchmakingCancelled(matchId, _gameId, _gameVersion);
 		}
 
 		private void HandleMessage(byte[] data)
@@ -105,7 +109,7 @@ namespace Elympics
 					_ws.Send(SerializedPong);
 					break;
 				case MatchmakingError matchmakingError:
-					HandleError($"Error deserializing matchmaker response\n{matchmakingError}");
+					HandleError($"[{matchmakingError.StatusCode}] {matchmakingError.ErrorBlame}");
 					break;
 				default:
 					_onMessage?.Invoke(messageFromLobby);
@@ -117,7 +121,7 @@ namespace Elympics
 		{
 			var matchId = CleanUp();
 			if (code != WebSocketCloseCode.Normal)
-				EmitMatchmakingError($"Connection closed abnormally: [{code}] {reason}", matchId);
+				EmitMatchmakingFailed($"Connection closed abnormally [{code}] {reason}", matchId, _gameId, _gameVersion);
 		}
 
 		private void HandleWarning(string message)
@@ -128,7 +132,7 @@ namespace Elympics
 		private void HandleError(string message)
 		{
 			var matchId = CleanUp((WebSocketCloseCode.Abnormal, message));
-			EmitMatchmakingError(message, matchId);
+			EmitMatchmakingFailed(message, matchId, _gameId, _gameVersion);
 		}
 
 		/// <summary>
@@ -144,6 +148,8 @@ namespace Elympics
 			var matchId = _matchId;
 			_ws = null;
 			_matchId = Guid.Empty;
+			_gameId = Guid.Empty;
+			_gameVersion = null;
 			if (closeArgs.HasValue)
 				try
 				{

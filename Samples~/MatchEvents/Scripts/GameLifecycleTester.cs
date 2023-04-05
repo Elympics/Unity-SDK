@@ -6,7 +6,7 @@ using MatchTcpClients.Synchronizer;
 
 namespace MatchEvents
 {
-    public class GameLifecycleTester : ElympicsMonoBehaviour, IClientHandler, IServerHandler, IBotHandler
+    public class GameLifecycleTester : ElympicsMonoBehaviour, IClientHandlerGuid, IServerHandlerGuid, IBotHandlerGuid
     {
         public event Action ConnectingStarted;
         public event Action<bool> ConnectingFinished;
@@ -57,13 +57,13 @@ namespace MatchEvents
 
         #region IClientHandler
 
-        public void OnStandaloneClientInit(InitialMatchPlayerData data) => Serializer.PrintCall(
+        public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(data), data }
             });
 
-        public void OnClientsOnServerInit(InitialMatchPlayerDatas datas) => Serializer.PrintCall(
+        public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid datas) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(datas), datas }
@@ -85,7 +85,7 @@ namespace MatchEvents
                 { nameof(data), data }
             });
 
-        public void OnAuthenticated(string userId) => Serializer.PrintCall(
+        public void OnAuthenticated(Guid userId) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(userId), userId }
@@ -97,7 +97,7 @@ namespace MatchEvents
                 { nameof(errorMessage), errorMessage }
             });
 
-        public void OnMatchJoined(string matchId) => Serializer.PrintCall(
+        public void OnMatchJoined(Guid matchId) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(matchId), matchId }
@@ -109,7 +109,7 @@ namespace MatchEvents
                 { nameof(errorMessage), errorMessage }
             });
 
-        public void OnMatchEnded(string matchId) => Serializer.PrintCall(
+        public void OnMatchEnded(Guid matchId) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(matchId), matchId }
@@ -119,7 +119,7 @@ namespace MatchEvents
 
         #region IServerHandler
 
-        public void OnServerInit(InitialMatchPlayerDatas datas) => Serializer.PrintCall(
+        public void OnServerInit(InitialMatchPlayerDatasGuid datas) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(datas), datas }
@@ -141,13 +141,13 @@ namespace MatchEvents
 
         #region IBotHandler
 
-        public void OnStandaloneBotInit(InitialMatchPlayerData data) => Serializer.PrintCall(
+        public void OnStandaloneBotInit(InitialMatchPlayerDataGuid data) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(data), data }
             });
 
-        public void OnBotsOnServerInit(InitialMatchPlayerDatas datas) => Serializer.PrintCall(
+        public void OnBotsOnServerInit(InitialMatchPlayerDatasGuid datas) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
                 { nameof(datas), datas }

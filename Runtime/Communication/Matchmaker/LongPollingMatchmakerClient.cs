@@ -13,28 +13,31 @@ namespace Elympics
 
 		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, CancellationToken ct = default)
 		{
+			var gameId = joinMatchmakerData.GameId;
+			var gameVersion = joinMatchmakerData.GameVersion;
+
 			void OnMatched(JoinMatchmakerAndWaitForMatchModel.Response response, Exception exception)
 			{
 				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId);
+					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
 					return;
 				}
 
 				if (exception != null)
 				{
-					EmitMatchmakingError(exception.Message, matchId);
+					EmitMatchmakingFailed(exception.Message, matchId, gameId, gameVersion);
 					return;
 				}
 
 				if (IsOpponentNotFound(response))
 				{
-					EmitMatchmakingError(JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound, matchId);
+					EmitMatchmakingFailed(JoinMatchmakerAndWaitForMatchModel.ErrorCodes.OpponentNotFound, matchId, gameId, gameVersion);
 					return;
 				}
 
-				EmitMatchmakingMatchFound(matchId);
+				EmitMatchmakingMatchFound(matchId, gameId, gameVersion);
 
 				var getMatchRequest = new GetMatchModel.Request
 				{
@@ -49,14 +52,14 @@ namespace Elympics
 				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId);
+					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
 					return;
 				}
 
 				if (TryGetErrorMessage(response, exception, out var errorMessage))
 				{
 					errorMessage += $" (waiting for state: {GetMatchDesiredState.Initializing}";
-					EmitMatchmakingError(errorMessage, matchId);
+					EmitMatchmakingFailed(errorMessage, matchId, gameId, gameVersion);
 					return;
 				}
 
@@ -73,14 +76,14 @@ namespace Elympics
 				var matchId = response.MatchId != null ? new Guid(response.MatchId) : Guid.Empty;
 				if (ct.IsCancellationRequested)
 				{
-					EmitMatchmakingCancelled(matchId);
+					EmitMatchmakingCancelled(matchId, gameId, gameVersion);
 					return;
 				}
 
 				if (TryGetErrorMessage(response, exception, out var errorMessage))
 				{
 					errorMessage += $" (waiting for state: {GetMatchDesiredState.Running}";
-					EmitMatchmakingError(errorMessage, matchId);
+					EmitMatchmakingFailed(errorMessage, matchId, gameId, gameVersion);
 					return;
 				}
 
@@ -95,14 +98,14 @@ namespace Elympics
 				var matchData = new MatchmakingFinishedData(matchId, response.UserSecret,
 					joinMatchmakerData.QueueName, joinMatchmakerData.RegionName, gameEngineData, matchmakerData,
 					response.TcpUdpServerAddress, response.WebServerAddress, response.MatchedPlayersId.Select(x => new Guid(x)).ToArray());
-				EmitMatchmakingFinished(matchData);
+				EmitMatchmakingSucceeded(matchData);
 			}
 
-			EmitMatchmakingStarted();
+			EmitMatchmakingStarted(gameId, gameVersion);
 
 			if (ct.IsCancellationRequested)
 			{
-				EmitMatchmakingCancelled(Guid.Empty);
+				EmitMatchmakingCancelled(Guid.Empty, gameId, gameVersion);
 				return;
 			}
 

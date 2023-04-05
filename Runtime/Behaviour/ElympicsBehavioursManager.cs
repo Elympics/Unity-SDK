@@ -353,13 +353,13 @@ namespace Elympics
 
 		#region ClientCallbacks
 
-		internal void OnStandaloneClientInit(InitialMatchPlayerData data)
+		internal void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnStandaloneClientInit(data);
 		}
 
-		internal void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		internal void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnClientsOnServerInit(data);
@@ -377,13 +377,13 @@ namespace Elympics
 				elympicsBehaviour.OnMatchJoinedFailed(errorMessage);
 		}
 
-		internal void OnMatchJoined(string matchId)
+		internal void OnMatchJoined(Guid matchId)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnMatchJoined(matchId);
 		}
 
-		internal void OnMatchEnded(string matchId)
+		internal void OnMatchEnded(Guid matchId)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnMatchEnded(matchId);
@@ -395,7 +395,7 @@ namespace Elympics
 				elympicsBehaviour.OnAuthenticatedFailed(errorMessage);
 		}
 
-		internal void OnAuthenticated(string userId)
+		internal void OnAuthenticated(Guid userId)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnAuthenticated(userId);
@@ -429,13 +429,13 @@ namespace Elympics
 
 		#region BotCallbacks
 
-		internal void OnStandaloneBotInit(InitialMatchPlayerData initialMatchData)
+		internal void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnStandaloneBotInit(initialMatchData);
 		}
 
-		internal void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchData)
+		internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnBotsOnServerInit(initialMatchData);
@@ -445,7 +445,7 @@ namespace Elympics
 
 		#region ServerCallbacks
 
-		internal void OnServerInit(InitialMatchPlayerDatas initialMatchData)
+		internal void OnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
 		{
 			foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
 				elympicsBehaviour.OnServerInit(initialMatchData);

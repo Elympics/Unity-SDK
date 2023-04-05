@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Elympics;
 using MatchTcpClients.Synchronizer;
 
 namespace GameLogic.NewTicTacToe
 {
-	public class PlayerController : ElympicsMonoBehaviour, IInputHandler, IClientHandler, IBotHandler, IUpdatable
+	public class PlayerController : ElympicsMonoBehaviour, IInputHandler, IClientHandlerGuid, IBotHandlerGuid, IUpdatable
 	{
-		[SerializeField] public GameStateObject     gameState           = null;
-		[SerializeField] public PlayerInputProvider playerInputProvider = null;
+		[SerializeField] public GameStateObject     gameState;
+		[SerializeField] public PlayerInputProvider playerInputProvider;
 
 		private readonly Dictionary<int, BotInputProvider> _botControllers = new Dictionary<int, BotInputProvider>();
 
@@ -48,7 +49,7 @@ namespace GameLogic.NewTicTacToe
 		{
 		}
 
-		public void OnStandaloneBotInit(InitialMatchPlayerData initialMatchPlayerData)
+		public void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchPlayerData)
 		{
 			var botController = gameObject.AddComponent<BotInputProvider>();
 			botController.gameState = gameState;
@@ -57,17 +58,17 @@ namespace GameLogic.NewTicTacToe
 			_botControllers.Add((int) initialMatchPlayerData.Player, botController);
 		}
 
-		public void OnBotsOnServerInit(InitialMatchPlayerDatas initialMatchPlayerDatas)
+		public void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
 		{
 			foreach (var initialMatchPlayerData in initialMatchPlayerDatas)
 				OnStandaloneBotInit(initialMatchPlayerData);
 		}
 
-		public void OnStandaloneClientInit(InitialMatchPlayerData data)
+		public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
 		{
 		}
 
-		public void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
 		{
 		}
 
@@ -90,7 +91,7 @@ namespace GameLogic.NewTicTacToe
 			// Debug.Log($"Synchronized {data.RoundTripDelay}");
 		}
 
-		public void OnAuthenticated(string userId)
+		public void OnAuthenticated(Guid userId)
 		{
 			Debug.Log($"Authenticated with userId {userId}");
 		}
@@ -100,7 +101,7 @@ namespace GameLogic.NewTicTacToe
 			Debug.Log($"Authentication failed - {errorMessage}");
 		}
 
-		public void OnMatchJoined(string matchId)
+		public void OnMatchJoined(Guid matchId)
 		{
 			Debug.Log($"Match joined");
 		}
@@ -110,7 +111,7 @@ namespace GameLogic.NewTicTacToe
 			Debug.Log($"Match joining failed");
 		}
 
-		public void OnMatchEnded(string matchId)
+		public void OnMatchEnded(Guid matchId)
 		{
 			Debug.Log($"Match ended");
 			gameState.SetGameOver(true);

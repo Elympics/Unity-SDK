@@ -26,22 +26,22 @@ namespace Elympics
 
 		public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
 		public event Action                          ConnectingFailed;
-		public event Action<string>                  AuthenticatedUserMatchWithUserId;
+		public event Action<Guid>                    AuthenticatedUserMatchWithUserId;
 		public event Action<string>                  AuthenticatedUserMatchFailedWithError;
 		public event Action                          AuthenticatedAsSpectator;
 		public event Action<string>                  AuthenticatedAsSpectatorWithError;
 		public event Action<string>                  MatchJoinedWithError;
-		public event Action<string>                  MatchJoinedWithMatchId;
-		public event Action<string>                  MatchEndedWithMatchId;
+		public event Action<Guid>                    MatchJoinedWithMatchId;
+		public event Action<Guid>                    MatchEndedWithMatchId;
 		public event Action                          DisconnectedByServer;
 		public event Action                          DisconnectedByClient;
 
-		private static readonly string MatchId = Guid.NewGuid().ToString();
+		private static readonly Guid MatchId = Guid.NewGuid();
 
 		private readonly HalfRemoteMatchClientAdapter _halfRemoteMatchClientAdapter;
 		private readonly string                       _ip;
 		private readonly int                          _port;
-		private readonly string                       _userId;
+		private readonly Guid                         _userId;
 		private readonly bool                         _useWeb;
 		private readonly HttpSignalingClient          _signalingClient;
 
@@ -50,7 +50,7 @@ namespace Elympics
 
 		private WebSignalingClientResponse _webResponse;
 
-		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, string userId, bool useWeb)
+		public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, Guid userId, bool useWeb)
 		{
 			_halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
 			_ip = ip;
@@ -110,8 +110,8 @@ namespace Elympics
 				yield break;
 			}
 
-			var client = new HalfRemoteMatchClient(_userId, new ProtoNetworkStreamClient(_tcpClient.GetStream()));
-			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId, client);
+			var client = new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(_tcpClient.GetStream()));
+			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
 		}
 
 		private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
@@ -166,7 +166,7 @@ namespace Elympics
 
 
 			var channelOpened = false;
-			var client = new HalfRemoteMatchClient(_userId, _webRtcClient);
+			var client = new HalfRemoteMatchClient(_userId.ToString(), _webRtcClient);
 
 			void OnChannelOpened(byte[] data, string playerId)
 			{
@@ -198,7 +198,7 @@ namespace Elympics
 
 			Debug.Log("WebRTC received channel opened");
 
-			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId, client);
+			yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
 		}
 
 		public IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct)

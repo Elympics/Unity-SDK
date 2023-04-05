@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Elympics.EgbTest
 {
-	public class DataDisplayer : MonoBehaviour, IClientHandler
+	public class DataDisplayer : MonoBehaviour, IClientHandlerGuid
 	{
 		[SerializeField] private InputField sentGeDataField;
 		[SerializeField] private InputField sentMmDataField;
@@ -38,7 +38,7 @@ namespace Elympics.EgbTest
 			sentMmDataField.text = DataConverter.StringifyMatchmakerData(_sentMmData);
 		}
 
-		public void OnStandaloneClientInit(InitialMatchPlayerData data)
+		public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
 		{
 			if (data.GameEngineData?.SequenceEqual(_sentGeData ?? Array.Empty<byte>()) is true)
 				receivedGeDataField.text = sentGeDataField.text;
@@ -66,7 +66,7 @@ namespace Elympics.EgbTest
 			field.colors = colors;
 		}
 
-		public void OnClientsOnServerInit(InitialMatchPlayerDatas data)
+		public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
 		{
 			Debug.LogError("This sample is meant for Debug Online and Online modes only.");
 		}
@@ -83,15 +83,15 @@ namespace Elympics.EgbTest
 
 		public void OnSynchronized(TimeSynchronizationData data) { }
 
-		public void OnAuthenticated(string userId) { }
+		public void OnAuthenticated(Guid userId) { }
 
 		public void OnAuthenticatedFailed(string errorMessage) { }
 
-		public void OnMatchJoined(string matchId) { }
+		public void OnMatchJoined(Guid matchId) { }
 
 		public void OnMatchJoinedFailed(string errorMessage) { }
 
-		public void OnMatchEnded(string matchId) { }
+		public void OnMatchEnded(Guid matchId) { }
 
 		#endregion Unused callbacks
 	}

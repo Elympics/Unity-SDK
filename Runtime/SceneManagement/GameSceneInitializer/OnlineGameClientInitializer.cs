@@ -8,7 +8,7 @@ namespace Elympics
 	{
 		protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
 		{
-			var matchData = ElympicsLobbyClient.Instance.MatchData;
+			var matchData = ElympicsLobbyClient.Instance.MatchDataGuid;
 			if (matchData == null)
 			{
 				Debug.LogError("[Elympics] Match data not found. Did you try to join an online match without going through matchmaking first?");
@@ -20,7 +20,7 @@ namespace Elympics
 				return;
 			}
 
-			var userId = ElympicsLobbyClient.Instance.UserId.Value;
+			var userId = ElympicsLobbyClient.Instance.UserGuid.Value;
 			var matchmakerData = matchData.MatchmakerData;
 			var gameEngineData = matchData.GameEngineData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];
@@ -42,7 +42,7 @@ namespace Elympics
 				elympicsGameConfig.UseWeb, matchData.RegionName);
 			var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
 
-			client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerData
+			client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid
 			{
 				Player = player,
 				UserId = userId,

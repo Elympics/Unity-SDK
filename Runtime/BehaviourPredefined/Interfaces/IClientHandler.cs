@@ -1,7 +1,9 @@
-﻿using MatchTcpClients.Synchronizer;
+﻿using System;
+using MatchTcpClients.Synchronizer;
 
 namespace Elympics
 {
+	[Obsolete("Use " + nameof(IClientHandlerGuid) + " instead")]
 	public interface IClientHandler : IObservable
 	{
 		/// <summary>
@@ -22,8 +24,14 @@ namespace Elympics
 		void OnDisconnectedByServer();
 		void OnDisconnectedByClient();
 		void OnSynchronized(TimeSynchronizationData data);
+
+		/// <summary>Called when client successfully authenticates on game server.</summary>
+		/// <param name="userId">User ID. Null when joining as a spectator.</param>
 		void OnAuthenticated(string userId);
 		void OnAuthenticatedFailed(string errorMessage);
+
+		/// <summary>Called when client successfully joins a match on game server.</summary>
+		/// <param name="matchId">Match ID. Can be null (this will be fixed in the next release).</param>
 		void OnMatchJoined(string matchId);
 		void OnMatchJoinedFailed(string errorMessage);
 		void OnMatchEnded(string matchId);

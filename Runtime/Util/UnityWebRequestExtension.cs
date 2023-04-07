@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -23,6 +21,20 @@ namespace Elympics
 #else
 			return request != null && request.isHttpError;
 #endif
+		}
+
+		public static void SetTestCertificateHandlerIfNeeded(this UnityWebRequest request)
+		{
+			if (request.uri.Scheme != TestCertificateHandler.SecureScheme || !request.uri.Host.EndsWith(TestCertificateHandler.TestDomain))
+				return;
+
+			Debug.Log($"Test domain cert handler set for domain {request.uri.Host}");
+			request.certificateHandler = new TestCertificateHandler();
+		}
+
+		public static void SetSdkVersionHeader(this UnityWebRequest request)
+		{
+			request.SetRequestHeader("elympics-sdk-version", ElympicsConfig.SdkVersion);
 		}
 	}
 }

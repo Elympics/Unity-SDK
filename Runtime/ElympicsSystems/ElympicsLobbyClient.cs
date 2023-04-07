@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
+using Elympics.Models.Matchmaking;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,44 +9,36 @@ namespace Elympics
 {
 	public class ElympicsLobbyClient : MonoBehaviour
 	{
-		internal enum JoinedMatchMode
-		{
-			Online,
-			Local,
-			HalfRemoteClient,
-			HalfRemoteServer
-		}
-
-		private static string GetAuthTokenPlayerPrefsKey()
-		{
-			const string authTokenPlayerPrefsKeyBase = "Elympics/AuthToken";
-			if (ElympicsClonesManager.IsClone())
-				return $"{authTokenPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}";
-			return authTokenPlayerPrefsKeyBase;
-		}
-
 		public static ElympicsLobbyClient Instance { get; private set; }
 
-#pragma warning disable IDE0044 // Add readonly modifier
 		[SerializeField] private bool authenticateOnAwake = true;
-#pragma warning restore IDE0044 // Add readonly modifier
 
 		public delegate void AuthenticationCallback(bool success, string userId, string jwtToken, string error);
-
+		[Obsolete("Use " + nameof(AuthenticatedGuid) + " instead")]
 		public event AuthenticationCallback Authenticated;
+		public event Action<Result<AuthenticationData, string>> AuthenticatedGuid;
 
-		public   string                UserId          { get; set; }
-		public   bool                  IsAuthenticated { get; private set; }
-		public   JoinedMatchData       MatchData => Matchmaker.MatchData;
-		public   IAuthenticationClient Auth            { get; private set; }
-		public   IMatchmakerClient     Matchmaker      { get; private set; }
-		internal JoinedMatchMode       MatchMode       { get; private set; }
+		public IMatchmakerEvents Matchmaker => _matchmaker;
 
-		private ElympicsConfig     _config;
-		private ElympicsGameConfig _gameConfig;
-		private UserApiClient      _lobbyPublicApiClient;
+		public Guid? UserGuid => _authData?.UserId;
+		public string UserId => UserGuid?.ToString();
+		public bool IsAuthenticated => _authData != null;
 
-		private string  _authToken;
+		internal JoinedMatchMode MatchMode { get; private set; }
+
+		public MatchmakingFinishedData MatchDataGuid { get; private set; }
+		public JoinedMatchData MatchData { get; private set; }
+
+		private string                _clientSecret;
+		private IAuthenticationClient _auth;
+		private AuthenticationData    _authData;
+		private ElympicsConfig        _config;
+		private ElympicsGameConfig    _gameConfig;
+		private IUserApiClient        _lobbyPublicApiClient;
+		private MatchmakerClient      _matchmaker;
+
+		private bool _inProgress;
+		private bool _loadingSceneOnFinished;
 
 		private void Awake()
 		{
@@ -58,13 +50,17 @@ namespace Elympics
 
 			Instance = this;
 			DontDestroyOnLoad(gameObject);
-			SetAuthToken();
+			SetClientSecret();
 			LoadConfig();
 
 			_lobbyPublicApiClient = new UserApiClient();
-			Auth = new RemoteAuthenticationClient(_lobbyPublicApiClient);
-			Matchmaker = new RemoteMatchmakerClient(_lobbyPublicApiClient);
-			Matchmaker.MatchmakingFinished += result => Debug.Log($"Received match id {result.MatchId}");
+			_auth = new RemoteAuthenticationClient(_lobbyPublicApiClient);
+			_matchmaker = MatchmakerClientFactory.Create(_gameConfig, _lobbyPublicApiClient);
+			_matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
+			_matchmaker.MatchmakingMatchFound += HandleMatchIdReceived;
+			_matchmaker.MatchmakingCancelledGuid += HandleMatchmakingCancelled;
+			_matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
+			_matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
 			if (authenticateOnAwake)
 				Authenticate();
@@ -73,8 +69,14 @@ namespace Elympics
 		private void LoadConfig()
 		{
 			_config = ElympicsConfig.Load();
+			_gameConfig = _config.GetCurrentGameConfig();
 		}
 
+		// ReSharper disable once MemberCanBePrivate.Global
+		/// <summary>
+		/// Performs authentication. Has to be run before joining an online match.
+		/// Done automatically on awake if <see cref="authenticateOnAwake"/> is set.
+		/// </summary>
 		public void Authenticate()
 		{
 			if (IsAuthenticated)
@@ -90,23 +92,24 @@ namespace Elympics
 				return;
 			}
 
-			Auth.AuthenticateWithAuthTokenAsync(authenticationEndpoint, _authToken, OnAuthenticated);
+			_auth.AuthenticateWithClientSecret(authenticationEndpoint, _clientSecret, OnAuthenticated);
 		}
 
-		private void OnAuthenticated((bool Success, string UserId, string JwtToken, string Error) result)
+		private void OnAuthenticated((bool Success, Guid UserId, string JwtToken, string Error) result)
 		{
 			if (result.Success)
 			{
 				Debug.Log($"[Elympics] Authentication successful with user id: {result.UserId}");
-				IsAuthenticated = true;
-				UserId = result.UserId;
+				_authData = new AuthenticationData(result.UserId, result.JwtToken);
+				AuthenticatedGuid?.Invoke(Result<AuthenticationData, string>.Success(_authData));
 			}
 			else
 			{
 				Debug.LogError($"[Elympics] Authentication failed: {result.Error}");
+				AuthenticatedGuid?.Invoke(Result<AuthenticationData, string>.Failure(result.Error));
 			}
 
-			Authenticated?.Invoke(result.Success, result.UserId, result.JwtToken, result.Error);
+			Authenticated?.Invoke(result.Success, result.UserId.ToString(), result.JwtToken, result.Error);
 		}
 
 		public void PlayOffline()
@@ -130,6 +133,11 @@ namespace Elympics
 
 		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, string regionName = null, CancellationToken cancellationToken = default)
 		{
+			if (_inProgress)
+			{
+				Debug.LogError("[Elympics] Joining match already in progress.");
+				return;
+			}
 			if (!IsAuthenticated)
 			{
 				Debug.LogError("[Elympics] User not authenticated, aborting join match.");
@@ -137,43 +145,93 @@ namespace Elympics
 			}
 
 			SetUpMatch(JoinedMatchMode.Online);
+			_loadingSceneOnFinished = loadGameplaySceneOnFinished;
+			_inProgress = true;
 
-			if (loadGameplaySceneOnFinished)
+			_matchmaker.JoinMatchmakerAsync(new JoinMatchmakerData
 			{
-				Matchmaker.MatchmakingFinished += HandleMatchmakingFinished;
-				Matchmaker.MatchmakingFinished += _ => Debug.Log("Matchmaking finished successfully");
-				Matchmaker.MatchmakingError += error => Debug.Log($"Matchmaking error - {error}");
-			}
-
-			Matchmaker.JoinMatchmakerAsync(_gameConfig.GameId, _gameConfig.GameVersion, _gameConfig.ReconnectEnabled, matchmakerData, gameEngineData, queueName, cancellationToken, regionName);
+				GameId = new Guid(_gameConfig.GameId),
+				GameVersion = _gameConfig.GameVersion,
+				MatchmakerData = matchmakerData,
+				GameEngineData = gameEngineData,
+				QueueName = queueName,
+				RegionName = regionName
+			}, cancellationToken);
 		}
 
 		private void SetUpMatch(JoinedMatchMode mode)
 		{
-			_gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			MatchMode = mode;
 		}
 
-		private void HandleMatchmakingFinished((string MatchId, string TcpUdpServerAddress, string WebServerAddress, string UserSecret, List<string> MatchedPlayers) obj)
+		private void HandleMatchmakingCancelled(Guid _)
 		{
-			Matchmaker.MatchmakingFinished -= HandleMatchmakingFinished;
-			LoadGameplayScene();
+			Debug.Log("Matchmaking cancelled");
+			CleanUpAfterMatchmaking();
+		}
+
+		private void HandleMatchmakingFailed((string Error, Guid MatchId) args)
+		{
+			Debug.LogError($"Matchmaking error: {args.Error}");
+			CleanUpAfterMatchmaking();
+		}
+
+		private static void HandleMatchmakingWarning((string Warning, Guid MatchId) args)
+		{
+			Debug.LogWarning($"Matchmaking warning: {args.Warning}");
+		}
+
+		private static void HandleMatchIdReceived(Guid matchId)
+		{
+			Debug.Log($"Received match id {matchId}");
+		}
+
+		private void HandleMatchmakingSucceeded(MatchmakingFinishedData matchData)
+		{
+			Debug.Log("Matchmaking finished successfully");
+			MatchDataGuid = matchData;
+			MatchData = new JoinedMatchData(matchData);
+			CleanUpAfterMatchmaking();
+			if (_loadingSceneOnFinished)
+				LoadGameplayScene();
+		}
+
+		private void CleanUpAfterMatchmaking()
+		{
+			_inProgress = false;
 		}
 
 		private void LoadGameplayScene() => SceneManager.LoadScene(_gameConfig.GameplayScene);
 
-		private void SetAuthToken()
+
+		private const string ClientSecretPlayerPrefsKeyBase = "Elympics/AuthToken";
+		private static string ClientSecretPlayerPrefsKey => ElympicsClonesManager.IsClone()
+			? $"{ClientSecretPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}"
+			: ClientSecretPlayerPrefsKeyBase;
+
+		private void SetClientSecret()
 		{
-			var key = GetAuthTokenPlayerPrefsKey();
+			var key = ClientSecretPlayerPrefsKey;
 			if (!PlayerPrefs.HasKey(key))
-				CreateNewAuthToken(key);
-			_authToken = PlayerPrefs.GetString(key);
+			{
+				PlayerPrefs.SetString(key, CreateNewClientSecret());
+				PlayerPrefs.Save();
+			}
+			_clientSecret = PlayerPrefs.GetString(key);
 		}
 
-		private static void CreateNewAuthToken(string key)
+		private static string CreateNewClientSecret()
 		{
-			PlayerPrefs.SetString(key, Guid.NewGuid().ToString());
-			PlayerPrefs.Save();
+			return Guid.NewGuid().ToString();
+		}
+
+
+		internal enum JoinedMatchMode
+		{
+			Online,
+			Local,
+			HalfRemoteClient,
+			HalfRemoteServer,
 		}
 	}
 }

@@ -14,14 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: TechDemo
   gameId: a9b2cd8b-ad30-4fe0-812c-351b7c3ca264
-  gameVersion: 15
+  gameVersion: 16
   players: 2
   gameplayScene: Assets/Samples/TechDemo/TechDemo.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 69dd9c1d70a588c4fba23ad579800771,
     type: 3}
   botsInServer: 1
   useWeb: 0
+  legacyMatchmakingClient: 0
   enableReconnect: 0
+  connectionConfig:
+    sessionConnectTimeout: 15
+    synchronizerTimeout: 20
+    minContinuousSynchronizationInterval: 0.1
+    unreliablePingTimeout: 5
+    webRtcOfferTimeout: 5
+    webRtcOfferMaxRetries: 5
+    webRtcOfferRetryDelay: 1
+    initialSynchronizeMaxRetries: 3
   ticksPerSecond: 30
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
@@ -36,6 +46,9 @@ MonoBehaviour:
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
   playerIndexForHalfRemoteMode: 0
+  testMatchData:
+    queueName: 
+    regionName: 
   testPlayers:
   - userId: p0
     isBot: 0

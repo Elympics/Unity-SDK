@@ -51,7 +51,7 @@ namespace Elympics
 
 		private List<ElympicsInput> _inputList;
 
-		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerData initialMatchPlayerData)
+		internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData)
 		{
 			base.InitializeInternal(elympicsGameConfig);
 			_player = initialMatchPlayerData.Player;
@@ -87,7 +87,7 @@ namespace Elympics
 			_matchConnectClient.ConnectingFailed += OnConnectingFailed;
 			_matchConnectClient.AuthenticatedUserMatchWithUserId += OnAuthenticated;
 			_matchConnectClient.AuthenticatedUserMatchFailedWithError += OnAuthenticatedFailed;
-			_matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(null);
+			_matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(Guid.Empty);
 			_matchConnectClient.AuthenticatedAsSpectatorWithError += OnAuthenticatedFailed;
 			_matchConnectClient.MatchJoinedWithMatchId += OnMatchJoined;
 			_matchConnectClient.MatchJoinedWithError += OnMatchJoinedFailed;

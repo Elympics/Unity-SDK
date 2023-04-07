@@ -13,16 +13,16 @@ namespace Elympics
 		public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
 		public event Action                          ConnectingFailed;
 
-		public event Action<string> AuthenticatedUserMatchWithUserId;
+		public event Action<Guid>   AuthenticatedUserMatchWithUserId;
 		public event Action<string> AuthenticatedUserMatchFailedWithError;
 
 		public event Action         AuthenticatedAsSpectator;
 		public event Action<string> AuthenticatedAsSpectatorWithError;
 
 		public event Action<string> MatchJoinedWithError;
-		public event Action<string> MatchJoinedWithMatchId;
+		public event Action<Guid>   MatchJoinedWithMatchId;
 
-		public event Action<string> MatchEndedWithMatchId;
+		public event Action<Guid> MatchEndedWithMatchId;
 
 		public event Action DisconnectedByServer;
 		public event Action DisconnectedByClient;
@@ -43,7 +43,6 @@ namespace Elympics
 		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false, string regionName = null)
 		{
 			_gameServerClient = gameServerClient;
-			Debug.Log(matchId);
 			_tcpUdpServerAddress = tcpUdpServerAddress;
 			_webServerAddress = webServerAddress;
 			_userSecret = userSecret;
@@ -210,7 +209,7 @@ namespace Elympics
 				return;
 			}
 
-			AuthenticatedUserMatchWithUserId?.Invoke(message.UserId);
+			AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
 			_gameServerClient.JoinMatchAsync();
 		}
@@ -238,11 +237,11 @@ namespace Elympics
 				return;
 			}
 
-			MatchJoinedWithMatchId?.Invoke(message.MatchId);
+			MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
 			_matchJoinedCallback?.Invoke();
 		}
 
-		private void OnMatchEnded(MatchEndedMessage message) => MatchEndedWithMatchId?.Invoke(message.MatchId);
+		private void OnMatchEnded(MatchEndedMessage message) => MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
 
 		private void OnDisconnectedWhileConnectingAndJoining()
 		{

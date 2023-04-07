@@ -1,5 +1,8 @@
+using System;
+
 namespace Elympics
 {
+	[Obsolete("Use " + nameof(InitialMatchPlayerDataGuid) + " instead")]
 	public class InitialMatchPlayerData
 	{
 		public ElympicsPlayer Player         { get; set; }
@@ -8,5 +11,18 @@ namespace Elympics
 		public double         BotDifficulty  { get; set; }
 		public byte[]         GameEngineData { get; set; }
 		public float[]        MatchmakerData { get; set; }
+
+		public InitialMatchPlayerData()
+		{ }
+
+		public InitialMatchPlayerData(InitialMatchPlayerDataGuid initialMatchPlayerDataGuid)
+		{
+			Player = initialMatchPlayerDataGuid.Player;
+			UserId = initialMatchPlayerDataGuid.UserId.ToString();
+			IsBot = initialMatchPlayerDataGuid.IsBot;
+			BotDifficulty = initialMatchPlayerDataGuid.BotDifficulty;
+			GameEngineData = initialMatchPlayerDataGuid.GameEngineData;
+			MatchmakerData = initialMatchPlayerDataGuid.MatchmakerData;
+		}
 	}
 }

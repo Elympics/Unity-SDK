@@ -4,6 +4,6 @@ namespace Elympics
 {
 	public interface IAuthenticationClient
 	{
-		void AuthenticateWithAuthTokenAsync(string endpoint, string authToken, Action<(bool Success, string UserId, string JwtToken, string Error)> callback);
+		void AuthenticateWithClientSecret(string endpoint, string clientSecret, Action<(bool Success, Guid UserId, string JwtToken, string Error)> callback);
 	}
 }

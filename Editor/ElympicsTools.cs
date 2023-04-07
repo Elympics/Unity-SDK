@@ -103,17 +103,17 @@ namespace Elympics
 
 		private static ElympicsConfig CreateNewConfig()
 		{
-			if (!Directory.Exists(ElympicsConfig.ELYMPICS_RESOURCES_PATH))
+			if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
 			{
 				Debug.Log("Creating Elympics resources directory...");
-				Directory.CreateDirectory(ElympicsConfig.ELYMPICS_RESOURCES_PATH);
+				Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
 			}
 
 			var newConfig = ScriptableObject.CreateInstance<ElympicsConfig>();
 
 			const string resourcesDirectory = "Assets/Resources/";
 			// TODO: there is probably some hack possible to get path to current Elympics directory
-			var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(resourcesDirectory + ElympicsConfig.PATH_IN_RESOURCES + ".asset");
+			var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(resourcesDirectory + ElympicsConfig.PathInResources + ".asset");
 			AssetDatabase.CreateAsset(newConfig, assetPathAndName);
 
 			AssetDatabase.SaveAssets();

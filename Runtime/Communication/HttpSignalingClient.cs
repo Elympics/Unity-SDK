@@ -31,8 +31,7 @@ namespace Elympics
 				uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
 				downloadHandler = new DownloadHandlerBuffer()
 			};
-
-			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
+			request.SetTestCertificateHandlerIfNeeded();
 
 			_requestAsyncOperation = request.SendWebRequest();
 			_requestAsyncOperation.completed += HandleCompleted;

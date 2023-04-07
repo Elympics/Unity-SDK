@@ -13,7 +13,7 @@ namespace Elympics
 
 		private IGameBotLogger _logger;
 
-		public event Action<InitialMatchPlayerData> InitializedWithMatchPlayerData;
+		public event Action<InitialMatchPlayerDataGuid> InitializedWithMatchPlayerData;
 
 		public event Action<byte[]> InGameDataForReliableChannelGenerated;
 		public event Action<byte[]> InGameDataForUnreliableChannelGenerated;
@@ -67,7 +67,7 @@ namespace Elympics
 		public void Init3(BotConfiguration botConfiguration)
 		{
 			Player = ElympicsPlayer.FromIndex(botConfiguration.MatchPlayers.IndexOf(botConfiguration.UserId));
-			InitializedWithMatchPlayerData?.Invoke(new InitialMatchPlayerData
+			InitializedWithMatchPlayerData?.Invoke(new InitialMatchPlayerDataGuid
 			{
 				Player = Player,
 				IsBot = true,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using ElympicsApiModels.ApiModels.Games;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -18,23 +19,12 @@ namespace Elympics
 			var uri = new Uri(url);
 			var request = UnityWebRequest.Post(uri, formData);
 			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
-			request.SetRequestHeader("elympics-sdk-version", ElympicsWebClient.SdkVersion);
-
-			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
+			request.SetSdkVersionHeader();
+			request.SetTestCertificateHandlerIfNeeded();
 
 			var asyncOperation = request.SendWebRequest();
 			AttachCompletedCallback(asyncOperation, completed);
 			return asyncOperation;
-		}
-
-		private static void AttachCompletedCallback(UnityWebRequestAsyncOperation asyncOperation, Action<UnityWebRequest> completed = null)
-		{
-			if (completed == null)
-				return;
-			if (asyncOperation.isDone)
-				completed.Invoke(asyncOperation.webRequest);
-			else
-				asyncOperation.completed += _ => completed?.Invoke(asyncOperation.webRequest);
 		}
 
 		public static UnityWebRequestAsyncOperation SendJsonGetRequestApi(string url, Action<UnityWebRequest> completed = null, bool silent = false)
@@ -45,12 +35,13 @@ namespace Elympics
 			request.SetRequestHeader("Authorization", $"Bearer {ElympicsConfig.AuthToken}");
 			request.SetRequestHeader("Content-Type", "application/json");
 			request.SetRequestHeader("Accept", "application/json");
-			request.SetRequestHeader("elympics-sdk-version", ElympicsWebClient.SdkVersion);
+			request.SetSdkVersionHeader();
+			request.SetTestCertificateHandlerIfNeeded();
 
-			ElympicsWebClient.AcceptTestCertificateHandler.SetOnRequestIfNeeded(request);
-
+#if ELYMPICS_DEBUG
 			if (!silent)
 				Debug.Log($"[Elympics] Sending request GET {url}");
+#endif
 
 			var asyncOperation = request.SendWebRequest();
 			AttachCompletedCallback(asyncOperation, completed);
@@ -59,9 +50,41 @@ namespace Elympics
 
 		public static UnityWebRequestAsyncOperation SendJsonPostRequestApi(string url, object body, Action<UnityWebRequest> completed = null, bool auth = true)
 		{
-			var asyncOperation = ElympicsWebClient.SendJsonPostRequest(url, body, auth ? $"Bearer {ElympicsConfig.AuthToken}" : null);
+			var uri = new Uri(url);
+			var request = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
+			var bodyString = JsonUtility.ToJson(body);
+			var bodyRaw = Encoding.ASCII.GetBytes(bodyString);
+			request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+			request.downloadHandler = new DownloadHandlerBuffer();
+
+			var token = ElympicsConfig.AuthToken;
+			if (auth && !string.IsNullOrEmpty(token))
+				request.SetRequestHeader("Authorization", $"Bearer {token}");
+			request.SetRequestHeader("Content-Type", "application/json");
+			request.SetRequestHeader("Accept", "application/json");
+			request.SetSdkVersionHeader();
+			request.SetTestCertificateHandlerIfNeeded();
+
+#if ELYMPICS_DEBUG
+			Debug.Log($"[Elympics] Sending request POST {url}\n{bodyString}");
+#endif
+
+			var asyncOperation = request.SendWebRequest();
 			AttachCompletedCallback(asyncOperation, completed);
 			return asyncOperation;
+		}
+
+		private static void AttachCompletedCallback(UnityWebRequestAsyncOperation asyncOperation, Action<UnityWebRequest> completed = null)
+		{
+			void RunCallback(UnityWebRequest request)
+			{
+				completed?.Invoke(request);
+			}
+
+			if (asyncOperation.isDone)
+				RunCallback(asyncOperation.webRequest);
+			else
+				asyncOperation.completed += _ => RunCallback(asyncOperation.webRequest);
 		}
 	}
 }

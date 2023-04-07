@@ -1,7 +1,4 @@
 ﻿using System;
-using GameBotCore.V1._1;
-using GameEngineCore.V1._1;
-using LobbyPublicApiClients;
 using MatchTcpClients;
 
 namespace Elympics

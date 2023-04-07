@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using GameEngineCore.V1._3;
 
@@ -10,7 +11,7 @@ namespace Elympics
 		{
 			return elympicsGameConfig.TestPlayers.Select((initialUserData, index) => new InitialMatchUserData
 				{
-					UserId = index.ToString(),
+					UserId = new Guid(index, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).ToString(),
 					IsBot = initialUserData.isBot,
 					BotDifficulty = initialUserData.botDifficulty,
 					MatchmakerData = initialUserData.matchmakerData,

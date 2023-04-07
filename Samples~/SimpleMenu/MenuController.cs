@@ -1,33 +1,38 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Threading;
+using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
-#if UNITY_EDITOR
-using ParrelSync;
-
-#endif
+using Plugins.Elympics.Plugins.ParrelSync;
 
 public class MenuController : MonoBehaviour
 {
-	[SerializeField] private Button     playButton         = null;
-	[SerializeField] private InputField halfRemotePlayerId = null;
+	[SerializeField] private Button     playButton;
+	[SerializeField] private InputField halfRemotePlayerId;
+
+	private const string PlayOnlineText = "Play Online";
+	private const string CancelMatchmakingText = "Cancel matchmaking";
+
+	private Text _playButtonText;
+	private CancellationTokenSource _cts;
 
 	private void Start()
 	{
-		ElympicsLobbyClient.Instance.Authenticated += HandleAuthenticated;
+		ElympicsLobbyClient.Instance.AuthenticatedGuid += HandleAuthenticated;
 		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
 
-#if UNITY_EDITOR
-		if (ClonesManager.IsClone())
-		{
-			halfRemotePlayerId.text = ElympicsGameConfig.GetHalfRemotePlayerIndex(0).ToString();
-			halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
-		}
-#endif
+		_playButtonText = playButton.GetComponentInChildren<Text>();
+		_playButtonText.text = PlayOnlineText;
+
+		if (!ElympicsClonesManager.IsClone())
+			return;
+		halfRemotePlayerId.text = ElympicsGameConfig.GetHalfRemotePlayerIndex(0).ToString();
+		halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
 	}
 
-	private void HandleAuthenticated(bool success, string userId, string jwtToken, string error)
+	private void HandleAuthenticated(Result<AuthenticationData, string> result)
 	{
-		playButton.interactable = success;
+		playButton.interactable = result.IsSuccess;
 	}
 
 	public void OnPlayLocalClicked()
@@ -48,6 +53,16 @@ public class MenuController : MonoBehaviour
 
 	public void OnPlayOnlineClicked()
 	{
-		ElympicsLobbyClient.Instance.PlayOnline();
+		if (_cts != null)
+		{
+			_cts.Cancel();
+			_playButtonText.text = PlayOnlineText;
+			_cts = null;
+			return;
+		}
+
+		_cts = new CancellationTokenSource();
+		_playButtonText.text = CancelMatchmakingText;
+		ElympicsLobbyClient.Instance.PlayOnline(cancellationToken: _cts.Token);
 	}
 }

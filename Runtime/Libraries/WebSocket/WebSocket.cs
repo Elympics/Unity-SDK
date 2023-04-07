@@ -1,21 +1,24 @@
 ﻿/*
  * unity-websocket-webgl
- * 
+ *
  * @author Jiri Hybek <jiri@hybek.cz>
  * @copyright 2018 Jiri Hybek <jiri@hybek.cz>
  * @license Apache 2.0 - See LICENSE file distributed with this source code.
  */
 
+/*
+ * With modifications licensed to Elympics Sp. z o.o.
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using UnityEngine;
+using System.Security.Authentication;
 using AOT;
 
 namespace HybridWebSocket
 {
-
-    /// <summary>
+	/// <summary>
     /// Handler for WebSocket Open event.
     /// </summary>
     public delegate void WebSocketOpenEventHandler();
@@ -33,7 +36,7 @@ namespace HybridWebSocket
     /// <summary>
     /// Handler for WebSocket Close event.
     /// </summary>
-    public delegate void WebSocketCloseEventHandler(WebSocketCloseCode closeCode);
+    public delegate void WebSocketCloseEventHandler(WebSocketCloseCode closeCode, string reason);
 
     /// <summary>
     /// Enum representing WebSocket connection state
@@ -123,34 +126,26 @@ namespace HybridWebSocket
     /// </summary>
     public static class WebSocketHelpers
     {
-
-        /// <summary>
+	    /// <summary>
         /// Safely parse close code enum from int value.
         /// </summary>
         /// <returns>The close code enum.</returns>
         /// <param name="closeCode">Close code as int.</param>
         public static WebSocketCloseCode ParseCloseCodeEnum(int closeCode)
         {
-
-            if (WebSocketCloseCode.IsDefined(typeof(WebSocketCloseCode), closeCode))
-            {
+	        if (Enum.IsDefined(typeof(WebSocketCloseCode), closeCode))
                 return (WebSocketCloseCode)closeCode;
-            }
-            else
-            {
-                return WebSocketCloseCode.Undefined;
-            }
-
+            return WebSocketCloseCode.Undefined;
         }
 
         /*
          * Return error message based on int code
-         * 
+         *
 
          */
         /// <summary>
         /// Return an exception instance based on int code.
-        /// 
+        ///
         /// Used for resolving JSLIB errors to meaninfull messages.
         /// </summary>
         /// <returns>Instance of an exception.</returns>
@@ -158,10 +153,8 @@ namespace HybridWebSocket
         /// <param name="inner">Inner exception</param>
         public static WebSocketException GetErrorMessageFromCode(int errorCode, Exception inner)
         {
-
             switch(errorCode)
             {
-
                 case -1: return new WebSocketUnexpectedException("WebSocket instance not found.", inner);
                 case -2: return new WebSocketInvalidStateException("WebSocket is already connected or in connecting state.", inner);
                 case -3: return new WebSocketInvalidStateException("WebSocket is not connected.", inner);
@@ -170,11 +163,8 @@ namespace HybridWebSocket
                 case -6: return new WebSocketInvalidStateException("WebSocket is not in open state.", inner);
                 case -7: return new WebSocketInvalidArgumentException("Cannot close WebSocket. An invalid code was specified or reason is too long.", inner);
                 default: return new WebSocketUnexpectedException("Unknown error.", inner);
-
             }
-
         }
-
     }
 
     /// <summary>
@@ -182,21 +172,16 @@ namespace HybridWebSocket
     /// </summary>
     public class WebSocketException : Exception
     {
-
-        public WebSocketException()
-        {
-        }
+	    public WebSocketException()
+        { }
 
         public WebSocketException(string message)
             : base(message)
-        {
-        }
+        { }
 
         public WebSocketException(string message, Exception inner)
             : base(message, inner)
-        {
-        }
-
+        { }
     }
 
     /// <summary>
@@ -204,9 +189,9 @@ namespace HybridWebSocket
     /// </summary>
     public class WebSocketUnexpectedException : WebSocketException
     {
-        public WebSocketUnexpectedException(){}
-        public WebSocketUnexpectedException(string message) : base(message){}
-        public WebSocketUnexpectedException(string message, Exception inner) : base(message, inner) {}
+        public WebSocketUnexpectedException() { }
+        public WebSocketUnexpectedException(string message) : base(message) { }
+        public WebSocketUnexpectedException(string message, Exception inner) : base(message, inner) { }
     }
 
     /// <summary>
@@ -233,9 +218,8 @@ namespace HybridWebSocket
     /// <summary>
     /// WebSocket class bound to JSLIB.
     /// </summary>
-    public class WebSocket: IWebSocket
+    public class WebSocket : IWebSocket
     {
-
         /* WebSocket JSLIB functions */
         [DllImport("__Internal")]
         public static extern int WebSocketConnect(int instanceId);
@@ -278,11 +262,9 @@ namespace HybridWebSocket
         /// Constructor - receive JSLIB instance id of allocated socket
         /// </summary>
         /// <param name="instanceId">Instance identifier.</param>
-        public WebSocket(int instanceId)
+        internal WebSocket(int instanceId)
         {
-
             this.instanceId = instanceId;
-
         }
 
         /// <summary>
@@ -301,9 +283,7 @@ namespace HybridWebSocket
         /// <returns>The instance identifier.</returns>
         public int GetInstanceId()
         {
-
             return this.instanceId;
-
         }
 
         /// <summary>
@@ -311,12 +291,10 @@ namespace HybridWebSocket
         /// </summary>
         public void Connect()
         {
-
             int ret = WebSocketConnect(this.instanceId);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
-
         }
 
         /// <summary>
@@ -326,12 +304,10 @@ namespace HybridWebSocket
         /// <param name="reason">Reason string.</param>
         public void Close(WebSocketCloseCode code = WebSocketCloseCode.Normal, string reason = null)
         {
-
             int ret = WebSocketClose(this.instanceId, (int)code, reason);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
-
         }
 
         /// <summary>
@@ -340,12 +316,10 @@ namespace HybridWebSocket
         /// <param name="data">Payload data.</param>
         public void Send(byte[] data)
         {
-
             int ret = WebSocketSend(this.instanceId, data, data.Length);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
-
         }
 
         /// <summary>
@@ -354,7 +328,6 @@ namespace HybridWebSocket
         /// <returns>The state.</returns>
         public WebSocketState GetState()
         {
-
             int state = WebSocketGetState(this.instanceId);
 
             if (state < 0)
@@ -377,7 +350,6 @@ namespace HybridWebSocket
                 default:
                     return WebSocketState.Closed;
             }
-
         }
 
         /// <summary>
@@ -386,9 +358,7 @@ namespace HybridWebSocket
         /// </summary>
         public void DelegateOnOpenEvent()
         {
-
-            this.OnOpen?.Invoke();
-
+            OnOpen?.Invoke();
         }
 
         /// <summary>
@@ -398,9 +368,7 @@ namespace HybridWebSocket
         /// <param name="data">Binary data.</param>
         public void DelegateOnMessageEvent(byte[] data)
         {
-
-            this.OnMessage?.Invoke(data);
-
+            OnMessage?.Invoke(data);
         }
 
         /// <summary>
@@ -410,9 +378,7 @@ namespace HybridWebSocket
         /// <param name="errorMsg">Error message.</param>
         public void DelegateOnErrorEvent(string errorMsg)
         {
-
-            this.OnError?.Invoke(errorMsg);
-
+            OnError?.Invoke(errorMsg);
         }
 
         /// <summary>
@@ -420,13 +386,10 @@ namespace HybridWebSocket
         /// Is called by WebSocketFactory
         /// </summary>
         /// <param name="closeCode">Close status code.</param>
-        public void DelegateOnCloseEvent(int closeCode)
+        public void DelegateOnCloseEvent(int closeCode, string reason)
         {
-
-            this.OnClose?.Invoke(WebSocketHelpers.ParseCloseCodeEnum(closeCode));
-
+            OnClose?.Invoke(WebSocketHelpers.ParseCloseCodeEnum(closeCode), reason);
         }
-
     }
 #else
     public class WebSocket : IWebSocket
@@ -455,56 +418,33 @@ namespace HybridWebSocket
         /// <summary>
         /// The WebSocketSharp instance.
         /// </summary>
-        protected WebSocketSharp.WebSocket ws;
+        private readonly WebSocketSharp.WebSocket _ws;
 
         /// <summary>
         /// WebSocket constructor.
         /// </summary>
         /// <param name="url">Valid WebSocket URL.</param>
-        public WebSocket(string url)
+        /// <param name="protocol">Requested WebSocket sub-protocol.</param>
+        internal WebSocket(string url, string protocol = null)
         {
-
-            try
+	        try
             {
-                   
                 // Create WebSocket instance
-                this.ws = new WebSocketSharp.WebSocket(url);
+                _ws = new WebSocketSharp.WebSocket(url, protocol == null ? Array.Empty<string>() : new []{ protocol });
+                const SslProtocols tls13 = (SslProtocols)12288;
+                if (_ws.IsSecure)
+                    _ws.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12 | tls13;
 
-                // Bind OnOpen event
-                this.ws.OnOpen += (sender, ev) =>
-                {
-                    this.OnOpen?.Invoke();
-                };
-
-                // Bind OnMessage event
-                this.ws.OnMessage += (sender, ev) =>
-                {
-                    if (ev.RawData != null)
-                        this.OnMessage?.Invoke(ev.RawData);
-                };
-
-                // Bind OnError event
-                this.ws.OnError += (sender, ev) =>
-                {
-                    this.OnError?.Invoke(ev.Message);
-                };
-
-                // Bind OnClose event
-                this.ws.OnClose += (sender, ev) =>
-                {
-                    this.OnClose?.Invoke(
-                        WebSocketHelpers.ParseCloseCodeEnum( (int)ev.Code )
-                    );
-                };
-
+                // Bind events
+                _ws.OnOpen += (sender, ev) => OnOpen?.Invoke();
+                _ws.OnMessage += (sender, ev) => OnMessage?.Invoke(ev.RawData);
+                _ws.OnError += (sender, ev) => OnError?.Invoke(ev.Message);
+                _ws.OnClose += (sender, ev) => OnClose?.Invoke(WebSocketHelpers.ParseCloseCodeEnum(ev.Code), ev.Reason);
             }
             catch (Exception e)
             {
-
-                throw new WebSocketUnexpectedException("Failed to create WebSocket Client.", e);
-
+	            throw new WebSocketUnexpectedException("Failed to create WebSocket Client.", e);
             }
-
         }
 
         /// <summary>
@@ -512,20 +452,18 @@ namespace HybridWebSocket
         /// </summary>
         public void Connect()
         {
-
-            // Check state
-            if (this.ws.ReadyState == WebSocketSharp.WebSocketState.Open || this.ws.ReadyState == WebSocketSharp.WebSocketState.Closing)
+	        // Check state
+            if (_ws.ReadyState == WebSocketSharp.WebSocketState.Open || _ws.ReadyState == WebSocketSharp.WebSocketState.Closing)
                 throw new WebSocketInvalidStateException("WebSocket is already connected or is closing.");
 
             try
             {
-                this.ws.ConnectAsync();
+                _ws.ConnectAsync();
             }
             catch (Exception e)
             {
                 throw new WebSocketUnexpectedException("Failed to connect.", e);
             }
-
         }
 
         /// <summary>
@@ -535,23 +473,21 @@ namespace HybridWebSocket
         /// <param name="reason">Reason string.</param>
         public void Close(WebSocketCloseCode code = WebSocketCloseCode.Normal, string reason = null)
         {
-
-            // Check state
-            if (this.ws.ReadyState == WebSocketSharp.WebSocketState.Closing)
+	        // Check state
+            if (_ws.ReadyState == WebSocketSharp.WebSocketState.Closing)
                 throw new WebSocketInvalidStateException("WebSocket is already closing.");
 
-            if (this.ws.ReadyState == WebSocketSharp.WebSocketState.Closed)
+            if (_ws.ReadyState == WebSocketSharp.WebSocketState.Closed)
                 throw new WebSocketInvalidStateException("WebSocket is already closed.");
 
             try
             {
-                this.ws.CloseAsync((ushort)code, reason);
+                _ws.CloseAsync((ushort)code, reason);
             }
             catch (Exception e)
             {
                 throw new WebSocketUnexpectedException("Failed to close the connection.", e);
             }
-
         }
 
         /// <summary>
@@ -560,20 +496,18 @@ namespace HybridWebSocket
         /// <param name="data">Payload data.</param>
         public void Send(byte[] data)
         {
-
-            // Check state
-            if (this.ws.ReadyState != WebSocketSharp.WebSocketState.Open)
+	        // Check state
+            if (_ws.ReadyState != WebSocketSharp.WebSocketState.Open)
                 throw new WebSocketInvalidStateException("WebSocket is not in open state.");
 
             try
             {
-                this.ws.Send(data);
+                _ws.Send(data);
             }
             catch (Exception e)
             {
                 throw new WebSocketUnexpectedException("Failed to send message.", e);
             }
-
         }
 
         /// <summary>
@@ -582,8 +516,7 @@ namespace HybridWebSocket
         /// <returns>The state.</returns>
         public WebSocketState GetState()
         {
-
-            switch (this.ws.ReadyState)
+	        switch (_ws.ReadyState)
             {
                 case WebSocketSharp.WebSocketState.Connecting:
                     return WebSocketState.Connecting;
@@ -600,31 +533,28 @@ namespace HybridWebSocket
                 default:
                     return WebSocketState.Closed;
             }
-
         }
-
     }
 #endif
 
-    /// <summary>
-    /// Class providing static access methods to work with JSLIB WebSocket or WebSocketSharp interface
-    /// </summary>
-    public static class WebSocketFactory
-    {
-
+	/// <summary>
+	/// Class providing static access methods to work with JSLIB WebSocket or WebSocketSharp interface
+	/// </summary>
+	public static class WebSocketFactory
+	{
 #if UNITY_WEBGL && !UNITY_EDITOR
         /* Map of websocket instances */
-        private static Dictionary<Int32, WebSocket> instances = new Dictionary<Int32, WebSocket>();
+        private static readonly Dictionary<int, WebSocket> Instances = new Dictionary<int, WebSocket>();
 
         /* Delegates */
         public delegate void OnOpenCallback(int instanceId);
-        public delegate void OnMessageCallback(int instanceId, System.IntPtr msgPtr, int msgSize);
-        public delegate void OnErrorCallback(int instanceId, System.IntPtr errorPtr);
-        public delegate void OnCloseCallback(int instanceId, int closeCode);
+        public delegate void OnMessageCallback(int instanceId, IntPtr msgPtr, int msgSize);
+        public delegate void OnErrorCallback(int instanceId, IntPtr errorPtr);
+        public delegate void OnCloseCallback(int instanceId, int closeCode, IntPtr reasonPtr);
 
         /* WebSocket JSLIB callback setters and other functions */
         [DllImport("__Internal")]
-        public static extern int WebSocketAllocate(string url);
+        public static extern int WebSocketAllocate(string url, string protocol);
 
         [DllImport("__Internal")]
         public static extern void WebSocketFree(int instanceId);
@@ -642,21 +572,19 @@ namespace HybridWebSocket
         public static extern void WebSocketSetOnClose(OnCloseCallback callback);
 
         /* If callbacks was initialized and set */
-        private static bool isInitialized = false;
+        private static bool isInitialized;
 
         /*
          * Initialize WebSocket callbacks to JSLIB
          */
         private static void Initialize()
         {
-
             WebSocketSetOnOpen(DelegateOnOpenEvent);
             WebSocketSetOnMessage(DelegateOnMessageEvent);
             WebSocketSetOnError(DelegateOnErrorEvent);
             WebSocketSetOnClose(DelegateOnCloseEvent);
 
             isInitialized = true;
-
         }
 
         /// <summary>
@@ -666,92 +594,72 @@ namespace HybridWebSocket
         /// <param name="instanceId">Instance identifier.</param>
         public static void HandleInstanceDestroy(int instanceId)
         {
-
-            instances.Remove(instanceId);
+            Instances.Remove(instanceId);
             WebSocketFree(instanceId);
-
         }
 
         [MonoPInvokeCallback(typeof(OnOpenCallback))]
         public static void DelegateOnOpenEvent(int instanceId)
         {
-
-            WebSocket instanceRef;
-
-            if (instances.TryGetValue(instanceId, out instanceRef))
+            if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
                 instanceRef.DelegateOnOpenEvent();
             }
-
         }
 
         [MonoPInvokeCallback(typeof(OnMessageCallback))]
-        public static void DelegateOnMessageEvent(int instanceId, System.IntPtr msgPtr, int msgSize)
+        public static void DelegateOnMessageEvent(int instanceId, IntPtr msgPtr, int msgSize)
         {
-
-            WebSocket instanceRef;
-
-            if (instances.TryGetValue(instanceId, out instanceRef))
+            if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
-                byte[] msg = new byte[msgSize];
+                var msg = new byte[msgSize];
                 Marshal.Copy(msgPtr, msg, 0, msgSize);
 
                 instanceRef.DelegateOnMessageEvent(msg);
             }
-
         }
 
         [MonoPInvokeCallback(typeof(OnErrorCallback))]
-        public static void DelegateOnErrorEvent(int instanceId, System.IntPtr errorPtr)
+        public static void DelegateOnErrorEvent(int instanceId, IntPtr errorPtr)
         {
-
-            WebSocket instanceRef;
-
-            if (instances.TryGetValue(instanceId, out instanceRef))
+            if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
-
-                string errorMsg = Marshal.PtrToStringAuto(errorPtr);
+                var errorMsg = Marshal.PtrToStringAuto(errorPtr);
                 instanceRef.DelegateOnErrorEvent(errorMsg);
-
             }
-
         }
 
         [MonoPInvokeCallback(typeof(OnCloseCallback))]
-        public static void DelegateOnCloseEvent(int instanceId, int closeCode)
+        public static void DelegateOnCloseEvent(int instanceId, int closeCode, IntPtr reasonPtr)
         {
-
-            WebSocket instanceRef;
-
-            if (instances.TryGetValue(instanceId, out instanceRef))
+            if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
-                instanceRef.DelegateOnCloseEvent(closeCode);
+                var reason = Marshal.PtrToStringAuto(reasonPtr);
+                instanceRef.DelegateOnCloseEvent(closeCode, reason);
             }
-
         }
 #endif
 
-        /// <summary>
-        /// Create WebSocket client instance
-        /// </summary>
-        /// <returns>The WebSocket instance.</returns>
-        /// <param name="url">WebSocket valid URL.</param>
-        public static WebSocket CreateInstance(string url)
-        {
+		/// <summary>
+		/// Create WebSocket client instance
+		/// </summary>
+		/// <returns>The WebSocket instance.</returns>
+		/// <param name="url">WebSocket valid URL.</param>
+		/// <param name="protocol">Requested WebSocket sub-protocol.</param>
+		public static WebSocket CreateInstance(string url, string protocol = null)
+		{
 #if UNITY_WEBGL && !UNITY_EDITOR
-        if (!isInitialized)
-            Initialize();
+	        if (!isInitialized)
+	            Initialize();
 
-        int instanceId = WebSocketAllocate(url);
-        WebSocket wrapper = new WebSocket(instanceId);
-        instances.Add(instanceId, wrapper);
+	        var instanceId = WebSocketAllocate(url, protocol);
+	        var wrapper = new WebSocket(instanceId);
+	        Instances.Add(instanceId, wrapper);
 
-        return wrapper;
+	        return wrapper;
 #else
-            return new WebSocket(url);
+			return new WebSocket(url, protocol);
 #endif
-        }
-
-    }
-
+		}
+	}
 }

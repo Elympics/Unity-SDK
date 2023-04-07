@@ -1,6 +1,9 @@
+using System;
+
 namespace Elympics
 {
-	public interface IBotHandler
+	[Obsolete("Use " + nameof(IBotHandlerGuid) + " instead")]
+	public interface IBotHandler : IObservable
 	{
 		/// <summary>
 		/// Called on standalone bot initialization (after processing all initial <see cref="ElympicsBehaviour"/>s).

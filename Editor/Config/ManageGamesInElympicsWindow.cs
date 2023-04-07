@@ -297,13 +297,13 @@ public class ManageGamesInElympicsWindow : EditorWindow
 		if (_customInspectorDrawer.DrawButtonCentered("Create first game config!", _resizableCenteredLabelWidth, 20))
 		{
 			var config = ScriptableObject.CreateInstance<ElympicsGameConfig>();
-			if (!Directory.Exists(ElympicsConfig.ELYMPICS_RESOURCES_PATH))
+			if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
 			{
 				Debug.Log("Creating Elympics resources directory...");
-				Directory.CreateDirectory(ElympicsConfig.ELYMPICS_RESOURCES_PATH);
+				Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
 			}
 
-			AssetDatabase.CreateAsset(config, ElympicsConfig.ELYMPICS_RESOURCES_PATH + "/ElympicsGameConfig.asset");
+			AssetDatabase.CreateAsset(config, ElympicsConfig.ElympicsResourcesPath + "/ElympicsGameConfig.asset");
 			AssetDatabase.SaveAssets();
 			availableGames.InsertArrayElementAtIndex(availableGames.arraySize);
 			var value = availableGames.GetArrayElementAtIndex(availableGames.arraySize - 1);

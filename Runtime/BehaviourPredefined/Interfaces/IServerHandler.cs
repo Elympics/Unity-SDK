@@ -1,5 +1,8 @@
-﻿namespace Elympics
+﻿using System;
+
+namespace Elympics
 {
+	[Obsolete("Use " + nameof(IServerHandlerGuid) + " instead")]
 	public interface IServerHandler : IObservable
 	{
 		/// <summary>

@@ -13,6 +13,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
 using AOT;
 
 namespace HybridWebSocket
@@ -428,8 +429,11 @@ namespace HybridWebSocket
         {
 	        try
             {
-	            // Create WebSocket instance
+                // Create WebSocket instance
                 _ws = new WebSocketSharp.WebSocket(url, protocol == null ? Array.Empty<string>() : new []{ protocol });
+                const SslProtocols tls13 = (SslProtocols)12288;
+                if (_ws.IsSecure)
+                    _ws.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12 | tls13;
 
                 // Bind events
                 _ws.OnOpen += (sender, ev) => OnOpen?.Invoke();

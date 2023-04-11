@@ -209,7 +209,7 @@ namespace Elympics
 				return;
 			}
 
-			AuthenticatedUserMatchWithUserId?.Invoke(new Guid(message.UserId));
+			AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
 			_gameServerClient.JoinMatchAsync();
 		}
@@ -237,7 +237,7 @@ namespace Elympics
 				return;
 			}
 
-			MatchJoinedWithMatchId?.Invoke(new Guid(message.MatchId));
+			MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
 			_matchJoinedCallback?.Invoke();
 		}
 

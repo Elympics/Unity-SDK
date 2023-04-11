@@ -1,4 +1,4 @@
-# [0.6.0](https://github.com/Elympics/Unity-SDK/compare/v0.5.4...v0.6.0) (2023-04-05)
+## [0.6.0](https://github.com/Elympics/Unity-SDK/compare/v0.5.4...v0.6.0) (2023-04-05)
 
 
 ### Features

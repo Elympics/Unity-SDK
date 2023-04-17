@@ -350,32 +350,52 @@ namespace Elympics
 
 		internal void OnConnected(TimeSynchronizationData data)
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnConnected(data);
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnected(data);
+#pragma warning restore CS0618
 		}
 
 		internal void OnConnectingFailed()
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnConnectingFailed();
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnConnectingFailed();
+#pragma warning restore CS0618
 		}
 
 		internal void OnDisconnectedByServer()
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnDisconnectedByServer();
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByServer();
+#pragma warning restore CS0618
 		}
 
 		internal void OnDisconnectedByClient()
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnDisconnectedByClient();
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnDisconnectedByClient();
+#pragma warning restore CS0618
 		}
 
 		internal void OnSynchronized(TimeSynchronizationData data)
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnSynchronized(data);
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnSynchronized(data);
+#pragma warning restore CS0618
 		}
 
 		internal void OnAuthenticated(Guid userId)
@@ -388,6 +408,8 @@ namespace Elympics
 
 		internal void OnAuthenticatedFailed(string errorMessage)
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnAuthenticatedFailed(errorMessage);
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnAuthenticatedFailed(errorMessage);
 		}
@@ -402,6 +424,8 @@ namespace Elympics
 
 		internal void OnMatchJoinedFailed(string errorMessage)
 		{
+			foreach (var handler in _componentsContainer.ClientHandlersGuid)
+				handler.OnMatchJoinedFailed(errorMessage);
 			foreach (var handler in _componentsContainer.ClientHandlers)
 				handler.OnMatchJoinedFailed(errorMessage);
 		}
@@ -454,14 +478,22 @@ namespace Elympics
 
 		internal void OnPlayerConnected(ElympicsPlayer player)
 		{
+			foreach (var handler in _componentsContainer.ServerHandlersGuid)
+				handler.OnPlayerConnected(player);
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerConnected(player);
+#pragma warning restore CS0618
 		}
 
 		internal void OnPlayerDisconnected(ElympicsPlayer player)
 		{
+			foreach (var handler in _componentsContainer.ServerHandlersGuid)
+				handler.OnPlayerDisconnected(player);
+#pragma warning disable CS0618
 			foreach (var handler in _componentsContainer.ServerHandlers)
 				handler.OnPlayerDisconnected(player);
+#pragma warning restore CS0618
 		}
 
 		#endregion

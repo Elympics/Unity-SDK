@@ -1,3 +1,12 @@
+## [0.6.1](https://github.com/Elympics/Unity-SDK/compare/v0.6.0...v0.6.1) (2023-04-18)
+
+
+### Bug Fixes 🪲
+
+* Fix IServerHandlerGuid methods not being called in ElympicsBehaviour ([eef5ff2](https://github.com/Elympics/Unity-SDK/commit/eef5ff2b77685c948eaf08e33394320dc4c4c473))
+
+
+
 ## [0.6.0](https://github.com/Elympics/Unity-SDK/compare/v0.5.4...v0.6.0) (2023-04-05)
 
 

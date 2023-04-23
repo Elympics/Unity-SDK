@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 
 namespace MatchTcpLibrary
 {
@@ -10,12 +11,12 @@ namespace MatchTcpLibrary
 		{
 			if (cancellationTokenSource == null)
 			{
-				if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+				if (await Task.WhenAny(task, TaskUtil.Delay(timeout)) == task)
 					return await task;
 			}
 			else
 			{
-				if (await Task.WhenAny(task, Task.Delay(timeout, cancellationTokenSource.Token)) == task)
+				if (await Task.WhenAny(task, TaskUtil.Delay(timeout, cancellationTokenSource.Token)) == task)
 					return await task;
 			}
 
@@ -25,7 +26,7 @@ namespace MatchTcpLibrary
 		{
 			if (cancellationTokenSource == null)
 			{
-				if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+				if (await Task.WhenAny(task, TaskUtil.Delay(timeout)) == task)
 				{
 					await task;
 					return;
@@ -33,7 +34,7 @@ namespace MatchTcpLibrary
 			}
 			else
 			{
-				if (await Task.WhenAny(task, Task.Delay(timeout, cancellationTokenSource.Token)) == task)
+				if (await Task.WhenAny(task, TaskUtil.Delay(timeout, cancellationTokenSource.Token)) == task)
 				{
 					await task;
 					return;

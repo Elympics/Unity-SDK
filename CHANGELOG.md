@@ -1,3 +1,12 @@
+## [0.6.2](https://github.com/Elympics/Unity-SDK/compare/v0.6.1...v0.6.2) (2023-04-24)
+
+
+### Bug Fixes 🪲
+
+* Fix OnSynchronized not being called on WebGL builds ([d447df4](https://github.com/Elympics/Unity-SDK/commit/d447df46452d44365347335ae462de00174d09f3))
+
+
+
 ## [0.6.1](https://github.com/Elympics/Unity-SDK/compare/v0.6.0...v0.6.1) (2023-04-18)
 
 

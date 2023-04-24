@@ -2,9 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary.Ntp;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
+using Debug = UnityEngine.Debug;
 
 namespace MatchTcpClients.Synchronizer
 {
@@ -33,7 +35,7 @@ namespace MatchTcpClients.Synchronizer
 		{
 			_ = Task.Run(async () =>
 			{
-				await Task.Delay(_config.UnreliablePingTimeoutInMilliseconds, ct);
+				await TaskUtil.Delay(_config.UnreliablePingTimeoutInMilliseconds, ct);
 				_waitingForFirstUnreliablePing = false;
 			}, ct);
 
@@ -57,7 +59,7 @@ namespace MatchTcpClients.Synchronizer
 					stopwatch.Reset();
 
 					if (timeToWait > TimeSpan.Zero)
-						await Task.Delay(timeToWait, ct).CatchOperationCanceledException();
+						await TaskUtil.Delay(timeToWait, ct).CatchOperationCanceledException();
 				}
 			}
 		}
@@ -65,7 +67,7 @@ namespace MatchTcpClients.Synchronizer
 		public async Task<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
 		{
 			if (_pingResponseCallback != null)
-				throw new ArgumentException("Cannot synchronize when there is other synchronization running");
+				throw new InvalidOperationException("Cannot synchronize when there is other synchronization running");
 
 			var pingCompletionSource = new TaskCompletionSource<PingClientResponseMessage>();
 			_pingResponseCallback = response => pingCompletionSource?.TrySetResult(response);
@@ -73,7 +75,7 @@ namespace MatchTcpClients.Synchronizer
 			SendSynchronizeRequest();
 
 			var pingCompletionTask = pingCompletionSource.Task;
-			var timeoutTask = Task.Delay(_config.TimeoutTime, ct).CatchOperationCanceledException();
+			var timeoutTask = TaskUtil.Delay(_config.TimeoutTime, ct).CatchOperationCanceledException();
 
 			var firstFinishedTask = await Task.WhenAny(pingCompletionTask, timeoutTask);
 			_pingResponseCallback = null;

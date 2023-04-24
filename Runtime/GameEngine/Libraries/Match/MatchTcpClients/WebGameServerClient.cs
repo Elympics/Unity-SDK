@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using WebRtcWrapper;
@@ -102,7 +103,7 @@ namespace MatchTcpClients
 				signalingClient.ReceivedResponse += OnAnswerReceived;
 				signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
-				await Task.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();
+				await TaskUtil.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();
 				signalingClient.ReceivedResponse -= OnAnswerReceived;
 				cts.Cancel();
 
@@ -110,7 +111,7 @@ namespace MatchTcpClients
 					break;
 				Logger.Error("[Elympics] WebRTC answer error: {0}", response?.Text);
 
-				await Task.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
+				await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
 			}
 
 			return response;
@@ -132,7 +133,7 @@ namespace MatchTcpClients
 
 			_webRtcClient.OfferCreated += OnOfferCreated;
 			_webRtcClient.CreateOffer();
-			await Task.Delay(Config.OfferTimeout, cts.Token).CatchOperationCanceledException();
+			await TaskUtil.Delay(Config.OfferTimeout, cts.Token).CatchOperationCanceledException();
 			_webRtcClient.OfferCreated -= OnOfferCreated;
 			return (offer, offerSet);
 		}

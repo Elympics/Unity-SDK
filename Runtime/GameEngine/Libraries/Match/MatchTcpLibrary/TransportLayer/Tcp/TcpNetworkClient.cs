@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Tcp
@@ -222,7 +223,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
 				_logger.Verbose($"Connecting no. {i} failed on {endpoint}, reason {result.ToString()}, retrying...");
 
-				await Task.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
+				await TaskUtil.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
 					_connectingTokenSource.Token);
 			}
 

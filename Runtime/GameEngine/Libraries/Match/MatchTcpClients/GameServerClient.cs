@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -81,7 +82,7 @@ namespace MatchTcpClients
 			}
 
 			ConnectedAndSynchronized?.Invoke(synchronizationData);
-			await StartClientSynchronizerLongRunningTaskAsync();
+			_ = _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token).ConfigureAwait(false);
 			return true;
 		}
 
@@ -116,10 +117,17 @@ namespace MatchTcpClients
 				if (!await TryInitializeSessionAsync(ct))
 					return false;
 
+				var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 				var sessionConnectedCompletionTask = sessionConnectedCompletionSource.Task;
-				var timeoutTask = Task.Delay(Config.SessionConnectTimeout, ct).CatchOperationCanceledException();
+				var timeoutTask = TaskUtil.Delay(Config.SessionConnectTimeout, cts.Token).CatchOperationCanceledException();
 
-				return await Task.WhenAny(sessionConnectedCompletionTask, timeoutTask) != timeoutTask;
+				if (await Task.WhenAny(sessionConnectedCompletionTask, timeoutTask) != timeoutTask)
+				{
+					cts.Cancel();
+					return true;
+				}
+
+				return false;
 			}
 			finally
 			{
@@ -140,11 +148,6 @@ namespace MatchTcpClients
 			}
 
 			return data;
-		}
-
-		private async Task StartClientSynchronizerLongRunningTaskAsync()
-		{
-			await Task.Factory.StartNew(() => _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token), TaskCreationOptions.LongRunning);
 		}
 
 		private void InitReliableClient()

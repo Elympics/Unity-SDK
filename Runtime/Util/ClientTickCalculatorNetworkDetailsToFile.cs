@@ -47,7 +47,7 @@ namespace Elympics
 			_fileName = $"###DetailedNetworkLogs_{DateTime.Now:yyyy_MM_dd___HH_mm_ss}.txt";
 
 			_cancellationTokenSource = new CancellationTokenSource();
-			Task.Factory.StartNew(async () =>
+			Task.Run(async () =>
 			{
 				while (true)
 				{
@@ -73,9 +73,9 @@ namespace Elympics
 					if (anythingToSend)
 						await WriteToFile(_sb.ToString(), _cancellationTokenSource.Token);
 
-					await Task.Delay(DelayInMs, _cancellationTokenSource.Token);
+					await TaskUtil.Delay(DelayInMs, _cancellationTokenSource.Token);
 				}
-			}, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+			}, _cancellationTokenSource.Token);
 		}
 
 

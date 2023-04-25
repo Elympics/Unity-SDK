@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
+using Elympics.Models.Authentication;
 using Plugins.Elympics.Plugins.ParrelSync;
 
 namespace MatchEvents
@@ -13,7 +14,7 @@ namespace MatchEvents
 		private void Start()
 		{
 			ElympicsLobbyClient.Instance.AuthenticatedGuid += HandleAuthenticated;
-			playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
+			playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticatedWith(AuthType.ClientSecret);
 
 			if (!ElympicsClonesManager.IsClone())
 				return;

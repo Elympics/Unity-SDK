@@ -174,7 +174,7 @@ namespace Elympics
 		{
 			var authTokenParts = authToken.Split('.');
 			var authTokenMidPadded = authTokenParts[1].PadRight(4 * ((authTokenParts[1].Length + 3) / 4), '=');
-			var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded));
+			var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/')));  // JWT is encoded as URL-safe base64, some characters have to be replaced
 			var authTokenMid = JsonConvert.DeserializeObject<JwtMidPart>(authTokenMidStr);
 			return authTokenMid;
 		}

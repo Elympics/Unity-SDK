@@ -48,6 +48,11 @@
       "path": "Samples~/EgbTest"
     },
     {
+      "displayName": "Leaderboard test",
+      "description": "A sample to illustrate usage of leaderboards. Works only if your game has generated any leaderboard data",
+      "path": "Samples~/Leaderboards"
+    },
+    {
       "displayName": "TicTacToe and more (Draft)",
       "description": "TicTacToe with bot and all of the Elympics stuff",
       "path": "Samples~/TicTacToe",

@@ -51,7 +51,8 @@ namespace Elympics
 			Instance = this;
 			DontDestroyOnLoad(gameObject);
 			SetClientSecret();
-			LoadConfig();
+			_config = ElympicsConfig.Load();
+			_gameConfig = _config.GetCurrentGameConfig();
 
 			_lobbyPublicApiClient = new UserApiClient();
 			_auth = new RemoteAuthenticationClient(_lobbyPublicApiClient);
@@ -64,12 +65,6 @@ namespace Elympics
 
 			if (authenticateOnAwake)
 				Authenticate();
-		}
-
-		private void LoadConfig()
-		{
-			_config = ElympicsConfig.Load();
-			_gameConfig = _config.GetCurrentGameConfig();
 		}
 
 		// ReSharper disable once MemberCanBePrivate.Global
@@ -161,6 +156,7 @@ namespace Elympics
 
 		private void SetUpMatch(JoinedMatchMode mode)
 		{
+			_gameConfig = _config.GetCurrentGameConfig();
 			MatchMode = mode;
 		}
 

@@ -1,3 +1,12 @@
+## [0.6.3](https://github.com/Elympics/Unity-SDK/compare/v0.6.2...v0.6.3) (2023-04-27)
+
+
+### Bug Fixes 🪲
+
+* Reload game config before starting game through ElympicsLobbyClient ([d3ae1b0](https://github.com/Elympics/Unity-SDK/commit/d3ae1b0975752e72f9b87d90fb3026ca3b5509a1))
+
+
+
 ## [0.6.2](https://github.com/Elympics/Unity-SDK/compare/v0.6.1...v0.6.2) (2023-04-24)
 
 

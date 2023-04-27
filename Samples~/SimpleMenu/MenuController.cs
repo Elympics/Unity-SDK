@@ -19,8 +19,8 @@ public class MenuController : MonoBehaviour
 
 	private void Start()
 	{
-		ElympicsLobbyClient.Instance.AuthenticatedGuid += HandleAuthenticated;
-		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticatedWith(AuthType.ClientSecret);
+		ElympicsLobbyClient.Instance.AuthenticationSucceeded += HandleAuthenticated;
+		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
 
 		_playButtonText = playButton.GetComponentInChildren<Text>();
 		_playButtonText.text = PlayOnlineText;
@@ -31,9 +31,9 @@ public class MenuController : MonoBehaviour
 		halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
 	}
 
-	private void HandleAuthenticated(Result<AuthenticationData, string> result)
+	private void HandleAuthenticated(AuthData _)
 	{
-		playButton.interactable = result.IsSuccess;
+		playButton.interactable = true;
 	}
 
 	public void OnPlayLocalClicked()

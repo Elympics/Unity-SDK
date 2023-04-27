@@ -1,9 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Plugins.Elympics.Plugins.ParrelSync;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,39 +20,51 @@ namespace Elympics
 
 		#region Authentication
 
-		[SerializeField] private bool              authenticateOnAwake = true;
-		[SerializeField] private bool              authenticateEthOnAwake;
+		[SerializeField] private AuthType authenticateOnAwakeWith = AuthType.ClientSecret;
 		[SerializeField] private ElympicsEthSigner ethSigner;
 
-		public event Action<Result<AuthenticationData, string>>           AuthenticatedGuid;
-		public event Action<AuthType, Result<AuthenticationData, string>> AuthenticatedWithType;
-		public IReadOnlyDictionary<AuthType, AuthenticationData>          AuthDataByType                         => _authDataByType;
-		public bool                                                       IsAuthenticatedWith(AuthType authType) => _authDataByType.ContainsKey(authType);
+		// TODO: remove the following measures of backwards compatibility one day ~dsygocki 2023-04-28
+		private AuthType AuthenticateOnAwakeWith => migratedAuthSettings
+			? authenticateOnAwakeWith
+			: authenticateOnAwake ? AuthType.ClientSecret : AuthType.None;
+		[SerializeField, HideInInspector] private bool authenticateOnAwake = true;
+		[SerializeField, HideInInspector] private bool migratedAuthSettings;
+#if UNITY_EDITOR
+		private void OnValidate()
+		{
+			if (PrefabUtility.IsPartOfPrefabAsset(this) || migratedAuthSettings)
+				return;
+			Undo.RecordObject(this, $"Migrate auth settings from {nameof(ElympicsLobbyClient)}");
+			if (!authenticateOnAwake)
+				authenticateOnAwakeWith = AuthType.None;
+			migratedAuthSettings = true;
+			if (PrefabUtility.IsPartOfPrefabInstance(this))
+				PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+		}
+#endif
 
-		private readonly Dictionary<AuthType, AuthenticationData> _authDataByType = new Dictionary<AuthType, AuthenticationData>();
-		private readonly HashSet<AuthType>                        _authInProgress = new HashSet<AuthType>();
+		public event Action<AuthData> AuthenticationSucceeded;
+		public event Action<string> AuthenticationFailed;
+		internal AuthData AuthData { get; private set; }
+		public Guid? UserGuid => AuthData?.UserId;
+		public bool IsAuthenticated => AuthData != null;
 
-		private AuthenticationData ClientSecretAuthData =>
-			_authDataByType.TryGetValue(AuthType.ClientSecret, out var authData) ? authData : null;
-
-		private string      _clientSecret;
 		private IAuthClient _auth;
+		private bool _authInProgress;
+		private string _clientSecret;
 
 		#endregion Authentication
 
 		#region Deprecated authentication
 
-		[Obsolete("Use " + nameof(AuthenticatedGuid) + " instead")]
+		[Obsolete("Use " + nameof(AuthenticationSucceeded) + " or " + nameof(AuthenticationFailed) + " instead")]
+		public event Action<Result<AuthenticationData, string>> AuthenticatedGuid;
+		[Obsolete("Use " + nameof(AuthenticationSucceeded) + " or " + nameof(AuthenticationFailed) + " instead")]
 		public delegate void AuthenticationCallback(bool success, string userId, string jwtToken, string error);
-		[Obsolete("Use " + nameof(AuthenticatedGuid) + " instead")]
+		[Obsolete("Use " + nameof(AuthenticationSucceeded) + " or " + nameof(AuthenticationFailed) + " instead")]
 		public event AuthenticationCallback Authenticated;
-
-		[Obsolete("Use " + nameof(AuthDataByType) + " instead")]
-		public Guid? UserGuid => ClientSecretAuthData?.UserId;
-		[Obsolete("Use " + nameof(AuthDataByType) + " instead")]
+		[Obsolete("Use " + nameof(UserGuid) + " instead")]
 		public string UserId => UserGuid?.ToString();
-		[Obsolete("Use " + nameof(IsAuthenticatedWith) + " instead")]
-		public bool IsAuthenticated => ClientSecretAuthData != null;
 
 		#endregion Deprecated authentication
 
@@ -58,7 +73,6 @@ namespace Elympics
 		public   IMatchmakerEvents       Matchmaker    => _matchmaker;
 		public   MatchmakingFinishedData MatchDataGuid { get; private set; }
 		internal JoinedMatchMode         MatchMode     { get; private set; }
-		internal AuthType                MatchAuthType { get; private set; }
 
 		private MatchmakerClient _matchmaker;
 		private bool             _matchmakingInProgress;
@@ -104,16 +118,14 @@ namespace Elympics
 			Matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
 			Matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
-			if (authenticateOnAwake)
-				AuthenticateWith(AuthType.ClientSecret);
-			if (authenticateEthOnAwake)
-				AuthenticateWith(AuthType.EthAddress);
+			if (AuthenticateOnAwakeWith != AuthType.None)
+				AuthenticateWith(AuthenticateOnAwakeWith);
 		}
 
 		// ReSharper disable once MemberCanBePrivate.Global
 		/// <summary>
 		/// Performs standard authentication. Has to be run before joining an online match requiring client-secret auth type.
-		/// Done automatically on awake if <see cref="authenticateOnAwake"/> is set.
+		/// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
 		/// </summary>
 		[Obsolete("Use " + nameof(AuthenticateWith) + " instead")]
 		public void Authenticate() => AuthenticateWith(AuthType.ClientSecret);
@@ -121,28 +133,28 @@ namespace Elympics
 		// ReSharper disable once MemberCanBePrivate.Global
 		/// <summary>
 		/// Performs authentication of specified type. Has to be run before joining an online match.
-		/// Done automatically on awake if <see cref="authenticateOnAwake"/> or <see cref="authenticateEthOnAwake"/> is set.
+		/// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
 		/// </summary>
 		/// <param name="authType">Type of authentication to be performed.</param>
 		public void AuthenticateWith(AuthType authType)
 		{
-			if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.Unknown)
+			if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.None)
 			{
 				Debug.LogError($"[Elympics] Invalid authentication type {authType}");
 				return;
 			}
-			if (IsAuthenticatedWith(authType))
+			if (IsAuthenticated)
 			{
-				Debug.LogError($"[Elympics] User already authenticated with {authType} auth type");
+				Debug.LogError($"[Elympics] User already authenticated (with {AuthData.AuthType} auth type)");
 				return;
 			}
-			if (_authInProgress.Contains(authType))
+			if (_authInProgress)
 			{
-				Debug.LogError($"[Elympics] Authentication already in progress for type {authType}");
+				Debug.LogError($"[Elympics] Authentication already in progress");
 				return;
 			}
 
-			_authInProgress.Add(authType);
+			_authInProgress = true;
 			try
 			{
 				if (authType == AuthType.ClientSecret)
@@ -152,24 +164,23 @@ namespace Elympics
 			}
 			catch
 			{
-				_authInProgress.Remove(authType);
+				_authInProgress = false;
 				throw;
 			}
 		}
 
-		private Action<Result<AuthenticationData, string>> OnAuthenticatedWith(AuthType authType) => result =>
+		private Action<Result<AuthData, string>> OnAuthenticatedWith(AuthType authType) => result =>
 		{
 			OnAuthenticatedWith(authType, result);
-			_authInProgress.Remove(authType);
+			_authInProgress = false;
 		};
 
-		private void OnAuthenticatedWith(AuthType authType, Result<AuthenticationData, string> result)
+		private void OnAuthenticatedWith(AuthType authType, Result<AuthData, string> result)
 		{
 			if (result.IsSuccess)
 			{
-				var authData = result.Value;
-				_authDataByType[authType] = authData;
-				Debug.Log($"[Elympics] {authType} authentication successful with user id: {authData.UserId}");
+				AuthData = result.Value;
+				Debug.Log($"[Elympics] {authType} authentication successful with user id: {AuthData.UserId}");
 			}
 			else
 				Debug.LogError($"[Elympics] {authType} authentication failed: {result.Error}");
@@ -177,10 +188,20 @@ namespace Elympics
 			string eventName = null;
 			try
 			{
-				eventName = nameof(AuthenticatedWithType);
-				AuthenticatedWithType?.Invoke(authType, result);
+				if (result.IsSuccess)
+				{
+					eventName = nameof(AuthenticationSucceeded);
+					AuthenticationSucceeded?.Invoke(result.Value);
+				}
+				else
+				{
+					eventName = nameof(AuthenticationFailed);
+					AuthenticationFailed?.Invoke(result.Error);
+				}
 				eventName = nameof(AuthenticatedGuid);
-				AuthenticatedGuid?.Invoke(result);
+				AuthenticatedGuid?.Invoke(result.IsSuccess
+					? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value))
+					: Result<AuthenticationData, string>.Failure(result.Error));
 				eventName = nameof(Authenticated);
 				Authenticated?.Invoke(result.IsSuccess, result.Value.UserId.ToString(), result.Value.JwtToken, result.Error);
 			}
@@ -189,6 +210,26 @@ namespace Elympics
 				Debug.LogException(new Exception($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e));
 			}
 		}
+
+		/// <summary>
+		/// Resets the authentication state.
+		/// After running this method, you have to authenticate using <see cref="AuthenticateWith"/> before joining an online match.
+		/// </summary>
+		public void SignOut()
+		{
+			if (_authInProgress)
+			{
+				Debug.LogError($"[Elympics] Authentication already in progress. Wait for it to complete before signing out");
+				return;
+			}
+			if (!IsAuthenticated)
+			{
+				Debug.LogError($"[Elympics] User is not authenticated");
+				return;
+			}
+			AuthData = null;
+		}
+
 
 		public void PlayOffline()
 		{
@@ -209,39 +250,38 @@ namespace Elympics
 			LoadGameplayScene();
 		}
 
-		
+
 		[Obsolete("Please use " + nameof(PlayOnlineInRegion) + " instead.")]
-		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, string regionName = null, CancellationToken cancellationToken = default, AuthType authType = AuthType.ClientSecret)
+		public void PlayOnline(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, string regionName = null, CancellationToken cancellationToken = default)
 		{
-			PlayOnlineInRegion(regionName, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken, authType);
+			PlayOnlineInRegion(regionName, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);
 		}
+
 		/// <remarks>In a performance manner, it is better to use PlayOnlineInRegion if the region is known upfront. This method pings every Elympics region. If ping will fail, fallback region will be used.</remarks>
-		public async void PlayOnlineInClosestRegionAsync(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default, AuthType authType = AuthType.ClientSecret, string fallbackRegion = "warsaw")
+		public async void PlayOnlineInClosestRegionAsync(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default, string fallbackRegion = "warsaw")
 		{
 			if (string.IsNullOrEmpty(fallbackRegion))
-				throw new ArgumentNullException($"{nameof(fallbackRegion)} argument cannot be null.");
-			
-			if (!CanJoinMatch(authType))
+				throw new ArgumentNullException(nameof(fallbackRegion));
+			if (!CanJoinMatch())
 				return;
 
 			var closestRegion = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
-
 			if (string.IsNullOrEmpty(closestRegion))
 				closestRegion = fallbackRegion;
-
-			SetupMatchAndJoinMatchmaker(closestRegion, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken, authType);
+			SetupMatchAndJoinMatchmaker(closestRegion, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);
 		}
 
-		public void PlayOnlineInRegion(string regionName, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default, AuthType authType = AuthType.ClientSecret)
+		public void PlayOnlineInRegion(string regionName, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default)
 		{
-			if (!CanJoinMatch(authType))
+			if (!CanJoinMatch())
 				return;
-			SetupMatchAndJoinMatchmaker(regionName, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken, authType);
+			SetupMatchAndJoinMatchmaker(regionName, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);
 		}
 
-		private void SetupMatchAndJoinMatchmaker(string regionName, float[] matchmakerData, byte[] gameEngineData, string queueName, bool loadGameplaySceneOnFinished, CancellationToken cancellationToken, AuthType authType)
+
+		private void SetupMatchAndJoinMatchmaker(string regionName, float[] matchmakerData, byte[] gameEngineData, string queueName, bool loadGameplaySceneOnFinished, CancellationToken cancellationToken)
 		{
-			SetUpMatch(JoinedMatchMode.Online, authType);
+			SetUpMatch(JoinedMatchMode.Online);
 			_matchmakingInProgress = true;
 			_loadingSceneOnFinished = loadGameplaySceneOnFinished;
 
@@ -253,10 +293,10 @@ namespace Elympics
 				GameEngineData = gameEngineData,
 				QueueName = queueName,
 				RegionName = regionName,
-			}, _authDataByType[authType], cancellationToken);
+			}, AuthData, cancellationToken);
 		}
 
-		private bool CanJoinMatch(AuthType authType)
+		private bool CanJoinMatch()
 		{
 			if (_matchmakingInProgress)
 			{
@@ -264,20 +304,19 @@ namespace Elympics
 				return false;
 			}
 
-			if (!IsAuthenticatedWith(authType))
+			if (!IsAuthenticated)
 			{
-				Debug.LogError($"[Elympics] Cannot join match because user is not authenticated with {authType}");
+				Debug.LogError($"[Elympics] Cannot join match because user is not authenticated");
 				return false;
 			}
 
 			return true;
 		}
 
-		private void SetUpMatch(JoinedMatchMode mode, AuthType authType = AuthType.Unknown)
+		private void SetUpMatch(JoinedMatchMode mode)
 		{
 			_gameConfig = _config.GetCurrentGameConfig();
 			MatchMode = mode;
-			MatchAuthType = authType;
 		}
 
 		private void HandleMatchmakingCancelled(Guid _)

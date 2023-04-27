@@ -15,13 +15,13 @@ namespace Elympics
 				Debug.LogError("[Elympics] Match data not found. Did you try to join an online match without going through matchmaking first?");
 				return;
 			}
-			if (!ElympicsLobbyClient.Instance.IsAuthenticatedWith(ElympicsLobbyClient.Instance.MatchAuthType))
+			if (!ElympicsLobbyClient.Instance.IsAuthenticated)
 			{
 				Debug.LogError("[Elympics] User is not authenticated. Did you try to join an online match without going through matchmaking first?");
 				return;
 			}
 
-			var userId = ElympicsLobbyClient.Instance.AuthDataByType[ElympicsLobbyClient.Instance.MatchAuthType].UserId;
+			var userId = ElympicsLobbyClient.Instance.UserGuid.Value;
 			var matchmakerData = matchData.MatchmakerData;
 			var gameEngineData = matchData.GameEngineData;
 			var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];

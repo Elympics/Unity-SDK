@@ -29,25 +29,25 @@ namespace Elympics
 			_ethAddressAuthUrl = uriBuilder.Uri.ToString();
 		}
 
-		public void AuthenticateWithClientSecret(string clientSecret, Action<Result<AuthenticationData, string>> onResult, CancellationToken ct = default)
+		public void AuthenticateWithClientSecret(string clientSecret, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
 		{
 			void OnResponse(Result<AuthenticationDataResponse, Exception> result)
 			{
 				onResult(result.IsSuccess
-					? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value))
-					: Result<AuthenticationData, string>.Failure(result.Error.Message));
+					? Result<AuthData, string>.Success(new AuthData(result.Value, AuthType.ClientSecret))
+					: Result<AuthData, string>.Failure(result.Error.Message));
 			}
 
 			var requestModel = new ClientSecretAuthRequest { clientSecret = clientSecret };
 			ElympicsWebClient.SendJsonPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, callback: OnResponse, ct: ct);
 		}
 
-		public async void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthenticationData, string>> onResult, CancellationToken ct = default)
+		public async void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
 		{
 			var ethAddress = await ethSigner.ProvideAddressAsync(ct: ct);
 			if (ethAddress == null)
 			{
-				onResult(Result<AuthenticationData, string>.Failure(
+				onResult(Result<AuthData, string>.Failure(
 					$"Address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.ProvideAddressAsync)} cannot be null"));
 				return;
 			}
@@ -63,7 +63,7 @@ namespace Elympics
 			{
 				if (result.IsFailure)
 				{
-					onResult(Result<AuthenticationData, string>.Failure(result.Error.Message));
+					onResult(Result<AuthData, string>.Failure(result.Error.Message));
 					return;
 				}
 
@@ -76,13 +76,13 @@ namespace Elympics
 				}
 				catch (Exception e)
 				{
-					onResult(Result<AuthenticationData, string>.Failure(e.ToString()));
+					onResult(Result<AuthData, string>.Failure(e.ToString()));
 					return;
 				}
 
 				if (signature == null)
 				{
-					onResult(Result<AuthenticationData, string>.Failure(
+					onResult(Result<AuthData, string>.Failure(
 						$"Signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)} cannot be null"));
 					return;
 				}
@@ -102,8 +102,8 @@ namespace Elympics
 			void OnAuthResponse(Result<AuthenticationDataResponse, Exception> result)
 			{
 				onResult(result.IsSuccess
-					? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value))
-					: Result<AuthenticationData, string>.Failure(result.Error.Message));
+					? Result<AuthData, string>.Success(new AuthData(result.Value, AuthType.EthAddress))
+					: Result<AuthData, string>.Failure(result.Error.Message));
 			}
 		}
 

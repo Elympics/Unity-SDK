@@ -56,7 +56,7 @@ namespace Elympics
 			}
 		}
 
-		private void OnAuthenticated(Result<AuthenticationData, string> result)
+		private void OnAuthenticated(Result<AuthData, string> result)
 		{
 			if (result.IsFailure)
 			{

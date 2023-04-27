@@ -1,5 +1,6 @@
 namespace Elympics
 {
+	// TODO: internalize, probably rethink the implementation ~dsygocki, 2023-04-28
 	public abstract class Result<TValue, TError>
 	{
 		public abstract bool IsSuccess { get; }

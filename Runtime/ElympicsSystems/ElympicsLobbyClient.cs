@@ -87,7 +87,8 @@ namespace Elympics
 			Instance = this;
 			DontDestroyOnLoad(gameObject);
 			SetClientSecret();
-			LoadConfig();
+			_config = ElympicsConfig.Load();
+			_gameConfig = _config.GetCurrentGameConfig();
 
 			if (string.IsNullOrEmpty(_config.ElympicsLobbyEndpoint))
 			{
@@ -107,12 +108,6 @@ namespace Elympics
 				AuthenticateWith(AuthType.ClientSecret);
 			if (authenticateEthOnAwake)
 				AuthenticateWith(AuthType.EthAddress);
-		}
-
-		private void LoadConfig()
-		{
-			_config = ElympicsConfig.Load();
-			_gameConfig = _config.GetCurrentGameConfig();
 		}
 
 		// ReSharper disable once MemberCanBePrivate.Global
@@ -280,6 +275,7 @@ namespace Elympics
 
 		private void SetUpMatch(JoinedMatchMode mode, AuthType authType = AuthType.Unknown)
 		{
+			_gameConfig = _config.GetCurrentGameConfig();
 			MatchMode = mode;
 			MatchAuthType = authType;
 		}

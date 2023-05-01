@@ -24,7 +24,7 @@ namespace Elympics
 			_getMatchLongPollingUrl = uriBuilder.Uri.ToString();
 		}
 
-		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthenticationData authData, CancellationToken ct = default)
+		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default)
 		{
 			var gameId = joinMatchmakerData.GameId;
 			var gameVersion = joinMatchmakerData.GameVersion;

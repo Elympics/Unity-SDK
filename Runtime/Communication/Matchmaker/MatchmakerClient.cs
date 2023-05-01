@@ -11,7 +11,7 @@ namespace Elympics
 {
 	internal abstract class MatchmakerClient : IMatchmakerEvents
 	{
-		internal abstract void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthenticationData authData, CancellationToken ct = default);
+		internal abstract void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default);
 
 		#region Matchmaking event emitters
 

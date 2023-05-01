@@ -1,25 +1,16 @@
 using System;
+using Elympics.Models.Authentication;
 
-namespace Elympics.Models.Authentication
+namespace Elympics
 {
-	// TODO: rename to shorter AuthData (but uhh backwards compatibility) ~dsygocki 2023-04-19
-	public class AuthenticationData
+	// TODO: in the process of renaming to shorter AuthData (backwards compatibility) ~dsygocki 2023-04-28
+	public class AuthenticationData : AuthData
 	{
-		public Guid   UserId   { get; }
-		public string JwtToken { get; }
-
-		internal string BearerAuthorization => $"Bearer {JwtToken}";
-
-		public AuthenticationData(Guid userId, string jwtToken)
-		{
-			UserId = userId;
-			JwtToken = jwtToken;
-		}
-
-		public AuthenticationData(AuthenticationDataResponse response)
-		{
-			UserId = new Guid(response.userId);
-			JwtToken = response.jwtToken;
-		}
+		public AuthenticationData(AuthData authData)
+			: base(authData.UserId, authData.JwtToken, authData.AuthType) { }
+		public AuthenticationData(Guid userId, string jwtToken, AuthType authType = AuthType.None)
+			: base(userId, jwtToken, authType) { }
+		public AuthenticationData(AuthenticationDataResponse response, AuthType authType = AuthType.None)
+			: base(response, authType) { }
 	}
 }

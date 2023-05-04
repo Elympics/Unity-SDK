@@ -14,14 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: Match events
   gameId: d8781ea6-3aaa-4dcd-b5b9-e6c725210f42
-  gameVersion: 7
+  gameVersion: 8
   players: 2
   gameplayScene: Assets/Samples/MatchEvents/Scenes/MatchEventsGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 2cda990e2423bbf4892e6590ba056729,
     type: 3}
   botsInServer: 1
   useWeb: 0
+  legacyMatchmakingClient: 0
   enableReconnect: 0
+  connectionConfig:
+    sessionConnectTimeout: 15
+    synchronizerTimeout: 20
+    minContinuousSynchronizationInterval: 0.1
+    unreliablePingTimeout: 5
+    webRtcOfferTimeout: 5
+    webRtcOfferMaxRetries: 5
+    webRtcOfferRetryDelay: 1
+    initialSynchronizeMaxRetries: 3
   ticksPerSecond: 30
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
@@ -29,13 +39,16 @@ MonoBehaviour:
   prediction: 1
   predictionLimitInTicks: 8
   detailedNetworkLog: 0
-  mode: 1
+  mode: 2
   halfRemoteMode: 0
   useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
   playerIndexForHalfRemoteMode: 1
+  testMatchData:
+    queueName: 
+    regionName: 
   testPlayers:
   - userId: 0
     isBot: 0

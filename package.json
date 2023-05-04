@@ -28,8 +28,8 @@
       "path": "Samples~/Empty"
     },
     {
-      "displayName": "Hello World",
-      "description": "Empty with additional synchronized button",
+      "displayName": "Button Clicker",
+      "description": "Clicker-type game for 1-4 players. Remember to set the player count in game config and queue settings",
       "path": "Samples~/HelloWorld"
     },
     {

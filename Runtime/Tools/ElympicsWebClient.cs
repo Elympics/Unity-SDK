@@ -29,9 +29,10 @@ namespace Elympics
 			var request = new UnityWebRequest(uri, method);
 			request.downloadHandler = new DownloadHandlerBuffer();
 
+			string bodyString = string.Empty;
 			if (jsonBody != null)
 			{
-				var bodyString = JsonUtility.ToJson(jsonBody);
+				bodyString = JsonUtility.ToJson(jsonBody);
 				var bodyRaw = Encoding.ASCII.GetBytes(bodyString);
 				request.uploadHandler = new UploadHandlerRaw(bodyRaw);
 				request.SetRequestHeader("Content-Type", "application/json");
@@ -44,7 +45,8 @@ namespace Elympics
 			request.SetTestCertificateHandlerIfNeeded();
 
 #if ELYMPICS_DEBUG
-			Debug.Log($"[Elympics] Sending request {method} {url}\n{bodyString}");
+			var body = string.IsNullOrEmpty(bodyString) ? "No request body." : $"{bodyString}";
+			Debug.Log($"[Elympics] Sending request {method} {url}\n{body}");
 #endif
 			var asyncOperation = request.SendWebRequest();
 			CallCallbackOnCompleted(asyncOperation, callback, ct);

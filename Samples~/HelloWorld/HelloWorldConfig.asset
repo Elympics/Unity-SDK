@@ -12,16 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: HelloWorldConfig
   m_EditorClassIdentifier: 
-  gameName: HelloWorld
-  gameId: 04fa614a-4526-40f9-84a4-e25e70e705f2
-  gameVersion: 1
-  players: 2
+  gameName: ButtonClicker
+  gameId: 288af85e-11f9-491f-bc1e-f8503040ebb1
+  gameVersion: 2-p1
+  players: 1
   gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1
   useWeb: 0
+  legacyMatchmakingClient: 0
   enableReconnect: 0
+  connectionConfig:
+    sessionConnectTimeout: 15
+    synchronizerTimeout: 20
+    minContinuousSynchronizationInterval: 0.1
+    unreliablePingTimeout: 5
+    webRtcOfferTimeout: 5
+    webRtcOfferMaxRetries: 5
+    webRtcOfferRetryDelay: 1
+    initialSynchronizeMaxRetries: 3
   ticksPerSecond: 30
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
@@ -29,21 +39,19 @@ MonoBehaviour:
   prediction: 1
   predictionLimitInTicks: 15
   detailedNetworkLog: 0
-  mode: 0
+  mode: 2
   halfRemoteMode: 0
   useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
   playerIndexForHalfRemoteMode: 1
+  testMatchData:
+    queueName: p1
+    regionName: 
   testPlayers:
   - userId: 0
     isBot: 0
-    botDifficulty: 0
-    gameEngineData: 
-    matchmakerData: []
-  - userId: 1
-    isBot: 1
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []

@@ -45,7 +45,7 @@ namespace MatchEvents
 
 		public void OnPlayOnlineClicked()
 		{
-			ElympicsLobbyClient.Instance.PlayOnline();
+			ElympicsLobbyClient.Instance.PlayOnlineInClosestRegionAsync();
 		}
 	}
 }

@@ -30,7 +30,7 @@ namespace MatchEvents
             }
 
             ConnectingStarted?.Invoke();
-            Elympics.ConnectAndJoinAsPlayer(OnConnectAndJoinAsPlayerResult);
+            StartCoroutine(Elympics.ConnectAndJoinAsPlayer(OnConnectAndJoinAsPlayerResult));
         }
 
         [UsedImplicitly]

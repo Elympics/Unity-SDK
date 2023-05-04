@@ -53,7 +53,7 @@ namespace Elympics
 					MatchId = matchId,
 					DesiredState = GetMatchDesiredState.Initializing,
 				};
-				ElympicsWebClient.SendJsonPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
+				ElympicsWebClient.SendPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
 					authData.BearerAuthorization, OnServerInitializing, ct);
 			}
 
@@ -76,7 +76,7 @@ namespace Elympics
 					MatchId = matchId,
 					DesiredState = GetMatchDesiredState.Running,
 				};
-				ElympicsWebClient.SendJsonPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
+				ElympicsWebClient.SendPostRequest<GetMatchModel.Response>(_getMatchLongPollingUrl, getMatchRequest,
 					authData.BearerAuthorization, OnServerRunning, ct);
 			}
 
@@ -118,7 +118,7 @@ namespace Elympics
 			}
 
 			var getPendingMatchRequest = new JoinMatchmakerAndWaitForMatchModel.Request(joinMatchmakerData);
-			ElympicsWebClient.SendJsonPostRequest<JoinMatchmakerAndWaitForMatchModel.Response>(
+			ElympicsWebClient.SendPostRequest<JoinMatchmakerAndWaitForMatchModel.Response>(
 				_getPendingMatchLongPollingUrl, getPendingMatchRequest, authData.BearerAuthorization, OnMatched, ct);
 		}
 

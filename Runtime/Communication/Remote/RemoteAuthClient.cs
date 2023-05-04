@@ -39,7 +39,7 @@ namespace Elympics
 			}
 
 			var requestModel = new ClientSecretAuthRequest { clientSecret = clientSecret };
-			ElympicsWebClient.SendJsonPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, callback: OnResponse, ct: ct);
+			ElympicsWebClient.SendPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, callback: OnResponse, ct: ct);
 		}
 
 		public async void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
@@ -57,7 +57,7 @@ namespace Elympics
 				: ethAddress;
 
 			var nonceRequest = new EthAddressNonceRequest { address = ethAddress };
-			ElympicsWebClient.SendJsonPutRequest<string>(_ethAddressNonceUrl, nonceRequest, callback: OnNonceResponse, ct: ct);
+			ElympicsWebClient.SendPutRequest<string>(_ethAddressNonceUrl, nonceRequest, callback: OnNonceResponse, ct: ct);
 
 			async void OnNonceResponse(Result<string, Exception> result)
 			{
@@ -96,7 +96,7 @@ namespace Elympics
 					msg = hexEncodedMessage,
 					sig = signature
 				};
-				ElympicsWebClient.SendJsonPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, callback: OnAuthResponse, ct: ct);
+				ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, callback: OnAuthResponse, ct: ct);
 			}
 
 			void OnAuthResponse(Result<AuthenticationDataResponse, Exception> result)

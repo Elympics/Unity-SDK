@@ -1,6 +1,7 @@
 using Elympics;
 using System;
 using Elympics.Models.Authentication;
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class LeaderboardTester : MonoBehaviour
@@ -27,6 +28,7 @@ public class LeaderboardTester : MonoBehaviour
         FetchFirst();
     }
 
+    [UsedImplicitly]
     private void CreateLeaderboardClient()
     {
         var timeScopeObject = timeScope != LeaderboardTimeScopeType.Custom
@@ -34,11 +36,11 @@ public class LeaderboardTester : MonoBehaviour
 	        : new LeaderboardTimeScope(DateTimeOffset.Parse(customTimeScopeFrom), DateTimeOffset.Parse(customTimeScopeTo));
         _leaderboardClient = new LeaderboardClient(pageSize, timeScopeObject, queue, gameVersion);
     }
-    private void FetchFirst() => _leaderboardClient.FetchFirstPage(DisplayEntries, CustomFailHandler);
-    private void FetchUserPage() => _leaderboardClient.FetchPageWithUser(DisplayEntries);
-    private void FetchNext() => _leaderboardClient.FetchNextPage(DisplayEntries);
-    private void FetchPrevious() => _leaderboardClient.FetchPreviousPage(DisplayEntries);
-    private void FetchCurrent() => _leaderboardClient.FetchRefreshedCurrentPage(DisplayEntries);
+    [UsedImplicitly] private void FetchFirst() => _leaderboardClient.FetchFirstPage(DisplayEntries, CustomFailHandler);
+    [UsedImplicitly] private void FetchUserPage() => _leaderboardClient.FetchPageWithUser(DisplayEntries);
+    [UsedImplicitly] private void FetchNext() => _leaderboardClient.FetchNextPage(DisplayEntries);
+    [UsedImplicitly] private void FetchPrevious() => _leaderboardClient.FetchPreviousPage(DisplayEntries);
+    [UsedImplicitly] private void FetchCurrent() => _leaderboardClient.FetchRefreshedCurrentPage(DisplayEntries);
 
     private void DisplayEntries(LeaderboardFetchResult result)
     {
@@ -46,7 +48,6 @@ public class LeaderboardTester : MonoBehaviour
         Debug.Log($"Fetched leaderboards: {result.Entries.Count} entries, page {result.PageNumber} of {totalPages}");
         foreach (var entry in result.Entries)
             Debug.Log($"{entry.Position}. Score: {entry.Score} User: {entry.UserId} When: {entry.ScoredAt.LocalDateTime}");
-        FetchNext();
     }
 
     private static void CustomFailHandler(LeaderboardFetchError fetchError)

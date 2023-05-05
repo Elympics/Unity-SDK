@@ -13,15 +13,25 @@ MonoBehaviour:
   m_Name: ElympicsEmptyConfig
   m_EditorClassIdentifier: 
   gameName: Game
-  gameId: 00ab967f-6d5d-470c-8e9a-4118ea99f637
-  gameVersion: 1
+  gameId: 00000000-0000-0000-0000-000000000000
+  gameVersion: 0
   players: 2
   gameplayScene: Assets/Samples/Empty/EmptyScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a4c4aa9df07fed148970250e0ae1a0a1,
     type: 3}
   botsInServer: 1
   useWeb: 0
+  legacyMatchmakingClient: 0
   enableReconnect: 0
+  connectionConfig:
+    sessionConnectTimeout: 15
+    synchronizerTimeout: 20
+    minContinuousSynchronizationInterval: 0.1
+    unreliablePingTimeout: 5
+    webRtcOfferTimeout: 5
+    webRtcOfferMaxRetries: 5
+    webRtcOfferRetryDelay: 1
+    initialSynchronizeMaxRetries: 3
   ticksPerSecond: 50
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 3
@@ -36,6 +46,9 @@ MonoBehaviour:
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
   playerIndexForHalfRemoteMode: 1
+  testMatchData:
+    queueName: 
+    regionName: 
   testPlayers:
   - userId: 0
     isBot: 0

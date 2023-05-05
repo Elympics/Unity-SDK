@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
@@ -16,11 +15,12 @@ public class MenuController : MonoBehaviour
 
 	private Text _playButtonText;
 	private CancellationTokenSource _cts;
+	private string _closestRegion;
 
 	private void Start()
 	{
 		ElympicsLobbyClient.Instance.AuthenticationSucceeded += HandleAuthenticated;
-		playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
+		ChooseRegion();
 
 		_playButtonText = playButton.GetComponentInChildren<Text>();
 		_playButtonText.text = PlayOnlineText;
@@ -33,7 +33,18 @@ public class MenuController : MonoBehaviour
 
 	private void HandleAuthenticated(AuthData _)
 	{
-		playButton.interactable = true;
+		if (_closestRegion != null)
+			playButton.interactable = true;
+	}
+
+	private async void ChooseRegion()
+	{
+		_closestRegion = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+		if (string.IsNullOrEmpty(_closestRegion))
+			_closestRegion = ElympicsRegions.Warsaw;
+		Debug.Log($"Selected region: {ElympicsRegions.Warsaw}");
+		if (ElympicsLobbyClient.Instance.IsAuthenticated)
+			playButton.interactable = true;
 	}
 
 	public void OnPlayLocalClicked()
@@ -64,6 +75,6 @@ public class MenuController : MonoBehaviour
 
 		_cts = new CancellationTokenSource();
 		_playButtonText.text = CancelMatchmakingText;
-		ElympicsLobbyClient.Instance.PlayOnline(cancellationToken: _cts.Token);
+		ElympicsLobbyClient.Instance.PlayOnlineInRegion(_closestRegion, cancellationToken: _cts.Token);
 	}
 }

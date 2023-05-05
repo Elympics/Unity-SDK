@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,6 +7,8 @@ namespace Elympics.EgbTest
 {
 	public class GameStarter : MonoBehaviour
 	{
+		private const string EgbGameplayGameName = "SampleEgbTest";
+
 		[SerializeField] private InputField sentGeDataField;
 		[SerializeField] private InputField sentMmDataField;
 		[SerializeField] private Button playOnlineButton;
@@ -15,9 +18,14 @@ namespace Elympics.EgbTest
 
 		private void Start()
 		{
+			var config = ElympicsConfig.Load();
+			config.SwitchGame(config.AvailableGames.Select((x, i) => (Index: i, Name: x.GameName))
+				.First(x => x.Name == EgbGameplayGameName).Index);
 			playOnlineButton.onClick.AddListener(OnPlayClicked);
 			sentGeDataField.onEndEdit.AddListener(ValidateGeData);
 			sentMmDataField.onEndEdit.AddListener(ValidateMmData);
+			playOnlineButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
+			ElympicsLobbyClient.Instance.AuthenticationSucceeded += _ => playOnlineButton.interactable = true;
 		}
 
 		private void ValidateGeData(string text)
@@ -51,8 +59,8 @@ namespace Elympics.EgbTest
 		private void OnPlayClicked()
 		{
 			playOnlineButton.interactable = false;
-			ElympicsLobbyClient.Instance.PlayOnline(SentMmData, SentGeData, queueName: "Solo", regionName: "warsaw");
 			playOnlineButton.onClick.RemoveListener(OnPlayClicked);
+			ElympicsLobbyClient.Instance.PlayOnlineInRegion("warsaw", SentMmData, SentGeData, queueName: "Solo");
 		}
 	}
 }

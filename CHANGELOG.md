@@ -1,12 +1,12 @@
-# [0.7.0](https://github.com/Elympics/Unity-SDK/compare/v0.6.3...v0.7.0) (2023-05-05)
+## [0.7.0](https://github.com/Elympics/Unity-SDK/compare/v0.6.3...v0.7.0) (2023-05-05)
 
 
 ### Features
 
-* Add communication with leaderboards api ([f42a1a3](https://github.com/Elympics/Unity-SDK/commit/f42a1a359fafcfba902812514caa28caecc97dde))
+* Add communication with Leaderboards API ([f42a1a3](https://github.com/Elympics/Unity-SDK/commit/f42a1a359fafcfba902812514caa28caecc97dde))
 * Allow authentication using Ethereum signature ([254ad16](https://github.com/Elympics/Unity-SDK/commit/254ad16c5521db9ebbc426c8fab7d2dd97607ed3))
 * Introduce SignOut method to ElympicsLobbyClient ([ff3bdd0](https://github.com/Elympics/Unity-SDK/commit/ff3bdd00d018b85765ef4df0e09214caef334eed))
-* new method allowing to play online in closest region ([b212572](https://github.com/Elympics/Unity-SDK/commit/b212572be7a3fce5e7d30a25b90fd0a8519ec6b4))
+* Add method allowing to play online in closest region ([b212572](https://github.com/Elympics/Unity-SDK/commit/b212572be7a3fce5e7d30a25b90fd0a8519ec6b4))
 
 
 

@@ -65,11 +65,12 @@ default:
 
 .unity_before_script: &unity_before_script
   before_script:
+    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
     - ./.scripts/ci/before_script.sh
 
 .ubuntu_before_script: &ubuntu_before_script
   before_script:
-    - apt update && apt install git -y
+    - apt update && apt install -y git
 
 .bash_before_script: &bash_before_script
   before_script:
@@ -146,6 +147,7 @@ get-activation-file:
   stage: test
   script:
     - ./.scripts/ci/create_testing_project.sh
+    - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
     - ./.scripts/ci/test.sh
   artifacts:
     when: always

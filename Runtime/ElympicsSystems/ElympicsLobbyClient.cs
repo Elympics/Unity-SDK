@@ -45,7 +45,7 @@ namespace Elympics
 
 		public event Action<AuthData> AuthenticationSucceeded;
 		public event Action<string> AuthenticationFailed;
-		internal AuthData AuthData { get; private set; }
+		public AuthData AuthData { get; private set; }
 		public Guid? UserGuid => AuthData?.UserId;
 		public bool IsAuthenticated => AuthData != null;
 

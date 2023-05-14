@@ -109,6 +109,9 @@ namespace Elympics
 
 		private static string AddQueryParams(string url, IEnumerable<KeyValuePair<string, string>> queryValues)
 		{
+			if (queryValues == null)
+				return url;
+
 			var uriBuilder = new UriBuilder(url);
 			var query = HttpUtility.ParseQueryString(uriBuilder.Query);
 			foreach (var (name, value) in queryValues)

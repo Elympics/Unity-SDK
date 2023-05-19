@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Elympics;
+using Elympics.Models.Authentication;
 using Plugins.Elympics.Plugins.ParrelSync;
 
 namespace MatchEvents
@@ -12,7 +13,7 @@ namespace MatchEvents
 
 		private void Start()
 		{
-			ElympicsLobbyClient.Instance.AuthenticatedGuid += HandleAuthenticated;
+			ElympicsLobbyClient.Instance.AuthenticationSucceeded += HandleAuthenticated;
 			playButton.interactable = ElympicsLobbyClient.Instance.IsAuthenticated;
 
 			if (!ElympicsClonesManager.IsClone())
@@ -21,9 +22,9 @@ namespace MatchEvents
 			halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
 		}
 
-		private void HandleAuthenticated(Result<AuthenticationData, string> result)
+		private void HandleAuthenticated(AuthData _)
 		{
-			playButton.interactable = result.IsSuccess;
+			playButton.interactable = true;
 		}
 
 		public void OnPlayLocalClicked()
@@ -44,7 +45,7 @@ namespace MatchEvents
 
 		public void OnPlayOnlineClicked()
 		{
-			ElympicsLobbyClient.Instance.PlayOnline();
+			ElympicsLobbyClient.Instance.PlayOnlineInClosestRegionAsync();
 		}
 	}
 }

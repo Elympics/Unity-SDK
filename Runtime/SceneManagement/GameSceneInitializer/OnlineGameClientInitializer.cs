@@ -1,4 +1,5 @@
 ﻿using Elympics.Libraries;
+using Elympics.Models.Authentication;
 using MatchTcpClients;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace Elympics
 				Debug.LogError("[Elympics] Match data not found. Did you try to join an online match without going through matchmaking first?");
 				return;
 			}
-			if (ElympicsLobbyClient.Instance.UserId == null)
+			if (!ElympicsLobbyClient.Instance.IsAuthenticated)
 			{
 				Debug.LogError("[Elympics] User is not authenticated. Did you try to join an online match without going through matchmaking first?");
 				return;

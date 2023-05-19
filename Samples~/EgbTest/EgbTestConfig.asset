@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EgbTestConfig
   m_EditorClassIdentifier: 
   gameName: SampleEgbTest
-  gameId: 3b213499-c15b-4126-bef9-969b3e7c9cdf
+  gameId: 1e8cea62-c4a2-40a8-8eb6-ae979fac6d48
   gameVersion: 1
   players: 1
   gameplayScene: Assets/Samples/EgbTest/Scenes/EgbTestGameplay.unity
@@ -21,6 +21,7 @@ MonoBehaviour:
     type: 3}
   botsInServer: 1
   useWeb: 0
+  legacyMatchmakingClient: 0
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15

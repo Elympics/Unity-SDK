@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elympics;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using UnityEngine;
 
@@ -10,7 +11,8 @@ namespace MatchEvents
     {
         private void Awake()
         {
-            ElympicsLobbyClient.Instance.AuthenticatedGuid += OnAuthenticated;
+            ElympicsLobbyClient.Instance.AuthenticationSucceeded += OnAuthenticationSucceeded;
+            ElympicsLobbyClient.Instance.AuthenticationFailed += OnAuthenticationFailed;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingStarted += MatchmakerOnMatchmakingStarted;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingMatchFound += MatchmakerOnMatchFound;
             ElympicsLobbyClient.Instance.Matchmaker.MatchmakingSucceeded += MatchmakerOnMatchmakingSucceeded;
@@ -21,14 +23,19 @@ namespace MatchEvents
 
         #region ElympicsLobbyClient
 
-        private static void OnAuthenticated(Result<AuthenticationData, string> obj) => Serializer.PrintCall(
+        private static void OnAuthenticationSucceeded(AuthData obj) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
-                { nameof(obj.IsSuccess), obj.IsSuccess },
-                { nameof(obj.Value.UserId), obj.Value?.UserId },
-                { nameof(obj.Value.JwtToken), obj.Value?.JwtToken },
-                { nameof(obj.Error), obj.Error }
+                { nameof(obj.UserId), obj.UserId },
+                { nameof(obj.JwtToken), obj.JwtToken },
+                { nameof(obj.AuthType), obj.AuthType },
             });
+
+        private static void OnAuthenticationFailed(string error) => Serializer.PrintCall(
+	        new Dictionary<string, object>
+	        {
+		        { nameof(error), error },
+	        });
 
         #endregion ElympicsLobbyClient
 

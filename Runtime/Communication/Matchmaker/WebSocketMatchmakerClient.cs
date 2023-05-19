@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading;
+using System.Web;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Models.Matchmaking.WebSocket;
 using HybridWebSocket;
@@ -13,6 +15,9 @@ namespace Elympics
 	internal class WebSocketMatchmakerClient : MatchmakerClient
 	{
 		private const string CanceledByUserCloseReason = "Canceled by user";
+		private const string JwtProtocolAndQueryParameter = "jwt_token";
+
+		private readonly string _findAndJoinMatchUrl;
 
 		private IWebSocket _ws;
 		private CancellationTokenRegistration _ctRegistration;
@@ -26,15 +31,20 @@ namespace Elympics
 
 		private Action<IFromLobby> _onMessage;
 
-		internal WebSocketMatchmakerClient(IUserApiClient userApiClient) : base(userApiClient)
-		{ }
+		internal WebSocketMatchmakerClient(string baseUrl)
+		{
+			var uriBuilder = new UriBuilder(baseUrl);
+			var oldPath = uriBuilder.Path.TrimEnd('/');
+			uriBuilder.Path = string.Join("/", oldPath, MatchmakingRoutes.Base, MatchmakingRoutes.FindAndJoinMatch);
+			_findAndJoinMatchUrl = uriBuilder.Uri.ToString();
+		}
 
-		private void SetUp(CancellationToken ct)
+		private void SetUp(string jwtToken, CancellationToken ct)
 		{
 			EmitMatchmakingStarted(_gameId, _gameVersion);
 			_ctRegistration = ct.Register(CancelConnection);
 
-			_ws = UserApiClient.CreateMatchmakingWebSocket();
+			_ws = WebSocketFactory.CreateInstance(GetMatchmakingWsAddress(jwtToken), JwtProtocolAndQueryParameter);
 			_ws.OnOpen += SendJoinRequest;
 			_ws.OnMessage += HandleMessage;
 			_ws.OnClose += HandleClose;
@@ -42,7 +52,7 @@ namespace Elympics
 			_ws.Connect();
 		}
 
-		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, CancellationToken ct = default)
+		internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default)
 		{
 			if (_ws != null)
 				CancelConnection();
@@ -52,7 +62,7 @@ namespace Elympics
 			_gameId = joinMatchmakerData.GameId;
 			_gameVersion = joinMatchmakerData.GameVersion;
 
-			SetUp(ct);
+			SetUp(authData.JwtToken, ct);
 		}
 
 		private void SendJoinRequest()
@@ -166,6 +176,16 @@ namespace Elympics
 			_ws.OnClose -= HandleClose;
 			_ws.OnError -= HandleError;
 			_onMessage = null;
+		}
+
+		private string GetMatchmakingWsAddress(string jwtToken)
+		{
+			var uriBuilder = new UriBuilder(_findAndJoinMatchUrl);
+			uriBuilder.Scheme = uriBuilder.Scheme == "https" ? "wss" : "ws";
+			var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+			query.Add(JwtProtocolAndQueryParameter, jwtToken);
+			uriBuilder.Query = query.ToString();
+			return uriBuilder.Uri.ToString();
 		}
 	}
 }

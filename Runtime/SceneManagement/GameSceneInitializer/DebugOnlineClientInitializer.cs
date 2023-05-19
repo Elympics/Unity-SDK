@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Elympics.Libraries;
+using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using MatchTcpClients;
 using Plugins.Elympics.Plugins.ParrelSync;
@@ -14,9 +15,8 @@ namespace Elympics
 
 		private ElympicsClient _client;
 
-		private IAuthenticationClient _authClient;
-		private MatchmakerClient      _matchmakerClient;
-		private IUserApiClient        _userApiClient;
+		private IAuthClient _authClient;
+		private MatchmakerClient _matchmakerClient;
 
 		private ElympicsGameConfig         _elympicsGameConfig;
 		private InitialMatchPlayerDataGuid _initialPlayerData;
@@ -26,9 +26,11 @@ namespace Elympics
 			_client = client;
 			_elympicsGameConfig = elympicsGameConfig;
 
-			_userApiClient = new UserApiClient();
-			_authClient = new RemoteAuthenticationClient(_userApiClient);
-			_matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, _userApiClient);
+			_authClient = new RemoteAuthClient();
+			_matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, ElympicsConfig.Load().ElympicsLobbyEndpoint);
+			_matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
+			_matchmakerClient.MatchmakingMatchFound += matchId => Debug.Log($"Match found: {matchId}");
+			_matchmakerClient.MatchmakingFailed += args => Debug.LogError($"Matchmaking error: {args.Error}");
 
 			var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
 			var testPlayerData = _elympicsGameConfig.TestPlayers[playerIndex];
@@ -46,7 +48,7 @@ namespace Elympics
 			try
 			{
 				var clientSecret = Guid.NewGuid().ToString();
-				_authClient.AuthenticateWithClientSecret(ElympicsConfig.Load().ElympicsLobbyEndpoint, clientSecret, OnAuthenticated);
+				_authClient.AuthenticateWithClientSecret(clientSecret, OnAuthenticated);
 			}
 			catch (Exception e)
 			{
@@ -54,29 +56,29 @@ namespace Elympics
 			}
 		}
 
-		private void OnAuthenticated((bool Success, Guid UserId, string JwtToken, string Error) result)
+		private void OnAuthenticated(Result<AuthData, string> result)
 		{
-			if (!result.Success)
+			if (result.IsFailure)
 			{
 				Debug.LogError($"Connecting failed: {result.Error}");
 				return;
 			}
 
-			_initialPlayerData.UserId = result.UserId;
+			_initialPlayerData.UserId = result.Value.UserId;
 
 			var cts = new CancellationTokenSource(MatchmakingTimeout);
-			_matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
-			_matchmakerClient.MatchmakingMatchFound += matchId => Debug.Log($"Match found: {matchId}");
-			_matchmakerClient.MatchmakingFailed += args => Debug.LogError($"Matchmaking error: {args.Error}");
+			var regionName = _elympicsGameConfig.TestMatchData.regionName;
+			if (string.IsNullOrEmpty(regionName))
+				regionName = null;
 			_matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData
 			{
 				GameId = new Guid(_elympicsGameConfig.GameId),
 				GameVersion = _elympicsGameConfig.GameVersion,
 				QueueName = _elympicsGameConfig.TestMatchData.queueName,
-				RegionName = _elympicsGameConfig.TestMatchData.regionName,
+				RegionName = regionName,
 				GameEngineData = _initialPlayerData.GameEngineData,
 				MatchmakerData = _initialPlayerData.MatchmakerData,
-			}, cts.Token);
+			}, result.Value, cts.Token);
 		}
 
 		private void OnMatchmakingSucceeded(MatchmakingFinishedData matchData)

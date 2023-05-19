@@ -45,7 +45,7 @@ namespace Elympics
 
 		public event Action<AuthData> AuthenticationSucceeded;
 		public event Action<string> AuthenticationFailed;
-		internal AuthData AuthData { get; private set; }
+		public AuthData AuthData { get; private set; }
 		public Guid? UserGuid => AuthData?.UserId;
 		public bool IsAuthenticated => AuthData != null;
 
@@ -265,7 +265,7 @@ namespace Elympics
 			if (!CanJoinMatch())
 				return;
 
-			var closestRegion = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+			var closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
 			if (string.IsNullOrEmpty(closestRegion))
 				closestRegion = fallbackRegion;
 			SetupMatchAndJoinMatchmaker(closestRegion, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);

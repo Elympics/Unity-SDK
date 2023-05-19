@@ -4,7 +4,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Elympics",
-        "Elympics.Editor"
+        "Elympics.Editor",
+        "UniTask"
     ],
     "includePlatforms": [
         "Editor"

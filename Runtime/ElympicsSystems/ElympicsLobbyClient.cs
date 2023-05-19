@@ -265,7 +265,7 @@ namespace Elympics
 			if (!CanJoinMatch())
 				return;
 
-			var closestRegion = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+			var closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
 			if (string.IsNullOrEmpty(closestRegion))
 				closestRegion = fallbackRegion;
 			SetupMatchAndJoinMatchmaker(closestRegion, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);

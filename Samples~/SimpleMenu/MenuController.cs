@@ -39,7 +39,7 @@ public class MenuController : MonoBehaviour
 
 	private async void ChooseRegion()
 	{
-		_closestRegion = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+		_closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
 		if (string.IsNullOrEmpty(_closestRegion))
 			_closestRegion = ElympicsRegions.Warsaw;
 		Debug.Log($"Selected region: {ElympicsRegions.Warsaw}");

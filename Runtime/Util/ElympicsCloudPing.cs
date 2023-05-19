@@ -14,7 +14,7 @@ namespace Elympics
 		private static readonly ISet<string>                    DistinctRegions   = new HashSet<string>();
 		private static readonly Dictionary<string, LatencyData> RegionLatencyData = new Dictionary<string, LatencyData>();
 
-		public static async UniTask<string> ChooseClosestRegion(IList<string> regions)
+		public static async UniTask<(string Region, float LatencyMs)> ChooseClosestRegion(IList<string> regions)
 		{
 			if (regions == null)
 				throw new ArgumentNullException(nameof(regions));
@@ -31,9 +31,6 @@ namespace Elympics
 				DistinctRegions.Add(region);
 			}
 
-			if (DistinctRegions.Count == 1)
-				return regions[0];
-
 			var pingsTasks = new List<UniTask<PingResults>>();
 
 			foreach (var region in DistinctRegions)
@@ -48,33 +45,36 @@ namespace Elympics
 					continue;
 
 				if (!RegionLatencyData.ContainsKey(pingResult.RegionName))
-					RegionLatencyData.Add(pingResult.RegionName, new LatencyData(pingResult.Latency));
+					RegionLatencyData.Add(pingResult.RegionName, new LatencyData(pingResult.LatencyMs));
 				else
-					RegionLatencyData[pingResult.RegionName].AddLatency(pingResult.Latency);
+					RegionLatencyData[pingResult.RegionName].AddLatency(pingResult.LatencyMs);
 			}
 
+			if (RegionLatencyData.Count == 0)
+				throw new ElympicsException("Network error");
+
 			var closestRegion = string.Empty;
-			var minLatency = double.MaxValue;
+			var minLatencyMs = double.MaxValue;
 			foreach (var latencyData in RegionLatencyData)
-				if (latencyData.Value.LatencyMedian < minLatency)
+				if (latencyData.Value.LatencyMedian < minLatencyMs)
 				{
-					minLatency = latencyData.Value.LatencyMedian;
+					minLatencyMs = latencyData.Value.LatencyMedian;
 					closestRegion = latencyData.Key;
 				}
 
-			return closestRegion;
+			return (Region: closestRegion, LatencyMs: (float)minLatencyMs);
 		}
 
-		public struct PingResults
+		private struct PingResults
 		{
 			public readonly string RegionName;
-			public readonly double Latency;
+			public readonly double LatencyMs;
 			public readonly bool   IsValid;
 
-			public PingResults(string regionName, double latency, bool isValid)
+			public PingResults(string regionName, double latencyMs, bool isValid)
 			{
 				RegionName = regionName;
-				Latency = latency;
+				LatencyMs = latencyMs;
 				IsValid = isValid;
 			}
 		}
@@ -98,6 +98,8 @@ namespace Elympics
 
 		private class LatencyData
 		{
+			public double LatencyMedian { get; private set; }
+
 			private readonly List<double> _latencies;
 
 			public LatencyData(double latency)
@@ -105,9 +107,6 @@ namespace Elympics
 				_latencies = new List<double>();
 				AddLatency(latency);
 			}
-
-			public double LatencyMedian { get; private set; }
-
 
 			public void AddLatency(double latency)
 			{

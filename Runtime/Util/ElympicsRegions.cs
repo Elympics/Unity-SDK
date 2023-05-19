@@ -4,13 +4,15 @@ namespace Elympics
 {
     public static class ElympicsRegions
     {
-        public static readonly string TelAviv = "telaviv";
-        public static readonly string Warsaw  = "warsaw";
-        public static readonly string Tokyo   = "tokyo";
+        public const string Warsaw = "warsaw";
+        public const string Tokyo = "tokyo";
+        public const string Dallas = "dallas";
 
-        public static readonly List<string> AllAvailableRegions = new List<string>()
+        public static readonly List<string> AllAvailableRegions = new List<string>
         {
-            TelAviv, Warsaw, Tokyo
+            Warsaw,
+            Tokyo,
+            Dallas,
         };
     }
 }

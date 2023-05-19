@@ -8,11 +8,11 @@ namespace Elympics
 {
 	public static class ElympicsCloudPing
 	{
-		private const           int                             IterationNumber    = 3;
-		private const           int                             TimeOut            = 2;
-		private const           string                          _pingRoute         = "api/ping";
-		private static readonly ISet<string>                    _distinctRegions   = new HashSet<string>();
-		private static readonly Dictionary<string, LatencyData> _regionLatencyData = new Dictionary<string, LatencyData>();
+		private const           int                             IterationNumber   = 3;
+		private const           int                             TimeOut           = 2;
+		private const           string                          PingRoute         = "api/ping";
+		private static readonly ISet<string>                    DistinctRegions   = new HashSet<string>();
+		private static readonly Dictionary<string, LatencyData> RegionLatencyData = new Dictionary<string, LatencyData>();
 
 		public static async UniTask<string> ChooseClosestRegion(IList<string> regions)
 		{
@@ -20,53 +20,47 @@ namespace Elympics
 				throw new ArgumentNullException(nameof(regions));
 
 			if (regions.Count == 0)
-				throw new ArgumentException("Regions list cannot be empty.");
+				throw new ArgumentException("Regions list cannot be empty.", nameof(regions));
 
-			_distinctRegions.Clear();
+			DistinctRegions.Clear();
 
 			foreach (var region in regions)
 			{
 				if (!ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl.ContainsKey(region))
 					throw new ArgumentException($"Could not find Google Cloud url for region {region}", nameof(regions));
-				_distinctRegions.Add(region);
+				DistinctRegions.Add(region);
 			}
 
-			if (_distinctRegions.Count == 1)
+			if (DistinctRegions.Count == 1)
 				return regions[0];
 
-			List<UniTask<PingResults>> pingsTasks = new List<UniTask<PingResults>>();
+			var pingsTasks = new List<UniTask<PingResults>>();
 
-			foreach (var region in _distinctRegions)
+			foreach (var region in DistinctRegions)
 				for (var i = 0; i < IterationNumber; i++)
 					pingsTasks.Add(GetPingResult(region));
 
 			var results = await UniTask.WhenAll(pingsTasks);
-			_regionLatencyData.Clear();
+			RegionLatencyData.Clear();
 			foreach (var pingResult in results)
 			{
 				if (!pingResult.IsValid)
 					continue;
 
-				if (!_regionLatencyData.ContainsKey(pingResult.RegionName))
-				{
-					_regionLatencyData.Add(pingResult.RegionName, new LatencyData(pingResult.Latency));
-				}
+				if (!RegionLatencyData.ContainsKey(pingResult.RegionName))
+					RegionLatencyData.Add(pingResult.RegionName, new LatencyData(pingResult.Latency));
 				else
-				{
-					_regionLatencyData[pingResult.RegionName].AddLatency(pingResult.Latency);
-				}
+					RegionLatencyData[pingResult.RegionName].AddLatency(pingResult.Latency);
 			}
 
-			string closestRegion = string.Empty;
-			double minLatency = double.MaxValue;
-			foreach (var latencyData in _regionLatencyData)
-			{
+			var closestRegion = string.Empty;
+			var minLatency = double.MaxValue;
+			foreach (var latencyData in RegionLatencyData)
 				if (latencyData.Value.LatencyMedian < minLatency)
 				{
 					minLatency = latencyData.Value.LatencyMedian;
 					closestRegion = latencyData.Key;
 				}
-			}
 
 			return closestRegion;
 		}
@@ -90,15 +84,15 @@ namespace Elympics
 			var url = ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl[region];
 			var uriBuilder = new UriBuilder(url)
 			{
-				Path = _pingRoute
+				Path = PingRoute
 			};
 			var stopwatch = new Stopwatch();
 			var webRequest = UnityWebRequest.Get(uriBuilder.Uri);
 			webRequest.timeout = TimeOut;
 			stopwatch.Start();
-			var resutls = await webRequest.SendWebRequest();
+			var results = await webRequest.SendWebRequest();
 			stopwatch.Stop();
-			bool isValid = !resutls.IsProtocolError() && !resutls.IsConnectionError();
+			var isValid = !results.IsProtocolError() && !results.IsConnectionError();
 			return new PingResults(region, stopwatch.Elapsed.TotalMilliseconds, isValid);
 		}
 

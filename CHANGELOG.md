@@ -1,3 +1,12 @@
+## [0.7.1](https://github.com/Elympics/Unity-SDK/compare/v0.7.0...v0.7.1) (2023-06-13)
+
+
+### Bug Fixes 🪲
+
+* Wait for server to fully initialize before marking it as initialized in the database ([65ce740](https://github.com/Elympics/Unity-SDK/commit/65ce740f3c1593db35552b360e51b5f536cbf5d7))
+
+
+
 ## [0.7.0](https://github.com/Elympics/Unity-SDK/compare/v0.6.3...v0.7.0) (2023-05-05)
 
 

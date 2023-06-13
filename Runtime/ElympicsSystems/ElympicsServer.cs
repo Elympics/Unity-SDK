@@ -64,13 +64,14 @@ namespace Elympics
 		{
 			_gameEngineAdapter.PlayerConnected += OnPlayerConnected;
 			_gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
-			_gameEngineAdapter.InitializedWithMatchPlayerDatas += data =>
+			_gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
 			{
-				Enqueue(() => _playerData = data);
-				OnServerInit(data);
-				InitializeBotsAndClientInServer(data);
-				Enqueue(SetInitialized);
-			};
+				_playerData = args.Data;
+				elympicsBehavioursManager.OnServerInit(args.Data);
+				InitializeBotsAndClientInServer(args.Data);
+				SetInitialized();
+				args.OnInitialized();
+			});
 		}
 
 		private void InitializeBotsAndClientInServer(InitialMatchPlayerDatasGuid data)
@@ -78,7 +79,7 @@ namespace Elympics
 			if (HandlingBotsInServer)
 			{
 				var dataOfBots = data.Where(x => x.IsBot).ToList();
-				OnBotsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfBots));
+				elympicsBehavioursManager.OnBotsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfBots));
 
 				_playersOfBots = dataOfBots.Select(x => x.Player).ToArray();
 				CallPlayerConnectedFromBotsOrClients(_playersOfBots);
@@ -87,7 +88,7 @@ namespace Elympics
 			if (HandlingClientsInServer)
 			{
 				var dataOfClients = data.Where(x => !x.IsBot).ToList();
-				OnClientsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfClients));
+				elympicsBehavioursManager.OnClientsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfClients));
 
 				_playersOfClients = dataOfClients.Select(x => x.Player).ToArray();
 				CallPlayerConnectedFromBotsOrClients(_playersOfClients);
@@ -95,10 +96,10 @@ namespace Elympics
 		}
 
 
-		private void CallPlayerConnectedFromBotsOrClients(ElympicsPlayer[] players)
+		private void CallPlayerConnectedFromBotsOrClients(IEnumerable<ElympicsPlayer> players)
 		{
 			foreach (var player in players)
-				OnPlayerConnected(player);
+				elympicsBehavioursManager.OnPlayerConnected(player);
 		}
 
 		protected override bool ShouldDoFixedUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);

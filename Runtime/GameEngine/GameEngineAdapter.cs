@@ -13,7 +13,7 @@ using IGameEngine = GameEngineCore.V1._3.IGameEngine;
 
 namespace Elympics
 {
-	public class GameEngineAdapter : IGameEngine
+	internal class GameEngineAdapter : IGameEngine
 	{
 		internal ElympicsPlayer[] Players { get; private set; } = Array.Empty<ElympicsPlayer>();
 
@@ -25,7 +25,12 @@ namespace Elympics
 		public event Action<ElympicsPlayer>       PlayerConnected;
 		public event Action<ElympicsPlayer>       PlayerDisconnected;
 
-		public event Action<InitialMatchPlayerDatasGuid> InitializedWithMatchPlayerDatas;
+		/// <remarks>
+		/// Invokes <see cref="Initialized"/> every time action passed in OnInitialized is called, but only the first call is meaningful.
+		/// There should be only one subscriber calling OnInitialized exactly once after it initializes.
+		/// </remarks>
+		internal event Action<(InitialMatchPlayerDatasGuid Data, Action OnInitialized)> ReceivedInitialMatchPlayerDatas;
+		internal event Action Initialized;
 
 		private IGameEngineLogger                  _logger;
 		private InitialMatchUserDatas              _initialMatchUserDatas;
@@ -35,13 +40,13 @@ namespace Elympics
 		private readonly LogHandler _logHandler;
 		private readonly int _playerInputBufferSize;
 
-		public readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput =
+		internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput =
 			new ConcurrentDictionary<ElympicsPlayer, ElympicsInput>();
-		public ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } =
+		internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } =
 			new ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>>();
 
 
-		public GameEngineAdapter(ElympicsGameConfig elympicsGameConfig, LogHandler logHandler)
+		internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig, LogHandler logHandler)
 		{
 			_playerInputBufferSize = elympicsGameConfig.PredictionBufferSize;
 			_logHandler = logHandler;
@@ -66,15 +71,15 @@ namespace Elympics
 				PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
 			_initialMatchUserDatas = initialMatchUserDatas;
-			InitializedWithMatchPlayerDatas?.Invoke(new InitialMatchPlayerDatasGuid(initialMatchUserDatas.Select(x => new InitialMatchPlayerDataGuid
+			ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchUserDatas.Select(x => new InitialMatchPlayerDataGuid
 			{
 				Player = _userIdsToPlayers[x.UserId],
 				UserId = new Guid(x.UserId),
 				IsBot = x.IsBot,
 				BotDifficulty = x.BotDifficulty,
 				GameEngineData = x.GameEngineData,
-				MatchmakerData = x.MatchmakerData
-			}).ToList()));
+				MatchmakerData = x.MatchmakerData,
+			}).ToList()), () => Initialized?.Invoke()));
 			// _logger.Info("Initialized from unity");
 		}
 
@@ -121,19 +126,19 @@ namespace Elympics
 			/* Using unity FixedUpdate */
 		}
 
-		public void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
+		internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
 		{
 			LatestSimulatedTickInput[player] = elympicsInput;
 		}
 
-		public void SendSnapshotUnreliable(ElympicsSnapshot snapshot)
+		internal void SendSnapshotUnreliable(ElympicsSnapshot snapshot)
 		{
 			var serializedData = snapshot.Serialize();
 			foreach (var userData in _initialMatchUserDatas)
 				InGameDataForPlayerOnUnreliableChannelGenerated?.Invoke(serializedData, userData.UserId);
 		}
 
-		public void SendSnapshotsUnreliable(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots)
+		internal void SendSnapshotsUnreliable(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots)
 		{
 			foreach (var (player, snapshot) in snapshots)
 			{
@@ -143,7 +148,7 @@ namespace Elympics
 			}
 		}
 
-		public void EndGame(ResultMatchPlayerDatas result = null)
+		internal void EndGame(ResultMatchPlayerDatas result = null)
 		{
 			try
 			{

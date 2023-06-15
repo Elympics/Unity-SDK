@@ -66,11 +66,12 @@ default:
 .unity_before_script: &unity_before_script
   before_script:
     - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - apt-get update && apt-get install -y --no-install-recommends xsltproc
     - ./.scripts/ci/before_script.sh
 
 .ubuntu_before_script: &ubuntu_before_script
   before_script:
-    - apt update && apt install -y git
+    - apt-get update && apt-get install -y --no-install-recommends git
 
 .bash_before_script: &bash_before_script
   before_script:
@@ -152,7 +153,10 @@ get-activation-file:
   artifacts:
     when: always
     expire_in: 2 weeks
-  coverage: /<Linecoverage>(.*?)</Linecoverage>/
+    paths:
+      - "$TEST_PLATFORM-results.xml"
+    reports:
+      junit: "$TEST_PLATFORM-results.xml"
 
 test:playmode:
   <<: *test

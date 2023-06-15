@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Networking;
 
@@ -11,10 +12,23 @@ namespace Elympics
 		private const           int                             IterationNumber   = 3;
 		private const           int                             TimeOut           = 2;
 		private const           string                          PingRoute         = "api/ping";
-		private static readonly ISet<string>                    DistinctRegions   = new HashSet<string>();
 		private static readonly Dictionary<string, LatencyData> RegionLatencyData = new Dictionary<string, LatencyData>();
 
 		public static async UniTask<(string Region, float LatencyMs)> ChooseClosestRegion(IList<string> regions)
+		{
+			var closestRegion = string.Empty;
+			var minLatencyMs = double.MaxValue;
+			foreach (var (region, latencyMs) in await GetLatencyDataForRegions(regions))
+				if (latencyMs.TotalMilliseconds < minLatencyMs)
+				{
+					minLatencyMs = latencyMs.TotalMilliseconds;
+					closestRegion = region;
+				}
+
+			return (Region: closestRegion, LatencyMs: (float)minLatencyMs);
+		}
+
+		public static async UniTask<Dictionary<string, TimeSpan>> GetLatencyDataForRegions(IList<string> regions)
 		{
 			if (regions == null)
 				throw new ArgumentNullException(nameof(regions));
@@ -22,22 +36,23 @@ namespace Elympics
 			if (regions.Count == 0)
 				throw new ArgumentException("Regions list cannot be empty.", nameof(regions));
 
-			DistinctRegions.Clear();
+			var distinctRegions = new HashSet<string>();
 
 			foreach (var region in regions)
 			{
 				if (!ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl.ContainsKey(region))
 					throw new ArgumentException($"Could not find Google Cloud url for region {region}", nameof(regions));
-				DistinctRegions.Add(region);
+				distinctRegions.Add(region);
 			}
 
-			var pingsTasks = new List<UniTask<PingResults>>();
-
-			foreach (var region in DistinctRegions)
+			var results = new List<PingResults>();
+			foreach (var region in distinctRegions)
 				for (var i = 0; i < IterationNumber; i++)
-					pingsTasks.Add(GetPingResult(region));
+				{
+					var result = await GetPingResult(region);
+					results.Add(result);
+				}
 
-			var results = await UniTask.WhenAll(pingsTasks);
 			RegionLatencyData.Clear();
 			foreach (var pingResult in results)
 			{
@@ -53,16 +68,7 @@ namespace Elympics
 			if (RegionLatencyData.Count == 0)
 				throw new ElympicsException("Network error");
 
-			var closestRegion = string.Empty;
-			var minLatencyMs = double.MaxValue;
-			foreach (var latencyData in RegionLatencyData)
-				if (latencyData.Value.LatencyMedian < minLatencyMs)
-				{
-					minLatencyMs = latencyData.Value.LatencyMedian;
-					closestRegion = latencyData.Key;
-				}
-
-			return (Region: closestRegion, LatencyMs: (float)minLatencyMs);
+			return RegionLatencyData.ToDictionary(entry => entry.Key, entry => TimeSpan.FromMilliseconds(entry.Value.LatencyMedian));
 		}
 
 		private struct PingResults
@@ -82,10 +88,7 @@ namespace Elympics
 		private static async UniTask<PingResults> GetPingResult(string region)
 		{
 			var url = ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl[region];
-			var uriBuilder = new UriBuilder(url)
-			{
-				Path = PingRoute
-			};
+			var uriBuilder = new UriBuilder(url) { Path = PingRoute };
 			var stopwatch = new Stopwatch();
 			var webRequest = UnityWebRequest.Get(uriBuilder.Uri);
 			webRequest.timeout = TimeOut;

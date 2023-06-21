@@ -145,7 +145,6 @@ namespace Elympics
 		#region ClientCallbacks
 
 		protected void OnStandaloneClientInit(InitialMatchPlayerDataGuid data) => Enqueue(() => elympicsBehavioursManager.OnStandaloneClientInit(data));
-		protected void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data) => Enqueue(() => elympicsBehavioursManager.OnClientsOnServerInit(data));
 		protected void OnSynchronized(TimeSynchronizationData data)            => Enqueue(() => elympicsBehavioursManager.OnSynchronized(data));
 		protected void OnDisconnectedByServer()                                => Enqueue(elympicsBehavioursManager.OnDisconnectedByServer);
 		protected void OnDisconnectedByClient()                                => Enqueue(elympicsBehavioursManager.OnDisconnectedByClient);
@@ -162,13 +161,11 @@ namespace Elympics
 		#region BotCallbacks
 
 		protected void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnStandaloneBotInit(initialMatchData));
-		protected void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnBotsOnServerInit(initialMatchData));
 
 		#endregion
 
 		#region ServerCallbacks
 
-		protected void OnServerInit(InitialMatchPlayerDatasGuid initialMatchData) => Enqueue(() => elympicsBehavioursManager.OnServerInit(initialMatchData));
 		protected void OnPlayerConnected(ElympicsPlayer player)                   => Enqueue(() => elympicsBehavioursManager.OnPlayerConnected(player));
 		protected void OnPlayerDisconnected(ElympicsPlayer player)                => Enqueue(() => elympicsBehavioursManager.OnPlayerDisconnected(player));
 

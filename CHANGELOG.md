@@ -3,48 +3,12 @@
 
 ### Bug Fixes 🪲
 
-* Add a delay before posting WebRTC offer again ([70845eb](https://github.com/Elympics/Unity-SDK/commit/70845eb489d74c524d731d7607101124d842313b))
-* allow for specifying queue and region for Debug Online mode ([d1988ab](https://github.com/Elympics/Unity-SDK/commit/d1988ab50b3ed8075777e201443394af3fac7adf))
-* Backport changes to TCP/WebRTC session to Unity 2019.4 ([2d48501](https://github.com/Elympics/Unity-SDK/commit/2d48501eb4fd90a09505dfe3db0f47cf48f1102b))
-* Change duplicated parameter name ([13e82db](https://github.com/Elympics/Unity-SDK/commit/13e82db713c4e0def47e4d53c7508276bf779648))
-* choose closest region did not returned valid region ([4db965f](https://github.com/Elympics/Unity-SDK/commit/4db965f911161bf08f387e0e69b838e9c0716634))
-* Correct GamesResponseModel ([dd8dff9](https://github.com/Elympics/Unity-SDK/commit/dd8dff9ac7bb2058b13fcc6b41f848d20d8bda22))
-* Explicitly specify TLS version when using WebSockets ([188c431](https://github.com/Elympics/Unity-SDK/commit/188c431ff57adfb4137dd18bfdf3147f6003b3c5))
-* Fix IServerHandlerGuid methods not being called in ElympicsBehaviour ([eef5ff2](https://github.com/Elympics/Unity-SDK/commit/eef5ff2b77685c948eaf08e33394320dc4c4c473))
-* Fix OnSynchronized not being called on WebGL builds ([d447df4](https://github.com/Elympics/Unity-SDK/commit/d447df46452d44365347335ae462de00174d09f3))
-* Gracefully handle null game and match IDs received in messages from game server ([537f650](https://github.com/Elympics/Unity-SDK/commit/537f65009b3afdb1ce57aa373e70300e76fd4e5c))
-* internalized unity connectors to not interfere with external libraries ([eea1277](https://github.com/Elympics/Unity-SDK/commit/eea12776ae4ae792f263e7356ff2de47a4e4d5e5))
-* Log Error Message when HalfRemote mode game is run with Application.RunInBackround set to false. ([c76b2d2](https://github.com/Elympics/Unity-SDK/commit/c76b2d2781ebdce80fffe5a1941f9d317d853b8e))
-* Log server errors to stderr ([fe383b6](https://github.com/Elympics/Unity-SDK/commit/fe383b6d0e5a6a065f49d16438db7d30cb8fd73d))
-* Make AuthData public and check for null in GET requests ([569bce4](https://github.com/Elympics/Unity-SDK/commit/569bce485531e146d34868a9cb8700941b3a0473))
-* Make sure Elympics-SDK-Version HTTP header is not empty ([1bbb97d](https://github.com/Elympics/Unity-SDK/commit/1bbb97df800d8ea1d457a99d66612912d745aced))
-* NetworkId generator refactor ([11ca5f0](https://github.com/Elympics/Unity-SDK/commit/11ca5f0de9ce397d4845ece84c56d2bad5906451))
-* Put correct paths in UXML files of Networked Simulation Analyzer ([46b22ce](https://github.com/Elympics/Unity-SDK/commit/46b22ce758ae5a8eb5e9d836378eb582f569af75))
-* Reload game config before starting game through ElympicsLobbyClient ([d3ae1b0](https://github.com/Elympics/Unity-SDK/commit/d3ae1b0975752e72f9b87d90fb3026ca3b5509a1))
-* Remove superfluous Assembly Definitions ([953640e](https://github.com/Elympics/Unity-SDK/commit/953640e35053e1be89321acb6b4778b99ee091c0))
-* Replace ContinueWith calls with try-catch blocks ([822cf1e](https://github.com/Elympics/Unity-SDK/commit/822cf1e1b7bbedf82b6874927e9a3c31b10546e9))
-* Replace tel-aviv region with dallas region ([8c3f3dd](https://github.com/Elympics/Unity-SDK/commit/8c3f3ddcef52695e33af2908c08d67624daea2f6))
-* Retrieve Matchmaker and Game Engine data modified by EGB ([6c1bc3c](https://github.com/Elympics/Unity-SDK/commit/6c1bc3cffb829b8cb6e8af09a7c8a62a9dacb5e7))
-* Return latency in addition to region name in ChooseClosestRegion method ([39f281f](https://github.com/Elympics/Unity-SDK/commit/39f281f78a4e14dc617f62c9e0f96a3403f0e862))
-* Same name ElympicsVars in one ElympicsBehaviour error of the NSA collecting phase ([e084387](https://github.com/Elympics/Unity-SDK/commit/e084387a84c11b375d04a004d4bf8d70dd30f01a))
-* Silence all errors and info printed while retrieving game version uploaded status ([cac7af4](https://github.com/Elympics/Unity-SDK/commit/cac7af4a8266fdb3d4f3f2eddbe723d542790adc))
-* Use correct Elympics SDK version in web headers ([7715a78](https://github.com/Elympics/Unity-SDK/commit/7715a78e8493ee27ff4d08f94503293bec2f5f4d))
-* Wait for server to fully initialize before marking it as initialized ([6c1d3e4](https://github.com/Elympics/Unity-SDK/commit/6c1d3e47064c0820c6fb2f3a01f457703e3fad12))
-* webrtc client race condition on receive fixed, compatibility with 2019 unity ([c47765d](https://github.com/Elympics/Unity-SDK/commit/c47765daa966127665550183fa51846e7a1f88df))
+* Choose closest region method did not returned valid region ([4db965f](https://github.com/Elympics/Unity-SDK/commit/4db965f911161bf08f387e0e69b838e9c0716634))
 
 
 ### Features
 
-* Add communication with leaderboards api ([f42a1a3](https://github.com/Elympics/Unity-SDK/commit/f42a1a359fafcfba902812514caa28caecc97dde))
-* Allow authentication using Ethereum signature ([254ad16](https://github.com/Elympics/Unity-SDK/commit/254ad16c5521db9ebbc426c8fab7d2dd97607ed3))
-* expose cancellation token in Play Online method ([51c2c60](https://github.com/Elympics/Unity-SDK/commit/51c2c608f834048377473849900ef40a7e7ec75d))
-* Implement Networked Simulation Analyzer ([42c0043](https://github.com/Elympics/Unity-SDK/commit/42c00437185f3ee5473904b58a18f24c986e9b5d))
-* include the player's input in the snapshot data. ([1cc4712](https://github.com/Elympics/Unity-SDK/commit/1cc471240315ae8702ccb4fdebeeda2a628838f4))
-* Introduce SignOut method to ElympicsLobbyClient ([ff3bdd0](https://github.com/Elympics/Unity-SDK/commit/ff3bdd00d018b85765ef4df0e09214caef334eed))
-* Introduce WebSocket-based communication with Elympics matchmaking ([8088651](https://github.com/Elympics/Unity-SDK/commit/808865125d51c78e866d27ca8aa7f6e41cc7a1ba))
-* introduction to #LOG_TO_FILE preprocessor directive that allows writing Elympmics simulation data logs into the file ([9cdc0f4](https://github.com/Elympics/Unity-SDK/commit/9cdc0f4f2b70fcd63614da85dd8b8de4f164c587))
-* new method allowing to play online in closest region ([b212572](https://github.com/Elympics/Unity-SDK/commit/b212572be7a3fce5e7d30a25b90fd0a8519ec6b4))
-* provides base class for handle blockchain sending transaction and response ([a923373](https://github.com/Elympics/Unity-SDK/commit/a9233730906ae8470ca5b995fa5d68669b2935fc))
+* New method returning latency for all available regions ([4db965f](https://github.com/Elympics/Unity-SDK/commit/4db965f911161bf08f387e0e69b838e9c0716634))
 
 
 

@@ -1,3 +1,17 @@
+## [0.7.2](https://github.com/Elympics/Unity-SDK/compare/v0.7.1...v0.7.2) (2023-06-22)
+
+
+### Bug Fixes 🪲
+
+* Choose closest region method did not returned valid region ([4db965f](https://github.com/Elympics/Unity-SDK/commit/4db965f911161bf08f387e0e69b838e9c0716634))
+
+
+### Features
+
+* New method returning latency for all available regions ([4db965f](https://github.com/Elympics/Unity-SDK/commit/4db965f911161bf08f387e0e69b838e9c0716634))
+
+
+
 ## [0.7.1](https://github.com/Elympics/Unity-SDK/compare/v0.7.0...v0.7.1) (2023-06-13)
 
 

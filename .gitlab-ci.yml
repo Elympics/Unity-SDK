@@ -61,7 +61,7 @@ default:
 
 .node_before_script: &node_before_script
   before_script:
-    - npm install -g conventional-changelog-cli
+    - npm install -g conventional-changelog-cli@2.2.2
 
 .unity_before_script: &unity_before_script
   before_script:

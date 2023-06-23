@@ -2,7 +2,7 @@
 using Elympics;
 using NUnit.Framework;
 
-namespace Tests
+namespace Elympics.Tests
 {
 	public class TestEqualityComparers
 	{

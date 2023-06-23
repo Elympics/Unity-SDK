@@ -2,7 +2,7 @@
 using System.IO;
 using Elympics;
 
-namespace Tests
+namespace Elympics.Tests
 {
 	public class TestInputWriting
 	{

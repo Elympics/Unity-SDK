@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Elympics;
 using NUnit.Framework;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.TestTools;
 
-namespace Tests
+namespace Elympics.Tests
 {
 	[TestFixture]
 	public class TestCloudPing
@@ -37,7 +36,7 @@ namespace Tests
 
 			var waitingForPing = UniTask.ToCoroutine(async () =>
 			{
-				UnityWebRequest request = new UnityWebRequest(builder.Uri);
+				var request = new UnityWebRequest(builder.Uri);
 				request.timeout = WebRequestTimeOutSec;
 				try
 				{
@@ -45,7 +44,7 @@ namespace Tests
 					var isValid = !result.IsProtocolError() && !result.IsConnectionError();
 					hasInternetConnection = isValid;
 				}
-				catch (Exception e)
+				catch (Exception)
 				{
 					request.Abort();
 				}

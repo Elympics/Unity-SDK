@@ -178,6 +178,8 @@ test:editmode:
       artifacts: false
     - job: test:editmode
       artifacts: false
+  inherit:
+    variables: false
   variables:
     CI_ELYMPICS_SDK_VERSION_OVERRIDE: $CI_COMMIT_SHA
     CI_ELYMPICS_SDK_SOURCE_OVERRIDE: "$CI_PROJECT_URL.git"

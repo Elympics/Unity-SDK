@@ -9,7 +9,7 @@ namespace TechDemo
 		public void ElympicsUpdate()
 		{
 			_ticksAlive.Value++;
-			if (_ticksAlive > 60)
+			if (_ticksAlive.Value > 60)
 				ElympicsDestroy(gameObject);
 		}
 	}

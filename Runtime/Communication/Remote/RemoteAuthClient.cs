@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Elympics.Models.Authentication;
 using AuthRoutes = Elympics.Models.Authentication.Routes;
@@ -12,6 +13,9 @@ namespace Elympics
 	{
 		// TODO: softcode this address ~dsygocki 2023-04-19
 		private const string AuthBaseUrl = "https://api.elympics.cc/v2/auth";
+
+		private readonly Regex _ethAddressRegex = new Regex("^(0x)?[0-9a-f]{40}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+		private readonly Regex _ethSignatureRegex = new Regex("^(0x)?[0-9a-f]{130}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 		private readonly string _clientSecretAuthUrl;
 		private readonly string _ethAddressNonceUrl;
@@ -52,9 +56,18 @@ namespace Elympics
 				return;
 			}
 
-			ethAddress = ethAddress.StartsWith("0x", true, CultureInfo.InvariantCulture)
-				? ethAddress.Substring(2)
-				: ethAddress;
+			var addressMatch = _ethAddressRegex.Match(ethAddress);
+			if (!addressMatch.Success)
+			{
+				onResult(Result<AuthData, string>.Failure(
+					$"Invalid format for address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.ProvideAddressAsync)}: "
+					+ ethAddress));
+				return;
+			}
+
+			var addressHasPrefix = addressMatch.Groups[1].Success;
+			if (!addressHasPrefix)
+				ethAddress = "0x" + ethAddress;
 
 			var nonceRequest = new EthAddressNonceRequest { address = ethAddress };
 			ElympicsWebClient.SendPutRequest<string>(_ethAddressNonceUrl, nonceRequest, callback: OnNonceResponse, ct: ct);
@@ -87,14 +100,24 @@ namespace Elympics
 					return;
 				}
 
-				if (signature.StartsWith("0x", true, CultureInfo.InvariantCulture))
-					signature = signature.Substring(2);
+				var signatureMatch = _ethSignatureRegex.Match(signature);
+				if (!signatureMatch.Success)
+				{
+					onResult(Result<AuthData, string>.Failure(
+						$"Invalid format for signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)}: "
+						+ signature));
+					return;
+				}
+
+				var signatureHasPrefix = signatureMatch.Groups[1].Success;
+				if (!signatureHasPrefix)
+					signature = "0x" + signature;
 
 				var authRequest = new EthAddressAuthRequest
 				{
 					address = ethAddress,
 					msg = hexEncodedMessage,
-					sig = signature
+					sig = signature,
 				};
 				ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, callback: OnAuthResponse, ct: ct);
 			}

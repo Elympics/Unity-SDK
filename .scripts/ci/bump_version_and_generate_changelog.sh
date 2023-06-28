@@ -4,18 +4,19 @@ set -e
 echo "Branch: $BRANCH_VERSION"
 echo "Package: $PACKAGE_VERSION"
 
-verlte() {
-  [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+function verlte {
+  [  "$1" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ]
 }
 
-if verlte $BRANCH_VERSION $PACKAGE_VERSION; then
+if verlte "$BRANCH_VERSION" "$PACKAGE_VERSION"; then
   echo "Trying to release invalid version: $BRANCH_VERSION"
   exit 1
 fi
 
 echo "Running changelog generation..."
 
-node ./.scripts/ci/update_version.js ../../package.json ../../Runtime/AssemblyInfo.cs $BRANCH_VERSION
+node ./.scripts/ci/update_version.js ../../package.json ../../Runtime/AssemblyInfo.cs "$BRANCH_VERSION"
+node ./.scripts/ci/update_version.js ../../package.json ../../Editor/AssemblyInfo.cs "$BRANCH_VERSION"
 
 echo "Version updated"
 echo "Generating changelog..."

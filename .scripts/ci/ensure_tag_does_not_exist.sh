@@ -8,7 +8,7 @@ fi
 
 TAG=$1
 
-git rev-parse -q --verify $TAG
+git rev-parse -q --verify "$TAG"
 
 RESULT=$?
 if [ $RESULT -ne 0 ]; then

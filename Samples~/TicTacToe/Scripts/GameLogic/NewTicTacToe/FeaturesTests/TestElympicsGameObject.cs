@@ -1,32 +1,27 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Elympics;
-using System;
 
 public class TestElympicsGameObject : ElympicsMonoBehaviour, IUpdatable, IInitializable
 {
-	[SerializeField] private ElympicsBehaviour singleGameObjectReference = null;
-	[SerializeField] private ElympicsBehaviour[] multipleGameObjectReferences = null;
+	[SerializeField] private ElympicsBehaviour singleGameObjectReference;
+	[SerializeField] private ElympicsBehaviour[] multipleGameObjectReferences;
 
 	private readonly ElympicsInt _tick = new ElympicsInt();
 
-	private ElympicsGameObject singleElympicsGameObject = new ElympicsGameObject(null);
-	private ElympicsList<ElympicsGameObject> listWithElympicsGameObjects = new ElympicsList<ElympicsGameObject>(() => new ElympicsGameObject(null));
+	private ElympicsGameObject _singleElympicsGameObject = new ElympicsGameObject(null);
+	private ElympicsList<ElympicsGameObject> _listWithElympicsGameObjects = new ElympicsList<ElympicsGameObject>(() => new ElympicsGameObject(null));
 
 	public void Initialize()
 	{
-		foreach (ElympicsBehaviour behaviour in multipleGameObjectReferences)
-		{
-			listWithElympicsGameObjects.Add().Value = behaviour;
-		}
+		foreach (var behaviour in multipleGameObjectReferences)
+			_listWithElympicsGameObjects.Add().Value = behaviour;
 	}
 
 	public void ElympicsUpdate()
 	{
 		_tick.Value++;
 
-		if (_tick % 200 == 80)
+		if (_tick.Value % 200 == 80)
 		{
 			ChangeSingleGameObject();
 			ChangePositionsInList();
@@ -35,35 +30,16 @@ public class TestElympicsGameObject : ElympicsMonoBehaviour, IUpdatable, IInitia
 
 	private void ChangePositionsInList()
 	{
-		ElympicsBehaviour firstElement = listWithElympicsGameObjects[0];
+		var firstElement = _listWithElympicsGameObjects[0].Value;
 
-		for (int i = 1; i < listWithElympicsGameObjects.Count; i++)
-		{
-			listWithElympicsGameObjects[i - 1].Value = listWithElympicsGameObjects[i];
-		}
+		for (var i = 1; i < _listWithElympicsGameObjects.Count; i++)
+			_listWithElympicsGameObjects[i - 1].Value = _listWithElympicsGameObjects[i].Value;
 
-		listWithElympicsGameObjects[listWithElympicsGameObjects.Count - 1].Value = firstElement;
+		_listWithElympicsGameObjects[_listWithElympicsGameObjects.Count - 1].Value = firstElement;
 	}
-
-	//private void Update()
-	//{
-	//	if (Input.GetKeyDown(KeyCode.P))
-	//	{
-	//		foreach (ElympicsBehaviour elympicsBehaviour in listWithElympicsGameObjects)
-	//		{
-	//			if (elympicsBehaviour != null)
-	//				Debug.Log(elympicsBehaviour.gameObject.name);
-	//			else
-	//				Debug.Log("NULL");
-	//		}
-	//	}
-	//}
 
 	private void ChangeSingleGameObject()
 	{
-		if (singleElympicsGameObject.Value == null)
-			singleElympicsGameObject.Value = singleGameObjectReference;
-		else
-			singleElympicsGameObject.Value = null;
+		_singleElympicsGameObject.Value = _singleElympicsGameObject.Value == null ? singleGameObjectReference : null;
 	}
 }

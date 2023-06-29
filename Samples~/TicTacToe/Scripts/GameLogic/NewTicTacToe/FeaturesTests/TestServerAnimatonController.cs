@@ -13,7 +13,7 @@ public class TestServerAnimatonController : ElympicsMonoBehaviour
 	private void FixedUpdate()
 	{
 		_tick.Value++;
-		if (_tick == 200)
+		if (_tick.Value == 200)
 			_animator.SetBool(MovingAnimationBool, true);
 	}
 }

@@ -8,19 +8,19 @@ namespace TechDemo
 		private readonly int _fireAnimatorTrigger = Animator.StringToHash("Fire");
 		private readonly int _movingAnimatorBool  = Animator.StringToHash("IsMoving");
 
-		[SerializeField] private Animator       characterAnimator = null;
+		[SerializeField] private Animator       characterAnimator;
 		[SerializeField] private float          speed             = 2;
 		[SerializeField] private float          force             = 100;
 		[SerializeField] private int            fireDelay         = 20;
 		[SerializeField] private string         ballPrefabName    = "Ball";
-		[SerializeField] private Transform      ballAnchor        = null;
+		[SerializeField] private Transform      ballAnchor;
 
 		private readonly ElympicsInt _timerForDelay  = new ElympicsInt();
 		private readonly ElympicsInt _timerForFiring = new ElympicsInt();
 
 		private Rigidbody _rigidbody;
 
-		private bool IsFiring => _timerForDelay > 0 || _timerForFiring > 0;
+		private bool IsFiring => _timerForDelay.Value > 0 || _timerForFiring.Value > 0;
 
 		private void Awake()
 		{
@@ -53,14 +53,14 @@ namespace TechDemo
 
 		public void ElympicsUpdate()
 		{
-			if (_timerForDelay > 0) DecreaseDelayTimer();
-			if (_timerForFiring > 0) DecreaseFiringTimer();
+			if (_timerForDelay.Value > 0) DecreaseDelayTimer();
+			if (_timerForFiring.Value > 0) DecreaseFiringTimer();
 		}
 
 		private void DecreaseDelayTimer()
 		{
 			_timerForDelay.Value--;
-			if (_timerForDelay <= 0)
+			if (_timerForDelay.Value <= 0)
 			{
 				SpawnBall();
 				_timerForFiring.Value = fireDelay;

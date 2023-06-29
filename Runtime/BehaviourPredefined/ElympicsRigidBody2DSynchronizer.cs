@@ -61,25 +61,25 @@ namespace Elympics
 		public void OnPostStateDeserialize()
 		{
 			if (_position.EnabledSynchronization)
-				Rigidbody2D.position = _position;
+				Rigidbody2D.position = _position.Value;
 			if (_rotation.EnabledSynchronization)
-				Rigidbody2D.rotation = _rotation;
+				Rigidbody2D.rotation = _rotation.Value;
 			if (_velocity.EnabledSynchronization)
-				Rigidbody2D.velocity = _velocity;
+				Rigidbody2D.velocity = _velocity.Value;
 			if (_angularVelocity.EnabledSynchronization)
-				Rigidbody2D.angularVelocity = _angularVelocity;
+				Rigidbody2D.angularVelocity = _angularVelocity.Value;
 			if (_drag.EnabledSynchronization)
-				Rigidbody2D.drag = _drag;
+				Rigidbody2D.drag = _drag.Value;
 			if (_angularDrag.EnabledSynchronization)
-				Rigidbody2D.angularDrag = _angularDrag;
+				Rigidbody2D.angularDrag = _angularDrag.Value;
 			if (_inertia.EnabledSynchronization)
-				Rigidbody2D.inertia = _inertia;
+				Rigidbody2D.inertia = _inertia.Value;
 			if (SynchronizeMass)
-				Rigidbody2D.mass = _mass;
+				Rigidbody2D.mass = _mass.Value;
 			if (_gravityScale.EnabledSynchronization)
-				Rigidbody2D.gravityScale = _gravityScale;
+				Rigidbody2D.gravityScale = _gravityScale.Value;
 			if (_isKinematic.EnabledSynchronization)
-				Rigidbody2D.isKinematic = _isKinematic;
+				Rigidbody2D.isKinematic = _isKinematic.Value;
 		}
 
 		public void OnPreStateSerialize()

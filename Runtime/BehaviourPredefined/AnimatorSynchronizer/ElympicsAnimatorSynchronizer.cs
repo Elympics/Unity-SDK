@@ -93,7 +93,7 @@ namespace Elympics
 		{
 			for (var i = 0; i < _layerStatuses.Length; i++)
 				if (_layerStatuses[i].Enabled)
-					Animator.SetLayerWeight(i, _layerWeights.Values[i]);
+					Animator.SetLayerWeight(i, _layerWeights.Values[i].Value);
 
 			for (var i = 0; i < _boolStatuses.Count; i++)
 				if (_boolStatuses[i].Enabled)

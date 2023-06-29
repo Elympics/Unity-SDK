@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Web;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
@@ -370,13 +371,16 @@ namespace Elympics
 			Debug.Log($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}");
 		}
 
+		[UsedImplicitly]
 		public static void BuildAndUploadServerInBatchmode(string username, string password)
 		{
 			var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			if (gameConfig == null)
-				throw new ArgumentNullException("No elympics game config found. Configure your game first before trying to build a server.");
-			if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-				throw new ArgumentNullException($"Login credentials not found.");
+				throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
+			if (string.IsNullOrEmpty(username))
+				throw new ArgumentNullException(nameof(username));
+			if (string.IsNullOrEmpty(password))
+				throw new ArgumentNullException(nameof(password));
 
 			var loginOp = Login(username, password);
 
@@ -385,17 +389,17 @@ namespace Elympics
 			LoginHandler(loginOp.webRequest);
 
 			if (!ElympicsConfig.IsLogin)
-				throw new Exception("Login operation failed. Check log for details");
+				throw new ElympicsException("Login operation failed. Check log for details");
 
 			if (!BuildTools.BuildElympicsServerLinux())
-				return;
+				throw new ElympicsException("Build failed");
 
 			var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
 			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
-				throw new Exception("Problem with packing engine");
+				throw new ElympicsException("Problem with packing engine");
 
 			if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out var botPath))
-				throw new Exception("Problem with packing bot");
+				throw new ElympicsException("Problem with packing bot");
 
 			var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
 			var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });

@@ -15,8 +15,7 @@ xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' \
     -username "$UNITY_USERNAME" -password "$UNITY_PASSWORD" |
       tee ./unity-output.log
 
-cat ./unity-output.log |
-  grep 'LICENSE SYSTEM .* Posting *' |
+grep 'LICENSE SYSTEM .* Posting *' ./unity-output.log |
   sed 's/.*Posting *//' > "${activation_file}"
 
 # Fail job if unity.alf is empty

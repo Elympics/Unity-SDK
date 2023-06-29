@@ -42,7 +42,7 @@ namespace Elympics
 				matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,
 				elympicsGameConfig.UseWeb, matchData.RegionName);
 			var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
-
+			elympicsGameConfig.players = matchData.MatchedPlayers.Length;
 			client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid
 			{
 				Player = player,

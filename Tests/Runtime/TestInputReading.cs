@@ -2,7 +2,7 @@
 using NUnit.Framework;
 using System.IO;
 
-namespace Tests
+namespace Elympics.Tests
 {
 	public class TestInputReading
 	{

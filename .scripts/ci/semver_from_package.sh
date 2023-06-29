@@ -7,4 +7,4 @@ fi
 
 PACKAGE_PATH=$1
 
-cat ${PACKAGE_DIR:-.}/$PACKAGE_PATH | jq -r '.version'
+jq -r '.version' "${PACKAGE_DIR:-.}/$PACKAGE_PATH"

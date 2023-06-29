@@ -6,12 +6,12 @@ namespace GameLogic.NewTicTacToe
 {
 	public class GameStateObject : ElympicsMonoBehaviour
 	{
-		[SerializeField] private GameObject            gameOverObject        = null;
-		[SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher = null;
+		[SerializeField] private GameObject            gameOverObject;
+		[SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher;
 
 		#region GameState
 
-		[SerializeField] public  List<Field>  fields            = null;
+		[SerializeField] public  List<Field>  fields;
 		[SerializeField] private ElympicsInt  player1Side       = new ElympicsInt(0);
 		[SerializeField] private ElympicsInt  player2Side       = new ElympicsInt(0);
 		[SerializeField] private ElympicsInt  currentPlayerTurn = new ElympicsInt((int) ElympicsPlayer.Invalid);
@@ -29,10 +29,10 @@ namespace GameLogic.NewTicTacToe
 			asyncEventsDispatcher.Enqueue(() => gameOverObject.SetActive(newValue));
 		}
 
-		public void SetSides(PlayerSide player1Side, PlayerSide player2Side)
+		public void SetSides(PlayerSide first, PlayerSide second)
 		{
-			this.player1Side.Value = (int) player1Side;
-			this.player2Side.Value = (int) player2Side;
+			player1Side.Value = (int)first;
+			player2Side.Value = (int)second;
 		}
 
 		public PlayerSide GetSide(int playerId)
@@ -44,14 +44,14 @@ namespace GameLogic.NewTicTacToe
 			return PlayerSide.None;
 		}
 
-		public bool IsPlayersTurn(int playerType) => playerType == currentPlayerTurn;
+		public bool IsPlayersTurn(int playerType) => playerType == currentPlayerTurn.Value;
 
 		public void SetTurnForPlayer(int playerId) => currentPlayerTurn.Value = playerId;
 
-		public void ChangeTurn() => currentPlayerTurn.Value = (int) ElympicsPlayer.FromIndex(0) + 1 - currentPlayerTurn;
+		public void ChangeTurn() => currentPlayerTurn.Value = (int) ElympicsPlayer.FromIndex(0) + 1 - currentPlayerTurn.Value;
 
-		public void SetGameOver(bool value) => gameOver.Value = true;
+		public void SetGameOver(bool value) => gameOver.Value = value;
 
-		public bool IsGameOver() => gameOver;
+		public bool IsGameOver() => gameOver.Value;
 	}
 }

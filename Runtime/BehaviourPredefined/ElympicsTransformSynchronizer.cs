@@ -27,11 +27,11 @@ namespace Elympics
 		{
 			var cachedTransform = transform;
 			if (_localPosition.EnabledSynchronization)
-				cachedTransform.localPosition = _localPosition;
+				cachedTransform.localPosition = _localPosition.Value;
 			if (_localScale.EnabledSynchronization)
-				cachedTransform.localScale = _localScale;
+				cachedTransform.localScale = _localScale.Value;
 			if (_localRotation.EnabledSynchronization)
-				cachedTransform.localRotation = _localRotation;
+				cachedTransform.localRotation = _localRotation.Value;
 		}
 
 		public void OnPreStateSerialize()

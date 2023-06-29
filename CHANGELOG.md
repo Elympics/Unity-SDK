@@ -1,3 +1,15 @@
+## [0.7.3](https://github.com/Elympics/Unity-SDK/compare/v0.7.2...v0.7.3) (2023-06-29)
+
+
+### Bug Fixes 🪲
+
+* Fix the format of Ethereum address used in EthAddr authentication ([29deca5](https://github.com/Elympics/Unity-SDK/commit/29deca522ddddebefadedda68a0eabe24d293a48))
+* Make CI-targeted build method throw on error ([719da0d](https://github.com/Elympics/Unity-SDK/commit/719da0dadccb79e6db1d78d37aac87a0a8bf78d8))
+* Make real player count (retrieved from match data) available through ElympicsGameConfig.Players ([0ca518b](https://github.com/Elympics/Unity-SDK/commit/0ca518bef2e9df20e6b80898ecbaaa06385a9794))
+* Mark implicit ElympicsVar cast as deprecated ([561ed5d](https://github.com/Elympics/Unity-SDK/commit/561ed5d33f5d42dbdf682e3d34b2abbd1dc88639))
+
+
+
 ## [0.7.2](https://github.com/Elympics/Unity-SDK/compare/v0.7.1...v0.7.2) (2023-06-22)
 
 

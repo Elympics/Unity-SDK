@@ -61,7 +61,7 @@ default:
 
 .node_before_script: &node_before_script
   before_script:
-    - npm install -g conventional-changelog-cli
+    - npm install -g conventional-changelog-cli@2.2.2
 
 .unity_before_script: &unity_before_script
   before_script:
@@ -178,6 +178,8 @@ test:editmode:
       artifacts: false
     - job: test:editmode
       artifacts: false
+  inherit:
+    variables: false
   variables:
     CI_ELYMPICS_SDK_VERSION_OVERRIDE: $CI_COMMIT_SHA
     CI_ELYMPICS_SDK_SOURCE_OVERRIDE: "$CI_PROJECT_URL.git"

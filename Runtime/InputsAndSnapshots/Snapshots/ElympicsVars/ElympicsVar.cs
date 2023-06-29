@@ -53,6 +53,7 @@ namespace Elympics
 
 		public override string ToString() => Value?.ToString() ?? "null";
 
+		[Obsolete("Refrain from using implicit casts to " + nameof(ElympicsVar) + " value as it reduces readability.")]
 		public static implicit operator T(ElympicsVar<T> v) => v.Value;
 
 		public override void Deserialize(BinaryReader br, bool ignoreTolerance = false)

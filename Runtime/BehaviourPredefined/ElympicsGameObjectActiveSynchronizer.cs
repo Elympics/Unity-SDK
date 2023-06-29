@@ -9,7 +9,7 @@ namespace Elympics
 
 		public void OnPostStateDeserialize()
 		{
-			gameObject.SetActive(_gameObjectActive);
+			gameObject.SetActive(_gameObjectActive.Value);
 		}
 
 		public void OnPreStateSerialize()

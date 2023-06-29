@@ -1,3 +1,15 @@
+## [0.7.3](https://github.com/Elympics/Unity-SDK/compare/v0.7.2...v0.7.3) (2023-06-29)
+
+
+### Bug Fixes 🪲
+
+* Don't remove 0x prefix from Eth address on authentication ([29deca5](https://github.com/Elympics/Unity-SDK/commit/29deca522ddddebefadedda68a0eabe24d293a48))
+* Limit play-mode test assemblies to Editor platform ([114918b](https://github.com/Elympics/Unity-SDK/commit/114918b61717723ea36181a547d187c5766aac61))
+* Make CI build method throw on error ([719da0d](https://github.com/Elympics/Unity-SDK/commit/719da0dadccb79e6db1d78d37aac87a0a8bf78d8))
+* player count retrieved from match data ([0ca518b](https://github.com/Elympics/Unity-SDK/commit/0ca518bef2e9df20e6b80898ecbaaa06385a9794))
+
+
+
 ## [0.7.2](https://github.com/Elympics/Unity-SDK/compare/v0.7.1...v0.7.2) (2023-06-22)
 
 

@@ -1,5 +1,4 @@
-﻿#if UNITY_2020_2_OR_NEWER
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor;
 using System.Collections.Generic;
@@ -21,8 +20,8 @@ namespace Elympics
         private TickListDisplayer _tickListDisplayer = null;
         private TickDataDisplayer _tickDataDisplayer = null;
         private ServerAnalyzerController _serverAnalyzerController = null;
-        
-        // TODO: find better way because its a bit dirty (maybe use change event from ElympicsConfig) 
+
+        // TODO: find better way because its a bit dirty (maybe use change event from ElympicsConfig)
         private bool closedForcefully = false;
 
         public bool Paused => _serverAnalyzerController?.Paused ?? false;
@@ -94,4 +93,3 @@ namespace Elympics
         }
     }
 }
-#endif

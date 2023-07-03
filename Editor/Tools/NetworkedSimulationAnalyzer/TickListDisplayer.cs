@@ -1,4 +1,3 @@
-#if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
@@ -34,11 +33,7 @@ namespace Elympics
         private void InitializeTickList(VisualTreeAsset listEntryTemplate)
         {
             // Ensure proper displaying
-#if UNITY_2021_2_OR_NEWER
             _tickList.Q<ScrollView>().horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-#else
-            _tickList.Q<ScrollView>().showHorizontal = false;
-#endif
 
             // Set up a make item function for a list entry
             _tickList.makeItem = () =>
@@ -70,12 +65,8 @@ namespace Elympics
             _tickList.itemsSource = _allTicksData;
 
             // Set up list properties
-#if UNITY_2021_2_OR_NEWER
             _tickList.fixedItemHeight = TickEntryHeight;
             _tickList.Q<ScrollView>().verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
-#else
-            _tickList.itemHeight = TickEntryHeight;
-#endif
         }
 
         internal void AddTick(ElympicsSnapshotWithMetadata snapshot)
@@ -83,12 +74,7 @@ namespace Elympics
             _allTicksData.Add(new TickEntryData(snapshot, _tickDataDisplayer.IsBots.Length));
 
             // Refresh list visual state
-#if UNITY_2021_2_OR_NEWER
             _tickList.RefreshItems();
-#else
-            _tickList.Refresh();
-#endif
         }
     }
 }
-#endif

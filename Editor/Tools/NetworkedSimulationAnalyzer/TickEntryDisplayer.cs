@@ -1,4 +1,3 @@
-#if UNITY_2020_2_OR_NEWER
 using UnityEngine.UIElements;
 
 namespace Elympics
@@ -28,4 +27,3 @@ namespace Elympics
         }
     }
 }
-#endif

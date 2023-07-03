@@ -36,11 +36,7 @@ namespace Elympics
 			@"build target (was )?unsupported|LinuxStandalone|scripting backend (\(\w+\) )?(is )?not installed",
 			RegexOptions.IgnoreCase | RegexOptions.Compiled);
 		private const string MissingModuleErrorMessage =
-#if UNITY_2021_2_OR_NEWER
 			"Installation of Unity modules is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
-#else
-			"Installation of Unity module is required: Linux Build Support (Mono)";
-#endif
 
 		public static void UpdateElympicsGameVersion(string newGameVersion)
 		{
@@ -111,12 +107,8 @@ namespace Elympics
 					locationPathName = Path.Combine(ServerBuildPath, EngineSubdirectory, UnityBuildPath, appName),
 					targetGroup = buildTargetGroup,
 					target = target,
-#if UNITY_2021_2_OR_NEWER
 					subtarget = (int)StandaloneBuildSubtarget.Server,
-					options = BuildOptions.CompressWithLz4HC
-#else
-					options = BuildOptions.EnableHeadlessMode | BuildOptions.CompressWithLz4HC
-#endif
+					options = BuildOptions.CompressWithLz4HC,
 				};
 
 				var report = BuildPipeline.BuildPlayer(buildPlayerOptions);

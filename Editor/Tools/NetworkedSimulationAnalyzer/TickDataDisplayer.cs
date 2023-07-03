@@ -1,4 +1,3 @@
-#if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -152,4 +151,3 @@ namespace Elympics
         }
     }
 }
-#endif

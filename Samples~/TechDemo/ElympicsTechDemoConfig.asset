@@ -33,13 +33,15 @@ MonoBehaviour:
     webRtcOfferRetryDelay: 1
     initialSynchronizeMaxRetries: 3
   ticksPerSecond: 30
+  minTickExecuteOnClientFactor: 0.8
+  maxTickToExecuteOnClientFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
   maxAllowedLagInTicks: 25
   prediction: 1
   predictionLimitInTicks: 25
   detailedNetworkLog: 0
-  mode: 2
+  mode: 1
   halfRemoteMode: 0
   useWebInHalfRemote: 1
   ipForHalfRemoteMode: 127.0.0.1

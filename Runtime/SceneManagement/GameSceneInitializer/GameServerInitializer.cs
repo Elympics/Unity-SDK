@@ -9,7 +9,6 @@ namespace Elympics
 
 		public override void Initialize(ElympicsClient client, ElympicsBot bot, ElympicsServer server, ElympicsGameConfig elympicsGameConfig)
 		{
-			Time.fixedDeltaTime = elympicsGameConfig.TickDuration;
 			Time.maximumDeltaTime = elympicsGameConfig.TickDuration * 2;
 			Application.targetFrameRate = elympicsGameConfig.TicksPerSecond * 2;
 

@@ -26,5 +26,7 @@ mkdir -p "$PACKAGE_FOLDER"
 cp -r Editor "$PACKAGE_FOLDER"
 cp -r Runtime "$PACKAGE_FOLDER"
 cp -r Tests "$PACKAGE_FOLDER"
+cp -r Samples~ "$PACKAGE_FOLDER"
+mv "${PACKAGE_FOLDER}Samples~" "${PACKAGE_FOLDER}Samples"
 
 echo "Elympics moved ✅"

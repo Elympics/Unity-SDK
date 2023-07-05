@@ -1,0 +1,11 @@
+root = false
+
+
+[*]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+indent_style = unset
+end_of_line = unset
+charset = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

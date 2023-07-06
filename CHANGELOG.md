@@ -1,6 +1,21 @@
 # [0.8.0](https://github.com/Elympics/Unity-SDK/compare/v0.7.3...v0.8.0) (2023-07-05)
 
 
+### BREAKING CHANGES :warning:
+
+* Update minimal supported Unity version to 2021.3 (current legacy LTS) ([2585a1e](https://github.com/Elympics/Unity-SDK/commit/2585a1e9f9325bd1817f80723473b23ce7baca52))
+
+
+### Performance Improvements 🚀
+
+* Move ElympicsUpdate loop logic from FixedUpdate to Update ([47c831f](https://github.com/Elympics/Unity-SDK/commit/47c831f87c9f35360b0d96168ba87e36640cf591))
+
+
+### Bug Fixes 🪲
+
+* Fix regression causing region name not to be used when creating game server URL ([acfb18d](https://github.com/Elympics/Unity-SDK/commit/acfb18d1e7bf77d384f0f5f1e2dd7e3d6ae9f507))
+
+
 
 ## [0.7.3](https://github.com/Elympics/Unity-SDK/compare/v0.7.2...v0.7.3) (2023-06-29)
 

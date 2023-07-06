@@ -1,4 +1,4 @@
-# [0.8.0](https://github.com/Elympics/Unity-SDK/compare/v0.7.3...v0.8.0) (2023-07-05)
+## [0.8.0](https://github.com/Elympics/Unity-SDK/compare/v0.7.3...v0.8.0) (2023-07-05)
 
 
 ### BREAKING CHANGES :warning:

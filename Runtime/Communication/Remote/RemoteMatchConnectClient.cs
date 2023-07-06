@@ -40,7 +40,7 @@ namespace Elympics
 		private Action _disconnectedCallback;
 		private Action _matchJoinedCallback;
 
-		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string matchId, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false, string regionName = null)
+		public RemoteMatchConnectClient(IGameServerClient gameServerClient, string tcpUdpServerAddress, string webServerAddress, string userSecret, bool useWeb = false)
 		{
 			_gameServerClient = gameServerClient;
 			_tcpUdpServerAddress = tcpUdpServerAddress;

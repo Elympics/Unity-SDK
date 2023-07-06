@@ -90,7 +90,8 @@ namespace Elympics
 			var serializer = new GameServerJsonSerializer();
 			var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
 			var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
-			var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress, matchData.MatchId.ToString());
+			var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress,
+				matchData.MatchId.ToString(), _elympicsGameConfig.TestMatchData.regionName);
 			var gameServerClient = _elympicsGameConfig.UseWeb
 				? (GameServerClient)new WebGameServerClient(logger, serializer, config,
 					new HttpSignalingClient(webSignalingEndpoint),
@@ -98,9 +99,9 @@ namespace Elympics
 				: new TcpUdpGameServerClient(logger, serializer, config,
 					IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
 
-			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId.ToString(),
+			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
 				matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,
-				_elympicsGameConfig.UseWeb, _elympicsGameConfig.TestMatchData.regionName);
+				_elympicsGameConfig.UseWeb);
 			var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
 			_elympicsGameConfig.players = matchData.MatchedPlayers.Length;
 			_client.InitializeInternal(_elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid

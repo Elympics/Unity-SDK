@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -12,9 +12,9 @@ public static class SerializedPropertyExtensions
     /// (Extension) Get the value of the serialized property.
     public static object GetValue(this SerializedProperty property)
     {
-        string propertyPath = property.propertyPath;
+        var propertyPath = property.propertyPath;
         object value = property.serializedObject.targetObject;
-        int i = 0;
+        var i = 0;
         while (NextPathComponent(propertyPath, ref i, out var token))
             value = GetPathComponentValue(value, token);
         return value;
@@ -28,18 +28,18 @@ public static class SerializedPropertyExtensions
         SetValueNoRecord(property, value);
 
         EditorUtility.SetDirty(property.serializedObject.targetObject);
-        property.serializedObject.ApplyModifiedProperties();
+        _ = property.serializedObject.ApplyModifiedProperties();
     }
 
     /// (Extension) Set the value of the serialized property, but do not record the change.
     /// The change will not be persisted unless you call SetDirty and ApplyModifiedProperties.
     public static void SetValueNoRecord(this SerializedProperty property, object value)
     {
-        string propertyPath = property.propertyPath;
+        var propertyPath = property.propertyPath;
         object container = property.serializedObject.targetObject;
 
-        int i = 0;
-        NextPathComponent(propertyPath, ref i, out var deferredToken);
+        var i = 0;
+        _ = NextPathComponent(propertyPath, ref i, out var deferredToken);
         while (NextPathComponent(propertyPath, ref i, out var token))
         {
             container = GetPathComponentValue(container, deferredToken);
@@ -51,13 +51,13 @@ public static class SerializedPropertyExtensions
 
     // Union type representing either a property name or array element index.  The element
     // index is valid only if propertyName is null.
-    struct PropertyPathComponent
+    private struct PropertyPathComponent
     {
         public string propertyName;
         public int elementIndex;
     }
 
-    static Regex arrayElementRegex = new Regex(@"\GArray\.data\[(\d+)\]", RegexOptions.Compiled);
+    private static Regex arrayElementRegex = new(@"\GArray\.data\[(\d+)\]", RegexOptions.Compiled);
 
     // Parse the next path component from a SerializedProperty.propertyPath.  For simple field/property access,
     // this is just tokenizing on '.' and returning each field/property name.  Array/list access is via
@@ -69,13 +69,13 @@ public static class SerializedPropertyExtensions
     //      int i = 0;
     //      NextPropertyPathToken(propertyPath, ref i, out var component);
     //          => component = { propertyName = "quests" };
-    //      NextPropertyPathToken(propertyPath, ref i, out var component) 
+    //      NextPropertyPathToken(propertyPath, ref i, out var component)
     //          => component = { elementIndex = 0 };
-    //      NextPropertyPathToken(propertyPath, ref i, out var component) 
+    //      NextPropertyPathToken(propertyPath, ref i, out var component)
     //          => component = { propertyName = "goal" };
-    //      NextPropertyPathToken(propertyPath, ref i, out var component) 
+    //      NextPropertyPathToken(propertyPath, ref i, out var component)
     //          => returns false
-    static bool NextPathComponent(string propertyPath, ref int index, out PropertyPathComponent component)
+    private static bool NextPathComponent(string propertyPath, ref int index, out PropertyPathComponent component)
     {
         component = new PropertyPathComponent();
 
@@ -90,30 +90,27 @@ public static class SerializedPropertyExtensions
             return true;
         }
 
-        int dot = propertyPath.IndexOf('.', index);
+        var dot = propertyPath.IndexOf('.', index);
         if (dot == -1)
         {
-            component.propertyName = propertyPath.Substring(index);
+            component.propertyName = propertyPath[index..];
             index = propertyPath.Length;
         }
         else
         {
-            component.propertyName = propertyPath.Substring(index, dot - index);
+            component.propertyName = propertyPath[index..dot];
             index = dot + 1; // Skip past next '.'
         }
 
         return true;
     }
 
-    static object GetPathComponentValue(object container, PropertyPathComponent component)
-    {
-        if (component.propertyName == null)
-            return ((IList)container)[component.elementIndex];
-        else
-            return GetMemberValue(container, component.propertyName);
-    }
+    private static object GetPathComponentValue(object container, PropertyPathComponent component) =>
+        component.propertyName == null
+            ? ((IList)container)[component.elementIndex]
+            : GetMemberValue(container, component.propertyName);
 
-    static void SetPathComponentValue(object container, PropertyPathComponent component, object value)
+    private static void SetPathComponentValue(object container, PropertyPathComponent component, object value)
     {
         if (component.propertyName == null)
             ((IList)container)[component.elementIndex] = value;
@@ -121,13 +118,13 @@ public static class SerializedPropertyExtensions
             SetMemberValue(container, component.propertyName, value);
     }
 
-    static object GetMemberValue(object container, string name)
+    private static object GetMemberValue(object container, string name)
     {
         if (container == null)
             return null;
         var type = container.GetType();
         var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        for (int i = 0; i < members.Length; ++i)
+        for (var i = 0; i < members.Length; ++i)
         {
             if (members[i] is FieldInfo field)
                 return field.GetValue(container);
@@ -137,11 +134,11 @@ public static class SerializedPropertyExtensions
         return null;
     }
 
-    static void SetMemberValue(object container, string name, object value)
+    private static void SetMemberValue(object container, string name, object value)
     {
         var type = container.GetType();
         var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        for (int i = 0; i < members.Length; ++i)
+        for (var i = 0; i < members.Length; ++i)
         {
             if (members[i] is FieldInfo field)
             {

@@ -1,19 +1,19 @@
-﻿using System;
+using System;
 
 namespace MatchTcpModels.Commands
 {
-	[Serializable]
-	public class Command
-	{
-		public CommandType Type;
+    [Serializable]
+    public class Command
+    {
+        public CommandType Type;
 
-		public Command()
-		{
-		}
+        public Command()
+        {
+        }
 
-		protected Command(CommandType type)
-		{
-			Type = type;
-		}
-	}
+        protected Command(CommandType type)
+        {
+            Type = type;
+        }
+    }
 }

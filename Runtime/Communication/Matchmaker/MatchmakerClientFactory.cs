@@ -1,12 +1,10 @@
-using Elympics.Models.Authentication;
-
 namespace Elympics
 {
-	internal static class MatchmakerClientFactory
-	{
-		internal static MatchmakerClient Create(ElympicsGameConfig gameConfig, string baseUrl) =>
-			gameConfig.UseLegacyMatchmaking
-				? (MatchmakerClient)new LongPollingMatchmakerClient(baseUrl)
-				: new WebSocketMatchmakerClient(baseUrl);
-	}
+    internal static class MatchmakerClientFactory
+    {
+        internal static MatchmakerClient Create(ElympicsGameConfig gameConfig, string baseUrl) =>
+            gameConfig.UseLegacyMatchmaking
+                ? new LongPollingMatchmakerClient(baseUrl)
+                : new WebSocketMatchmakerClient(baseUrl);
+    }
 }

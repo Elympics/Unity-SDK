@@ -20,12 +20,10 @@ namespace Elympics
         private readonly Foldout _stateFoldout;
 
         private readonly StringBuilder _stringBuilder;
-
-        private bool[] _isBots;
         private Label[] _inputsData;
 
         internal TickEntryData SelectedTick { get; private set; } = null;
-        internal bool[] IsBots => _isBots;
+        internal bool[] IsBots { get; private set; }
 
         internal TickDataDisplayer(VisualElement root, VisualTreeAsset inputDataTemplate, ServerAnalyzerController serverAnalyzerController)
         {
@@ -51,10 +49,11 @@ namespace Elympics
             _titleBar.style.visibility = visibility;
             _contentsContainer.style.visibility = visibility;
 
-            if (SelectedTick == null) return;
+            if (SelectedTick == null)
+                return;
 
             // general data
-            float timeUsage = tickEntryData.ExecutionTime / ServerAnalyzerUtils.ExpectedTime;
+            var timeUsage = tickEntryData.ExecutionTime / ServerAnalyzerUtils.ExpectedTime;
 
             _nrLabel.text = tickEntryData.Tick.ToString("000000");
             _expectedTime.text = ServerAnalyzerUtils.FormatFloatMilliseconds(ServerAnalyzerUtils.ExpectedTime);
@@ -62,7 +61,7 @@ namespace Elympics
             _executionTime.style.color = ServerAnalyzerUtils.GetTimeUsageColor(timeUsage);
 
             // inputs
-            for (int i = 0; i < _inputsData.Length; i++)
+            for (var i = 0; i < _inputsData.Length; i++)
             {
                 _inputsData[i].text = tickEntryData.InputInfos[i].Message;
                 _inputsData[i].style.color = tickEntryData.InputInfos[i].Color;
@@ -73,19 +72,21 @@ namespace Elympics
             _stateData.Clear();
             foreach (var state in tickEntryData.SynchronizedState)
             {
-                var behaviour = new Foldout();
-                behaviour.text = $"{state.NetworkId} - {state.Name} -> {SizeOfNetworkData(tickEntryData.Snapshot.Data.Where(x => x.Key == state.NetworkId).First())} B";
+                var behaviour = new Foldout
+                {
+                    text = $"{state.NetworkId} - {state.Name} -> {SizeOfNetworkData(tickEntryData.Snapshot.Data.Where(x => x.Key == state.NetworkId).First())} B"
+                };
                 _stateData.Add(behaviour);
 
-                _stringBuilder.Clear();
+                _ = _stringBuilder.Clear();
 
                 foreach (var (componentName, vars) in state.StateMetadata)
                 {
                     if (state.StateMetadata.Count > 1)
-                        _stringBuilder.AppendLine($" {componentName}:");
+                        _ = _stringBuilder.AppendLine($" {componentName}:");
 
                     foreach (var (elympicsVar, value) in vars)
-                        _stringBuilder.AppendLine($"    - {elympicsVar} = {value}");
+                        _ = _stringBuilder.AppendLine($"    - {elympicsVar} = {value}");
                 }
 
                 var variables = new Label();
@@ -102,12 +103,12 @@ namespace Elympics
 
         internal void InitializeInputs(bool[] isBots)
         {
-            _isBots = isBots;
+            IsBots = isBots;
             _inputsData = new Label[isBots.Length];
 
             _inputsFoldout.Clear();
 
-            for (int i = 0; i < isBots.Length; i++)
+            for (var i = 0; i < isBots.Length; i++)
             {
                 var newInputDisplay = _inputDataTemplate.CloneTree();
                 _inputsData[i] = newInputDisplay.Q<Label>("value");
@@ -130,7 +131,7 @@ namespace Elympics
         internal int CalculateTotalStateWeight(ElympicsSnapshotWithMetadata snapshot)
         {
             // initialize with Tick and TickStartUtc length
-            int byteSum = sizeof(long) + ElympicsSnapshot.DateTimeWeight;
+            var byteSum = sizeof(long) + ElympicsSnapshot.DateTimeWeight;
 
             foreach (var item in snapshot.Data)
             {

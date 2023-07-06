@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Elympics
 {
@@ -8,7 +8,7 @@ namespace Elympics
         public const string Tokyo = "tokyo";
         public const string Dallas = "dallas";
 
-        public static readonly List<string> AllAvailableRegions = new List<string>
+        public static readonly List<string> AllAvailableRegions = new()
         {
             Warsaw,
             Tokyo,

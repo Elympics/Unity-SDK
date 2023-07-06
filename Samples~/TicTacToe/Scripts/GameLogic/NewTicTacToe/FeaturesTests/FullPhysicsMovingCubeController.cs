@@ -4,20 +4,20 @@ using UnityEngine;
 
 namespace GameLogic.NewTicTacToe
 {
-	public class FullPhysicsMovingCubeController : MonoBehaviour
-	{
-		[SerializeField] private List<Rigidbody> cubeRigidbodies = null;
+    public class FullPhysicsMovingCubeController : MonoBehaviour
+    {
+        [SerializeField] private List<Rigidbody> cubeRigidbodies = null;
 
-		private void Start()
-		{
-			StartCoroutine(AddGravityForRigidBody());
-		}
+        private void Start()
+        {
+            _ = StartCoroutine(AddGravityForRigidBody());
+        }
 
-		private IEnumerator AddGravityForRigidBody()
-		{
-			yield return new WaitForSeconds(5);
-			foreach (var cubeRigidbody in cubeRigidbodies)
-				cubeRigidbody.useGravity = true;
-		}
-	}
+        private IEnumerator AddGravityForRigidBody()
+        {
+            yield return new WaitForSeconds(5);
+            foreach (var cubeRigidbody in cubeRigidbodies)
+                cubeRigidbody.useGravity = true;
+        }
+    }
 }

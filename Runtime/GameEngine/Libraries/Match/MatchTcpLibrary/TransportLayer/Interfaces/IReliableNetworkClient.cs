@@ -1,6 +1,6 @@
-﻿namespace MatchTcpLibrary.TransportLayer.Interfaces
+namespace MatchTcpLibrary.TransportLayer.Interfaces
 {
-	public interface IReliableNetworkClient : INetworkClient
-	{
-	}
+    public interface IReliableNetworkClient : INetworkClient
+    {
+    }
 }

@@ -1,139 +1,138 @@
 using System;
-using UnityEngine;
 
 namespace Elympics
 {
-	public class ClientTickCalculator
-	{
-		private const    float                              TimeThresholdToHoldPredictionDownSeconds = 0.3f;
-		private const    float                              TimeThresholdToForceJumpSeconds          = 0.2f;
-		private const    double                             MaxTickAheadWithNoChange                 = 1.0d;
-		private const    float                              LerpRatio                                = 0.35f;
-		private readonly ElympicsGameConfig                 _config;
-		private readonly IRoundTripTimeCalculator           _roundTripTimeCalculator;
-		private readonly ClientTickCalculatorNetworkDetails _tickCalculationResults;
-		public           ClientTickCalculatorNetworkDetails Results => _tickCalculationResults;
+    public class ClientTickCalculator
+    {
+        private const float TimeThresholdToHoldPredictionDownSeconds = 0.3f;
+        private const float TimeThresholdToForceJumpSeconds = 0.2f;
+        private const double MaxTickAheadWithNoChange = 1.0d;
+        private const float LerpRatio = 0.35f;
+        private readonly ElympicsGameConfig _config;
+        private readonly IRoundTripTimeCalculator _roundTripTimeCalculator;
 
-		public ClientTickCalculator(IRoundTripTimeCalculator roundTripTimeCalculator, ElympicsGameConfig config)
-		{
-			_tickCalculationResults = new ClientTickCalculatorNetworkDetails(config);
-			_roundTripTimeCalculator = roundTripTimeCalculator;
-			_config = config;
-		}
+        public ClientTickCalculatorNetworkDetails Results { get; }
 
-		public void CalculateNextTick(long lastReceivedTick, long lastPredictedTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
-		{
-			_tickCalculationResults.Reset();
-			var canPredict = true;
-			var lastReceivedTickStart = receivedTickStartUtc.ToLocalTime();
-			var clientTickStart = clientTickStartUtc.ToLocalTime();
+        public ClientTickCalculator(IRoundTripTimeCalculator roundTripTimeCalculator, ElympicsGameConfig config)
+        {
+            Results = new ClientTickCalculatorNetworkDetails(config);
+            _roundTripTimeCalculator = roundTripTimeCalculator;
+            _config = config;
+        }
 
-			var calculatedNextTickExact = CalculateTotalDelayInTicks(lastReceivedTick, lastReceivedTickStart, clientTickStart);
+        public void CalculateNextTick(long lastReceivedTick, long lastPredictedTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
+        {
+            Results.Reset();
+            var lastReceivedTickStart = receivedTickStartUtc.ToLocalTime();
+            var clientTickStart = clientTickStartUtc.ToLocalTime();
 
-			var expectedPredictionTick = lastPredictedTick + 1;
-			var exactToExpectedTickDiff = calculatedNextTickExact - expectedPredictionTick;
+            var calculatedNextTickExact = CalculateTotalDelayInTicks(lastReceivedTick, lastReceivedTickStart, clientTickStart);
 
-			long newPredictionTick;
-			var tickDiffInSec = exactToExpectedTickDiff * _config.TickDuration;
-			if (DoesClientNeedToHoldPrediction(tickDiffInSec))
-			{
-				newPredictionTick = lastPredictedTick;
-				canPredict = false;
-			}
-			else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var tickToCatchup))
-			{
-				canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, tickToCatchup);
-				if (canPredict)
-				{
-					_tickCalculationResults.WasTickJumpForced = true;
-					_tickCalculationResults.TicksToCatchup = tickToCatchup;
-				}
-			}
-			else
-			{
-				canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick);
-			}
+            var expectedPredictionTick = lastPredictedTick + 1;
+            var exactToExpectedTickDiff = calculatedNextTickExact - expectedPredictionTick;
 
-			_tickCalculationResults.LastReceivedTick = lastReceivedTick;
-			_tickCalculationResults.ExactTickCalculated = calculatedNextTickExact;
-			_tickCalculationResults.CanPredict = canPredict;
-			_tickCalculationResults.LastPredictionTick = lastPredictedTick;
-			_tickCalculationResults.LastInputTick = lastDelayInputTick;
-			_tickCalculationResults.NewPredictedTickFromCalculations = newPredictionTick;
-			if (canPredict)
-			{
-				_tickCalculationResults.PredictionTick = newPredictionTick;
-				_tickCalculationResults.DelayedInputTick = newPredictionTick;
-			}
+            long newPredictionTick;
+            var tickDiffInSec = exactToExpectedTickDiff * _config.TickDuration;
+            bool canPredict;
+            if (DoesClientNeedToHoldPrediction(tickDiffInSec))
+            {
+                newPredictionTick = lastPredictedTick;
+                canPredict = false;
+            }
+            else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var tickToCatchup))
+            {
+                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, tickToCatchup);
+                if (canPredict)
+                {
+                    Results.WasTickJumpForced = true;
+                    Results.TicksToCatchup = tickToCatchup;
+                }
+            }
+            else
+            {
+                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick);
+            }
 
-			_tickCalculationResults.PredictionLimit = _config.TotalPredictionLimitInTicks;
-			_tickCalculationResults.DefaultTickRate = _config.TicksPerSecond;
-			_tickCalculationResults.InputLagTicks = _config.InputLagTicks;
-			_tickCalculationResults.RttTicks = _roundTripTimeCalculator.AverageRoundTripTime.TotalSeconds * _config.TicksPerSecond;
-			_tickCalculationResults.LcoTicks = _roundTripTimeCalculator.AverageLocalClockOffset.TotalSeconds * _config.TicksPerSecond;
+            Results.LastReceivedTick = lastReceivedTick;
+            Results.ExactTickCalculated = calculatedNextTickExact;
+            Results.CanPredict = canPredict;
+            Results.LastPredictionTick = lastPredictedTick;
+            Results.LastInputTick = lastDelayInputTick;
+            Results.NewPredictedTickFromCalculations = newPredictionTick;
+            if (canPredict)
+            {
+                Results.PredictionTick = newPredictionTick;
+                Results.DelayedInputTick = newPredictionTick;
+            }
 
-			UpdateElympicsUpdateInterval();
-		}
+            Results.PredictionLimit = _config.TotalPredictionLimitInTicks;
+            Results.DefaultTickRate = _config.TicksPerSecond;
+            Results.InputLagTicks = _config.InputLagTicks;
+            Results.RttTicks = _roundTripTimeCalculator.AverageRoundTripTime.TotalSeconds * _config.TicksPerSecond;
+            Results.LcoTicks = _roundTripTimeCalculator.AverageLocalClockOffset.TotalSeconds * _config.TicksPerSecond;
 
-		private void UpdateElympicsUpdateInterval()
-		{
-			var diffInTicks = _tickCalculationResults.ExactTickCalculated - _tickCalculationResults.PredictionTick;
-			var isClientTooFast = diffInTicks < 0;
-			// We don't want to slow down client ASAP due to the fact slowing down, can lead to lack of inputs on server as client will not be able to deliver inputs on time.
-			var needsUpdateIntervalAdjustment = diffInTicks <= -MaxTickAheadWithNoChange;
+            UpdateElympicsUpdateInterval();
+        }
 
-			if (!_tickCalculationResults.CanPredict || (isClientTooFast && !needsUpdateIntervalAdjustment))
-			{
-				_tickCalculationResults.ElympicsUpdateTickRate = _config.TicksPerSecond;
-				return;
-			}
+        private void UpdateElympicsUpdateInterval()
+        {
+            var diffInTicks = Results.ExactTickCalculated - Results.PredictionTick;
+            var isClientTooFast = diffInTicks < 0;
+            // We don't want to slow down client ASAP due to the fact slowing down, can lead to lack of inputs on server as client will not be able to deliver inputs on time.
+            var needsUpdateIntervalAdjustment = diffInTicks <= -MaxTickAheadWithNoChange;
 
-			var previousTickRate = _tickCalculationResults.ElympicsUpdateTickRate;
-			var newTickRate = _config.TicksPerSecond + diffInTicks;
+            if (!Results.CanPredict || (isClientTooFast && !needsUpdateIntervalAdjustment))
+            {
+                Results.ElympicsUpdateTickRate = _config.TicksPerSecond;
+                return;
+            }
 
-			newTickRate = (1 - LerpRatio) * previousTickRate + LerpRatio * newTickRate;
-			newTickRate = newTickRate.Clamp(_config.MinTickRate, _config.MaxTickRate);
+            var previousTickRate = Results.ElympicsUpdateTickRate;
+            var newTickRate = _config.TicksPerSecond + diffInTicks;
 
-			_tickCalculationResults.ElympicsUpdateTickRate = newTickRate;
-		}
+            newTickRate = (1 - LerpRatio) * previousTickRate + LerpRatio * newTickRate;
+            newTickRate = newTickRate.Clamp(_config.MinTickRate, _config.MaxTickRate);
 
-		private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, double calculatedAndExpectedTickDiffInSec, long lastPredictionTick, long lastReceivedTick, out long ticksToCatchup)
-		{
-			ticksToCatchup = 0;
-			if (calculatedAndExpectedTickDiffInSec > TimeThresholdToForceJumpSeconds)
-			{
-				ticksToCatchup = (long)Math.Floor(calculatedAndExpectedTickDiff);
+            Results.ElympicsUpdateTickRate = newTickRate;
+        }
 
-				if (lastPredictionTick + ticksToCatchup < lastReceivedTick)
-				{
-					ticksToCatchup = lastReceivedTick - lastPredictionTick;
-				}
+        private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, double calculatedAndExpectedTickDiffInSec, long lastPredictionTick, long lastReceivedTick, out long ticksToCatchup)
+        {
+            ticksToCatchup = 0;
+            if (calculatedAndExpectedTickDiffInSec > TimeThresholdToForceJumpSeconds)
+            {
+                ticksToCatchup = (long)Math.Floor(calculatedAndExpectedTickDiff);
 
-				return true;
-			}
+                if (lastPredictionTick + ticksToCatchup < lastReceivedTick)
+                {
+                    ticksToCatchup = lastReceivedTick - lastPredictionTick;
+                }
 
-			return false;
-		}
+                return true;
+            }
 
-		private bool TrySetNextTick(long lastReceivedTick, long lastPredictedTick, out long newTick, long offset = 0)
-		{
-			newTick = lastPredictedTick + 1 + offset;
-			return newTick <= lastReceivedTick + _config.TotalPredictionLimitInTicks;
-		}
+            return false;
+        }
 
-		private double CalculateTotalDelayInTicks(long receivedTick, DateTime receivedTickStartLocalTime, DateTime clientTickStartLocalTime)
-		{
-			var receivedTickStartLocal = receivedTickStartLocalTime.Subtract(_roundTripTimeCalculator.AverageLocalClockOffset);
-			var clientTickStartDelayVsReceived = clientTickStartLocalTime - receivedTickStartLocal;
-			var tickTotal = (double)_config.InputLagTicks;
-			tickTotal += (clientTickStartDelayVsReceived + _roundTripTimeCalculator.AverageRoundTripTime).TotalSeconds * _config.TicksPerSecond;
-			tickTotal += receivedTick;
-			return tickTotal;
-		}
+        private bool TrySetNextTick(long lastReceivedTick, long lastPredictedTick, out long newTick, long offset = 0)
+        {
+            newTick = lastPredictedTick + 1 + offset;
+            return newTick <= lastReceivedTick + _config.TotalPredictionLimitInTicks;
+        }
 
-		private bool DoesClientNeedToHoldPrediction(double calculatedAndExpectedTickDiffInSec)
-		{
-			return calculatedAndExpectedTickDiffInSec < -TimeThresholdToHoldPredictionDownSeconds;
-		}
-	}
+        private double CalculateTotalDelayInTicks(long receivedTick, DateTime receivedTickStartLocalTime, DateTime clientTickStartLocalTime)
+        {
+            var receivedTickStartLocal = receivedTickStartLocalTime.Subtract(_roundTripTimeCalculator.AverageLocalClockOffset);
+            var clientTickStartDelayVsReceived = clientTickStartLocalTime - receivedTickStartLocal;
+            var tickTotal = (double)_config.InputLagTicks;
+            tickTotal += (clientTickStartDelayVsReceived + _roundTripTimeCalculator.AverageRoundTripTime).TotalSeconds * _config.TicksPerSecond;
+            tickTotal += receivedTick;
+            return tickTotal;
+        }
+
+        private bool DoesClientNeedToHoldPrediction(double calculatedAndExpectedTickDiffInSec)
+        {
+            return calculatedAndExpectedTickDiffInSec < -TimeThresholdToHoldPredictionDownSeconds;
+        }
+    }
 }

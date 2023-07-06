@@ -2,26 +2,26 @@ using System;
 
 namespace Elympics.Models.Authentication
 {
-	public class AuthData
-	{
-		public Guid UserId { get; }
-		public string JwtToken { get; }
-		public AuthType AuthType { get; }
+    public class AuthData
+    {
+        public Guid UserId { get; }
+        public string JwtToken { get; }
+        public AuthType AuthType { get; }
 
-		internal string BearerAuthorization => $"Bearer {JwtToken}";
+        internal string BearerAuthorization => $"Bearer {JwtToken}";
 
-		public AuthData(Guid userId, string jwtToken, AuthType authType = AuthType.None)
-		{
-			UserId = userId;
-			JwtToken = jwtToken;
-			AuthType = authType;
-		}
+        public AuthData(Guid userId, string jwtToken, AuthType authType = AuthType.None)
+        {
+            UserId = userId;
+            JwtToken = jwtToken;
+            AuthType = authType;
+        }
 
-		public AuthData(AuthenticationDataResponse response, AuthType authType = AuthType.None)
-		{
-			UserId = new Guid(response.userId);
-			JwtToken = response.jwtToken;
-			AuthType = authType;
-		}
-	}
+        public AuthData(AuthenticationDataResponse response, AuthType authType = AuthType.None)
+        {
+            UserId = new Guid(response.userId);
+            JwtToken = response.jwtToken;
+            AuthType = authType;
+        }
+    }
 }

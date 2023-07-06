@@ -1,9 +1,9 @@
-﻿namespace Elympics
+namespace Elympics
 {
-	public class ParameterSynchronizationStatus
-	{
-		public string Name;
-		public int    HashName;
-		public bool   Enabled;
-	}
+    public class ParameterSynchronizationStatus
+    {
+        public string Name;
+        public int HashName;
+        public bool Enabled;
+    }
 }

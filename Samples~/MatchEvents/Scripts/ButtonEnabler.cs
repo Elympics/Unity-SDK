@@ -6,83 +6,83 @@ using UnityEngine.UI;
 
 namespace MatchEvents
 {
-	public class ButtonEnabler : MonoBehaviour, IClientHandlerGuid
-	{
-		#pragma warning disable CS0649  // Field is never assigned to, and will always have its default value null
+    public class ButtonEnabler : MonoBehaviour, IClientHandlerGuid
+    {
+#pragma warning disable CS0649  // Field is never assigned to, and will always have its default value null
 
-		[SerializeField] private Button playerConnectButton;
-		[SerializeField] private Button spectatorConnectButton;
-		[SerializeField] private Button disconnectButton;
-		[SerializeField] private Button endGameButton;
+        [SerializeField] private Button playerConnectButton;
+        [SerializeField] private Button spectatorConnectButton;
+        [SerializeField] private Button disconnectButton;
+        [SerializeField] private Button endGameButton;
 
-		[SerializeField] private GameLifecycleTester gameLifecycleTester;
-		[SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher;
+        [SerializeField] private GameLifecycleTester gameLifecycleTester;
+        [SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher;
 
-		#pragma warning restore CS0649
+#pragma warning restore CS0649
 
-		public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data) => OnClientInit();
-		public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data) => OnClientInit();
+        public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data) => OnClientInit();
+        public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data) => OnClientInit();
 
-		private void OnClientInit()
-		{
-			SetButtonsDisconnected();
+        private void OnClientInit()
+        {
+            SetButtonsDisconnected();
 
-			gameLifecycleTester.ConnectingStarted += DisableAllButtons;
-			gameLifecycleTester.ConnectingFinished += success =>
-			{
-				if (success)
-					SetButtonsConnected();
-				else
-					SetButtonsDisconnected();
-			};
-		}
+            gameLifecycleTester.ConnectingStarted += DisableAllButtons;
+            gameLifecycleTester.ConnectingFinished += success =>
+            {
+                if (success)
+                    SetButtonsConnected();
+                else
+                    SetButtonsDisconnected();
+            };
+        }
 
-		public void OnConnected(TimeSynchronizationData data) => SetButtonsConnected();
-		public void OnAuthenticated(Guid userId) => SetButtonsConnected();
-		public void OnMatchJoined(Guid matchId) => SetButtonsConnected();
+        public void OnConnected(TimeSynchronizationData data) => SetButtonsConnected();
+        public void OnAuthenticated(Guid userId) => SetButtonsConnected();
+        public void OnMatchJoined(Guid matchId) => SetButtonsConnected();
 
-		public void OnConnectingFailed() => SetButtonsDisconnected();
-		public void OnAuthenticatedFailed(string errorMessage) => SetButtonsDisconnected();
-		public void OnMatchJoinedFailed(string errorMessage) => SetButtonsDisconnected();
-		public void OnDisconnectedByClient() => SetButtonsDisconnected();
+        public void OnConnectingFailed() => SetButtonsDisconnected();
+        public void OnAuthenticatedFailed(string errorMessage) => SetButtonsDisconnected();
+        public void OnMatchJoinedFailed(string errorMessage) => SetButtonsDisconnected();
+        public void OnDisconnectedByClient() => SetButtonsDisconnected();
 
-		public void OnMatchEnded(Guid matchId) => DisableAllButtons();
-		public void OnDisconnectedByServer() => DisableAllButtons();
+        public void OnMatchEnded(Guid matchId) => DisableAllButtons();
+        public void OnDisconnectedByServer() => DisableAllButtons();
 
-		private void DisableAllButtons()
-		{
-			asyncEventsDispatcher.Enqueue(() =>
-			{
-				playerConnectButton.interactable = false;
-				spectatorConnectButton.interactable = false;
-				disconnectButton.interactable = false;
-				endGameButton.interactable = false;
-			});
-		}
+        private void DisableAllButtons()
+        {
+            asyncEventsDispatcher.Enqueue(() =>
+            {
+                playerConnectButton.interactable = false;
+                spectatorConnectButton.interactable = false;
+                disconnectButton.interactable = false;
+                endGameButton.interactable = false;
+            });
+        }
 
-		private void SetButtonsConnected()
-		{
-			asyncEventsDispatcher.Enqueue(() =>
-			{
-				playerConnectButton.interactable = false;
-				spectatorConnectButton.interactable = false;
-				disconnectButton.interactable = true;
-				endGameButton.interactable = true;
-			});
-		}
+        private void SetButtonsConnected()
+        {
+            asyncEventsDispatcher.Enqueue(() =>
+            {
+                playerConnectButton.interactable = false;
+                spectatorConnectButton.interactable = false;
+                disconnectButton.interactable = true;
+                endGameButton.interactable = true;
+            });
+        }
 
-		private void SetButtonsDisconnected()
-		{
-			asyncEventsDispatcher.Enqueue(() =>
-			{
-				playerConnectButton.interactable = true;
-				spectatorConnectButton.interactable = true;
-				disconnectButton.interactable = false;
-				endGameButton.interactable = false;
-			});
-		}
+        private void SetButtonsDisconnected()
+        {
+            asyncEventsDispatcher.Enqueue(() =>
+            {
+                playerConnectButton.interactable = true;
+                spectatorConnectButton.interactable = true;
+                disconnectButton.interactable = false;
+                endGameButton.interactable = false;
+            });
+        }
 
-		public void OnSynchronized(TimeSynchronizationData data)
-		{ }
-	}
+        public void OnSynchronized(TimeSynchronizationData data)
+        { }
+    }
 }

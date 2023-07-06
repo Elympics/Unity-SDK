@@ -10,8 +10,8 @@ using Object = UnityEngine.Object;
 
 namespace Elympics
 {
-	internal static class TaskUtil
-	{
+    internal static class TaskUtil
+    {
 #if UNITY_WEBGL
 		private static AsyncEventsDispatcher coroutineRunner;
 
@@ -28,8 +28,8 @@ namespace Elympics
 		}
 #endif
 
-		internal static async Task Delay(TimeSpan delay, CancellationToken cancellationToken = default)
-		{
+        internal static async Task Delay(TimeSpan delay, CancellationToken cancellationToken = default)
+        {
 #if UNITY_WEBGL
 			if (coroutineRunner == null)
 				coroutineRunner = Object.FindObjectOfType<AsyncEventsDispatcher>();
@@ -37,11 +37,11 @@ namespace Elympics
 			coroutineRunner.Enqueue(Delay(delay, tcs, cancellationToken));
 			await tcs.Task;
 #else
-			await Task.Delay(delay, cancellationToken);
+            await Task.Delay(delay, cancellationToken);
 #endif
-		}
+        }
 
-		internal static Task Delay(int millisecondsDelay, CancellationToken cancellationToken = default) =>
-		    Delay(TimeSpan.FromMilliseconds(millisecondsDelay), cancellationToken);
-	}
+        internal static Task Delay(int millisecondsDelay, CancellationToken cancellationToken = default) =>
+            Delay(TimeSpan.FromMilliseconds(millisecondsDelay), cancellationToken);
+    }
 }

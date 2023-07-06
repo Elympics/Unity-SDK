@@ -1,11 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class VariableJoystick : Joystick
 {
-    public float MoveThreshold { get { return moveThreshold; } set { moveThreshold = Mathf.Abs(value); } }
+    public float MoveThreshold { get => moveThreshold; set => moveThreshold = Mathf.Abs(value); }
 
     [SerializeField] private float moveThreshold = 1;
     [SerializeField] private JoystickType joystickType = JoystickType.Fixed;
@@ -15,7 +13,7 @@ public class VariableJoystick : Joystick
     public void SetMode(JoystickType joystickType)
     {
         this.joystickType = joystickType;
-        if(joystickType == JoystickType.Fixed)
+        if (joystickType == JoystickType.Fixed)
         {
             background.anchoredPosition = fixedPosition;
             background.gameObject.SetActive(true);
@@ -33,7 +31,7 @@ public class VariableJoystick : Joystick
 
     public override void OnPointerDown(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
         {
             background.anchoredPosition = ScreenPointToAnchoredPosition(eventData.position);
             background.gameObject.SetActive(true);
@@ -43,7 +41,7 @@ public class VariableJoystick : Joystick
 
     public override void OnPointerUp(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
             background.gameObject.SetActive(false);
 
         base.OnPointerUp(eventData);
@@ -53,7 +51,7 @@ public class VariableJoystick : Joystick
     {
         if (joystickType == JoystickType.Dynamic && magnitude > moveThreshold)
         {
-            Vector2 difference = normalised * (magnitude - moveThreshold) * radius;
+            var difference = normalised * (magnitude - moveThreshold) * radius;
             background.anchoredPosition += difference;
         }
         base.HandleInput(magnitude, normalised, radius, cam);

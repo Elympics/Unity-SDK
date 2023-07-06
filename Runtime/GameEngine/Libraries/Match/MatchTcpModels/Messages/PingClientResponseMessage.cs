@@ -2,14 +2,14 @@ using System;
 
 namespace MatchTcpModels.Messages
 {
-	[Serializable]
-	public class PingClientResponseMessage : Message
-	{
-		public string NtpData;
+    [Serializable]
+    public class PingClientResponseMessage : Message
+    {
+        public string NtpData;
 
-		public PingClientResponseMessage()
-		{
-			Type = MessageType.PingClientResponse;
-		}
-	}
+        public PingClientResponseMessage()
+        {
+            Type = MessageType.PingClientResponse;
+        }
+    }
 }

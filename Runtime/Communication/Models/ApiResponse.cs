@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 
 namespace Elympics.Models
 {
-	[Serializable]
-	public class ApiResponse
-	{
-		public string ErrorMessage;
+    [Serializable]
+    public class ApiResponse
+    {
+        public string ErrorMessage;
 
-		public bool IsSuccess => ErrorMessage == null;
-	}
+        public bool IsSuccess => ErrorMessage == null;
+    }
 }

@@ -1,56 +1,56 @@
-﻿using System;
+using System;
 using System.Linq;
 
 namespace Elympics
 {
-	public static class CurrentGameVersionUploadedToTheCloudStatus
-	{
-		private static bool isCheckingGameVersion = false;
+    public static class CurrentGameVersionUploadedToTheCloudStatus
+    {
+        private static bool isCheckingGameVersion = false;
 
-		private static ElympicsGameConfig activeGameConfig = null;
+        private static ElympicsGameConfig activeGameConfig = null;
 
-		public static bool IsVersionUploaded { get; private set; } = false;
+        public static bool IsVersionUploaded { get; private set; } = false;
 
-		public static event Action<bool> CheckingIfGameVersionIsUploadedChanged = null;
+        public static event Action<bool> CheckingIfGameVersionIsUploadedChanged = null;
 
-		public static void Initialize(ElympicsGameConfig _config)
-		{
-			if (_config != activeGameConfig)
-			{
-				activeGameConfig = _config;
+        public static void Initialize(ElympicsGameConfig _config)
+        {
+            if (_config != activeGameConfig)
+            {
+                activeGameConfig = _config;
 
-				activeGameConfig.DataChanged += RequestCheckIfCurrentGameVersionUploadedToCloud;
-				ElympicsWebIntegration.GameUploadedToTheCloud += RequestCheckIfCurrentGameVersionUploadedToCloud;
-			}
+                activeGameConfig.DataChanged += RequestCheckIfCurrentGameVersionUploadedToCloud;
+                ElympicsWebIntegration.GameUploadedToTheCloud += RequestCheckIfCurrentGameVersionUploadedToCloud;
+            }
 
-			RequestCheckIfCurrentGameVersionUploadedToCloud();
-		}
+            RequestCheckIfCurrentGameVersionUploadedToCloud();
+        }
 
-		public static void Disable()
-		{
-			activeGameConfig.DataChanged -= RequestCheckIfCurrentGameVersionUploadedToCloud;
-			ElympicsWebIntegration.GameUploadedToTheCloud -= RequestCheckIfCurrentGameVersionUploadedToCloud;
+        public static void Disable()
+        {
+            activeGameConfig.DataChanged -= RequestCheckIfCurrentGameVersionUploadedToCloud;
+            ElympicsWebIntegration.GameUploadedToTheCloud -= RequestCheckIfCurrentGameVersionUploadedToCloud;
 
-			activeGameConfig = null;
-		}
+            activeGameConfig = null;
+        }
 
-		private static void RequestCheckIfCurrentGameVersionUploadedToCloud()
-		{
-			if (!isCheckingGameVersion)
-			{
-				isCheckingGameVersion = true;
-				CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
-			}
+        private static void RequestCheckIfCurrentGameVersionUploadedToCloud()
+        {
+            if (!isCheckingGameVersion)
+            {
+                isCheckingGameVersion = true;
+                CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
+            }
 
-			ElympicsWebIntegration.GetGameVersions(gameVersions =>
-			{
-				var gameVersionUploaded = gameVersions.Versions.Any(x => string.Equals(x.Version, activeGameConfig.gameVersion));
+            ElympicsWebIntegration.GetGameVersions(gameVersions =>
+            {
+                var gameVersionUploaded = gameVersions.Versions.Any(x => string.Equals(x.Version, activeGameConfig.gameVersion));
 
-				isCheckingGameVersion = false;
-				CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
+                isCheckingGameVersion = false;
+                CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
 
-				IsVersionUploaded = gameVersionUploaded;
-			}, true);
-		}
-	}
+                IsVersionUploaded = gameVersionUploaded;
+            }, true);
+        }
+    }
 }

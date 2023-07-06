@@ -40,7 +40,7 @@ namespace Elympics
 
 		private void StartBot() => _started = true;
 
-		protected override bool ShouldDoFixedUpdate() => Initialized && _started;
+		protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
 
 		protected override void ElympicsFixedUpdate()
 		{

@@ -7,11 +7,11 @@ namespace Elympics
 		private const int SafeInputLagForBotMs = 50;
 
 		public override ElympicsPlayer Player => _gameBotAdapter.Player;
-		public override bool           IsBot    => true;
+		public override bool           IsBot  => true;
 
-		private static readonly object LastReceivedSnapshotLock = new object();
-		private ElympicsSnapshot _lastReceivedSnapshot;
-		private bool _started;
+		private static readonly object           LastReceivedSnapshotLock = new object();
+		private                 ElympicsSnapshot _lastReceivedSnapshot;
+		private                 bool             _started;
 
 		private GameBotAdapter _gameBotAdapter;
 
@@ -40,9 +40,9 @@ namespace Elympics
 
 		private void StartBot() => _started = true;
 
-		protected override bool ShouldDoFixedUpdate() => Initialized && _started;
+		protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
 
-		protected override void DoFixedUpdate()
+		protected override void ElympicsFixedUpdate()
 		{
 			ElympicsSnapshot snapshot;
 			lock (LastReceivedSnapshotLock)
@@ -64,7 +64,7 @@ namespace Elympics
 
 		private void AddMetadataToInput(ElympicsInput input, long snapshotTick)
 		{
-			input.Tick = (int) (snapshotTick + Math.Max(1, SafeInputLagForBotMs * Config.TicksPerSecond / 1000.0) + Config.InputLagTicks);
+			input.Tick = (int)(snapshotTick + Math.Max(1, SafeInputLagForBotMs * Config.TicksPerSecond / 1000.0) + Config.InputLagTicks);
 			input.Player = Player;
 		}
 

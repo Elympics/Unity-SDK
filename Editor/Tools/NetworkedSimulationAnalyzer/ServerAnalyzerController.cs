@@ -1,5 +1,4 @@
-﻿#if UNITY_2020_2_OR_NEWER
-using System;
+﻿using System;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -30,7 +29,7 @@ namespace Elympics
             // pause toggle setup
             _pauseToggle = root.Q<ToolbarToggle>("pause-control");
             // because used element template contains useless element which have to be disabled - it takes up space!
-            _pauseToggle.Q<VisualElement>(classes: "unity-toggle__input").style.display = DisplayStyle.None; 
+            _pauseToggle.Q<VisualElement>(classes: "unity-toggle__input").style.display = DisplayStyle.None;
             _pauseToggle.SetEnabled(EditorApplication.isPlaying);
             _pauseToggle.RegisterValueChangedCallback(valueChangedEvent =>
             {
@@ -70,7 +69,7 @@ namespace Elympics
             };
 
             _helpLink = root.Q<Label>("help-control");
-            _helpLink.RegisterCallback<MouseDownEvent> (e => 
+            _helpLink.RegisterCallback<MouseDownEvent> (e =>
             {
                 Application.OpenURL("https://docs.elympics.cc/testing-troubleshooting/networked-simulation-analyzer/");
             });
@@ -181,4 +180,3 @@ namespace Elympics
         }
     }
 }
-#endif

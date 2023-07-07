@@ -32,11 +32,7 @@ namespace Elympics
 			_currentPhysicsScene2D = currentScene.GetPhysicsScene2D();
 
 			Physics.autoSimulation = false;
-#if UNITY_2020_1_OR_NEWER
 			Physics2D.simulationMode = SimulationMode2D.Script;
-#else
-			Physics2D.autoSimulation = false;
-#endif
 		}
 
 		public void ElympicsUpdate()

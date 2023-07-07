@@ -26,20 +26,22 @@ MonoBehaviour:
   connectionConfig:
     sessionConnectTimeout: 15
     synchronizerTimeout: 20
-    minContinuousSynchronizationInterval: 0.1
+    minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
     webRtcOfferTimeout: 5
     webRtcOfferMaxRetries: 5
     webRtcOfferRetryDelay: 1
     initialSynchronizeMaxRetries: 3
   ticksPerSecond: 30
+  minClientTickRateFactor: 0.8
+  maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
   maxAllowedLagInTicks: 25
   prediction: 1
   predictionLimitInTicks: 25
   detailedNetworkLog: 0
-  mode: 2
+  mode: 1
   halfRemoteMode: 0
   useWebInHalfRemote: 1
   ipForHalfRemoteMode: 127.0.0.1

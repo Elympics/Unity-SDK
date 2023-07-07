@@ -8,10 +8,10 @@ namespace Elympics
 		public TimeSpan LastRoundTripTime    { get; private set; }
 		public TimeSpan LastLocalClockOffset { get; private set; }
 
-		private const    int        MaxRttSamples  = 10;
+		private const    int        MaxRttSamples  = 3;
 		private readonly RunningAvg _rttRunningAvg = new RunningAvg(MaxRttSamples);
 
-		private const    int           MaxLcoSamples     = 10;
+		private const    int           MaxLcoSamples     = 5;
 		private readonly RunningMedian _lcoRunningMedian = new RunningMedian(MaxLcoSamples);
 
 		public TimeSpan AverageRoundTripTime    { get; private set; }

@@ -10,7 +10,7 @@ namespace Elympics
 	{
 		[Tooltip("In seconds")] public float sessionConnectTimeout = 15;
 		[Tooltip("In seconds")] public float synchronizerTimeout = 20;
-		[Tooltip("In seconds")] public float minContinuousSynchronizationInterval = 0.1f;
+		[Tooltip("In seconds")] public float minContinuousSynchronizationInterval = 0.02f;
 		[Tooltip("In seconds")] public float unreliablePingTimeout = 5;
 		[Tooltip("In seconds")] public float webRtcOfferTimeout = 5;
 		public int webRtcOfferMaxRetries = 5;

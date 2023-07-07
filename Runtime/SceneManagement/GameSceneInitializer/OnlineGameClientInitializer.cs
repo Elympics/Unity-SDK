@@ -31,16 +31,16 @@ namespace Elympics
 			var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
 			var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
 			var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress,
-				matchData.MatchId.ToString());
+				matchData.MatchId.ToString(), matchData.RegionName);
 			var gameServerClient = elympicsGameConfig.UseWeb
 				? (GameServerClient)new WebGameServerClient(logger, serializer, config,
 					new HttpSignalingClient(webSignalingEndpoint),
 					WebRtcFactory.CreateInstance)
 				: new TcpUdpGameServerClient(logger, serializer, config,
 					IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
-			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.MatchId.ToString(),
+			var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
 				matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,
-				elympicsGameConfig.UseWeb, matchData.RegionName);
+				elympicsGameConfig.UseWeb);
 			var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
 			elympicsGameConfig.players = matchData.MatchedPlayers.Length;
 			client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid

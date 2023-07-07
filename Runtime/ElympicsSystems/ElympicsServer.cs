@@ -10,25 +10,25 @@ namespace Elympics
 		private static readonly ElympicsPlayer ServerPlayer = ElympicsPlayer.World;
 
 		private ElympicsPlayer _currentPlayer = ElympicsPlayer.Invalid;
-		private bool _currentIsBot;
-		private bool _currentIsClient;
+		private bool           _currentIsBot;
+		private bool           _currentIsClient;
 
-		public override ElympicsPlayer Player => _currentPlayer;
-		public override bool IsServer => true;
-		public override bool IsBot => _currentIsBot;
-		public override bool IsClient => _currentIsClient;
+		public override ElympicsPlayer Player   => _currentPlayer;
+		public override bool           IsServer => true;
+		public override bool           IsBot    => _currentIsBot;
+		public override bool           IsClient => _currentIsClient;
 
 		private bool _handlingBotsOverride;
 		private bool _handlingClientsOverride;
-		private bool HandlingBotsInServer => _handlingBotsOverride || Config.BotsInServer;
+		private bool HandlingBotsInServer    => _handlingBotsOverride || Config.BotsInServer;
 		private bool HandlingClientsInServer => _handlingClientsOverride;
 
-		private GameEngineAdapter _gameEngineAdapter;
+		private GameEngineAdapter           _gameEngineAdapter;
 		private InitialMatchPlayerDatasGuid _playerData;
-		private ElympicsPlayer[] _playersOfBots;
-		private ElympicsPlayer[] _playersOfClients;
+		private ElympicsPlayer[]            _playersOfBots;
+		private ElympicsPlayer[]            _playersOfClients;
 
-		private List<ElympicsInput> _inputList;
+		private List<ElympicsInput>                _inputList;
 		private Dictionary<int, TickToPlayerInput> _tickToPlayerInputHolder;
 
 		private ElympicsGameConfig _currentGameConfig;
@@ -37,8 +37,7 @@ namespace Elympics
 
 		private protected override void TryAttachTickAnalysis()
 		{
-			TickAnalysis?.Attach(snapshot => elympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true),
-				_playerData?.Select(x => x.IsBot).ToArray());
+			TickAnalysis?.Attach(snapshot => elympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true), _playerData?.Select(x => x.IsBot).ToArray());
 		}
 
 		#endregion TickAnalysis
@@ -102,12 +101,10 @@ namespace Elympics
 				elympicsBehavioursManager.OnPlayerConnected(player);
 		}
 
-		protected override bool ShouldDoFixedUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
+		protected override bool ShouldDoElympicsUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
 
-		protected override void DoFixedUpdate()
+		protected override void ElympicsFixedUpdate()
 		{
-			_tickStartUtc = DateTime.UtcNow;
-
 			using (ElympicsMarkers.Elympics_GatheringClientInputMarker.Auto())
 			{
 				if (HandlingBotsInServer)
@@ -137,7 +134,7 @@ namespace Elympics
 		}
 
 		private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForClient();
-		private static ElympicsInput BotInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForBot();
+		private static ElympicsInput BotInputGetter(ElympicsBehavioursManager manager)    => manager.OnInputForBot();
 
 		private void GatherInputsFromServerBotsOrClient(ElympicsPlayer[] players, Action<ElympicsPlayer> switchElympicsBaseBehaviour, Func<ElympicsBehavioursManager, ElympicsInput> onInput)
 		{
@@ -152,7 +149,8 @@ namespace Elympics
 
 			SwitchBehaviourToServer();
 		}
-		protected override void LateFixedUpdate()
+
+		protected override void ElympicsLateFixedUpdate()
 		{
 			using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
 				if (ShouldSendSnapshot())
@@ -160,7 +158,7 @@ namespace Elympics
 					// gather state info from scene and send to clients
 					PopulateTickToPlayerInputHolder();
 					var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
-					AddMetadataToSnapshots(snapshots, _tickStartUtc);
+					AddMetadataToSnapshots(snapshots, TickStartUtc);
 
 					_gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
 				}
@@ -169,7 +167,7 @@ namespace Elympics
 			{
 				var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
 				localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
-				TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails());
+				TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails(_currentGameConfig));
 			}
 
 			Tick++;

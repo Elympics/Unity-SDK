@@ -13,12 +13,15 @@ namespace Elympics
 	[CustomEditor(typeof(ElympicsGameConfig))]
 	internal partial class ElympicsGameConfigEditor : Editor
 	{
-		private const int MaxTicks         = 128;
-		private const int MinTicks         = 1;
-		private const int MaxLagInMs       = 2000;
-		private const int MinInputLagTicks = 1;
-		private const int MaxInputLagMs    = 500;
-		private const int UnitLabelWidth   = 30;
+		private const int   MaxTicks              = 128;
+		private const int   MinTicks              = 1;
+		private const int   MaxLagInMs            = 2000;
+		private const int   MinInputLagTicks      = 1;
+		private const int   MaxInputLagMs         = 500;
+		private const int   UnitLabelWidth        = 30;
+		private const float MinTickRateFactor     = 0.2f;
+		private const float DefaultTickRateFactor = 1;
+		private const float MaxTickRateFactor     = 5;
 
 		private ElympicsGameConfig _config;
 
@@ -36,6 +39,8 @@ namespace Elympics
 		private SerializedProperty _connectionConfig;
 
 		private SerializedProperty _ticksPerSecond;
+		private SerializedProperty _minTickRateFactor;
+		private SerializedProperty _maxTickRateFactor;
 		private SerializedProperty _snapshotSendingPeriodInTicks;
 		private SerializedProperty _inputLagTicks;
 		private SerializedProperty _maxAllowedLagInTicks;
@@ -89,6 +94,8 @@ namespace Elympics
 			_connectionConfig = serializedObject.FindProperty("connectionConfig");
 
 			_ticksPerSecond = serializedObject.FindProperty("ticksPerSecond");
+			_minTickRateFactor = serializedObject.FindProperty("minClientTickRateFactor");
+			_maxTickRateFactor = serializedObject.FindProperty("maxClientTickRateFactor");
 			_snapshotSendingPeriodInTicks = serializedObject.FindProperty("snapshotSendingPeriodInTicks");
 			_inputLagTicks = serializedObject.FindProperty("inputLagTicks");
 			_maxAllowedLagInTicks = serializedObject.FindProperty("maxAllowedLagInTicks");
@@ -158,6 +165,10 @@ namespace Elympics
 			EditorGUILayout.Space();
 
 			_ticksPerSecond.intValue = TickSlider("Ticks per second", _ticksPerSecond.intValue, MinTicks, MaxTicks);
+			_minTickRateFactor.floatValue = FactorSlider("Min factor", _minTickRateFactor.floatValue, MinTickRateFactor, DefaultTickRateFactor);
+			_maxTickRateFactor.floatValue = FactorSlider("Max factor", _maxTickRateFactor.floatValue, DefaultTickRateFactor, MaxTickRateFactor);
+			var text = _minTickRateFactor.floatValue == _maxTickRateFactor.floatValue ? $"{_ticksPerSecond.intValue} ticks" : $"From {Mathf.Floor(_minTickRateFactor.floatValue * _ticksPerSecond.intValue)} To {Mathf.Ceil(_maxTickRateFactor.floatValue * _ticksPerSecond.intValue)} ticks";
+			EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only for client. The exact value will be determined each tick base on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
 			_snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
 			_inputLagTicks.intValue = TickSliderConvertedToMs("Input lag", _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
 			_maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
@@ -374,7 +385,7 @@ namespace Elympics
 
 		private void DrawInitialMatchData()
 		{
-			EditorGUILayout.LabelField("Test match data", new GUIStyle(GUI.skin.label) {fontStyle = FontStyle.Italic});
+			EditorGUILayout.LabelField("Test match data", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Italic });
 			EditorGUILayout.PropertyField(_testMatchDataQueue);
 			EditorGUILayout.PropertyField(_testMatchDataRegion);
 			EditorGUILayout.Separator();
@@ -410,6 +421,8 @@ namespace Elympics
 
 		private int TickSlider(string label, int value, int left, int right) => TickSlider(new GUIContent(label), value, left, right);
 
+		private float FactorSlider(string label, float value, float min, float max) => FloatSliderWithUnit(new GUIContent(label), value, min, max, string.Empty);
+
 		private int TickSlider(GUIContent content, int value, int left, int right)
 		{
 			return IntSliderWithUnit(content, value, left, right, "ticks");
@@ -419,6 +432,15 @@ namespace Elympics
 		{
 			EditorGUILayout.BeginHorizontal();
 			var newValue = EditorGUILayout.IntSlider(content, value, left, right, GUILayout.MaxWidth(float.MaxValue));
+			EditorGUILayout.LabelField(unit, GUILayout.Width(UnitLabelWidth));
+			EditorGUILayout.EndHorizontal();
+			return newValue;
+		}
+
+		private float FloatSliderWithUnit(GUIContent content, float value, float left, float right, string unit)
+		{
+			EditorGUILayout.BeginHorizontal();
+			var newValue = EditorGUILayout.Slider(content, value, left, right, GUILayout.MaxWidth(float.MaxValue));
 			EditorGUILayout.LabelField(unit, GUILayout.Width(UnitLabelWidth));
 			EditorGUILayout.EndHorizontal();
 			return newValue;
@@ -501,14 +523,14 @@ namespace Elympics
 						{
 							var gameEngineDataAsByte64 = Convert.ToBase64String(gameEngineDataValue);
 							var newGameEngineDataAsByte64 = EditorGUILayout.TextArea(gameEngineDataAsByte64, new GUIStyle(GUI.skin.textArea) { fixedHeight = 0, stretchWidth = true, stretchHeight = true });
-							newGameEngineDataValue = newGameEngineDataAsByte64.Length != 0 ? Convert.FromBase64String(newGameEngineDataAsByte64) : new byte[0];
+							newGameEngineDataValue = newGameEngineDataAsByte64.Length != 0 ? Convert.FromBase64String(newGameEngineDataAsByte64) : Array.Empty<byte>();
 							break;
 						}
 						case "String":
 						{
 							var gameEngineDataAsString = Encoding.ASCII.GetString(gameEngineDataValue);
 							var newGameEngineDataAsString = EditorGUILayout.TextArea(gameEngineDataAsString, new GUIStyle(GUI.skin.textArea) { fixedHeight = 0, stretchWidth = true, stretchHeight = true });
-							newGameEngineDataValue = newGameEngineDataAsString.Length != 0 ? Encoding.ASCII.GetBytes(newGameEngineDataAsString) : new byte[0];
+							newGameEngineDataValue = newGameEngineDataAsString.Length != 0 ? Encoding.ASCII.GetBytes(newGameEngineDataAsString) : Array.Empty<byte>();
 							break;
 						}
 					}
@@ -528,7 +550,7 @@ namespace Elympics
 				var newMmDataValueString = EditorGUILayout.TextField("Matchmaker data", string.Join(" ", mmDataValue.Select(x => x.ToString(CultureInfo.InvariantCulture))));
 				if (EditorGUI.EndChangeCheck())
 				{
-					var newMmDataValue = newMmDataValueString.Length != 0 ? newMmDataValueString.Split(' ').Select(x => float.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f).ToArray() : new float[0];
+					var newMmDataValue = newMmDataValueString.Length != 0 ? newMmDataValueString.Split(' ').Select(x => float.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f).ToArray() : Array.Empty<float>();
 					matchmakerData.SetValue(newMmDataValue);
 				}
 			}

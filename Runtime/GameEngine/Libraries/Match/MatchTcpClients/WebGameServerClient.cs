@@ -27,7 +27,7 @@ namespace MatchTcpClients
 			_webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
 		}
 
-		public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName = null)
+		public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
 		{
 			var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri)
 				? new Uri(baseUri, $"doSignaling/{matchId}")

@@ -44,7 +44,7 @@ namespace Elympics
 #elif ELYMPICS_DEBUG
 			_folderPath = Path.Combine(Application.persistentDataPath, LogDirectoryName);
 #endif
-			_fileName = $"###DetailedNetworkLogs_{DateTime.Now:yyyy_MM_dd___HH_mm_ss}.txt";
+			_fileName = $"DetailedNetworkLogs_{DateTime.Now:yyyy_MM_dd___HH_mm_ss}.txt";
 
 			_cancellationTokenSource = new CancellationTokenSource();
 			Task.Run(async () =>

@@ -13,14 +13,14 @@ namespace Elympics
 		[SerializeField] internal ElympicsBehavioursManager elympicsBehavioursManager;
 		[SerializeField] internal AsyncEventsDispatcher     asyncEventsDispatcher;
 
-		[Tooltip("Attach gameobjects that you want to be destroyed together with this system")] 
+		[Tooltip("Attach GameObjects that you want to be destroyed together with this system")]
 		[SerializeField]
 		private GameObject[] linkedLogic;
 
 		private readonly Stopwatch _elympicsUpdateStopwatch = new Stopwatch();
 		private          long      _fixedUpdatesCounter;
 		private          double    _timer;
-		
+
 		private DateTime _previousUtcForDeltaTime = DateTime.UtcNow;
 		private double   MaxDeltaTime => 3 * TickDuration;
 
@@ -78,6 +78,7 @@ namespace Elympics
 		{
 			Config = elympicsGameConfig;
 			ElympicsUpdateDuration = TickDuration;
+			_previousUtcForDeltaTime = DateTime.UtcNow;
 		}
 
 		public void Destroy()
@@ -87,17 +88,17 @@ namespace Elympics
 			DestroyImmediate(gameObject);
 		}
 
-
 		private void Update()
 		{
+			if (!ShouldDoElympicsUpdate())
+				return;
+
 			var currentUtc = DateTime.UtcNow;
 			_timer += CalculateDeltaBasedOnUtcNow(currentUtc);
 
 			while (_timer >= ElympicsUpdateDuration)
 			{
 				_timer -= ElympicsUpdateDuration;
-				if (!ShouldDoFixedUpdate())
-					continue;
 
 				_elympicsUpdateStopwatch.Stop();
 				if (Config.DetailedNetworkLog)
@@ -163,7 +164,7 @@ namespace Elympics
 			return elympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
 		}
 
-		protected virtual  bool ShouldDoFixedUpdate() => true;
+		protected virtual  bool ShouldDoElympicsUpdate() => true;
 		protected abstract void ElympicsFixedUpdate();
 
 		protected virtual void ElympicsLateFixedUpdate()

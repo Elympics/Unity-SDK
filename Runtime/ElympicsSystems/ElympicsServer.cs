@@ -101,7 +101,7 @@ namespace Elympics
 				elympicsBehavioursManager.OnPlayerConnected(player);
 		}
 
-		protected override bool ShouldDoFixedUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
+		protected override bool ShouldDoElympicsUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
 
 		protected override void ElympicsFixedUpdate()
 		{

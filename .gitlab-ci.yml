@@ -8,8 +8,6 @@ variables:
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
 
-cache: {}
-
 stages:
   - prepare-version
   - prepare-license
@@ -21,8 +19,17 @@ stages:
   - release
 
 default:
+  cache: {}
   tags:
     - docker
+
+# source: https://stackoverflow.com/a/69819558
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
 
 .cond.license:
   rules:
@@ -31,17 +38,17 @@ default:
 
 .cond.releasebranch:
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/
+    - if: '$CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 .cond.release.auto:
   rules: &cond_release_auto_rules
-    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: always
 
 .cond.release.post:
   rules: &cond_release_post_rules
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 .cond.release.always:
@@ -51,7 +58,7 @@ default:
 
 .cond.release.manual:
   rules:
-    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
 
 .unity_image:

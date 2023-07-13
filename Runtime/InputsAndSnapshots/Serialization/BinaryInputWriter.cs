@@ -1,36 +1,36 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Elympics
 {
-	internal class BinaryInputWriter : BinaryWriter, IBinaryInputWriter, IDisposable
-	{
-		private readonly MemoryStream memoryStream;
+    internal class BinaryInputWriter : BinaryWriter, IBinaryInputWriter, IDisposable
+    {
+        private readonly MemoryStream _memoryStream;
 
-		public BinaryInputWriter() : base(new MemoryStream())
-		{
-			memoryStream = (MemoryStream) OutStream;
-		}
+        public BinaryInputWriter() : base(new MemoryStream())
+        {
+            _memoryStream = (MemoryStream)OutStream;
+        }
 
-		protected override void Dispose(bool disposing)
-		{
-			base.Dispose(disposing);
-			if (disposing)
-				memoryStream.Dispose();
-		}
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+                _memoryStream.Dispose();
+        }
 
-		public void ResetStream()
-		{
-			memoryStream.SetLength(0);
-		}
+        public void ResetStream()
+        {
+            _memoryStream.SetLength(0);
+        }
 
-		public byte[] GetData()
-		{
-			if (memoryStream.Length == 0)
-				return null; // avoid unnecessary allocation
-			return memoryStream.ToArray();
-		}
+        public byte[] GetData()
+        {
+            if (_memoryStream.Length == 0)
+                return null; // avoid unnecessary allocation
+            return _memoryStream.ToArray();
+        }
 
-		public void Write<TEnum>(TEnum value) where TEnum : Enum => base.Write((int) (object) value);
-	}
+        public void Write<TEnum>(TEnum value) where TEnum : Enum => base.Write((int)(object)value);
+    }
 }

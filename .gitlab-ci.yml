@@ -1,5 +1,6 @@
 variables:
-  NODE_VERSION: 18.13.0
+  NODE_VERSION: "18.13.0"
+  DOTNET_VERSION: "6.0"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
   UNITY_ARCH: linux-il2cpp-1.0.1
@@ -8,107 +9,81 @@ variables:
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
   FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
 
-cache: {}
-
 stages:
-  - prepare
+  - prepare-version
+  - prepare-license
+  - prepare-project
   - test
+  - check-style
   - trigger
   - pre-release
   - release
 
 default:
+  cache: {}
   tags:
     - docker
 
-.cond.releasebranch:
+# source: https://stackoverflow.com/a/69819558
+workflow:
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/
-      when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
 
-.cond.release.auto:
-  rules:
-    - if: $CI_COMMIT_BRANCH == 'main'
-      when: always
-
-.cond.release.always:
-  rules:
-    - if: $CI_COMMIT_BRANCH == 'main'
-      when: always
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
-      when: always
-
-.cond.release.post:
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
-      when: always
-
-.cond.release.manual:
-  rules:
-    - if: $CI_COMMIT_BRANCH == 'main'
-      when: manual
-
-.env_unity: &env_unity
-  image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
-
-.env_node: &env_node
-  image: node:$NODE_VERSION
-
-.env_ubuntu: &env_ubuntu
-  image: ubuntu
-
-.env_bash: &env_bash
-  image: bash
-
-.node_before_script: &node_before_script
-  before_script:
-    - npm install -g conventional-changelog-cli@2.2.2
-
-.unity_before_script: &unity_before_script
-  before_script:
-    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
-    - apt-get update && apt-get install -y --no-install-recommends xsltproc
-    - ./.scripts/ci/before_script.sh
-
-.ubuntu_before_script: &ubuntu_before_script
-  before_script:
-    - apt-get update && apt-get install -y --no-install-recommends git
-
-.bash_before_script: &bash_before_script
-  before_script:
-    - apk add --no-cache jq
-
-.license: &license
+.cond.license:
   rules:
     - if: '$UNITY_LICENSE != null'
       when: always
 
-.unity_defaults: &unity_defaults
-  <<:
-    - *env_unity
-    - *unity_before_script
-    - *license
+.cond.releasebranch:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
 
-.node_defaults: &node_defaults
-  <<:
-    - *env_node
-    - *node_before_script
+.cond.release.auto:
+  rules: &cond_release_auto_rules
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
 
-.ubuntu_defaults: &ubuntu_defaults
-  <<:
-    - *env_ubuntu
-    - *ubuntu_before_script
+.cond.release.post:
+  rules: &cond_release_post_rules
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
 
-.bash_defaults: &bash_defaults
-  <<:
-    - *env_bash
-    - *bash_before_script
+.cond.release.always:
+  rules:
+    - *cond_release_auto_rules
+    - *cond_release_post_rules
+
+.cond.release.manual:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+
+.unity_image:
+  image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
+
+.node_image:
+  image: node:$NODE_VERSION
+
+.bash_image:
+  image: bash
+
+.unity_default:
+  before_script: &unity_default_before_script
+    - ./.scripts/ci/before_script.sh
 
 get-package-version:
-  <<: *bash_defaults
-  stage: prepare
+  extends:
+    - .bash_image
+    - .cond.releasebranch
+  stage: prepare-version
   variables:
     GIT_DEPTH: 1
+  before_script:
+    - apk add --no-cache jq
   script:
     - export PACKAGE_VERSION=$(./.scripts/ci/semver_from_package.sh package.json)
     - echo PACKAGE_VERSION=$PACKAGE_VERSION | tee prepare.env
@@ -119,10 +94,10 @@ get-package-version:
       dotenv: prepare.env
 
 get-branch-version:
-  <<: *bash_defaults
-  stage: prepare
   extends:
+    - .bash_image
     - .cond.releasebranch
+  stage: prepare-version
   variables:
     GIT_DEPTH: 1
   script:
@@ -132,11 +107,14 @@ get-branch-version:
       dotenv: prepare.env
 
 get-activation-file:
-  <<: *unity_before_script
   rules:
     - if: '$UNITY_LICENSE == null'
       when: manual
-  stage: prepare
+  stage: prepare-license
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
   script:
     - ./.scripts/ci/get_activation_file.sh
   artifacts:
@@ -144,32 +122,86 @@ get-activation-file:
       - $UNITY_ACTIVATION_FILE
     expire_in: 10 min
 
-.test: &test
-  <<: *unity_defaults
-  stage: test
+create-testing-project:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: prepare-project
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
+    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
   script:
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
+    - ./.scripts/ci/generate_solution_files.sh
+  artifacts:
+    paths:
+      - "./$TESTING_PROJECT_NAME"
+    expire_in: 1 hour
+
+.test:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: test
+  needs:
+    - job: create-testing-project
+      artifacts: true
+  before_script:
+    - *unity_default_before_script
+    - apt-get update && apt-get install -y --no-install-recommends xsltproc
+  script:
     - ./.scripts/ci/test.sh
   artifacts:
     when: always
-    expire_in: 2 weeks
     paths:
       - "$TEST_PLATFORM-results.xml"
+    expire_in: 2 weeks
     reports:
       junit: "$TEST_PLATFORM-results.xml"
 
 test:playmode:
-  <<: *test
+  extends: .test
   variables:
     TEST_PLATFORM: playmode
     TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
 
 test:editmode:
-  <<: *test
+  extends: .test
   variables:
     TEST_PLATFORM: editmode
     TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+
+verify-formatting:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: check-style
+  needs:
+    - job: test:playmode
+      artifacts: false
+    - job: test:editmode
+      artifacts: false
+    - job: create-testing-project
+      artifacts: true
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+    - apt-get update && apt-get install -y --no-install-recommends jq dotnet-sdk-$DOTNET_VERSION
+  script:
+    - ./.scripts/ci/generate_formatting_report.sh
+  artifacts:
+    when: always
+    paths:
+      - format-report.codequality.json
+    expire_in: 2 weeks
+    reports:
+      codequality: format-report.codequality.json
 
 .trigger:
   extends: .cond.releasebranch
@@ -182,8 +214,9 @@ test:editmode:
   inherit:
     variables: false
   variables:
-    CI_ELYMPICS_SDK_VERSION_OVERRIDE: $CI_COMMIT_SHA
+    CI_ELYMPICS_SDK_VERSION_OVERRIDE: "$CI_COMMIT_SHA"
     CI_ELYMPICS_SDK_SOURCE_OVERRIDE: "$CI_PROJECT_URL.git"
+    GIT_DEPTH: 1
 
 trigger:tanks:
   extends: .trigger
@@ -198,29 +231,30 @@ trigger:spellz:
     strategy: depend
 
 create-changelog:
-  <<: *node_defaults
-  stage: pre-release
   extends:
+    - .node_image
     - .cond.releasebranch
+  stage: pre-release
   needs:
     - job: get-package-version
       artifacts: true
     - job: get-branch-version
       artifacts: true
+  before_script:
+    - npm install -g conventional-changelog-cli@2.2.2
+    - git config user.email "bot@elympics.cc"
+    - git config user.name "Elympics Bot"
+    - git remote remove gitlab_origin || true
+    - git remote add gitlab_origin https://oauth2:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
   script:
-    - |
-      ./.scripts/ci/bump_version_and_generate_changelog.sh || exit 137
-      git config user.email "bot@elympics.cc"
-      git config user.name "Elympics Bot"
-      git remote remove gitlab_origin || true
-      git remote add gitlab_origin https://oauth2:$GITLAB_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
-      ./.scripts/ci/commit_changelog_and_version.sh
+    - ./.scripts/ci/bump_version_and_generate_changelog.sh || exit 137
+    - ./.scripts/ci/commit_changelog_and_version.sh
   allow_failure:
     exit_codes: 137
 
 get-changelog-for-release:
-  <<: *node_defaults
   extends:
+    - .node_image
     - .cond.release.always
   stage: pre-release
   needs:
@@ -232,8 +266,9 @@ get-changelog-for-release:
       artifacts: false
   variables:
     GIT_DEPTH: 1
-  script:
+  before_script:
     - npm install changelog-parser
+  script:
     - echo $PACKAGE_VERSION
     - node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION
     - export RELEASE_NOTES=$(node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION)
@@ -244,7 +279,7 @@ get-changelog-for-release:
       - release.description
 
 check-if-release-possible:
-  <<: *ubuntu_defaults
+  image: alpine/git
   extends:
     - .cond.release.auto
   stage: pre-release
@@ -254,6 +289,8 @@ check-if-release-possible:
     - job: test:playmode
       artifacts: false
     - job: test:editmode
+      artifacts: false
+    - job: verify-formatting
       artifacts: false
   script:
     - ./.scripts/ci/ensure_tag_does_not_exist.sh $RELEASE_TAG_VERSION

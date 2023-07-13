@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -31,7 +31,7 @@ namespace Elympics
             // because used element template contains useless element which have to be disabled - it takes up space!
             _pauseToggle.Q<VisualElement>(classes: "unity-toggle__input").style.display = DisplayStyle.None;
             _pauseToggle.SetEnabled(EditorApplication.isPlaying);
-            _pauseToggle.RegisterValueChangedCallback(valueChangedEvent =>
+            _ = _pauseToggle.RegisterValueChangedCallback(valueChangedEvent =>
             {
                 _saveButton.SetEnabled(valueChangedEvent.newValue);
                 _loadButton.SetEnabled(valueChangedEvent.newValue);
@@ -45,10 +45,7 @@ namespace Elympics
 
             _saveButton = root.Q<Button>("save-control");
             _saveButton.SetEnabled(false);
-            _saveButton.clicked += () =>
-            {
-                ReplayFileManager.SaveServerReplay(_tickListDisplayer, _tickDataDisplayer);
-            };
+            _saveButton.clicked += () => ReplayFileManager.SaveServerReplay(_tickListDisplayer, _tickDataDisplayer);
 
             _loadButton = root.Q<Button>("load-control");
             _loadButton.SetEnabled(!EditorApplication.isPlaying);
@@ -56,7 +53,7 @@ namespace Elympics
             {
                 var tickBeforeLoad = _tickListDisplayer.LatestTick;
 
-                ReplayFileManager.LoadServerReplay(_tickListDisplayer, _tickDataDisplayer);
+                _ = ReplayFileManager.LoadServerReplay(_tickListDisplayer, _tickDataDisplayer);
 
                 ApplyLatestTickIfNeeded(true);
                 _tickDataDisplayer.Deselect();
@@ -69,22 +66,16 @@ namespace Elympics
             };
 
             _helpLink = root.Q<Label>("help-control");
-            _helpLink.RegisterCallback<MouseDownEvent> (e =>
-            {
-                Application.OpenURL("https://docs.elympics.cc/testing-troubleshooting/networked-simulation-analyzer/");
-            });
+            _helpLink.RegisterCallback<MouseDownEvent>(e => Application.OpenURL("https://docs.elympics.cc/testing-troubleshooting/networked-simulation-analyzer/"));
 
             // apply state button setup
             _applyStateButton = root.Q<Button>("apply-state-button");
             _applyStateButton.SetEnabled(false);
-            _applyStateButton.clicked += () =>
-            {
-                ApplyTickStateIfNeeded(_tickDataDisplayer.SelectedTick?.Snapshot, true);
-            };
+            _applyStateButton.clicked += () => ApplyTickStateIfNeeded(_tickDataDisplayer.SelectedTick?.Snapshot, true);
 
             // auto apply state toggle setup
             _autoApplyStateToggle = root.Q<Toggle>("auto-apply-control");
-            _autoApplyStateToggle.RegisterValueChangedCallback(valueChangedEvent =>
+            _ = _autoApplyStateToggle.RegisterValueChangedCallback(valueChangedEvent =>
             {
                 AdjustApplyStateButtonClickability();
 
@@ -127,7 +118,7 @@ namespace Elympics
 
         private void AdjustControlsToPlayMode(PlayModeStateChange state)
         {
-            bool startedPlayMode = state == PlayModeStateChange.EnteredPlayMode;
+            var startedPlayMode = state == PlayModeStateChange.EnteredPlayMode;
 
             _pauseToggle.SetEnabled(startedPlayMode);
             _pauseToggle.value = false;
@@ -160,7 +151,7 @@ namespace Elympics
             Physics2D.simulationMode = SimulationMode2D.Script;
 
             Physics.Simulate(float.Epsilon);
-            Physics2D.Simulate(float.Epsilon);
+            _ = Physics2D.Simulate(float.Epsilon);
 
             Physics.autoSimulation = oldPhysicsAutoSimulation;
             Physics2D.simulationMode = oldPhysics2DAutoSimulation;

@@ -1,33 +1,33 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace Elympics
 {
-	public class GameSceneManager : MonoBehaviour
-	{
-		[SerializeField] private ElympicsClient elympicsClient;
-		[SerializeField] private ElympicsBot    elympicsBot;
-		[SerializeField] private ElympicsServer elympicsServer;
+    public class GameSceneManager : MonoBehaviour
+    {
+        [SerializeField] private ElympicsClient elympicsClient;
+        [SerializeField] private ElympicsBot elympicsBot;
+        [SerializeField] private ElympicsServer elympicsServer;
 
-		private GameSceneInitializer _gameSceneInitializer;
+        private GameSceneInitializer _gameSceneInitializer;
 
-		public void Awake()
-		{
-			try
-			{
-				var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-				_gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);
-				_gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsGameConfig);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-		}
+        public void Awake()
+        {
+            try
+            {
+                var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+                _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);
+                _gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsGameConfig);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
-		private void OnDisable()
-		{
-			_gameSceneInitializer?.Dispose();
-		}
-	}
+        private void OnDisable()
+        {
+            _gameSceneInitializer?.Dispose();
+        }
+    }
 }

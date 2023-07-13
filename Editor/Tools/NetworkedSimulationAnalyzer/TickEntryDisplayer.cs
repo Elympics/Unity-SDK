@@ -17,7 +17,7 @@ namespace Elympics
 
         internal void SetTickEntryData(TickEntryData tickEntryData)
         {
-            float timeUsage = tickEntryData.ExecutionTime / ServerAnalyzerUtils.ExpectedTime;
+            var timeUsage = tickEntryData.ExecutionTime / ServerAnalyzerUtils.ExpectedTime;
 
             _nrLabel.text = "#" + tickEntryData.Tick.ToString("000000");
             _executionTime.text = ServerAnalyzerUtils.FormatFloatMilliseconds(tickEntryData.ExecutionTime);

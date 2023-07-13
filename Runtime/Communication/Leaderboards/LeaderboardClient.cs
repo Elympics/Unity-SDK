@@ -22,7 +22,7 @@ namespace Elympics
         /// <param name="queueName">No filtering by queue if null provided</param>
         public LeaderboardClient(int pageSize, LeaderboardTimeScope timeScope, string queueName = null, LeaderboardGameVersion gameVersion = LeaderboardGameVersion.All)
         {
-            if (pageSize < 1 || pageSize > 100)
+            if (pageSize is < 1 or > 100)
                 throw new ArgumentOutOfRangeException(nameof(pageSize), "Must be in range 1 - 100 (inclusive)");
 
             if (timeScope == null)
@@ -61,7 +61,7 @@ namespace Elympics
 
         private void SendLeaderboardRequest(string url, int pageNumber, Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure)
         {
-            onFailure = onFailure ?? DefaultFailure;
+            onFailure ??= DefaultFailure;
 
             if (_isBusy)
                 onFailure(LeaderboardFetchError.RequestAlreadyInProgress);

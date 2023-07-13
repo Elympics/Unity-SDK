@@ -1,8 +1,8 @@
-﻿namespace Elympics
+namespace Elympics
 {
-	public class LayerSynchronizationStatus
-	{
-		public string Name;
-		public bool   Enabled;
-	}
+    public class LayerSynchronizationStatus
+    {
+        public string Name;
+        public bool Enabled;
+    }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using MatchTcpClients.Synchronizer;
 using Plugins.Elympics.Plugins.ParrelSync;
@@ -7,92 +7,92 @@ using UnityEngine.UI;
 
 namespace Elympics.EgbTest
 {
-	public class DataDisplayer : MonoBehaviour, IClientHandlerGuid
-	{
-		[SerializeField] private InputField sentGeDataField;
-		[SerializeField] private InputField sentMmDataField;
-		[SerializeField] private InputField receivedGeDataField;
-		[SerializeField] private InputField receivedMmDataField;
+    public class DataDisplayer : MonoBehaviour, IClientHandlerGuid
+    {
+        [SerializeField] private InputField sentGeDataField;
+        [SerializeField] private InputField sentMmDataField;
+        [SerializeField] private InputField receivedGeDataField;
+        [SerializeField] private InputField receivedMmDataField;
 
-		private static readonly Color HighlightColor = new Color(1, 0.58f, 0.58f);
+        private static readonly Color HighlightColor = new(1, 0.58f, 0.58f);
 
-		private byte[] _sentGeData;
-		private float[] _sentMmData;
+        private byte[] _sentGeData;
+        private float[] _sentMmData;
 
-		private void Start()
-		{
-			if (ElympicsLobbyClient.Instance != null)
-			{
-				_sentGeData = GameStarter.SentGeData;
-				_sentMmData = GameStarter.SentMmData;
-			}
-			else
-			{
-				var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
-				var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
-				var testPlayerData = config.TestPlayers[playerIndex];
-				_sentGeData = testPlayerData.gameEngineData;
-				_sentMmData = testPlayerData.matchmakerData;
-			}
-			sentGeDataField.text = DataConverter.StringifyGameEngineData(_sentGeData);
-			sentMmDataField.text = DataConverter.StringifyMatchmakerData(_sentMmData);
-		}
+        private void Start()
+        {
+            if (ElympicsLobbyClient.Instance != null)
+            {
+                _sentGeData = GameStarter.SentGeData;
+                _sentMmData = GameStarter.SentMmData;
+            }
+            else
+            {
+                var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
+                var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
+                var testPlayerData = config.TestPlayers[playerIndex];
+                _sentGeData = testPlayerData.gameEngineData;
+                _sentMmData = testPlayerData.matchmakerData;
+            }
+            sentGeDataField.text = DataConverter.StringifyGameEngineData(_sentGeData);
+            sentMmDataField.text = DataConverter.StringifyMatchmakerData(_sentMmData);
+        }
 
-		public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
-		{
-			if (data.GameEngineData?.SequenceEqual(_sentGeData ?? Array.Empty<byte>()) is true)
-				receivedGeDataField.text = sentGeDataField.text;
-			else
-			{
-				receivedGeDataField.text = DataConverter.StringifyGameEngineData(data.GameEngineData);
-				HighlightField(receivedGeDataField);
-			}
-			receivedGeDataField.readOnly = true;
+        public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
+        {
+            if (data.GameEngineData?.SequenceEqual(_sentGeData ?? Array.Empty<byte>()) is true)
+                receivedGeDataField.text = sentGeDataField.text;
+            else
+            {
+                receivedGeDataField.text = DataConverter.StringifyGameEngineData(data.GameEngineData);
+                HighlightField(receivedGeDataField);
+            }
+            receivedGeDataField.readOnly = true;
 
-			if (data.MatchmakerData?.SequenceEqual(_sentMmData ?? Array.Empty<float>()) is true)
-				receivedMmDataField.text = sentMmDataField.text;
-			else
-			{
-				receivedMmDataField.text = DataConverter.StringifyMatchmakerData(data.MatchmakerData);
-				HighlightField(receivedMmDataField);
-			}
-			receivedMmDataField.readOnly = true;
-		}
+            if (data.MatchmakerData?.SequenceEqual(_sentMmData ?? Array.Empty<float>()) is true)
+                receivedMmDataField.text = sentMmDataField.text;
+            else
+            {
+                receivedMmDataField.text = DataConverter.StringifyMatchmakerData(data.MatchmakerData);
+                HighlightField(receivedMmDataField);
+            }
+            receivedMmDataField.readOnly = true;
+        }
 
-		private static void HighlightField(Selectable field)
-		{
-			var colors = field.colors;
-			colors.normalColor = colors.selectedColor = HighlightColor;
-			field.colors = colors;
-		}
+        private static void HighlightField(Selectable field)
+        {
+            var colors = field.colors;
+            colors.normalColor = colors.selectedColor = HighlightColor;
+            field.colors = colors;
+        }
 
-		public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
-		{
-			Debug.LogError("This sample is meant for Debug Online and Online modes only.");
-		}
+        public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
+        {
+            Debug.LogError("This sample is meant for Debug Online and Online modes only.");
+        }
 
-		#region Unused callbacks
+        #region Unused callbacks
 
-		public void OnConnected(TimeSynchronizationData data) { }
+        public void OnConnected(TimeSynchronizationData data) { }
 
-		public void OnConnectingFailed() { }
+        public void OnConnectingFailed() { }
 
-		public void OnDisconnectedByServer() { }
+        public void OnDisconnectedByServer() { }
 
-		public void OnDisconnectedByClient() { }
+        public void OnDisconnectedByClient() { }
 
-		public void OnSynchronized(TimeSynchronizationData data) { }
+        public void OnSynchronized(TimeSynchronizationData data) { }
 
-		public void OnAuthenticated(Guid userId) { }
+        public void OnAuthenticated(Guid userId) { }
 
-		public void OnAuthenticatedFailed(string errorMessage) { }
+        public void OnAuthenticatedFailed(string errorMessage) { }
 
-		public void OnMatchJoined(Guid matchId) { }
+        public void OnMatchJoined(Guid matchId) { }
 
-		public void OnMatchJoinedFailed(string errorMessage) { }
+        public void OnMatchJoinedFailed(string errorMessage) { }
 
-		public void OnMatchEnded(Guid matchId) { }
+        public void OnMatchEnded(Guid matchId) { }
 
-		#endregion Unused callbacks
-	}
+        #endregion Unused callbacks
+    }
 }

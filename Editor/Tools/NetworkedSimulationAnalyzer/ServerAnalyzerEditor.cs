@@ -1,9 +1,9 @@
-﻿using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEditor;
+using System;
 using System.Collections.Generic;
 using Plugins.Elympics.Plugins.ParrelSync;
-using System;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Elympics
 {
@@ -13,16 +13,16 @@ namespace Elympics
         private const string EditorTitle = "Networked Simulation Analyzer";
         private static readonly Vector2 MinWindowSize = new Vector2Int(660, 400);
 
-        [SerializeField] private VisualTreeAsset uxml = null;
-        [SerializeField] private VisualTreeAsset tickEntryTemplate = null;
-        [SerializeField] private VisualTreeAsset inputDataTemplate = null;
+        [SerializeField] private VisualTreeAsset uxml;
+        [SerializeField] private VisualTreeAsset tickEntryTemplate;
+        [SerializeField] private VisualTreeAsset inputDataTemplate;
 
-        private TickListDisplayer _tickListDisplayer = null;
-        private TickDataDisplayer _tickDataDisplayer = null;
-        private ServerAnalyzerController _serverAnalyzerController = null;
+        private TickListDisplayer _tickListDisplayer;
+        private TickDataDisplayer _tickDataDisplayer;
+        private ServerAnalyzerController _serverAnalyzerController;
 
         // TODO: find better way because its a bit dirty (maybe use change event from ElympicsConfig)
-        private bool closedForcefully = false;
+        private bool closedForcefully;
 
         public bool Paused => _serverAnalyzerController?.Paused ?? false;
 
@@ -76,7 +76,7 @@ namespace Elympics
         {
             _serverAnalyzerController.SetSnapshotApplier(snapshotApplier);
 
-            _tickDataDisplayer?.InitializeInputs(isBots ?? new bool[0]);
+            _tickDataDisplayer?.InitializeInputs(isBots ?? Array.Empty<bool>());
 
             var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
             ServerAnalyzerUtils.ExpectedTime = 1000 * config.TickDuration;

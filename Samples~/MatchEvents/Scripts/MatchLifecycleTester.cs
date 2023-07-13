@@ -32,10 +32,10 @@ namespace MatchEvents
             });
 
         private static void OnAuthenticationFailed(string error) => Serializer.PrintCall(
-	        new Dictionary<string, object>
-	        {
-		        { nameof(error), error },
-	        });
+            new Dictionary<string, object>
+            {
+                { nameof(error), error },
+            });
 
         #endregion ElympicsLobbyClient
 
@@ -54,10 +54,10 @@ namespace MatchEvents
             });
 
         private static void MatchmakerOnMatchFound(Guid matchId) => Serializer.PrintCall(
-	        new Dictionary<string, object>
-	        {
-		        { nameof(matchId), matchId }
-	        });
+            new Dictionary<string, object>
+            {
+                { nameof(matchId), matchId }
+            });
 
         private static void MatchmakerOnMatchmakingFailed((string Error, Guid MatchId) obj) => Serializer.PrintCall(
             new Dictionary<string, object>
@@ -67,17 +67,17 @@ namespace MatchEvents
             });
 
         private static void MatchmakerOnMatchmakingWarning((string Warning, Guid MatchId) obj) => Serializer.PrintCall(
-	        new Dictionary<string, object>
-	        {
-		        { nameof(obj.Warning), obj.Warning },
-		        { nameof(obj.MatchId), obj.MatchId }
-	        });
+            new Dictionary<string, object>
+            {
+                { nameof(obj.Warning), obj.Warning },
+                { nameof(obj.MatchId), obj.MatchId }
+            });
 
         private static void MatchmakerOnMatchmakingCancelled(Guid matchId) => Serializer.PrintCall(
-	        new Dictionary<string, object>
-	        {
-		        { nameof(matchId), matchId }
-	        });
+            new Dictionary<string, object>
+            {
+                { nameof(matchId), matchId }
+            });
 
         #endregion IMatchmakerClient
     }

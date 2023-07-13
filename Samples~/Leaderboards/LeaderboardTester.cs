@@ -1,5 +1,5 @@
-using Elympics;
 using System;
+using Elympics;
 using Elympics.Models.Authentication;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -32,8 +32,8 @@ public class LeaderboardTester : MonoBehaviour
     private void CreateLeaderboardClient()
     {
         var timeScopeObject = timeScope != LeaderboardTimeScopeType.Custom
-	        ? new LeaderboardTimeScope(timeScope)
-	        : new LeaderboardTimeScope(DateTimeOffset.Parse(customTimeScopeFrom), DateTimeOffset.Parse(customTimeScopeTo));
+            ? new LeaderboardTimeScope(timeScope)
+            : new LeaderboardTimeScope(DateTimeOffset.Parse(customTimeScopeFrom), DateTimeOffset.Parse(customTimeScopeTo));
         _leaderboardClient = new LeaderboardClient(pageSize, timeScopeObject, queue, gameVersion);
     }
     [UsedImplicitly] private void FetchFirst() => _leaderboardClient.FetchFirstPage(DisplayEntries, CustomFailHandler);

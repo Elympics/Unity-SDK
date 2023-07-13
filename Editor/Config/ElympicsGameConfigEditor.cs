@@ -8,10 +8,10 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace Elympics
+namespace Elympics.Editor
 {
     [CustomEditor(typeof(ElympicsGameConfig))]
-    internal partial class ElympicsGameConfigEditor : Editor
+    internal partial class ElympicsGameConfigEditor : UnityEditor.Editor
     {
         private const int MaxTicks = 128;
         private const int MinTicks = 1;

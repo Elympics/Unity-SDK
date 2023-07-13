@@ -4,16 +4,16 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Elympics
+namespace Elympics.Editor
 {
     [CustomEditor(typeof(ElympicsConfig))]
-    public class ElympicsConfigEditor : Editor
+    public class ElympicsConfigEditor : UnityEditor.Editor
     {
         private SerializedProperty _currentGameIndex;
         private SerializedProperty _availableGames;
 
         private Object _lastChosenGamePropertyObject;
-        private Editor _lastChosenGameEditor;
+        private UnityEditor.Editor _lastChosenGameEditor;
         private SerializedProperty _elympicsApiEndpoint;
         private SerializedProperty _elympicsLobbyEndpoint;
         private SerializedProperty _elympicsGameServersEndpoint;

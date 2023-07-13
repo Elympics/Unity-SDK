@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Web;
+using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -14,10 +15,11 @@ using AuthRoutes = ElympicsApiModels.ApiModels.Auth.Routes;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
 using Regions = ElympicsApiModels.ApiModels.Regions.Routes;
 using Routes = ElympicsApiModels.ApiModels.Users.Routes;
+using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
 
 namespace Elympics
 {
-    public static class ElympicsWebIntegration
+    internal static class ElympicsWebIntegration
     {
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";
@@ -287,6 +289,50 @@ namespace Elympics
                         Debug.Log($"Set {endpoints.Lobby} {endpoints.GameServers} elympics endpoints");
                     }
                 }
+            }
+        }
+
+        public static void PostStartEvent()
+        {
+            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+            PostTelemetryEvent(UsageStatisticsRoutes.Start, new StartRequest { gameId = gameConfig.GameId });
+        }
+
+        public static void PostPlayEvent(string mode)
+        {
+            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+            PostTelemetryEvent(UsageStatisticsRoutes.Play, new PlayRequest
+            {
+                gameId = gameConfig.GameId,
+                mode = mode,
+            });
+        }
+
+        public static void PostStopEvent()
+        {
+            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+            var requestBody = new StopRequest { gameId = gameConfig.GameId };
+            var uri = GetCombinedUrl(ElympicsWebEndpoint, UsageStatisticsRoutes.Base, UsageStatisticsRoutes.Stop);
+            var asyncOperation = ElympicsEditorWebClient.SendJsonPostRequestApi(uri, requestBody, auth: ElympicsConfig.IsLogin);
+            while (asyncOperation.isDone)
+                ;
+        }
+
+        private static void PostTelemetryEvent(string pathSegment, object requestBody)
+        {
+            try
+            {
+                CheckAuthTokenAndRefreshIfNeeded(_ => OnContinuation());
+            }
+            catch (ElympicsException)
+            {
+                OnContinuation();
+            }
+
+            void OnContinuation()
+            {
+                var uri = GetCombinedUrl(ElympicsWebEndpoint, UsageStatisticsRoutes.Base, pathSegment);
+                _ = ElympicsEditorWebClient.SendJsonPostRequestApi(uri, requestBody, null, ElympicsConfig.IsLogin);
             }
         }
 

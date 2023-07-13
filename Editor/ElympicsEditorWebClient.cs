@@ -54,6 +54,7 @@ namespace Elympics
             var request = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
             var bodyString = JsonUtility.ToJson(body);
             var bodyRaw = Encoding.ASCII.GetBytes(bodyString);
+            request.timeout = 5;  // TODO ~dsygocki 2023-07-15
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
 

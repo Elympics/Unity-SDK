@@ -1,4 +1,4 @@
-namespace Elympics
+namespace Elympics.Editor
 {
     internal partial class ElympicsGameConfigEditor
     {

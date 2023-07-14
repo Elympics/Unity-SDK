@@ -24,13 +24,11 @@ default:
   tags:
     - docker
 
-# source: https://stackoverflow.com/a/69819558
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
-      when: never
     - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
 
 .cond.license:
   rules:

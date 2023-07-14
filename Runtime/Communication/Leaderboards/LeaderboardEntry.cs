@@ -11,14 +11,16 @@ namespace Elympics
         public string UserId { get; }
         public int Position { get; }
         public float Score { get; }
-        public DateTimeOffset ScoredAt { get; }
+        public DateTimeOffset? ScoredAt { get; }
 
         internal LeaderboardEntry(LeaderboardResponseEntry entry)
         {
             UserId = entry.userId;
             Position = entry.position;
             Score = entry.points;
-            ScoredAt = DateTimeOffset.Parse(entry.endedAt);
+
+            if (DateTimeOffset.TryParse(entry.endedAt, out var endedAt))
+                ScoredAt = endedAt;
         }
     }
 }

@@ -19,7 +19,7 @@ using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
 
 namespace Elympics
 {
-    internal static class ElympicsWebIntegration
+    public static class ElympicsWebIntegration
     {
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";

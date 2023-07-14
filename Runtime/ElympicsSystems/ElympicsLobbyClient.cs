@@ -295,6 +295,24 @@ namespace Elympics
             }, AuthData, cancellationToken);
         }
 
+        public void HasAnyUnfinishedMatch(Action<bool> onSuccess, Action<string> onFailure = null)
+        {
+            _matchmaker.CheckForAnyUnfinishedMatch(new Guid(_gameConfig.GameId), _gameConfig.GameVersion, AuthData,
+                onSuccess, e => onFailure?.Invoke(e.Message));
+        }
+
+        public void RejoinLastOnlineMatch(bool loadGameplaySceneOnFinished = true, CancellationToken ct = default)
+        {
+            if (!CanJoinMatch())
+                return;
+
+            SetUpMatch(JoinedMatchMode.Online);
+            _matchmakingInProgress = true;
+            _loadingSceneOnFinished = loadGameplaySceneOnFinished;
+
+            _matchmaker.RejoinLastMatchAsync(new Guid(_gameConfig.GameId), _gameConfig.GameVersion, AuthData, ct);
+        }
+
         private bool CanJoinMatch()
         {
             if (_matchmakingInProgress)

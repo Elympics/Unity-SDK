@@ -22,6 +22,8 @@ namespace Elympics.Models.Matchmaking.LongPolling
         {
             public string MatchId;
             public string ServerAddress;
+            public string QueueName;
+            public string RegionName;
             public string TcpUdpServerAddress;
             public string WebServerAddress;
             public string UserSecret;

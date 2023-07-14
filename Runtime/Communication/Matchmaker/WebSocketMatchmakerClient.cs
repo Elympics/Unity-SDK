@@ -31,7 +31,7 @@ namespace Elympics
 
         private Action<IFromLobby> _onMessage;
 
-        internal WebSocketMatchmakerClient(string baseUrl)
+        internal WebSocketMatchmakerClient(string baseUrl) : base(baseUrl)
         {
             var uriBuilder = new UriBuilder(baseUrl);
             var oldPath = uriBuilder.Path.TrimEnd('/');

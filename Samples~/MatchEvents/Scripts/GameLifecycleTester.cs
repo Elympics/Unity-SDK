@@ -30,7 +30,7 @@ namespace MatchEvents
             }
 
             ConnectingStarted?.Invoke();
-            StartCoroutine(Elympics.ConnectAndJoinAsPlayer(OnConnectAndJoinAsPlayerResult));
+            _ = StartCoroutine(Elympics.ConnectAndJoinAsPlayer(OnConnectAndJoinAsPlayerResult));
         }
 
         [UsedImplicitly]
@@ -46,7 +46,7 @@ namespace MatchEvents
             }
 
             ConnectingStarted?.Invoke();
-            StartCoroutine(Elympics.ConnectAndJoinAsSpectator(OnConnectAndJoinAsSpectatorResult));
+            _ = StartCoroutine(Elympics.ConnectAndJoinAsSpectator(OnConnectAndJoinAsSpectatorResult));
         }
 
         [UsedImplicitly]

@@ -8,35 +8,33 @@ namespace Elympics
         private static readonly int TickEntryHeight = 18;
 
         private readonly TickDataDisplayer _tickDataDisplayer;
-        private readonly ListView _tickList;
-        private readonly List<TickEntryData> _allTicksData;
 
-        internal TickEntryData LatestTick => _allTicksData.Count != 0 ? _allTicksData[_allTicksData.Count - 1] : null;
-        internal List<TickEntryData> AllTicksData => _allTicksData;
-        internal ListView TickListElement => _tickList;
+        internal TickEntryData LatestTick => AllTicksData.Count != 0 ? AllTicksData[^1] : null;
+        internal List<TickEntryData> AllTicksData { get; }
+        internal ListView TickListElement { get; }
 
         internal TickListDisplayer(VisualElement root, VisualTreeAsset tickEntryTemplate, TickDataDisplayer tickDataDisplayer)
         {
             _tickDataDisplayer = tickDataDisplayer;
 
             // Create data collection to bind
-            _allTicksData = new List<TickEntryData>();
+            AllTicksData = new List<TickEntryData>();
 
             // Store a reference to the list element and initialize it
-            _tickList = root.Q<ListView>("tick-list");
+            TickListElement = root.Q<ListView>("tick-list");
             InitializeTickList(tickEntryTemplate);
 
             // Register tick selection callback
-            _tickList.onSelectionChange += tickDataDisplayer.OnTickSelected;
+            TickListElement.onSelectionChange += tickDataDisplayer.OnTickSelected;
         }
 
         private void InitializeTickList(VisualTreeAsset listEntryTemplate)
         {
             // Ensure proper displaying
-            _tickList.Q<ScrollView>().horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            TickListElement.Q<ScrollView>().horizontalScrollerVisibility = ScrollerVisibility.Hidden;
 
             // Set up a make item function for a list entry
-            _tickList.makeItem = () =>
+            TickListElement.makeItem = () =>
             {
                 // Instantiate the UXML template for the entry and provide corresponding style
                 var newListEntry = listEntryTemplate.CloneTree();
@@ -56,25 +54,22 @@ namespace Elympics
             };
 
             // Set up bind function for a specific list entry
-            _tickList.bindItem = (item, index) =>
-            {
-                (item.userData as TickEntryDisplayer)?.SetTickEntryData(_allTicksData[index]);
-            };
+            TickListElement.bindItem = (item, index) => (item.userData as TickEntryDisplayer)?.SetTickEntryData(AllTicksData[index]);
 
             // Set the actual item's source list/array
-            _tickList.itemsSource = _allTicksData;
+            TickListElement.itemsSource = AllTicksData;
 
             // Set up list properties
-            _tickList.fixedItemHeight = TickEntryHeight;
-            _tickList.Q<ScrollView>().verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
+            TickListElement.fixedItemHeight = TickEntryHeight;
+            TickListElement.Q<ScrollView>().verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible;
         }
 
         internal void AddTick(ElympicsSnapshotWithMetadata snapshot)
         {
-            _allTicksData.Add(new TickEntryData(snapshot, _tickDataDisplayer.IsBots.Length));
+            AllTicksData.Add(new TickEntryData(snapshot, _tickDataDisplayer.IsBots.Length));
 
             // Refresh list visual state
-            _tickList.RefreshItems();
+            TickListElement.RefreshItems();
         }
     }
 }

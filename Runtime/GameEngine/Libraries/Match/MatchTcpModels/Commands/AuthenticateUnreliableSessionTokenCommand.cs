@@ -2,13 +2,13 @@ using System;
 
 namespace MatchTcpModels.Commands
 {
-	[Serializable]
-	public class AuthenticateUnreliableSessionTokenCommand : Command
-	{
-		public string SessionToken;
+    [Serializable]
+    public class AuthenticateUnreliableSessionTokenCommand : Command
+    {
+        public string SessionToken;
 
-		public AuthenticateUnreliableSessionTokenCommand() : base(CommandType.AuthenticateUnreliableSessionToken)
-		{
-		}
-	}
+        public AuthenticateUnreliableSessionTokenCommand() : base(CommandType.AuthenticateUnreliableSessionToken)
+        {
+        }
+    }
 }

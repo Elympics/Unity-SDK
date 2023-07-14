@@ -20,9 +20,9 @@ namespace Elympics
 
         /// <param name="pageSize">Must be in range 1 - 100 (inclusive)</param>
         /// <param name="queueName">No filtering by queue if null provided</param>
-        public LeaderboardClient(int pageSize, LeaderboardTimeScope timeScope, string queueName = null, LeaderboardGameVersion gameVersion = LeaderboardGameVersion.All)
+        public LeaderboardClient(int pageSize, LeaderboardTimeScope timeScope, string queueName = null, LeaderboardGameVersion gameVersion = LeaderboardGameVersion.All, LeaderboardType leaderboardType = LeaderboardType.BestResult)
         {
-            if (pageSize < 1 || pageSize > 100)
+            if (pageSize is < 1 or > 100)
                 throw new ArgumentOutOfRangeException(nameof(pageSize), "Must be in range 1 - 100 (inclusive)");
 
             if (timeScope == null)
@@ -30,6 +30,9 @@ namespace Elympics
 
             if (!Enum.IsDefined(typeof(LeaderboardGameVersion), gameVersion))
                 throw new ArgumentOutOfRangeException(nameof(gameVersion));
+
+            if (!Enum.IsDefined(typeof(LeaderboardType), leaderboardType))
+                throw new ArgumentOutOfRangeException(nameof(leaderboardType));
 
             var gameConfig = ElympicsConfig.Load().GetCurrentGameConfig();
             if (gameConfig == null)
@@ -43,6 +46,7 @@ namespace Elympics
                 { "GameVersion", gameVersion == LeaderboardGameVersion.All ? null : gameConfig.GameVersion },
                 { "QueueName", queueName },
                 { "TimeScope", timeScope.LeaderboardTimeScopeType.ToString() },
+                { "FetchType", leaderboardType == LeaderboardType.BestResult ? "Max" : "SumMax" },
             };
 
             if (timeScope.LeaderboardTimeScopeType == LeaderboardTimeScopeType.Custom)
@@ -61,7 +65,7 @@ namespace Elympics
 
         private void SendLeaderboardRequest(string url, int pageNumber, Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure)
         {
-            onFailure = onFailure ?? DefaultFailure;
+            onFailure ??= DefaultFailure;
 
             if (_isBusy)
                 onFailure(LeaderboardFetchError.RequestAlreadyInProgress);
@@ -121,5 +125,11 @@ namespace Elympics
     {
         All,
         Current,
+    }
+
+    public enum LeaderboardType
+    {
+        BestResult,
+        BestSumOfResults,
     }
 }

@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 [CustomEditor(typeof(FloatingJoystick))]
 public class FloatingJoystickEditor : JoystickEditor
@@ -12,7 +10,7 @@ public class FloatingJoystickEditor : JoystickEditor
 
         if (background != null)
         {
-            RectTransform backgroundRect = (RectTransform)background.objectReferenceValue;
+            var backgroundRect = (RectTransform)background.objectReferenceValue;
             backgroundRect.anchorMax = Vector2.zero;
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.pivot = center;

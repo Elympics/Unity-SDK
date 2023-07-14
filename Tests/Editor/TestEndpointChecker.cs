@@ -1,43 +1,42 @@
-﻿using System.Collections.Generic;
-using Elympics;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace Elympics.Editor.Tests
 {
-	public class TestEndpointChecker
-	{
-		private EditorEndpointChecker _endpointChecker;
+    public class TestEndpointChecker
+    {
+        private EditorEndpointChecker _endpointChecker;
 
-		private static IEnumerable<TestAddress> _testAddresses => new List<TestAddress>()
-		{
-			new TestAddress("https", false),
-			new TestAddress("https:", false),
-			new TestAddress("https://", false),
-			new TestAddress("https://test", true),
-			new TestAddress("https://test.domain/", true),
-			new TestAddress("https://test.domain/path", true),
-			new TestAddress("https://test.domain/path/", true)
-		};
+        private static IEnumerable<TestAddress> TestAddresses => new List<TestAddress>()
+        {
+            new("https", false),
+            new("https:", false),
+            new("https://", false),
+            new("https://test", true),
+            new("https://test.domain/", true),
+            new("https://test.domain/path", true),
+            new("https://test.domain/path/", true)
+        };
 
-		[SetUp]
-		public void SetUp()
-		{
-			_endpointChecker = new EditorEndpointChecker();
-		}
+        [SetUp]
+        public void SetUp()
+        {
+            _endpointChecker = new EditorEndpointChecker();
+        }
 
-		[Test]
-		public void TestUrlValidation([ValueSource(nameof(_testAddresses))] TestAddress testAddress)
-		{
-			_endpointChecker.UpdateUri(testAddress.Address);
-			Assert.AreEqual(_endpointChecker.IsUriCorrect, testAddress.IsCorrect);
-		}
+        [Test]
+        public void TestUrlValidation([ValueSource(nameof(TestAddresses))] TestAddress testAddress)
+        {
+            _endpointChecker.UpdateUri(testAddress.Address);
+            Assert.AreEqual(_endpointChecker.IsUriCorrect, testAddress.IsCorrect);
+        }
 
-		public class TestAddress
-		{
-			public string Address;
-			public bool IsCorrect;
+        public class TestAddress
+        {
+            public string Address;
+            public bool IsCorrect;
 
-			public TestAddress(string address, bool isCorrect) => (Address, IsCorrect) = (address, isCorrect);
-		}
-	}
+            public TestAddress(string address, bool isCorrect) => (Address, IsCorrect) = (address, isCorrect);
+        }
+    }
 }

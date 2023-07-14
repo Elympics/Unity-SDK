@@ -1,6 +1,5 @@
-using System.IO;
-using System.Linq;
 using System;
+using System.IO;
 using UnityEditor;
 
 namespace Elympics
@@ -34,13 +33,13 @@ namespace Elympics
 
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
             using (var br = new BinaryReader(fs))
-            if (!DeserializeServerData(br, tickListDisplayer, tickDataDisplayer))
-            {
-                EditorUtility.DisplayDialog("Wrong replay file", "Could not read provided file or it was uncompatible, outdated or had wrong format. " +
-                    "File is considered uncompatible, when gameID, game name, " +
-                    "game version or number of players is different than in the file provided.", "OK");
-                return false;
-            }
+                if (!DeserializeServerData(br, tickListDisplayer, tickDataDisplayer))
+                {
+                    _ = EditorUtility.DisplayDialog("Wrong replay file", "Could not read provided file or it was uncompatible, outdated or had wrong format. " +
+                        "File is considered uncompatible, when gameID, game name, " +
+                        "game version or number of players is different than in the file provided.", "OK");
+                    return false;
+                }
 
             return true;
         }
@@ -86,13 +85,14 @@ namespace Elympics
             // file info
             var header = br.ReadString();
             var formatVersion = br.ReadInt32();
+
             // note that date is provided but currently has no use
-            var date = DateTime.FromBinary(br.ReadInt64());
+            _ = DateTime.FromBinary(br.ReadInt64());
             if (!header.Equals(ElympicsFileFormatName + ServerIndicator) || formatVersion != ElympicsFileFormatVersion)
                 return false;
 
             // game info
-            bool compatibilityCheck = true;
+            var compatibilityCheck = true;
             var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
             compatibilityCheck &= br.ReadString() == config.GameName;
             compatibilityCheck &= br.ReadString() == config.GameId;
@@ -103,20 +103,21 @@ namespace Elympics
             var major = br.ReadInt32();
             var minor = br.ReadInt32();
             var build = br.ReadInt32();
+
             // note that sdk version is provided but currently has no use
             // in the future it will be used in hardcoded conditional tree checking for versions with
             // breaking changes, deciding if we should allow older versions or not
-            var fileElympicsVersion = new Version(major, minor, build);
+            _ = new Version(major, minor, build);
 
             // time threshold
             ServerAnalyzerUtils.ExpectedTime = br.ReadSingle();
-            float fileTickDurationInSeconds = ServerAnalyzerUtils.ExpectedTime / 1000;
+            var fileTickDurationInSeconds = ServerAnalyzerUtils.ExpectedTime / 1000;
             if (config.TickDuration != fileTickDurationInSeconds)
                 UnityEngine.Debug.LogWarning($"CAUTION! Different TickDuration in game config ({config.TickDuration}) and in the input file({fileTickDurationInSeconds})!");
 
             // input view
             var isBots = new bool[br.ReadInt32()];
-            for (int i = 0; i < isBots.Length; i++)
+            for (var i = 0; i < isBots.Length; i++)
             {
                 isBots[i] = br.ReadBoolean();
             }

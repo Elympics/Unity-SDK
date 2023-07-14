@@ -1,10 +1,10 @@
-﻿namespace Elympics.Models
+namespace Elympics.Models
 {
-	public static class CommonErrorMessages
-	{
-		public const string ServerMaintenance = "ServerMaintenance";
+    public static class CommonErrorMessages
+    {
+        public const string ServerMaintenance = "ServerMaintenance";
 
-		public const string OperationFailed = "OperationFailed";
-		public const string RequestNotValid = "Request not valid";
-	}
+        public const string OperationFailed = "OperationFailed";
+        public const string RequestNotValid = "Request not valid";
+    }
 }

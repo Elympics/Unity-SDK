@@ -1,5 +1,5 @@
-﻿namespace Elympics.Models
+namespace Elympics.Models
 {
-	public abstract class ApiRequest
-	{ }
+    public abstract class ApiRequest
+    { }
 }

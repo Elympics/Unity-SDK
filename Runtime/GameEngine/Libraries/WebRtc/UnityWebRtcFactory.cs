@@ -8,13 +8,12 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
 #endif
-using UnityEngine;
 using WebRtcWrapper;
 
 namespace Elympics.Libraries
 {
-	public static class WebRtcFactory
-	{
+    public static class WebRtcFactory
+    {
 #if UNITY_WEBGL && !UNITY_EDITOR
 		private class WebRtcClientAdapter : IWebRtcClient
 		{
@@ -229,8 +228,8 @@ namespace Elympics.Libraries
 		}
 #endif
 
-		public static IWebRtcClient CreateInstance()
-		{
+        public static IWebRtcClient CreateInstance()
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
 			if (!_isInitialized)
 				Initialize();
@@ -241,8 +240,8 @@ namespace Elympics.Libraries
 
 			return wrapper;
 #else
-			return new WebRtcClient();
+            return new WebRtcClient();
 #endif
-		}
-	}
+        }
+    }
 }

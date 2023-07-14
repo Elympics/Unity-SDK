@@ -1,8 +1,8 @@
-﻿namespace Elympics
+namespace Elympics
 {
-	internal interface IBinaryInputWriter : IInputWriter
-	{
-		void ResetStream();
-		byte[] GetData();
-	}
+    internal interface IBinaryInputWriter : IInputWriter
+    {
+        void ResetStream();
+        byte[] GetData();
+    }
 }

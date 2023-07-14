@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Elympics;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,84 +9,82 @@ using UnityEditor;
 
 public class ElympicsGameSelectionMenu : MonoBehaviour
 {
-	[SerializeField] private ChangeSelectedGameButton gameButtonPrefab = null;
+    [SerializeField] private ChangeSelectedGameButton gameButtonPrefab = null;
 
-	private List<ChangeSelectedGameButton> buttonsList;
+    private List<ChangeSelectedGameButton> buttonsList;
 
-	private ElympicsConfig elympicsConfig;
+    private ElympicsConfig elympicsConfig;
 
-	private void OnEnable()
-	{
-		UpdateGameButtonsList();
-		UpdateButtonsInteractability();
-	}
+    private void OnEnable()
+    {
+        UpdateGameButtonsList();
+        UpdateButtonsInteractability();
+    }
 
-	private void LoadElympicsConfig()
-	{
-		elympicsConfig = ElympicsConfig.Load();
-		elympicsConfig.CurrentGameSwitched += HandleCurrentGameSwitched;
-	}
+    private void LoadElympicsConfig()
+    {
+        elympicsConfig = ElympicsConfig.Load();
+        elympicsConfig.CurrentGameSwitched += HandleCurrentGameSwitched;
+    }
 
-	[ContextMenu("Update List")]
-	public void UpdateGameButtonsList()
-	{
-		if (elympicsConfig == null)
-			LoadElympicsConfig();
-		if (buttonsList == null)
-			buttonsList = new List<ChangeSelectedGameButton>();
+    [ContextMenu("Update List")]
+    public void UpdateGameButtonsList()
+    {
+        if (elympicsConfig == null)
+            LoadElympicsConfig();
+        buttonsList ??= new List<ChangeSelectedGameButton>();
 
-		buttonsList.Clear();
-		GetComponentsInChildren(buttonsList);
+        buttonsList.Clear();
+        GetComponentsInChildren(buttonsList);
 
-		if (!ValidateGameButtonsList())
-		{
-			RebuildButtonsList();
-			UpdateButtonsInteractability();
-		}
-	}
+        if (!ValidateGameButtonsList())
+        {
+            RebuildButtonsList();
+            UpdateButtonsInteractability();
+        }
+    }
 
-	private void RebuildButtonsList()
-	{
-		foreach (var button in buttonsList)
-			DestroyImmediate(button.gameObject);
-		buttonsList.Clear();
-		int index = 0;
-		foreach (var game in elympicsConfig.availableGames)
-		{
-			ChangeSelectedGameButton button =
+    private void RebuildButtonsList()
+    {
+        foreach (var button in buttonsList)
+            DestroyImmediate(button.gameObject);
+        buttonsList.Clear();
+        var index = 0;
+        foreach (var game in elympicsConfig.availableGames)
+        {
+            var button =
 #if UNITY_EDITOR
-					PrefabUtility.InstantiatePrefab(gameButtonPrefab, transform) as ChangeSelectedGameButton;
-			EditorUtility.SetDirty(button.gameObject);
+                PrefabUtility.InstantiatePrefab(gameButtonPrefab, transform) as ChangeSelectedGameButton;
+            EditorUtility.SetDirty(button.gameObject);
 #else
-				Instantiate(gameButtonPrefab, transform);
+				Instantiate<ChangeSelectedGameButton>(gameButtonPrefab, transform);
 #endif
-			button.LinkWithGame(index++, game.GameId, game.GameName, elympicsConfig);
-			buttonsList.Add(button);
-		}
-	}
+            button.LinkWithGame(index++, game.GameId, game.GameName, elympicsConfig);
+            buttonsList.Add(button);
+        }
+    }
 
-	private void UpdateButtonsInteractability()
-	{
-		string currentGameId = elympicsConfig.GetCurrentGameConfig().GameId;
-		foreach (var button in buttonsList)
-			button.SetInteractable(button.LinkedId != currentGameId);
-	}
+    private void UpdateButtonsInteractability()
+    {
+        var currentGameId = elympicsConfig.GetCurrentGameConfig().GameId;
+        foreach (var button in buttonsList)
+            button.SetInteractable(button.LinkedId != currentGameId);
+    }
 
-	private void HandleCurrentGameSwitched() => UpdateButtonsInteractability();
+    private void HandleCurrentGameSwitched() => UpdateButtonsInteractability();
 
-	private bool ValidateGameButtonsList()
-	{
-		return buttonsList
-			.Select(button => button.LinkedId)
-			.SequenceEqual(
-				elympicsConfig.availableGames
-				.Select(game => game.GameId)
-				);
-	}
+    private bool ValidateGameButtonsList()
+    {
+        return buttonsList
+            .Select(button => button.LinkedId)
+            .SequenceEqual(
+                elympicsConfig.availableGames
+                .Select(game => game.GameId));
+    }
 
-	private void OnDestroy()
-	{
-		if (elympicsConfig != null)
-			elympicsConfig.CurrentGameSwitched -= HandleCurrentGameSwitched;
-	}
+    private void OnDestroy()
+    {
+        if (elympicsConfig != null)
+            elympicsConfig.CurrentGameSwitched -= HandleCurrentGameSwitched;
+    }
 }

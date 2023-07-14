@@ -1,3 +1,14 @@
+## [0.8.1](https://github.com/Elympics/Unity-SDK/compare/v0.8.0...v0.8.1) (2023-07-14)
+
+
+### Features
+
+* Integrate summing fetch type of leaderboard-service with the LeaderboardClient ([891bdda](https://github.com/Elympics/Unity-SDK/commit/891bdda22bbdeaa829280e88cd1d8e98e8d52f1e))
+* Make rejoining last unfinished game possible ([fee0269](https://github.com/Elympics/Unity-SDK/commit/fee0269a28db737aaf707e9b3139dc4ddd831fc3))
+* Send basic usage statistics to Elympics ([15eed80](https://github.com/Elympics/Unity-SDK/commit/15eed80a989f8f71d5f9d917a413fb43ce224f06))
+
+
+
 ## [0.8.0](https://github.com/Elympics/Unity-SDK/compare/v0.7.3...v0.8.0) (2023-07-05)
 
 

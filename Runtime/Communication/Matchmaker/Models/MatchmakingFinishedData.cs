@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using Elympics.Models.Matchmaking.LongPolling;
 using Elympics.Models.Matchmaking.WebSocket;
 
 namespace Elympics.Models.Matchmaking
@@ -41,6 +43,22 @@ namespace Elympics.Models.Matchmaking
             TcpUdpServerAddress = matchData.TcpUdpServerAddress;
             WebServerAddress = matchData.WebServerAddress;
             MatchedPlayers = matchData.MatchedPlayersId;
+        }
+
+        public MatchmakingFinishedData(GetMatchModel.Response matchResponse)
+        {
+            var matchmakerData = matchResponse.UserData?.MatchmakerData;
+            var gameEngineData = Convert.FromBase64String(matchResponse.UserData?.GameEngineData ?? "");
+
+            MatchId = new Guid(matchResponse.MatchId);
+            UserSecret = matchResponse.UserSecret;
+            QueueName = matchResponse.QueueName;
+            RegionName = matchResponse.RegionName;
+            GameEngineData = gameEngineData;
+            MatchmakerData = matchmakerData;
+            TcpUdpServerAddress = matchResponse.TcpUdpServerAddress;
+            WebServerAddress = matchResponse.WebServerAddress;
+            MatchedPlayers = matchResponse.MatchedPlayersId.Select(x => new Guid(x)).ToArray();
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Elympics
         private readonly string _getPendingMatchLongPollingUrl;
         private readonly string _getMatchLongPollingUrl;
 
-        internal LongPollingMatchmakerClient(string baseUrl)
+        internal LongPollingMatchmakerClient(string baseUrl) : base(baseUrl)
         {
             var uriBuilder = new UriBuilder(baseUrl);
             var oldPath = uriBuilder.Path.TrimEnd('/');
@@ -130,24 +130,6 @@ namespace Elympics
             if (string.IsNullOrEmpty(result.Value.MatchId))
             {
                 errorMessage = "Match ID missing from response";
-                return true;
-            }
-
-            errorMessage = null;
-            return false;
-        }
-
-        private static bool TryGetErrorMessage(Result<ApiResponse, Exception> result, out string errorMessage)
-        {
-            if (result.IsFailure)
-            {
-                errorMessage = result.Error.Message;
-                return true;
-            }
-
-            if (!string.IsNullOrEmpty(result.Value.ErrorMessage))
-            {
-                errorMessage = result.Value.ErrorMessage;
                 return true;
             }
 

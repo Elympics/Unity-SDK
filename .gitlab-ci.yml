@@ -36,7 +36,7 @@ workflow:
       when: always
 
 .cond.releasebranch:
-  rules:
+  rules: &cond_releasebranch_rules
     - if: '$CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
@@ -51,9 +51,14 @@ workflow:
       when: always
 
 .cond.release.always:
-  rules:
+  rules: &cond_release_always_rules
     - *cond_release_auto_rules
     - *cond_release_post_rules
+
+.cond.release.orbranch:
+  rules:
+    - *cond_releasebranch_rules
+    - *cond_release_always_rules
 
 .cond.release.manual:
   rules:
@@ -76,7 +81,7 @@ workflow:
 get-package-version:
   extends:
     - .bash_image
-    - .cond.releasebranch
+    - .cond.release.orbranch
   stage: prepare-version
   variables:
     GIT_DEPTH: 1

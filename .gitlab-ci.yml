@@ -74,6 +74,9 @@ workflow:
 .bash_image:
   image: bash
 
+.ubuntu_image:
+  image: ubuntu
+
 .unity_default:
   before_script: &unity_default_before_script
     - ./.scripts/ci/before_script.sh
@@ -282,9 +285,9 @@ get-changelog-for-release:
       - release.description
 
 check-if-release-possible:
-  image: alpine/git
   extends:
     - .cond.release.auto
+    - .ubuntu_image
   stage: pre-release
   needs:
     - job: get-package-version
@@ -295,6 +298,8 @@ check-if-release-possible:
       artifacts: false
     - job: verify-formatting
       artifacts: false
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
   script:
     - ./.scripts/ci/ensure_tag_does_not_exist.sh $RELEASE_TAG_VERSION
 

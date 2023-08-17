@@ -1,7 +1,7 @@
 ![Elympics](Documentation~/images/logo-light.png#gh-dark-mode-only)
 ![Elympics](Documentation~/images/logo-dark.png#gh-light-mode-only)
 
-![Platforms](https://img.shields.io/badge/Platform-Unity-black.svg?logo=unity&style=flat)
+![Platforms](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FElympics%2FUnity-SDK%2Fmain%2Fpackage.json&query=%24.unity&label=Platform&logo=unity&prefix=Unity%20&suffix=%2B&color=black)
 ![License: Commercial](https://img.shields.io/badge/License-Commercial-white.svg?style=flat)
 ![Language](https://img.shields.io/badge/Language-CSharp-239120.svg?logo=csharp&style=flat)
 [![Discord](https://img.shields.io/badge/Discord-Elympics-white?logo=Discord&style=flat)](https://discord.gg/Xh6AR2mceg)

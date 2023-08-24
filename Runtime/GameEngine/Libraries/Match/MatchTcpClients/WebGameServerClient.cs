@@ -17,11 +17,10 @@ namespace MatchTcpClients
         private string _answer;
 
         public WebGameServerClient(
-            IGameServerClientLogger logger,
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
-            Func<IWebRtcClient> customWebRtcFactory = null) : base(logger, serializer, config)
+            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
@@ -44,8 +43,8 @@ namespace MatchTcpClients
         protected override void CreateNetworkClients()
         {
             _webRtcClient = _webRtcFactory();
-            ReliableClient = new WebRtcReliableNetworkClient(MatchTcpLibraryLogger, _webRtcClient);
-            UnreliableClient = new WebRtcUnreliableNetworkClient(MatchTcpLibraryLogger, _webRtcClient);
+            ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
+            UnreliableClient = new WebRtcUnreliableNetworkClient(_webRtcClient);
         }
 
         protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
@@ -54,9 +53,9 @@ namespace MatchTcpClients
             _answer = null;
             var (offer, offerSet) = await TryCreateOfferAsync();
             if (!offerSet)
-                Logger.Error("[Elympics] WebRTC Offer not received from WebRTC client");
+                ElympicsLogger.LogError("Error creating WebRTC offer.");
             if (string.IsNullOrEmpty(offer))
-                Logger.Error("[Elympics] WebRTC Offer is null or empty");
+                ElympicsLogger.LogError("Created WebRTC offer is null or empty.");
             if (!offerSet || string.IsNullOrEmpty(offer))
             {
                 Disconnect();
@@ -66,7 +65,7 @@ namespace MatchTcpClients
             var response = await WaitForWebResponseAsync(_signalingClient, offer, ct);
             if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
             {
-                Logger.Error("[Elympics] WebRTC Answer is null or empty");
+                ElympicsLogger.LogError("No valid WebRTC answer has been received.");
                 Disconnect();
                 return false;
             }
@@ -77,8 +76,9 @@ namespace MatchTcpClients
 
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
-            Logger.Info("[Elympics] Setting up WebRTC client");
+            ElympicsLogger.Log("Setting up WebRTC client...");
             _webRtcClient.OnAnswer(_answer);
+            ElympicsLogger.Log("Client initialized successfully.");
             return Task.FromResult(true);
         }
 
@@ -100,6 +100,7 @@ namespace MatchTcpClients
 
                 var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
 
+                ElympicsLogger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
                 signalingClient.ReceivedResponse += OnAnswerReceived;
                 signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
@@ -109,7 +110,7 @@ namespace MatchTcpClients
 
                 if (response?.IsError == false)
                     break;
-                Logger.Error("[Elympics] WebRTC answer error: {0}", response?.Text);
+                ElympicsLogger.LogError($"WebRTC answer error: {response?.Text}");
 
                 await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
             }

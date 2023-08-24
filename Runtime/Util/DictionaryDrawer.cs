@@ -95,7 +95,7 @@ namespace Elympics
             if (typeof(UnityObject).IsAssignableFrom(type))
                 return (T)(object)EditorGUI.ObjectField(rect, (UnityObject)(object)value, type, true);
 
-            Debug.Log("Type is not supported: " + type);
+            ElympicsLogger.LogWarning($"Type is not supported: {type.FullName}.");
             return value;
         }
     }

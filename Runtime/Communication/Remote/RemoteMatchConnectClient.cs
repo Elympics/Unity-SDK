@@ -4,7 +4,6 @@ using System.Threading;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -166,14 +165,15 @@ namespace Elympics
             _disconnectedCallback = DisconnectedCallback;
             _matchJoinedCallback = MatchJoinedCallback;
 
-            Debug.Log(_useWeb
-                ? $"[Elympics] Connecting to game server by WebSocket/WebRTC on {_webServerAddress}"
-                : $"[Elympics] Connecting to game server by TCP/UDP on {_tcpUdpServerAddress}");
+            ElympicsLogger.Log(_useWeb
+                ? $"Connecting to game server by WebSocket/WebRTC on {_webServerAddress}"
+                : $"Connecting to game server by TCP/UDP on {_tcpUdpServerAddress}");
 
             _ = _gameServerClient.ConnectAsync(ct).ContinueWith(t =>
             {
                 if (t.IsFaulted)
-                    Debug.LogErrorFormat("[Elympics] Connecting exception\n{0}", t.Exception);
+                    _ = ElympicsLogger.LogException("Could not connect to the game server",
+                        t.Exception);
                 else
                     ConnectedCallback(t.Result);
             }, ct);

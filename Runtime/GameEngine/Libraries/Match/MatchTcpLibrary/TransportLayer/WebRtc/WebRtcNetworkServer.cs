@@ -1,17 +1,12 @@
 using System;
+using Elympics;
 using WebRtcWrapper;
 
 namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
     public class WebRtcNetworkServer : IDisposable
     {
-        private readonly IMatchTcpLibraryLogger _logger;
         private IWebRtcServer _webRtcServer;
-
-        public WebRtcNetworkServer(IMatchTcpLibraryLogger logger)
-        {
-            _logger = logger;
-        }
 
         public void Start(int port, string publicIpOverride = null, int? publicPortOverride = null)
         {
@@ -26,7 +21,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public IWebRtcServerClient CreateClient()
         {
-            _logger.Debug("WebRtc creating client");
+            ElympicsLogger.Log("WebRtc creating client");
             return _webRtcServer.CreateClient();
         }
 

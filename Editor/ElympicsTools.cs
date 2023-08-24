@@ -88,16 +88,19 @@ namespace Elympics
 
         private static void CheckIfThereIsNoRepetitionsInNetworkIds(List<ElympicsBehaviour> behaviours)
         {
-            var networkIds = new HashSet<int>();
+            var behaviourNames = new Dictionary<int, string>();
             foreach (var behaviour in behaviours)
             {
-                if (networkIds.Contains(behaviour.NetworkId))
+                var networkId = behaviour.NetworkId;
+                if (behaviourNames.TryGetValue(networkId, out var previousBehaviourName))
                 {
-                    Debug.LogError($"Repetition for network id {behaviour.NetworkId} in {behaviour.gameObject.name} {behaviour.GetType().Name}");
+                    ElympicsLogger.LogError($"Repeated network ID: {networkId} "
+                        + $"(in object {behaviour.gameObject.name})!\n"
+                        + $"Already used in object {previousBehaviourName}.");
                     continue;
                 }
 
-                _ = networkIds.Add(behaviour.NetworkId);
+                behaviourNames.Add(networkId, behaviour.gameObject.name);
             }
         }
 
@@ -105,7 +108,7 @@ namespace Elympics
         {
             if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
             {
-                Debug.Log("Creating Elympics resources directory...");
+                ElympicsLogger.Log("Creating Elympics resources directory...");
                 _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
             }
 

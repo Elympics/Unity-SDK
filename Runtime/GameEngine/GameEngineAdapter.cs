@@ -6,7 +6,6 @@ using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
 using MessagePack;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using IGameEngine = GameEngineCore.V1._3.IGameEngine;
 
 #pragma warning disable CS0618
@@ -35,29 +34,21 @@ namespace Elympics
 
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
-        private IGameEngineLogger _logger;
         private InitialMatchUserDatas _initialMatchUserDatas;
         private Dictionary<string, ElympicsPlayer> _userIdsToPlayers;
         private Dictionary<ElympicsPlayer, string> _playersToUserIds;
 
-        private readonly LogHandler _logHandler;
         private readonly int _playerInputBufferSize;
 
         internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new();
         internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } = new();
 
 
-        internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig, LogHandler logHandler)
-        {
+        internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig) =>
             _playerInputBufferSize = elympicsGameConfig.PredictionBufferSize;
-            _logHandler = logHandler;
-        }
 
         public void Init(IGameEngineLogger logger, InitialMatchData initialMatchData)
-        {
-            _logger = logger;
-            _logHandler.Logger = _logger;
-        }
+        { }
 
         public void Init2(InitialMatchUserDatas initialMatchUserDatas)
         {
@@ -81,7 +72,6 @@ namespace Elympics
                 GameEngineData = x.GameEngineData,
                 MatchmakerData = x.MatchmakerData,
             }).ToList()), () => Initialized?.Invoke()));
-            // _logger.Info("Initialized from unity");
         }
 
         public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId) =>
@@ -109,7 +99,7 @@ namespace Elympics
             input.Player = player;
             if (!PlayerInputBuffers.TryGetValue(player, out var buffer))
             {
-                Debug.LogWarning($"Input buffer for {player} not found");
+                ElympicsLogger.LogWarning($"Input buffer for {player} not found.");
                 return;
             }
 
@@ -123,8 +113,7 @@ namespace Elympics
 
         public void Tick(long tick)
         {
-            // _logger.Info($"Hello from unity tick {tick}");
-            /* Using unity FixedUpdate */
+            /* Using Unity Update instead. */
         }
 
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
@@ -170,7 +159,8 @@ namespace Elympics
 
                 if (result.Count != _initialMatchUserDatas.Count)
                 {
-                    _logger.Error("Invalid length of match result, expected {0}, has {1}", _initialMatchUserDatas.Count, result.Count);
+                    ElympicsLogger.LogError($"Invalid length of match result: expected {_initialMatchUserDatas.Count}, "
+                        + $"has {result.Count}.");
                     GameEnded?.Invoke(null);
                     return;
                 }

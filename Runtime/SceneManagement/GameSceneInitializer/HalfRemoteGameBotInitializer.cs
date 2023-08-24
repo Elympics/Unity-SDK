@@ -32,7 +32,7 @@ namespace Elympics
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
             gameBotAdapter.InGameDataForUnreliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, false);
 
-            gameBotAdapter.Init(new LoggerNoop(), null);
+            gameBotAdapter.Init(null, null);
             gameBotAdapter.Init2(null);
             gameBotAdapter.Init3(botConfiguration);
 

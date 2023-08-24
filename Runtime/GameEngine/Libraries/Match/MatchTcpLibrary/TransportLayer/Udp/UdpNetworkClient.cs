@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Udp
@@ -13,8 +14,6 @@ namespace MatchTcpLibrary.TransportLayer.Udp
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
         private readonly IPEndPoint _anyEndPoint = new(IPAddress.Any, 0);
-
-        private readonly IMatchTcpLibraryLogger _logger;
 
         public IPEndPoint LocalEndPoint => _udpClient?.Client?.IsBound ?? false
             ? _udpClient?.Client?.LocalEndPoint as IPEndPoint
@@ -50,11 +49,6 @@ namespace MatchTcpLibrary.TransportLayer.Udp
                 if (isDisconnected)
                     Disconnected?.Invoke();
             }
-        }
-
-        public UdpNetworkClient(IMatchTcpLibraryLogger logger)
-        {
-            _logger = logger;
         }
 
         public void CreateAndBind()
@@ -94,17 +88,11 @@ namespace MatchTcpLibrary.TransportLayer.Udp
                     return Task.FromResult(false);
 
                 if (NotCreated())
-                {
-                    throw new NullReferenceException("CreateAndBind not called before connecting");
-                }
+                    throw ElympicsLogger.LogException(new NullReferenceException("CreateAndBind has not been called before connecting."));
                 else if (IsDisconnected() || IsConnectedToOther(remoteEndPoint))
-                {
                     RecreateSocket();
-                }
                 else if (IsConnectedTo(remoteEndPoint))
-                {
                     return Task.FromResult(true);
-                }
 
                 _udpClient.Connect(remoteEndPoint);
                 IsConnected = true;
@@ -176,7 +164,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
             catch (Exception e)
             {
-                _logger.Error("Error while sending data through the UDP socket: ", e);
+                _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
                 return false;
             }
 
@@ -194,7 +182,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
             catch (Exception e)
             {
-                _logger.Error("Error while sending data through the UDP socket: ", e);
+                _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
                 return false;
             }
 

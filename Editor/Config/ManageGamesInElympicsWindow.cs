@@ -212,11 +212,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         if (_customInspectorDrawer.DrawButtonCentered("Synchronize", _resizableCenteredLabelWidth, 20))
         {
-            if (!elympicsApiEndpointChecker.IsRequestSuccessful)
-            {
-                Debug.LogError("Cannot connect to API, check API Endpoint");
+            if (!IsConnected())
                 return;
-            }
 
             ElympicsWebIntegration.GetElympicsEndpoints(endpoint =>
             {
@@ -225,18 +222,18 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
                 ElympicsWebIntegration.GetGames(availableGamesOnline =>
                 {
-                    Debug.Log($"Received {availableGamesOnline.Count} games - {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
+                    ElympicsLogger.Log($"Received {availableGamesOnline.Count} games: {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
                     _accountGames = availableGamesOnline;
                 });
                 var gameId = ((List<ElympicsGameConfig>)availableGames.GetValue())[currentGameIndex.intValue].gameId;
                 ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId, regionsResponse =>
                 {
                     _availableRegions = regionsResponse.Select(x => x.Name).ToList();
-                    Debug.Log($"Received {regionsResponse.Count} regions - {string.Join(", ", regionsResponse)}");
+                    ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", regionsResponse)}");
                 }, () =>
                 {
                     _availableRegions = new List<string>();
-                    Debug.LogError($"Did not received regions for gameId {gameId}");
+                    ElympicsLogger.LogError($"Error receiving regions for game ID: {gameId}");
                 });
             });
             GUI.FocusControl(null);
@@ -299,8 +296,9 @@ public class ManageGamesInElympicsWindow : EditorWindow
             var config = CreateInstance<ElympicsGameConfig>();
             if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
             {
-                Debug.Log("Creating Elympics resources directory...");
+                ElympicsLogger.Log("Creating Elympics Resources directory...");
                 _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
+                ElympicsLogger.Log("Elympics Resources directory created successfully.");
             }
 
             AssetDatabase.CreateAsset(config, ElympicsConfig.ElympicsResourcesPath + "/ElympicsGameConfig.asset");
@@ -319,7 +317,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         if (configs.Length <= 0)
         {
-            Debug.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
+            ElympicsLogger.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
             return;
         }
 
@@ -458,15 +456,20 @@ public class ManageGamesInElympicsWindow : EditorWindow
     {
         if (_customInspectorDrawer.DrawButtonCentered("Login", 150, 30))
         {
-            if (!elympicsApiEndpointChecker.IsRequestSuccessful)
-            {
-                Debug.LogError("cannot connect with elympicsweb, check elympicsweb endpoint");
+            if (!IsConnected())
                 return;
-            }
-
             ElympicsWebIntegration.Login();
         }
     }
 
     #endregion
+
+    private static bool IsConnected()
+    {
+        if (elympicsApiEndpointChecker.IsRequestSuccessful)
+            return true;
+        ElympicsLogger.LogError("Cannot connect to Elympics API! "
+            + "Check your Internet connection and configured Elympics Web addresses");
+        return false;
+    }
 }

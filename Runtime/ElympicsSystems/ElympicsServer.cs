@@ -52,8 +52,7 @@ namespace Elympics
             _inputList = new List<ElympicsInput>();
             elympicsBehavioursManager.InitializeInternal(this);
             SetupCallbacks();
-            if (Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
-                Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+            LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         private void SetupCallbacks()
@@ -237,16 +236,25 @@ namespace Elympics
             _currentIsBot = false;
         }
 
+        private void LogHalfRemoteRunInBackgroundErrorIfApplicable()
+        {
+            if (!Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
+                ElympicsLogger.LogError("Development Mode is set to Half Remote "
+                    + "but PlayerSettings \"Run In Background\" option is false, "
+                    + "hence network simulation will not be performed in out-of-focus windows. "
+                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
+        }
+
         private void OnApplicationPause(bool pauseStatus)
         {
-            if (pauseStatus && !Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
-                Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+            if (pauseStatus)
+                LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (!hasFocus && !Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
-                Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+            if (!hasFocus)
+                LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         #region IElympics

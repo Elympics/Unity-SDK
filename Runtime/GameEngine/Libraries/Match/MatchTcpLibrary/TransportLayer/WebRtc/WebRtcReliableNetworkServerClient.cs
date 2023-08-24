@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using WebRtcWrapper;
 
@@ -8,7 +9,6 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
     public class WebRtcReliableNetworkServerClient : IReliableNetworkClient
     {
-        private readonly IMatchTcpLibraryLogger _logger;
         private readonly IWebRtcServerClient _webRtcServerClient;
 
         public bool IsConnected { get; private set; }
@@ -20,9 +20,8 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public IPEndPoint RemoteEndpoint => throw new NotImplementedException();
 
-        public WebRtcReliableNetworkServerClient(IMatchTcpLibraryLogger logger, IWebRtcServerClient webRtcServerClient)
+        public WebRtcReliableNetworkServerClient(IWebRtcServerClient webRtcServerClient)
         {
-            _logger = logger;
             _webRtcServerClient = webRtcServerClient;
         }
 
@@ -31,7 +30,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
             IsConnected = true;
             _webRtcServerClient.ReliableReceivingEnded += () =>
             {
-                _logger.Info($"{nameof(WebRtcReliableNetworkClient)} receiving ended");
+                ElympicsLogger.Log($"{nameof(WebRtcReliableNetworkClient)} receiving ended");
                 IsConnected = false;
                 Disconnected?.Invoke();
             };

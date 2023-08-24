@@ -20,8 +20,8 @@ SOFTWARE.
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Elympics;
 using UnityEditor;
-using UnityEngine;
 
 // Provide simple value get/set methods for SerializedProperty.  Can be used with
 // any data types and with arbitrarily deeply-pathed properties.
@@ -64,7 +64,11 @@ public static class SerializedPropertyExtensions
             deferredToken = token;
         }
 
-        Debug.Assert(!container.GetType().IsValueType, $"Cannot use SerializedObject.SetValue on a struct object, as the result will be set on a temporary.  Either change {container.GetType().Name} to a class, or use SetValue with a parent member.");
+        if (container.GetType().IsValueType)
+            ElympicsLogger.LogError($"Cannot use {nameof(SerializedObject)}.{nameof(SetValue)} "
+                + "on a struct object, as the result will be set on a temporary. "
+                + $"Either change {container.GetType().Name} to a class "
+                + $"or use {nameof(SetValue)} with a parent member.");
         SetPathComponentValue(container, deferredToken, value);
     }
 
@@ -170,6 +174,6 @@ public static class SerializedPropertyExtensions
                 return;
             }
         }
-        Debug.Assert(false, $"Failed to set member {container}.{name} via reflection");
+        ElympicsLogger.LogError($"Failed to set member {container}.{name} via reflection");
     }
 }

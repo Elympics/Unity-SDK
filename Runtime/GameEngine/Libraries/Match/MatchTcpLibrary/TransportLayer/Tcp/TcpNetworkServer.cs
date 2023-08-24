@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Tcp
@@ -13,13 +14,11 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
         private readonly IPEndPoint _anyEndPoint = new(IPAddress.Any, 0);
 
-        private readonly IMatchTcpLibraryLogger _logger;
         private readonly IMessageEncoder _messageEncoder;
         private readonly TcpProtocolConfig _tcpProtocolConfig;
 
-        public TcpNetworkServer(IMatchTcpLibraryLogger logger, IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig = null)
+        public TcpNetworkServer(IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig = null)
         {
-            _logger = logger;
             _messageEncoder = messageEncoder;
             _tcpProtocolConfig = tcpProtocolConfig ?? TcpProtocolConfig.Default;
         }
@@ -28,14 +27,14 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
         {
             var listener = new TcpListener(endPoint ?? _anyEndPoint);
             listener.Start();
-            _logger.Debug($"TCP Network Server started listening on {((IPEndPoint)listener.LocalEndpoint).Port}");
+            ElympicsLogger.Log($"TCP Network Server started listening on {((IPEndPoint)listener.LocalEndpoint).Port}");
 
 
             _ = ct.Register(() =>
             {
-                _logger.Debug($"TCP Network Server stopping");
+                ElympicsLogger.Log("TCP Network Server stopping");
                 listener.Stop();
-                _logger.Debug($"TCP Network Server stopped");
+                ElympicsLogger.Log("TCP Network Server stopped");
             });
 
             try
@@ -53,12 +52,12 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                     }
 
                     var remoteEndPoint = client.Client.RemoteEndPoint;
-                    _logger.Debug("Client {0} accepted", remoteEndPoint);
+                    ElympicsLogger.Log($"Client {remoteEndPoint} accepted");
 
-                    var tcpNetworkClient = new TcpNetworkClient(_logger, _messageEncoder, _tcpProtocolConfig, client);
+                    var tcpNetworkClient = new TcpNetworkClient(_messageEncoder, _tcpProtocolConfig, client);
                     OnAccepted?.Invoke(tcpNetworkClient);
 
-                    _logger.Info("Client {0} accepted and connected", remoteEndPoint);
+                    ElympicsLogger.Log($"Client {remoteEndPoint} accepted and connected");
                 }
             }
             catch (TcpListenerDisposedException)

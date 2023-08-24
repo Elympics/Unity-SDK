@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Threading;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace Elympics
 {
@@ -43,6 +42,7 @@ namespace Elympics
         {
             Initialized = true;
             Instance = this;
+            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
         }
 
         private static ElympicsBase instance;
@@ -82,6 +82,7 @@ namespace Elympics
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig)
         {
+            ElympicsLogger.Log($"Initializing {nameof(ElympicsBase)} ({GetType().Name})...");
             Config = elympicsGameConfig;
             ElympicsUpdateDuration = TickDuration;
             _previousUtcForDeltaTime = DateTime.UtcNow;
@@ -175,23 +176,22 @@ namespace Elympics
         private void LogFixedUpdateThrottle()
         {
             if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
-                Debug.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
+                ElympicsLogger.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
             else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
-                Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
-
+                ElympicsLogger.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
         }
 
-        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) => $"Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         private void LogElympicsTickThrottle()
         {
             if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
-                Debug.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
+                ElympicsLogger.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
             else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
-                Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
+                ElympicsLogger.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
         }
 
-        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) => $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour)
         {

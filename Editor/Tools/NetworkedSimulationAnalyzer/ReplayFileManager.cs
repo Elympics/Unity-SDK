@@ -69,9 +69,7 @@ namespace Elympics
             // input view
             bw.Write(tickDataDisplayer.IsBots.Length);
             foreach (var isBot in tickDataDisplayer.IsBots)
-            {
                 bw.Write(isBot);
-            }
 
             // snapshots
             bw.Write(tickListDisplayer.AllTicksData.Count);
@@ -112,14 +110,13 @@ namespace Elympics
             ServerAnalyzerUtils.ExpectedTime = br.ReadSingle();
             var fileTickDurationInSeconds = ServerAnalyzerUtils.ExpectedTime / 1000;
             if (config.TickDuration != fileTickDurationInSeconds)
-                UnityEngine.Debug.LogWarning($"CAUTION! Different TickDuration in game config ({config.TickDuration}) and in the input file({fileTickDurationInSeconds})!");
+                ElympicsLogger.LogWarning($"Different tick duration in game config ({config.TickDuration}) "
+                    + $"and in the input replay file ({fileTickDurationInSeconds})!");
 
             // input view
             var isBots = new bool[br.ReadInt32()];
             for (var i = 0; i < isBots.Length; i++)
-            {
                 isBots[i] = br.ReadBoolean();
-            }
             tickDataDisplayer.InitializeInputs(isBots);
 
             // snapshots

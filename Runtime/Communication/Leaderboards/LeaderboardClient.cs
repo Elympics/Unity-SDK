@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -112,13 +111,13 @@ namespace Elympics
                     else
                     {
                         onFailure(LeaderboardFetchError.UnknownError);
-                        Debug.LogError(errorMessage);
+                        ElympicsLogger.LogError(errorMessage);
                     }
                 }
             };
         }
 
-        private static void DefaultFailure(LeaderboardFetchError error) => Debug.LogError(error);
+        private static void DefaultFailure(LeaderboardFetchError error) => ElympicsLogger.LogError(error.ToString());
     }
 
     public enum LeaderboardGameVersion

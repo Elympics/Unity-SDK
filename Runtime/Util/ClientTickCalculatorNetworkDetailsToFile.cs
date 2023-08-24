@@ -81,6 +81,7 @@ namespace Elympics
 
         private async Task WriteToFile(string text, CancellationToken ct)
         {
+            var combinedPath = Path.Combine(_folderPath, _fileName);
             try
             {
                 ct.ThrowIfCancellationRequested();
@@ -88,13 +89,13 @@ namespace Elympics
                 if (!Directory.Exists(_folderPath))
                     _ = Directory.CreateDirectory(_folderPath);
 
-                var combinedPath = Path.Combine(_folderPath, _fileName);
                 using var sw = File.AppendText(combinedPath);
                 await sw.WriteAsync(text);
             }
             catch (Exception e)
             {
-                Debug.LogError($"Something went wrong while writing log to file.\n{e}");
+                _ = ElympicsLogger.LogException("Something went wrong while writing log to file "
+                    + $"at path: {combinedPath}", e);
             }
         }
 

@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Text;
 using UnityEditor;
@@ -7,7 +6,7 @@ using UnityEngine;
 namespace Elympics
 {
     [CustomEditor(typeof(ElympicsBehaviour))]
-    internal partial class ElympicsBehaviourEditor : Editor
+    internal partial class ElympicsBehaviourEditor : UnityEditor.Editor
     {
         [Flags]
         private enum ElympicsComponentsToSync
@@ -289,4 +288,3 @@ namespace Elympics
         }
     }
 }
-#endif

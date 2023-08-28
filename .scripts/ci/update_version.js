@@ -29,8 +29,9 @@ async function main() {
 
   assemblyPaths.forEach(assemblyPath => {
     const assemblyFileName = path.resolve(__dirname, assemblyPath);
-    const assemblyFile = fs.readFileSync(assemblyFileName).toString();
-    assemblyFile = assemblyFile.replace(/(AssemblyVersion\(\").*(\.[0-9]+\"\))/, `$1${version}$2`);
+    const assemblyFile = fs.readFileSync(assemblyFileName)
+        .toString()
+        .replace(/(AssemblyVersion\(\").*(\.[0-9]+\"\))/, `$1${version}$2`);
     fs.writeFileSync(assemblyFileName, assemblyFile);
     console.log(`Updated Assembly version to ${version}`);
   });

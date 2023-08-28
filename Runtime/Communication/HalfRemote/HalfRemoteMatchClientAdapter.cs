@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
+using MessagePack;
 using UnityConnectors.HalfRemote;
 using UnityConnectors.HalfRemote.Ntp;
 using UnityEngine;
@@ -16,9 +17,10 @@ namespace Elympics
 
         public event Action<TimeSynchronizationData> Synchronized;
         public event Action<ElympicsSnapshot> SnapshotReceived;
-        public event Action<byte[]> RawSnapshotReceived;
+        public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
+        public event Action<byte[]> InGameDataUnreliableReceived;
 
-        private readonly RingBuffer<byte[]> _inputRingBuffer;
+        private readonly RingBuffer<ElympicsInput> _inputRingBuffer;
 
         private readonly WaitForSeconds _synchronizationDelay;
         private readonly HalfRemoteLagConfig _lagConfig;
@@ -30,10 +32,9 @@ namespace Elympics
 
         public HalfRemoteMatchClientAdapter(ElympicsGameConfig config)
         {
-            _inputRingBuffer = new RingBuffer<byte[]>(config.InputsToSendBufferSize);
+            _inputRingBuffer = new RingBuffer<ElympicsInput>(config.InputsToSendBufferSize);
             _lagConfig = config.HalfRemoteLagConfig;
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
-            _synchronizationDelay = new WaitForSeconds(config.ConnectionConfig.minContinuousSynchronizationInterval);
         }
 
         internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
@@ -51,8 +52,8 @@ namespace Elympics
             _client.UnreliableReceivingEnded += () => Debug.Log("Unreliable receiving ended");
             _client.WebRtcUpgraded += () => Debug.Log("WebRtc upgraded");
             _client.NtpReceived += OnNtpReceived;
-            _client.InGameDataForPlayerOnReliableChannelGenerated += OnInGameDataForPlayerOnReliableChannelGenerated;
-            _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnInGameDataForPlayerOnUnreliableChannelGenerated;
+            _client.InGameDataForPlayerOnReliableChannelGenerated += OnReliableInGameDataReceived;
+            _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
 
             Debug.Log("Connected with half remote client");
             connectedCallback?.Invoke(true);
@@ -63,47 +64,47 @@ namespace Elympics
         public void PlayerConnected() => _client.PlayerConnected();
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
-        public Task SendInputReliable(ElympicsInput input)
+        public async Task SendInput(ElympicsInput input)
         {
-            SendRawInputReliable(input.Serialize());
-            return Task.CompletedTask;
+            _inputRingBuffer.PushBack(input);
+            var data = new ElympicsInputList { Values = _inputRingBuffer.ToList() };
+            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
         }
 
-        public Task SendInputUnreliable(ElympicsInput input)
+        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), true);
+
+        public async Task SendRawDataToServer(byte[] rawData, bool reliable)
         {
-            SendRawInputUnreliable(input.Serialize());
-            return Task.CompletedTask;
+            Action<byte[]> sendDataAsync = reliable
+                ? _client.SendInputReliable
+                : _client.SendInputUnreliable;
+
+            await RunWithLag(() => sendDataAsync(rawData));
         }
 
-        public void OnInGameDataForPlayerOnReliableChannelGenerated(byte[] data, string userId)
+        private void OnUnreliableInGameDataReceived(byte[] data, string userId)
         {
             if (userId != _userId)
                 return;
-            _ = RunWithLag(() =>
-            {
-                SnapshotReceived?.Invoke(data.Deserialize<ElympicsSnapshot>());
-                RawSnapshotReceived?.Invoke(data);
-            });
+            InGameDataUnreliableReceived?.Invoke(data);
+            ProcessDataFromServer(data);
         }
 
-        public void OnInGameDataForPlayerOnUnreliableChannelGenerated(byte[] data, string userId)
+        private void OnReliableInGameDataReceived(byte[] data, string userId)
         {
             if (userId != _userId)
                 return;
-            _ = RunWithLag(() =>
-            {
-                SnapshotReceived?.Invoke(data.Deserialize<ElympicsSnapshot>());
-                RawSnapshotReceived?.Invoke(data);
-            });
+            ProcessDataFromServer(data);
         }
 
-        public void SendRawInputReliable(byte[] data) => _ = RunWithLag(() => _client.SendInputReliable(data));
-
-        public void SendRawInputUnreliable(byte[] data)
+        private void ProcessDataFromServer(byte[] serializedData)
         {
-            _inputRingBuffer.PushBack(data);
-            var serializedInputs = _inputRingBuffer.ToArray().MergeBytePackage();
-            _ = RunWithLag(() => _client.SendInputUnreliable(serializedInputs));
+            var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(serializedData);
+            if (deserializedData is ElympicsSnapshot snapshot)
+                SnapshotReceived?.Invoke(snapshot);
+            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
+                RpcMessageListReceived?.Invoke(rpcMessageList);
         }
 
         private async UniTask RunWithLag(Action action)

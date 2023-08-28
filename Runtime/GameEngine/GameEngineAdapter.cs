@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
+using MessagePack;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using IGameEngine = GameEngineCore.V1._3.IGameEngine;
@@ -32,6 +33,8 @@ namespace Elympics
         internal event Action<(InitialMatchPlayerDatasGuid Data, Action OnInitialized)> ReceivedInitialMatchPlayerDatas;
         internal event Action Initialized;
 
+        public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
+
         private IGameEngineLogger _logger;
         private InitialMatchUserDatas _initialMatchUserDatas;
         private Dictionary<string, ElympicsPlayer> _userIdsToPlayers;
@@ -40,10 +43,8 @@ namespace Elympics
         private readonly LogHandler _logHandler;
         private readonly int _playerInputBufferSize;
 
-        internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput =
-            new();
-        internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } =
-            new ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>>();
+        internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new();
+        internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } = new();
 
 
         internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig, LogHandler logHandler)
@@ -83,24 +84,24 @@ namespace Elympics
             // _logger.Info("Initialized from unity");
         }
 
-        public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId) => AddReliableInputToBuffer(data, userId);
-        public void OnInGameDataFromPlayerUnreliableReceived(byte[] data, string userId) => AddUnreliableInputsToBuffer(data, userId);
+        public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId) =>
+            ProcessReceivedInGameData(data, userId);
 
-        private void AddReliableInputToBuffer(byte[] data, string userId)
+        public void OnInGameDataFromPlayerUnreliableReceived(byte[] data, string userId) =>
+            ProcessReceivedInGameData(data, userId);
+
+        private void ProcessReceivedInGameData(byte[] data, string userId)
         {
             var player = _userIdsToPlayers[userId];
-            var input = data.Deserialize<ElympicsInput>();
-            AddInputToBuffer(input, player);
-        }
+            var deserializedData = MessagePackSerializer.Deserialize<IToServer>(data);
 
-        private void AddUnreliableInputsToBuffer(byte[] data, string userId)
-        {
-            var player = _userIdsToPlayers[userId];
-
-            var inputs = data.DeserializeList<ElympicsInput>();
-
-            foreach (var input in inputs)
+            if (deserializedData is ElympicsInput input)
                 AddInputToBuffer(input, player);
+            else if (deserializedData is ElympicsInputList inputList)
+                foreach (var value in inputList.Values)
+                    AddInputToBuffer(value, player);
+            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
+                RpcMessageListReceived?.Invoke(rpcMessageList);
         }
 
         private void AddInputToBuffer(ElympicsInput input, ElympicsPlayer player)
@@ -131,21 +132,30 @@ namespace Elympics
             LatestSimulatedTickInput[player] = elympicsInput;
         }
 
-        internal void SendSnapshotUnreliable(ElympicsSnapshot snapshot)
+        internal void BroadcastDataToPlayers(IFromServer data, bool reliable)
         {
-            var serializedData = snapshot.Serialize();
+            var serializedData = MessagePackSerializer.Serialize(data);
+            var sendData = reliable
+                ? InGameDataForPlayerOnReliableChannelGenerated
+                : InGameDataForPlayerOnUnreliableChannelGenerated;
             foreach (var userData in _initialMatchUserDatas)
-                InGameDataForPlayerOnUnreliableChannelGenerated?.Invoke(serializedData, userData.UserId);
+                sendData?.Invoke(serializedData, userData.UserId);
         }
 
-        internal void SendSnapshotsUnreliable(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshots)
+        internal void SendSnapshotsToPlayers(Dictionary<ElympicsPlayer, ElympicsSnapshot> snapshotPerPlayer)
         {
-            foreach (var (player, snapshot) in snapshots)
-            {
-                var userId = _playersToUserIds[player];
-                var serializedData = snapshot.Serialize();
-                InGameDataForPlayerOnUnreliableChannelGenerated?.Invoke(serializedData, userId);
-            }
+            foreach (var (player, snapshot) in snapshotPerPlayer)
+                SendDataToPlayer(snapshot, player, false);
+        }
+
+        private void SendDataToPlayer(IFromServer data, ElympicsPlayer player, bool reliable)
+        {
+            var sendData = reliable
+                ? InGameDataForPlayerOnReliableChannelGenerated
+                : InGameDataForPlayerOnUnreliableChannelGenerated;
+            var userId = _playersToUserIds[player];
+            var serializedData = MessagePackSerializer.Serialize(data);
+            sendData?.Invoke(serializedData, userId);
         }
 
         internal void EndGame(ResultMatchPlayerDatas result = null)

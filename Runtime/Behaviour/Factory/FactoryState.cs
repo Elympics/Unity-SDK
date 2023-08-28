@@ -1,20 +1,11 @@
 using System.Collections.Generic;
-using System.IO;
+using MessagePack;
 
 namespace Elympics
 {
-    public class FactoryState : IElympicsSerializable
+    [MessagePackObject]
+    public class FactoryState
     {
-        public List<KeyValuePair<int, byte[]>> Parts;
-
-        void IElympicsSerializable.Serialize(BinaryWriter bw)
-        {
-            bw.Write(Parts);
-        }
-
-        void IElympicsSerializable.Deserialize(BinaryReader br)
-        {
-            Parts = br.ReadListWithKvpIntToByteArray();
-        }
+        [Key(0)] public List<KeyValuePair<int, byte[]>> Parts;
     }
 }

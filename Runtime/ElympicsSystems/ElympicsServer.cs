@@ -31,8 +31,6 @@ namespace Elympics
         private List<ElympicsInput> _inputList;
         private Dictionary<int, TickToPlayerInput> _tickToPlayerInputHolder;
 
-        private ElympicsGameConfig _currentGameConfig;
-
         #region TickAnalysis
 
         private protected override void TryAttachTickAnalysis()
@@ -44,18 +42,17 @@ namespace Elympics
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
         {
-            _currentGameConfig = elympicsGameConfig;
+            InitializeInternal(elympicsGameConfig);
             _tickToPlayerInputHolder = new Dictionary<int, TickToPlayerInput>();
             SwitchBehaviourToServer();
             _handlingBotsOverride = handlingBotsOverride;
             HandlingClientsInServer = handlingClientsOverride;
-            InitializeInternal(elympicsGameConfig);
             _gameEngineAdapter = gameEngineAdapter;
             Tick = 0;
             _inputList = new List<ElympicsInput>();
             elympicsBehavioursManager.InitializeInternal(this);
             SetupCallbacks();
-            if (_currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
+            if (Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
                 Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
         }
 
@@ -71,6 +68,7 @@ namespace Elympics
                 SetInitialized();
                 args.OnInitialized();
             });
+            _gameEngineAdapter.RpcMessageListReceived += QueueRpcMessagesToInvoke;
         }
 
         private void InitializeBotsAndClientInServer(InitialMatchPlayerDatasGuid data)
@@ -113,8 +111,6 @@ namespace Elympics
                     GatherInputsFromServerBotsOrClient(_playersOfClients, SwitchBehaviourToClient, ClientInputGetter);
             }
 
-            elympicsBehavioursManager.CommitVars();
-
             _inputList.Clear();
             foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
             {
@@ -128,6 +124,9 @@ namespace Elympics
 
             using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                 elympicsBehavioursManager.SetCurrentInputs(_inputList);
+
+            InvokeQueuedRpcMessages();
+            elympicsBehavioursManager.CommitVars();
 
             using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
                 elympicsBehavioursManager.ElympicsUpdate();
@@ -160,14 +159,16 @@ namespace Elympics
                     var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
                     AddMetadataToSnapshots(snapshots, TickStartUtc);
 
-                    _gameEngineAdapter.SendSnapshotsUnreliable(snapshots);
+                    _gameEngineAdapter.SendSnapshotsToPlayers(snapshots);
                 }
+
+            SendQueuedRpcMessages();
 
             if (TickAnalysis != null)
             {
                 var localSnapshotWithInputs = CreateLocalSnapshotWithMetadata();
                 localSnapshotWithInputs.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(_tickToPlayerInputHolder);
-                TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails(_currentGameConfig));
+                TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails(Config));
             }
 
             Tick++;
@@ -212,11 +213,14 @@ namespace Elympics
             snapshot.Tick = Tick;
         }
 
+        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, true);
+
         private void SwitchBehaviourToServer()
         {
             _currentPlayer = ServerPlayer;
-            _currentIsClient = false;
-            _currentIsBot = false;
+            _currentIsClient = HandlingClientsInServer;
+            _currentIsBot = HandlingBotsInServer;
         }
 
         private void SwitchBehaviourToBot(ElympicsPlayer player)
@@ -235,13 +239,13 @@ namespace Elympics
 
         private void OnApplicationPause(bool pauseStatus)
         {
-            if (pauseStatus && !Application.runInBackground && _currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
+            if (pauseStatus && !Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
                 Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
         }
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (!hasFocus && !Application.runInBackground && _currentGameConfig.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
+            if (!hasFocus && !Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
                 Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
         }
 

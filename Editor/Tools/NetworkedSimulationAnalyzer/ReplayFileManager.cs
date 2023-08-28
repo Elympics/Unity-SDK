@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using MessagePack;
 using UnityEditor;
 
 namespace Elympics
@@ -75,9 +76,7 @@ namespace Elympics
             // snapshots
             bw.Write(tickListDisplayer.AllTicksData.Count);
             foreach (var entry in tickListDisplayer.AllTicksData)
-            {
-                entry.Snapshot.Serialize(bw);
-            }
+                MessagePackSerializer.Serialize(bw.BaseStream, entry.Snapshot);
         }
 
         private static bool DeserializeServerData(BinaryReader br, TickListDisplayer tickListDisplayer, TickDataDisplayer tickDataDisplayer)
@@ -127,11 +126,7 @@ namespace Elympics
             tickListDisplayer.AllTicksData.Clear();
             var count = br.ReadInt32();
             for (var i = 0; i < count; i++)
-            {
-                var snapshot = new ElympicsSnapshotWithMetadata();
-                snapshot.Deserialize(br);
-                tickListDisplayer.AddTick(snapshot);
-            }
+                tickListDisplayer.AddTick(MessagePackSerializer.Deserialize<ElympicsSnapshotWithMetadata>(br.BaseStream));
 
             return true;
         }

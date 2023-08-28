@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Elympics
 {
@@ -34,6 +36,8 @@ namespace Elympics
                 ++_size;
             }
         }
+
+        public List<T> ToList() => _buffer.Take(_size).ToList();
 
         public T[] ToArray()
         {

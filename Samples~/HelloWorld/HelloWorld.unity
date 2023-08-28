@@ -1322,7 +1322,7 @@ MonoBehaviour:
   networkId: 1
   predictableFor:
     playerIndex: -2
-  isUpdatableForNonOwners: 0
+  isUpdatableForNonOwners: 1
   visibleFor:
     playerIndex: -3
   stateFrequencyStages:

@@ -1,20 +1,12 @@
 using System.Collections.Generic;
-using System.IO;
+using MessagePack;
 using NetworkId = System.Int32;
 
 namespace Elympics
 {
-    public class ElympicsSnapshotPlayerInput : IElympicsSerializable
+    [MessagePackObject]
+    public class ElympicsSnapshotPlayerInput
     {
-        public List<KeyValuePair<NetworkId, byte[]>> Data { get; set; }
-        void IElympicsSerializable.Serialize(BinaryWriter bw)
-        {
-            bw.Write(Data);
-        }
-
-        void IElympicsSerializable.Deserialize(BinaryReader br)
-        {
-            Data = br.ReadListWithKvpIntToByteArray();
-        }
+        [Key(0)] public List<KeyValuePair<NetworkId, byte[]>> Data { get; set; }
     }
 }

@@ -9,10 +9,11 @@ namespace Elympics
     [DisallowMultipleComponent]
     public class ElympicsBehavioursManager : MonoBehaviour
     {
-        [SerializeField] private ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new();
-        [SerializeField] private ElympicsFactory factory;
+        [SerializeField] internal ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new();
+        [SerializeField] internal ElympicsFactory factory;
 
         private ElympicsBehavioursContainer _elympicsBehaviours;
+
         private readonly List<ElympicsBehaviour> _bufferForIteration = new();
         private ElympicsBase _elympics;
         private BinaryInputWriter _inputWriter;

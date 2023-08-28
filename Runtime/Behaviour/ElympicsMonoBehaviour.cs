@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Elympics
@@ -98,10 +101,19 @@ namespace Elympics
         private void ThrowIfCalledInWrongContext([CallerMemberName] string caller = "")
         {
             if (ElympicsBase.CurrentCallContext is not ElympicsBase.CallContext.ElympicsUpdate
-                    and not ElympicsBase.CallContext.Initialize)
-                throw new ElympicsException($"You cannot use {caller} outside of {nameof(IUpdatable.ElympicsUpdate)} or {nameof(IInitializable.Initialize)}");
+                and not ElympicsBase.CallContext.Initialize)
+                throw new ElympicsException($"You cannot use {caller} outside of {nameof(IUpdatable.ElympicsUpdate)} "
+                    + $"or {nameof(IInitializable.Initialize)}");
         }
 
         private ElympicsFactory GetFactory() => _factory ??= FindObjectOfType<ElympicsFactory>();
+
+        [UsedImplicitly] // from generated IL code
+        protected internal MethodInfo GetMethodInfo(string methodName) =>
+            GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+        [UsedImplicitly] // from generated IL code
+        protected internal ElympicsRpcProperties GetRpcProperties(MethodInfo methodInfo) =>
+            methodInfo!.GetCustomAttributes<ElympicsRpcAttribute>().First().Properties;
     }
 }

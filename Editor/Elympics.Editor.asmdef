@@ -1,7 +1,9 @@
 {
     "name": "Elympics.Editor",
+    "rootNamespace": "",
     "references": [
-        "GUID:98c20d83c9beb3344bdbd3db8ff8d852"
+        "GUID:98c20d83c9beb3344bdbd3db8ff8d852",
+        "GUID:b5112f143ba6a88409acbb72a5e9f0f0"
     ],
     "includePlatforms": [
         "Editor"
@@ -10,8 +12,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Elympics.Newtonsoft.Json.dll",
-        "ElympicsApiModels-packed.dll"
+        "Elympics.Newtonsoft.Json.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

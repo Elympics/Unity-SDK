@@ -1,31 +1,13 @@
 using System.Collections.Generic;
-using System.IO;
+using MessagePack;
 
 namespace Elympics
 {
-    public class ElympicsInput : ElympicsDataWithTick, IElympicsSerializable
+    [MessagePackObject]
+    public class ElympicsInput : ElympicsDataWithTick, IToServer
     {
-        public override long Tick { get; set; }
-        public ElympicsPlayer Player { get; set; }
-        public List<KeyValuePair<int, byte[]>> Data { get; set; }
-
-        public static readonly ElympicsInput Empty = new()
-        {
-            Data = new List<KeyValuePair<int, byte[]>>()
-        };
-
-        void IElympicsSerializable.Serialize(BinaryWriter bw)
-        {
-            bw.Write(Tick);
-            bw.Write((int)Player);
-            bw.Write(Data);
-        }
-
-        void IElympicsSerializable.Deserialize(BinaryReader br)
-        {
-            Tick = br.ReadInt64();
-            Player = ElympicsPlayer.FromIndex(br.ReadInt32());
-            Data = br.ReadListWithKvpIntToByteArray();
-        }
+        [IgnoreMember] public override long Tick { get; set; }
+        [Key(1)] public ElympicsPlayer Player { get; set; }
+        [Key(2)] public List<KeyValuePair<int, byte[]>> Data { get; set; } = new();
     }
 }

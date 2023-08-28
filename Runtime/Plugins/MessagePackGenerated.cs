@@ -47,20 +47,46 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(12)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(38)
             {
-                { typeof(global::System.Guid[]), 0 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.ErrorBlame), 1 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodes), 2 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IFromLobby), 3 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IToLobby), 4 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.GameData), 5 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker), 6 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchData), 7 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchFound), 8 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError), 9 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Ping), 10 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Pong), 11 },
+                { typeof((string, global::System.Collections.Generic.List<(string, string)>)), 0 },
+                { typeof((string, string)), 1 },
+                { typeof(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>), 2 },
+                { typeof(global::System.Collections.Generic.Dictionary<long, global::Elympics.ElympicsSnapshotPlayerInput>), 3 },
+                { typeof(global::System.Collections.Generic.KeyValuePair<int, byte[]>), 4 },
+                { typeof(global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>), 5 },
+                { typeof(global::System.Collections.Generic.List<(string, string)>), 6 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>), 7 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsInput>), 8 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>), 9 },
+                { typeof(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>), 10 },
+                { typeof(global::System.Guid[]), 11 },
+                { typeof(object[]), 12 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.ErrorBlame), 13 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodes), 14 },
+                { typeof(global::Elympics.ElympicsDataWithTick), 15 },
+                { typeof(global::Elympics.IFromServer), 16 },
+                { typeof(global::Elympics.IToServer), 17 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IFromLobby), 18 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IToLobby), 19 },
+                { typeof(global::Elympics.ElympicsBehaviourMetadata), 20 },
+                { typeof(global::Elympics.ElympicsInput), 21 },
+                { typeof(global::Elympics.ElympicsInputList), 22 },
+                { typeof(global::Elympics.ElympicsPlayer), 23 },
+                { typeof(global::Elympics.ElympicsRpcMessage), 24 },
+                { typeof(global::Elympics.ElympicsRpcMessageList), 25 },
+                { typeof(global::Elympics.ElympicsSnapshot), 26 },
+                { typeof(global::Elympics.ElympicsSnapshotPlayerInput), 27 },
+                { typeof(global::Elympics.ElympicsSnapshotWithMetadata), 28 },
+                { typeof(global::Elympics.FactoryState), 29 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.GameData), 30 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker), 31 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchData), 32 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchFound), 33 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError), 34 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Ping), 35 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Pong), 36 },
+                { typeof(global::Elympics.TickToPlayerInput), 37 },
             };
         }
 
@@ -74,18 +100,44 @@ namespace MessagePack.Resolvers
 
             switch (key)
             {
-                case 0: return new global::MessagePack.Formatters.ArrayFormatter<global::System.Guid>();
-                case 1: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.ErrorBlameFormatter();
-                case 2: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodesFormatter();
-                case 3: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IFromLobbyFormatter();
-                case 4: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IToLobbyFormatter();
-                case 5: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.GameDataFormatter();
-                case 6: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.JoinMatchmakerFormatter();
-                case 7: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchDataFormatter();
-                case 8: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchFoundFormatter();
-                case 9: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakingErrorFormatter();
-                case 10: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PingFormatter();
-                case 11: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PongFormatter();
+                case 0: return new global::MessagePack.Formatters.ValueTupleFormatter<string, global::System.Collections.Generic.List<(string, string)>>();
+                case 1: return new global::MessagePack.Formatters.ValueTupleFormatter<string, string>();
+                case 2: return new global::MessagePack.Formatters.DictionaryFormatter<int, global::Elympics.TickToPlayerInput>();
+                case 3: return new global::MessagePack.Formatters.DictionaryFormatter<long, global::Elympics.ElympicsSnapshotPlayerInput>();
+                case 4: return new global::MessagePack.Formatters.KeyValuePairFormatter<int, byte[]>();
+                case 5: return new global::MessagePack.Formatters.ListFormatter<(string, global::System.Collections.Generic.List<(string, string)>)>();
+                case 6: return new global::MessagePack.Formatters.ListFormatter<(string, string)>();
+                case 7: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsBehaviourMetadata>();
+                case 8: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsInput>();
+                case 9: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsRpcMessage>();
+                case 10: return new global::MessagePack.Formatters.ListFormatter<global::System.Collections.Generic.KeyValuePair<int, byte[]>>();
+                case 11: return new global::MessagePack.Formatters.ArrayFormatter<global::System.Guid>();
+                case 12: return new global::MessagePack.Formatters.ArrayFormatter<object>();
+                case 13: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.ErrorBlameFormatter();
+                case 14: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodesFormatter();
+                case 15: return new MessagePack.Formatters.Elympics.ElympicsDataWithTickFormatter();
+                case 16: return new MessagePack.Formatters.Elympics.IFromServerFormatter();
+                case 17: return new MessagePack.Formatters.Elympics.IToServerFormatter();
+                case 18: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IFromLobbyFormatter();
+                case 19: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IToLobbyFormatter();
+                case 20: return new MessagePack.Formatters.Elympics.ElympicsBehaviourMetadataFormatter();
+                case 21: return new MessagePack.Formatters.Elympics.ElympicsInputFormatter();
+                case 22: return new MessagePack.Formatters.Elympics.ElympicsInputListFormatter();
+                case 23: return new MessagePack.Formatters.Elympics.ElympicsPlayerFormatter();
+                case 24: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageFormatter();
+                case 25: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageListFormatter();
+                case 26: return new MessagePack.Formatters.Elympics.ElympicsSnapshotFormatter();
+                case 27: return new MessagePack.Formatters.Elympics.ElympicsSnapshotPlayerInputFormatter();
+                case 28: return new MessagePack.Formatters.Elympics.ElympicsSnapshotWithMetadataFormatter();
+                case 29: return new MessagePack.Formatters.Elympics.FactoryStateFormatter();
+                case 30: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.GameDataFormatter();
+                case 31: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.JoinMatchmakerFormatter();
+                case 32: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchDataFormatter();
+                case 33: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchFoundFormatter();
+                case 34: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakingErrorFormatter();
+                case 35: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PingFormatter();
+                case 36: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PongFormatter();
+                case 37: return new MessagePack.Formatters.Elympics.TickToPlayerInputFormatter();
                 default: return null;
             }
         }
@@ -166,6 +218,297 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 #pragma warning disable SA1403 // File may only contain a single namespace
 #pragma warning disable SA1649 // File name should match first type name
 
+namespace MessagePack.Formatters.Elympics
+{
+    public sealed class ElympicsDataWithTickFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsDataWithTick>
+    {
+        private readonly global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>> typeToKeyAndJumpMap;
+        private readonly global::System.Collections.Generic.Dictionary<int, int> keyToJumpMap;
+
+        public ElympicsDataWithTickFormatter()
+        {
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(3, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            {
+                { typeof(global::Elympics.ElympicsSnapshot).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
+                { typeof(global::Elympics.ElympicsInput).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+                { typeof(global::Elympics.ElympicsRpcMessageList).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
+            };
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(3)
+            {
+                { 0, 0 },
+                { 1, 1 },
+                { 2, 2 },
+            };
+        }
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsDataWithTick value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            global::System.Collections.Generic.KeyValuePair<int, int> keyValuePair;
+            if (value != null && this.typeToKeyAndJumpMap.TryGetValue(value.GetType().TypeHandle, out keyValuePair))
+            {
+                writer.WriteArrayHeader(2);
+                writer.WriteInt32(keyValuePair.Key);
+                switch (keyValuePair.Value)
+                {
+                    case 0:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsSnapshot>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsSnapshot)value, options);
+                        break;
+                    case 1:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsInput)value, options);
+                        break;
+                    case 2:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsRpcMessageList)value, options);
+                        break;
+                    default:
+                        break;
+                }
+
+                return;
+            }
+
+            writer.WriteNil();
+        }
+
+        public global::Elympics.ElympicsDataWithTick Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            if (reader.ReadArrayHeader() != 2)
+            {
+                throw new global::System.InvalidOperationException("Invalid Union data was detected. Type:global::Elympics.ElympicsDataWithTick");
+            }
+
+            options.Security.DepthStep(ref reader);
+            var key = reader.ReadInt32();
+
+            if (!this.keyToJumpMap.TryGetValue(key, out key))
+            {
+                key = -1;
+            }
+
+            global::Elympics.ElympicsDataWithTick result = null;
+            switch (key)
+            {
+                case 0:
+                    result = (global::Elympics.ElympicsDataWithTick)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsSnapshot>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 1:
+                    result = (global::Elympics.ElympicsDataWithTick)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 2:
+                    result = (global::Elympics.ElympicsDataWithTick)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                default:
+                    reader.Skip();
+                    break;
+            }
+
+            reader.Depth--;
+            return result;
+        }
+    }
+
+    public sealed class IFromServerFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.IFromServer>
+    {
+        private readonly global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>> typeToKeyAndJumpMap;
+        private readonly global::System.Collections.Generic.Dictionary<int, int> keyToJumpMap;
+
+        public IFromServerFormatter()
+        {
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(2, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            {
+                { typeof(global::Elympics.ElympicsSnapshot).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
+                { typeof(global::Elympics.ElympicsRpcMessageList).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+            };
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(2)
+            {
+                { 0, 0 },
+                { 1, 1 },
+            };
+        }
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.IFromServer value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            global::System.Collections.Generic.KeyValuePair<int, int> keyValuePair;
+            if (value != null && this.typeToKeyAndJumpMap.TryGetValue(value.GetType().TypeHandle, out keyValuePair))
+            {
+                writer.WriteArrayHeader(2);
+                writer.WriteInt32(keyValuePair.Key);
+                switch (keyValuePair.Value)
+                {
+                    case 0:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsSnapshot>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsSnapshot)value, options);
+                        break;
+                    case 1:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsRpcMessageList)value, options);
+                        break;
+                    default:
+                        break;
+                }
+
+                return;
+            }
+
+            writer.WriteNil();
+        }
+
+        public global::Elympics.IFromServer Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            if (reader.ReadArrayHeader() != 2)
+            {
+                throw new global::System.InvalidOperationException("Invalid Union data was detected. Type:global::Elympics.IFromServer");
+            }
+
+            options.Security.DepthStep(ref reader);
+            var key = reader.ReadInt32();
+
+            if (!this.keyToJumpMap.TryGetValue(key, out key))
+            {
+                key = -1;
+            }
+
+            global::Elympics.IFromServer result = null;
+            switch (key)
+            {
+                case 0:
+                    result = (global::Elympics.IFromServer)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsSnapshot>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 1:
+                    result = (global::Elympics.IFromServer)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                default:
+                    reader.Skip();
+                    break;
+            }
+
+            reader.Depth--;
+            return result;
+        }
+    }
+
+    public sealed class IToServerFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.IToServer>
+    {
+        private readonly global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>> typeToKeyAndJumpMap;
+        private readonly global::System.Collections.Generic.Dictionary<int, int> keyToJumpMap;
+
+        public IToServerFormatter()
+        {
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(3, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            {
+                { typeof(global::Elympics.ElympicsInput).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
+                { typeof(global::Elympics.ElympicsInputList).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+                { typeof(global::Elympics.ElympicsRpcMessageList).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
+            };
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(3)
+            {
+                { 0, 0 },
+                { 1, 1 },
+                { 2, 2 },
+            };
+        }
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.IToServer value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            global::System.Collections.Generic.KeyValuePair<int, int> keyValuePair;
+            if (value != null && this.typeToKeyAndJumpMap.TryGetValue(value.GetType().TypeHandle, out keyValuePair))
+            {
+                writer.WriteArrayHeader(2);
+                writer.WriteInt32(keyValuePair.Key);
+                switch (keyValuePair.Value)
+                {
+                    case 0:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsInput)value, options);
+                        break;
+                    case 1:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInputList>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsInputList)value, options);
+                        break;
+                    case 2:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsRpcMessageList)value, options);
+                        break;
+                    default:
+                        break;
+                }
+
+                return;
+            }
+
+            writer.WriteNil();
+        }
+
+        public global::Elympics.IToServer Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            if (reader.ReadArrayHeader() != 2)
+            {
+                throw new global::System.InvalidOperationException("Invalid Union data was detected. Type:global::Elympics.IToServer");
+            }
+
+            options.Security.DepthStep(ref reader);
+            var key = reader.ReadInt32();
+
+            if (!this.keyToJumpMap.TryGetValue(key, out key))
+            {
+                key = -1;
+            }
+
+            global::Elympics.IToServer result = null;
+            switch (key)
+            {
+                case 0:
+                    result = (global::Elympics.IToServer)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 1:
+                    result = (global::Elympics.IToServer)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInputList>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 2:
+                    result = (global::Elympics.IToServer)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                default:
+                    reader.Skip();
+                    break;
+            }
+
+            reader.Depth--;
+            return result;
+        }
+    }
+
+
+}
+
+#pragma warning restore 168
+#pragma warning restore 414
+#pragma warning restore 618
+#pragma warning restore 612
+
+#pragma warning restore SA1403 // File may only contain a single namespace
+#pragma warning restore SA1649 // File name should match first type name
+
+// <auto-generated>
+// THIS (.cs) FILE IS GENERATED BY MPC(MessagePack-CSharp). DO NOT CHANGE IT.
+// </auto-generated>
+
+#pragma warning disable 618
+#pragma warning disable 612
+#pragma warning disable 414
+#pragma warning disable 168
+#pragma warning disable CS1591 // document public APIs
+
+#pragma warning disable SA1403 // File may only contain a single namespace
+#pragma warning disable SA1649 // File name should match first type name
+
 namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 {
     public sealed class IFromLobbyFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Models.Matchmaking.WebSocket.IFromLobby>
@@ -203,19 +546,19 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
                 switch (keyValuePair.Value)
                 {
                     case 0:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Ping)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Ping)value, options);
                         break;
                     case 1:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Pong)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Pong)value, options);
                         break;
                     case 2:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchFound>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchFound)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchFound>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchFound)value, options);
                         break;
                     case 3:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchData>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchData)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchData>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchData)value, options);
                         break;
                     case 4:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError)value, options);
                         break;
                     default:
                         break;
@@ -251,19 +594,19 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
             switch (key)
             {
                 case 0:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 1:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 2:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchFound>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchFound>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 3:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchData>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchData>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 4:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -308,16 +651,16 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
                 switch (keyValuePair.Value)
                 {
                     case 0:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Ping)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Ping)value, options);
                         break;
                     case 1:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Pong)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.Pong)value, options);
                         break;
                     case 2:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.GameData>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.GameData)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.GameData>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.GameData)value, options);
                         break;
                     case 3:
-                        options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker>().Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker>(options.Resolver).Serialize(ref writer, (global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker)value, options);
                         break;
                     default:
                         break;
@@ -353,16 +696,16 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
             switch (key)
             {
                 case 0:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Ping>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 1:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.Pong>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 2:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.GameData>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.GameData>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 3:
-                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)options.Resolver.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker>().Deserialize(ref reader, options);
+                    result = (global::Elympics.Models.Matchmaking.WebSocket.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -385,6 +728,588 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 #pragma warning restore SA1403 // File may only contain a single namespace
 #pragma warning restore SA1649 // File name should match first type name
 
+
+// <auto-generated>
+// THIS (.cs) FILE IS GENERATED BY MPC(MessagePack-CSharp). DO NOT CHANGE IT.
+// </auto-generated>
+
+#pragma warning disable 618
+#pragma warning disable 612
+#pragma warning disable 414
+#pragma warning disable 168
+#pragma warning disable CS1591 // document public APIs
+
+#pragma warning disable SA1129 // Do not use default value type constructor
+#pragma warning disable SA1309 // Field names should not begin with underscore
+#pragma warning disable SA1312 // Variable names should begin with lower-case letter
+#pragma warning disable SA1403 // File may only contain a single namespace
+#pragma warning disable SA1649 // File name should match first type name
+
+namespace MessagePack.Formatters.Elympics
+{
+    public sealed class ElympicsBehaviourMetadataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsBehaviourMetadata>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsBehaviourMetadata value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(5);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Name, options);
+            writer.Write(value.NetworkId);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsPlayer>(formatterResolver).Serialize(ref writer, value.PredictableFor, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.PrefabName, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>>(formatterResolver).Serialize(ref writer, value.StateMetadata, options);
+        }
+
+        public global::Elympics.ElympicsBehaviourMetadata Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsBehaviourMetadata();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Name = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 1:
+                        ____result.NetworkId = reader.ReadInt32();
+                        break;
+                    case 2:
+                        ____result.PredictableFor = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsPlayer>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 3:
+                        ____result.PrefabName = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 4:
+                        ____result.StateMetadata = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsInputFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsInput>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsInput value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(3);
+            writer.Write(value.Tick);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsPlayer>(formatterResolver).Serialize(ref writer, value.Player, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Serialize(ref writer, value.Data, options);
+        }
+
+        public global::Elympics.ElympicsInput Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsInput();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Tick = reader.ReadInt64();
+                        break;
+                    case 1:
+                        ____result.Player = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsPlayer>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 2:
+                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsInputListFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsInputList>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsInputList value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsInput>>(formatterResolver).Serialize(ref writer, value.Values, options);
+        }
+
+        public global::Elympics.ElympicsInputList Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsInputList();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Values = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsInput>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsPlayerFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsPlayer>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsPlayer value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            writer.WriteArrayHeader(0);
+        }
+
+        public global::Elympics.ElympicsPlayer Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+            }
+
+            reader.Skip();
+            return new global::Elympics.ElympicsPlayer();
+        }
+    }
+
+    public sealed class ElympicsRpcMessageFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsRpcMessage>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsRpcMessage value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(3);
+            writer.Write(value.NetworkId);
+            writer.Write(value.MethodId);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<object[]>(formatterResolver).Serialize(ref writer, value.Arguments, options);
+        }
+
+        public global::Elympics.ElympicsRpcMessage Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var __NetworkId__ = default(int);
+            var __MethodId__ = default(ushort);
+            var __Arguments__ = default(object[]);
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        __NetworkId__ = reader.ReadInt32();
+                        break;
+                    case 1:
+                        __MethodId__ = reader.ReadUInt16();
+                        break;
+                    case 2:
+                        __Arguments__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<object[]>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            var ____result = new global::Elympics.ElympicsRpcMessage(__NetworkId__, __MethodId__, __Arguments__);
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsRpcMessageListFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsRpcMessageList>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsRpcMessageList value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(2);
+            writer.Write(value.Tick);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Serialize(ref writer, value.Messages, options);
+        }
+
+        public global::Elympics.ElympicsRpcMessageList Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsRpcMessageList();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Tick = reader.ReadInt64();
+                        break;
+                    case 1:
+                        ____result.Messages = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsSnapshotFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsSnapshot>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsSnapshot value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(5);
+            writer.Write(value.Tick);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.TickStartUtc, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Serialize(ref writer, value.Factory, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Serialize(ref writer, value.Data, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Serialize(ref writer, value.TickToPlayersInputData, options);
+        }
+
+        public global::Elympics.ElympicsSnapshot Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsSnapshot();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Tick = reader.ReadInt64();
+                        break;
+                    case 1:
+                        ____result.TickStartUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 2:
+                        ____result.Factory = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 3:
+                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 4:
+                        ____result.TickToPlayersInputData = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsSnapshotPlayerInputFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsSnapshotPlayerInput>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsSnapshotPlayerInput value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Serialize(ref writer, value.Data, options);
+        }
+
+        public global::Elympics.ElympicsSnapshotPlayerInput Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsSnapshotPlayerInput();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class ElympicsSnapshotWithMetadataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.ElympicsSnapshotWithMetadata>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsSnapshotWithMetadata value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(8);
+            writer.Write(value.Tick);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.TickStartUtc, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Serialize(ref writer, value.Factory, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Serialize(ref writer, value.Data, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Serialize(ref writer, value.TickToPlayersInputData, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.TickEndUtc, options);
+            writer.Write(value.FixedUpdateNumber);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Serialize(ref writer, value.Metadata, options);
+        }
+
+        public global::Elympics.ElympicsSnapshotWithMetadata Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Tick = reader.ReadInt64();
+                        break;
+                    case 1:
+                        ____result.TickStartUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 2:
+                        ____result.Factory = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 3:
+                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 4:
+                        ____result.TickToPlayersInputData = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 5:
+                        ____result.TickEndUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 6:
+                        ____result.FixedUpdateNumber = reader.ReadInt64();
+                        break;
+                    case 7:
+                        ____result.Metadata = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class FactoryStateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.FactoryState>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.FactoryState value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Serialize(ref writer, value.Parts, options);
+        }
+
+        public global::Elympics.FactoryState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.FactoryState();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Parts = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class TickToPlayerInputFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.TickToPlayerInput>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.TickToPlayerInput value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<long, global::Elympics.ElympicsSnapshotPlayerInput>>(formatterResolver).Serialize(ref writer, value.Data, options);
+        }
+
+        public global::Elympics.TickToPlayerInput Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Elympics.TickToPlayerInput();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<long, global::Elympics.ElympicsSnapshotPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+}
+
+#pragma warning restore 168
+#pragma warning restore 414
+#pragma warning restore 618
+#pragma warning restore 612
+
+#pragma warning restore SA1129 // Do not use default value type constructor
+#pragma warning restore SA1309 // Field names should not begin with underscore
+#pragma warning restore SA1312 // Variable names should begin with lower-case letter
+#pragma warning restore SA1403 // File may only contain a single namespace
+#pragma warning restore SA1649 // File name should match first type name
 
 // <auto-generated>
 // THIS (.cs) FILE IS GENERATED BY MPC(MessagePack-CSharp). DO NOT CHANGE IT.

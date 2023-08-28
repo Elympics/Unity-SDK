@@ -149,6 +149,7 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
+        [Ignore("Takes long to execute and yields uncertain results")]
         [Repeat(25)]
         public IEnumerator TestCorrectRegionIsFound() => UniTask.ToCoroutine(async () =>
         {

@@ -1,4 +1,5 @@
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Models.Authentication;
 using Plugins.Elympics.Plugins.ParrelSync;
@@ -30,7 +31,7 @@ public class MenuController : MonoBehaviour
             ElympicsLobbyClient.Instance.AuthenticationSucceeded += HandleAuthenticated;
         ElympicsLobbyClient.Instance.Matchmaker.MatchmakingCancelledGuid += _ => ResetState();
         ElympicsLobbyClient.Instance.Matchmaker.MatchmakingFailed += _ => ResetState();
-        ChooseRegion();
+        _ = ChooseRegion();
 
         _playButtonText = playButton.GetComponentInChildren<Text>();
         _rejoinButtonText = rejoinButton.GetComponentInChildren<Text>();
@@ -58,7 +59,7 @@ public class MenuController : MonoBehaviour
         ElympicsLobbyClient.Instance.HasAnyUnfinishedMatch(isUnfinishedMatchAvailable => rejoinButton.interactable = isUnfinishedMatchAvailable, Debug.LogError);
     }
 
-    private async void ChooseRegion()
+    private async UniTaskVoid ChooseRegion()
     {
         _closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
         if (string.IsNullOrEmpty(_closestRegion))

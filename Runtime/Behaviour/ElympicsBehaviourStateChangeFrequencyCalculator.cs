@@ -24,11 +24,11 @@ namespace Elympics
 
         private Func<byte[], byte[], bool> areStatesEqualsFunc = null;
 
-        public ElympicsBehaviourStateChangeFrequencyCalculator(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStages, Func<byte[], byte[], bool> areStatesEqualsFunc)
+        public ElympicsBehaviourStateChangeFrequencyCalculator(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStages, Func<byte[], byte[], bool> areStatesEqualsFunc, ElympicsGameConfig gameConfig)
         {
             this.areStatesEqualsFunc = areStatesEqualsFunc;
 
-            CreateStateUpdateFrequencyStagesInTicks(stateUpdateFrequencyStages, ElympicsConfig.LoadCurrentElympicsGameConfig().TicksPerSecond);
+            CreateStateUpdateFrequencyStagesInTicks(stateUpdateFrequencyStages, gameConfig.TicksPerSecond);
         }
 
         private bool CanSkipStateSynchronizingInCurrentSnapshotCall()

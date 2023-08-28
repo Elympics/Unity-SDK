@@ -13,7 +13,6 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     [SerializeField] private Text[] playerLabels;
 
     private ElympicsArray<ElympicsInt> _clickCount;
-    private ElympicsArray<ElympicsInt> _lastClicked;
     private ElympicsInt _ticksLeft;
 
     private int _playerCount;
@@ -33,32 +32,35 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
         }
 
         _clickCount = new ElympicsArray<ElympicsInt>(_playerCount, () => new ElympicsInt());
-        _lastClicked = new ElympicsArray<ElympicsInt>(_playerCount, () => new ElympicsInt());
         mainLabel.text = $"Game started for {_playerCount} players";
         _ticksLeft = new ElympicsInt((int)Mathf.Ceil(secondsLimit * Elympics.TicksPerSecond));
         _initialized = true;
     }
 
     [UsedImplicitly]
-    public void OnClick()
-    {
-        _clicked = true;
-    }
+    public void OnClick() => _clicked = true;
 
     public void OnInputForClient(IInputWriter inputSerializer)
-    {
-        if (!_initialized)
-            return;
-        if (_clicked)
-        {
-            _lastClickedCached = (int)Elympics.Tick;
-            _clicked = false;
-        }
-        inputSerializer.Write(_lastClickedCached);
-    }
+    { }
 
     public void OnInputForBot(IInputWriter inputSerializer)
     { }
+
+    [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
+    private void IncrementCounter(int playerId)
+    {
+        _clickCount.Values[playerId].Value++;
+        playerLabels[playerId].gameObject.SetActive(true);
+
+        if (_clickCount.Values[playerId].Value == 5)
+            LogOnPlayers($"Player {playerId} just scored 5 points");
+    }
+
+    [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
+    private void LogOnPlayers(string message)
+    {
+        Debug.LogError("RPC message from server: " + message);
+    }
 
     public void ElympicsUpdate()
     {
@@ -72,16 +74,12 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
                     x => new ResultMatchPlayerData { MatchmakerData = new float[] { x.Value } }).ToList()));
             return;
         }
-        for (var playerId = 0; playerId < _playerCount; playerId++)
-            if (ElympicsBehaviour.TryGetInput(ElympicsPlayer.FromIndex(playerId), out var inputReader))
-            {
-                inputReader.Read(out int lastClicked);
-                if (lastClicked <= _lastClicked.Values[playerId].Value)
-                    continue;
-                _lastClicked.Values[playerId].Value = lastClicked;
-                _clickCount.Values[playerId].Value++;
-                playerLabels[playerId].gameObject.SetActive(true);
-            }
+
+        if (_clicked && Elympics.IsClient)
+        {
+            IncrementCounter(Math.Max((int)Elympics.Player, 0));
+            _clicked = false;
+        }
     }
 
     public void Update()

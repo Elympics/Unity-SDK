@@ -7,3 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
+[assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]

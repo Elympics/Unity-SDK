@@ -1,18 +1,23 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using MatchTcpLibrary.Ntp;
+using MessagePack;
 using PlayerId = System.Int32;
 
 namespace Elympics
 {
-    public class ElympicsSnapshot : ElympicsDataWithTick, IElympicsSerializable
+    [MessagePackObject]
+    public class ElympicsSnapshot : ElympicsDataWithTick, IFromServer
     {
         internal const int DateTimeWeight = 8;
 
+        [IgnoreMember] public sealed override long Tick { get; set; }
+        [Key(1)] public DateTime TickStartUtc { get; set; }
+        [Key(2)] public FactoryState Factory { get; set; }
+        [Key(3)] public List<KeyValuePair<int, byte[]>> Data { get; set; }
+        [Key(4)] public Dictionary<PlayerId, TickToPlayerInput> TickToPlayersInputData { get; set; }
+
         public ElympicsSnapshot()
-        {
-        }
+        { }
 
         public ElympicsSnapshot(ElympicsSnapshot snapshot)
         {
@@ -20,46 +25,6 @@ namespace Elympics
             TickStartUtc = snapshot.TickStartUtc;
             Factory = snapshot.Factory;
             Data = snapshot.Data;
-        }
-
-        public sealed override long Tick { get; set; }
-        public DateTime TickStartUtc { get; set; }
-        public FactoryState Factory { get; set; }
-        public List<KeyValuePair<int, byte[]>> Data { get; set; }
-
-        public Dictionary<PlayerId, TickToPlayerInput> TickToPlayersInputData { get; set; }
-
-        public virtual void Deserialize(BinaryReader br)
-        {
-            Tick = br.ReadInt64();
-            Factory = br.Deserialize<FactoryState>();
-            Data = br.ReadListWithKvpIntToByteArray();
-            TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>();
-            var lenght = br.ReadInt32();
-            for (var i = 0; i < lenght; i++)
-            {
-                var tick = br.ReadInt32();
-                var playerToInputDataPair = br.Deserialize<TickToPlayerInput>();
-                TickToPlayersInputData.Add(tick, playerToInputDataPair);
-            }
-            var createdAt = br.ReadBytes(DateTimeWeight);
-            TickStartUtc = NtpUtils.NtpDataTimeStampToDateTime(createdAt);
-        }
-
-        public virtual void Serialize(BinaryWriter bw)
-        {
-            bw.Write(Tick);
-            Factory.Serialize(bw);
-            bw.Write(Data);
-            bw.Write(TickToPlayersInputData.Count);
-            foreach (var keyValuePair in TickToPlayersInputData)
-            {
-                bw.Write(keyValuePair.Key);
-                keyValuePair.Value.Serialize(bw);
-            }
-            var createdAt = new byte[DateTimeWeight];
-            NtpUtils.DateTimeToNtpDataTimeStamp(TickStartUtc, createdAt);
-            bw.Write(createdAt);
         }
     }
 }

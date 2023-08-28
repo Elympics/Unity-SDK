@@ -28,9 +28,9 @@ namespace Elympics
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
             _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, new Guid(userId), elympicsGameConfig.UseWebInHalfRemote);
 
-            _halfRemoteMatchClient.RawSnapshotReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
-            gameBotAdapter.InGameDataForReliableChannelGenerated += data => _halfRemoteMatchClient.SendRawInputReliable(data);
-            gameBotAdapter.InGameDataForUnreliableChannelGenerated += data => _halfRemoteMatchClient.SendRawInputUnreliable(data);
+            _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
+            gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
+            gameBotAdapter.InGameDataForUnreliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, false);
 
             gameBotAdapter.Init(new LoggerNoop(), null);
             gameBotAdapter.Init2(null);
@@ -39,9 +39,6 @@ namespace Elympics
             _ = _halfRemoteMatchConnectClient.ConnectAndJoinAsPlayer(_ => { }, default);
         }
 
-        public override void Dispose()
-        {
-            _halfRemoteMatchConnectClient?.Dispose();
-        }
+        public override void Dispose() => _halfRemoteMatchConnectClient?.Dispose();
     }
 }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
+using MessagePack;
 
 namespace Elympics
 {
@@ -10,45 +11,48 @@ namespace Elympics
     {
         public event Action<TimeSynchronizationData> Synchronized;
         public event Action<ElympicsSnapshot> SnapshotReceived;
+        public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
         private readonly IGameServerClient _gameServerClient;
-        private readonly RingBuffer<byte[]> _inputRingBuffer;
+        private readonly RingBuffer<ElympicsInput> _inputRingBuffer;
 
         public RemoteMatchClient(IGameServerClient gameServerClient, ElympicsGameConfig config)
         {
             _gameServerClient = gameServerClient;
-            _inputRingBuffer = new RingBuffer<byte[]>(config.InputsToSendBufferSize);
+            _inputRingBuffer = new RingBuffer<ElympicsInput>(config.InputsToSendBufferSize);
 
             gameServerClient.Synchronized += OnSynchronized;
-            gameServerClient.InGameDataReliableReceived += OnInGameDataReliableReceived;
-            gameServerClient.InGameDataUnreliableReceived += OnInGameDataUnreliableReceived;
+            gameServerClient.InGameDataReliableReceived += ProcessReceivedInGameData;
+            gameServerClient.InGameDataUnreliableReceived += ProcessReceivedInGameData;
         }
 
         private void OnSynchronized(TimeSynchronizationData data) => Synchronized?.Invoke(data);
 
-        private void OnInGameDataReliableReceived(InGameDataMessage message)
+        private void ProcessReceivedInGameData(InGameDataMessage message)
         {
-            var snapshot = Convert.FromBase64String(message.Data).Deserialize<ElympicsSnapshot>();
-            SnapshotReceived?.Invoke(snapshot);
+            var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(Convert.FromBase64String(message.Data));
+            if (deserializedData is ElympicsSnapshot snapshot)
+                SnapshotReceived?.Invoke(snapshot);
+            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
+                RpcMessageListReceived?.Invoke(rpcMessageList);
         }
 
-        private void OnInGameDataUnreliableReceived(InGameDataMessage message)
+        public async Task SendInput(ElympicsInput input)
         {
-            var snapshot = Convert.FromBase64String(message.Data).Deserialize<ElympicsSnapshot>();
-            SnapshotReceived?.Invoke(snapshot);
+            _inputRingBuffer.PushBack(input);
+            await SendDataToServer(new ElympicsInputList { Values = _inputRingBuffer.ToList() }, false);
         }
 
-        public async Task SendInputReliable(ElympicsInput input)
-        {
-            var inputSerialized = input.Serialize();
-            await _gameServerClient.SendInGameDataReliableAsync(inputSerialized);
-        }
+        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            await SendDataToServer(rpcMessageList, true);
 
-        public async Task SendInputUnreliable(ElympicsInput input)
+        private async Task SendDataToServer(IToServer data, bool reliable)
         {
-            _inputRingBuffer.PushBack(input.Serialize());
-            var serializedInputs = _inputRingBuffer.ToArray().MergeBytePackage();
-            await _gameServerClient.SendInGameDataUnreliableAsync(serializedInputs);
+            var dataSerialized = MessagePackSerializer.Serialize(data);
+            Func<byte[], Task> sendDataAsync = reliable
+                ? _gameServerClient.SendInGameDataReliableAsync
+                : _gameServerClient.SendInGameDataUnreliableAsync;
+            await sendDataAsync(dataSerialized);
         }
     }
 }

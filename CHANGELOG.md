@@ -1,18 +1,3 @@
-# [0.9.0](https://github.com/Elympics/Unity-SDK/compare/v0.8.1...v0.9.0) (2023-08-28)
-
-
-### Bug Fixes 🪲
-
-* Prevent NRE when accessing current ElympicsGameConfig at startup ([c40cdb3](https://github.com/Elympics/Unity-SDK/commit/c40cdb3e67b48d6f91f4427a0dc598a0aba02923))
-
-
-### Features
-
-* Add ElympicsLobby to "Add GameObject" context menu ([624214b](https://github.com/Elympics/Unity-SDK/commit/624214b01031bc85fc75a20471165119d4f31fb0))
-* Introduce RPC ([bcc9129](https://github.com/Elympics/Unity-SDK/commit/bcc9129621dc2e3dfa670210fd7dcbe2120787f6))
-
-
-
 ## [0.8.1](https://github.com/Elympics/Unity-SDK/compare/v0.8.0...v0.8.1) (2023-07-14)
 
 

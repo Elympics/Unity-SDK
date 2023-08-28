@@ -33,7 +33,7 @@ async function main() {
         .toString()
         .replace(/(AssemblyVersion\(\").*(\.[0-9]+\"\))/, `$1${version}$2`);
     fs.writeFileSync(assemblyFileName, assemblyFile);
-    console.log(`Updated Assembly version to ${version}`);
+    console.log(`Updated ${assemblyFileName} Assembly version to ${version}`);
   });
 }
 

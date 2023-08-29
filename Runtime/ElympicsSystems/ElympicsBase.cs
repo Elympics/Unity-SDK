@@ -124,6 +124,7 @@ namespace Elympics
                 _fixedUpdatesCounter++;
             }
 
+            _elympicsUpdateStopwatch.Reset();
             _elympicsUpdateStopwatch.Start();
         }
 
@@ -173,20 +174,21 @@ namespace Elympics
 
         private void LogFixedUpdateThrottle()
         {
-            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
-                Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
-            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
+            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
                 Debug.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
+            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
+                Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
+
         }
 
         private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         private void LogElympicsTickThrottle()
         {
-            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
-                Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
-            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
+            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
                 Debug.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
+            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
+                Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
         }
 
         private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";

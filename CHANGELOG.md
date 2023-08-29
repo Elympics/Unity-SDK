@@ -3,6 +3,7 @@
 
 ### Bug Fixes 🪲
 
+* Reduce throttle warnings frequency ([779838e](https://github.com/Elympics/Unity-SDK/commit/779838ef7704e09fc6e3e4ad01bdf0cfcb31eb36))
 * Prevent NRE when accessing current ElympicsGameConfig at startup ([c40cdb3](https://github.com/Elympics/Unity-SDK/commit/c40cdb3e67b48d6f91f4427a0dc598a0aba02923))
 
 

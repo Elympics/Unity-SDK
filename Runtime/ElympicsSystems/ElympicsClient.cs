@@ -71,6 +71,7 @@ namespace Elympics
         {
             _matchClient.SnapshotReceived += OnSnapshotReceived;
             _matchClient.Synchronized += OnSynchronized;
+            _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
             _matchConnectClient.DisconnectedByServer += OnDisconnectedByServer;
             _matchConnectClient.DisconnectedByClient += OnDisconnectedByClient;
             _matchConnectClient.ConnectedWithSynchronizationData += OnConnectedWithSynchronizationData;
@@ -93,7 +94,11 @@ namespace Elympics
         private void OnDestroy()
         {
             if (_matchClient != null)
+            {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
+                _matchClient.Synchronized -= OnSynchronized;
+                _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
+            }
 
             _logToFile?.DeInit();
         }
@@ -139,6 +144,7 @@ namespace Elympics
                         using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
                             ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
 
+                        InvokeQueuedRpcMessages();
                         elympicsBehavioursManager.CommitVars();
 
                         using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
@@ -156,10 +162,13 @@ namespace Elympics
             else
             {
                 ApplyFullSnapshot(receivedSnapshot);
+                InvokeQueuedRpcMessages();
                 elympicsBehavioursManager.CommitVars();
             }
 
             ElympicsUpdateDuration = 1 / _clientTickCalculator.Results.ElympicsUpdateTickRate;
+
+            SendQueuedRpcMessages();
 
             if (Config.DetailedNetworkLog)
             {
@@ -209,7 +218,10 @@ namespace Elympics
             input.Player = Player;
         }
 
-        private void SendInput(ElympicsInput input) => _matchClient.SendInputUnreliable(input);
+        private void SendInput(ElympicsInput input) => _matchClient.SendInput(input);
+
+        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            _matchClient.SendRpcMessageList(rpcMessageList);
 
         private void ApplyPredictedInput()
         {

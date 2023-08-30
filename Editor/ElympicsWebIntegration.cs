@@ -295,7 +295,7 @@ namespace Elympics
         public static void PostStartEvent()
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            PostTelemetryEvent(UsageStatisticsRoutes.Start, new StartRequest { gameId = gameConfig.GameId });
+            PostTelemetryEvent(UsageStatisticsRoutes.Start, new StartRequest { gameId = gameConfig?.GameId });
         }
 
         public static void PostPlayEvent(string mode)

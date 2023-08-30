@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -34,6 +35,11 @@ namespace Elympics
         };
 
         private ElympicsComponentsContainer _componentsContainer;
+
+        internal RpcMethodsContainer RpcMethods { get; } = new();
+        private bool _isReconciling;
+        private bool _isInvokingRpc;
+
         private List<ElympicsVar> _backingFields;
         private Dictionary<ElympicsVar, string> _backingFieldsNames;
         private List<(string, List<ElympicsVar>)> _backingFieldsByComponents;
@@ -46,6 +52,76 @@ namespace Elympics
         {
             get => networkId;
             internal set => networkId = value;
+        }
+
+        [UsedImplicitly]  // from generated IL code
+        public void ValidateRpcContext(ElympicsRpcProperties _, MethodInfo method)
+        {
+            if (ElympicsBase.CurrentCallContext == ElympicsBase.CallContext.RpcInvoking)
+                return;
+            if (ElympicsBase.CurrentCallContext is not ElympicsBase.CallContext.ElympicsUpdate
+                and not ElympicsBase.CallContext.Initialize)
+                throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: "
+                    + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
+                    + $"or {nameof(IInitializable.Initialize)}");
+        }
+
+        [UsedImplicitly]  // from generated IL code
+        public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo method)
+        {
+            if (_isReconciling)
+                return false;
+            if (_isInvokingRpc)
+                return false;
+            if (ElympicsBase.IsLocalMode)
+                return false;
+            if (ElympicsBase.IsServer && ElympicsBase.IsBot && properties.Direction == ElympicsRpcDirection.PlayerToServer)
+                return false;
+            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer
+                    && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
+                || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
+                throw new RpcDirectionMismatchException(properties, method);
+            return true;
+        }
+
+        [UsedImplicitly]  // from generated IL code
+        public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo _)
+        {
+            if (_isReconciling)
+                return false;
+            if (_isInvokingRpc)
+            {
+                _isInvokingRpc = false;
+                return true;
+            }
+            // TODO: The following two cases short-circuit RPCs so they are not queued for later bulk execution.
+            // TODO: This may introduce unwanted behavior. ~dsygocki 2023-08-07
+            if (ElympicsBase.IsLocalMode)
+                return true;
+            if (ElympicsBase.IsServer && ElympicsBase.IsBot && properties.Direction == ElympicsRpcDirection.PlayerToServer)
+                return true;
+            return false;
+        }
+
+        [UsedImplicitly]  // from generated IL code
+        public void OnRpcCaptured(ElympicsRpcProperties _, MethodInfo method, object target, params object[] arguments)
+        {
+            var rpcMethod = new RpcMethod(method, target);
+            var methodId = RpcMethods.GetIdOf(rpcMethod);
+            var rpcMessage = new ElympicsRpcMessage(NetworkId, methodId, arguments);
+            ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+        }
+
+        // this is NOT called from generated IL code
+        internal void OnRpcInvoked(ushort methodId, params object[] arguments)
+        {
+            var rpcMethod = RpcMethods[methodId];
+            var previousCallContext = ElympicsBase.CurrentCallContext;
+            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.RpcInvoking;
+            _isInvokingRpc = true;
+            rpcMethod.Call(arguments);
+            _isInvokingRpc = false;
+            ElympicsBase.CurrentCallContext = previousCallContext;
         }
 
         public string PrefabName { get; internal set; }
@@ -151,7 +227,7 @@ namespace Elympics
 
             ElympicsBase = elympicsBase;
 
-            _behaviourStateChangeFrequencyCalculator = new ElympicsBehaviourStateChangeFrequencyCalculator(stateFrequencyStages, AreStatesEqual);
+            _behaviourStateChangeFrequencyCalculator = new ElympicsBehaviourStateChangeFrequencyCalculator(stateFrequencyStages, AreStatesEqual, elympicsBase.Config);
 
             _componentsContainer = new ElympicsComponentsContainer(this);
 
@@ -191,6 +267,8 @@ namespace Elympics
                 }
                 if (componentVars.Count > 0)
                     _backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
+
+                RpcMethods.CollectFrom(observable);
             }
 
             _inputReader = new BinaryInputReader();
@@ -287,8 +365,11 @@ namespace Elympics
 
         internal void CommitVars()
         {
+            var previousCallContext = ElympicsBase.CurrentCallContext;
+            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ValueChanged;
             foreach (var backingField in _backingFields)
                 backingField.Commit();
+            ElympicsBase.CurrentCallContext = previousCallContext;
         }
 
         internal void ElympicsUpdate()
@@ -316,6 +397,7 @@ namespace Elympics
 
         internal void OnPreReconcile()
         {
+            _isReconciling = true;
             foreach (var reconciliationHandler in _componentsContainer.ReconciliationHandlers)
                 reconciliationHandler.OnPreReconcile();
         }
@@ -324,6 +406,7 @@ namespace Elympics
         {
             foreach (var reconciliationHandler in _componentsContainer.ReconciliationHandlers)
                 reconciliationHandler.OnPostReconcile();
+            _isReconciling = false;
         }
 
         #region ClientCallbacks

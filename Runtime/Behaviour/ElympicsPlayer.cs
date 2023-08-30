@@ -1,9 +1,11 @@
 using System;
+using MessagePack;
 using UnityEngine;
 
 namespace Elympics
 {
     [Serializable]
+    [MessagePackObject]
     public struct ElympicsPlayer : IEquatable<ElympicsPlayer>, IComparable<ElympicsPlayer>
     {
         private const int AllValue = -3;
@@ -18,7 +20,7 @@ namespace Elympics
         public static readonly ElympicsPlayer World = new() { playerIndex = WorldValue };
         public static readonly ElympicsPlayer Invalid = new() { playerIndex = InvalidValue };
 
-        [SerializeField] internal int playerIndex;
+        [SerializeField][Key(0)] internal int playerIndex;
 
         private ElympicsPlayer(int playerIndex)
         {

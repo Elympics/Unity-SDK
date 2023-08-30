@@ -49,7 +49,7 @@ namespace Elympics
         public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
         {
             var elympicsConfig = Resources.Load<ElympicsConfig>(PathInResources);
-            return elympicsConfig.GetCurrentGameConfig();
+            return elympicsConfig?.GetCurrentGameConfig();
         }
 
         public ElympicsGameConfig GetCurrentGameConfig()

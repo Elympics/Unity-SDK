@@ -1,5 +1,6 @@
 using System;
 using GameBotCore.V1._1;
+using MessagePack;
 using UnityEngine;
 using BotConfiguration = GameBotCore.V1._3.BotConfiguration;
 using IGameBot = GameBotCore.V1._3.IGameBot;
@@ -18,16 +19,19 @@ namespace Elympics
         public event Action<byte[]> InGameDataForReliableChannelGenerated;
         public event Action<byte[]> InGameDataForUnreliableChannelGenerated;
 
-        public void OnInGameDataUnreliableReceived(byte[] data)
-        {
-            var snapshot = data.Deserialize<ElympicsSnapshot>();
-            SnapshotReceived?.Invoke(snapshot);
-        }
+        public void OnInGameDataUnreliableReceived(byte[] data) =>
+            ProcessReceivedInGameData(data);
 
-        public void OnInGameDataReliableReceived(byte[] data)
+        public void OnInGameDataReliableReceived(byte[] data) =>
+            ProcessReceivedInGameData(data);
+
+        private void ProcessReceivedInGameData(byte[] data)
         {
-            var snapshot = data.Deserialize<ElympicsSnapshot>();
-            SnapshotReceived?.Invoke(snapshot);
+            var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(data);
+            if (deserializedData is ElympicsSnapshot snapshot)
+                SnapshotReceived?.Invoke(snapshot);
+            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
+                RpcMessageListReceived?.Invoke(rpcMessageList);
         }
 
         public void Init(IGameBotLogger logger, GameBotCore.V1._1.BotConfiguration botConfiguration)
@@ -83,7 +87,17 @@ namespace Elympics
         }
 
         internal event Action<ElympicsSnapshot> SnapshotReceived;
-        internal void SendInputReliable(ElympicsInput input) => InGameDataForReliableChannelGenerated?.Invoke(input.Serialize());
-        internal void SendInputUnreliable(ElympicsInput input) => InGameDataForUnreliableChannelGenerated?.Invoke(input.Serialize());
+        internal event Action<ElympicsRpcMessageList> RpcMessageListReceived;
+        internal void SendInput(ElympicsInput input) => SendDataToServer(input, false);
+        internal void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) => SendDataToServer(rpcMessageList, true);
+
+        private void SendDataToServer(IToServer data, bool reliable)
+        {
+            var serializedData = MessagePackSerializer.Serialize(data);
+            var sendData = reliable
+                ? InGameDataForReliableChannelGenerated
+                : InGameDataForUnreliableChannelGenerated;
+            sendData?.Invoke(serializedData);
+        }
     }
 }

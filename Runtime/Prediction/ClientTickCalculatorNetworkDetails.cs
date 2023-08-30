@@ -1,9 +1,8 @@
-using System.IO;
 using System.Text;
 
 namespace Elympics
 {
-    public class ClientTickCalculatorNetworkDetails : IElympicsSerializable
+    public class ClientTickCalculatorNetworkDetails
     {
         public bool CanPredict;
         public long DelayedInputTick;
@@ -26,48 +25,6 @@ namespace Elympics
         public ClientTickCalculatorNetworkDetails(ElympicsGameConfig config)
         {
             ElympicsUpdateTickRate = config.TickDuration;
-        }
-
-        public void Serialize(BinaryWriter bw)
-        {
-            bw.Write(CanPredict);
-            bw.Write(DelayedInputTick);
-            bw.Write(ElympicsUpdateTickRate);
-            bw.Write(ExactTickCalculated);
-            bw.Write(InputLagTicks);
-            bw.Write(LastInputTick);
-            bw.Write(LastPredictionTick);
-            bw.Write(LastReceivedTick);
-            bw.Write(LcoTicks);
-            bw.Write(PredictionTick);
-            bw.Write(ReconciliationPerformed);
-            bw.Write(RttTicks);
-            bw.Write(WasTickJumpForced);
-            bw.Write(PredictionLimit);
-            bw.Write(DefaultTickRate);
-            bw.Write(TicksToCatchup);
-            bw.Write(NewPredictedTickFromCalculations);
-        }
-
-        public void Deserialize(BinaryReader br)
-        {
-            CanPredict = br.ReadBoolean();
-            DelayedInputTick = br.ReadInt64();
-            ElympicsUpdateTickRate = br.ReadDouble();
-            ExactTickCalculated = br.ReadDouble();
-            InputLagTicks = br.ReadInt32();
-            LastInputTick = br.ReadInt64();
-            LastPredictionTick = br.ReadInt64();
-            LastReceivedTick = br.ReadInt64();
-            LcoTicks = br.ReadDouble();
-            PredictionTick = br.ReadInt64();
-            ReconciliationPerformed = br.ReadBoolean();
-            RttTicks = br.ReadDouble();
-            WasTickJumpForced = br.ReadBoolean();
-            PredictionLimit = br.ReadInt64();
-            DefaultTickRate = br.ReadDouble();
-            TicksToCatchup = br.ReadInt64();
-            NewPredictedTickFromCalculations = br.ReadInt64();
         }
 
         public override string ToString()

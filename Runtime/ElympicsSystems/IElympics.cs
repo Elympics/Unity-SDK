@@ -25,6 +25,9 @@ namespace Elympics
         /// during input gathering and game initialization.</remarks>
         bool IsBot { get; }
 
+        /// <value>Shortcut for (<see cref="IsClient"/> || <see cref="IsBot"/>).</value>
+        bool IsClientOrBot { get; }
+
         /// <value>The interval in seconds at which network synchronization occurs. It is equal to <see cref="UnityEngine.Time.fixedDeltaTime"/> and calculated as 1/<see cref="TicksPerSecond"/>.</value>
         float TickDuration { get; }
 

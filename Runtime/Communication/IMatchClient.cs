@@ -8,8 +8,9 @@ namespace Elympics
     {
         event Action<TimeSynchronizationData> Synchronized;
         event Action<ElympicsSnapshot> SnapshotReceived;
+        event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
-        Task SendInputReliable(ElympicsInput input);
-        Task SendInputUnreliable(ElympicsInput input);
+        Task SendInput(ElympicsInput input);
+        Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
     }
 }

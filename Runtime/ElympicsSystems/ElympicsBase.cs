@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using MatchTcpClients.Synchronizer;
@@ -17,6 +18,11 @@ namespace Elympics
         [SerializeField]
         private GameObject[] linkedLogic;
 
+        internal readonly ElympicsRpcMessageList RpcMessagesToSend = new();
+        internal readonly List<ElympicsRpcMessageList> RpcMessagesToInvoke = new();
+        protected static readonly object RpcMessagesToInvokeLock = new();
+        private readonly List<ElympicsRpcMessageList> _rpcMessagesToInvokeInCurrentTick = new();
+
         private readonly Stopwatch _elympicsUpdateStopwatch = new();
         private long _fixedUpdatesCounter;
         private double _timer;
@@ -26,7 +32,7 @@ namespace Elympics
 
         protected virtual double MaxUpdateTimeWarningThreshold => ElympicsUpdateDuration;
         private protected DateTime TickStartUtc;
-        private protected ElympicsGameConfig Config;
+        internal ElympicsGameConfig Config { get; private set; }
 
         internal CallContext CurrentCallContext { get; set; } = CallContext.None;
         internal double ElympicsUpdateDuration { get; private protected set; }
@@ -118,6 +124,7 @@ namespace Elympics
                 _fixedUpdatesCounter++;
             }
 
+            _elympicsUpdateStopwatch.Reset();
             _elympicsUpdateStopwatch.Start();
         }
 
@@ -127,6 +134,32 @@ namespace Elympics
             deltaTime = Math.Min(deltaTime, MaxDeltaTime);
             _previousUtcForDeltaTime = currentUtc;
             return deltaTime;
+        }
+
+        protected internal void InvokeQueuedRpcMessages()
+        {
+            _rpcMessagesToInvokeInCurrentTick.Clear();
+            lock (RpcMessagesToInvokeLock)
+                for (var i = RpcMessagesToInvoke.Count - 1; i >= 0; i--)
+                {
+                    if (RpcMessagesToInvoke[i].Tick > Tick)
+                        continue;
+                    _rpcMessagesToInvokeInCurrentTick.Add(RpcMessagesToInvoke[i]);
+                    RpcMessagesToInvoke.RemoveAt(i);
+                }
+            foreach (var rpcMessageList in _rpcMessagesToInvokeInCurrentTick)
+                foreach (var rpcMessage in rpcMessageList.Messages)
+                    if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
+                        behaviour.OnRpcInvoked(rpcMessage.MethodId, rpcMessage.Arguments);
+        }
+
+        protected internal void SendQueuedRpcMessages()
+        {
+            if (RpcMessagesToSend.Messages.Count == 0)
+                return;
+            RpcMessagesToSend.Tick = Tick;
+            SendRpcMessageList(RpcMessagesToSend);
+            RpcMessagesToSend.Messages.Clear();
         }
 
         protected ElympicsSnapshotWithMetadata CreateLocalSnapshotWithMetadata()
@@ -141,20 +174,21 @@ namespace Elympics
 
         private void LogFixedUpdateThrottle()
         {
-            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
-                Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
-            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
+            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
                 Debug.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
+            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
+                Debug.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
+
         }
 
         private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         private void LogElympicsTickThrottle()
         {
-            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
-                Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
-            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
+            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
                 Debug.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
+            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
+                Debug.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
         }
 
         private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) => $"[Elympics] Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
@@ -166,6 +200,15 @@ namespace Elympics
 
         protected virtual bool ShouldDoElympicsUpdate() => true;
         protected abstract void ElympicsFixedUpdate();
+
+        public void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
+        protected abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
+
+        protected void QueueRpcMessagesToInvoke(ElympicsRpcMessageList rpcMessageList)
+        {
+            lock (RpcMessagesToInvokeLock)
+                RpcMessagesToInvoke.Add(rpcMessageList);
+        }
 
         protected virtual void ElympicsLateFixedUpdate()
         {
@@ -210,6 +253,8 @@ namespace Elympics
         public virtual bool IsBot => false;
         public virtual bool IsServer => false;
         public virtual bool IsClient => false;
+        public bool IsClientOrBot => IsClient || IsBot;
+        internal bool IsLocalMode => IsServer && IsClient;  // assuming there is only one client (and Unlimited Bots Work)
 
         public float TickDuration => Config.TickDuration;
         public int TicksPerSecond => Config.TicksPerSecond;
@@ -235,8 +280,10 @@ namespace Elympics
         internal enum CallContext
         {
             None,
+            RpcInvoking,
+            ValueChanged,
             ElympicsUpdate,
-            Initialize
+            Initialize,
         }
     }
 }

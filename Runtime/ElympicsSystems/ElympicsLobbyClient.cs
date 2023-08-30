@@ -13,6 +13,7 @@ using UnityEngine.SceneManagement;
 
 namespace Elympics
 {
+    [RequireComponent(typeof(AsyncEventsDispatcher))]
     public class ElympicsLobbyClient : MonoBehaviour
     {
         public static ElympicsLobbyClient Instance { get; private set; }

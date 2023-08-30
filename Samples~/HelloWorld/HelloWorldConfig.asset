@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: ButtonClicker
   gameId: 288af85e-11f9-491f-bc1e-f8503040ebb1
-  gameVersion: 2-p1
+  gameVersion: 3.3
   players: 1
   gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,

@@ -22,6 +22,7 @@ namespace Elympics
             _gameBotAdapter = gameBotAdapter;
             elympicsBehavioursManager.InitializeInternal(this);
             _gameBotAdapter.SnapshotReceived += OnSnapshotReceived;
+            _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesToInvoke;
             _gameBotAdapter.InitializedWithMatchPlayerData += data =>
             {
                 OnStandaloneBotInit(data);
@@ -50,9 +51,14 @@ namespace Elympics
                 snapshot = _lastReceivedSnapshot;
             elympicsBehavioursManager.ApplySnapshot(snapshot);
             ProcessInput(snapshot.Tick);
+            InvokeQueuedRpcMessages();
             elympicsBehavioursManager.CommitVars();
             elympicsBehavioursManager.ElympicsUpdate();
+            SendQueuedRpcMessages();
         }
+
+        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            _gameBotAdapter.SendRpcMessageList(rpcMessageList);
 
         private void ProcessInput(long snapshotTick)
         {
@@ -69,6 +75,6 @@ namespace Elympics
             input.Player = Player;
         }
 
-        private void SendInput(ElympicsInput input) => _gameBotAdapter.SendInputUnreliable(input);
+        private void SendInput(ElympicsInput input) => _gameBotAdapter.SendInput(input);
     }
 }

@@ -32,5 +32,11 @@ namespace Elympics
         }
 
         public ushort GetIdOf(RpcMethod rpcMethod) => _rpcMethodIds[rpcMethod];
+
+        internal void Clear()
+        {
+            _rpcMethods.Clear();
+            _rpcMethodIds.Clear();
+        }
     }
 }

@@ -231,6 +231,9 @@ namespace Elympics
 
             _componentsContainer = new ElympicsComponentsContainer(this);
 
+            foreach (var observable in _componentsContainer.Observables)
+                RpcMethods.CollectFrom(observable);
+
             var previousCallContext = ElympicsBase.CurrentCallContext;
             ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
             foreach (var initializable in _componentsContainer.Initializables)
@@ -269,8 +272,6 @@ namespace Elympics
                 }
                 if (componentVars.Count > 0)
                     _backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
-
-                RpcMethods.CollectFrom(observable);
             }
 
             _inputReader = new BinaryInputReader();

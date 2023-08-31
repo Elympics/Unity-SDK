@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace Elympics.Editor.Tests
 {
     [Category("RPC")]
-    public class TestMethodInvokedComponent
+    public class TestRpcRegistrationValidation
     {
         private ElympicsRpcComponent _component;
         private SimpleAssemblyResolver _assemblyResolver;
@@ -21,7 +21,7 @@ namespace Elympics.Editor.Tests
             _assemblyResolver.AssemblyDefinitions = new[]
             {
                 AssemblyDefinition.ReadAssembly(typeof(void).Assembly.Location, new ReaderParameters { AssemblyResolver = _assemblyResolver }),
-                AssemblyDefinition.ReadAssembly(typeof(TestMethodInvokedComponent).Assembly.Location, new ReaderParameters { AssemblyResolver = _assemblyResolver }),
+                AssemblyDefinition.ReadAssembly(typeof(TestRpcRegistrationValidation).Assembly.Location, new ReaderParameters { AssemblyResolver = _assemblyResolver }),
                 AssemblyDefinition.ReadAssembly(typeof(ElympicsMonoBehaviour).Assembly.Location, new ReaderParameters { AssemblyResolver = _assemblyResolver }),
             };
         }

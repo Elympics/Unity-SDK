@@ -32,12 +32,21 @@ namespace Elympics
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
 
             var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
-            var testPlayerData = _elympicsGameConfig.TestPlayers[playerIndex];
+            ElympicsGameConfig.InitialUserData testPlayerData;
+            if (_elympicsGameConfig.TestPlayers.Count > playerIndex)
+                testPlayerData = _elympicsGameConfig.TestPlayers[playerIndex];
+            else
+            {
+                testPlayerData = new ElympicsGameConfig.InitialUserData();
+                ElympicsLogger.LogWarning($"No data for player ID: {playerIndex} in \"Test players\" list. "
+                    + $"The list has only {_elympicsGameConfig.TestPlayers.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+            }
             _initialPlayerData = new InitialMatchPlayerDataGuid
             {
                 Player = ElympicsPlayer.FromIndex(playerIndex),
                 GameEngineData = testPlayerData.gameEngineData,
-                MatchmakerData = testPlayerData.matchmakerData
+                MatchmakerData = testPlayerData.matchmakerData,
             };
             Connect();
         }

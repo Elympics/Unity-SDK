@@ -17,7 +17,7 @@ namespace Elympics.Tests
     public class RemoteAuthClientTests
     {
         private const int TimeoutMsPerTest = 10000;
-        private readonly RemoteAuthClient _sut = new();
+        private readonly RemoteAuthClient _sut = new("test");
 
         [SetUp]
         public void ResetWebClient() => ElympicsWebClient.Instance = null;

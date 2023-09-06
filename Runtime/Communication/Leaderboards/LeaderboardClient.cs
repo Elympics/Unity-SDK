@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Plugins.Elympics.Runtime.Util;
 
 namespace Elympics
 {
@@ -9,8 +10,8 @@ namespace Elympics
     /// </summary>
     public class LeaderboardClient
     {
-        private const string LeaderboardsUrl = "https://api.elympics.cc/v2/leaderboardservice/leaderboard";
-        private const string LeaderboardsUserCenteredUrl = "https://api.elympics.cc/v2/leaderboardservice/leaderboard/user-centred";
+        private readonly string _leaderboardsUrl;
+        private readonly string _leaderboardsUserCenteredUrl;
 
         private readonly Dictionary<string, string> _queryValues;
 
@@ -33,7 +34,10 @@ namespace Elympics
             if (!Enum.IsDefined(typeof(LeaderboardType), leaderboardType))
                 throw new ArgumentOutOfRangeException(nameof(leaderboardType));
 
-            var gameConfig = ElympicsConfig.Load().GetCurrentGameConfig();
+            var config = ElympicsConfig.Load();
+            _leaderboardsUrl = config.ElympicsLeaderboardsEndpoint.AppendPathSegments("leaderboard");
+            _leaderboardsUserCenteredUrl = _leaderboardsUrl.AppendPathSegments("user-centred");
+            var gameConfig = config.GetCurrentGameConfig();
             if (gameConfig == null)
                 throw new ElympicsException("Provide ElympicsGameConfig before proceeding");
 
@@ -56,11 +60,11 @@ namespace Elympics
         }
 
 
-        public void FetchFirstPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(LeaderboardsUrl, 1, onSuccess, onFailure);
-        public void FetchPageWithUser(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(LeaderboardsUserCenteredUrl, _currentPage, onSuccess, onFailure);
-        public void FetchNextPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(LeaderboardsUrl, _currentPage + 1, onSuccess, onFailure);
-        public void FetchPreviousPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(LeaderboardsUrl, _currentPage - 1, onSuccess, onFailure);
-        public void FetchRefreshedCurrentPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(LeaderboardsUrl, _currentPage, onSuccess, onFailure);
+        public void FetchFirstPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(_leaderboardsUrl, 1, onSuccess, onFailure);
+        public void FetchPageWithUser(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(_leaderboardsUserCenteredUrl, _currentPage, onSuccess, onFailure);
+        public void FetchNextPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(_leaderboardsUrl, _currentPage + 1, onSuccess, onFailure);
+        public void FetchPreviousPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(_leaderboardsUrl, _currentPage - 1, onSuccess, onFailure);
+        public void FetchRefreshedCurrentPage(Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure = null) => SendLeaderboardRequest(_leaderboardsUrl, _currentPage, onSuccess, onFailure);
 
         private void SendLeaderboardRequest(string url, int pageNumber, Action<LeaderboardFetchResult> onSuccess, Action<LeaderboardFetchError> onFailure)
         {

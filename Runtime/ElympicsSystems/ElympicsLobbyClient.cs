@@ -119,7 +119,7 @@ namespace Elympics
                 return;
             }
 
-            _auth = new RemoteAuthClient();
+            _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = MatchmakerClientFactory.Create(_gameConfig, _config.ElympicsLobbyEndpoint);
             Matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
             Matchmaker.MatchmakingMatchFound += HandleMatchIdReceived;

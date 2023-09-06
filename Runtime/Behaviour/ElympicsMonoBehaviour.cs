@@ -24,8 +24,8 @@ namespace Elympics
                 if (TryGetComponent(out _elympicsBehaviour))
                     return _elympicsBehaviour;
 
-                var missingComponentMessage = $"{GetType().Name} has missing {nameof(ElympicsBehaviour)} component";
-                Debug.LogError(missingComponentMessage, this);
+                var missingComponentMessage = $"{GetType().Name} has no {nameof(ElympicsBehaviour)} component.";
+                ElympicsLogger.LogError(missingComponentMessage, this);
                 throw new MissingComponentException(missingComponentMessage);
             }
         }
@@ -42,8 +42,9 @@ namespace Elympics
                 if (_elympics != null)
                     return _elympics;
 
-                var elympicsBaseNullReferenceMessage = $"Calling for Elympics in ElympicsMonoBehaviour before Elympics field is initialized. Check Script Execution Order!";
-                Debug.LogError(elympicsBaseNullReferenceMessage, this);
+                var elympicsBaseNullReferenceMessage = $"{nameof(ElympicsBehaviour)} in {gameObject.name} object "
+                    + "has not been initialized yet. Check Script Execution Order!";
+                ElympicsLogger.LogError(elympicsBaseNullReferenceMessage, this);
                 throw new UnassignedReferenceException(elympicsBaseNullReferenceMessage);
             }
         }

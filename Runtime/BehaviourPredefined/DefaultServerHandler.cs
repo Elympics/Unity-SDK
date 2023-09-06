@@ -23,7 +23,9 @@ namespace Elympics
 
             _playersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
-            Debug.Log($"Game initialized with {humansPlayers} human players and {initialMatchPlayerDatas.Count - humansPlayers} bots");
+            ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
+                + $"(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
+            ElympicsLogger.Log($"Waiting for {humansPlayers} human players to connect.");
 
             _ = StartCoroutine(WaitForGameStartOrEnd());
         }
@@ -37,11 +39,13 @@ namespace Elympics
                 if (_gameStarted)
                     yield break;
 
-                Debug.Log("Waiting for game to start");
+                ElympicsLogger.Log("Not all players connected yet...");
                 yield return new WaitForSeconds(5);
             }
 
-            Debug.Log("Forcing game end because game didn't start");
+            ElympicsLogger.LogWarning("Forcing game server to quit because some players did not connect on time.\n"
+                + "Connected players: "
+                + string.Join(", ", _playersConnected));
             Elympics.EndGame();
         }
 
@@ -50,8 +54,8 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
-            Debug.Log($"Player {player} disconnected");
-            Debug.Log("Game ended!");
+            ElympicsLogger.Log($"Player {player} disconnected.");
+            ElympicsLogger.LogWarning("Forcing game server to quit because one of the players disconnected.");
             Elympics.EndGame();
         }
 
@@ -60,14 +64,14 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
-            Debug.Log($"Player {player} connected");
+            ElympicsLogger.Log($"Player {player} connected.");
 
             _ = _playersConnected.Add(player);
             if (_playersConnected.Count != _playersNumber || _gameStarted)
                 return;
 
             _gameStarted = true;
-            Debug.Log("Game started!");
+            ElympicsLogger.Log("All players have connected.");
         }
 
         // This Unity event method is necessary for the script to have a checkbox in Inspector.

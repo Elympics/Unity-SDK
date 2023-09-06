@@ -7,9 +7,5 @@ namespace MatchTcpModels.Messages
     {
         public MessageType Type;
         public string ErrorMessage;
-
-        public Message()
-        {
-        }
     }
 }

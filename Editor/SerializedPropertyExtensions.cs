@@ -1,9 +1,27 @@
-#if UNITY_EDITOR
+/* MIT License
+Copyright (c) 2022 Alex Holkner
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Elympics;
 using UnityEditor;
-using UnityEngine;
 
 // Provide simple value get/set methods for SerializedProperty.  Can be used with
 // any data types and with arbitrarily deeply-pathed properties.
@@ -45,7 +63,12 @@ public static class SerializedPropertyExtensions
             container = GetPathComponentValue(container, deferredToken);
             deferredToken = token;
         }
-        Debug.Assert(!container.GetType().IsValueType, $"Cannot use SerializedObject.SetValue on a struct object, as the result will be set on a temporary.  Either change {container.GetType().Name} to a class, or use SetValue with a parent member.");
+
+        if (container.GetType().IsValueType)
+            ElympicsLogger.LogError($"Cannot use {nameof(SerializedObject)}.{nameof(SetValue)} "
+                + "on a struct object, as the result will be set on a temporary. "
+                + $"Either change {container.GetType().Name} to a class "
+                + $"or use {nameof(SetValue)} with a parent member.");
         SetPathComponentValue(container, deferredToken, value);
     }
 
@@ -151,7 +174,6 @@ public static class SerializedPropertyExtensions
                 return;
             }
         }
-        Debug.Assert(false, $"Failed to set member {container}.{name} via reflection");
+        ElympicsLogger.LogError($"Failed to set member {container}.{name} via reflection");
     }
 }
-#endif

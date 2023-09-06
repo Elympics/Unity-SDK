@@ -42,20 +42,20 @@ namespace Elympics
             _userId = userId;
 
             _client = client;
-            _client.ReliableReceivingError += Debug.LogError;
+            _client.ReliableReceivingError += ElympicsLogger.LogError;
             _client.ReliableReceivingEnded += () =>
             {
                 _playerDisconnected = true;
-                Debug.Log("Reliable receiving ended");
+                ElympicsLogger.Log("Reliable receiving ended.");
             };
-            _client.UnreliableReceivingError += Debug.LogError;
-            _client.UnreliableReceivingEnded += () => Debug.Log("Unreliable receiving ended");
-            _client.WebRtcUpgraded += () => Debug.Log("WebRtc upgraded");
+            _client.UnreliableReceivingError += ElympicsLogger.LogError;
+            _client.UnreliableReceivingEnded += () => ElympicsLogger.Log("Unreliable receiving ended.");
+            _client.WebRtcUpgraded += () => ElympicsLogger.Log("Upgraded connection to WebRTC.");
             _client.NtpReceived += OnNtpReceived;
             _client.InGameDataForPlayerOnReliableChannelGenerated += OnReliableInGameDataReceived;
             _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
 
-            Debug.Log("Connected with half remote client");
+            ElympicsLogger.Log("Connected to a half remote server.");
             connectedCallback?.Invoke(true);
 
             return Synchronization();

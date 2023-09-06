@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Reflection;
 using UnityEditor.Callbacks;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Elympics
@@ -28,7 +27,7 @@ namespace Elympics
                         var isElympicsVar = typeof(ElympicsVar).IsAssignableFrom(field.FieldType);
 
                         if (field.IsPrivate && isElympicsVar)
-                            Debug.LogWarning($"WARNING! Private ElympicsVar ({field}) in base {type} of class {customClass} isn't synchronized! Try making it protected instead.");
+                            ElympicsLogger.LogWarning($"Private ElympicsVar ({field}) in base {type} of class {customClass} isn't synchronized! Try making it protected instead.");
                     }
                 }
             }

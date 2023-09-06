@@ -13,6 +13,13 @@ namespace Elympics
         {
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
+
+            if (playersList.Count > playerIndex)
+                throw ElympicsLogger.LogException("Half Remote bot won't be initialized because "
+                    + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
+                    + $"The list has only {playersList.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+
             var userId = playersList[playerIndex].UserId;
 
             var botConfiguration = new BotConfiguration
@@ -32,7 +39,7 @@ namespace Elympics
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
             gameBotAdapter.InGameDataForUnreliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, false);
 
-            gameBotAdapter.Init(new LoggerNoop(), null);
+            gameBotAdapter.Init(null, null);
             gameBotAdapter.Init2(null);
             gameBotAdapter.Init3(botConfiguration);
 

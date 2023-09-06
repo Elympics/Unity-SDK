@@ -39,13 +39,13 @@ namespace Elympics
                 newPredictionTick = lastPredictedTick;
                 canPredict = false;
             }
-            else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var tickToCatchup))
+            else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var ticksToCatchup))
             {
-                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, tickToCatchup);
+                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, ticksToCatchup);
                 if (canPredict)
                 {
                     Results.WasTickJumpForced = true;
-                    Results.TicksToCatchup = tickToCatchup;
+                    Results.TicksToCatchup = ticksToCatchup;
                 }
             }
             else

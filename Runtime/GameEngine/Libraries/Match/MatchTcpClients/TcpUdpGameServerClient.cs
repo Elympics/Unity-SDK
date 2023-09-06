@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.SimpleMessageEncoder;
@@ -15,10 +16,9 @@ namespace MatchTcpClients
         private readonly IPEndPoint _endpoint;
 
         public TcpUdpGameServerClient(
-            IGameServerClientLogger logger,
             IGameServerSerializer serializer,
             GameServerClientConfig config,
-            IPEndPoint endpoint) : base(logger, serializer, config)
+            IPEndPoint endpoint) : base(serializer, config)
         {
             _endpoint = endpoint;
         }
@@ -31,11 +31,11 @@ namespace MatchTcpClients
 
         protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
         {
-            Logger.Info($"[Elympics] Connecting reliable to {_endpoint}");
+            ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
             if (!await TryConnectSessionAsync(ct))
                 return false;
 
-            Logger.Info($"[Elympics] Connecting unreliable to {_endpoint}");
+            ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
             if (await UnreliableClient.ConnectAsync(_endpoint))
                 return true;
 
@@ -51,7 +51,7 @@ namespace MatchTcpClients
             }
             catch (SocketException e)
             {
-                Logger.Error($"Couldn't connect to the server: {e}");
+                _ = ElympicsLogger.LogException("Couldn't connect to the server", e);
                 return false;
             }
         }
@@ -59,13 +59,11 @@ namespace MatchTcpClients
         private IReliableNetworkClient CreateTcpNetworkClient()
         {
             var encoder = new SimpleDelimiterEncoder(SimpleMessageEncoderConfig.Default);
-            var client = new TcpNetworkClient(MatchTcpLibraryLogger, encoder, TcpProtocolConfig.Default);
+            var client = new TcpNetworkClient(encoder, TcpProtocolConfig.Default);
             return client;
         }
 
-        private IUnreliableNetworkClient CreateUdpNetworkClient()
-        {
-            return new UdpNetworkClient(MatchTcpLibraryLogger);
-        }
+        private IUnreliableNetworkClient CreateUdpNetworkClient() =>
+            new UdpNetworkClient();
     }
 }

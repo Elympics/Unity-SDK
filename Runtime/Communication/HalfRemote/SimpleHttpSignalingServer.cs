@@ -3,8 +3,8 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Elympics;
 using UnityConnectors.HalfRemote.Server;
-using UnityEngine;
 
 namespace Plugins.Elympics.Runtime.Communication.HalfRemote
 {
@@ -26,13 +26,16 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
         public void RunAsync(CancellationToken ct)
         {
             if (_uri.Contains("*"))
-                Debug.LogWarning("Signaling server listening on all hosts. If it throws HttpListenerException: Access Denied. run Unity for half remote server as administrator");
+                ElympicsLogger.LogWarning("Signaling server listening on all hosts. "
+                    + "If it throws \"HttpListenerException: Access Denied.\", run Unity as administrator "
+                    + "before starting Half Remote server.");
 
             _listener.Start();
-            Debug.Log($"Started listening on {_uri}");
+            ElympicsLogger.Log($"Started listening on {_uri}");
             _ = ct.Register(() => _listener.Stop());
 
-            _ = Task.Factory.StartNew(async () => await HandleConnections(ct).ContinueWith(_ => Debug.Log("Signaling server stopped")), TaskCreationOptions.LongRunning);
+            _ = Task.Factory.StartNew(async () => await HandleConnections(ct)
+                .ContinueWith(_ => ElympicsLogger.Log("Signaling server stopped.")), TaskCreationOptions.LongRunning);
         }
 
         private async Task HandleConnections(CancellationToken ct)

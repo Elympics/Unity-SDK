@@ -42,7 +42,7 @@ namespace Elympics
         {
             var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
             if (config == null)
-                throw new Exception("[Elympics] Elympics config not found");
+                throw new ElympicsException("Elympics config not found");
 
             config.UpdateGameVersion(newGameVersion);
         }
@@ -68,7 +68,7 @@ namespace Elympics
         {
             if (IsLinuxModuleInstalled() is false)
             {
-                Debug.LogError(MissingModuleErrorMessage);
+                ElympicsLogger.LogError(MissingModuleErrorMessage);
                 return false;
             }
 
@@ -87,12 +87,12 @@ namespace Elympics
                 EditorUtility.DisplayProgressBar(title, "Loading elympics game config", 0);
                 var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
                 if (config == null)
-                    throw new Exception("[Elympics] Elympics config not found");
+                    throw new ElympicsException("Elympics config not found");
 
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
-                var buildTargetGroup = BuildTargetGroup.Standalone;
+                const BuildTargetGroup buildTargetGroup = BuildTargetGroup.Standalone;
                 var oldScriptingBackend = PlayerSettings.GetScriptingBackend(buildTargetGroup);
                 PlayerSettings.SetScriptingBackend(buildTargetGroup, ScriptingImplementation.Mono2x);
 
@@ -171,10 +171,10 @@ namespace Elympics
         private static void LogBuildResult(BuildReport report)
         {
             if (report.summary.result == BuildResult.Succeeded)
-                Debug.Log($"Server build succeeded on {report.summary.outputPath}");
+                ElympicsLogger.Log($"Server build succeeded on {report.summary.outputPath}");
             else
             {
-                Debug.LogError($"Server build failed with {report.summary.totalErrors} errors");
+                ElympicsLogger.LogError($"Server build failed with {report.summary.totalErrors} errors");
                 ProcessBuildErrors(report);
             }
         }
@@ -191,7 +191,7 @@ namespace Elympics
                         continue;
                     if (MissingModuleRegex.IsMatch(message.content))
                     {
-                        Debug.LogError(MissingModuleErrorMessage);
+                        ElympicsLogger.LogError(MissingModuleErrorMessage);
                         return;
                     }
                 }

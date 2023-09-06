@@ -10,7 +10,6 @@ using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
 using WebRtcWrapper;
-using Debug = UnityEngine.Debug;
 
 #pragma warning disable CS0067
 
@@ -19,7 +18,8 @@ namespace Elympics
     public class HalfRemoteMatchConnectClient : IMatchConnectClient
     {
         private const int ConnectMaxRetries = 50;
-        private static readonly WaitForSeconds WaitTimeToRetryConnect = new(1);
+        private const int WaitTimeToRetryConnectInSeconds = 1;
+        private static readonly WaitForSeconds WaitTimeToRetryConnect = new(WaitTimeToRetryConnectInSeconds);
 
         private static readonly WaitForSeconds OfferWaitingInterval = new(1);
         private const int MaxOfferWaitingIntervals = 5;
@@ -92,13 +92,13 @@ namespace Elympics
                 {
                     _tcpClient = new TcpClient();
                     _tcpClient.Connect(IPAddress.Parse(_ip), _port);
-                    Debug.Log($"Tcp connected to {_ip}:{_port}");
+                    ElympicsLogger.Log($"TCP connected to {_ip}:{_port}");
                     break;
                 }
                 catch (Exception e)
                 {
                     _tcpClient = null;
-                    Debug.LogException(e);
+                    _ = ElympicsLogger.LogException(e);
                 }
 
                 yield return WaitTimeToRetryConnect;
@@ -134,9 +134,15 @@ namespace Elympics
             }
 
             if (!offerSet)
-                throw new ArgumentException("Offer not received from WebRTC client");
+            {
+                ElympicsLogger.LogError("Offer not received from WebRTC client.");
+                yield break;
+            }
             if (string.IsNullOrEmpty(offer))
-                throw new ArgumentException("Offer is null or empty");
+            {
+                ElympicsLogger.LogError("Offer is null or empty.");
+                yield break;
+            }
 
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
@@ -154,12 +160,15 @@ namespace Elympics
                     answer = _webResponse.Text;
                     break;
                 }
-                Debug.LogError(_webResponse?.IsError == true ? _webResponse.Text : "Response not received from WebRTC client");
+                ElympicsLogger.LogError(_webResponse?.IsError == true
+                    ? _webResponse.Text
+                    : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))
             {
-                Debug.LogError("WebRTC Answer empty - connection error or signaling server problem");
+                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error "
+                    + "or an issue with signaling server.");
                 connectedCallback.Invoke(false);
                 yield break;
             }
@@ -191,12 +200,13 @@ namespace Elympics
 
             if (!channelOpened)
             {
-                Debug.LogError("WebRTC channel not opened after time");
+                ElympicsLogger.LogError("WebRTC channel not open after "
+                    + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
                 connectedCallback.Invoke(false);
                 yield break;
             }
 
-            Debug.Log("WebRTC received channel opened");
+            ElympicsLogger.Log("WebRTC received channel opened.");
 
             yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
         }

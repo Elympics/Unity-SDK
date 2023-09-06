@@ -18,7 +18,6 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
         public IPEndPoint LocalEndPoint => _tcpClient?.Client?.LocalEndPoint as IPEndPoint;
         public IPEndPoint RemoteEndpoint => _tcpClient?.Client?.RemoteEndPoint as IPEndPoint;
 
-        private readonly IMatchTcpLibraryLogger _logger;
         private readonly IMessageEncoder _messageEncoder;
 
         private readonly TcpProtocolConfig _tcpProtocolConfig;
@@ -53,11 +52,10 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
         }
 
-        public TcpNetworkClient(IMatchTcpLibraryLogger logger, IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig,
+        public TcpNetworkClient(IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig,
             TcpClient client = null)
         {
             _messageEncoder = messageEncoder;
-            _logger = logger;
             _tcpProtocolConfig = tcpProtocolConfig;
             _connectingTokenSource = new CancellationTokenSource();
             _tcpClient = client;
@@ -108,7 +106,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch (Exception e)
             {
-                _logger.Error($"{nameof(TcpNetworkClient)} Processing a message failed: " + e);
+                _ = ElympicsLogger.LogException($"{nameof(TcpNetworkClient)} failed to process a message", e);
             }
         }
 
@@ -116,14 +114,12 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
         {
             var trimmedData = _messageEncoder.ExtractCompleteMessages(_receivedBytes);
             foreach (var data in trimmedData)
-            {
                 DataReceived?.Invoke(data.ToArray());
-            }
         }
 
         private void OnReceivingStopped()
         {
-            _logger.Debug($"{GetType().Name} receiving stopped, disconnecting...");
+            ElympicsLogger.Log($"{GetType().Name} stopped receiving, disconnecting...");
             Disconnect();
         }
 
@@ -140,13 +136,9 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                     return false;
 
                 if (NotCreated())
-                {
-                    throw new NullReferenceException("CreateAndBind not called before connecting");
-                }
+                    throw ElympicsLogger.LogException(new NullReferenceException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else if (IsDisconnected() || IsConnected)
-                {
                     RecreateSocket();
-                }
 
                 await TryConnectAsync(remoteEndPoint);
 
@@ -221,7 +213,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 if (IsConnected || _connectingTokenSource.IsCancellationRequested)
                     break;
 
-                _logger.Verbose($"Connecting no. {i} failed on {endpoint}, reason {result}, retrying...");
+                ElympicsLogger.Log($"Connection attempt no. {i} failed on {endpoint}, reason {result}, retrying...");
 
                 await TaskUtil.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
                     _connectingTokenSource.Token);
@@ -245,7 +237,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch (Exception e)
             {
-                _logger.Error($"{nameof(TcpNetworkClient)} connect exception", e);
+                _ = ElympicsLogger.LogException($"{nameof(TcpNetworkClient)} connection exception", e);
                 return ConnectResult.OtherException;
             }
         }
@@ -271,7 +263,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch
             {
-                _logger.Debug($"{GetType().Name} send failed, disconnecting...");
+                ElympicsLogger.Log($"{GetType().Name} failed to send a message, disconnecting...");
                 Disconnect();
             }
 

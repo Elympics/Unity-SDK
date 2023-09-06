@@ -12,7 +12,7 @@ namespace Elympics
             Time.maximumDeltaTime = elympicsGameConfig.TickDuration * 2;
             Application.targetFrameRate = elympicsGameConfig.TicksPerSecond * 2;
 
-            var gameEngine = new GameEngineAdapter(elympicsGameConfig, new LogHandler());
+            var gameEngine = new GameEngineAdapter(elympicsGameConfig);
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             server.InitializeInternal(elympicsGameConfig, gameEngine, HandlingBotsOverride, HandlingClientsOverride);

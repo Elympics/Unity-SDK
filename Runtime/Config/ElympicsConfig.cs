@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Plugins.Elympics.Runtime.Util;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,8 +14,7 @@ namespace Elympics
         public const string ElympicsResourcesPath = "Assets/Resources/Elympics";
         public const string PathInResources = "Elympics/ElympicsConfig";
 
-        [SerializeField] private string elympicsApiEndpoint = "https://api.elympics.cc";
-        [SerializeField] private string elympicsLobbyEndpoint = "https://lobby.elympics.cc";
+        [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
 
         [SerializeField] internal int currentGame = -1;
@@ -36,9 +36,14 @@ namespace Elympics
 #endif
         private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 
-        internal string ElympicsApiEndpoint => elympicsApiEndpoint;
-        internal string ElympicsLobbyEndpoint => elympicsLobbyEndpoint;
+        internal string ElympicsApiEndpoint => GetV2Endpoint("api");
+        internal string ElympicsLobbyEndpoint => GetV2Endpoint("lobby");
+        internal string ElympicsAuthEndpoint => GetV2Endpoint("auth");
+        internal string ElympicsLeaderboardsEndpoint => GetV2Endpoint("leaderboardservice");
         internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;
+
+        private string GetV2Endpoint(string serviceName) =>
+            elympicsWebEndpoint.AppendPathSegments("v2", serviceName);
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;
 
@@ -72,16 +77,6 @@ namespace Elympics
                 throw new NullReferenceException("Choose game config in ElympicsConfig!");
             if (game < 0 || game >= availableGames.Count)
                 throw new NullReferenceException("Game config out of range in ElympicsConfig!");
-        }
-
-        public void UpdateElympicsEndpoint(string elympicsEndpoint)
-        {
-            if (string.IsNullOrEmpty(elympicsEndpoint))
-                throw new NullReferenceException("Invalid elympics endpoint.");
-            if (!Uri.IsWellFormedUriString(elympicsEndpoint, UriKind.Absolute))
-                throw new NullReferenceException("Invalid elympics endpoint format. Please use an absolute uri");
-
-            elympicsLobbyEndpoint = elympicsEndpoint;
         }
 
 #if UNITY_EDITOR

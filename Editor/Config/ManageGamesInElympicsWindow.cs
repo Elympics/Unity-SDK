@@ -36,10 +36,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
     private static SerializedObject elympicsConfigSerializedObject;
     private static SerializedProperty currentGameIndex;
     private static SerializedProperty availableGames;
-    private static SerializedProperty elympicsApiEndpoint;
-    private static EditorEndpointChecker elympicsApiEndpointChecker;
-    private static SerializedProperty elympicsLobbyEndpoint;
-    private static EditorEndpointChecker elympicsLobbyEndpointChecker;
+    private static SerializedProperty elympicsWebEndpoint;
+    private static EditorEndpointChecker elympicsWebEndpointChecker;
     private static SerializedProperty elympicsGameServersEndpoint;
     private static EditorEndpointChecker elympicsGameServersEndpointChecker;
 
@@ -55,19 +53,16 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData;
 
-    public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsApiEndpoint, SerializedProperty elympicsLobbyEndpoint, SerializedProperty elympicsGameServersEndpoint)
+    public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsWebEndpoint, SerializedProperty elympicsGameServersEndpoint)
     {
         ManageGamesInElympicsWindow.elympicsConfigSerializedObject = elympicsConfigSerializedObject;
         ManageGamesInElympicsWindow.currentGameIndex = currentGameIndex;
         ManageGamesInElympicsWindow.availableGames = availableGames;
-        ManageGamesInElympicsWindow.elympicsApiEndpoint = elympicsApiEndpoint;
-        ManageGamesInElympicsWindow.elympicsLobbyEndpoint = elympicsLobbyEndpoint;
+        ManageGamesInElympicsWindow.elympicsWebEndpoint = elympicsWebEndpoint;
         ManageGamesInElympicsWindow.elympicsGameServersEndpoint = elympicsGameServersEndpoint;
 
-        elympicsApiEndpointChecker = new EditorEndpointChecker();
-        elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
-        elympicsLobbyEndpointChecker = new EditorEndpointChecker();
-        elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
+        elympicsWebEndpointChecker = new EditorEndpointChecker();
+        elympicsWebEndpointChecker.UpdateUri(elympicsWebEndpoint.stringValue);
         elympicsGameServersEndpointChecker = new EditorEndpointChecker();
         elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
 
@@ -94,17 +89,14 @@ public class ManageGamesInElympicsWindow : EditorWindow
         elympicsConfigSerializedObject = new SerializedObject(manageGamesInElympicsWindowData.objectToSerialize);
         currentGameIndex = elympicsConfigSerializedObject.FindProperty("currentGame");
         availableGames = elympicsConfigSerializedObject.FindProperty("availableGames");
-        elympicsApiEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsApiEndpoint");
-        elympicsLobbyEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsLobbyEndpoint");
+        elympicsWebEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsWebEndpoint");
         elympicsGameServersEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsGameServersEndpoint");
 
-        if (elympicsApiEndpointChecker == null || elympicsLobbyEndpointChecker == null || elympicsGameServersEndpointChecker == null)
+        if (elympicsWebEndpointChecker == null || elympicsGameServersEndpointChecker == null)
         {
-            elympicsApiEndpointChecker = new EditorEndpointChecker();
-            elympicsLobbyEndpointChecker = new EditorEndpointChecker();
+            elympicsWebEndpointChecker = new EditorEndpointChecker();
             elympicsGameServersEndpointChecker = new EditorEndpointChecker();
-            elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
-            elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
+            elympicsWebEndpointChecker.UpdateUri(elympicsWebEndpoint.stringValue);
             elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
         }
 
@@ -132,8 +124,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
         if (BuildPipeline.isBuildingPlayer || GetManageGamesInElympicsWindowData() == false)
             return;
 
-        elympicsApiEndpointChecker.Update();
-        elympicsLobbyEndpointChecker.Update();
+        elympicsWebEndpointChecker.Update();
         elympicsGameServersEndpointChecker.Update();
 
         PrepareDrawer();
@@ -206,9 +197,9 @@ public class ManageGamesInElympicsWindow : EditorWindow
         _customInspectorDrawer.DrawHeader("Endpoints", 20, elympicsColor);
         _customInspectorDrawer.Space();
 
-        _customInspectorDrawer.DrawEndpoint("API Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out var apiEndpointChanged);
-        if (apiEndpointChanged)
-            elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
+        _customInspectorDrawer.DrawEndpoint("Web endpoint", elympicsWebEndpoint, elympicsWebEndpointChecker, 0.3f, 0.3f, out var webEndpointChanged);
+        if (webEndpointChanged)
+            elympicsWebEndpointChecker.UpdateUri(elympicsWebEndpoint.stringValue);
 
         if (_customInspectorDrawer.DrawButtonCentered("Synchronize", _resizableCenteredLabelWidth, 20))
         {
@@ -217,7 +208,6 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
             ElympicsWebIntegration.GetElympicsEndpoints(endpoint =>
             {
-                elympicsLobbyEndpoint.SetValue(endpoint.Lobby);
                 elympicsGameServersEndpoint.SetValue(endpoint.GameServers);
 
                 ElympicsWebIntegration.GetGames(availableGamesOnline =>
@@ -242,11 +232,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
         _customInspectorDrawer.DrawLabelCentered(SynchronizeInfo, _resizableCenteredLabelWidth, 20, true);
         _customInspectorDrawer.Space();
 
-        _customInspectorDrawer.DrawEndpoint("Lobby Endpoint", elympicsLobbyEndpoint, elympicsLobbyEndpointChecker, 0.3f, 0.3f, out var lobbyEndpointChanged);
-        if (lobbyEndpointChanged)
-            elympicsLobbyEndpointChecker.UpdateUri(elympicsLobbyEndpoint.stringValue);
-
-        _customInspectorDrawer.DrawEndpoint("Game Servers Endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out var gameServersEndpointChanged);
+        _customInspectorDrawer.DrawEndpoint("Game Servers endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out var gameServersEndpointChanged);
         if (gameServersEndpointChanged)
             elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
 
@@ -418,13 +404,13 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private void DrawLoginEndpointSection()
     {
-        _customInspectorDrawer.DrawHeader("Elympics Endpoint", 20, elympicsColor);
+        _customInspectorDrawer.DrawHeader("Elympics endpoints", 20, elympicsColor);
         _customInspectorDrawer.Space();
 
-        _customInspectorDrawer.DrawEndpoint("Elympics Web Endpoint", elympicsApiEndpoint, elympicsApiEndpointChecker, 0.3f, 0.3f, out var endpointChanged);
+        _customInspectorDrawer.DrawEndpoint("Elympics Web endpoint", elympicsWebEndpoint, elympicsWebEndpointChecker, 0.3f, 0.3f, out var endpointChanged);
 
         if (endpointChanged)
-            elympicsApiEndpointChecker.UpdateUri(elympicsApiEndpoint.stringValue);
+            elympicsWebEndpointChecker.UpdateUri(elympicsWebEndpoint.stringValue);
     }
 
     private void DrawLoginSection()
@@ -466,10 +452,10 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private static bool IsConnected()
     {
-        if (elympicsApiEndpointChecker.IsRequestSuccessful)
+        if (elympicsWebEndpointChecker.IsRequestSuccessful)
             return true;
-        ElympicsLogger.LogError("Cannot connect to Elympics API! "
-            + "Check your Internet connection and configured Elympics Web addresses");
+        ElympicsLogger.LogError("Cannot connect to Elympics cloud! "
+            + "Check your Internet connection and configured Elympics endpoints.");
         return false;
     }
 }

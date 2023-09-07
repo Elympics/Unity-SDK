@@ -14,14 +14,12 @@ namespace Elympics.Editor
 
         private Object _lastChosenGamePropertyObject;
         private UnityEditor.Editor _lastChosenGameEditor;
-        private SerializedProperty _elympicsApiEndpoint;
-        private SerializedProperty _elympicsLobbyEndpoint;
+        private SerializedProperty _elympicsWebEndpoint;
         private SerializedProperty _elympicsGameServersEndpoint;
 
         private void OnEnable()
         {
-            _elympicsApiEndpoint = serializedObject.FindProperty("elympicsApiEndpoint");
-            _elympicsLobbyEndpoint = serializedObject.FindProperty("elympicsLobbyEndpoint");
+            _elympicsWebEndpoint = serializedObject.FindProperty("elympicsWebEndpoint");
             _elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
             _currentGameIndex = serializedObject.FindProperty("currentGame");
             _availableGames = serializedObject.FindProperty("availableGames");
@@ -106,15 +104,14 @@ namespace Elympics.Editor
         {
             if (GUILayout.Button("Manage games in Elympics"))
                 _ = ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames,
-                    _elympicsApiEndpoint, _elympicsLobbyEndpoint, _elympicsGameServersEndpoint);
+                    _elympicsWebEndpoint, _elympicsGameServersEndpoint);
 
             EditorGUILayout.Separator();
         }
 
         private void DrawEndpointsSection()
         {
-            EditorEndpointCheckerEditor.DrawEndpointField(_elympicsApiEndpoint, "API endpoint");
-            EditorEndpointCheckerEditor.DrawEndpointField(_elympicsLobbyEndpoint, "Lobby endpoint");
+            EditorEndpointCheckerEditor.DrawEndpointField(_elympicsWebEndpoint, "Web endpoint");
             EditorEndpointCheckerEditor.DrawEndpointField(_elympicsGameServersEndpoint, "GameServers endpoint");
             EditorGUILayout.Separator();
         }

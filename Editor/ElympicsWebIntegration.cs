@@ -54,7 +54,7 @@ namespace Elympics
             if (ElympicsConfig.IsLogin)
                 return true;
             ElympicsLogger.LogError("Not logged in to Elympics cloud. "
-                + "Check your Internet connection, configured credentials and Elympics Web addresses.");
+                + "Check your Internet connection, configured credentials and Elympics endpoints.");
             return false;
         }
 
@@ -341,7 +341,7 @@ namespace Elympics
 
             void OnContinuation(bool success)
             {
-                const string title = "Uploading to Elympics Cloud";
+                const string title = "Uploading to Elympics cloud";
 
                 if (!success)
                 {

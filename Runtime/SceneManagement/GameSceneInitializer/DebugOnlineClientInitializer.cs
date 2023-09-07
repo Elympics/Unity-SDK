@@ -24,9 +24,10 @@ namespace Elympics
         {
             _client = client;
             _elympicsGameConfig = elympicsGameConfig;
+            var elympicsConfig = ElympicsConfig.Load();
 
-            _authClient = new RemoteAuthClient();
-            _matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, ElympicsConfig.Load().ElympicsLobbyEndpoint);
+            _authClient = new RemoteAuthClient(elympicsConfig.ElympicsAuthEndpoint);
+            _matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, elympicsConfig.ElympicsLobbyEndpoint);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
             _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.Log($"Match found: {matchId}.");
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");

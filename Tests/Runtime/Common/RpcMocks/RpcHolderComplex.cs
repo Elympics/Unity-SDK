@@ -2,10 +2,8 @@ using System.Reflection;
 
 namespace Elympics.Tests.RpcMocks
 {
-    public class TestRpcHolder : ElympicsMonoBehaviour
+    public class RpcHolderComplex : RpcHolder
     {
-        public bool PlayerToServerMethodCalled { get; private set; }
-        public bool ServerToPlayersMethodCalled { get; private set; }
         public bool PlayerToServerMethodPrivateCalled { get; private set; }
         public bool PingServerToPlayersCalled { get; private set; }
         public bool PongPlayerToServerCalled { get; private set; }
@@ -37,15 +35,9 @@ namespace Elympics.Tests.RpcMocks
         [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
         public void PongServerToPlayers() => PongServerToPlayersCalled = true;
 
-        [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
-        public void PlayerToServerMethod() => PlayerToServerMethodCalled = true;
-
         [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
         public void ServerToPlayersMethodWithArgs(bool boolArg, byte byteArg, sbyte sbyteArg, ushort ushortArg, short shortArg, uint uintArg, int intArg, ulong ulongArg, long longArg, float floatArg, double doubleArg, char charArg, string stringArg) =>
             ServerToPlayersMethodLastCallArguments = (boolArg, byteArg, sbyteArg, ushortArg, shortArg, uintArg, intArg, ulongArg, longArg, floatArg, doubleArg, charArg, stringArg);
-
-        [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
-        public void ServerToPlayersMethod() => ServerToPlayersMethodCalled = true;
 
         [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
         public void PlayerToServerMethodWithArgs(bool boolArg, byte byteArg, sbyte sbyteArg, ushort ushortArg, short shortArg, uint uintArg, int intArg, ulong ulongArg, long longArg, float floatArg, double doubleArg, char charArg, string stringArg) =>
@@ -57,10 +49,9 @@ namespace Elympics.Tests.RpcMocks
         public void CallPlayerToServerMethodPrivate() => PlayerToServerMethodPrivate();
         public MethodInfo PlayerToServerMethodPrivateInfo => GetType().GetMethod(nameof(PlayerToServerMethodPrivate), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        public void Reset()
+        public override void Reset()
         {
-            PlayerToServerMethodCalled = false;
-            ServerToPlayersMethodCalled = false;
+            base.Reset();
             PlayerToServerMethodLastCallArguments = null;
             ServerToPlayersMethodLastCallArguments = null;
             PlayerToServerMethodPrivateCalled = false;

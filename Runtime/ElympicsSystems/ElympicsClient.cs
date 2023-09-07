@@ -190,17 +190,22 @@ namespace Elympics
 
         private void CheckIfPredictionIsBlocked()
         {
+            var rttMs = _clientTickCalculator.Results.RttTicks * Config.TickDuration * 1000;
+            var lcoMs = _clientTickCalculator.Results.LcoTicks * Config.TickDuration * 1000;
+
             if (_clientTickCalculator.Results.CanPredict)
             {
+                if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
+                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. "
+                        + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
                 _currentTicksWithoutPrediction = 0;
                 return;
             }
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 
-            var rtt = _clientTickCalculator.Results.RttTicks * Config.TickDuration;
             ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
-                + $"Check your Internet connection. Current RTT: {rtt} ms");
+                + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
         }
 
         private void LogNetworkConditionsInInterval()

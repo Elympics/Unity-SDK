@@ -19,7 +19,7 @@ namespace Elympics
 
         private string GetUnfinishedMatchesUrl(Guid gameId, string gameVersion)
         {
-            _uriBuilder.Path = string.Join("/", _baseUrlOriginalPath, MatchmakingRoutes.Base, MatchmakingRoutes.UnfinishedMatches, gameId.ToString(), gameVersion);
+            _uriBuilder.Path = string.Join("/", _baseUrlOriginalPath, MatchmakingRoutes.Base, MatchmakingRoutes.Unfinished, gameId.ToString(), gameVersion);
             return _uriBuilder.Uri.ToString();
         }
 
@@ -39,7 +39,7 @@ namespace Elympics
             void OnResponse(Result<UnfinishedMatchesResponse, Exception> result)
             {
                 if (result.IsSuccess)
-                    onCompleted((result.Value.MatchIds?.Count ?? 0) > 0);
+                    onCompleted(result.Value.Matches?.Any() is true);
                 else
                     onError(result.Error);
             }
@@ -73,7 +73,7 @@ namespace Elympics
                     return;
                 }
 
-                matchId = result.Value?.MatchIds?.FirstOrDefault();
+                matchId = result.Value?.Matches?.FirstOrDefault()?.MatchId;
                 if (string.IsNullOrEmpty(matchId))
                 {
                     EmitMatchmakingFailed("No unfinished matches to rejoin", Guid.Empty, gameId, gameVersion);

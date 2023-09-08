@@ -5,20 +5,40 @@ namespace Elympics
 {
     internal static class StringExtensions
     {
-        public static string AppendPathSegments(this string uri, params string[] segments)
+        public static Uri AppendPathSegments(this string uri, params string[] segments)
         {
             var uriBuilder = new UriBuilder(uri);
             var oldPath = uriBuilder.Path.TrimEnd('/');
             uriBuilder.Path = string.Join('/', segments.Prepend(oldPath));
-            return uriBuilder.Uri.ToString();
+            return uriBuilder.Uri;
         }
 
-        public static string AppendPathSegments(this string uri, string segment)
+        public static Uri AppendPathSegments(this Uri uri, params string[] segments)
+        {
+            var uriBuilder = new UriBuilder(uri);
+            var oldPath = uriBuilder.Path.TrimEnd('/');
+            uriBuilder.Path = string.Join('/', segments.Prepend(oldPath));
+            return uriBuilder.Uri;
+        }
+
+        public static Uri AppendPathSegments(this string uri, string segment)
         {
             var uriBuilder = new UriBuilder(uri);
             var oldPath = uriBuilder.Path.TrimEnd('/');
             uriBuilder.Path = string.Join('/', oldPath, segment);
-            return uriBuilder.Uri.ToString();
+            return uriBuilder.Uri;
         }
+
+        public static Uri AppendPathSegments(this Uri uri, string segment)
+        {
+            var uriBuilder = new UriBuilder(uri);
+            var oldPath = uriBuilder.Path.TrimEnd('/');
+            uriBuilder.Path = string.Join('/', oldPath, segment);
+            return uriBuilder.Uri;
+        }
+
+        public static string GetAbsoluteOrRelativeString(this Uri uri) => uri.IsAbsoluteUri
+            ? uri.AbsoluteUri
+            : uri.OriginalString;
     }
 }

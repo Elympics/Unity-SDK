@@ -1,5 +1,3 @@
-using static Elympics.ApplicationParameters.HalfRemote;
-
 namespace Elympics
 {
     internal class HalfRemoteGameClientInitializer : GameClientInitializer
@@ -9,9 +7,7 @@ namespace Elympics
 
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
-            var playerIndex = GetPlayerIndex(elympicsGameConfig);
-            var ip = GetIp(elympicsGameConfig);
-            var port = GetPort(elympicsGameConfig);
+            var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
 
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
 
@@ -26,7 +22,7 @@ namespace Elympics
             var gameEngineData = playersList[playerIndex].GameEngineData;
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, ip, port, userId, elympicsGameConfig.UseWebInHalfRemote);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.PortForHalfRemoteMode, userId, elympicsGameConfig.UseWeb);
             client.InitializeInternal(elympicsGameConfig, _halfRemoteMatchConnectClient, _halfRemoteMatchClient,
                 new InitialMatchPlayerDataGuid
                 {
@@ -38,9 +34,6 @@ namespace Elympics
                 });
         }
 
-        public override void Dispose()
-        {
-            _halfRemoteMatchConnectClient?.Dispose();
-        }
+        public override void Dispose() => _halfRemoteMatchConnectClient?.Dispose();
     }
 }

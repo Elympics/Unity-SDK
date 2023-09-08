@@ -13,6 +13,9 @@ namespace Elympics
 
         public void Awake()
         {
+            if (!ApplicationParameters.InitializeParameters())
+                ExitUtility.ExitGame();
+
             try
             {
                 var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();

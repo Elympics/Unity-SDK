@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace Elympics
 {
-    public static class ElympicsWebGL
+    internal static class ElympicsWebGL
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
 		[DllImport("__Internal")]

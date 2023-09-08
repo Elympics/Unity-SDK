@@ -17,7 +17,7 @@ namespace Elympics
         private readonly string _ethAddressNonceUrl;
         private readonly string _ethAddressAuthUrl;
 
-        internal RemoteAuthClient(string authEndpoint)
+        public RemoteAuthClient(string authEndpoint)
         {
             var uriBuilder = new UriBuilder(authEndpoint);
             var oldPath = uriBuilder.Path.TrimEnd('/');

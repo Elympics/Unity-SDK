@@ -1,5 +1,5 @@
 using System;
-using static Elympics.ApplicationParameters.Factory;
+using UnityEngine;
 
 namespace Elympics
 {
@@ -9,14 +9,14 @@ namespace Elympics
         {
             #region Build run
 
-            if (ShouldLoadElympicsOnlineBot())
+            if (ApplicationParameters.ShouldLoadElympicsOnlineBot)
                 return new OnlineGameBotInitializer();
-            if (ShouldLoadElympicsOnlineServer())
+            if (ApplicationParameters.ShouldLoadElympicsOnlineServer)
                 return new OnlineGameServerInitializer();
-            if (ShouldLoadFromLobbyClient())
+            if (ElympicsLobbyClient.Instance != null)
                 return LoadFromLobbyClient();
 
-            if (ShouldLoadHalfRemoteServer())
+            if (ScriptingSymbols.IsUnityServer && !Application.isEditor)
                 return new HalfRemoteGameServerInitializer();
 
             #endregion

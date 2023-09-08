@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Plugins.Elympics.Runtime.Util
+namespace Elympics
 {
     internal static class StringExtensions
     {

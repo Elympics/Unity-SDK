@@ -1,3 +1,20 @@
+## [0.9.1](https://github.com/Elympics/Unity-SDK/compare/v0.9.0...v0.9.1) (2023-09-08)
+
+
+### Bug Fixes 🪲
+
+* Base URLs of lobby, auth and leaderboard service on general Elympics Cloud address ([968dcd6](https://github.com/Elympics/Unity-SDK/commit/968dcd6a8f05a56040a7718185b41c64ca7acea1))
+* Fix RPC methods not being registered before calling IInitializable.Initialize ([babaab9](https://github.com/Elympics/Unity-SDK/commit/babaab9e3411fcf2b650d55901e63afa8c7c0d5d))
+* Improve handling of duplicated ElympicsUnityPhysicsSimulator ([7f928f8](https://github.com/Elympics/Unity-SDK/commit/7f928f8ef35298af3be4375c5778360b347cb84c))
+* Log after prediction is unblocked, fix the level of ElympicsLobby logs ([572f212](https://github.com/Elympics/Unity-SDK/commit/572f212e408c9462076c869efd634e26ba152461))
+* Mark Elympics logs in a distinctive way, include timing, add missing logs ([e2190a6](https://github.com/Elympics/Unity-SDK/commit/e2190a661bde24de0b35664d7ce185549ffaa0ab))
+* Prevent Half Remote clients from starting if their ID is too high ([477dc50](https://github.com/Elympics/Unity-SDK/commit/477dc506afa636398f025b2d56eb6e66177bac5a))
+* Provide verbose warning when there is not enough entries in Test players ([e2e2427](https://github.com/Elympics/Unity-SDK/commit/e2e2427697286098b6bd4e51b210c31b054926cd))
+* Retrieve unfinished matches only for the current version of the game ([37e3984](https://github.com/Elympics/Unity-SDK/commit/37e39843824e2fb8640925cec182924ae98bdbbd))
+* Update WebRTC DLLs to reduce delay while receiving data ([a0774a3](https://github.com/Elympics/Unity-SDK/commit/a0774a378a44eba41fecaaff4c8bea151ac896c2))
+
+
+
 ## [0.9.0](https://github.com/Elympics/Unity-SDK/compare/v0.8.1...v0.9.0) (2023-08-28)
 
 

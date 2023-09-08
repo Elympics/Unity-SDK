@@ -108,7 +108,7 @@ namespace Elympics
             _config = ElympicsConfig.Load();
             _gameConfig = _config.GetCurrentGameConfig();
 
-            ElympicsLogger.LogWarning($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n"
+            ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n"
                 + "Available games:\n" + string.Join("\n", _config.AvailableGames
                     .Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}")));
 
@@ -127,7 +127,7 @@ namespace Elympics
             Matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
             Matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
-            ElympicsLogger.LogWarning($"Initialized {nameof(ElympicsLobbyClient)}.");
+            ElympicsLogger.Log($"Initialized {nameof(ElympicsLobbyClient)}.");
 
             if (AuthenticateOnAwakeWith != AuthType.None)
                 AuthenticateWith(AuthenticateOnAwakeWith);
@@ -149,7 +149,7 @@ namespace Elympics
         /// <param name="authType">Type of authentication to be performed.</param>
         public void AuthenticateWith(AuthType authType)
         {
-            ElympicsLogger.LogWarning($"Starting {authType} authentication...");
+            ElympicsLogger.Log($"Starting {authType} authentication...");
 
             if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.None)
             {
@@ -231,7 +231,7 @@ namespace Elympics
         /// </summary>
         public void SignOut()
         {
-            ElympicsLogger.LogWarning("Trying to sign out...");
+            ElympicsLogger.Log("Trying to sign out...");
 
             if (_authInProgress)
             {
@@ -245,12 +245,12 @@ namespace Elympics
             }
             AuthData = null;
 
-            ElympicsLogger.LogWarning("Signed out.");
+            ElympicsLogger.Log("Signed out.");
         }
 
 
         private void LogSettingUpGame(string gameModeName) =>
-            ElympicsLogger.LogWarning($"Setting up {gameModeName} mode for {_gameConfig.GameName} "
+            ElympicsLogger.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} "
                 + $"(ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
 
         public void PlayOffline()

@@ -197,7 +197,7 @@ namespace Elympics.Weaver
             if (!File.Exists(assemblyPath))
             {
                 if (weavedAssembly.ShouldThrowIfNotFound)
-                    throw new FileNotFoundException($"Weaved assembly file missing: {assemblyPath}");
+                    ElympicsLogger.LogWarning($"Could not find assembly file: {assemblyPath}");
                 return;
             }
             if (HasBeenAlreadyWeaved(assemblyPath))

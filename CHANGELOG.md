@@ -10,6 +10,7 @@
 * Provide verbose warning when there is not enough entries in Test players ([e2e2427](https://github.com/Elympics/Unity-SDK/commit/e2e2427697286098b6bd4e51b210c31b054926cd))
 * Prevent Half Remote clients from starting if their ID is too high ([477dc50](https://github.com/Elympics/Unity-SDK/commit/477dc506afa636398f025b2d56eb6e66177bac5a))
 * Update WebRTC DLLs to reduce delay while receiving data ([a0774a3](https://github.com/Elympics/Unity-SDK/commit/a0774a378a44eba41fecaaff4c8bea151ac896c2))
+* Fix error handling in ElympicsCloudPing ([d1f4ad4](https://github.com/Elympics/Unity-SDK/commit/d1f4ad4ec42bce6c5e358aea59feb54a2d82d6dd))
 
 
 

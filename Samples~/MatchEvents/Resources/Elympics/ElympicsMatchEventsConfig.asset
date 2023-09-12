@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ElympicsMatchEventsConfig
   m_EditorClassIdentifier: 
   gameName: Match events
-  gameId: d8781ea6-3aaa-4dcd-b5b9-e6c725210f42
-  gameVersion: 8
+  gameId: 7f98ae1a-1df1-44ee-957a-465c7ff43fa7
+  gameVersion: 9
   players: 2
   gameplayScene: Assets/Samples/MatchEvents/Scenes/MatchEventsGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 2cda990e2423bbf4892e6590ba056729,

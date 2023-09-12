@@ -18,7 +18,7 @@ namespace Elympics.Editor.Communication.UsageStatistics
 
         private static void OnAssemblyReload()
         {
-            if (SessionState.GetBool(SessionStartKey, false))
+            if (SessionState.GetBool(SessionStartKey, false) || ElympicsConfig.Load() == null)
                 return;
             ElympicsWebIntegration.PostStartEvent();
             SessionState.SetBool(SessionStartKey, true);

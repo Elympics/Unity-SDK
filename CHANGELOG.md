@@ -11,6 +11,7 @@
 * Prevent Half Remote clients from starting if their ID is too high ([477dc50](https://github.com/Elympics/Unity-SDK/commit/477dc506afa636398f025b2d56eb6e66177bac5a))
 * Update WebRTC DLLs to reduce delay while receiving data ([a0774a3](https://github.com/Elympics/Unity-SDK/commit/a0774a378a44eba41fecaaff4c8bea151ac896c2))
 * Fix error handling in ElympicsCloudPing ([d1f4ad4](https://github.com/Elympics/Unity-SDK/commit/d1f4ad4ec42bce6c5e358aea59feb54a2d82d6dd))
+* Prevent NRE from being thrown if client disconnects just after connecting to game server ([9d5b756](https://github.com/Elympics/Unity-SDK/commit/9d5b756ca7cbd14a25d84f331df4acf8ed99a8db))
 
 
 

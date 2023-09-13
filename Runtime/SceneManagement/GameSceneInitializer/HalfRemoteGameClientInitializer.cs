@@ -16,7 +16,7 @@ namespace Elympics
 
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
 
-            if (playersList.Count > playerIndex)
+            if (playersList.Count <= playerIndex)
                 throw ElympicsLogger.LogException("Half Remote client won't be initialized because "
                     + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                     + $"The list has only {playersList.Count} entries. "

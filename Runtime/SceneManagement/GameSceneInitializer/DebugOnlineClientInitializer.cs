@@ -39,7 +39,8 @@ namespace Elympics
             else
             {
                 testPlayerData = new ElympicsGameConfig.InitialUserData();
-                ElympicsLogger.LogWarning($"No data for player ID: {playerIndex} in \"Test players\" list. "
+                ElympicsLogger.LogWarning("Using empty initial user data, "
+                    + $"because no data for player ID: {playerIndex} in \"Test players\" list. "
                     + $"The list has only {_elympicsGameConfig.TestPlayers.Count} entries. "
                     + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             }

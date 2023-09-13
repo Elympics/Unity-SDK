@@ -69,6 +69,11 @@ namespace MatchTcpClients
 
             Connected?.Invoke();
             InitClientDisconnectedCts();
+            if (!IsConnected)
+            {
+                Disconnect();
+                return false;
+            }
 
             var synchronizationData = await TryInitialSynchronizeAsync(ct);
             if (synchronizationData == null)
@@ -162,15 +167,13 @@ namespace MatchTcpClients
 
         private void InitClientDisconnectedCts()
         {
-            ReliableClient.Disconnected += Disconnect;
-            if (!IsConnected)
-                Disconnect();
-
             _ = ClientDisconnectedCts.Token.Register(() =>
             {
                 ElympicsLogger.Log("Client disconnected.");
                 Disconnected?.Invoke();
             });
+
+            ReliableClient.Disconnected += Disconnect;
         }
 
         private void InitClientSynchronizer()

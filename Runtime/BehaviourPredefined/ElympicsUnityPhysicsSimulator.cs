@@ -16,7 +16,7 @@ namespace Elympics
 
         public void Initialize()
         {
-            if (instance is not null && instance != this)
+            if (instance != null && instance != this)
             {
                 ElympicsLogger.LogError("You can't use more than 1 instance of "
                     + $"{nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"

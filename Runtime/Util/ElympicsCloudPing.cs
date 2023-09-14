@@ -41,7 +41,7 @@ namespace Elympics
             foreach (var region in regions)
             {
                 if (!ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl.ContainsKey(region))
-                    throw new ArgumentException($"Could not find Google Cloud url for region {region}", nameof(regions));
+                    throw new ArgumentException($"Could not find Google Cloud URL for region {region}", nameof(regions));
                 _ = distinctRegions.Add(region);
             }
 
@@ -66,7 +66,7 @@ namespace Elympics
             }
 
             if (RegionLatencyData.Count == 0)
-                throw new ElympicsException("Network error");
+                throw new ElympicsException("No valid results received. Possible network error.");
 
             return RegionLatencyData.ToDictionary(entry => entry.Key, entry => TimeSpan.FromMilliseconds(entry.Value.LatencyMedian));
         }
@@ -92,10 +92,20 @@ namespace Elympics
             var stopwatch = new Stopwatch();
             var webRequest = UnityWebRequest.Get(uriBuilder.Uri);
             webRequest.timeout = TimeOut;
+            var isValid = true;
             stopwatch.Start();
-            var results = await webRequest.SendWebRequest();
-            stopwatch.Stop();
-            var isValid = !results.IsProtocolError() && !results.IsConnectionError();
+            try
+            {
+                _ = await webRequest.SendWebRequest();
+            }
+            catch (UnityWebRequestException)
+            {
+                isValid = false;
+            }
+            finally
+            {
+                stopwatch.Stop();
+            }
             return new PingResults(region, stopwatch.Elapsed.TotalMilliseconds, isValid);
         }
 

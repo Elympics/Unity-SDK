@@ -310,7 +310,7 @@ namespace Elympics
         public static void PostStopEvent()
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            var requestBody = new StopRequest { gameId = gameConfig.GameId };
+            var requestBody = new StopRequest { gameId = gameConfig?.GameId };
             var uri = GetCombinedUrl(ElympicsWebEndpoint, UsageStatisticsRoutes.Base, UsageStatisticsRoutes.Stop);
             var asyncOperation = ElympicsEditorWebClient.SendJsonPostRequestApi(uri, requestBody, auth: ElympicsConfig.IsLogin);
             while (asyncOperation.isDone)

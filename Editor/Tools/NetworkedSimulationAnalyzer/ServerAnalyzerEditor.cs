@@ -40,7 +40,8 @@ namespace Elympics
         public static bool ValidateOpenWindow()
         {
             return !(ElympicsClonesManager.IsClone()
-                || ElympicsConfig.LoadCurrentElympicsGameConfig().GameplaySceneDebugMode == GameplaySceneDebugModeEnum.DebugOnlinePlayer);
+                || ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplaySceneDebugMode is null
+                    or GameplaySceneDebugModeEnum.DebugOnlinePlayer);
         }
 
         private void OnDisable()

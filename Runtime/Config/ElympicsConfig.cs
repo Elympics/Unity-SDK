@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -48,7 +49,7 @@ namespace Elympics
 
         public event Action CurrentGameSwitched;
 
-        public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PathInResources);
+        [CanBeNull] public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PathInResources);
 
         public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
         {
@@ -56,10 +57,18 @@ namespace Elympics
             return elympicsConfig?.GetCurrentGameConfig();
         }
 
+        [CanBeNull]
         public ElympicsGameConfig GetCurrentGameConfig()
         {
-            ValidateGameIndex(currentGame);
-            return availableGames[currentGame];
+            try
+            {
+                ValidateGameIndex(currentGame);
+                return availableGames[currentGame];
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public void SwitchGame(int game)
@@ -72,10 +81,11 @@ namespace Elympics
 
         private void ValidateGameIndex(int game)
         {
-            if (game == -1)
-                throw new NullReferenceException("Choose game config in ElympicsConfig!");
+            if (availableGames.Count == 0)
+                throw ElympicsLogger.LogException(new InvalidOperationException(
+                    $"No game configs have been configured in {nameof(ElympicsConfig)}"));
             if (game < 0 || game >= availableGames.Count)
-                throw new NullReferenceException("Game config out of range in ElympicsConfig!");
+                throw ElympicsLogger.LogException(new ArgumentOutOfRangeException(nameof(game)));
         }
 
 #if UNITY_EDITOR

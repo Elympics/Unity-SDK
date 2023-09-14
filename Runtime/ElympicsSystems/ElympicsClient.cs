@@ -14,6 +14,8 @@ namespace Elympics
         [SerializeField, Range(0, 60), Tooltip("In seconds")]
         private int networkConditionsLogInterval = 5;
 
+        private const uint PredictionBlockedThreshold = 10;
+
         private ElympicsPlayer _player;
         public override ElympicsPlayer Player => _player;
         public override bool IsClient => true;
@@ -34,6 +36,7 @@ namespace Elympics
         private ElympicsSnapshot _lastReceivedSnapshot;
 
         private DateTime? _lastClientPrintNetworkConditions;
+        private uint _currentTicksWithoutPrediction;
         private long _lastPredictedTick;
         private long _lastDelayedInputTick;
 
@@ -64,7 +67,13 @@ namespace Elympics
             SetInitialized();
 
             if (connectOnStart)
-                StartCoroutine(ConnectAndJoinAsPlayer(_ => { }, default));
+                StartCoroutine(ConnectAndJoinAsPlayer(success =>
+                {
+                    if (success)
+                        ElympicsLogger.Log("Successfully connected to the game server.");
+                    else
+                        ElympicsLogger.LogError("Could not connect to the game server.");
+                }, default));
         }
 
         private void SetupCallbacks()
@@ -133,6 +142,8 @@ namespace Elympics
 
             if (Config.Prediction)
             {
+                CheckIfPredictionIsBlocked();
+
                 using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
                     ReconcileIfRequired(receivedSnapshot);
 
@@ -177,6 +188,26 @@ namespace Elympics
             }
         }
 
+        private void CheckIfPredictionIsBlocked()
+        {
+            var rttMs = _clientTickCalculator.Results.RttTicks * Config.TickDuration * 1000;
+            var lcoMs = _clientTickCalculator.Results.LcoTicks * Config.TickDuration * 1000;
+
+            if (_clientTickCalculator.Results.CanPredict)
+            {
+                if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
+                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. "
+                        + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                _currentTicksWithoutPrediction = 0;
+                return;
+            }
+            if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
+                return;
+
+            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
+                + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+        }
+
         private void LogNetworkConditionsInInterval()
         {
             if (!_lastClientPrintNetworkConditions.HasValue)
@@ -185,16 +216,13 @@ namespace Elympics
             if (!((TickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
                 return;
 
-            Debug.Log($"[Elympics] {_clientTickCalculator.Results}");
+            ElympicsLogger.Log(_clientTickCalculator.Results.ToString());
             _lastClientPrintNetworkConditions = TickStartUtc;
         }
 
         private void ProcessSnapshot(long predictionTick)
         {
-            ElympicsSnapshot snapshot;
-
-            snapshot = elympicsBehavioursManager.GetLocalSnapshot();
-
+            var snapshot = elympicsBehavioursManager.GetLocalSnapshot();
             snapshot.Tick = predictionTick;
             _ = _predictionBuffer.AddSnapshotToBuffer(snapshot);
         }
@@ -253,7 +281,6 @@ namespace Elympics
 
             elympicsBehavioursManager.OnPreReconcile();
 
-            // Debug.Log($"[{_player}] Applying snapshot {_lastReceivedSnapshot.Tick} with {JsonConvert.SerializeObject(_lastReceivedSnapshot, Formatting.Indented)}");
             Tick = receivedSnapshot.Tick;
             elympicsBehavioursManager.ApplySnapshot(receivedSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
             elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);

@@ -40,7 +40,7 @@ namespace Elympics
 
 #if ELYMPICS_DEBUG
             if (!silent)
-                Debug.Log($"[Elympics] Sending request GET {url}");
+                ElympicsLogger.Log($"Sending Web request: GET {url}");
 #endif
 
             var asyncOperation = request.SendWebRequest();
@@ -67,7 +67,7 @@ namespace Elympics
             request.SetTestCertificateHandlerIfNeeded();
 
 #if ELYMPICS_DEBUG
-            Debug.Log($"[Elympics] Sending request POST {url}\n{bodyString}");
+            ElympicsLogger.Log($"Sending Web request: POST {url}\n{bodyString}");
 #endif
 
             var asyncOperation = request.SendWebRequest();

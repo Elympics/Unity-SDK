@@ -132,14 +132,14 @@ namespace Elympics
             if (!EditorApplication.isPlaying || snapshot == null || (!force && (!AutoApplyState || !Paused)))
                 return;
 
-            Debug.Log($"Going to snapshot tick {snapshot.Tick}");
+            ElympicsLogger.Log($"Going to tick no. {snapshot.Tick}");
             try
             {
                 _snapshotApplier(snapshot);
             }
             catch (Exception e)
             {
-                Debug.LogException(new Exception($"Error applying snapshot tick {snapshot.Tick}", e));
+                _ = ElympicsLogger.LogException($"Error applying tick no. {snapshot.Tick}", e);
                 return;
             }
 
@@ -164,7 +164,8 @@ namespace Elympics
 
             if (_currentlyAppliedTick >= 0 || force)
             {
-                Debug.LogWarning($"Forcefully applied latest recorded state{(reloadedPreLoadState ? " from before loading the replay file" : string.Empty)}");
+                ElympicsLogger.LogWarning("Forcefully applied latest recorded state"
+                    + (reloadedPreLoadState ? " from before loading the replay file" : string.Empty));
                 ApplyTickStateIfNeeded(reloadedPreLoadState ? _tickBeforeLoad.Snapshot : _tickListDisplayer.LatestTick.Snapshot, true);
                 _currentlyAppliedTick = -1;
             }

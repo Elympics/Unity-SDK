@@ -30,13 +30,9 @@ namespace Elympics
             _max = max;
             _current = _min - 1;
             if (_min < ElympicsBehavioursManager.NetworkIdRange) // in case when developer wants to hardcode networkIds during production. The available range is from 0 to ElympicsBehavioursManager.NetworkIdRange
-            {
                 SetCurrentWithMaximumNotForcedNetworkIdPresentOnScene();
-            }
             else
-            {
                 _ = MoveNextAndGetCurrent();
-            }
         }
 
 
@@ -66,13 +62,10 @@ namespace Elympics
 
             _usedForcedIdsCached = new HashSet<int>();
             foreach (var behaviour in behaviours)
-            {
                 if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && behaviour.forceNetworkId)
-                {
                     if (!_usedForcedIdsCached.Add(behaviour.NetworkId))
-                        Debug.LogError($"Repetition for FORCED network id {behaviour.NetworkId} in {behaviour.gameObject.name} {behaviour.GetType().Name}");
-                }
-            }
+                        throw ElympicsLogger.LogException("Repetition for FORCED network ID "
+                            + $"{behaviour.NetworkId} in {behaviour.gameObject.name} {behaviour.GetType().Name}");
 
             return _usedForcedIdsCached;
         }
@@ -96,14 +89,16 @@ namespace Elympics
                 }
 
                 if (next > _max && isOverflow)
-                    throw new OverflowException($"Cannot generate NetworkId. The pool of min: {_min} max: {_max} ID's has been used out.");
+                    throw ElympicsLogger.LogException(new OverflowException("Cannot generate a network ID. "
+                        + $"The pool of IDs between min: {_min} and max: {_max} has been used up."));
 
-                if (next == int.MaxValue)
-                    Debug.LogError($"[Elympics] NetworkIds overflow! Try running {ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH}.");
+                if (next == int.MaxValue)  // TODO: can this error occur? ~dsygocki 2023-08-24
+                    throw ElympicsLogger.LogException(new OverflowException("Network ID overflow! "
+                        + $"Try running {ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH}."));
             } while (usedForcedIds.Contains(next) || (_checkDynamicAllocations && _dynamicAllocatedIds.Contains(next)));
 
             if (!_dynamicAllocatedIds.Add(next))
-                throw new Exception("Dynamically allocated NetworkId's already contains given Id.");
+                throw ElympicsLogger.LogException($"Generated network ID {next} is already in use.");
 
             return next;
         }

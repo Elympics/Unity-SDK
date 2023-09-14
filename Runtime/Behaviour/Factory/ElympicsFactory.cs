@@ -57,9 +57,10 @@ namespace Elympics
         {
             if (!_playersObjects.TryGetValue(go, out var player))
             {
-                const string message = "Trying to destroy object not created by ElympicsFactory or wrong cached reference after reconciliation";
-                Debug.LogError(message, go);
-                throw new ArgumentException("Trying to destroy object not created by ElympicsFactory or wrong cached reference after reconciliation", nameof(go));
+                const string message = "Trying to destroy an object not instantiated by Elympics. "
+                    + "This may also be a result of using an incorrectly cached reference after reconciliation.";
+                ElympicsLogger.LogError(message, go);
+                throw new ArgumentException(message, nameof(go));
             }
 
             var elympicsFactoryPart = GetOrCreateFactoryPart(player);

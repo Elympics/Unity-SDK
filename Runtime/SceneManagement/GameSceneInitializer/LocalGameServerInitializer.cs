@@ -14,7 +14,7 @@ namespace Elympics
         {
             var initialMatchData = new InitialMatchUserDatas(DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig));
             _localGameEngineAdapter = gameEngineAdapter;
-            _localGameEngineAdapter.Init(new LoggerNoop(), null);
+            _localGameEngineAdapter.Init(null, null);
             _localGameEngineAdapter.Init2(initialMatchData);
 
             Application.targetFrameRate = -1;

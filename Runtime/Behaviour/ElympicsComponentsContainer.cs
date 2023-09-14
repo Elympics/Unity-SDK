@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Elympics
@@ -30,8 +31,18 @@ namespace Elympics
             if (inputHandlers.Length > 0)
             {
                 InputHandler = inputHandlers[0];
-                for (var i = 1; i < inputHandlers.Length; i++)
-                    Debug.LogError($"More than one {nameof(IInputHandler)} component on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}! Ignoring {inputHandlers.GetType().Name}", elympicsBehaviour);
+                if (inputHandlers.Length > 1)
+                {
+                    var allComponents = elympicsBehaviour.GetComponents<Component>();
+                    for (var i = 1; i < inputHandlers.Length; i++)
+                    {
+                        var inputHandler = inputHandlers[i];
+                        var componentIndex = Array.IndexOf(allComponents, inputHandler);
+                        ElympicsLogger.LogError($"More than one {nameof(IInputHandler)} component found on "
+                            + $"{elympicsBehaviour.gameObject.name}! Ignoring component no. {componentIndex} of type "
+                            + $"{inputHandler.GetType().Name}", allComponents[componentIndex]);
+                    }
+                }
             }
 #pragma warning disable CS0618
             ClientHandlers = elympicsBehaviour.GetComponents<IClientHandler>();

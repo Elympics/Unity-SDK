@@ -187,7 +187,10 @@ namespace Elympics.Editor
             if (previousMode != _mode.enumValueIndex)
             {
                 if ((ElympicsGameConfig.GameplaySceneDebugModeEnum)_mode.enumValueIndex == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote && !Application.runInBackground)
-                    Debug.LogError(SdkLogMessages.Error_HalfRemoteWoRunInBacktround);
+                    ElympicsLogger.LogError("Development Mode is set to Half Remote but PlayerSettings "
+                        + "\"Run In Background\" option is false. Network simulation will not be performed in "
+                        + "out-of-focus Editor windows. Please make sure that PlayerSettings \"Run In Background\" "
+                        + "option is set to true.");
             }
 
             switch ((ElympicsGameConfig.GameplaySceneDebugModeEnum)_mode.enumValueIndex)
@@ -550,7 +553,7 @@ namespace Elympics.Editor
                 }
                 catch (FormatException e)
                 {
-                    Debug.LogWarning(e.Message);
+                    ElympicsLogger.LogWarning(e.Message);
                 }
             }
 

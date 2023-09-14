@@ -2,30 +2,29 @@ using UnityEngine;
 
 namespace Elympics
 {
+    [DisallowMultipleComponent]
     public class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
     {
+        private static ElympicsUnityPhysicsSimulator instance;
+
         private PhysicsScene? _currentPhysicsScene;
         private PhysicsScene2D? _currentPhysicsScene2D;
+        private bool _isActive;
 
-        private bool isActive = false;
-
-        private void OnEnable()
-        {
-            isActive = true;
-        }
-
-        private void OnDisable()
-        {
-            isActive = false;
-        }
+        private void OnEnable() => _isActive = true;
+        private void OnDisable() => _isActive = false;
 
         public void Initialize()
         {
-            if (gameObject.FindObjectsOfTypeOnScene<ElympicsUnityPhysicsSimulator>().Count > 1)
+            if (instance != null && instance != this)
             {
-                Debug.LogError($"You can't use more than 1 {nameof(ElympicsUnityPhysicsSimulator)}!", gameObject);
+                ElympicsLogger.LogError("You can't use more than 1 instance of "
+                    + $"{nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
+                    + $"Previously detected on object: {instance.gameObject.name}, "
+                    + $"current object: {gameObject.name}", gameObject);
                 return;
             }
+            instance = this;
 
             var currentScene = gameObject.scene;
             _currentPhysicsScene = currentScene.GetPhysicsScene();
@@ -37,16 +36,16 @@ namespace Elympics
 
         public void ElympicsUpdate()
         {
-            if (!isActive)
+            if (!_isActive)
                 return;
             if (_currentPhysicsScene == null || _currentPhysicsScene2D == null)
             {
-                Debug.LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!", gameObject);
+                ElympicsLogger.LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!", gameObject);
                 return;
             }
 
             _currentPhysicsScene?.Simulate(Elympics.TickDuration);
-            _ = (_currentPhysicsScene2D?.Simulate(Elympics.TickDuration));
+            _ = _currentPhysicsScene2D?.Simulate(Elympics.TickDuration);
         }
     }
 }

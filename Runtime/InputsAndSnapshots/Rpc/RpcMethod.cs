@@ -28,5 +28,8 @@ namespace Elympics
             left.Equals(right);
         public static bool operator !=(RpcMethod left, RpcMethod right) =>
             !left.Equals(right);
+
+        public override string ToString() =>
+            $"{nameof(RpcMethod)} ({_methodInfo.DeclaringType!.FullName}.{_methodInfo.Name} of {_target})";
     }
 }

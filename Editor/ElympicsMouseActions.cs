@@ -15,7 +15,7 @@ namespace Elympics
             const string name = "Elympics System";
             if (HasActiveSceneAnyObjectOfType<ElympicsLobbyClient>())
             {
-                Debug.LogError($"{name} cannot be placed in the menu scene. Use a separate game scene.");
+                ElympicsLogger.LogError($"{name} cannot be placed in the menu scene. Use a separate game scene.");
                 return;
             }
             AddUniquePrefabToScene<GameSceneManager>(PathToElympicsSystem, name);
@@ -27,7 +27,7 @@ namespace Elympics
             const string name = "Elympics Lobby";
             if (HasActiveSceneAnyObjectOfType<GameSceneManager>())
             {
-                Debug.LogError($"{name} cannot be placed in the game scene. Use a separate menu scene.");
+                ElympicsLogger.LogError($"{name} cannot be placed in the game scene. Use a separate menu scene.");
                 return;
             }
             AddUniquePrefabToScene<ElympicsLobbyClient>(PathToElympicsLobby, name);
@@ -38,13 +38,13 @@ namespace Elympics
         {
             if (HasActiveSceneAnyObjectOfType<T>())
             {
-                Debug.LogError($"{name} is already present in the current scene.");
+                ElympicsLogger.LogError($"{name} is already present in the current scene.");
                 return;
             }
             var prefabReference = Resources.Load<T>(path);
             if (prefabReference == null)
             {
-                Debug.LogError($"Cannot instantiate {name} - prefab reference is null!");
+                ElympicsLogger.LogError($"Cannot instantiate {name} - prefab reference is null!");
                 return;
             }
             var instance = PrefabUtility.InstantiatePrefab(prefabReference.gameObject);

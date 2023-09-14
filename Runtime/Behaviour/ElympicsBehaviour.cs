@@ -231,6 +231,9 @@ namespace Elympics
 
             _componentsContainer = new ElympicsComponentsContainer(this);
 
+            foreach (var observable in _componentsContainer.Observables)
+                RpcMethods.CollectFrom(observable);
+
             var previousCallContext = ElympicsBase.CurrentCallContext;
             ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
             foreach (var initializable in _componentsContainer.Initializables)
@@ -262,13 +265,13 @@ namespace Elympics
                             }
                         }
                         else
-                            Debug.LogError($"Cannot synchronize ElympicsVar {field.Name} in {field.DeclaringType}, because it's null");
+                            ElympicsLogger.LogError($"Cannot synchronize {nameof(ElympicsVar)} {field.Name} "
+                                + $"in {field.DeclaringType}, because it hasn't been initialized "
+                                + "(its value is null).");
                     }
                 }
                 if (componentVars.Count > 0)
                     _backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
-
-                RpcMethods.CollectFrom(observable);
             }
 
             _inputReader = new BinaryInputReader();
@@ -339,7 +342,7 @@ namespace Elympics
                 if (!backingField.Equals(_binaryReader1, _binaryReader2))
                 {
                     if (!ElympicsBase.IsServer)
-                        Debug.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
+                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
                     areEqual = false;
                 }
             }
@@ -386,8 +389,7 @@ namespace Elympics
                 }
                 catch (Exception e) when (e is EndOfStreamException or ReadNotEnoughException)
                 {
-                    Debug.LogException(e);
-                    Debug.LogError("An exception occured when applying inputs. This might be a result of faulty code or a hacking attempt.");
+                    _ = ElympicsLogger.LogException("An exception occured when applying inputs", e);
                 }
                 finally
                 {

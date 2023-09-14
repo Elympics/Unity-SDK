@@ -33,21 +33,17 @@ namespace Elympics
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
                 var networkId = elympicsBehaviour.NetworkId;
-                if (networkId < 0)
+                if (networkId < 0)  // there is no upper limit
                 {
-                    Debug.LogError($"Invalid networkId {networkId} on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}", elympicsBehaviour);
+                    ElympicsLogger.LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
+                        + "Network ID must not be negative.", elympicsBehaviour);
                     return;
                 }
 
                 if (_elympicsBehaviours.Contains(networkId))
                 {
-                    Debug.LogError($"Duplicated networkId {networkId} on {elympicsBehaviour.gameObject.name} {elympicsBehaviour.GetType().Name}", elympicsBehaviour);
-                    return;
-                }
-
-                if (networkId >= NetworkIdRange && !elympicsBehaviour.forceNetworkId)
-                {
-                    Debug.LogError($"Auto assign id failed (NetworkId: {networkId}) on {elympicsBehaviour.gameObject.name} {nameof(ElympicsBehaviour)}. Object has id in range for instantiated objects", elympicsBehaviour);
+                    ElympicsLogger.LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
+                        + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object", elympicsBehaviour);
                     return;
                 }
 
@@ -254,7 +250,7 @@ namespace Elympics
         {
             if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory))
             {
-                Debug.LogWarning($"States not equal on factory");
+                ElympicsLogger.LogWarning("States not equal on factory.");
                 return false;
             }
 
@@ -297,7 +293,7 @@ namespace Elympics
                 if (elympicsBehaviour.AreStatesEqual(historyState, receivedState))
                     continue;
 
-                Debug.LogWarning($"States not equal on {networkId}");
+                ElympicsLogger.LogWarning($"States not equal for network ID {networkId}.");
                 return false;
             }
 
@@ -340,7 +336,7 @@ namespace Elympics
                 var networkId = elympicsBehaviour.NetworkId;
                 if (elympicsBehavioursView.ContainsKey(networkId))
                 {
-                    Debug.LogWarning($"Cannot refresh behaviour with networkId {networkId}! Duplicated entry", elympicsBehaviour);
+                    ElympicsLogger.LogWarning($"Duplicated entry detected for network ID {networkId}!", elympicsBehaviour);
                     continue;
                 }
 

@@ -6,6 +6,6 @@ namespace Elympics.Models.Matchmaking
     [Serializable]
     public class UnfinishedMatchesResponse
     {
-        public List<string> MatchIds;
+        public List<UnfinishedMatch> Matches;
     }
 }

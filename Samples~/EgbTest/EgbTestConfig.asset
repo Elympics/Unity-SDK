@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: SampleEgbTest
   gameId: 1e8cea62-c4a2-40a8-8eb6-ae979fac6d48
-  gameVersion: 1
+  gameVersion: 1.1
   players: 1
   gameplayScene: Assets/Samples/EgbTest/Scenes/EgbTestGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a42c95641b7d92742b53156c2f7f3f04,

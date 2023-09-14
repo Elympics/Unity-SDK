@@ -1,3 +1,20 @@
+## [0.9.1](https://github.com/Elympics/Unity-SDK/compare/v0.9.0...v0.9.1) (2023-09-08)
+
+
+### Bug Fixes 🪲
+
+* Fix RPC methods not being registered before calling IInitializable.Initialize ([babaab9](https://github.com/Elympics/Unity-SDK/commit/babaab9e3411fcf2b650d55901e63afa8c7c0d5d))
+* Base URLs of lobby, auth and leaderboard service on general Elympics Cloud address ([968dcd6](https://github.com/Elympics/Unity-SDK/commit/968dcd6a8f05a56040a7718185b41c64ca7acea1))
+* Retrieve unfinished matches only for the current version of the game ([37e3984](https://github.com/Elympics/Unity-SDK/commit/37e39843824e2fb8640925cec182924ae98bdbbd))
+* Mark Elympics logs in a distinctive way, include timing, add missing logs ([e2190a6](https://github.com/Elympics/Unity-SDK/commit/e2190a661bde24de0b35664d7ce185549ffaa0ab))
+* Provide verbose warning when there is not enough entries in Test players ([e2e2427](https://github.com/Elympics/Unity-SDK/commit/e2e2427697286098b6bd4e51b210c31b054926cd))
+* Prevent Half Remote clients from starting if their ID is too high ([477dc50](https://github.com/Elympics/Unity-SDK/commit/477dc506afa636398f025b2d56eb6e66177bac5a))
+* Update WebRTC DLLs to reduce delay while receiving data ([a0774a3](https://github.com/Elympics/Unity-SDK/commit/a0774a378a44eba41fecaaff4c8bea151ac896c2))
+* Fix error handling in ElympicsCloudPing ([d1f4ad4](https://github.com/Elympics/Unity-SDK/commit/d1f4ad4ec42bce6c5e358aea59feb54a2d82d6dd))
+* Prevent NRE from being thrown if client disconnects just after connecting to game server ([9d5b756](https://github.com/Elympics/Unity-SDK/commit/9d5b756ca7cbd14a25d84f331df4acf8ed99a8db))
+
+
+
 ## [0.9.0](https://github.com/Elympics/Unity-SDK/compare/v0.8.1...v0.9.0) (2023-08-28)
 
 
@@ -206,9 +223,9 @@
 
 ### Features
 
-- Possibility of joining region-specific matchmaking queues.  
-  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.  
-  Empty/null region name means that servers based in Warsaw are used (legacy behavior).  
+- Possibility of joining region-specific matchmaking queues.
+  See new `regionName` argument in `ElympicsLobbyClient.Instance.PlayOnline()`.
+  Empty/null region name means that servers based in Warsaw are used (legacy behavior).
   Regions configured for active game can be retrieved using "Synchronize" button in "Manage games in Elympics" window.
 
 

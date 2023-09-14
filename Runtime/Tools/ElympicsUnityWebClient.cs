@@ -34,7 +34,7 @@ namespace Elympics
 
 #if ELYMPICS_DEBUG
             var body = string.IsNullOrEmpty(bodyString) ? "No request body." : $"{bodyString}";
-            Debug.Log($"[Elympics] Sending request {method} {url}\n{body}");
+            ElympicsLogger.Log($"Sending Web request: {method} {url}\n{body}");
 #endif
             var asyncOperation = request.SendWebRequest();
             CallCallbackOnCompleted(asyncOperation, callback, ct);
@@ -73,7 +73,8 @@ namespace Elympics
                     return;
                 }
 #if ELYMPICS_DEBUG
-                Debug.Log($"[Elympics] Received response {requestOp.webRequest.responseCode} from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
+                ElympicsLogger.Log($"Received response {requestOp.webRequest.responseCode} "
+                    + $"from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
 #endif
                 if (requestOp.webRequest.responseCode != 200)
                 {

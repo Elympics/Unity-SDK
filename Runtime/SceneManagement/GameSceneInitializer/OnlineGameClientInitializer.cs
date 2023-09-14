@@ -1,6 +1,5 @@
 using Elympics.Libraries;
 using MatchTcpClients;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -8,15 +7,24 @@ namespace Elympics
     {
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
-            var matchData = ElympicsLobbyClient.Instance.MatchDataGuid;
-            if (matchData == null)
+            if (ElympicsLobbyClient.Instance == null)
             {
-                Debug.LogError("[Elympics] Match data not found. Did you try to join an online match without going through matchmaking first?");
+                ElympicsLogger.LogError($"{nameof(ElympicsLobbyClient)} object is not present. "
+                    + "Make sure to setup a menu scene before playing an online match.");
                 return;
             }
             if (!ElympicsLobbyClient.Instance.IsAuthenticated)
             {
-                Debug.LogError("[Elympics] User is not authenticated. Did you try to join an online match without going through matchmaking first?");
+                ElympicsLogger.LogError("User is not authenticated. Remember to set \"Authenticate On Awake With\" "
+                    + $"correctly for {nameof(ElympicsLobbyClient)} object.");
+                return;
+            }
+            var matchData = ElympicsLobbyClient.Instance.MatchDataGuid;
+            if (matchData == null)
+            {
+                ElympicsLogger.LogError("Match data not found. Going through matchmaking is required "
+                    + $"before joining an online match. See {nameof(ElympicsLobbyClient)}."
+                    + $"{nameof(ElympicsLobbyClient.Instance)}.{nameof(ElympicsLobbyClient.PlayOnlineInRegion)}().");
                 return;
             }
 
@@ -25,17 +33,16 @@ namespace Elympics
             var gameEngineData = matchData.GameEngineData;
             var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];
 
-            var logger = new LoggerDebug();
             var serializer = new GameServerJsonSerializer();
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress,
                 matchData.MatchId.ToString(), matchData.RegionName);
             var gameServerClient = elympicsGameConfig.UseWeb
-                ? (GameServerClient)new WebGameServerClient(logger, serializer, config,
+                ? (GameServerClient)new WebGameServerClient(serializer, config,
                     new HttpSignalingClient(webSignalingEndpoint),
                     WebRtcFactory.CreateInstance)
-                : new TcpUdpGameServerClient(logger, serializer, config,
+                : new TcpUdpGameServerClient(serializer, config,
                     IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
                 matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret,

@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Linq;
 using System.Threading;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -94,6 +96,8 @@ namespace Elympics
         {
             if (Instance != null)
             {
+                ElympicsLogger.LogWarning($"An instance of {nameof(ElympicsLobbyClient)} already exists. "
+                    + $"Destroying {gameObject} game object...");
                 Destroy(gameObject);
                 return;
             }
@@ -104,19 +108,26 @@ namespace Elympics
             _config = ElympicsConfig.Load();
             _gameConfig = _config.GetCurrentGameConfig();
 
+            ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n"
+                + "Available games:\n" + string.Join("\n", _config.AvailableGames
+                    .Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}")));
+
             if (string.IsNullOrEmpty(_config.ElympicsLobbyEndpoint))
             {
-                Debug.LogError($"[Elympics] Elympics authentication endpoint not set. Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}]");
+                ElympicsLogger.LogError("Elympics authentication endpoint not set. "
+                    + $"Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}].");
                 return;
             }
 
-            _auth = new RemoteAuthClient();
+            _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = MatchmakerClientFactory.Create(_gameConfig, _config.ElympicsLobbyEndpoint);
             Matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
             Matchmaker.MatchmakingMatchFound += HandleMatchIdReceived;
             Matchmaker.MatchmakingCancelledGuid += HandleMatchmakingCancelled;
             Matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
             Matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
+
+            ElympicsLogger.Log($"Initialized {nameof(ElympicsLobbyClient)}.");
 
             if (AuthenticateOnAwakeWith != AuthType.None)
                 AuthenticateWith(AuthenticateOnAwakeWith);
@@ -138,19 +149,21 @@ namespace Elympics
         /// <param name="authType">Type of authentication to be performed.</param>
         public void AuthenticateWith(AuthType authType)
         {
+            ElympicsLogger.Log($"Starting {authType} authentication...");
+
             if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.None)
             {
-                Debug.LogError($"[Elympics] Invalid authentication type {authType}");
+                ElympicsLogger.LogError($"Invalid authentication type: {authType}.");
                 return;
             }
             if (IsAuthenticated)
             {
-                Debug.LogError($"[Elympics] User already authenticated (with {AuthData.AuthType} auth type)");
+                ElympicsLogger.LogError($"User already authenticated (with {AuthData.AuthType} auth type).");
                 return;
             }
             if (_authInProgress)
             {
-                Debug.LogError($"[Elympics] Authentication already in progress");
+                ElympicsLogger.LogError("Authentication already in progress.");
                 return;
             }
 
@@ -180,10 +193,10 @@ namespace Elympics
             if (result.IsSuccess)
             {
                 AuthData = result.Value;
-                Debug.Log($"[Elympics] {authType} authentication successful with user id: {AuthData.UserId}");
+                ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId}.");
             }
             else
-                Debug.LogError($"[Elympics] {authType} authentication failed: {result.Error}");
+                ElympicsLogger.LogError($"{authType} authentication failed: {result.Error}");
 
             string eventName = null;
             try
@@ -207,7 +220,8 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                Debug.LogException(new Exception($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e));
+                _ = ElympicsLogger.LogException($"Exception occured in one of listeners of "
+                    + $"{nameof(ElympicsLobbyClient)}.{eventName}", e);
             }
         }
 
@@ -217,28 +231,40 @@ namespace Elympics
         /// </summary>
         public void SignOut()
         {
+            ElympicsLogger.Log("Trying to sign out...");
+
             if (_authInProgress)
             {
-                Debug.LogError($"[Elympics] Authentication already in progress. Wait for it to complete before signing out");
+                ElympicsLogger.LogError("Authentication already in progress. Wait for it to complete before signing out");
                 return;
             }
             if (!IsAuthenticated)
             {
-                Debug.LogError($"[Elympics] User is not authenticated");
+                ElympicsLogger.LogError("User is not authenticated");
                 return;
             }
             AuthData = null;
+
+            ElympicsLogger.Log("Signed out.");
         }
 
 
+        private void LogSettingUpGame(string gameModeName) =>
+            ElympicsLogger.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} "
+                + $"(ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
+
         public void PlayOffline()
         {
+            LogSettingUpGame("Local Player with Bots");
+
             SetUpMatch(JoinedMatchMode.Local);
             LoadGameplayScene();
         }
 
         public void PlayHalfRemote(int playerId)
         {
+            LogSettingUpGame("Half Remote Client");
+
             Environment.SetEnvironmentVariable(ApplicationParameters.HalfRemote.PlayerIndexEnvironmentVariable, playerId.ToString());
             SetUpMatch(JoinedMatchMode.HalfRemoteClient);
             LoadGameplayScene();
@@ -246,6 +272,8 @@ namespace Elympics
 
         public void StartHalfRemoteServer()
         {
+            LogSettingUpGame("Half Remote Server");
+
             SetUpMatch(JoinedMatchMode.HalfRemoteServer);
             LoadGameplayScene();
         }
@@ -260,6 +288,8 @@ namespace Elympics
         /// <remarks>In a performance manner, it is better to use PlayOnlineInRegion if the region is known upfront. This method pings every Elympics region. If ping will fail, fallback region will be used.</remarks>
         public async void PlayOnlineInClosestRegionAsync(float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default, string fallbackRegion = "warsaw")
         {
+            LogSettingUpGame("Online (in closest region)");
+
             if (string.IsNullOrEmpty(fallbackRegion))
                 throw new ArgumentNullException(nameof(fallbackRegion));
             if (!CanJoinMatch())
@@ -273,14 +303,33 @@ namespace Elympics
 
         public void PlayOnlineInRegion(string regionName, float[] matchmakerData = null, byte[] gameEngineData = null, string queueName = null, bool loadGameplaySceneOnFinished = true, CancellationToken cancellationToken = default)
         {
+            LogSettingUpGame("Online");
+
             if (!CanJoinMatch())
                 return;
             SetupMatchAndJoinMatchmaker(regionName, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);
         }
 
 
+        internal static void LogJoiningMatchmaker(Guid userId, float[] matchmakerData, byte[] gameEngineData, string queueName, string regionName, bool loadGameplaySceneOnFinished)
+        {
+            var serializedMmData = matchmakerData != null
+                ? "[" + string.Join(", ", matchmakerData.Select(x => x.ToString(CultureInfo.InvariantCulture))) + "]"
+                : "null";
+            var serializedGeData = gameEngineData != null
+                ? Convert.ToBase64String(gameEngineData)
+                : "null";
+            ElympicsLogger.Log($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\n"
+                + $"Supplied matchmaker data: {serializedMmData}\n"
+                + $"Supplied game engine data: {serializedGeData}");
+            if (loadGameplaySceneOnFinished)
+                ElympicsLogger.Log("Gameplay scene will be loaded after matchmaking succeeds.");
+        }
+
         private void SetupMatchAndJoinMatchmaker(string regionName, float[] matchmakerData, byte[] gameEngineData, string queueName, bool loadGameplaySceneOnFinished, CancellationToken cancellationToken)
         {
+            LogJoiningMatchmaker(UserGuid!.Value, matchmakerData, gameEngineData, queueName, regionName, loadGameplaySceneOnFinished);
+
             SetUpMatch(JoinedMatchMode.Online);
             _matchmakingInProgress = true;
             _loadingSceneOnFinished = loadGameplaySceneOnFinished;
@@ -304,6 +353,10 @@ namespace Elympics
 
         public void RejoinLastOnlineMatch(bool loadGameplaySceneOnFinished = true, CancellationToken ct = default)
         {
+            ElympicsLogger.Log("Rejoining last Online game...");
+            if (loadGameplaySceneOnFinished)
+                ElympicsLogger.Log("Gameplay scene will be loaded after rejoining succeeds.");
+
             if (!CanJoinMatch())
                 return;
 
@@ -318,13 +371,13 @@ namespace Elympics
         {
             if (_matchmakingInProgress)
             {
-                Debug.LogError("[Elympics] Joining match already in progress.");
+                ElympicsLogger.LogError("Joining match already in progress.");
                 return false;
             }
 
             if (!IsAuthenticated)
             {
-                Debug.LogError($"[Elympics] Cannot join match because user is not authenticated");
+                ElympicsLogger.LogError($"Cannot join match because user is not authenticated.");
                 return false;
             }
 
@@ -339,29 +392,29 @@ namespace Elympics
 
         private void HandleMatchmakingCancelled(Guid _)
         {
-            Debug.Log("Matchmaking cancelled");
+            ElympicsLogger.Log("Matchmaking cancelled.");
             CleanUpAfterMatchmaking();
         }
 
         private void HandleMatchmakingFailed((string Error, Guid MatchId) args)
         {
-            Debug.LogError($"Matchmaking error: {args.Error}");
+            ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
             CleanUpAfterMatchmaking();
         }
 
         private static void HandleMatchmakingWarning((string Warning, Guid MatchId) args)
         {
-            Debug.LogWarning($"Matchmaking warning: {args.Warning}");
+            ElympicsLogger.LogWarning($"Matchmaking warning: {args.Warning}");
         }
 
         private static void HandleMatchIdReceived(Guid matchId)
         {
-            Debug.Log($"Received match id {matchId}");
+            ElympicsLogger.Log($"Received match ID: {matchId}.");
         }
 
         private void HandleMatchmakingSucceeded(MatchmakingFinishedData matchData)
         {
-            Debug.Log("Matchmaking finished successfully");
+            ElympicsLogger.Log("Matchmaking finished successfully.");
             MatchDataGuid = matchData;
             MatchData = new JoinedMatchData(matchData);
             CleanUpAfterMatchmaking();

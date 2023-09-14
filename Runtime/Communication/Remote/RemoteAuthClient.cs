@@ -10,9 +10,6 @@ namespace Elympics
 {
     internal class RemoteAuthClient : IAuthClient
     {
-        // TODO: softcode this address ~dsygocki 2023-04-19
-        private const string AuthBaseUrl = "https://api.elympics.cc/v2/auth";
-
         private readonly Regex _ethAddressRegex = new("^(0x)?[0-9a-f]{40}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly Regex _ethSignatureRegex = new("^(0x)?[0-9a-f]{130}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -20,9 +17,9 @@ namespace Elympics
         private readonly string _ethAddressNonceUrl;
         private readonly string _ethAddressAuthUrl;
 
-        internal RemoteAuthClient()
+        internal RemoteAuthClient(string authEndpoint)
         {
-            var uriBuilder = new UriBuilder(AuthBaseUrl);
+            var uriBuilder = new UriBuilder(authEndpoint);
             var oldPath = uriBuilder.Path.TrimEnd('/');
             uriBuilder.Path = string.Join("/", oldPath, AuthRoutes.Base, AuthRoutes.ClientSecretAuth);
             _clientSecretAuthUrl = uriBuilder.Uri.ToString();

@@ -4,6 +4,7 @@ using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using GameplaySceneDebugModeEnum = Elympics.ElympicsGameConfig.GameplaySceneDebugModeEnum;
 
 namespace Elympics
 {
@@ -22,7 +23,7 @@ namespace Elympics
         private ServerAnalyzerController _serverAnalyzerController;
 
         // TODO: find better way because its a bit dirty (maybe use change event from ElympicsConfig)
-        private bool closedForcefully;
+        private bool _closedForcefully;
 
         public bool Paused => _serverAnalyzerController?.Paused ?? false;
 
@@ -39,27 +40,29 @@ namespace Elympics
         public static bool ValidateOpenWindow()
         {
             return !(ElympicsClonesManager.IsClone()
-                || ElympicsConfig.LoadCurrentElympicsGameConfig().GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer);
+                || ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplaySceneDebugMode is null
+                    or GameplaySceneDebugModeEnum.DebugOnlinePlayer);
         }
 
         private void OnDisable()
         {
-            if (closedForcefully)
+            if (_closedForcefully)
                 return;
 
             ElympicsBase.TickAnalysis = null;
 
-            if (ElympicsConfig.LoadCurrentElympicsGameConfig().GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer)
+            const GameplaySceneDebugModeEnum debugOnlineMode = GameplaySceneDebugModeEnum.DebugOnlinePlayer;
+            if (ElympicsConfig.LoadCurrentElympicsGameConfig().GameplaySceneDebugMode == debugOnlineMode)
             {
-                Debug.LogWarning("You cannot use the tool in the \"DebugOnlinePlayer\" mode!");
-                closedForcefully = true;
+                ElympicsLogger.LogWarning($"You cannot use the tool in the {debugOnlineMode} mode!");
+                _closedForcefully = true;
                 Close();
             }
         }
 
         private void OnEnable()
         {
-            closedForcefully = false;
+            _closedForcefully = false;
 
             uxml.CloneTree(rootVisualElement);
 

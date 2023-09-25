@@ -3,7 +3,7 @@
 
 ### Bug Fixes 🪲
 
-* Fix game-breaking lags on Android ([983b782](https://github.com/Elympics/Unity-SDK/commit/983b7829e757984bb5ffb38717c36c0630eaea90))
+* Fix game-breaking lags on Android by updating MessagePack to v2.5.124 ([983b782](https://github.com/Elympics/Unity-SDK/commit/983b7829e757984bb5ffb38717c36c0630eaea90))
 
 
 

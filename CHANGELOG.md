@@ -1,3 +1,12 @@
+## [0.9.2](https://github.com/Elympics/Unity-SDK/compare/v0.9.1...v0.9.2) (2023-09-25)
+
+
+### Bug Fixes 🪲
+
+* Fix game-breaking lags on Android by updating MessagePack to v2.5.124 ([983b782](https://github.com/Elympics/Unity-SDK/commit/983b7829e757984bb5ffb38717c36c0630eaea90))
+
+
+
 ## [0.9.1](https://github.com/Elympics/Unity-SDK/compare/v0.9.0...v0.9.1) (2023-09-08)
 
 

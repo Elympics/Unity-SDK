@@ -1,8 +1,7 @@
 {
-    "name": "Elympics.Editor",
+    "name": "MessagePack.UnityEditor",
     "rootNamespace": "",
     "references": [
-        "Elympics",
         "MessagePack"
     ],
     "includePlatforms": [
@@ -10,10 +9,8 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "Elympics.Newtonsoft.Json.dll"
-    ],
+    "overrideReferences": false,
+    "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

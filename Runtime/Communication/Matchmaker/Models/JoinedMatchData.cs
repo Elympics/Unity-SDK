@@ -5,7 +5,7 @@ namespace Elympics.Models.Matchmaking
 {
     public class JoinedMatchData
     {
-        public JoinedMatchData(MatchmakingFinishedData matchmakingFinishedData)
+        internal JoinedMatchData(MatchmakingFinishedData matchmakingFinishedData)
         {
             MatchId = matchmakingFinishedData.MatchId.ToString();
             TcpUdpServerAddress = matchmakingFinishedData.TcpUdpServerAddress;

@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fd80fb1f7856404a988224a406da737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  asyncEventsDispatcher: {fileID: 7894258471756086654}
   authenticateOnAwakeWith: 1
   ethSigner: {fileID: 0}
   authenticateOnAwake: 1

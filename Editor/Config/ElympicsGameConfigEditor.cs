@@ -35,7 +35,6 @@ namespace Elympics.Editor
         private SerializedProperty _botsInServer;
 
         private SerializedProperty _useWeb;
-        private SerializedProperty _legacyMatchmakingClient;
         private SerializedProperty _connectionConfig;
 
         private SerializedProperty _ticksPerSecond;
@@ -89,7 +88,6 @@ namespace Elympics.Editor
             _botsInServer = serializedObject.FindProperty("botsInServer");
 
             _useWeb = serializedObject.FindProperty("useWeb");
-            _legacyMatchmakingClient = serializedObject.FindProperty("legacyMatchmakingClient");
             _connectionConfig = serializedObject.FindProperty("connectionConfig");
 
             _ticksPerSecond = serializedObject.FindProperty("ticksPerSecond");
@@ -158,7 +156,6 @@ namespace Elympics.Editor
 
             BeginSection("Client");
             DrawUseWeb(summaryLabelStyle);
-            _ = EditorGUILayout.PropertyField(_legacyMatchmakingClient, new GUIContent("Legacy matchmaking", "Use long polling instead of WebSockets"));
             _ = EditorGUILayout.PropertyField(_connectionConfig, new GUIContent("Client connection config"));
             EditorGUILayout.Space();
 

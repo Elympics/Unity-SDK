@@ -96,6 +96,12 @@ csharp_using_directive_placement = outside_namespace:warning
 csharp_prefer_static_local_function = true:warning
 csharp_style_namespace_declarations = file_scoped:warning
 csharp_style_prefer_utf8_string_literals = true:warning
+csharp_max_formal_parameters_on_line = 5
+csharp_wrap_parameters_style = chop_if_long
+csharp_wrap_after_declaration_lpar = true
+csharp_wrap_chained_binary_expressions = chop_if_long
+csharp_wrap_before_binary_opsign = true
+csharp_max_initializer_elements_on_line = 0
 
 ### Add missing cases to switch expression
 dotnet_diagnostic.IDE0072.severity = suggestion
@@ -193,6 +199,17 @@ csharp_space_between_empty_square_brackets = false
 csharp_space_between_square_brackets = false
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
+csharp_wrap_ternary_expr_style = chop_always
+
+## ReSharper
+csharp_empty_block_style = together
+csharp_trailing_comma_in_multiline_lists = true:warning
+csharp_trailing_comma_in_singleline_lists = false:warning
+csharp_wrap_chained_method_calls = chop_if_long:warning
+csharp_wrap_after_dot_in_method_calls = false:warning
+csharp_wrap_before_first_method_call = false:warning
+csharp_wrap_after_property_in_chained_method_calls = false:suggestion
+csharp_nested_ternary_style = expanded:warning
 
 
 # Naming rules

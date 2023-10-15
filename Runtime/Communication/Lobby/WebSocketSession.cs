@@ -56,7 +56,7 @@ namespace Elympics.Lobby
 
         public WebSocketSession(IAsyncEventsDispatcher dispatcher, WebSocketFactory? wsFactory = null, ILobbySerializer? serializer = null)
         {
-            _dispatcher = dispatcher;
+            _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _wsFactory = wsFactory ?? HybridWebSocket.WebSocketFactory.CreateInstance;
             _serializer = serializer ?? new MessagePackLobbySerializer();
         }

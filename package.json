@@ -57,6 +57,11 @@
       "description": "TicTacToe with bot and all of the Elympics stuff",
       "path": "Samples~/TicTacToe",
       "interactiveImport": true
+    },
+    {
+      "displayName": "Rooms sample",
+      "description": "Showcase of the rooms feature ",
+      "path": "Samples~/Rooms"
     }
   ]
 }

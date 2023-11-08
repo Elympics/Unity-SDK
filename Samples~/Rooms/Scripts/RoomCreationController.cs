@@ -13,8 +13,8 @@ public class RoomCreationController : BaseWindow
     {
         try
         {
-            var (Region, LatencyMs) = await ClosestRegionFinder.GetClosestRegion();
-            await ElympicsLobbyClient.Instance.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, roomViewElements.IsPublic, queue, Region, false);
+            var (Region, LatencyMs) = await ClosestRegionFinder.GetClosestRegion(); // TODO: use region
+            await ElympicsLobbyClient.Instance.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, !roomViewElements.IsPublic, false);
         }
         catch (Exception e)
         {

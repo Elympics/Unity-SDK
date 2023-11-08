@@ -20,8 +20,8 @@ public class RoomRecordController : MonoBehaviour
         this.joinRoomAction = joinRoomAction;
         this.setAndShowJoinCodePopupAction = setAndShowJoinCodePopupAction;
 
-        roomNameTextField.text = room.RoomName;
-        additionalRoomDataTextField.text = room?.State.RoomParameters[RoomsUtility.SampleDataKey];
+        roomNameTextField.text = room.State.RoomName;
+        additionalRoomDataTextField.text = room.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
         SetJoinButtonState();
     }
 
@@ -31,7 +31,7 @@ public class RoomRecordController : MonoBehaviour
         JoinButtonState joinButtonState;
         if (room.State.Users.Count == RoomsUtility.MaxPlayers)
             joinButtonState = JoinButtonState.Full;
-        else if (room.JoinCode != null)
+        else if (room.State.JoinCode != null)
             joinButtonState = JoinButtonState.JoinPrivate;
         else
             joinButtonState = JoinButtonState.JoinPublic;

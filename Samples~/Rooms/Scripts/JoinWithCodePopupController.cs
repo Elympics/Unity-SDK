@@ -19,7 +19,7 @@ public class JoinWithCodePopupController : BasePopup
     public void SetAndShow(IRoom room)
     {
         this.room = room;
-        roomNameTextField.text = room?.RoomName;
+        roomNameTextField.text = room?.State?.RoomName;
 
         Show();
     }

@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Collections;
 using JetBrains.Annotations;
+using Elympics.Rooms.Models;
 
 public class RoomController : BaseWindow
 {
@@ -16,7 +17,7 @@ public class RoomController : BaseWindow
     private const string WaitingForReadyMessage = "Waiting for all players to be ready...";
     private const string MatchmakingStartCountdownMessage = "Matchmaking starts in {}";
     private const string MatchmakingStartedMessage = "Matchmaking started! Waiting for servers allocation...";
-    private const string MatchmakingFinishedMessage = "Match is ready!";
+    private const string MatchmakingFinishedMessage = "Match is ready! Connecting to the server...";
     private const string MatchmakingErrorMessage = "Matchmaking failed because of an error: {}";
 
     [SerializeField] private CanvasGroup roomCanvasGroup;
@@ -58,11 +59,10 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged += ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged += ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged += ManageReadiness;
-        RoomsUtility.RoomsManager.RoomParametersChanged += ManageAddtionalData;
+        RoomsUtility.RoomsManager.CustomDataChanged += ManageAdditionalData;
 
-        RoomsUtility.RoomsManager.MatchmakingStarted += OnMatchmakingStarted;
-        RoomsUtility.RoomsManager.MatchmakingSucceeded += OnMatchmakingSucceeded;
-        RoomsUtility.RoomsManager.MatchmakingFailed += OnMatchmakingFailed;
+        RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
+        RoomsUtility.RoomsManager.MatchmakingStateChanged += OnMatchmakingStateChanged;
     }
 
     private void UnsubscribeFromRoomEvents()
@@ -77,11 +77,10 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged -= ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged -= ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged -= ManageReadiness;
-        RoomsUtility.RoomsManager.RoomParametersChanged -= ManageAddtionalData;
+        RoomsUtility.RoomsManager.CustomDataChanged -= ManageAdditionalData;
 
-        RoomsUtility.RoomsManager.MatchmakingStarted -= OnMatchmakingStarted;
-        RoomsUtility.RoomsManager.MatchmakingSucceeded -= OnMatchmakingSucceeded;
-        RoomsUtility.RoomsManager.MatchmakingFailed -= OnMatchmakingFailed;
+        RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
+        RoomsUtility.RoomsManager.MatchmakingStateChanged -= OnMatchmakingStateChanged;
     }
 
     private void RefreshRoomData(RoomStateChangedArgs obj)
@@ -176,24 +175,27 @@ public class RoomController : BaseWindow
         }
     }
 
-    private void ManageAddtionalData(RoomParametersChangedArgs obj)
+    private void ManageAdditionalData(CustomDataChangedArgs obj)
     {
-        roomViewElements.SampleGameData.text = currentRoom.State.RoomParameters[RoomsUtility.SampleDataKey];
+        roomViewElements.SampleGameData.text = obj.CustomData[RoomsUtility.SampleDataKey];
     }
 
-    private void OnMatchmakingStarted(MatchmakingStartedArgs obj)
+    private void OnMatchmakingStateChanged(MatchmakingStateChangedArgs obj)
     {
-        statusText.text = MatchmakingStartedMessage;
+        var currentState = currentRoom.State.MatchmakingData.MatchmakingState;
+
+        if (currentState == MatchmakingState.RequestingMatchmaking)
+            statusText.text = MatchmakingStartedMessage;
+        else if (currentState == MatchmakingState.Matched)
+            statusText.text = MatchmakingFinishedMessage;
     }
 
-    private void OnMatchmakingSucceeded(MatchmakingSucceededArgs obj)
+    private void OnMatchmakingEnded(MatchmakingEndedArgs obj)
     {
-        statusText.text = MatchmakingFinishedMessage;
-    }
+        if (currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Playing)
+            return;
 
-    private void OnMatchmakingFailed(MatchmakingFailedArgs obj)
-    {
-        statusText.text = string.Format(MatchmakingErrorMessage, obj.Error);
+        statusText.text = string.Format(MatchmakingErrorMessage, currentRoom.State.MatchmakingData.MatchData?.FailReason);
 
         LockPlayersInRoom(false);
     }
@@ -226,11 +228,11 @@ public class RoomController : BaseWindow
         if (currentRoom == null)
             currentRoom = RoomsUtility.RoomsManager.ListJoinedRooms().First();
 
-        roomViewElements.RoomName.text = currentRoom.RoomName;
-        roomViewElements.RoomPrivacy.SelectOption(currentRoom.JoinCode == null ? 0 : 1); //TODO: use privacy property
-        roomViewElements.SampleGameData.text = currentRoom.State.RoomParameters[RoomsUtility.SampleDataKey];
+        roomViewElements.RoomName.text = currentRoom.State.RoomName;
+        roomViewElements.RoomPrivacy.SelectOption(currentRoom.State.JoinCode == null ? 0 : 1); //TODO: use privacy property
+        roomViewElements.SampleGameData.text = currentRoom.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
 
-        joinCode.text = currentRoom.JoinCode;
+        joinCode.text = currentRoom.State.JoinCode;
 
         var users = currentRoom.State?.Users;
         if (users == null)

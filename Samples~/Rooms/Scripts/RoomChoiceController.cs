@@ -31,6 +31,8 @@ public class RoomChoiceController : BaseWindow
 
         try
         {
+            Debug.Log("Fetched existing room list");
+            /*
             var fetchedRooms = await RoomsManager.ListPublicRooms(0);
 
             //TODO: Adjust output type 
@@ -38,6 +40,7 @@ public class RoomChoiceController : BaseWindow
             {
                 //AddRoomRecord(fetchedRoom);
             }
+            */
         }
         catch (Exception e)
         {
@@ -64,7 +67,7 @@ public class RoomChoiceController : BaseWindow
     {
         try
         {
-            await RoomsManager.JoinRoom(room.RoomId, room.JoinCode, null);
+            await RoomsManager.JoinRoom(room.RoomId, room.State.JoinCode, null);
         }
         catch (Exception e)
         {

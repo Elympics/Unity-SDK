@@ -35,4 +35,7 @@ public class RoomCreationController : BaseWindow
     {
         return $"{UnityEngine.Random.Range(0, 10000)}'s room";
     }
+
+    [UsedImplicitly]
+    public void ShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();
 }

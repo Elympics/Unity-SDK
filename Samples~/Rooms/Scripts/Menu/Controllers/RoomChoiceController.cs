@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Assertions;
 using System;
 using Elympics;
 using JetBrains.Annotations;
@@ -10,16 +9,12 @@ public class RoomChoiceController : BaseWindow
     [SerializeField] private RectTransform roomListContentParent;
     [SerializeField] private RoomRecordController roomRecordPrefab;
     [SerializeField] private JoinWithCodePopupController joinRoomWithCodePopup;
-    [SerializeField] private RoomCreationController roomCreationController;
 
+    private RoomsNavigationController navigationController;
     private Dictionary<Guid, RoomRecordController> existingRooms;
-
-    private IRoomsManager RoomsManager => ElympicsLobbyClient.Instance.RoomsManager;
 
     private void Start()
     {
-        Assert.IsNotNull(roomCreationController);
-
         joinRoomWithCodePopup.Init(TryJoinRoom);
 
         InitializeRoomList();
@@ -67,7 +62,7 @@ public class RoomChoiceController : BaseWindow
     {
         try
         {
-            await RoomsManager.JoinRoom(room.RoomId, room.State.JoinCode, null);
+            await RoomsUtility.RoomsManager.JoinRoom(room.RoomId, room.State.JoinCode, null);
         }
         catch (Exception e)
         {
@@ -77,6 +72,16 @@ public class RoomChoiceController : BaseWindow
         }
     }
 
+    public override void Show()
+    {
+        base.Show();
+
+        joinRoomWithCodePopup.Hide();
+    }
+
     [UsedImplicitly]
-    public void ShowRoomCreationView() => roomCreationController.Show();
+    public void ShowTitleScreen() => RoomsNavigationController.Instance.ShowTitleScreen();
+
+    [UsedImplicitly]
+    public void ShowRoomCreationView() => RoomsNavigationController.Instance.ShowRoomCreationView();
 }

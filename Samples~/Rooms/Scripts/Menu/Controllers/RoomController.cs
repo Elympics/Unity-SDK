@@ -93,7 +93,7 @@ public class RoomController : BaseWindow
         if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(obj.RoomId, out currentRoom))
             Debug.LogError("Joined room not found!");
 
-        Show();
+        RoomsNavigationController.Instance.ShowRoomView();
 
         var firstUser = currentRoom.State.Users.First();
         currentRoom.ChangeTeam(firstUser.TeamIndex.HasValue ? 1 - firstUser.TeamIndex : 0);
@@ -289,4 +289,7 @@ public class RoomController : BaseWindow
         // TODO: when sdk has suitable method
         Debug.Log($"Sent {roomViewElements.SampleGameData.text} as new additional data");
     }
+
+    [UsedImplicitly]
+    public void ShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();
 }

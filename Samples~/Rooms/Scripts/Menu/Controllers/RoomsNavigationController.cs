@@ -8,7 +8,7 @@ public class RoomsNavigationController : MonoBehaviour
     [SerializeField] private RoomChoiceController roomChoiceController;
     [SerializeField] private RoomCreationController roomCreationController;
     [SerializeField] private RoomController roomController;
-
+    [Space]
     [SerializeField] private BaseWindow currentViewController;
 
     public static RoomsNavigationController Instance;
@@ -43,7 +43,7 @@ public class RoomsNavigationController : MonoBehaviour
     public void ShowTitleScreen() => ShowView(titleScreenController);
 
     public void ShowRoomCreationView() => ShowView(roomCreationController);
-
+    [ContextMenu("RoomView")]
     public void ShowRoomView() => ShowView(roomController);
 
     private void ShowView(BaseWindow newView)

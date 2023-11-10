@@ -2,11 +2,12 @@ using System;
 using Elympics;
 using JetBrains.Annotations;
 using UnityEngine;
-using TMPro;
+using UnityEngine.UI;
 
-public class JoinWithCodePopupController : BasePopup
+public class JoinWithCodePopupController : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI roomNameTextField;
+    [SerializeField] private BasePopup popupView;
+    [SerializeField] private Button joinButton;
 
     private IRoom room;
     private Action<IRoom, BasePopup> joinRoomAction;
@@ -19,20 +20,35 @@ public class JoinWithCodePopupController : BasePopup
     public void SetAndShow(IRoom room)
     {
         this.room = room;
-        roomNameTextField.text = room?.State?.RoomName;
+
+        popupView.SetTitle(room?.State?.RoomName);
 
         Show();
     }
 
-    public override void Hide()
+    [UsedImplicitly]
+    public void Show()
     {
-        base.Hide();
+        joinButton.interactable = true;
+
+        popupView.Show();
+    }
+
+    [UsedImplicitly]
+    public void Hide()
+    {
+        popupView.Hide();
+
         room = null;
+        popupView.Reset();
     }
 
     [UsedImplicitly]
     public void TryJoinRoomByCode()
     {
-        joinRoomAction?.Invoke(room, this);
+        Debug.Log("Attempting to log by code");
+        joinRoomAction?.Invoke(room, popupView);
+        Debug.Log("Disabling join button");
+        joinButton.interactable = false;
     }
 }

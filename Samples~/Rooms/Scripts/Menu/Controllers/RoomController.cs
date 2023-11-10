@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections;
 using JetBrains.Annotations;
 using Elympics.Rooms.Models;
+using Elympics.Models.Authentication;
 
 public class RoomController : BaseWindow
 {
@@ -23,7 +24,6 @@ public class RoomController : BaseWindow
     [SerializeField] private CanvasGroup roomCanvasGroup;
     [SerializeField] private RoomViewBaseElements roomViewElements;
     [SerializeField] private TextMeshProUGUI joinCode;
-    [SerializeField] private Selectable[] hostInteractableElements;
 
     [SerializeField] private Button readyButton;
     [SerializeField] private Button unreadyButton;
@@ -37,9 +37,15 @@ public class RoomController : BaseWindow
     private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
     private bool AmIHost => MyUserId.Equals(currentRoom.State.Host.UserId);
 
+    #region Events integration
     private void Awake()
     {
-        SubscribeToRoomEvents();
+        Debug.Log(ElympicsLobbyClient.Instance.IsAuthenticated);
+
+        if (ElympicsLobbyClient.Instance.IsAuthenticated)
+            SubscribeToRoomEvents();
+        else
+            ElympicsLobbyClient.Instance.AuthenticationSucceeded += (_) => SubscribeToRoomEvents();
     }
 
     private void OnDestroy()
@@ -49,6 +55,9 @@ public class RoomController : BaseWindow
 
     private void SubscribeToRoomEvents()
     {
+        if (!ElympicsLobbyClient.Instance.IsAuthenticated)
+            return;
+
         RoomsUtility.RoomsManager.RoomStateChanged += RefreshRoomData;
 
         RoomsUtility.RoomsManager.JoinedRoom += SetUpRoomData;
@@ -67,6 +76,9 @@ public class RoomController : BaseWindow
 
     private void UnsubscribeFromRoomEvents()
     {
+        if (!ElympicsLobbyClient.Instance.IsAuthenticated)
+            return;
+
         RoomsUtility.RoomsManager.RoomStateChanged -= RefreshRoomData;
 
         RoomsUtility.RoomsManager.JoinedRoom -= SetUpRoomData;
@@ -82,6 +94,7 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingStateChanged -= OnMatchmakingStateChanged;
     }
+    #endregion
 
     private void RefreshRoomData(RoomStateChangedArgs obj)
     {
@@ -147,7 +160,7 @@ public class RoomController : BaseWindow
 
             if (MyUserId.Equals(obj.UserId))
             {
-                ManageInteractiveness(true);
+                roomViewElements.ManageInteractability(true);
                 seatLookup[MyUserId].SetMyselfIndicator();
                 unreadyButton.transform.parent = seatLookup[MyUserId].transform;
             }
@@ -220,7 +233,7 @@ public class RoomController : BaseWindow
         unreadyButton.interactable = !shouldBeLocked;
 
         if (AmIHost)
-            ManageInteractiveness(!shouldBeLocked);
+            roomViewElements.ManageInteractability(!shouldBeLocked);
     }
 
     public override void Show()
@@ -244,7 +257,7 @@ public class RoomController : BaseWindow
         }
 
         seatLookup[currentRoom.State.Host.UserId].SetHostIndicator();
-        ManageInteractiveness(AmIHost);
+        roomViewElements.ManageInteractability(AmIHost);
 
         seatLookup[MyUserId].SetMyselfIndicator();
         unreadyButton.transform.parent = seatLookup[MyUserId].transform;
@@ -256,14 +269,6 @@ public class RoomController : BaseWindow
     {
         SetVisibility(false);
         currentRoom.Leave();
-    }
-
-    private void ManageInteractiveness(bool shouldBeInteractive)
-    {
-        foreach (var element in hostInteractableElements)
-        {
-            element.interactable = shouldBeInteractive;
-        }
     }
 
     private void SetVisibility(bool shouldBeVisible)
@@ -291,5 +296,5 @@ public class RoomController : BaseWindow
     }
 
     [UsedImplicitly]
-    public void ShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();
+    public void LeaveAndShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();
 }

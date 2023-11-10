@@ -27,6 +27,11 @@ public class StateDependentButton : MonoBehaviour
         button.interactable = buttonStates[currentState].interactable;
     }
 
+    public void ManageInteractability(bool shouldBeInteractable)
+    {
+        button.interactable = shouldBeInteractable;
+    }
+
     private void OnValidate()
     {
         SetState(currentState);

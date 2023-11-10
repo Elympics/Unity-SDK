@@ -3,6 +3,8 @@ using UnityEngine;
 using System;
 using Elympics;
 using JetBrains.Annotations;
+using Cysharp.Threading.Tasks;
+using System.Threading;
 
 public class RoomChoiceController : BaseWindow
 {
@@ -10,7 +12,6 @@ public class RoomChoiceController : BaseWindow
     [SerializeField] private RoomRecordController roomRecordPrefab;
     [SerializeField] private JoinWithCodePopupController joinRoomWithCodePopup;
 
-    private RoomsNavigationController navigationController;
     private Dictionary<Guid, RoomRecordController> existingRooms;
 
     private void Start()
@@ -68,7 +69,8 @@ public class RoomChoiceController : BaseWindow
         {
             string errorMessage = $"Joining failed: {e.Message}";
             Debug.LogError(errorMessage);
-            errorPopup.LogText(errorMessage);
+            errorPopup.SetMessage(errorMessage);
+            errorPopup.Show();
         }
     }
 

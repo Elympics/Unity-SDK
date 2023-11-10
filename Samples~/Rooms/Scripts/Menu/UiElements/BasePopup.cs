@@ -3,18 +3,15 @@ using TMPro;
 
 public class BasePopup : BaseWindow
 {
+    [SerializeField] private TextMeshProUGUI titleTextField;
     [SerializeField] private TextMeshProUGUI logTextField;
 
-    public void LogText(string text)
-    {
-        logTextField.text = text;
-        Show();
-    }
+    public void SetTitle(string title) => titleTextField.text = title;
+    public void SetMessage(string message) => logTextField.text = message;
 
-    public override void Hide()
+    public void Reset()
     {
-        base.Hide();
-
         logTextField.text = string.Empty;
+        titleTextField.text = string.Empty;
     }
 }

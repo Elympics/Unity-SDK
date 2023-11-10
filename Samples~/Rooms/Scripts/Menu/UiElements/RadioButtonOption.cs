@@ -1,7 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
-using UnityEngine.UI;
 
 [RequireComponent(typeof(StateDependentButton))]
 public class RadioButtonOption : MonoBehaviour
@@ -22,6 +20,11 @@ public class RadioButtonOption : MonoBehaviour
     {
         selectedIcon.SetActive(newState != RadioButtonStates.Selectable);
         button.SetState((int)newState);
+    }
+
+    public void ManageInteractability(bool shouldBeInteractable)
+    {
+        button.ManageInteractability(shouldBeInteractable);
     }
 }
 

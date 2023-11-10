@@ -14,4 +14,10 @@ public class RoomViewBaseElements : MonoBehaviour
     public TextMeshProUGUI RoomName => roomName;
     public RadioButtonGroup RoomPrivacy => roomPrivacy;
     public TMP_InputField SampleGameData => sampleGameData; // TODO: Connect to the UI
+
+    public void ManageInteractability(bool shouldBeInteractable)
+    {
+        roomPrivacy.ManageInteractability(shouldBeInteractable);
+        sampleGameData.interactable = shouldBeInteractable;
+    }
 }

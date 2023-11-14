@@ -8,18 +8,10 @@ using System.Linq;
 using System.Collections;
 using JetBrains.Annotations;
 using Elympics.Rooms.Models;
-using Elympics.Models.Authentication;
 
 public class RoomController : BaseWindow
 {
     private const int MatchmakingCountdownSeconds = 3;
-
-    private const string WaitingForPlayerToJoinMessage = "Waiting for another player to join...";
-    private const string WaitingForReadyMessage = "Waiting for all players to be ready...";
-    private const string MatchmakingStartCountdownMessage = "Matchmaking starts in {}";
-    private const string MatchmakingStartedMessage = "Matchmaking started! Waiting for servers allocation...";
-    private const string MatchmakingFinishedMessage = "Match is ready! Connecting to the server...";
-    private const string MatchmakingErrorMessage = "Matchmaking failed because of an error: {}";
 
     [SerializeField] private CanvasGroup roomCanvasGroup;
     [SerializeField] private RoomViewBaseElements roomViewElements;
@@ -147,7 +139,7 @@ public class RoomController : BaseWindow
         bool allSeatsFull = obj.UserCount == RoomsUtility.MaxPlayers;
 
         readyButton.gameObject.SetActive(allSeatsFull);
-        statusText.text = allSeatsFull ? WaitingForReadyMessage : WaitingForPlayerToJoinMessage;
+        statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
     }
 
     private void ManageHostIndicatorState(HostChangedArgs obj)
@@ -198,9 +190,9 @@ public class RoomController : BaseWindow
         var currentState = currentRoom.State.MatchmakingData.MatchmakingState;
 
         if (currentState == MatchmakingState.RequestingMatchmaking)
-            statusText.text = MatchmakingStartedMessage;
+            statusText.text = RoomStatusMessages.MatchmakingStartedMessage;
         else if (currentState == MatchmakingState.Matched)
-            statusText.text = MatchmakingFinishedMessage;
+            statusText.text = RoomStatusMessages.MatchmakingFinishedMessage;
     }
 
     private void OnMatchmakingEnded(MatchmakingEndedArgs obj)
@@ -208,7 +200,7 @@ public class RoomController : BaseWindow
         if (currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Playing)
             return;
 
-        statusText.text = string.Format(MatchmakingErrorMessage, currentRoom.State.MatchmakingData.MatchData?.FailReason);
+        statusText.text = string.Format(RoomStatusMessages.MatchmakingErrorMessage, currentRoom.State.MatchmakingData.MatchData?.FailReason);
 
         LockPlayersInRoom(false);
     }
@@ -219,7 +211,7 @@ public class RoomController : BaseWindow
 
         for (int i = delay; i > 0; i--)
         {
-            statusText.text = string.Format(MatchmakingStartCountdownMessage, i);
+            statusText.text = string.Format(RoomStatusMessages.MatchmakingStartCountdownMessage, i);
             yield return new WaitForSeconds(1);
         }
 

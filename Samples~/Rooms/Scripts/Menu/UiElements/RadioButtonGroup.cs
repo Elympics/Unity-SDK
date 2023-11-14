@@ -35,15 +35,4 @@ public class RadioButtonGroup : MonoBehaviour
             option.ManageInteractability(shouldBeInteractable);
         }
     }
-
-    /*
-    public void SetToDisplay(int selectedOption)
-    {
-        for (int i = 0; i < Options.Length; i++)
-        {
-            if (selectedOption == i) continue;
-            Options[i].SetOptionState(RadioButtonStates.NotSelectedDisplay);
-        }
-    }
-    */
 }

@@ -1,27 +1,25 @@
 using System;
 using Elympics;
+using JetBrains.Annotations;
 using UnityEngine.SceneManagement;
 
 public class TestGameManager : ElympicsMonoBehaviour, IClientHandlerGuid, IUpdatable
 {
     private bool gameShouldEnd = false;
-    public void SetEndGame() => gameShouldEnd = true;
 
-    private void EndGame()
-    {
-        if (Elympics.IsServer) Elympics.EndGame();
-        else EndGameOnServer();
-    }
+    [UsedImplicitly]
+    public void SetEndGame() => EndGameOnServer();
 
     [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
-    private void EndGameOnServer() => Elympics.EndGame();
+    private void EndGameOnServer() => gameShouldEnd = true;
 
-    public void OnMatchEnded(Guid matchId) => Invoke(nameof(LoadMenuScene), 5f);
+    public void OnMatchEnded(Guid matchId) => Invoke(nameof(LoadMenuScene), 2f);
 
     private void LoadMenuScene() => SceneManager.LoadScene(0);
 
     public void ElympicsUpdate()
     {
-        if (gameShouldEnd) EndGame();
+        if (Elympics.IsServer && gameShouldEnd)
+            Elympics.EndGame();
     }
 }

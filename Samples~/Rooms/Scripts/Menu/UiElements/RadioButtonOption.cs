@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 [RequireComponent(typeof(StateDependentButton))]
@@ -28,4 +27,4 @@ public class RadioButtonOption : MonoBehaviour
     }
 }
 
-public enum RadioButtonStates { Selectable, Selected, NotSelectedDisplay}
+public enum RadioButtonStates { Selectable, Selected, NotSelectedDisplay }

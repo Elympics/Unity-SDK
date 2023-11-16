@@ -1,8 +1,11 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class RadioButtonGroup : MonoBehaviour
 {
     [SerializeField] private int defaultOptionIndex;
+    [SerializeField] private UnityEvent OnOptionChanged;
+
     private RadioButtonOption[] options;
 
     public int CurrentOptionIndex { get; private set; }
@@ -20,12 +23,17 @@ public class RadioButtonGroup : MonoBehaviour
 
     public void SelectOption(RadioButtonOption chosenOption)
     {
+        var previousOption = CurrentOptionIndex;
+
         for (int i = 0; i < options.Length; i++)
         {
             bool isChosenOption = options[i] == chosenOption;
             if (isChosenOption) CurrentOptionIndex = i;
             options[i].SetOptionState(isChosenOption ? RadioButtonStates.Selected : RadioButtonStates.Selectable);
         }
+
+        if (previousOption != CurrentOptionIndex)
+            OnOptionChanged?.Invoke();
     }
 
     public void ManageInteractability(bool shouldBeInteractable)

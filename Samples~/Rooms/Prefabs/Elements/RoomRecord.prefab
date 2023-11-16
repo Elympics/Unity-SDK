@@ -545,6 +545,76 @@ PrefabInstance:
       propertyPath: buttonStates.Array.data[2].interactable
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 3203593079526047641}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 3203593079526047641}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: JoinRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ShowJoinCodePopup
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: RoomRecordController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: RoomRecordController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[0].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: -3288584532947107121, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
+      propertyPath: buttonStates.Array.data[1].OnClickEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 1283071119756171570, guid: 737edd7d4f91dc94c83eba9e730aab14,
         type: 3}
       propertyPath: m_Name

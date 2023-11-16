@@ -18,10 +18,10 @@ public class RoomController : BaseWindow
     [SerializeField] private TextMeshProUGUI joinCode;
 
     [SerializeField] private Button readyButton;
-    [SerializeField] private Button unreadyButton;
     [SerializeField] private Button leaveButton;
     [SerializeField] private PlayerSeat[] playerSeats;
     [SerializeField] private TextMeshProUGUI statusText;
+    [SerializeField] private BasePopup leavePopup;
 
     private readonly Dictionary<Guid, PlayerSeat> seatLookup = new();
     private IRoom currentRoom;
@@ -32,8 +32,6 @@ public class RoomController : BaseWindow
     #region Events integration
     private void Awake()
     {
-        Debug.Log(ElympicsLobbyClient.Instance.IsAuthenticated);
-
         if (ElympicsLobbyClient.Instance.IsAuthenticated)
             SubscribeToRoomEvents();
         else
@@ -63,7 +61,7 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.CustomDataChanged += ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
-        RoomsUtility.RoomsManager.MatchmakingStateChanged += OnMatchmakingStateChanged;
+        RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
     }
 
     private void UnsubscribeFromRoomEvents()
@@ -84,7 +82,7 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.CustomDataChanged -= ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
-        RoomsUtility.RoomsManager.MatchmakingStateChanged -= OnMatchmakingStateChanged;
+        RoomsUtility.RoomsManager.MatchmakingDataChanged -= OnMatchmakingStateChanged;
     }
     #endregion
 
@@ -114,7 +112,7 @@ public class RoomController : BaseWindow
         if (seat.IsOccupied)
             return false;
 
-        seat.SetPlayer(userId);
+        seat.SetPlayer(userId, MyUserId.Equals(userId));
         seatLookup[userId] = seat;
         return true;
     }
@@ -134,9 +132,11 @@ public class RoomController : BaseWindow
         seatLookup.Remove(obj.User.UserId);
     }
 
-    private void ManageRoomFill(UserCountChangedArgs obj)
+    private void ManageRoomFill(UserCountChangedArgs obj) => ManageRoomFill((int)obj.UserCount);
+
+    private void ManageRoomFill(int userCount)
     {
-        bool allSeatsFull = obj.UserCount == RoomsUtility.MaxPlayers;
+        bool allSeatsFull = userCount == RoomsUtility.MaxPlayers;
 
         readyButton.gameObject.SetActive(allSeatsFull);
         statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
@@ -153,8 +153,6 @@ public class RoomController : BaseWindow
             if (MyUserId.Equals(obj.UserId))
             {
                 roomViewElements.ManageInteractability(true);
-                seatLookup[MyUserId].SetMyselfIndicator();
-                unreadyButton.transform.parent = seatLookup[MyUserId].transform;
             }
         }
 
@@ -163,29 +161,28 @@ public class RoomController : BaseWindow
 
     private void ManageReadiness(UserReadinessChangedArgs obj)
     {
-        seatLookup[obj.UserId].SetReady(obj.IsReady);
-
-        var isRoomFull = currentRoom.State.Users.Count(x => x.IsReady) == RoomsUtility.MaxPlayers;
-
-        if (isRoomFull)
-            StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
-
         if (!obj.IsReady)
             LockPlayersInRoom(false);
 
         if (MyUserId.Equals(obj.UserId))
         {
             readyButton.interactable = !obj.IsReady;
-            unreadyButton.interactable = !obj.IsReady;
         }
+
+        seatLookup[obj.UserId].SetReady(obj.IsReady);
+
+        var isRoomReady = currentRoom.State.Users.Count(x => x.IsReady) == RoomsUtility.MaxPlayers;
+
+        if (isRoomReady)
+            StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
     }
 
     private void ManageAdditionalData(CustomDataChangedArgs obj)
     {
-        roomViewElements.SampleGameData.text = obj.CustomData[RoomsUtility.SampleDataKey];
+        //roomViewElements.SampleGameData.text = obj.CustomData[RoomsUtility.SampleDataKey];
     }
 
-    private void OnMatchmakingStateChanged(MatchmakingStateChangedArgs obj)
+    private void OnMatchmakingStateChanged(MatchmakingDataChangedArgs obj)
     {
         var currentState = currentRoom.State.MatchmakingData.MatchmakingState;
 
@@ -222,7 +219,7 @@ public class RoomController : BaseWindow
     private void LockPlayersInRoom(bool shouldBeLocked)
     {
         leaveButton.interactable = !shouldBeLocked;
-        unreadyButton.interactable = !shouldBeLocked;
+        seatLookup[MyUserId].LockUnreadyInteractability(shouldBeLocked);
 
         if (AmIHost)
             roomViewElements.ManageInteractability(!shouldBeLocked);
@@ -234,8 +231,8 @@ public class RoomController : BaseWindow
             currentRoom = RoomsUtility.RoomsManager.ListJoinedRooms().First();
 
         roomViewElements.RoomName.text = currentRoom.State.RoomName;
-        roomViewElements.RoomPrivacy.SelectOption(currentRoom.State.JoinCode == null ? 0 : 1); //TODO: use privacy property
-        roomViewElements.SampleGameData.text = currentRoom.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
+        roomViewElements.RoomPrivacy.SelectOption(currentRoom.State.IsPrivate ? 1 : 0);
+        //roomViewElements.SampleGameData.text = currentRoom.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
 
         joinCode.text = currentRoom.State.JoinCode;
 
@@ -246,13 +243,14 @@ public class RoomController : BaseWindow
         for (int i = 0; i < users.Count; i++)
         {
             TryTakeSeat(playerSeats[i], users[i].UserId);
+            playerSeats[i].SetReady(users[i].IsReady);
         }
 
         seatLookup[currentRoom.State.Host.UserId].SetHostIndicator();
         roomViewElements.ManageInteractability(AmIHost);
 
-        seatLookup[MyUserId].SetMyselfIndicator();
-        unreadyButton.transform.parent = seatLookup[MyUserId].transform;
+        readyButton.interactable = true;
+        ManageRoomFill(users.Count);
 
         SetVisibility(true);
     }
@@ -260,6 +258,13 @@ public class RoomController : BaseWindow
     public override void Hide()
     {
         SetVisibility(false);
+
+        leavePopup.Hide();
+
+        foreach (var seat in seatLookup.Values)
+            seat.SetEmpty();
+        seatLookup.Clear();
+
         currentRoom.Leave();
     }
 
@@ -276,15 +281,19 @@ public class RoomController : BaseWindow
             currentRoom.MarkYourselfReady(null, null);
         else
             currentRoom.MarkYourselfUnready();
-
-        readyButton.interactable = !shouldMarkReady;
     }
 
     [UsedImplicitly]
-    public void SaveAdditionalDataChange()
+    public async void SaveDataChange()
     {
-        // TODO: when sdk has suitable method
-        Debug.Log($"Sent {roomViewElements.SampleGameData.text} as new additional data");
+        try
+        {
+            await currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPublic, null);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error when updating room params: {e.Message}");
+        }
     }
 
     [UsedImplicitly]

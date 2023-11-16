@@ -16,7 +16,7 @@ MonoBehaviour:
   gameId: 175456be-aa02-4a10-9889-6c739f5c7700
   gameVersion: 0.3
   players: 2
-  gameplayScene: Assets/Samples/Rooms/RoomSampleGameplayScene.unity
+  gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,
     type: 3}
   botsInServer: 1

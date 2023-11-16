@@ -532,16 +532,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d03d949b61820c2438db327da0b8c846, type: 3}
---- !u!114 &739724420022280783 stripped
+--- !u!114 &3175410750629860020 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1085257031066866262, guid: d03d949b61820c2438db327da0b8c846,
+  m_CorrespondingSourceObject: {fileID: 2979922480470139565, guid: d03d949b61820c2438db327da0b8c846,
     type: 3}
   m_PrefabInstance: {fileID: 381571172839485465}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!224 &9185923796451048035 stripped
@@ -1565,7 +1565,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eba35df514c104246b83665fe5996a61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomName: {fileID: 739724420022280783}
+  roomName: {fileID: 3175410750629860020}
   roomPrivacy: {fileID: 5751412089418878036}
   sampleGameData: {fileID: 8553443150430537012}
 --- !u!224 &7117025172961758615 stripped

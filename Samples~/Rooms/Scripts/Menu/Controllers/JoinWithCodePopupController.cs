@@ -1,27 +1,27 @@
 using System;
-using Elympics;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class JoinWithCodePopupController : MonoBehaviour
 {
     [SerializeField] private BasePopup popupView;
     [SerializeField] private Button joinButton;
+    [SerializeField] private TMP_InputField joinCodeField;
 
-    private IRoom room;
-    private Action<IRoom, BasePopup> joinRoomAction;
+    private Action<string> joinRoomWithCodeAction;
 
-    public void Init(Action<IRoom, BasePopup> joinRoomAction)
+    public BasePopup PopupView => popupView;
+
+    public void Init(Action<string> joinRoomWithCodeAction)
     {
-        this.joinRoomAction = joinRoomAction;
+        this.joinRoomWithCodeAction = joinRoomWithCodeAction;
     }
 
-    public void SetAndShow(IRoom room)
+    public void SetAndShow(string roomName)
     {
-        this.room = room;
-
-        popupView.SetTitle(room?.State?.RoomName);
+        popupView.SetTitle(roomName);
 
         Show();
     }
@@ -29,9 +29,10 @@ public class JoinWithCodePopupController : MonoBehaviour
     [UsedImplicitly]
     public void Show()
     {
-        joinButton.interactable = true;
-
         popupView.Show();
+
+        joinCodeField.text = string.Empty;
+        joinCodeField.ActivateInputField();
     }
 
     [UsedImplicitly]
@@ -39,7 +40,6 @@ public class JoinWithCodePopupController : MonoBehaviour
     {
         popupView.Hide();
 
-        room = null;
         popupView.Reset();
     }
 
@@ -47,8 +47,6 @@ public class JoinWithCodePopupController : MonoBehaviour
     public void TryJoinRoomByCode()
     {
         Debug.Log("Attempting to log by code");
-        joinRoomAction?.Invoke(room, popupView);
-        Debug.Log("Disabling join button");
-        joinButton.interactable = false;
+        joinRoomWithCodeAction?.Invoke(joinCodeField.text);
     }
 }

@@ -34,7 +34,11 @@ public class StateDependentButton : MonoBehaviour
 
     private void OnValidate()
     {
-        SetState(currentState);
+        try
+        {
+            SetState(currentState);
+        }
+        catch { }
     }
 
 #nullable enable

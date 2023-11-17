@@ -28,6 +28,7 @@ public class RoomController : BaseWindow
 
     private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
     private bool AmIHost => MyUserId.Equals(currentRoom.State.Host.UserId);
+    private bool IsActive => roomCanvasGroup.blocksRaycasts;
 
     #region Events integration
     private void Awake()
@@ -231,7 +232,7 @@ public class RoomController : BaseWindow
             currentRoom = RoomsUtility.RoomsManager.ListJoinedRooms().First();
 
         roomViewElements.RoomName.text = currentRoom.State.RoomName;
-        roomViewElements.RoomPrivacy.SelectOption(currentRoom.State.IsPrivate ? 1 : 0);
+        roomViewElements.SetPrivacy(currentRoom.State.IsPrivate);
         //roomViewElements.SampleGameData.text = currentRoom.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
 
         joinCode.text = currentRoom.State.JoinCode;
@@ -288,7 +289,10 @@ public class RoomController : BaseWindow
     {
         try
         {
-            await currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPublic, null);
+            if (!AmIHost || !IsActive)
+                return;
+
+            await currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPrivate, null);
         }
         catch (Exception e)
         {

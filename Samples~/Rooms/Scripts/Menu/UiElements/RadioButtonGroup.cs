@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -6,41 +7,47 @@ public class RadioButtonGroup : MonoBehaviour
     [SerializeField] private int defaultOptionIndex;
     [SerializeField] private UnityEvent OnOptionChanged;
 
-    private RadioButtonOption[] options;
+    private List<RadioButtonOption> options;
 
-    public int CurrentOptionIndex { get; private set; }
+    private RadioButtonOption CurrentOption => options[CurrentOptionIndex];
+    public int CurrentOptionIndex { get; private set; } = -1;
 
     private void Awake()
     {
-        options = GetComponentsInChildren<RadioButtonOption>();
-        foreach (var option in options) option.SetUpOption(this);
+        options = new(GetComponentsInChildren<RadioButtonOption>());
+        foreach (var option in options)
+            option.Init(this);
+
         Restart();
     }
 
-    public void Restart() => SelectOption(defaultOptionIndex);
-
-    public void SelectOption(int chosenOptionIndex) => SelectOption(options[chosenOptionIndex]);
-
-    public void SelectOption(RadioButtonOption chosenOption)
+    public void Restart()
     {
-        var previousOption = CurrentOptionIndex;
-
-        for (int i = 0; i < options.Length; i++)
-        {
-            bool isChosenOption = options[i] == chosenOption;
-            if (isChosenOption) CurrentOptionIndex = i;
-            options[i].SetOptionState(isChosenOption ? RadioButtonStates.Selected : RadioButtonStates.Selectable);
-        }
-
-        if (previousOption != CurrentOptionIndex)
-            OnOptionChanged?.Invoke();
+        CurrentOptionIndex = defaultOptionIndex;
+        CurrentOption.ReactToSelection(true);
     }
+
+    public void SelectOption(int chosenOptionIndex)
+    {
+        if (chosenOptionIndex == CurrentOptionIndex)
+            return;
+
+        CurrentOption.ReactToSelection(false);
+        CurrentOptionIndex = chosenOptionIndex;
+        CurrentOption.ReactToSelection(true);
+
+        OnOptionChanged?.Invoke();
+    }
+
+    public void SelectOption(RadioButtonOption chosenOption) => SelectOption(options.IndexOf(chosenOption));
 
     public void ManageInteractability(bool shouldBeInteractable)
     {
         foreach (var option in options)
         {
-            option.ManageInteractability(shouldBeInteractable);
+            option.ManageInteractabilty(shouldBeInteractable);
         }
+
+        CurrentOption.ReactToSelection(true);
     }
 }

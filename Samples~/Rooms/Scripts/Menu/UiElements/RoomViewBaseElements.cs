@@ -3,13 +3,14 @@ using TMPro;
 
 public class RoomViewBaseElements : MonoBehaviour
 {
-    private const int PublicRoomOptionIndex = 0;
+    private static int PublicRoomOptionIndex = 0;
+    private static int PrivateRoomOptionIndex = 1;
 
     [SerializeField] private TMP_InputField roomName;
     [SerializeField] private RadioButtonGroup roomPrivacy;
     [SerializeField] private TMP_InputField sampleGameData;
 
-    public bool IsPublic => RoomPrivacy.CurrentOptionIndex == PublicRoomOptionIndex;
+    public bool IsPrivate => roomPrivacy.CurrentOptionIndex == PrivateRoomOptionIndex;
 
     public TMP_InputField RoomName => roomName;
     public RadioButtonGroup RoomPrivacy => roomPrivacy;
@@ -21,4 +22,6 @@ public class RoomViewBaseElements : MonoBehaviour
         roomPrivacy.ManageInteractability(shouldBeInteractable);
         sampleGameData.interactable = shouldBeInteractable;
     }
+
+    public void SetPrivacy(bool isPrivate) => roomPrivacy.SelectOption(isPrivate ? PrivateRoomOptionIndex : PublicRoomOptionIndex);
 }

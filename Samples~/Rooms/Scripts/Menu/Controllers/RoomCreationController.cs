@@ -1,6 +1,7 @@
 using UnityEngine;
 using Elympics;
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 
 public class RoomCreationController : BaseWindow
@@ -14,7 +15,7 @@ public class RoomCreationController : BaseWindow
         try
         {
             //var (Region, LatencyMs) = await ClosestRegionFinder.GetClosestRegion(); // TODO: use region
-            await ElympicsLobbyClient.Instance.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate);
+            await ElympicsLobbyClient.Instance.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate, new Dictionary<string, string>(), new Dictionary<string, string>());
         }
         catch (Exception e)
         {

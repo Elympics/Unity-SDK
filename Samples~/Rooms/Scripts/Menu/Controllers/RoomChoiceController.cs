@@ -23,20 +23,15 @@ public class RoomChoiceController : BaseWindow
         InitializeRoomList();
     }
 
-    private async void InitializeRoomList()
+    private void InitializeRoomList()
     {
         existingRooms = new();
 
         try
         {
-            Debug.Log("Fetched existing room list");
-            /*
-            var fetchedRooms = await RoomsManager.ListPublicRooms(0);
-            */
-            //TODO: Adjust output type 
-            foreach (var fetchedRoom in TemporaryTestRoomList.Rooms)
+            foreach (var room in RoomsUtility.RoomsManager.ListAvailableRooms())
             {
-                AddRoomRecord(fetchedRoom.Value);
+                AddRoomRecord(room);
             }
         }
         catch (Exception e)
@@ -45,7 +40,7 @@ public class RoomChoiceController : BaseWindow
         }
     }
 
-    private void AddRoomRecord(RoomStateChanged room)
+    private void AddRoomRecord(IRoom room)
     {
         RoomRecordController newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
@@ -90,80 +85,4 @@ public class RoomChoiceController : BaseWindow
 
     [UsedImplicitly]
     public void ShowRoomCreationView() => RoomsNavigationController.Instance.ShowRoomCreationView();
-}
-
-public static class TemporaryTestRoomList
-{
-    public static readonly Dictionary<Guid, RoomStateChanged> Rooms = new();
-
-    static TemporaryTestRoomList()
-    {
-        var roomId1 = Guid.Parse("383dc2ee-e1bf-4224-aaeb-66e425da8702");
-        var roomId3 = Guid.Parse("02c0fe92-ce91-475e-90bf-12c8cea23016");
-        var roomId4 = Guid.Parse("04c0fe92-ce91-475e-90bf-12c8cea23016");
-
-        Rooms.Add(roomId1, new RoomStateChanged(
-            roomId1,
-            DateTime.Now,
-            new List<UserInfo> { new(Guid.NewGuid(), 0, false) },
-            true,
-            new MatchmakingData(
-                MatchmakingState.Unlocked,
-                DateTime.Now,
-                "q1",
-                1,
-                2,
-                null,
-                new Dictionary<string, string> { { ":pub:SampleData", "public data" }, { "PrivateData", "private data" } }
-            ),
-            false,
-            false,
-            "Pair1v1Public",
-            "CCCCCCCC",
-            new Dictionary<string, string>()
-        ));
-
-
-        Rooms.Add(roomId3, new RoomStateChanged(
-            roomId3,
-            DateTime.Now,
-            new List<UserInfo> { new(Guid.NewGuid(), 0, true) },
-            true,
-            new MatchmakingData(
-                MatchmakingState.Unlocked,
-                DateTime.Now,
-                "q1",
-                1,
-                2,
-                null,
-                new Dictionary<string, string> { { ":pub:SampleData", "public data" }, { "PrivateData", "private data" } }
-            ),
-            true,
-            false,
-            "1v1Private",
-            "AAAAAAAA",
-            new Dictionary<string, string>()
-        ));
-
-        Rooms.Add(roomId4, new RoomStateChanged(
-            roomId4,
-            DateTime.Now,
-            new List<UserInfo> { new(Guid.NewGuid(), 0, true), new(Guid.NewGuid(), 0, true) },
-            true,
-            new MatchmakingData(
-                MatchmakingState.Unlocked,
-                DateTime.Now,
-                "q1",
-                1,
-                2,
-                null,
-                new Dictionary<string, string> { { ":pub:SampleData", "public data" }, { "PrivateData", "private data" } }
-            ),
-            false,
-            false,
-            "FullRoom",
-            "WWWWWWWW",
-            new Dictionary<string, string>()
-        ));
-    }
 }

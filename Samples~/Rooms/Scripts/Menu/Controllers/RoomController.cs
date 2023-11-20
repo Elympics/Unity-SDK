@@ -49,8 +49,6 @@ public class RoomController : BaseWindow
         if (!ElympicsLobbyClient.Instance.IsAuthenticated)
             return;
 
-        RoomsUtility.RoomsManager.RoomStateChanged += RefreshRoomData;
-
         RoomsUtility.RoomsManager.JoinedRoom += SetUpRoomData;
         RoomsUtility.RoomsManager.LeftRoom += RoomLeaveFeedback;
 
@@ -59,18 +57,18 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged += ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged += ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged += ManageReadiness;
-        RoomsUtility.RoomsManager.CustomDataChanged += ManageAdditionalData;
+        RoomsUtility.RoomsManager.CustomRoomDataChanged += ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
+
+        RoomsUtility.RoomsManager.StartTrackingAvailableRooms();
     }
 
     private void UnsubscribeFromRoomEvents()
     {
         if (!ElympicsLobbyClient.Instance.IsAuthenticated)
             return;
-
-        RoomsUtility.RoomsManager.RoomStateChanged -= RefreshRoomData;
 
         RoomsUtility.RoomsManager.JoinedRoom -= SetUpRoomData;
         RoomsUtility.RoomsManager.LeftRoom -= RoomLeaveFeedback;
@@ -80,17 +78,14 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged -= ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged -= ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged -= ManageReadiness;
-        RoomsUtility.RoomsManager.CustomDataChanged -= ManageAdditionalData;
+        RoomsUtility.RoomsManager.CustomRoomDataChanged -= ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged -= OnMatchmakingStateChanged;
+
+        RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
     }
     #endregion
-
-    private void RefreshRoomData(RoomStateChangedArgs obj)
-    {
-        Debug.Log("Refreshed room data");
-    }
 
     private void SetUpRoomData(JoinedRoomArgs obj)
     {
@@ -178,7 +173,7 @@ public class RoomController : BaseWindow
             StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
     }
 
-    private void ManageAdditionalData(CustomDataChangedArgs obj)
+    private void ManageAdditionalData(CustomRoomDataChangedArgs obj)
     {
         //roomViewElements.SampleGameData.text = obj.CustomData[RoomsUtility.SampleDataKey];
     }

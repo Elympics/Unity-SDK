@@ -27,10 +27,10 @@ public class RadioButtonOption : MonoBehaviour
     [UsedImplicitly]
     public void OptionClicked() => radioButtonManager.SelectOption(this);
 
-    public void ReactToSelection(bool selected)
+    public void ReactToSelection(bool selected, bool isParentInteractable = true)
     {
         selectedIcon.SetActive(selected);
-        button.interactable = !selected;
+        button.interactable = !selected && isParentInteractable;
     }
 
     public void ManageInteractabilty(bool shouldBeInteractable)

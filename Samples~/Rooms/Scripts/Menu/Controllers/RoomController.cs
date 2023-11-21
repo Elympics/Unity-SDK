@@ -57,6 +57,9 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged += ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged += ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged += ManageReadiness;
+
+        RoomsUtility.RoomsManager.RoomNameChanged += ManageRoomName;
+        RoomsUtility.RoomsManager.RoomPublicnessChanged += ManageRoomPrivacy;
         RoomsUtility.RoomsManager.CustomMatchmakingDataChanged += ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
@@ -78,6 +81,9 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged -= ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged -= ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged -= ManageReadiness;
+
+        RoomsUtility.RoomsManager.RoomNameChanged -= ManageRoomName;
+        RoomsUtility.RoomsManager.RoomPublicnessChanged -= ManageRoomPrivacy;
         RoomsUtility.RoomsManager.CustomMatchmakingDataChanged -= ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
@@ -175,6 +181,16 @@ public class RoomController : BaseWindow
 
         if (isRoomReady)
             StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
+    }
+
+    private void ManageRoomName(RoomNameChangedArgs obj)
+    {
+        roomViewElements.RoomName.text = obj.RoomName;
+    }
+
+    private void ManageRoomPrivacy(RoomPublicnessChangedArgs obj)
+    {
+        roomViewElements.SetPrivacy(obj.IsPrivate);
     }
 
     private void ManageAdditionalData(CustomMatchmakingDataChangedArgs obj)

@@ -8,6 +8,7 @@ public class RadioButtonGroup : MonoBehaviour
     [SerializeField] private UnityEvent OnOptionChanged;
 
     private List<RadioButtonOption> options;
+    private bool interactable;
 
     private RadioButtonOption CurrentOption => options[CurrentOptionIndex];
     public int CurrentOptionIndex { get; private set; } = -1;
@@ -23,6 +24,8 @@ public class RadioButtonGroup : MonoBehaviour
 
     public void Restart()
     {
+        interactable = true;
+
         CurrentOptionIndex = defaultOptionIndex;
         CurrentOption.ReactToSelection(true);
     }
@@ -32,7 +35,7 @@ public class RadioButtonGroup : MonoBehaviour
         if (chosenOptionIndex == CurrentOptionIndex)
             return;
 
-        CurrentOption.ReactToSelection(false);
+        CurrentOption.ReactToSelection(false, interactable);
         CurrentOptionIndex = chosenOptionIndex;
         CurrentOption.ReactToSelection(true);
 
@@ -43,6 +46,8 @@ public class RadioButtonGroup : MonoBehaviour
 
     public void ManageInteractability(bool shouldBeInteractable)
     {
+        interactable = shouldBeInteractable;
+
         foreach (var option in options)
         {
             option.ManageInteractabilty(shouldBeInteractable);

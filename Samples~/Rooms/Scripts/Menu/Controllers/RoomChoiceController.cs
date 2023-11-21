@@ -3,7 +3,6 @@ using UnityEngine;
 using System;
 using Elympics;
 using JetBrains.Annotations;
-using Elympics.Rooms.Models;
 
 public class RoomChoiceController : BaseWindow
 {

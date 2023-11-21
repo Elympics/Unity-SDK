@@ -83,7 +83,11 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged -= OnMatchmakingStateChanged;
 
-        RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
+        try
+        {
+            RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
+        }
+        catch { }
     }
     #endregion
 
@@ -287,7 +291,11 @@ public class RoomController : BaseWindow
             if (!AmIHost || !IsActive)
                 return;
 
-            await currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPrivate, null);
+            var customMatchmakingData = new Dictionary<string, string>(currentRoom.State.MatchmakingData.CustomData)
+            {
+                [RoomsUtility.SampleDataKey] = roomViewElements.SampleGameData.text
+            };
+            await currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPrivate, null, customMatchmakingData);
         }
         catch (Exception e)
         {

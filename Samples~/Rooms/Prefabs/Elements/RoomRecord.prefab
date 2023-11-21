@@ -653,6 +653,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7438600834180065077, guid: 737edd7d4f91dc94c83eba9e730aab14,
         type: 3}
+      propertyPath: m_Colors.m_FadeDuration
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7438600834180065077, guid: 737edd7d4f91dc94c83eba9e730aab14,
+        type: 3}
       propertyPath: m_Colors.m_NormalColor.b
       value: 0.33333334
       objectReference: {fileID: 0}

@@ -33,7 +33,7 @@ public class RoomRecordController : MonoBehaviour
     public void SetJoinButtonState()
     {
         JoinButtonState joinButtonState;
-        if (room.State.Users.Count == RoomsUtility.MaxPlayers)
+        if (room.State.Users.Count == RoomsUtility.RoomCapacity(room))
             joinButtonState = JoinButtonState.Full;
         else if (room.State.IsPrivate)
             joinButtonState = JoinButtonState.JoinPrivate;

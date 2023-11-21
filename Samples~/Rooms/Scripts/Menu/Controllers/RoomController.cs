@@ -132,7 +132,7 @@ public class RoomController : BaseWindow
 
     private void ManageRoomFill(int userCount)
     {
-        bool allSeatsFull = userCount == RoomsUtility.MaxPlayers;
+        bool allSeatsFull = userCount == RoomsUtility.RoomCapacity(currentRoom);
 
         readyButton.gameObject.SetActive(allSeatsFull);
         statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
@@ -167,7 +167,7 @@ public class RoomController : BaseWindow
 
         seatLookup[obj.UserId].SetReady(obj.IsReady);
 
-        var isRoomReady = currentRoom.State.Users.Count(x => x.IsReady) == RoomsUtility.MaxPlayers;
+        var isRoomReady = currentRoom.State.Users.Count(x => x.IsReady) == RoomsUtility.RoomCapacity(currentRoom);
 
         if (isRoomReady)
             StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));

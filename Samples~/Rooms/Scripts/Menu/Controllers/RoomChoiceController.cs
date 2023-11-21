@@ -37,6 +37,21 @@ public class RoomChoiceController : BaseWindow
         {
             Debug.LogError($"Room list not initialized: {e.Message}");
         }
+
+        RoomsUtility.RoomsManager.RoomListUpdated += OnRoomsListUpdated;
+    }
+
+    private void OnDestroy()
+    {
+        RoomsUtility.RoomsManager.RoomListUpdated -= OnRoomsListUpdated;
+    }
+
+    private void OnRoomsListUpdated(RoomListUpdatedArgs obj)
+    {
+        foreach (var updatedRoomId in obj.RoomIds)
+        {
+            existingRooms[updatedRoomId].Reset();
+        }
     }
 
     private void AddRoomRecord(IRoom room)

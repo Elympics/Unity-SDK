@@ -20,6 +20,11 @@ public class RoomRecordController : MonoBehaviour
         this.joinRoomByIdAction = joinRoomByIdAction;
         this.setAndShowJoinCodePopupAction = setAndShowJoinCodePopupAction;
 
+        Reset();
+    }
+
+    public void Reset()
+    {
         roomNameTextField.text = room.State.RoomName;
 
         if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out string value))

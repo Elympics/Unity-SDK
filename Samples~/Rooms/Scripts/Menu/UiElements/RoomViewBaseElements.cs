@@ -1,10 +1,11 @@
 using UnityEngine;
 using TMPro;
+using Elympics;
 
 public class RoomViewBaseElements : MonoBehaviour
 {
-    private static int PublicRoomOptionIndex = 0;
-    private static int PrivateRoomOptionIndex = 1;
+    private static readonly int PublicRoomOptionIndex = 0;
+    private static readonly int PrivateRoomOptionIndex = 1;
 
     [SerializeField] private TMP_InputField roomName;
     [SerializeField] private RadioButtonGroup roomPrivacy;
@@ -14,13 +15,21 @@ public class RoomViewBaseElements : MonoBehaviour
 
     public TMP_InputField RoomName => roomName;
     public RadioButtonGroup RoomPrivacy => roomPrivacy;
-    public TMP_InputField SampleGameData => sampleGameData; // TODO: Connect to the UI
+    public TMP_InputField SampleGameData => sampleGameData;
 
     public void ManageInteractability(bool shouldBeInteractable)
     {
         roomName.interactable = shouldBeInteractable;
         roomPrivacy.ManageInteractability(shouldBeInteractable);
         sampleGameData.interactable = shouldBeInteractable;
+    }
+
+    public void TrySetSampleData(IRoom room)
+    {
+        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out string value))
+            sampleGameData.text = value;
+        else
+            Debug.LogWarning($"Joined room has no CustomMatchmakingData of key {RoomsUtility.SampleDataKey}");
     }
 
     public void SetPrivacy(bool isPrivate) => roomPrivacy.SelectOption(isPrivate ? PrivateRoomOptionIndex : PublicRoomOptionIndex);

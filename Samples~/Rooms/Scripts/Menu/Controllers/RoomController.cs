@@ -57,7 +57,7 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged += ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged += ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged += ManageReadiness;
-        RoomsUtility.RoomsManager.CustomRoomDataChanged += ManageAdditionalData;
+        RoomsUtility.RoomsManager.CustomMatchmakingDataChanged += ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
@@ -78,7 +78,7 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.UserCountChanged -= ManageRoomFill;
         RoomsUtility.RoomsManager.HostChanged -= ManageHostIndicatorState;
         RoomsUtility.RoomsManager.UserReadinessChanged -= ManageReadiness;
-        RoomsUtility.RoomsManager.CustomRoomDataChanged -= ManageAdditionalData;
+        RoomsUtility.RoomsManager.CustomMatchmakingDataChanged -= ManageAdditionalData;
 
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged -= OnMatchmakingStateChanged;
@@ -173,9 +173,9 @@ public class RoomController : BaseWindow
             StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
     }
 
-    private void ManageAdditionalData(CustomRoomDataChangedArgs obj)
+    private void ManageAdditionalData(CustomMatchmakingDataChangedArgs obj)
     {
-        //roomViewElements.SampleGameData.text = obj.CustomData[RoomsUtility.SampleDataKey];
+        roomViewElements.TrySetSampleData(currentRoom);
     }
 
     private void OnMatchmakingStateChanged(MatchmakingDataChangedArgs obj)
@@ -228,7 +228,7 @@ public class RoomController : BaseWindow
 
         roomViewElements.RoomName.text = currentRoom.State.RoomName;
         roomViewElements.SetPrivacy(currentRoom.State.IsPrivate);
-        //roomViewElements.SampleGameData.text = currentRoom.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
+        roomViewElements.TrySetSampleData(currentRoom);
 
         joinCode.text = currentRoom.State.JoinCode;
 

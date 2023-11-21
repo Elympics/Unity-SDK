@@ -21,7 +21,12 @@ public class RoomRecordController : MonoBehaviour
         this.setAndShowJoinCodePopupAction = setAndShowJoinCodePopupAction;
 
         roomNameTextField.text = room.State.RoomName;
-        //additionalRoomDataTextField.text = room.State.MatchmakingData.CustomData[RoomsUtility.SampleDataKey];
+
+        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out string value))
+            additionalRoomDataTextField.text = value;
+        else
+            Debug.LogWarning($"Room {room.RoomId} has no CustomMatchmakingData of key {RoomsUtility.SampleDataKey}");
+
         SetJoinButtonState();
     }
 

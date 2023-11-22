@@ -42,7 +42,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param callback Reference to C# static function
 	 */
-	WebSocketSetOnOpen: function(callback) {
+	ElympicsWebSocketSetOnOpen: function(callback) {
 
 		webSocketState.onOpen = callback;
 
@@ -53,7 +53,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param callback Reference to C# static function
 	 */
-	WebSocketSetOnMessage: function(callback) {
+	ElympicsWebSocketSetOnMessage: function(callback) {
 
 		webSocketState.onMessage = callback;
 
@@ -64,7 +64,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param callback Reference to C# static function
 	 */
-	WebSocketSetOnError: function(callback) {
+	ElympicsWebSocketSetOnError: function(callback) {
 
 		webSocketState.onError = callback;
 
@@ -75,7 +75,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param callback Reference to C# static function
 	 */
-	WebSocketSetOnClose: function(callback) {
+	ElympicsWebSocketSetOnClose: function(callback) {
 
 		webSocketState.onClose = callback;
 
@@ -87,7 +87,7 @@ var LibraryWebSocket = {
 	 * @param url Server URL
 	 * @param protocols Requested sub-protocol
 	 */
-	WebSocketAllocate: function(url, protocol) {
+	ElympicsWebSocketAllocate: function(url, protocol) {
 
 		var urlStr = UTF8ToString(url);
 		var id = webSocketState.lastId++;
@@ -110,7 +110,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param instanceId Instance ID
 	 */
-	WebSocketFree: function(instanceId) {
+	ElympicsWebSocketFree: function(instanceId) {
 
 		var instance = webSocketState.instances[instanceId];
 
@@ -132,7 +132,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param instanceId Instance ID
 	 */
-	WebSocketConnect: function(instanceId) {
+	ElympicsWebSocketConnect: function(instanceId) {
 
 		var instance = webSocketState.instances[instanceId];
 		if (!instance) return -1;
@@ -239,7 +239,7 @@ var LibraryWebSocket = {
 	 * @param code Close status code
 	 * @param reasonPtr Pointer to reason string
 	 */
-	WebSocketClose: function(instanceId, code, reasonPtr) {
+	ElympicsWebSocketClose: function(instanceId, code, reasonPtr) {
 
 		var instance = webSocketState.instances[instanceId];
 		if (!instance) return -1;
@@ -272,7 +272,7 @@ var LibraryWebSocket = {
 	 * @param bufferPtr Pointer to the message buffer
 	 * @param length Length of the message in the buffer
 	 */
-	WebSocketSend: function(instanceId, bufferPtr, length) {
+	ElympicsWebSocketSend: function(instanceId, bufferPtr, length) {
 
 		var instance = webSocketState.instances[instanceId];
 		if (!instance) return -1;
@@ -294,7 +294,7 @@ var LibraryWebSocket = {
 	 *
 	 * @param instanceId Instance ID
 	 */
-	WebSocketGetState: function(instanceId) {
+	ElympicsWebSocketGetState: function(instanceId) {
 
 		var instance = webSocketState.instances[instanceId];
 		if (!instance) return -1;

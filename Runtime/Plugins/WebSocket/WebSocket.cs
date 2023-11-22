@@ -222,16 +222,16 @@ namespace HybridWebSocket
     {
         /* WebSocket JSLIB functions */
         [DllImport("__Internal")]
-        public static extern int WebSocketConnect(int instanceId);
+        public static extern int ElympicsWebSocketConnect(int instanceId);
 
         [DllImport("__Internal")]
-        public static extern int WebSocketClose(int instanceId, int code, string reason);
+        public static extern int ElympicsWebSocketClose(int instanceId, int code, string reason);
 
         [DllImport("__Internal")]
-        public static extern int WebSocketSend(int instanceId, byte[] dataPtr, int dataLength);
+        public static extern int ElympicsWebSocketSend(int instanceId, byte[] dataPtr, int dataLength);
 
         [DllImport("__Internal")]
-        public static extern int WebSocketGetState(int instanceId);
+        public static extern int ElympicsWebSocketGetState(int instanceId);
 
         /// <summary>
         /// The instance identifier.
@@ -291,7 +291,7 @@ namespace HybridWebSocket
         /// </summary>
         public void Connect()
         {
-            int ret = WebSocketConnect(this.instanceId);
+            int ret = ElympicsWebSocketConnect(this.instanceId);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
@@ -304,7 +304,7 @@ namespace HybridWebSocket
         /// <param name="reason">Reason string.</param>
         public void Close(WebSocketCloseCode code = WebSocketCloseCode.Normal, string reason = null)
         {
-            int ret = WebSocketClose(this.instanceId, (int)code, reason);
+            int ret = ElympicsWebSocketClose(this.instanceId, (int)code, reason);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
@@ -316,7 +316,7 @@ namespace HybridWebSocket
         /// <param name="data">Payload data.</param>
         public void Send(byte[] data)
         {
-            int ret = WebSocketSend(this.instanceId, data, data.Length);
+            int ret = ElympicsWebSocketSend(this.instanceId, data, data.Length);
 
             if (ret < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(ret, null);
@@ -328,7 +328,7 @@ namespace HybridWebSocket
         /// <returns>The state.</returns>
         public WebSocketState GetState()
         {
-            int state = WebSocketGetState(this.instanceId);
+            int state = ElympicsWebSocketGetState(this.instanceId);
 
             if (state < 0)
                 throw WebSocketHelpers.GetErrorMessageFromCode(state, null);
@@ -554,22 +554,22 @@ namespace HybridWebSocket
 
         /* WebSocket JSLIB callback setters and other functions */
         [DllImport("__Internal")]
-        public static extern int WebSocketAllocate(string url, string protocol);
+        public static extern int ElympicsWebSocketAllocate(string url, string protocol);
 
         [DllImport("__Internal")]
-        public static extern void WebSocketFree(int instanceId);
+        public static extern void ElympicsWebSocketFree(int instanceId);
 
         [DllImport("__Internal")]
-        public static extern void WebSocketSetOnOpen(OnOpenCallback callback);
+        public static extern void ElympicsWebSocketSetOnOpen(OnOpenCallback callback);
 
         [DllImport("__Internal")]
-        public static extern void WebSocketSetOnMessage(OnMessageCallback callback);
+        public static extern void ElympicsWebSocketSetOnMessage(OnMessageCallback callback);
 
         [DllImport("__Internal")]
-        public static extern void WebSocketSetOnError(OnErrorCallback callback);
+        public static extern void ElympicsWebSocketSetOnError(OnErrorCallback callback);
 
         [DllImport("__Internal")]
-        public static extern void WebSocketSetOnClose(OnCloseCallback callback);
+        public static extern void ElympicsWebSocketSetOnClose(OnCloseCallback callback);
 
         /* If callbacks was initialized and set */
         private static bool isInitialized;
@@ -579,10 +579,10 @@ namespace HybridWebSocket
          */
         private static void Initialize()
         {
-            WebSocketSetOnOpen(DelegateOnOpenEvent);
-            WebSocketSetOnMessage(DelegateOnMessageEvent);
-            WebSocketSetOnError(DelegateOnErrorEvent);
-            WebSocketSetOnClose(DelegateOnCloseEvent);
+            ElympicsWebSocketSetOnOpen(DelegateOnOpenEvent);
+            ElympicsWebSocketSetOnMessage(DelegateOnMessageEvent);
+            ElympicsWebSocketSetOnError(DelegateOnErrorEvent);
+            ElympicsWebSocketSetOnClose(DelegateOnCloseEvent);
 
             isInitialized = true;
         }
@@ -595,7 +595,7 @@ namespace HybridWebSocket
         public static void HandleInstanceDestroy(int instanceId)
         {
             Instances.Remove(instanceId);
-            WebSocketFree(instanceId);
+            ElympicsWebSocketFree(instanceId);
         }
 
         [MonoPInvokeCallback(typeof(OnOpenCallback))]
@@ -652,7 +652,7 @@ namespace HybridWebSocket
 	        if (!isInitialized)
 	            Initialize();
 
-	        var instanceId = WebSocketAllocate(url, protocol);
+	        var instanceId = ElympicsWebSocketAllocate(url, protocol);
 	        var wrapper = new WebSocket(instanceId);
 	        Instances.Add(instanceId, wrapper);
 

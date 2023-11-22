@@ -48,8 +48,8 @@ namespace Elympics.Tests.Rooms
             _ = Assert.Throws<RoomDisposedException>(() => _ = room.IsJoined);
             _ = Assert.Throws<RoomDisposedException>(() => _ = room.HasMatchmakingEnabled);
             _ = Assert.Throws<RoomDisposedException>(() => _ = room.IsMatchAvailable);
-            _ = Assert.Throws<RoomDisposedException>(() => room.UpdateState(default!));
-            _ = Assert.Throws<RoomDisposedException>(() => room.UpdateState(default!, default!));
+            _ = Assert.Throws<RoomDisposedException>(() => ((IRoom)room).UpdateState(default!));
+            _ = Assert.Throws<RoomDisposedException>(() => ((IRoom)room).UpdateState(default!, default!));
             _ = await AssertThrowsAsync<RoomDisposedException>(async () => await room.ChangeTeam(default));
             _ = await AssertThrowsAsync<RoomDisposedException>(async () => await ((IRoom)room).BecomeSpectator());
             _ = await AssertThrowsAsync<RoomDisposedException>(async () => await room.MarkYourselfReady());
@@ -150,7 +150,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomMatchmakingDataExceedingMaxSizeLimit() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState, true);
+            IRoom room = new Room(null!, null!, RoomIdForTesting, InitialRoomState, true);
             room.UpdateState(InitialRoomState, new RoomStateDiff());
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_valueOverTheLimit);
@@ -164,7 +164,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomMatchmakingDataEqualToMaxLimit() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, new RoomClientMock(), RoomIdForTesting, InitialRoomState, true);
+            IRoom room = new Room(null!, new RoomClientMock(), RoomIdForTesting, InitialRoomState, true);
             room.UpdateState(InitialRoomState, new RoomStateDiff());
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_valueInLimit);

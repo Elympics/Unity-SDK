@@ -40,7 +40,7 @@ namespace Elympics
 
         public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
 
-        private readonly Dictionary<Guid, Room> _rooms = new();
+        private readonly Dictionary<Guid, IRoom> _rooms = new();
         private readonly IRoomJoiningQueue _joiningQueue;
         private CancellationTokenSource _cts = new();
 
@@ -48,6 +48,21 @@ namespace Elympics
         private readonly IRoomsClient _client;
 
         private readonly RoomStateDiff _stateDiff = new();
+
+        public event Func<IRoom, IRoom>? RoomSetUp
+        {
+            add
+            {
+                if (value != null && _roomDecorators.IndexOf(value) == -1)
+                    _roomDecorators.Add(value);
+            }
+            remove
+            {
+                if (value != null)
+                    _ = _roomDecorators.RemoveAll(x => x == value);
+            }
+        }
+        private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
 
         public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiningQueue? joiningQueue = null)
         {
@@ -134,7 +149,12 @@ namespace Elympics
             }
         }
 
-        private void AddRoomToDictionary(Room room) => _rooms.Add(room.RoomId, room);
+        private void AddRoomToDictionary(IRoom room)
+        {
+            foreach (var decorator in _roomDecorators)
+                room = decorator(room);
+            _rooms.Add(room.RoomId, room);
+        }
 
         internal void InvokeEventsBasedOnStateDiff(Guid roomId, RoomStateDiff stateDiff)
         {
@@ -294,7 +314,6 @@ namespace Elympics
                 // ReSharper restore AccessToModifiedClosure
             }
         }
-
         private async UniTask<IRoom> JoinRoom(string joinCode, uint? teamIndex)
         {
             var existingRoom = _rooms.Values.FirstOrDefault(x => x.State.JoinCode == joinCode);

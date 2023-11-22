@@ -21,6 +21,12 @@ namespace Elympics.Editor.Tests
                 WebSocketMockSetup.MakeAllPlayersReadyForRoom(currentRoomId);
             }
 
+            if (GUILayout.Button("Create And Join"))
+            {
+                var mock = (RoomMockController)target;
+                mock.CreateAndJoin();
+            }
+
             if (GUILayout.Button("Simulate Room Parameters Change"))
             {
                 var mock = (RoomMockController)target;
@@ -29,11 +35,16 @@ namespace Elympics.Editor.Tests
 
                 var roomId = roomManager.ListJoinedRooms().Count > 0 ? roomManager.ListJoinedRooms()[0].RoomId : new Guid(mock.modifiedRoomId);
 
-                WebSocketMockSetup.SimulateRoomParametersChange(roomId, mock.newRoomName, mock.newIsPrivate,
-                    new(StringStringPair.ToDictionary(mock.newCustomRoomData)),
-                    new(StringStringPair.ToDictionary(mock.newCustomMatchmakingData))
-                    );
+                WebSocketMockSetup.SimulateRoomParametersChange(roomId, mock.newRoomName, mock.newIsPrivate, new(StringStringPair.ToDictionary(mock.newCustomRoomData)), new(StringStringPair.ToDictionary(mock.newCustomMatchmakingData)));
             }
+
+            if (GUILayout.Button("Set Ready"))
+            {
+                var mock = (RoomMockController)target;
+                mock.SetReady();
+            }
+
+
         }
     }
 }

@@ -8,4 +8,8 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Editor")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
+[assembly: InternalsVisibleTo("SmartContractService")]
+[assembly: InternalsVisibleTo("SmartContractService.Editor")]
+[assembly: InternalsVisibleTo("SmartContractService.Test")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
+

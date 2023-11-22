@@ -139,8 +139,8 @@ namespace Elympics.Tests.Rooms
             Assert.That(exception.InProgress, Is.True);
         });
 
-        [UnityTest]
-        public IEnumerator JoinRoomThatIsAlreadyListedInPublicRoomListAndRoomStateIsUpdated() => UniTask.ToCoroutine(async () =>
+        [Test]
+        public void JoinRoomThatIsAlreadyListedInPublicRoomListAndRoomStateIsUpdated()
         {
             var currentUser = new UserInfo(Guid.NewGuid(), 0, false);
             var currentMmData = new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>());
@@ -170,11 +170,14 @@ namespace Elympics.Tests.Rooms
             //Assert
             _eventRegister.AssertIfInvoked();
             Assert.AreEqual(2, _roomsManager.ListJoinedRooms()[0].State.Users.Count());
-        });
+        }
 
         [UnityTest]
         public IEnumerator HappyPathStartingQuickMatchShouldSucceed() => UniTask.ToCoroutine(async () =>
         {
+            const string regionName = "test-region";
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, ""), Guid.Empty, "", regionName);
+            _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
             var readyState = _roomStateChanged with
             {
@@ -209,7 +212,7 @@ namespace Elympics.Tests.Rooms
             {
                 new(_roomIdForTesting, new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch, "test room name", true, new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
                 {
-                    new UserInfo(Guid.NewGuid(), 0, false)
+                    new (Guid.NewGuid(), 0, false)
                 }, false, new Dictionary<string, string>())),
             });
             _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.RoomListUpdatedInvoked);

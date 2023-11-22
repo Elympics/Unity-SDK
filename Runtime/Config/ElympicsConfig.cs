@@ -47,7 +47,8 @@ namespace Elympics
         internal string ElympicsGameServersEndpoint => ApplicationParameters.Parameters.GameServersEndpoint.GetValue(new UriBuilder(elympicsGameServersEndpoint).Uri)
             .GetAbsoluteOrRelativeString();
 
-        private Uri GetV2Endpoint(string serviceName) =>
+        [PublicAPI]
+        public Uri GetV2Endpoint(string serviceName) =>
             elympicsWebEndpoint.AppendPathSegments("v2", serviceName);
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;

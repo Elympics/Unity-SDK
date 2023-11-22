@@ -383,6 +383,27 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
+        public IEnumerator MessageShouldBeReceivedOnceAfterReconnecting() => UniTask.ToCoroutine(async () =>
+        {
+            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
+            {
+                Serialize = _ => Array.Empty<byte>(),
+                Deserialize = _ => new UnknownMessage(),
+            });
+            var counter = 0;
+            await ConnectWebSocketSessionAndAssert(session);
+            DisconnectWebSocketSessionAndAssert(session);
+            await ConnectWebSocketSessionAndAssert(session);
+
+
+            session.MessageReceived += ReceiveMessage;
+            WsMock.InvokeOnMessage(Array.Empty<byte>());
+
+            void ReceiveMessage(IFromLobby message) => counter++;
+            Assert.AreEqual(1, counter);
+        });
+
+        [UnityTest]
         public IEnumerator HappyPathOperationExecutionScenarioShouldSucceed() => UniTask.ToCoroutine(async () =>
         {
             var operation = new UnknownOperation();

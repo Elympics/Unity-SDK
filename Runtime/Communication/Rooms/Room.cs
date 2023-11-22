@@ -11,7 +11,7 @@ using Elympics.Rooms.Models;
 
 namespace Elympics
 {
-    internal class Room : IRoom, IDisposable
+    internal class Room : IRoom
     {
         public Guid RoomId => ThrowIfDisposedOrReturn(_roomId);
         public RoomState State => ThrowIfDisposedOrReturn(_state);
@@ -20,8 +20,14 @@ namespace Elympics
 
         public bool IsJoined
         {
+            get => ((IRoom)this).IsJoined;
+            internal set => ((IRoom)this).IsJoined = value;
+        }
+
+        bool IRoom.IsJoined
+        {
             get => ThrowIfDisposedOrReturn(_isJoined);
-            internal set
+            set
             {
                 ThrowIfDisposed();
                 _isJoined = value;
@@ -77,13 +83,13 @@ namespace Elympics
             _state = new RoomState(initialState);
         }
 
-        internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
             _state.Update(roomState, stateDiff);
         }
 
-        internal void UpdateState(PublicRoomState roomState)
+        void IRoom.UpdateState(PublicRoomState roomState)
         {
             ThrowIfDisposed();
             _state.Update(roomState);
@@ -107,7 +113,7 @@ namespace Elympics
             return _client.ChangeTeam(_roomId, teamIndex);
         }
 
-        public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null)
+        public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();

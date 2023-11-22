@@ -7,5 +7,7 @@ namespace Elympics.Editor
 
         private const string Label_WebClientWarning = "Be careful using WebSocket and WebRTC with other types of build. It is working fine with Editor and WebGL build, " +
                                                       "but other platforms weren't tested and it is known that IL2CPP cannot serialize some methods used in native webrtc library wrapper.";
+
+        private const string Label_GameIdIsNotGuidError = "The Game id in Game Setup is required to be in a Guid format!";
     }
 }

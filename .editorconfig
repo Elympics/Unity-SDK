@@ -60,6 +60,9 @@ dotnet_diagnostic.IDE0070.severity = suggestion
 ### Convert typeof to nameof
 dotnet_diagnostic.IDE0082.severity = warning
 
+### Use conditional expression for return
+dotnet_diagnostic.IDE0046.severity = none
+
 ## C#
 csharp_preferred_modifier_order = public,private,protected,internal,file,new,static,abstract,virtual,sealed,readonly,override,extern,unsafe,volatile,async,required:warning
 csharp_style_var_for_built_in_types = true:warning
@@ -102,6 +105,8 @@ csharp_wrap_after_declaration_lpar = true
 csharp_wrap_chained_binary_expressions = chop_if_long
 csharp_wrap_before_binary_opsign = true
 csharp_max_initializer_elements_on_line = 0
+csharp_wrap_before_binary_pattern_op = true
+csharp_wrap_chained_binary_patterns = chop_if_long
 
 ### Add missing cases to switch expression
 dotnet_diagnostic.IDE0072.severity = suggestion

@@ -68,66 +68,28 @@ namespace Elympics
             RoomManager.MatchmakingEnded += OnMatchmakingEnded;
             RoomManager.MatchDataReceived += OnMatchDataReceived;
             RoomManager.MatchmakingDataChanged += OnMatchmakingDataChanged;
+            ElympicsLobbyClient.Instance.WebSocketSession.Connected += OnConnected;
 
+        }
+        private void OnConnected()
+        {
             _ = RoomManager.StartTrackingAvailableRooms();
+            ElympicsLobbyClient.Instance.WebSocketSession.Connected -= OnConnected;
         }
-        private void OnMatchmakingDataChanged(MatchmakingDataChangedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On matchmaking state changed {args}");
-        }
-        private void OnMatchDataReceived(MatchDataReceivedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On MatchData received {args}");
-        }
-        private void OnMatchmakingEnded(MatchmakingEndedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On matchmaking ended {args}");
-        }
-        private void OnMatchmakingStarted(MatchmakingStartedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On matchmaking started {args}");
-        }
-        private void OnUserReadinessChanged(UserReadinessChangedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On user readiness changed {args}");
-        }
-        private void OnUserCountChanged(UserCountChangedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On user count change {args}");
-        }
-        private void OnUserChangedTeam(UserChangedTeamArgs args)
-        {
-            Debug.Log($"[RoomHandler] On user changed team {args}");
-        }
-        private void OnCustomDataChanged(CustomRoomDataChangedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On custom data changed {args.RoomId}");
-            Debug.Log($"Key: {args.Key} Value: {args.Value}");
-        }
-        private void OnUserLeft(UserLeftArgs args)
-        {
-            Debug.Log($"[RoomHandler] On user left {args}");
-        }
-        private void OnUserJoined(UserJoinedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On user joined {args}");
-        }
-        private void OnJoinedRoom(JoinedRoomArgs args)
-        {
-            Debug.Log($"[RoomHandler] On joined room {args}");
-        }
-        private void OnHostChanged(HostChangedArgs args)
-        {
-            Debug.Log($"[RoomHandler] On host changed {args}");
-        }
-        private void OnLeftRoom(LeftRoomArgs args)
-        {
-            Debug.Log($"[RoomHandler] On Room Left {args}");
-        }
-        private void OnJoinedRoomUpdated(JoinedRoomUpdatedArgs args)
-        {
-            Debug.Log($"[RoomHandler] Joined room updated {args}");
-        }
+        private void OnMatchmakingDataChanged(MatchmakingDataChangedArgs args) => Debug.Log($"[RoomHandler] On matchmaking state changed {args}");
+        private void OnMatchDataReceived(MatchDataReceivedArgs args) => Debug.Log($"[RoomHandler] On MatchData received {args}");
+        private void OnMatchmakingEnded(MatchmakingEndedArgs args) => Debug.Log($"[RoomHandler] On matchmaking ended {args}");
+        private void OnMatchmakingStarted(MatchmakingStartedArgs args) => Debug.Log($"[RoomHandler] On matchmaking started {args}");
+        private void OnUserReadinessChanged(UserReadinessChangedArgs args) => Debug.Log($"[RoomHandler] On user readiness changed {args}");
+        private void OnUserCountChanged(UserCountChangedArgs args) => Debug.Log($"[RoomHandler] On user count change {args}");
+        private void OnUserChangedTeam(UserChangedTeamArgs args) => Debug.Log($"[RoomHandler] On user changed team {args}");
+        private void OnCustomDataChanged(CustomRoomDataChangedArgs args) => Debug.Log($"[RoomHandler] On custom data changed {args.RoomId}" + $"{Environment.NewLine}" + $"Key: {args.Key} Value: {args.Value}");
+        private void OnUserLeft(UserLeftArgs args) => Debug.Log($"[RoomHandler] On user left {args}");
+        private void OnUserJoined(UserJoinedArgs args) => Debug.Log($"[RoomHandler] On user joined {args}");
+        private void OnJoinedRoom(JoinedRoomArgs args) => Debug.Log($"[RoomHandler] On joined room {args}");
+        private void OnHostChanged(HostChangedArgs args) => Debug.Log($"[RoomHandler] On host changed {args}");
+        private void OnLeftRoom(LeftRoomArgs args) => Debug.Log($"[RoomHandler] On Room Left {args}");
+        private void OnJoinedRoomUpdated(JoinedRoomUpdatedArgs args) => Debug.Log($"[RoomHandler] Joined room updated {args}");
 
         [ContextMenu("CreateAndJoin")]
         public async void CreateAndJoin()
@@ -239,7 +201,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogError(e.Message);
             }
         }
 

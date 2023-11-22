@@ -29,6 +29,8 @@ namespace Elympics
 
         public event System.Action DataChanged;
 
+        private const string GameIdInvalidFormatErrorMessage = "Game Id is required to be in a Guid format!";
+
         public ElympicsGameConfigGeneralInfoDrawer(CustomInspectorDrawer inspectorDrawer, Color themeColor)
         {
             _customInspectorDrawer = inspectorDrawer;
@@ -89,10 +91,18 @@ namespace Elympics
 
             _gameName.stringValue = _customInspectorDrawer.DrawStringField("Name", _gameName.stringValue, 0.25f, true);
             _gameId.stringValue = _customInspectorDrawer.DrawStringField("Game Id", _gameId.stringValue, 0.25f, true);
-            _gameVersion.stringValue = _customInspectorDrawer.DrawStringField("Version", _gameVersion.stringValue, 0.25f, true);
+            if (!System.Guid.TryParse(_gameId.stringValue, out _))
+            {
+                _customInspectorDrawer.DrawHelpBox(GameIdInvalidFormatErrorMessage, 40, MessageType.Error);
+            }
+
+            _gameVersion.stringValue =
+                _customInspectorDrawer.DrawStringField("Version", _gameVersion.stringValue, 0.25f, true);
             _players.intValue = _customInspectorDrawer.DrawIntField("Players Count", _players.intValue, 0.25f, true);
 
-            _gameplaySceneAsset.objectReferenceValue = _customInspectorDrawer.DrawSceneFieldWithOpenSceneButton("Gameplay scene", _gameplaySceneAsset.objectReferenceValue, 0.25f, 0.5f, out var sceneFieldChanged, out var openSceneButtonPressed);
+            _gameplaySceneAsset.objectReferenceValue = _customInspectorDrawer.DrawSceneFieldWithOpenSceneButton(
+                "Gameplay scene", _gameplaySceneAsset.objectReferenceValue, 0.25f, 0.5f, out var sceneFieldChanged,
+                out var openSceneButtonPressed);
             if (sceneFieldChanged || _verifyGameScenePath)
                 CheckGameplaySceneAndUpdatePath();
             if (openSceneButtonPressed)
@@ -101,10 +111,7 @@ namespace Elympics
             _ = _customInspectorDrawer.DrawStringField("Scene path", _gameplayScene.stringValue, 0.25f, false);
         }
 
-        private void OpenSceneFromGameConfig()
-        {
-            _ = EditorSceneManager.OpenScene(_gameplayScene.stringValue);
-        }
+        private void OpenSceneFromGameConfig() => _ = EditorSceneManager.OpenScene(_gameplayScene.stringValue);
 
         private void CheckGameplaySceneAndUpdatePath()
         {

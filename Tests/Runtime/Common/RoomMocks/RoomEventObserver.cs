@@ -13,7 +13,9 @@ namespace Elympics.Tests.Rooms
 
         public RoomEventObserver(IRoomsManager roomsManager)
         {
-            var events = roomsManager.GetType().GetEvents();
+            var events = roomsManager.GetType()
+                .GetEvents()
+                .Where(e => e.EventHandlerType.GetGenericTypeDefinition() == typeof(Action<>));
             foreach (var roomEvent in events)
             {
                 _calledHandlers.Add(roomEvent.Name, 0);

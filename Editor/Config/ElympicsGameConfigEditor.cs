@@ -145,6 +145,8 @@ namespace Elympics.Editor
                 EditorGUI.EndDisabledGroup();
                 EditorGUILayout.Separator();
             }
+            if (!Guid.TryParse(_config.gameId, out _))
+                EditorGUILayout.HelpBox(Label_GameIdIsNotGuidError, MessageType.Error);
 
             DrawGameplayScene();
 
@@ -319,6 +321,7 @@ namespace Elympics.Editor
                     break;
                 case ElympicsGameConfig.HalfRemoteModeEnum.Client:
                 case ElympicsGameConfig.HalfRemoteModeEnum.Bot:
+#pragma warning disable IDE0045
                     if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
                         EditorGUI.EndDisabledGroup();
 
@@ -335,6 +338,7 @@ namespace Elympics.Editor
                         _ = EditorGUILayout.IntField("Used player index", ElympicsGameConfig.GetHalfRemotePlayerIndex(_playerIndexForHalfRemoteMode.intValue));
                     else
                         _ = EditorGUILayout.PropertyField(_playerIndexForHalfRemoteMode, new GUIContent("Used player index"));
+#pragma warning enable IDE0045
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -415,10 +419,7 @@ namespace Elympics.Editor
 
         private float FactorSlider(string label, float value, float min, float max) => FloatSliderWithUnit(new GUIContent(label), value, min, max, string.Empty);
 
-        private int TickSlider(GUIContent content, int value, int left, int right)
-        {
-            return IntSliderWithUnit(content, value, left, right, "ticks");
-        }
+        private int TickSlider(GUIContent content, int value, int left, int right) => IntSliderWithUnit(content, value, left, right, "ticks");
 
         private int IntSliderWithUnit(GUIContent content, int value, int left, int right, string unit)
         {
@@ -438,15 +439,9 @@ namespace Elympics.Editor
             return newValue;
         }
 
-        private int TicksToMs(int ticks)
-        {
-            return (int)Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
-        }
+        private int TicksToMs(int ticks) => (int)Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
 
-        private int MsToTicks(int milliseconds)
-        {
-            return (int)Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
-        }
+        private int MsToTicks(int milliseconds) => (int)Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
 
         [CustomPropertyDrawer(typeof(ElympicsGameConfig.InitialUserData))]
         public class InitialUserDataPropertyDrawer : PropertyDrawer

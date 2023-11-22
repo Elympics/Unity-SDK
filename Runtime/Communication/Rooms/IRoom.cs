@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
 #nullable enable
@@ -9,7 +10,7 @@ using JetBrains.Annotations;
 namespace Elympics
 {
     [PublicAPI]
-    public interface IRoom
+    public interface IRoom : IDisposable
     {
         Guid RoomId { get; }
         RoomState State { get; }
@@ -17,7 +18,7 @@ namespace Elympics
         public sealed string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
-        bool IsJoined { get; }
+        bool IsJoined { get; internal set; }
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
 
@@ -25,7 +26,7 @@ namespace Elympics
         UniTask ChangeTeam(uint? teamIndex);
         public sealed UniTask BecomeSpectator() => ChangeTeam(null);
 
-        UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null);
+        UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
         UniTask MarkYourselfUnready();
 
         UniTask StartMatchmaking();
@@ -36,5 +37,9 @@ namespace Elympics
         void PlayAvailableMatch();
 
         UniTask Leave();
+
+        internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff);
+
+        internal void UpdateState(PublicRoomState roomState);
     }
 }

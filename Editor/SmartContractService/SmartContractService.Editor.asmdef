@@ -1,0 +1,22 @@
+{
+    "name": "SmartContractService.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d66ac15473c2d56458af24eb7c1b437a",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:98c20d83c9beb3344bdbd3db8ff8d852"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "NSubstitute.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

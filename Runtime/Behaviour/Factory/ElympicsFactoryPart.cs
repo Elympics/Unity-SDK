@@ -88,9 +88,8 @@ namespace Elympics
 
         private CreatedInstanceWrapper CreateInstanceInternal(int instanceId, string pathInResources)
         {
-            var createdPrefab = Resources.Load<GameObject>(pathInResources);
-            if (createdPrefab == null)
-                throw new ArgumentException($"Prefab you want to instantiate ({pathInResources}) does not exist");
+            var createdPrefab = Resources.Load<GameObject>(pathInResources)
+                                ?? throw new ArgumentException($"Prefab you want to instantiate ({pathInResources}) does not exist");
             var createdGameObject = _instantiate(_player, createdPrefab);
             var elympicsBehaviours = createdGameObject.GetComponentsInChildren<ElympicsBehaviour>(true);
             foreach (var behaviour in elympicsBehaviours)

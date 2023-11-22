@@ -1,0 +1,19 @@
+{
+    "name": "SmartContractService.Test.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:771c7dee2d16473419074ab885a8bf1a",
+        "GUID:f49956841b21e164289d14711fd9284f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

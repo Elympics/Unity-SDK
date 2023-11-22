@@ -22,7 +22,7 @@ namespace Elympics
             window.titleContent = new GUIContent(EditorTitle);
         }
 
-        private void OnEnable() => _mockActive = PlayerPrefs.GetInt(Mockings.MockActivationKey) != 0;
+        private void OnEnable() => _mockActive = PlayerPrefs.GetInt(MockController.MockActivationKey) != 0;
 
         public void CreateGUI()
         {
@@ -48,7 +48,7 @@ namespace Elympics
         private void OnMocksToggleButtonClicked()
         {
             var newValue = _mockActive ? 0 : 1;
-            PlayerPrefs.SetInt(Mockings.MockActivationKey, newValue);
+            PlayerPrefs.SetInt(MockController.MockActivationKey, newValue);
             _mockActive = IntToBool(newValue);
             RefreshDescriptionTexts();
         }

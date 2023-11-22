@@ -40,22 +40,15 @@ namespace Elympics
 
         public static void UpdateElympicsGameVersion(string newGameVersion)
         {
-            var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            if (config == null)
-                throw new ElympicsException("Elympics config not found");
+            var config = ElympicsConfig.LoadCurrentElympicsGameConfig()
+                         ?? throw new ElympicsException("Elympics config not found");
 
             config.UpdateGameVersion(newGameVersion);
         }
 
-        internal static bool BuildServerWindows()
-        {
-            return BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
-        }
+        internal static bool BuildServerWindows() => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
 
-        internal static bool BuildServerLinux()
-        {
-            return BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
-        }
+        internal static bool BuildServerLinux() => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
 
         private static bool? IsLinuxModuleInstalled()
         {
@@ -85,9 +78,8 @@ namespace Elympics
             {
                 var title = $"Building server for {appName}";
                 EditorUtility.DisplayProgressBar(title, "Loading elympics game config", 0);
-                var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
-                if (config == null)
-                    throw new ElympicsException("Elympics config not found");
+                var config = ElympicsConfig.LoadCurrentElympicsGameConfig()
+                             ?? throw new ElympicsException("Elympics config not found");
 
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);

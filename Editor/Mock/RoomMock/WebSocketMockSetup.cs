@@ -77,7 +77,7 @@ namespace Elympics
                         case CreateRoom createRoom:
                         {
                             ThrowIfAlreadyInRoom(Ws, createRoom);
-                            var queue = GetQueueOrThrow(createRoom.QueueName, Ws, createRoom);
+                            var (teamSize, teamCount) = GetQueueOrThrow(createRoom.QueueName, Ws, createRoom);
 
                             var room = new RoomStateChanged(
                                 Guid.NewGuid(),
@@ -89,8 +89,8 @@ namespace Elympics
                                     DateTime.Now,
                                     MatchmakingState.Unlocked,
                                     createRoom.QueueName,
-                                    queue.TeamCount,
-                                    queue.TeamSize,
+                                    teamCount,
+                                    teamSize,
                                     createRoom.CustomMatchmakingData,
                                     null),
                             new List<UserInfo>

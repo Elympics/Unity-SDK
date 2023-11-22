@@ -30,7 +30,8 @@ namespace Elympics.Rooms.Models
                 && MatchmakerData.SequenceEqual(other.MatchmakerData);
         }
 
-        public override string ToString() => $"{nameof(MatchedPlayersId)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", MatchedPlayersId)}{Environment.NewLine}"
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+        public override string ToString() => $"{nameof(MatchedPlayersId)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", MatchedPlayersId ?? new List<Guid>())}{Environment.NewLine}"
             + $"{nameof(TcpUdpServerAddress)}:{TcpUdpServerAddress}{Environment.NewLine}"
             + $"{nameof(WebServerAddress)}:{WebServerAddress}{Environment.NewLine}"
             + $"{nameof(UserSecret)}:{UserSecret}{Environment.NewLine}"

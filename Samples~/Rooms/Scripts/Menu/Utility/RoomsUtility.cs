@@ -1,4 +1,4 @@
-﻿using Elympics;
+using Elympics;
 
 public static class RoomsUtility
 {

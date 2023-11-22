@@ -1,8 +1,8 @@
-using UnityEngine;
-using TMPro;
-using Elympics;
 using System;
+using Elympics;
 using JetBrains.Annotations;
+using TMPro;
+using UnityEngine;
 
 public class RoomRecordController : MonoBehaviour
 {
@@ -27,7 +27,7 @@ public class RoomRecordController : MonoBehaviour
     {
         roomNameTextField.text = room.State.RoomName;
 
-        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out string value))
+        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out var value))
             additionalRoomDataTextField.text = value;
         else
             Debug.LogWarning($"Room {room.RoomId} has no CustomMatchmakingData of key {RoomsUtility.SampleDataKey}");

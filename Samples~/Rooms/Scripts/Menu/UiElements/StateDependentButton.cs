@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class StateDependentButton : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class StateDependentButton : MonoBehaviour
     [SerializeField] private Image buttonImage;
     [Space]
     [SerializeField] private int currentState = 0;
-    [SerializeField] private List<ButtonState> buttonStates = new List<ButtonState>();
+    [SerializeField] private List<ButtonState> buttonStates = new();
 
     public void Click() => buttonStates[currentState].OnClickEvent?.Invoke();
 

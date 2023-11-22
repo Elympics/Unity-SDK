@@ -1,6 +1,6 @@
-using UnityEngine;
-using TMPro;
 using Elympics;
+using TMPro;
+using UnityEngine;
 
 public class RoomViewBaseElements : MonoBehaviour
 {
@@ -26,7 +26,7 @@ public class RoomViewBaseElements : MonoBehaviour
 
     public void TrySetSampleData(IRoom room)
     {
-        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out string value))
+        if (room.State.MatchmakingData.CustomData.TryGetValue(RoomsUtility.SampleDataKey, out var value))
             sampleGameData.text = value;
         else
             Debug.LogWarning($"Joined room has no CustomMatchmakingData of key {RoomsUtility.SampleDataKey}");

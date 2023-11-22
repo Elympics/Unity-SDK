@@ -1,4 +1,4 @@
-﻿public static class RoomStatusMessages
+public static class RoomStatusMessages
 {
     public const string WaitingForPlayerToJoinMessage = "Waiting for another player to join...";
     public const string WaitingForReadyMessage = "Waiting for all players to be ready...";

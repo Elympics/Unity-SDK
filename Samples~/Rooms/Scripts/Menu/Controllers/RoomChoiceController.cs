@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using UnityEngine;
 using System;
+using System.Collections.Generic;
 using Elympics;
 using JetBrains.Annotations;
+using UnityEngine;
 
 public class RoomChoiceController : BaseWindow
 {
@@ -56,7 +56,7 @@ public class RoomChoiceController : BaseWindow
 
     private void AddRoomRecord(IRoom room)
     {
-        RoomRecordController newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
+        var newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
         existingRooms.Add(room.RoomId, newRoomRecord);
         ListLengthChanged?.Invoke(existingRooms.Count);
@@ -65,7 +65,7 @@ public class RoomChoiceController : BaseWindow
     private void RemoveRoomRecord(Guid roomId)
     {
         Destroy(existingRooms[roomId].gameObject);
-        existingRooms.Remove(roomId);
+        _ = existingRooms.Remove(roomId);
         ListLengthChanged?.Invoke(existingRooms.Count);
     }
 
@@ -76,11 +76,11 @@ public class RoomChoiceController : BaseWindow
     {
         try
         {
-            await RoomsUtility.RoomsManager.JoinRoom(roomId, joinCode, null);
+            _ = await RoomsUtility.RoomsManager.JoinRoom(roomId, joinCode, null);
         }
         catch (Exception e)
         {
-            string errorMessage = $"Joining failed: {e.Message}";
+            var errorMessage = $"Joining failed: {e.Message}";
             Debug.LogError(errorMessage);
             errorPopup.SetMessage(errorMessage);
             errorPopup.Show();

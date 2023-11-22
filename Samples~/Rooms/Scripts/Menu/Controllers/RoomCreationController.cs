@@ -13,8 +13,7 @@ public class RoomCreationController : BaseWindow
     {
         try
         {
-            var room = await RoomsUtility.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate, new Dictionary<string, string>(), new Dictionary<string, string>());
-            await room.UpdateRoomParams(null, null, null, new (){ { ":pub:SampleData", roomViewElements.SampleGameData.text }, { "ExamplePrivateData", "test private data" } });
+            await RoomsUtility.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate, null, NewCustomMatchmakingData());
         }
         catch (Exception e)
         {
@@ -33,8 +32,10 @@ public class RoomCreationController : BaseWindow
 
     private string GenerateRandomRoomName()
     {
-        return $"{UnityEngine.Random.Range(0, 10000)}'s room";
+        return $"Room {UnityEngine.Random.Range(0, 10000)}";
     }
+
+    private Dictionary<string, string> NewCustomMatchmakingData() => new() { { ":pub:SampleData", roomViewElements.SampleGameData.text }, { "ExamplePrivateData", "test private data" } };
 
     [UsedImplicitly]
     public void ShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();

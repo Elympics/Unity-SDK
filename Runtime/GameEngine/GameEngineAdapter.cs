@@ -5,7 +5,6 @@ using System.Linq;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
 using MessagePack;
-using UnityEngine;
 using IGameEngine = GameEngineCore.V1._3.IGameEngine;
 
 #pragma warning disable CS0618
@@ -149,40 +148,33 @@ namespace Elympics
 
         internal void EndGame(ResultMatchPlayerDatas result = null)
         {
-            try
+            if (result == null)
             {
-                if (result == null)
-                {
-                    GameEnded?.Invoke(null);
-                    return;
-                }
-
-                if (result.Count != _initialMatchUserDatas.Count)
-                {
-                    ElympicsLogger.LogError($"Invalid length of match result: expected {_initialMatchUserDatas.Count}, "
-                        + $"has {result.Count}.");
-                    GameEnded?.Invoke(null);
-                    return;
-                }
-
-                var matchResult = new ResultMatchUserDatas();
-                for (var i = 0; i < result.Count; i++)
-                {
-                    var userId = _playersToUserIds[Players[i]];
-                    matchResult.Add(new ResultMatchUserData
-                    {
-                        UserId = userId,
-                        GameEngineData = result[i].GameEngineData,
-                        MatchmakerData = result[i].MatchmakerData
-                    });
-                }
-
-                GameEnded?.Invoke(matchResult);
+                GameEnded?.Invoke(null);
+                return;
             }
-            finally
+
+            if (result.Count != _initialMatchUserDatas.Count)
             {
-                Application.Quit(result == null ? 1 : 0);
+                ElympicsLogger.LogError($"Invalid length of match result: expected {_initialMatchUserDatas.Count}, "
+                    + $"has {result.Count}.");
+                GameEnded?.Invoke(null);
+                return;
             }
+
+            var matchResult = new ResultMatchUserDatas();
+            for (var i = 0; i < result.Count; i++)
+            {
+                var userId = _playersToUserIds[Players[i]];
+                matchResult.Add(new ResultMatchUserData
+                {
+                    UserId = userId,
+                    GameEngineData = result[i].GameEngineData,
+                    MatchmakerData = result[i].MatchmakerData,
+                });
+            }
+
+            GameEnded?.Invoke(matchResult);
         }
 
         public event Action GameStarted;

@@ -44,6 +44,11 @@ public class RoomController : BaseWindow
         UnsubscribeFromRoomEvents();
     }
 
+    private void OnApplicationQuit()
+    {
+        _ = _currentRoom?.Leave();
+    }
+
     private void SubscribeToRoomEvents()
     {
         if (!ElympicsLobbyClient.Instance.IsAuthenticated)
@@ -236,7 +241,7 @@ public class RoomController : BaseWindow
             yield return new WaitForSeconds(1);
         }
 
-        if (MyUserId.Equals(_currentRoom.State.Host))
+        if (AmIHost)
             _ = _currentRoom.StartMatchmaking();
     }
 

@@ -1171,42 +1171,6 @@ MonoBehaviour:
   roomCreationController: {fileID: 1229363449}
   roomController: {fileID: 45096622}
   currentViewController: {fileID: 8898138260294079518}
---- !u!1 &1746919320 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4038678426090251084, guid: 3cdf86a27de66234b9a3326606f73313,
-    type: 3}
-  m_PrefabInstance: {fileID: 1876961128}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1746919324
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1746919320}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0ad735cdc918cf47840d20c2b434857, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  subscribeToEvents: 0
-  roomName: 
-  queueName: 
-  isSingleTeam: 0
-  isPrivate: 0
-  customRoomData: []
-  customMatchmakingData: []
-  roomId: 
-  joinCode: 
-  teamIndex: 0
-  newTeamIndex: 0
-  modifiedRoomId: 
-  newRoomName: 
-  newIsPrivate: 0
-  newCustomRoomData: []
-  newCustomMatchmakingData:
-  - key: :pub:SampleData
-    value: 999999999$$
 --- !u!1 &1824844009
 GameObject:
   m_ObjectHideFlags: 0

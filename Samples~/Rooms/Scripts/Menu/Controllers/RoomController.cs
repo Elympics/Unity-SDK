@@ -46,7 +46,8 @@ public class RoomController : BaseWindow
 
     private void OnApplicationQuit()
     {
-        _ = _currentRoom?.Leave();
+        if (_currentRoom != null && _currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Unlocked)
+            _ = _currentRoom.Leave();
     }
 
     private void SubscribeToRoomEvents()

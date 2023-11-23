@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elympics;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -11,7 +12,7 @@ public class RoomChoiceController : BaseWindow
     [SerializeField] private JoinWithCodePopupController joinRoomWithCodePopup;
     [SerializeField] private BasePopup errorPopup;
 
-    private Dictionary<Guid, RoomRecordController> existingRooms;
+    private Dictionary<Guid, RoomRecordController> roomRecordsLookup;
 
     public Action<int> ListLengthChanged;
 
@@ -24,7 +25,7 @@ public class RoomChoiceController : BaseWindow
 
     private void InitializeRoomList()
     {
-        existingRooms = new();
+        roomRecordsLookup = new();
 
         try
         {
@@ -48,9 +49,18 @@ public class RoomChoiceController : BaseWindow
 
     private void OnRoomsListUpdated(RoomListUpdatedArgs obj)
     {
+        var roomList = RoomsUtility.RoomsManager.ListAvailableRooms();
+
         foreach (var updatedRoomId in obj.RoomIds)
         {
-            existingRooms[updatedRoomId].Reset();
+            var updatedRoom = roomList.FirstOrDefault(x => x.RoomId == updatedRoomId);
+
+            if (updatedRoom == null)
+                RemoveRoomRecord(updatedRoomId);
+            else if (roomRecordsLookup.TryGetValue(updatedRoomId, out var recordController))
+                recordController.Reset();
+            else
+                AddRoomRecord(updatedRoom);
         }
     }
 
@@ -58,15 +68,15 @@ public class RoomChoiceController : BaseWindow
     {
         var newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
-        existingRooms.Add(room.RoomId, newRoomRecord);
-        ListLengthChanged?.Invoke(existingRooms.Count);
+        roomRecordsLookup.Add(room.RoomId, newRoomRecord);
+        ListLengthChanged?.Invoke(roomRecordsLookup.Count);
     }
 
     private void RemoveRoomRecord(Guid roomId)
     {
-        Destroy(existingRooms[roomId].gameObject);
-        _ = existingRooms.Remove(roomId);
-        ListLengthChanged?.Invoke(existingRooms.Count);
+        Destroy(roomRecordsLookup[roomId].gameObject);
+        _ = roomRecordsLookup.Remove(roomId);
+        ListLengthChanged?.Invoke(roomRecordsLookup.Count);
     }
 
     private void TryJoinRoomById(Guid roomId) => TryJoinRoom(roomId, null, errorPopup);

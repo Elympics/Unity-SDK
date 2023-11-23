@@ -118,6 +118,8 @@ public class RoomController : BaseWindow
 
         RoomsNavigationController.Instance.ShowRoomView();
 
+        if (_currentRoom.State.Users.Any(x => x.UserId == MyUserId && x.TeamIndex.HasValue))
+            return;
         var firstUser = _currentRoom.State.Users.First();
         _ = _currentRoom.ChangeTeam(firstUser.TeamIndex.HasValue ? 1 - firstUser.TeamIndex : 0);
     }
@@ -145,7 +147,6 @@ public class RoomController : BaseWindow
                 break;
         }
     }
-
     private void RemovePlayer(UserLeftArgs obj)
     {
         _seatLookup[obj.User.UserId].SetEmpty();
@@ -216,6 +217,8 @@ public class RoomController : BaseWindow
     {
         var currentState = _currentRoom.State.MatchmakingData.MatchmakingState;
 
+        Debug.Log(currentState);
+
         if (currentState == MatchmakingState.RequestingMatchmaking)
             statusText.text = RoomStatusMessages.MatchmakingStartedMessage;
         else if (currentState == MatchmakingState.Matched)
@@ -265,9 +268,7 @@ public class RoomController : BaseWindow
 
         joinCode.text = _currentRoom.State.JoinCode;
 
-        var users = _currentRoom.State?.Users;
-        if (users == null)
-            throw new Exception("User list of the room is null!");
+        var users = _currentRoom.State.Users;
 
         for (var i = 0; i < users.Count; i++)
         {

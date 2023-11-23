@@ -12,7 +12,7 @@ public class RoomChoiceController : BaseWindow
     [SerializeField] private JoinWithCodePopupController joinRoomWithCodePopup;
     [SerializeField] private BasePopup errorPopup;
 
-    private Dictionary<Guid, RoomRecordController> roomRecordsLookup;
+    private Dictionary<Guid, RoomRecordController> _roomRecordsLookup;
 
     public Action<int> ListLengthChanged;
 
@@ -25,7 +25,7 @@ public class RoomChoiceController : BaseWindow
 
     private void InitializeRoomList()
     {
-        roomRecordsLookup = new();
+        _roomRecordsLookup = new();
 
         try
         {
@@ -57,7 +57,7 @@ public class RoomChoiceController : BaseWindow
 
             if (updatedRoom == null)
                 RemoveRoomRecord(updatedRoomId);
-            else if (roomRecordsLookup.TryGetValue(updatedRoomId, out var recordController))
+            else if (_roomRecordsLookup.TryGetValue(updatedRoomId, out var recordController))
                 recordController.Reset();
             else
                 AddRoomRecord(updatedRoom);
@@ -68,15 +68,15 @@ public class RoomChoiceController : BaseWindow
     {
         var newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
-        roomRecordsLookup.Add(room.RoomId, newRoomRecord);
-        ListLengthChanged?.Invoke(roomRecordsLookup.Count);
+        _roomRecordsLookup.Add(room.RoomId, newRoomRecord);
+        ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
     }
 
     private void RemoveRoomRecord(Guid roomId)
     {
-        Destroy(roomRecordsLookup[roomId].gameObject);
-        _ = roomRecordsLookup.Remove(roomId);
-        ListLengthChanged?.Invoke(roomRecordsLookup.Count);
+        Destroy(_roomRecordsLookup[roomId].gameObject);
+        _ = _roomRecordsLookup.Remove(roomId);
+        ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
     }
 
     private void TryJoinRoomById(Guid roomId) => TryJoinRoom(roomId, null, errorPopup);

@@ -1089,7 +1089,7 @@ PrefabInstance:
     - target: {fileID: 9163146912738509428, guid: 045083d93bcf60543bbf9befbff3358a,
         type: 3}
       propertyPath: queue
-      value: q1
+      value: Duel
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 045083d93bcf60543bbf9befbff3358a, type: 3}
@@ -1194,6 +1194,8 @@ MonoBehaviour:
   queueName: 
   isSingleTeam: 0
   isPrivate: 0
+  customRoomData: []
+  customMatchmakingData: []
   roomId: 
   joinCode: 
   teamIndex: 0

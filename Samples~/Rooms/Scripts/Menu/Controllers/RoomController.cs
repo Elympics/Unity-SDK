@@ -65,6 +65,14 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
 
+        StartCoroutine(TrackListAfterWait(3));
+    }
+
+    // TODO: remove this temporary solution after adding to the SDK event for websocket connection
+    private IEnumerator TrackListAfterWait(int seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        Debug.Log("Initialized room list tracking");
         _ = RoomsUtility.RoomsManager.StartTrackingAvailableRooms();
     }
 
@@ -91,7 +99,7 @@ public class RoomController : BaseWindow
 
         try
         {
-            _ = RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
+            //_ = RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
         }
         catch { }
     }

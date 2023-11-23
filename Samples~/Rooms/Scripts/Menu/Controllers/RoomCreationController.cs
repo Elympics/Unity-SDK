@@ -13,7 +13,7 @@ public class RoomCreationController : BaseWindow
     {
         try
         {
-            await RoomsUtility.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate, null, NewCustomMatchmakingData());
+            await RoomsUtility.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, queue, false, roomViewElements.IsPrivate, new(), NewCustomMatchmakingData());
         }
         catch (Exception e)
         {

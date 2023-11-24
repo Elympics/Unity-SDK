@@ -1,3 +1,14 @@
+## [0.9.3](https://github.com/Elympics/Unity-SDK/compare/v0.9.1...v0.9.3) (2023-11-24)
+
+
+### Bug Fixes 🪲
+
+* Don't call Application.Quit on server immediately after sending match results ([810aa46](https://github.com/Elympics/Unity-SDK/commit/810aa46d2bea8f845b3f0aae042aeb8ef98c00d9))
+* Fix game-breaking lags on Android ([983b782](https://github.com/Elympics/Unity-SDK/commit/983b7829e757984bb5ffb38717c36c0630eaea90))
+* Rename WebSocket-related JS methods to prevent conflicts ([fb0ca7d](https://github.com/Elympics/Unity-SDK/commit/fb0ca7dc3742e8751fb97b06457888f7fe5d8c64))
+
+
+
 ## [0.9.1](https://github.com/Elympics/Unity-SDK/compare/v0.9.0...v0.9.1) (2023-09-08)
 
 

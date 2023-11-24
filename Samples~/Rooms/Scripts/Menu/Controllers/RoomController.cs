@@ -7,6 +7,7 @@ using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class RoomController : BaseWindow
@@ -26,9 +27,13 @@ public class RoomController : BaseWindow
     private readonly Dictionary<Guid, PlayerSeat> _seatLookup = new();
     private IRoom _currentRoom;
 
+    private static bool _alreadyCheckedForMatchRejoin = false;
+
     private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
     private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.UserId);
     private bool IsActive => roomCanvasGroup.blocksRaycasts;
+    private IRoom FirstJoinedRoom => RoomsUtility.RoomsManager.ListJoinedRooms().FirstOrDefault();
+
 
     #region Events integration
     private void Awake()
@@ -36,12 +41,14 @@ public class RoomController : BaseWindow
         if (ElympicsLobbyClient.Instance.IsAuthenticated)
             SubscribeToRoomEvents();
         else
-            ElympicsLobbyClient.Instance.AuthenticationSucceeded += (_) => SubscribeToRoomEvents();
+            ElympicsLobbyClient.Instance.AuthenticationSucceeded += SubscribeToRoomEvents;
     }
 
     private void OnDestroy()
     {
         UnsubscribeFromRoomEvents();
+
+        ElympicsLobbyClient.Instance.AuthenticationSucceeded -= SubscribeToRoomEvents;
     }
 
     private void OnApplicationQuit()
@@ -50,12 +57,33 @@ public class RoomController : BaseWindow
             _ = _currentRoom.Leave();
     }
 
+    private void RejoinRoomIfAvailable(Scene scene, LoadSceneMode loadMode) => RejoinRoomIfAvailable();
+
+    private void RejoinRoomIfAvailable()
+    {
+        if (RoomsUtility.RoomsManager.ListJoinedRooms().Any())
+            RoomsNavigationController.Instance.ShowRoomView();
+    }
+
+    private bool TryRejoinMatchIfAvailable()
+    {
+        _currentRoom ??= FirstJoinedRoom;
+        var hasAvailableMatch = _currentRoom?.State.MatchmakingData.MatchData?.State == MatchState.Running;
+
+        if (hasAvailableMatch)
+            _currentRoom.PlayAvailableMatch();
+
+        return hasAvailableMatch;
+    }
+
+    private void SubscribeToRoomEvents(Elympics.Models.Authentication.AuthData _) => SubscribeToRoomEvents();
+
     private void SubscribeToRoomEvents()
     {
         if (!ElympicsLobbyClient.Instance.IsAuthenticated)
             return;
 
-        RoomsUtility.RoomsManager.JoinedRoom += SetUpRoomData;
+        RoomsUtility.RoomsManager.JoinedRoom += OnRoomJoined;
         RoomsUtility.RoomsManager.LeftRoom += RoomLeaveFeedback;
 
         RoomsUtility.RoomsManager.UserJoined += AddPlayer;
@@ -70,6 +98,8 @@ public class RoomController : BaseWindow
 
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
+
+        SceneManager.sceneLoaded += RejoinRoomIfAvailable;
 
         StartCoroutine(TrackListAfterWait(3));
     }
@@ -87,7 +117,7 @@ public class RoomController : BaseWindow
         if (!ElympicsLobbyClient.Instance.IsAuthenticated)
             return;
 
-        RoomsUtility.RoomsManager.JoinedRoom -= SetUpRoomData;
+        RoomsUtility.RoomsManager.JoinedRoom -= OnRoomJoined;
         RoomsUtility.RoomsManager.LeftRoom -= RoomLeaveFeedback;
 
         RoomsUtility.RoomsManager.UserJoined -= AddPlayer;
@@ -103,18 +133,24 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.MatchmakingEnded -= OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged -= OnMatchmakingStateChanged;
 
-        try
-        {
-            //_ = RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
-        }
-        catch { }
+        SceneManager.sceneLoaded -= RejoinRoomIfAvailable;
+
+        _ = RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
     }
     #endregion
 
-    private void SetUpRoomData(JoinedRoomArgs obj)
+    private void OnRoomJoined(JoinedRoomArgs obj)
     {
         if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(obj.RoomId, out _currentRoom))
             Debug.LogError("Joined room not found!");
+
+        if (!_alreadyCheckedForMatchRejoin)
+        {
+            _alreadyCheckedForMatchRejoin = true;
+
+            if (TryRejoinMatchIfAvailable())
+                return;
+        }
 
         RoomsNavigationController.Instance.ShowRoomView();
 
@@ -260,7 +296,10 @@ public class RoomController : BaseWindow
 
     public override void Show()
     {
-        _currentRoom ??= RoomsUtility.RoomsManager.ListJoinedRooms().First();
+        _currentRoom ??= FirstJoinedRoom;
+
+        if (_currentRoom == null)
+            throw new Exception("Trying to show room view when there are no currently joined rooms!");
 
         roomViewElements.RoomName.text = _currentRoom.State.RoomName;
         roomViewElements.SetPrivacy(_currentRoom.State.IsPrivate);

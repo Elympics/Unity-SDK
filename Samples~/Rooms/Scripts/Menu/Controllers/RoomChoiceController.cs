@@ -73,7 +73,7 @@ public class RoomChoiceController : BaseWindow
     }
 
     private void TryJoinRoomById(Guid roomId) => TryJoinRoom(roomId, null, errorPopup);
-    private void TryJoinRoomByCode(string joinCode) => TryJoinRoom(null, joinCode, joinRoomWithCodePopup.PopupView);
+    private void TryJoinRoomByCode(string joinCode, Guid? roomId = null) => TryJoinRoom(roomId, joinCode, joinRoomWithCodePopup.PopupView);
 
     private async void TryJoinRoom(Guid? roomId, string joinCode, BasePopup errorPopup)
     {

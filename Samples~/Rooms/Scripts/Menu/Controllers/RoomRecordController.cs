@@ -12,9 +12,9 @@ public class RoomRecordController : MonoBehaviour
 
     private IRoom room;
     private Action<Guid> joinRoomByIdAction;
-    private Action<string> setAndShowJoinCodePopupAction;
+    private Action<string, Guid> setAndShowJoinCodePopupAction;
 
-    public void Init(IRoom room, Action<Guid> joinRoomByIdAction, Action<string> setAndShowJoinCodePopupAction)
+    public void Init(IRoom room, Action<Guid> joinRoomByIdAction, Action<string, Guid> setAndShowJoinCodePopupAction)
     {
         this.room = room;
         this.joinRoomByIdAction = joinRoomByIdAction;
@@ -52,7 +52,7 @@ public class RoomRecordController : MonoBehaviour
     public void JoinRoom() => joinRoomByIdAction?.Invoke(room.RoomId);
 
     [UsedImplicitly]
-    public void ShowJoinCodePopup() => setAndShowJoinCodePopupAction?.Invoke(room.State.RoomName);
+    public void ShowJoinCodePopup() => setAndShowJoinCodePopupAction?.Invoke(room.State.RoomName, room.RoomId);
 }
 
 public enum JoinButtonState { JoinPublic, JoinPrivate, Full }

@@ -10,18 +10,21 @@ public class JoinWithCodePopupController : MonoBehaviour
     [SerializeField] private Button joinButton;
     [SerializeField] private TMP_InputField joinCodeField;
 
-    private Action<string> joinRoomWithCodeAction;
+    private Action<string, Guid?> joinRoomWithCodeAction;
+    private Guid? relatedRoomId = null;
+
 
     public BasePopup PopupView => popupView;
 
-    public void Init(Action<string> joinRoomWithCodeAction)
+    public void Init(Action<string, Guid?> joinRoomWithCodeAction)
     {
         this.joinRoomWithCodeAction = joinRoomWithCodeAction;
     }
 
-    public void SetAndShow(string roomName)
+    public void SetAndShow(string roomName, Guid roomId)
     {
         popupView.SetTitle(roomName);
+        relatedRoomId = roomId;
 
         Show();
     }
@@ -40,6 +43,7 @@ public class JoinWithCodePopupController : MonoBehaviour
     {
         popupView.Hide();
 
+        relatedRoomId = null;
         popupView.Reset();
     }
 
@@ -47,6 +51,6 @@ public class JoinWithCodePopupController : MonoBehaviour
     public void TryJoinRoomByCode()
     {
         Debug.Log("Attempting to log by code");
-        joinRoomWithCodeAction?.Invoke(joinCodeField.text);
+        joinRoomWithCodeAction?.Invoke(joinCodeField.text, relatedRoomId);
     }
 }

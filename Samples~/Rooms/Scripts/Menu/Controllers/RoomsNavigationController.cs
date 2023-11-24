@@ -43,7 +43,7 @@ public class RoomsNavigationController : MonoBehaviour
     public void ShowTitleScreen() => ShowView(titleScreenController);
 
     public void ShowRoomCreationView() => ShowView(roomCreationController);
-    [ContextMenu("RoomView")]
+
     public void ShowRoomView() => ShowView(roomController);
 
     private void ShowView(BaseWindow newView)

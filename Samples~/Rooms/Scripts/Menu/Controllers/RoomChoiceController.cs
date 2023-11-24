@@ -27,16 +27,9 @@ public class RoomChoiceController : BaseWindow
     {
         _roomRecordsLookup = new();
 
-        try
+        foreach (var room in RoomsUtility.RoomsManager.ListAvailableRooms())
         {
-            foreach (var room in RoomsUtility.RoomsManager.ListAvailableRooms())
-            {
-                AddRoomRecord(room);
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Room list not initialized: {e.Message}");
+            AddRoomRecord(room);
         }
 
         RoomsUtility.RoomsManager.RoomListUpdated += OnRoomsListUpdated;

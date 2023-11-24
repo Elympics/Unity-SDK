@@ -16,6 +16,7 @@ public class RoomController : BaseWindow
 
     [SerializeField] private CanvasGroup roomCanvasGroup;
     [SerializeField] private RoomViewBaseElements roomViewElements;
+    [SerializeField] private CanvasGroup joinCodeSection;
     [SerializeField] private TextMeshProUGUI joinCode;
 
     [SerializeField] private Button readyButton;
@@ -211,6 +212,8 @@ public class RoomController : BaseWindow
 
             if (MyUserId.Equals(obj.UserId))
             {
+                SetJoinCode();
+
                 roomViewElements.ManageInteractability(true);
             }
         }
@@ -307,7 +310,7 @@ public class RoomController : BaseWindow
         roomViewElements.SetPrivacy(_currentRoom.State.IsPrivate);
         roomViewElements.TrySetSampleData(_currentRoom);
 
-        joinCode.text = _currentRoom.State.JoinCode;
+        SetJoinCode();
 
         var users = _currentRoom.State.Users;
 
@@ -343,6 +346,12 @@ public class RoomController : BaseWindow
     {
         roomCanvasGroup.alpha = shouldBeVisible ? 1 : 0;
         roomCanvasGroup.blocksRaycasts = shouldBeVisible;
+    }
+
+    private void SetJoinCode()
+    {
+        joinCodeSection.alpha = _currentRoom.State.JoinCode != null ? 1 : 0;
+        joinCode.text = _currentRoom.State.JoinCode;
     }
 
     [UsedImplicitly]

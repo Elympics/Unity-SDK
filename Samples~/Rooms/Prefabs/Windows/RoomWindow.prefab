@@ -119,6 +119,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d8fe5046d42f5c64a90fd6b0b823e97b, type: 3}
+--- !u!225 &3411045248652962404 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 3752236045085973254, guid: d8fe5046d42f5c64a90fd6b0b823e97b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1964951907017060706}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &5692477132497080270 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6177624308450311852, guid: d8fe5046d42f5c64a90fd6b0b823e97b,
@@ -725,6 +731,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomCanvasGroup: {fileID: 7408841630665233914}
   roomViewElements: {fileID: 3723632215672901876}
+  joinCodeSection: {fileID: 3411045248652962404}
   joinCode: {fileID: 5692477132497080270}
   readyButton: {fileID: 7108439044055123801}
   leaveButton: {fileID: 6672419020571465224}

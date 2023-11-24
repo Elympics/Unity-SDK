@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1304435618042801418}
   - component: {fileID: 7151200034895466621}
   - component: {fileID: 2771513226280550290}
+  - component: {fileID: 3752236045085973254}
   m_Layer: 5
   m_Name: JoinCodeSection
   m_TagString: Untagged
@@ -105,6 +106,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textField: {fileID: 6177624308450311852}
+--- !u!225 &3752236045085973254
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1493484638918875448}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &6572337548661718929
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -83,6 +84,8 @@ public class RoomChoiceController : BaseWindow
         }
         catch (Exception e)
         {
+            await UniTask.SwitchToMainThread();
+
             var errorMessage = $"Joining failed: {e.Message}";
             Debug.LogError(errorMessage);
             errorPopup.SetMessage(errorMessage);

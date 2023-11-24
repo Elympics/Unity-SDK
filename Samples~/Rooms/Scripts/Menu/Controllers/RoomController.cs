@@ -38,6 +38,8 @@ public class RoomController : BaseWindow
     #region Events integration
     private void Awake()
     {
+        ElympicsLobbyClient.Instance.ShouldLoadGameplaySceneAfterMatchmaking = true;
+
         if (ElympicsLobbyClient.Instance.IsAuthenticated)
             SubscribeToRoomEvents();
         else

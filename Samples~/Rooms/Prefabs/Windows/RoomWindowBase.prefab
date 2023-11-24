@@ -287,6 +287,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2979922480470139565, guid: d03d949b61820c2438db327da0b8c846,
         type: 3}
+      propertyPath: m_Colors.m_FadeDuration
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2979922480470139565, guid: d03d949b61820c2438db327da0b8c846,
+        type: 3}
       propertyPath: m_Colors.m_DisabledColor.a
       value: 0.2509804
       objectReference: {fileID: 0}
@@ -1610,6 +1615,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_GlobalPointSize
       value: 36
+      objectReference: {fileID: 0}
+    - target: {fileID: 2979922480470139565, guid: d03d949b61820c2438db327da0b8c846,
+        type: 3}
+      propertyPath: m_Colors.m_FadeDuration
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2979922480470139565, guid: d03d949b61820c2438db327da0b8c846,
         type: 3}

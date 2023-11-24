@@ -433,6 +433,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1662540664021179433, guid: f96262bc694c229408688203398b88ed,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7529846740173844773, guid: f96262bc694c229408688203398b88ed,
         type: 3}
       propertyPath: m_Name
@@ -495,6 +500,24 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f96262bc694c229408688203398b88ed, type: 3}
+--- !u!1 &1355227894 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2826778636150675420, guid: f96262bc694c229408688203398b88ed,
+    type: 3}
+  m_PrefabInstance: {fileID: 1355227893}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1355227895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355227894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd9912894122ef5458fcead2ca77db25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1361035553
 GameObject:
   m_ObjectHideFlags: 0
@@ -584,6 +607,30 @@ MonoBehaviour:
       - m_Target: {fileID: 1361035560}
         m_TargetAssemblyTypeName: TestGameManager, Assembly-CSharp
         m_MethodName: SetEndGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1361035555}
+        m_TargetAssemblyTypeName: UnityEngine.UI.Selectable, UnityEngine.UI
+        m_MethodName: set_interactable
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1361035560}
+        m_TargetAssemblyTypeName: TestGameManager, Assembly-CSharp
+        m_MethodName: GoBackToMenuAfterShortDelay
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

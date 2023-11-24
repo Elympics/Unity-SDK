@@ -198,7 +198,7 @@ public class RoomController : BaseWindow
     {
         var allSeatsFull = userCount == RoomsUtility.RoomCapacity(_currentRoom);
 
-        readyButton.gameObject.SetActive(allSeatsFull);
+        readyButton.gameObject.SetActive(allSeatsFull && !_currentRoom.State.Users.Single(x => x.UserId == MyUserId).IsReady);
         statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
     }
 
@@ -258,9 +258,7 @@ public class RoomController : BaseWindow
     {
         var currentState = _currentRoom.State.MatchmakingData.MatchmakingState;
 
-        Debug.Log(currentState);
-
-        if (currentState == MatchmakingState.RequestingMatchmaking)
+        if (currentState == MatchmakingState.Matchmaking)
             statusText.text = RoomStatusMessages.MatchmakingStartedMessage;
         else if (currentState == MatchmakingState.Matched)
             statusText.text = RoomStatusMessages.MatchmakingFinishedMessage;
@@ -268,7 +266,7 @@ public class RoomController : BaseWindow
 
     private void OnMatchmakingEnded(MatchmakingEndedArgs obj)
     {
-        if (_currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Playing)
+        if (_currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Playing || _currentRoom.State.MatchmakingData?.MatchData?.FailReason == null)
             return;
 
         statusText.text = string.Format(RoomStatusMessages.MatchmakingErrorMessage, _currentRoom.State.MatchmakingData.MatchData?.FailReason);

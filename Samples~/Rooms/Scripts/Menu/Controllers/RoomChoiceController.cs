@@ -43,13 +43,9 @@ public class RoomChoiceController : BaseWindow
 
     private void OnRoomsListUpdated(RoomListUpdatedArgs obj)
     {
-        var roomList = RoomsUtility.RoomsManager.ListAvailableRooms();
-
         foreach (var updatedRoomId in obj.RoomIds)
         {
-            var updatedRoom = roomList.FirstOrDefault(x => x.RoomId == updatedRoomId);
-
-            if (updatedRoom == null)
+            if (!RoomsUtility.RoomsManager.TryGetAvailableRoom(updatedRoomId, out var updatedRoom))
                 RemoveRoomRecord(updatedRoomId);
             else if (_roomRecordsLookup.TryGetValue(updatedRoomId, out var recordController))
                 recordController.Reset();
@@ -68,9 +64,14 @@ public class RoomChoiceController : BaseWindow
 
     private void RemoveRoomRecord(Guid roomId)
     {
-        Destroy(_roomRecordsLookup[roomId].gameObject);
-        _ = _roomRecordsLookup.Remove(roomId);
-        ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
+        try
+        {
+            Destroy(_roomRecordsLookup[roomId].gameObject);
+            _ = _roomRecordsLookup.Remove(roomId);
+            ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
+        }
+        catch
+        { }
     }
 
     private void TryJoinRoomById(Guid roomId) => TryJoinRoom(roomId, null, errorPopup);

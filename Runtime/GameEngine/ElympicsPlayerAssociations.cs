@@ -17,5 +17,9 @@ namespace Elympics
         internal static Dictionary<ElympicsPlayer, string> GetPlayersToUserIds(IEnumerable<string> userIds) =>
             userIds.Select((x, i) => new KeyValuePair<ElympicsPlayer, string>(ElympicsPlayer.FromIndex(i), x))
                 .ToDictionary(x => x.Key, x => x.Value);
+
+        internal static Dictionary<ElympicsPlayer, Guid> GetPlayersToUserIds(IEnumerable<Guid> userIds) =>
+            userIds.Select((x, i) => new KeyValuePair<ElympicsPlayer, Guid>(ElympicsPlayer.FromIndex(i), x))
+                .ToDictionary(x => x.Key, x => x.Value);
     }
 }

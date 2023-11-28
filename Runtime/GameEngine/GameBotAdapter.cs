@@ -46,7 +46,7 @@ namespace Elympics
                 IsBot = true,
                 BotDifficulty = botConfiguration.Difficulty,
                 MatchmakerData = botConfiguration.MatchmakerData,
-                GameEngineData = botConfiguration.GameEngineData
+                GameEngineData = botConfiguration.GameEngineData,
             });
             Initialized = true;
         }

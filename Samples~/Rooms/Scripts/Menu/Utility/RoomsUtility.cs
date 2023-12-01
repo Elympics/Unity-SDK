@@ -2,7 +2,7 @@ using Elympics;
 
 public static class RoomsUtility
 {
-    public const string SampleDataKey = ":pub:SampleData";
+    public const string SampleDataKey = ":pub:scs:bet";
 
     public static IRoomsManager RoomsManager => ElympicsLobbyClient.Instance.RoomsManager;
 

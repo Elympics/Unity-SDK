@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ElympicsRoomSampleConfig
   m_EditorClassIdentifier: 
   gameName: RoomSample
-  gameId: 175456be-aa02-4a10-9889-6c739f5c7700
-  gameVersion: 0.4
+  gameId: ac568cee-2b00-40d9-9c3f-13bc5d6d517b
+  gameVersion: 0.5.1
   players: 2
   gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,

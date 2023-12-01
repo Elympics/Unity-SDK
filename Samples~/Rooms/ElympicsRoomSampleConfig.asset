@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsRoomSampleConfig
   m_EditorClassIdentifier: 
-  gameName: RoomSample
-  gameId: 175456be-aa02-4a10-9889-6c739f5c7700
-  gameVersion: 0.4
+  gameName: RoomSample_Goerli
+  gameId: 1fca34ed-f5de-4513-9ec3-76b8b30d6b13
+  gameVersion: 1d
   players: 2
   gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,

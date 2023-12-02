@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace Elympics
@@ -26,6 +27,16 @@ namespace Elympics
             ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
                 + $"(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
             ElympicsLogger.Log($"Waiting for {humansPlayers} human players to connect.");
+            var sb = new StringBuilder();
+            sb.AppendLine($"MatchId: {initialMatchPlayerDatas.MatchId}");
+            sb.AppendLine($"QueueName: {initialMatchPlayerDatas.QueueName}");
+            sb.AppendLine($"RegionName: :{initialMatchPlayerDatas.RegionName}");
+            sb.AppendLine($"CustomMatchmakingData: {initialMatchPlayerDatas.CustomMatchmakingData?.Count.ToString() ?? "null"}");
+            sb.AppendLine($"CustomRoomData: {(initialMatchPlayerDatas.CustomRoomData != null ? string.Join(", ", initialMatchPlayerDatas.CustomRoomData.Select(x => x.Key)) : "null")}");
+            sb.AppendLine($"ExternalGameData: {initialMatchPlayerDatas.ExternalGameData?.Length.ToString() ?? "null"}");
+            foreach (var playerData in initialMatchPlayerDatas)
+                sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
+            ElympicsLogger.Log(sb.ToString());
 
             _ = StartCoroutine(WaitForGameStartOrEnd());
         }

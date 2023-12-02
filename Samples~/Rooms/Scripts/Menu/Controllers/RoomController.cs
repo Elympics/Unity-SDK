@@ -104,7 +104,7 @@ public class RoomController : BaseWindow
 
         SceneManager.sceneLoaded += RejoinRoomIfAvailable;
 
-        StartCoroutine(TrackListAfterWait(3));
+        StartCoroutine(TrackListAfterWait(7));
     }
 
     // TODO: remove this temporary solution after adding to the SDK event for websocket connection

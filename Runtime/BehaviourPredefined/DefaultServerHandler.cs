@@ -25,17 +25,18 @@ namespace Elympics
             _playersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
-                + $"(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
+                               + $"(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
             ElympicsLogger.Log($"Waiting for {humansPlayers} human players to connect.");
-            var sb = new StringBuilder();
-            sb.AppendLine($"MatchId: {initialMatchPlayerDatas.MatchId}");
-            sb.AppendLine($"QueueName: {initialMatchPlayerDatas.QueueName}");
-            sb.AppendLine($"RegionName: :{initialMatchPlayerDatas.RegionName}");
-            sb.AppendLine($"CustomMatchmakingData: {initialMatchPlayerDatas.CustomMatchmakingData?.Count.ToString() ?? "null"}");
-            sb.AppendLine($"CustomRoomData: {(initialMatchPlayerDatas.CustomRoomData != null ? string.Join(", ", initialMatchPlayerDatas.CustomRoomData.Select(x => x.Key)) : "null")}");
-            sb.AppendLine($"ExternalGameData: {initialMatchPlayerDatas.ExternalGameData?.Length.ToString() ?? "null"}");
+            var sb = new StringBuilder()
+                .AppendLine($"MatchId: {initialMatchPlayerDatas.MatchId}")
+                .AppendLine($"QueueName: {initialMatchPlayerDatas.QueueName}")
+                .AppendLine($"RegionName: :{initialMatchPlayerDatas.RegionName}")
+                .AppendLine($"CustomMatchmakingData: {initialMatchPlayerDatas.CustomMatchmakingData?.Count.ToString() ?? "null"}")
+                .AppendLine($"CustomRoomData: {(initialMatchPlayerDatas.CustomRoomData != null ? string.Join(", ", initialMatchPlayerDatas.CustomRoomData.Select(x => x.Key)) : "null")}")
+                .AppendLine($"ExternalGameData: {initialMatchPlayerDatas.ExternalGameData?.Length.ToString() ?? "null"}");
+
             foreach (var playerData in initialMatchPlayerDatas)
-                sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
+                _ = sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
             ElympicsLogger.Log(sb.ToString());
 
             _ = StartCoroutine(WaitForGameStartOrEnd());
@@ -55,8 +56,8 @@ namespace Elympics
             }
 
             ElympicsLogger.LogWarning("Forcing game server to quit because some players did not connect on time.\n"
-                + "Connected players: "
-                + string.Join(", ", _playersConnected));
+                                      + "Connected players: "
+                                      + string.Join(", ", _playersConnected));
             Elympics.EndGame();
         }
 
@@ -89,6 +90,7 @@ namespace Elympics
         // https://forum.unity.com/threads/why-do-some-components-have-enable-disable-checkboxes-in-the-inspector-while-others-dont.390770/#post-2547484
         // ReSharper disable once Unity.RedundantEventFunction
         private void Start()
-        { }
+        {
+        }
     }
 }

@@ -1,4 +1,4 @@
-using GameEngineCore.V1._3;
+using GameEngineCore.V1._4;
 using UnityEngine;
 
 namespace Elympics
@@ -12,10 +12,8 @@ namespace Elympics
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
-            var initialMatchData = new InitialMatchUserDatas(DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig));
             _localGameEngineAdapter = gameEngineAdapter;
-            _localGameEngineAdapter.Init(null, null);
-            _localGameEngineAdapter.Init2(initialMatchData);
+            _localGameEngineAdapter.Initialize(new InitialMatchData { UserData = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig) });
 
             Application.targetFrameRate = -1;
         }

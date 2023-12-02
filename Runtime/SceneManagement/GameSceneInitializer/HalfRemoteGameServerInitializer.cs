@@ -1,6 +1,6 @@
 using System.Net;
 using System.Threading;
-using GameEngineCore.V1._3;
+using GameEngineCore.V1._4;
 using UnityConnectors.HalfRemote;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
 
@@ -11,6 +11,7 @@ namespace Elympics
         private SimpleHttpSignalingServer _signalingServer;
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
+
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
@@ -34,9 +35,7 @@ namespace Elympics
             _halfRemoteGameEngineProtoConnector.ListeningError += x =>
                 ElympicsLogger.Log($"Listening error for {x.Source}: {x.Error}");
 
-            var initialMatchData = new InitialMatchUserDatas(DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig));
-            gameEngineAdapter.Init(null, null);
-            gameEngineAdapter.Init2(initialMatchData);
+            gameEngineAdapter.Initialize(new InitialMatchData { UserData = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig) });
 
             _signalingServer = new SimpleHttpSignalingServer(_halfRemoteGameEngineProtoConnector, new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
             _signalingServerCts = new CancellationTokenSource();

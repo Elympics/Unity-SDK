@@ -1330,7 +1330,7 @@ PrefabInstance:
     - target: {fileID: 4038678426090251085, guid: 3cdf86a27de66234b9a3326606f73313,
         type: 3}
       propertyPath: authenticateOnAwakeWith
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3cdf86a27de66234b9a3326606f73313, type: 3}

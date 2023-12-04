@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameName: RoomSample_Goerli
   gameId: 1fca34ed-f5de-4513-9ec3-76b8b30d6b13
-  gameVersion: 1a
+  gameVersion: 1d
   players: 2
   gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,

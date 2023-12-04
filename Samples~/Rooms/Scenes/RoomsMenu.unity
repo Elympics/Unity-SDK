@@ -1478,7 +1478,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 6cbb8289bcfbdba43817188b3b4f15e0, type: 2}
-  initializeOnAwake: 1
+  initializeOnAwake: 0
   _transport: {fileID: 0}
   InfuraProjectId: 
   RpcUrl: []

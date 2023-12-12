@@ -1,18 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using UnityEngine.Networking;
 
 namespace Elympics
 {
     public static class ElympicsCloudPing
     {
         private const int IterationNumber = 3;
-        private const int TimeOut = 2;
-        private const string PingRoute = "api/ping";
         private static readonly Dictionary<string, LatencyData> RegionLatencyData = new();
+        internal static IPingResultFactory PingResultFactory = new GoogleCloudPingResultFactory();
 
         public static async UniTask<(string Region, float LatencyMs)> ChooseClosestRegion(IList<string> regions)
         {
@@ -49,7 +46,7 @@ namespace Elympics
             foreach (var region in distinctRegions)
                 for (var i = 0; i < IterationNumber; i++)
                 {
-                    var result = await GetPingResult(region);
+                    var result = await PingResultFactory.GetPingResult(region);
                     results.Add(result);
                 }
 
@@ -69,44 +66,6 @@ namespace Elympics
                 throw new ElympicsException("No valid results received. Possible network error.");
 
             return RegionLatencyData.ToDictionary(entry => entry.Key, entry => TimeSpan.FromMilliseconds(entry.Value.LatencyMedian));
-        }
-
-        private struct PingResults
-        {
-            public readonly string RegionName;
-            public readonly double LatencyMs;
-            public readonly bool IsValid;
-
-            public PingResults(string regionName, double latencyMs, bool isValid)
-            {
-                RegionName = regionName;
-                LatencyMs = latencyMs;
-                IsValid = isValid;
-            }
-        }
-
-        private static async UniTask<PingResults> GetPingResult(string region)
-        {
-            var url = ElympicsRegionToGCRegionMapper.ElympicsRegionToGCRegionPingUrl[region];
-            var uriBuilder = new UriBuilder(url) { Path = PingRoute };
-            var stopwatch = new Stopwatch();
-            var webRequest = UnityWebRequest.Get(uriBuilder.Uri);
-            webRequest.timeout = TimeOut;
-            var isValid = true;
-            stopwatch.Start();
-            try
-            {
-                _ = await webRequest.SendWebRequest();
-            }
-            catch (UnityWebRequestException)
-            {
-                isValid = false;
-            }
-            finally
-            {
-                stopwatch.Stop();
-            }
-            return new PingResults(region, stopwatch.Elapsed.TotalMilliseconds, isValid);
         }
 
         private class LatencyData

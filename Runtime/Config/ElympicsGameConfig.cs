@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -46,10 +47,9 @@ namespace Elympics
         [SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.HalfRemote;
 
         [SerializeField] private HalfRemoteModeEnum halfRemoteMode = HalfRemoteModeEnum.Server;
-        [SerializeField] private bool useWebInHalfRemote;
         [SerializeField] private string ipForHalfRemoteMode = "127.0.0.1";
-        [SerializeField] private int tcpPortForHalfRemoteMode = 9101;
-        [SerializeField] private int webPortForHalfRemoteMode = 9102;
+        [SerializeField] private ushort tcpPortForHalfRemoteMode = 9101;
+        [SerializeField] private ushort webPortForHalfRemoteMode = 9102;
         [SerializeField] private int playerIndexForHalfRemoteMode = 1;
         [SerializeField] private InitialMatchData testMatchData;
         [SerializeField] private List<InitialUserData> testPlayers;
@@ -70,7 +70,10 @@ namespace Elympics
 
         public bool BotsInServer => botsInServer;
 
-        public bool UseWeb => GetUseWeb(useWeb);
+        public bool UseWeb =>
+            ApplicationParameters.Parameters.ShouldUseWebRtc.Priority >= ApplicationParameters.Parameters.ShouldUseTcpUdp.Priority
+                ? ApplicationParameters.Parameters.ShouldUseWebRtc.GetValue(useWeb)
+                : !ApplicationParameters.Parameters.ShouldUseTcpUdp.GetValue(!useWeb);
         internal bool UseLegacyMatchmaking => legacyMatchmakingClient;
         public bool Prediction => prediction;
         public bool ReconnectEnabled => enableReconnect;
@@ -86,24 +89,25 @@ namespace Elympics
         public bool DetailedNetworkLog => detailedNetworkLog;
         internal GameplaySceneDebugModeEnum GameplaySceneDebugMode => mode;
         internal HalfRemoteModeEnum HalfRemoteMode => GetHalfRemoteMode(halfRemoteMode);
-        public bool UseWebInHalfRemote => GetUseWebInHalfRemote(useWebInHalfRemote);
-        public string IpForHalfRemoteMode => ipForHalfRemoteMode;
-        public int TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
-        public int WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
+        public string IpForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemoteIp.GetValue(IPAddress.Parse(ipForHalfRemoteMode)).ToString();
+        public ushort PortForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemotePort.GetValue(UseWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
+        public ushort TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
+        public ushort WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
         public int InputsToSendBufferSize => InputsToSendBufferSizeDefault;
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
-        public int PlayerIndexForHalfRemoteMode => GetHalfRemotePlayerIndex(playerIndexForHalfRemoteMode);
+        public int PlayerIndexForHalfRemoteMode
+        {
+            get => GetHalfRemotePlayerIndex(ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode));
+            internal set => playerIndexForHalfRemoteMode = value;
+        }
         public InitialMatchData TestMatchData => testMatchData;
         public List<InitialUserData> TestPlayers => testPlayers;
 
         [field: NonSerialized] public HalfRemoteLagConfig HalfRemoteLagConfig { get; } = new HalfRemoteLagConfig();
         [field: NonSerialized] public ReconciliationFrequencyEnum ReconciliationFrequency { get; set; } = ReconciliationFrequencyEnum.OnlyIfNeeded;
 
-        internal void ProcessElympicsConfigDataChanged()
-        {
-            DataChanged?.Invoke();
-        }
+        internal void ProcessElympicsConfigDataChanged() => DataChanged?.Invoke();
 
         public static bool GetUseWeb(bool defaultUseWeb)
         {
@@ -126,15 +130,6 @@ namespace Elympics
 			return true;
 #else
             return false;
-#endif
-        }
-
-        public static bool GetUseWebInHalfRemote(bool defaultUseWebInHalfRemote)
-        {
-#if UNITY_WEBGL
-			return true;
-#else
-            return defaultUseWebInHalfRemote;
 #endif
         }
 

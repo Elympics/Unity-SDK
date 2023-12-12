@@ -58,7 +58,7 @@ namespace Elympics
             ElympicsLogger.LogWarning($"Starting {AuthType.ClientSecret} authentication...");
             try
             {
-                var clientSecret = Guid.NewGuid().ToString();
+                var clientSecret = ElympicsLobbyClient.GetOrCreateClientSecret();
                 _authClient.AuthenticateWithClientSecret(clientSecret, OnAuthenticated);
             }
             catch (Exception e)

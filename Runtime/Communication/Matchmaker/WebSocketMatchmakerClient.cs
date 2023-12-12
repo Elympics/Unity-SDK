@@ -52,7 +52,7 @@ namespace Elympics
             _ws.Connect();
         }
 
-        internal override void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default)
+        protected override void JoinMatchmakerInternal(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default)
         {
             if (_ws != null)
                 CancelConnection();

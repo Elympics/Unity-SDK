@@ -94,6 +94,9 @@ namespace Elympics
 
         private void Awake()
         {
+            if (!ApplicationParameters.InitializeParameters())
+                ExitUtility.ExitGame();
+
             if (Instance != null)
             {
                 ElympicsLogger.LogWarning($"An instance of {nameof(ElympicsLobbyClient)} already exists. "
@@ -104,7 +107,7 @@ namespace Elympics
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            SetClientSecret();
+            _clientSecret = GetOrCreateClientSecret();
             _config = ElympicsConfig.Load();
             _gameConfig = _config.GetCurrentGameConfig();
 
@@ -265,7 +268,7 @@ namespace Elympics
         {
             LogSettingUpGame("Half Remote Client");
 
-            Environment.SetEnvironmentVariable(ApplicationParameters.HalfRemote.PlayerIndexEnvironmentVariable, playerId.ToString());
+            _gameConfig.PlayerIndexForHalfRemoteMode = playerId;
             SetUpMatch(JoinedMatchMode.HalfRemoteClient);
             LoadGameplayScene();
         }
@@ -433,23 +436,25 @@ namespace Elympics
         private const string ClientSecretPlayerPrefsKeyBase = "Elympics/AuthToken";
         private static string ClientSecretPlayerPrefsKey => ElympicsClonesManager.IsClone() ? $"{ClientSecretPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}" : ClientSecretPlayerPrefsKeyBase;
 
-        private void SetClientSecret()
+        internal static string GetOrCreateClientSecret()
         {
+            var parameterValue = ApplicationParameters.Parameters.ClientSecret.GetValue();
+            if (!string.IsNullOrEmpty(parameterValue))
+                return parameterValue;
+
+            if (parameterValue == "")
+                return CreateNewClientSecret();
+
             var key = ClientSecretPlayerPrefsKey;
             if (!PlayerPrefs.HasKey(key))
             {
                 PlayerPrefs.SetString(key, CreateNewClientSecret());
                 PlayerPrefs.Save();
             }
-
-            _clientSecret = PlayerPrefs.GetString(key);
+            return PlayerPrefs.GetString(key);
         }
 
-        private static string CreateNewClientSecret()
-        {
-            return Guid.NewGuid().ToString();
-        }
-
+        private static string CreateNewClientSecret() => Guid.NewGuid().ToString();
 
         internal enum JoinedMatchMode
         {

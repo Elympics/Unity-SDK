@@ -50,7 +50,6 @@ namespace Elympics.Editor
         private SerializedProperty _detailedNetworkLog;
         private SerializedProperty _mode;
         private SerializedProperty _halfRemoteMode;
-        private SerializedProperty _useWebInHalfRemote;
         private SerializedProperty _ipForHalfRemoteMode;
         private SerializedProperty _tcpPortForHalfRemoteMode;
         private SerializedProperty _webPortForHalfRemoteMode;
@@ -105,7 +104,6 @@ namespace Elympics.Editor
             _detailedNetworkLog = serializedObject.FindProperty("detailedNetworkLog");
             _mode = serializedObject.FindProperty("mode");
             _halfRemoteMode = serializedObject.FindProperty("halfRemoteMode");
-            _useWebInHalfRemote = serializedObject.FindProperty("useWebInHalfRemote");
             _ipForHalfRemoteMode = serializedObject.FindProperty("ipForHalfRemoteMode");
             _tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
             _webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
@@ -327,10 +325,8 @@ namespace Elympics.Editor
                     if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
                         EditorGUI.EndDisabledGroup();
 
-                    DrawUseWebInHalfRemoteClient();
-
                     _ = EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
-                    if (ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue))
+                    if (ElympicsGameConfig.GetUseWeb(_useWeb.boolValue))
                         _ = EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Web port of server"));
                     else
                         _ = EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("TCP port of server"));
@@ -380,18 +376,6 @@ namespace Elympics.Editor
             }
 
             EditorGUILayout.Separator();
-        }
-
-        private void DrawUseWebInHalfRemoteClient()
-        {
-            if (ElympicsGameConfig.IsOverridenByWebGL())
-            {
-                EditorGUI.BeginDisabledGroup(true);
-                _ = EditorGUILayout.Toggle("Use HTTPS/WebRTC (forced by WebGL)", ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue));
-                EditorGUI.EndDisabledGroup();
-            }
-            else
-                _ = EditorGUILayout.PropertyField(_useWebInHalfRemote, new GUIContent("Use HTTPS/WebRTC"));
         }
 
         private void DrawInitialMatchData()

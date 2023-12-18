@@ -166,42 +166,42 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void PlayerToServerRpcScheduledOnServerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void PlayerToServerRpcScheduledOnServerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.ServerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
 
-            Assert.IsTrue(_rpcHolder.PlayerToServerMethodCalled);
+            Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         [Test]
-        public void PlayerToServerRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void PlayerToServerRpcScheduledOnLocalPlayerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
 
-            Assert.IsTrue(_rpcHolder.PlayerToServerMethodCalled);
+            Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         [Test]
-        public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.ServerToPlayersMethod();
 
-            Assert.IsTrue(_rpcHolder.ServerToPlayersMethodCalled);
+            Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         public record SendingQueueTestCase(ElympicsStatus Status, ElympicsRpcDirection Direction);
@@ -487,7 +487,7 @@ namespace Elympics.Tests
             };
 
         [Test]
-        public void RpcOfOppositeDirectionShouldBeInvokedInstantlyInsideCurrentlyInvokedRpcInLocalMode([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
+        public void RpcOfOppositeDirectionShouldBeQueuedToBeInvokedInsideCurrentlyInvokedRpcInLocalMode([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
@@ -505,9 +505,9 @@ namespace Elympics.Tests
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(testCase.WasPingCalled(_rpcHolder));
-            Assert.IsTrue(testCase.WasPongCalled(_rpcHolder));
+            Assert.IsFalse(testCase.WasPongCalled(_rpcHolder));
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
     }
 }

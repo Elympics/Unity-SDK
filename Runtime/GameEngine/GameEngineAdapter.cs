@@ -37,7 +37,7 @@ namespace Elympics
         /// </remarks>
         internal event Action<(InitialMatchPlayerDatasGuid Data, Action OnInitialized)>? ReceivedInitialMatchPlayerDatas;
 
-        public event Action<ElympicsRpcMessageList>? RpcMessageListReceived;
+        public event Action<ElympicsPlayer, ElympicsRpcMessageList>? RpcMessageListReceived;
 
         private InitialMatchData _initialMatchData = null!;
         private Dictionary<Guid, ElympicsPlayer> _userIdsToPlayers = null!;
@@ -95,7 +95,7 @@ namespace Elympics
             if (deserializedData is ElympicsInputList inputList)
                 ProcessReceivedInputList(inputList, player);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
-                RpcMessageListReceived?.Invoke(rpcMessageList);
+                RpcMessageListReceived?.Invoke(player, rpcMessageList);
         }
 
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)

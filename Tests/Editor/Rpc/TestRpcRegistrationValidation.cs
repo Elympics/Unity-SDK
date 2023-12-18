@@ -103,8 +103,26 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
+        public void MethodsWhichHaveMoreThanOneMetadataParameterShouldNotPassValidation()
+        {
+            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+                RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.MoreThanOneMetadata)));
+            Assert.True(exception.Message.Contains("single"));
+        }
+
+        [Test]
+        public void MethodsWhichHaveNonOptionalMetadataParameterShouldNotPassValidation()
+        {
+            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+                RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.RequiredMetadata)));
+            Assert.True(exception.Message.Contains("optional"));
+        }
+
+        [Test]
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethod))]
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithArguments))]
+        [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithMetadata))]
+        [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithArgumentsAndMetadata))]
         [TestCase(ElympicsMonoBehaviourSubclass.PrivateValidMethodName)]
         public void MethodsWithValidDefinitionShouldPassValidation(string methodName)
         {
@@ -125,9 +143,13 @@ namespace Elympics.Editor.Tests
             public void OutArgumentMethod(out string str) => str = "";
             public void OverloadedMethod() { }
             public void OverloadedMethod(int a) { }
+            public void MoreThanOneMetadata(RpcMetadata metadata1 = default, RpcMetadata metadata2 = default) { }
+            public void RequiredMetadata(RpcMetadata metadata) { }
 
             public void ValidMethod() { }
             public void ValidMethodWithArguments(int a, float b, string c) { }
+            public void ValidMethodWithMetadata(RpcMetadata metadata = default) { }
+            public void ValidMethodWithArgumentsAndMetadata(int a, float b, string c, RpcMetadata metadata = default) { }
             private void PrivateValidMethod() { }
             public const string PrivateValidMethodName = nameof(PrivateValidMethod);
 

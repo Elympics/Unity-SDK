@@ -22,7 +22,7 @@ namespace Elympics
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _gameBotAdapter = gameBotAdapter;
             _gameBotAdapter.SnapshotReceived += OnSnapshotReceived;
-            _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesToInvoke;
+            _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesFromServerToInvoke;
             _gameBotAdapter.InitializedWithMatchPlayerData += data =>
             {
                 OnStandaloneBotInit(data);

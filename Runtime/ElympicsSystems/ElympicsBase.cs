@@ -133,7 +133,7 @@ namespace Elympics
             foreach (var rpcMessageList in _rpcMessagesToInvokeInCurrentTick)
                 foreach (var rpcMessage in rpcMessageList.Messages)
                     if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
-                        behaviour.OnRpcInvoked(rpcMessage.MethodId, rpcMessage.Arguments);
+                        behaviour.OnRpcInvoked(rpcMessageList.Sender, rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
         internal void SendQueuedRpcMessages()
@@ -175,11 +175,14 @@ namespace Elympics
         protected virtual bool ShouldDoElympicsUpdate() => true;
         internal abstract void ElympicsFixedUpdate();
 
-        public void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
+        internal void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
         internal abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
 
-        protected void QueueRpcMessagesToInvoke(ElympicsRpcMessageList rpcMessageList)
+        internal void QueueRpcMessagesFromServerToInvoke(ElympicsRpcMessageList rpcMessageList) =>
+            QueueRpcMessagesToInvoke(ElympicsPlayer.World, rpcMessageList);
+        protected void QueueRpcMessagesToInvoke(ElympicsPlayer sender, ElympicsRpcMessageList rpcMessageList)
         {
+            rpcMessageList.Sender = sender;
             lock (RpcMessagesToInvokeLock)
                 RpcMessagesToInvoke.Add(rpcMessageList);
         }
@@ -245,7 +248,8 @@ namespace Elympics
 
         public virtual bool IsReplay => false;
         public bool IsClientOrBot => IsClient || IsBot;
-        internal bool IsLocalMode => IsServer && IsClient; // assuming there is only one client (and Unlimited Bots Work)
+        internal bool IsLocalMode => IsServer && IsClient;  // assuming there is only one client (and Unlimited Bots Work)
+        internal bool IsBotOnServer => IsServer && IsBot;
 
         public float TickDuration => Config.TickDuration;
         public int TicksPerSecond => Config.TicksPerSecond;

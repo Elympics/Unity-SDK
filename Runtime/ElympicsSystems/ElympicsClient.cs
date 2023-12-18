@@ -108,7 +108,7 @@ namespace Elympics
         {
             _matchClient.SnapshotReceived += OnSnapshotReceived;
             _matchClient.Synchronized += OnMatchClientSynchronized;
-            _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
+            _matchClient.RpcMessageListReceived += QueueRpcMessagesFromServerToInvoke;
             _matchConnectClient.DisconnectedByServer += OnDisconnectedByServerHandler;
             _matchConnectClient.DisconnectedByClient += OnDisconnectedByClientHandler;
             _matchConnectClient.ConnectedWithSynchronizationData += OnConnectedWithSynchronizationData;
@@ -160,7 +160,7 @@ namespace Elympics
             {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
                 _matchClient.Synchronized -= OnMatchClientSynchronized;
-                _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
+                _matchClient.RpcMessageListReceived -= QueueRpcMessagesFromServerToInvoke;
                 _matchClient.Dispose();
             }
 

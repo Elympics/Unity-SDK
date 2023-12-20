@@ -28,7 +28,7 @@ public class RoomController : BaseWindow
     private readonly Dictionary<Guid, PlayerSeat> _seatLookup = new();
     private IRoom _currentRoom;
 
-    private static bool _alreadyCheckedForMatchRejoin = false;
+    private static bool alreadyCheckedForMatchRejoin = false;
 
     private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
     private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.UserId);
@@ -104,7 +104,7 @@ public class RoomController : BaseWindow
 
         SceneManager.sceneLoaded += RejoinRoomIfAvailable;
 
-        StartCoroutine(TrackListAfterWait(7));
+        _ = StartCoroutine(TrackListAfterWait(7));
     }
 
     // TODO: remove this temporary solution after adding to the SDK event for websocket connection
@@ -147,9 +147,9 @@ public class RoomController : BaseWindow
         if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(obj.RoomId, out _currentRoom))
             Debug.LogError("Joined room not found!");
 
-        if (!_alreadyCheckedForMatchRejoin)
+        if (!alreadyCheckedForMatchRejoin)
         {
-            _alreadyCheckedForMatchRejoin = true;
+            alreadyCheckedForMatchRejoin = true;
 
             if (TryRejoinMatchIfAvailable())
                 return;

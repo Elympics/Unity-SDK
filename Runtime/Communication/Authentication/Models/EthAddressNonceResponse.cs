@@ -5,9 +5,8 @@ using System;
 namespace Elympics.Models.Authentication
 {
     [Serializable]
-    public struct EthAddressAuthRequest
+    public class EthAddressNonceResponse
     {
-        public string typedData;
-        public string signature;
+        public string nonce;
     }
 }

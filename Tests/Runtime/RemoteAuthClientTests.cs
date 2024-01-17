@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Elympics.Models.Authentication;
 using Elympics.Tests.MockWebClient;
 using NUnit.Framework;
@@ -25,7 +23,7 @@ namespace Elympics.Tests
         [UnityTest, Timeout(TimeoutMsPerTest)]
         public IEnumerator NullEthAddressShouldResultInError()
         {
-            var ethSignerMock = new EthSignerMock { Address = null };
+            var ethSignerMock = new EthSignerMock { Address = null! };
             Result<AuthData, string> result = null;
 
             _sut.AuthenticateWithEthAddress(ethSignerMock, arg => result = arg);
@@ -73,7 +71,7 @@ namespace Elympics.Tests
             Assert.IsTrue(result.Error.Contains(nameof(ValidEthAddressShouldResultInNonceRequest)));
 
             Assert.IsTrue(request.HasValue);
-            var requestedAddress = request.Value.address;
+            var requestedAddress = request!.Value.address;
             Assert.AreEqual(42, requestedAddress.Length);
             Assert.IsTrue(requestedAddress.EndsWith(validAddress, true, CultureInfo.InvariantCulture));
             Assert.IsTrue(requestedAddress.StartsWith("0x", true, CultureInfo.InvariantCulture));
@@ -82,10 +80,10 @@ namespace Elympics.Tests
         [UnityTest, Timeout(TimeoutMsPerTest)]
         public IEnumerator NullEthSignatureShouldResultInError()
         {
-            var ethSignerMock = new EthSignerMock { Address = ValidAddresses[0], Message = "", Signature = null };
+            var ethSignerMock = new EthSignerMock { Address = ValidAddresses[0], TypedData = "", Signature = null };
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, reqParams => Guid.Empty.ToString());
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
             Result<AuthData, string> result = null;
 
             _sut.AuthenticateWithEthAddress(ethSignerMock, arg => result = arg);
@@ -95,7 +93,7 @@ namespace Elympics.Tests
             Assert.IsTrue(result.Error.Contains("null"));
         }
 
-        public static string[] InvalidSignatures = { "", "xyz", "-1", new string(Enumerable.Repeat('a', 131).ToArray()), "0x" + new string(Enumerable.Repeat('b', 131).ToArray()) };
+        public static string[] InvalidSignatures = { "", "xyz", "-1", new(Enumerable.Repeat('a', 131).ToArray()), "0x" + new string(Enumerable.Repeat('b', 131).ToArray()) };
 
         [UnityTest, Timeout(TimeoutMsPerTest)]
         public IEnumerator InvalidEthSignatureFormatShouldResultInError([ValueSource(nameof(InvalidSignatures))] string invalidSignature)
@@ -103,12 +101,12 @@ namespace Elympics.Tests
             var ethSignerMock = new EthSignerMock
             {
                 Address = ValidAddresses[0],
-                Message = "",
+                TypedData = "",
                 Signature = invalidSignature,
             };
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, reqParams => Guid.Empty.ToString());
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
             Result<AuthData, string> result = null;
 
             _sut.AuthenticateWithEthAddress(ethSignerMock, arg => result = arg);
@@ -118,7 +116,7 @@ namespace Elympics.Tests
             Assert.IsTrue(result.Error.Contains("format"));
         }
 
-        public static string[] ValidSignatures = { new string(Enumerable.Repeat('a', 130).ToArray()), "0x" + new string(Enumerable.Repeat('b', 130).ToArray()) };
+        public static string[] ValidSignatures = { new(Enumerable.Repeat('a', 130).ToArray()), "0x" + new string(Enumerable.Repeat('b', 130).ToArray()) };
 
         [UnityTest, Timeout(TimeoutMsPerTest)]
         public IEnumerator ValidEthSignatureFormatShouldResultInAuthRequest([ValueSource(nameof(ValidSignatures))] string validSignature)
@@ -126,13 +124,13 @@ namespace Elympics.Tests
             var ethSignerMock = new EthSignerMock
             {
                 Address = ValidAddresses[0],
-                Message = "",
+                TypedData = "",
                 Signature = validSignature,
             };
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
             EthAddressAuthRequest? request = null;
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, reqParams => Guid.Empty.ToString());
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
             webClientMock.AddHandler("/" + AuthRoutes.EthAddressAuth, reqParams =>
             {
                 request = reqParams.JsonBody as EthAddressAuthRequest?;
@@ -147,7 +145,7 @@ namespace Elympics.Tests
             Assert.IsTrue(result.Error.Contains(nameof(ValidEthSignatureFormatShouldResultInAuthRequest)));
 
             Assert.IsTrue(request.HasValue);
-            var requestSignature = request.Value.sig;
+            var requestSignature = request!.Value.signature;
             Assert.AreEqual(132, requestSignature.Length);
             Assert.IsTrue(requestSignature.EndsWith(ethSignerMock.Signature, true, CultureInfo.InvariantCulture));
             Assert.IsTrue(requestSignature.StartsWith("0x", true, CultureInfo.InvariantCulture));
@@ -159,13 +157,13 @@ namespace Elympics.Tests
             var ethSignerMock = new EthSignerMock
             {
                 Address = ValidAddresses[0],
-                Message = "Hello world!",
+                TypedData = "Hello world!",
                 Signature = ValidSignatures[0],
             };
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
             EthAddressAuthRequest? request = null;
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, reqParams => Guid.Empty.ToString());
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
             webClientMock.AddHandler("/" + AuthRoutes.EthAddressAuth, reqParams =>
             {
                 request = reqParams.JsonBody as EthAddressAuthRequest?;
@@ -180,8 +178,8 @@ namespace Elympics.Tests
             Assert.IsTrue(result.Error.Contains(nameof(AuthRequestShouldContainMessageFromEthSigner)));
 
             Assert.IsTrue(request.HasValue);
-            var requestMessage = request.Value.msg;
-            Assert.AreEqual(ethSignerMock.Message, ConvertHexStringToUtf8String(requestMessage));
+            var requestTypedData = request!.Value.typedData;
+            Assert.AreEqual(ethSignerMock.TypedData, requestTypedData);
         }
 
         [UnityTest, Timeout(TimeoutMsPerTest)]
@@ -190,14 +188,14 @@ namespace Elympics.Tests
             var ethSignerMock = new EthSignerMock
             {
                 Address = ValidAddresses[0],
-                Message = "",
+                TypedData = "",
                 Signature = ValidSignatures[0],
             };
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, reqParams => Guid.Empty.ToString());
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
             var expectedAuthData = new AuthData(Guid.Empty, "", AuthType.EthAddress);
-            webClientMock.AddHandler("/" + AuthRoutes.EthAddressAuth, reqParams => new AuthenticationDataResponse
+            webClientMock.AddHandler("/" + AuthRoutes.EthAddressAuth, _ => new AuthenticationDataResponse
             {
                 jwtToken = expectedAuthData.JwtToken,
                 userId = expectedAuthData.UserId.ToString(),
@@ -211,20 +209,6 @@ namespace Elympics.Tests
             Assert.AreEqual(expectedAuthData.JwtToken, result.Value.JwtToken);
             Assert.AreEqual(expectedAuthData.UserId, result.Value.UserId);
             Assert.AreEqual(expectedAuthData.AuthType, result.Value.AuthType);
-        }
-
-        private static string ConvertHexStringToUtf8String(string hexString)
-        {
-            hexString = hexString.ToLowerInvariant();
-            var hasPrefix = hexString.StartsWith("0x");
-            var bytes = new List<byte>();
-            for (var i = hasPrefix ? 1 : 0; i < hexString.Length / 2; i++)
-                bytes.Add((byte)((HexDigitToNumber(hexString[i * 2]) << 4) + HexDigitToNumber(hexString[i * 2 + 1])));
-            return Encoding.UTF8.GetString(bytes.ToArray());
-
-            static byte HexDigitToNumber(char c) => c >= 'a'
-                ? (byte)(c - 'a' + 10)
-                : (byte)(c - '0');
         }
     }
 }

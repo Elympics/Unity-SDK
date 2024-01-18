@@ -10,7 +10,8 @@
         "MessagePack",
         "Elympics.Tests",
         "Elympics.Weaver",
-        "Elympics.Editor.Weaving"
+        "Elympics.Editor.Weaving",
+        "SmartContractService.Test"
     ],
     "includePlatforms": [
         "Editor"

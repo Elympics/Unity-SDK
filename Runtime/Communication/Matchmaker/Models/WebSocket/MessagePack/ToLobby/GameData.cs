@@ -4,7 +4,7 @@ using MessagePack;
 namespace Elympics.Models.Matchmaking.WebSocket
 {
     [MessagePackObject]
-    public readonly struct GameData : IToLobby
+    public readonly struct GameData : IToMatchmaker
     {
         [Key(0)] public string SdkVersion { get; }
         [Key(1)] public Guid GameId { get; }

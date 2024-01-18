@@ -22,16 +22,7 @@ namespace Elympics
             _ = ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig, currentGameIndex, availableGames, elympicsWebEndpoint, elympicsGameServersEndpoint);
         }
 
-        private static ElympicsConfig LoadOrCreateConfig()
-        {
-            var config = ElympicsConfig.Load();
-            if (config == null)
-            {
-                config = CreateNewConfig();
-            }
-
-            return config;
-        }
+        private static ElympicsConfig LoadOrCreateConfig() => ElympicsConfig.Load() ?? CreateNewConfig();
 
         [MenuItem(ElympicsEditorMenuPaths.SETUP_MENU_PATH, priority = 2)]
         public static void SelectOrCreateConfig()
@@ -69,10 +60,7 @@ namespace Elympics
                 AssignNextNetworkId(behaviour);
         }
 
-        private static void AssignNextNetworkId(ElympicsBehaviour behaviour)
-        {
-            behaviour.UpdateSerializedNetworkId();
-        }
+        private static void AssignNextNetworkId(ElympicsBehaviour behaviour) => behaviour.UpdateSerializedNetworkId();
 
         private static void AssignNetworkIdsForNewBehaviours(List<ElympicsBehaviour> behaviours)
         {

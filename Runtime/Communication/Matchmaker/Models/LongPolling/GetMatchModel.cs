@@ -5,18 +5,6 @@ namespace Elympics.Models.Matchmaking.LongPolling
 {
     public static class GetMatchModel
     {
-        public static class ErrorCodes
-        {
-            public const string NotInDesiredState = "Not in desired state";
-        }
-
-        [Serializable]
-        public class Request : ApiRequest
-        {
-            public string MatchId;
-            public GetMatchDesiredState DesiredState;
-        }
-
         [Serializable]
         public class Response : ApiResponse
         {

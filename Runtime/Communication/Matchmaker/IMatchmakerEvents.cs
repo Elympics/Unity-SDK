@@ -19,16 +19,16 @@ namespace Elympics
 
         #region Deprecated matchmaking events
 
-        [Obsolete("Not used anymore. Rejoining matches has been temporarily disabled")]
+        [Obsolete("Use " + nameof(ElympicsLobbyClient) + "." + nameof(ElympicsLobbyClient.RejoinLastOnlineMatch) + " instead")]
         event Action<(string GameId, string GameVersion)> LookingForUnfinishedMatchStarted;
 
-        [Obsolete("Not used anymore. Rejoining matches has been temporarily disabled")]
+        [Obsolete("Use " + nameof(ElympicsLobbyClient) + "." + nameof(ElympicsLobbyClient.RejoinLastOnlineMatch) + " instead")]
         event Action<(string GameId, string GameVersion, string MatchId)> LookingForUnfinishedMatchFinished;
 
-        [Obsolete("Not used anymore. Rejoining matches has been temporarily disabled")]
+        [Obsolete("Use " + nameof(ElympicsLobbyClient) + "." + nameof(ElympicsLobbyClient.RejoinLastOnlineMatch) + " instead")]
         event Action<(string GameId, string GameVersion, string Error)> LookingForUnfinishedMatchError;
 
-        [Obsolete("Not used anymore. Rejoining matches has been temporarily disabled")]
+        [Obsolete("Use " + nameof(ElympicsLobbyClient) + "." + nameof(ElympicsLobbyClient.RejoinLastOnlineMatch) + " instead")]
         event Action<(string GameId, string GameVersion)> LookingForUnfinishedMatchCancelled;
 
 

@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using System.Web;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Models.Matchmaking.WebSocket;
@@ -15,7 +14,6 @@ namespace Elympics
     internal class WebSocketMatchmakerClient : MatchmakerClient
     {
         private const string CanceledByUserCloseReason = "Canceled by user";
-        private const string JwtProtocolAndQueryParameter = "jwt_token";
 
         private readonly string _findAndJoinMatchUrl;
 
@@ -27,9 +25,9 @@ namespace Elympics
         private string _gameVersion;
         private Guid _matchId;
 
-        private static readonly byte[] SerializedPong = MessagePackSerializer.Serialize<IToLobby>(new Pong());
+        private static readonly byte[] SerializedPong = MessagePackSerializer.Serialize<IToMatchmaker>(new Pong());
 
-        private Action<IFromLobby> _onMessage;
+        private Action<IFromMatchmaker> _onMessage;
 
         internal WebSocketMatchmakerClient(string baseUrl) : base(baseUrl)
         {
@@ -44,7 +42,8 @@ namespace Elympics
             EmitMatchmakingStarted(_gameId, _gameVersion);
             _ctRegistration = ct.Register(CancelConnection);
 
-            _ws = WebSocketFactory.CreateInstance(GetMatchmakingWsAddress(jwtToken), JwtProtocolAndQueryParameter);
+            var (url, protocol) = _findAndJoinMatchUrl.ToWebSocketAddress(jwtToken);
+            _ws = WebSocketFactory.CreateInstance(url, protocol);
             _ws.OnOpen += SendJoinRequest;
             _ws.OnMessage += HandleMessage;
             _ws.OnClose += HandleClose;
@@ -57,8 +56,8 @@ namespace Elympics
             if (_ws != null)
                 CancelConnection();
 
-            _serializedGameData = MessagePackSerializer.Serialize<IToLobby>(new GameData(ElympicsConfig.SdkVersion, joinMatchmakerData));
-            _serializedJoinRequest = MessagePackSerializer.Serialize<IToLobby>(new JoinMatchmaker(joinMatchmakerData));
+            _serializedGameData = MessagePackSerializer.Serialize<IToMatchmaker>(new GameData(ElympicsConfig.SdkVersion, joinMatchmakerData));
+            _serializedJoinRequest = MessagePackSerializer.Serialize<IToMatchmaker>(new JoinMatchmaker(joinMatchmakerData));
             _gameId = joinMatchmakerData.GameId;
             _gameVersion = joinMatchmakerData.GameVersion;
 
@@ -74,7 +73,7 @@ namespace Elympics
             _ws.Send(_serializedJoinRequest);
         }
 
-        private void ReceiveMatchId(IFromLobby message)
+        private void ReceiveMatchId(IFromMatchmaker message)
         {
             if (message is not MatchFound matchFound)
                 return;
@@ -84,7 +83,7 @@ namespace Elympics
             EmitMatchmakingMatchFound(_matchId, _gameId, _gameVersion);
         }
 
-        private void ReceiveMatchReady(IFromLobby message)
+        private void ReceiveMatchReady(IFromMatchmaker message)
         {
             if (message is not MatchData matchData)
                 return;
@@ -102,10 +101,10 @@ namespace Elympics
 
         private void HandleMessage(byte[] data)
         {
-            IFromLobby messageFromLobby;
+            IFromMatchmaker messageFromMatchmaker;
             try
             {
-                messageFromLobby = MessagePackSerializer.Deserialize<IFromLobby>(data);
+                messageFromMatchmaker = MessagePackSerializer.Deserialize<IFromMatchmaker>(data);
             }
             catch (Exception exception)
             {
@@ -113,7 +112,7 @@ namespace Elympics
                 return;
             }
 
-            switch (messageFromLobby)
+            switch (messageFromMatchmaker)
             {
                 case Ping:
                     _ws.Send(SerializedPong);
@@ -122,7 +121,7 @@ namespace Elympics
                     HandleError($"[{matchmakingError.StatusCode}] {matchmakingError.ErrorBlame}");
                     break;
                 default:
-                    _onMessage?.Invoke(messageFromLobby);
+                    _onMessage?.Invoke(messageFromMatchmaker);
                     break;
             }
         }
@@ -176,16 +175,6 @@ namespace Elympics
             _ws.OnClose -= HandleClose;
             _ws.OnError -= HandleError;
             _onMessage = null;
-        }
-
-        private string GetMatchmakingWsAddress(string jwtToken)
-        {
-            var uriBuilder = new UriBuilder(_findAndJoinMatchUrl);
-            uriBuilder.Scheme = uriBuilder.Scheme == "https" ? "wss" : "ws";
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            query.Add(JwtProtocolAndQueryParameter, jwtToken);
-            uriBuilder.Query = query.ToString();
-            return uriBuilder.Uri.ToString();
         }
     }
 }

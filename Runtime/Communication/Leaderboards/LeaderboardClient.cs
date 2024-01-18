@@ -36,9 +36,8 @@ namespace Elympics
             var config = ElympicsConfig.Load();
             _leaderboardsUrl = config.ElympicsLeaderboardsEndpoint.AppendPathSegments("leaderboard").GetAbsoluteOrRelativeString();
             _leaderboardsUserCenteredUrl = _leaderboardsUrl.AppendPathSegments("user-centred").GetAbsoluteOrRelativeString();
-            var gameConfig = config.GetCurrentGameConfig();
-            if (gameConfig == null)
-                throw new ElympicsException("Provide ElympicsGameConfig before proceeding");
+            var gameConfig = config.GetCurrentGameConfig()
+                             ?? throw new ElympicsException("Provide ElympicsGameConfig before proceeding");
 
             _queryValues = new Dictionary<string, string>
             {

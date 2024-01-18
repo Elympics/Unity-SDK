@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using Elympics.Models.Matchmaking.LongPolling;
-using Elympics.Models.Matchmaking.WebSocket;
+using Elympics.Rooms.Models;
+
+#nullable enable
 
 namespace Elympics.Models.Matchmaking
 {
-    public class MatchmakingFinishedData
+    public class MatchmakingFinishedData : IEquatable<MatchmakingFinishedData?>
     {
         public Guid MatchId { get; }
         public string UserSecret { get; }
@@ -17,7 +19,7 @@ namespace Elympics.Models.Matchmaking
         public string WebServerAddress { get; }
         public Guid[] MatchedPlayers { get; }
 
-        public MatchmakingFinishedData(Guid matchId, string userSecret, string queueName, string regionName,
+        internal MatchmakingFinishedData(Guid matchId, string userSecret, string queueName, string regionName,
             byte[] gameEngineData, float[] matchmakerData, string tcpUdpServerAddress, string webServerAddress,
             Guid[] matchedPlayers)
         {
@@ -32,7 +34,7 @@ namespace Elympics.Models.Matchmaking
             MatchedPlayers = matchedPlayers;
         }
 
-        public MatchmakingFinishedData(MatchData matchData)
+        internal MatchmakingFinishedData(WebSocket.MatchData matchData)
         {
             MatchId = matchData.MatchId;
             UserSecret = matchData.UserSecret;
@@ -45,9 +47,9 @@ namespace Elympics.Models.Matchmaking
             MatchedPlayers = matchData.MatchedPlayersId;
         }
 
-        public MatchmakingFinishedData(GetMatchModel.Response matchResponse)
+        internal MatchmakingFinishedData(GetMatchModel.Response matchResponse)
         {
-            var matchmakerData = matchResponse.UserData?.MatchmakerData;
+            var matchmakerData = matchResponse.UserData?.MatchmakerData ?? Array.Empty<float>();
             var gameEngineData = Convert.FromBase64String(matchResponse.UserData?.GameEngineData ?? "");
 
             MatchId = new Guid(matchResponse.MatchId);
@@ -60,5 +62,62 @@ namespace Elympics.Models.Matchmaking
             WebServerAddress = matchResponse.WebServerAddress;
             MatchedPlayers = matchResponse.MatchedPlayersId.Select(x => new Guid(x)).ToArray();
         }
+
+        public MatchmakingFinishedData(Guid matchId, MatchDetails matchData, string queueName, string regionName)
+        {
+            MatchId = matchId;
+            UserSecret = matchData.UserSecret;
+            QueueName = queueName;
+            RegionName = regionName;
+            GameEngineData = matchData.GameEngineData;
+            MatchmakerData = matchData.MatchmakerData;
+            TcpUdpServerAddress = matchData.TcpUdpServerAddress;
+            WebServerAddress = matchData.WebServerAddress;
+            MatchedPlayers = matchData.MatchedPlayersId.ToArray();
+        }
+
+        public bool Equals(MatchmakingFinishedData? other)
+        {
+            if (other == null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return MatchId.Equals(other.MatchId)
+                && UserSecret == other.UserSecret
+                && QueueName == other.QueueName
+                && RegionName == other.RegionName
+                && GameEngineData.SequenceEqual(other.GameEngineData)
+                && MatchmakerData.SequenceEqual(other.MatchmakerData)
+                && TcpUdpServerAddress == other.TcpUdpServerAddress
+                && WebServerAddress == other.WebServerAddress
+                && MatchedPlayers.SequenceEqual(other.MatchedPlayers);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            return obj.GetType() == GetType() && Equals((MatchmakingFinishedData)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = new HashCode();
+            hashCode.Add(MatchId);
+            hashCode.Add(UserSecret);
+            hashCode.Add(QueueName);
+            hashCode.Add(RegionName);
+            hashCode.Add(GameEngineData.Length);
+            hashCode.Add(MatchmakerData.Length);
+            hashCode.Add(TcpUdpServerAddress);
+            hashCode.Add(WebServerAddress);
+            hashCode.Add(MatchedPlayers.Length);
+            return hashCode.ToHashCode();
+        }
+
+        public static bool operator ==(MatchmakingFinishedData? left, MatchmakingFinishedData? right) => Equals(left, right);
+        public static bool operator !=(MatchmakingFinishedData? left, MatchmakingFinishedData? right) => !Equals(left, right);
     }
 }

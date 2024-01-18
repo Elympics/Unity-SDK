@@ -1,10 +1,11 @@
 using System;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using AuthRoutes = Elympics.Models.Authentication.Routes;
+
+#nullable enable
 
 namespace Elympics
 {
@@ -42,13 +43,14 @@ namespace Elympics
             ElympicsWebClient.SendPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, callback: OnResponse, ct: ct);
         }
 
-        public async void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
+        public void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
         {
-            var ethAddress = await ethSigner.ProvideAddressAsync(ct: ct);
+            var ethAddress = ethSigner.Address;
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (ethAddress == null)
             {
                 onResult(Result<AuthData, string>.Failure(
-                    $"Address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.ProvideAddressAsync)} cannot be null"));
+                    $"Address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)} cannot be null"));
                 return;
             }
 
@@ -56,7 +58,7 @@ namespace Elympics
             if (!addressMatch.Success)
             {
                 onResult(Result<AuthData, string>.Failure(
-                    $"Invalid format for address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.ProvideAddressAsync)}: "
+                    $"Invalid format for address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)}: "
                     + ethAddress));
                 return;
             }
@@ -66,9 +68,9 @@ namespace Elympics
                 ethAddress = "0x" + ethAddress;
 
             var nonceRequest = new EthAddressNonceRequest { address = ethAddress };
-            ElympicsWebClient.SendPutRequest<string>(_ethAddressNonceUrl, nonceRequest, callback: OnNonceResponse, ct: ct);
+            ElympicsWebClient.SendPutRequest<EthAddressNonceResponse>(_ethAddressNonceUrl, nonceRequest, callback: r => OnNonceResponse(r).Forget(), ct: ct);
 
-            async void OnNonceResponse(Result<string, Exception> result)
+            async UniTaskVoid OnNonceResponse(Result<EthAddressNonceResponse, Exception> result)
             {
                 if (result.IsFailure)
                 {
@@ -76,12 +78,12 @@ namespace Elympics
                     return;
                 }
 
-                string hexEncodedMessage;
-                string signature;
+                string? typedData;
+                string? signature;
                 try
                 {
-                    hexEncodedMessage = HexEncodeUtf8String(ethSigner.ProvideMessage(result.Value));
-                    signature = await ethSigner.SignAsync(hexEncodedMessage, ct);
+                    typedData = ethSigner.ProvideTypedData(result.Value.nonce);
+                    signature = await ethSigner.SignAsync(typedData, ct);
                 }
                 catch (Exception e)
                 {
@@ -111,9 +113,8 @@ namespace Elympics
 
                 var authRequest = new EthAddressAuthRequest
                 {
-                    address = ethAddress,
-                    msg = hexEncodedMessage,
-                    sig = signature,
+                    typedData = typedData,
+                    signature = signature,
                 };
                 ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, callback: OnAuthResponse, ct: ct);
             }
@@ -124,12 +125,6 @@ namespace Elympics
                     ? Result<AuthData, string>.Success(new AuthData(result.Value, AuthType.EthAddress))
                     : Result<AuthData, string>.Failure(result.Error.Message));
             }
-        }
-
-        private static string HexEncodeUtf8String(string str)
-        {
-            var bytes = Encoding.UTF8.GetBytes(str);
-            return string.Concat(bytes.Select(x => x.ToString("X2")));
         }
     }
 }

@@ -97,15 +97,15 @@ namespace Elympics
             return result;
         }
 
-        public void Space()
+        public void DrawHelpBox(string content, int height, MessageType type)
         {
-            IncreaseSpacingManually(spacingBetweenElements);
+            EditorGUI.HelpBox(new Rect(horizontalMargin, currentSpaceBetweenElements, position.width, height), content, type);
+            IncreaseSpacingManually(height + spacingBetweenElements);
         }
 
-        public void IncreaseSpacingManually(int value)
-        {
-            currentSpaceBetweenElements += value;
-        }
+        public void Space() => IncreaseSpacingManually(spacingBetweenElements);
+
+        public void IncreaseSpacingManually(int value) => currentSpaceBetweenElements += value;
 
         public void DrawHeader(string content, int height, Color headerLineColor)
         {

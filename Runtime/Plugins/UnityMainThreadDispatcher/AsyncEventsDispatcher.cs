@@ -22,6 +22,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Collections.Concurrent;
+
+#nullable enable
 
 namespace Elympics
 {
@@ -30,11 +33,11 @@ namespace Elympics
 	/// A thread-safe class which holds a queue with actions to execute on the next Update() method. It can be used to make calls to the main thread for
 	/// things such as UI Manipulation in Unity. It was developed for use in combination with the Firebase Unity plugin, which uses separate threads for event handling
 	/// </summary>
-	public class AsyncEventsDispatcher : MonoBehaviour
+	public class AsyncEventsDispatcher : MonoBehaviour, IAsyncEventsDispatcher
 	{
 		public static AsyncEventsDispatcher Instance { get; set; }
 
-		private readonly Queue<Action> _executionQueue = new Queue<Action>();
+		private readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 
 		private void Awake()
 		{
@@ -44,11 +47,8 @@ namespace Elympics
 
 		private void Update()
 		{
-			lock (_executionQueue)
-			{
-				while (_executionQueue.Count > 0)
-					_executionQueue.Dequeue().Invoke();
-			}
+			while (_executionQueue.TryDequeue(out var action))
+                action.Invoke();
 		}
 
 		/// <summary>
@@ -57,10 +57,7 @@ namespace Elympics
 		/// <param name="action">IEnumerator function that will be executed from the main thread.</param>
 		public void Enqueue(IEnumerator action)
 		{
-			lock (_executionQueue)
-			{
-				_executionQueue.Enqueue(() => StartCoroutine(action));
-			}
+			_executionQueue.Enqueue(() => StartCoroutine(action));
 		}
 
 		/// <summary>

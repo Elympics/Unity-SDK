@@ -26,7 +26,6 @@ namespace Elympics
         [SerializeField] private bool botsInServer = true;
 
         [SerializeField] private bool useWeb;
-        [SerializeField] private bool legacyMatchmakingClient;
         [SerializeField] private bool enableReconnect;
         [SerializeField] private ClientConnectionSettings connectionConfig = new();
 
@@ -74,7 +73,6 @@ namespace Elympics
             ApplicationParameters.Parameters.ShouldUseWebRtc.Priority >= ApplicationParameters.Parameters.ShouldUseTcpUdp.Priority
                 ? ApplicationParameters.Parameters.ShouldUseWebRtc.GetValue(useWeb)
                 : !ApplicationParameters.Parameters.ShouldUseTcpUdp.GetValue(!useWeb);
-        internal bool UseLegacyMatchmaking => legacyMatchmakingClient;
         public bool Prediction => prediction;
         public bool ReconnectEnabled => enableReconnect;
         public ClientConnectionSettings ConnectionConfig => connectionConfig;
@@ -112,7 +110,7 @@ namespace Elympics
         public static bool GetUseWeb(bool defaultUseWeb)
         {
 #if UNITY_WEBGL
-			return true;
+            return true;
 #else
             return defaultUseWeb;
 #endif
@@ -127,7 +125,7 @@ namespace Elympics
         public static bool IsOverridenByWebGL()
         {
 #if UNITY_WEBGL
-			return true;
+            return true;
 #else
             return false;
 #endif

@@ -192,18 +192,12 @@ namespace Elympics
             if (!receivedStateDataExists && !historyStateDataExists)
                 return true;
 
-            using (var ms1 = new MemoryStream(historyStateData.Value.Value))
-            using (var br1 = new BinaryReader(ms1))
-            using (var ms2 = new MemoryStream(receivedStateData.Value.Value))
-            using (var br2 = new BinaryReader(ms2))
-            {
-                if (!_checkEqualsEnumerator.Equals(br1, br2))
-                    return false;
-                if (!_checkEqualsData.Equals(br1, br2))
-                    return false;
-            }
+            using var ms1 = new MemoryStream(historyStateData.Value.Value);
+            using var br1 = new BinaryReader(ms1);
+            using var ms2 = new MemoryStream(receivedStateData.Value.Value);
+            using var br2 = new BinaryReader(ms2);
 
-            return true;
+            return _checkEqualsEnumerator.Equals(br1, br2) && _checkEqualsData.Equals(br1, br2);
         }
 
         private static KeyValuePair<int, byte[]>? FindStateData(FactoryState receivedState, int playerIndex)

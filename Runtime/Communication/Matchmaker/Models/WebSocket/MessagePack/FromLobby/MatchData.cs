@@ -4,7 +4,7 @@ using MessagePack;
 namespace Elympics.Models.Matchmaking.WebSocket
 {
     [MessagePackObject]
-    public readonly struct MatchData : IFromLobby
+    public readonly struct MatchData : IFromMatchmaker
     {
         [Key(0)] public Guid MatchId { get; }
         [Key(1)] public string UserSecret { get; }

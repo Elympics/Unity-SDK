@@ -27,7 +27,7 @@ namespace Elympics
             var elympicsConfig = ElympicsConfig.Load();
 
             _authClient = new RemoteAuthClient(elympicsConfig.ElympicsAuthEndpoint);
-            _matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, elympicsConfig.ElympicsLobbyEndpoint);
+            _matchmakerClient = new WebSocketMatchmakerClient(elympicsConfig.ElympicsLobbyEndpoint);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
             _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.Log($"Match found: {matchId}.");
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
@@ -84,7 +84,7 @@ namespace Elympics
             if (string.IsNullOrEmpty(regionName))
                 regionName = null;
 
-            ElympicsLobbyClient.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData,
+            ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData,
                 _initialPlayerData.GameEngineData, testMatchData.queueName, regionName, false);
 
             _matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData

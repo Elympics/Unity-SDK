@@ -121,5 +121,11 @@ namespace SCS
             if (_currentWallet == null)
                 throw new SmartContractServiceException("Please register Wallet to Smart Contract Service");
         }
+
+        private void OnDestroy()
+        {
+            if (_roomsManager != null)
+                _roomsManager.RoomSetUp -= OnRoomSetUp;
+        }
     }
 }

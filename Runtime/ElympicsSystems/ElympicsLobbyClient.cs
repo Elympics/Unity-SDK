@@ -219,6 +219,46 @@ namespace Elympics
         }
 
         /// <summary>
+        /// Use cached AuthData to perform authentication. Fails if JwtToken is expired.
+        /// Remember to keep the authData secure between sessions. Please note, that leaking AuthData may result in player account breach.
+        /// </summary>
+        /// <param name="cachedData"></param>
+        /// <param name="autoRetryIfExpired">If true, perform automatic call to Auth service with the same <see cref="AuthType"/></param>
+        [PublicAPI]
+        public void AuthenticateWithCachedData(AuthData cachedData, bool autoRetryIfExpired = false)
+        {
+            if (cachedData is null)
+                throw new ArgumentException($"{nameof(cachedData)} cannot be null.");
+
+            ElympicsLogger.Log($"Starting cached {cachedData.AuthType} authentication...");
+
+            if (CanAuthenticate(cachedData.AuthType) == false)
+                return;
+
+            _authInProgress = true;
+            try
+            {
+                var isJwtTokenExpired = JwtTokenUtil.IsJwtExpired(cachedData.JwtToken);
+
+                if (isJwtTokenExpired == false)
+                {
+                    OnAuthenticatedWith(cachedData.AuthType).Invoke(Result<AuthData, string>.Success(cachedData));
+                }
+                else if (autoRetryIfExpired)
+                {
+                    _authInProgress = false;
+                    AuthenticateWith(cachedData.AuthType);
+                }
+                else
+                    OnAuthenticatedWith(cachedData.AuthType).Invoke(Result<AuthData, string>.Failure("Jwt token has expired."));
+            }
+            finally
+            {
+                _authInProgress = false;
+            }
+        }
+
+        /// <summary>
         /// Performs standard authentication. Has to be run before joining an online match requiring client-secret auth type.
         /// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
         /// </summary>
@@ -231,23 +271,8 @@ namespace Elympics
         {
             ElympicsLogger.Log($"Starting {authType} authentication...");
 
-            if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.None)
-            {
-                ElympicsLogger.LogError($"Invalid authentication type: {authType}.");
+            if (CanAuthenticate(authType) == false)
                 return;
-            }
-
-            if (IsAuthenticated)
-            {
-                ElympicsLogger.LogError($"User already authenticated (with {AuthData!.AuthType} auth type).");
-                return;
-            }
-
-            if (_authInProgress)
-            {
-                ElympicsLogger.LogError("Authentication already in progress.");
-                return;
-            }
 
             _authInProgress = true;
             try
@@ -303,7 +328,7 @@ namespace Elympics
                 eventName = nameof(AuthenticatedGuid);
                 AuthenticatedGuid?.Invoke(result.IsSuccess ? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value)) : Result<AuthenticationData, string>.Failure(result.Error));
                 eventName = nameof(Authenticated);
-                Authenticated?.Invoke(result.IsSuccess, result.Value.UserId.ToString(), result.Value.JwtToken, result.Error);
+                Authenticated?.Invoke(result.IsSuccess, result.Value?.UserId.ToString() ?? "", result.Value?.JwtToken ?? "", result.Error);
             }
             catch (Exception e)
             {
@@ -567,6 +592,28 @@ namespace Elympics
                 PlayerPrefs.Save();
             }
             return PlayerPrefs.GetString(key);
+        }
+
+        private bool CanAuthenticate(AuthType authType)
+        {
+            if (!Enum.IsDefined(typeof(AuthType), authType) || authType == AuthType.None)
+            {
+                ElympicsLogger.LogError($"Invalid authentication type: {authType}.");
+                return false;
+            }
+
+            if (IsAuthenticated)
+            {
+                ElympicsLogger.LogError($"User already authenticated (with {AuthData!.AuthType} auth type).");
+                return false;
+            }
+
+            if (_authInProgress)
+            {
+                ElympicsLogger.LogError("Authentication already in progress.");
+                return false;
+            }
+            return true;
         }
 
         private static string CreateNewClientSecret() => Guid.NewGuid().ToString();

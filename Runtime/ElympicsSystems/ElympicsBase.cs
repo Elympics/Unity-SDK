@@ -140,6 +140,7 @@ namespace Elympics
         {
             if (RpcMessagesToSend.Messages.Count == 0)
                 return;
+            RpcMessagesToSend.Sender = Player;
             RpcMessagesToSend.Tick = Tick;
             SendRpcMessageList(RpcMessagesToSend);
             RpcMessagesToSend.Messages.Clear();
@@ -167,10 +168,8 @@ namespace Elympics
         private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) =>
             $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
-        public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour)
-        {
-            return ElympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
-        }
+        public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour) =>
+            ElympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
 
         protected virtual bool ShouldDoElympicsUpdate() => true;
         internal abstract void ElympicsFixedUpdate();
@@ -179,16 +178,15 @@ namespace Elympics
         internal abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
 
         internal void QueueRpcMessagesFromServerToInvoke(ElympicsRpcMessageList rpcMessageList) =>
-            QueueRpcMessagesToInvoke(ElympicsPlayer.World, rpcMessageList);
-        protected void QueueRpcMessagesToInvoke(ElympicsPlayer sender, ElympicsRpcMessageList rpcMessageList)
+            QueueRpcMessagesToInvoke(rpcMessageList);
+        protected void QueueRpcMessagesToInvoke(ElympicsRpcMessageList rpcMessageList)
         {
-            rpcMessageList.Sender = sender;
             lock (RpcMessagesToInvokeLock)
                 RpcMessagesToInvoke.Add(rpcMessageList);
         }
 
         protected virtual void ElympicsLateFixedUpdate()
-        { }
+        {}
 
         protected virtual void ElympicsRenderUpdate(in RenderData renderData) { }
 
@@ -248,7 +246,7 @@ namespace Elympics
 
         public virtual bool IsReplay => false;
         public bool IsClientOrBot => IsClient || IsBot;
-        internal bool IsLocalMode => IsServer && IsClient;  // assuming there is only one client (and Unlimited Bots Work)
+        internal bool IsLocalMode => IsServer && IsClient; // assuming there is only one client (and Unlimited Bots Work)
         internal bool IsBotOnServer => IsServer && IsBot;
 
         public float TickDuration => Config.TickDuration;

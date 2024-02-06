@@ -37,7 +37,7 @@ namespace Elympics
         /// </remarks>
         internal event Action<(InitialMatchPlayerDatasGuid Data, Action OnInitialized)>? ReceivedInitialMatchPlayerDatas;
 
-        public event Action<ElympicsPlayer, ElympicsRpcMessageList>? RpcMessageListReceived;
+        public event Action<ElympicsRpcMessageList>? RpcMessageListReceived;
 
         private InitialMatchData _initialMatchData = null!;
         private Dictionary<Guid, ElympicsPlayer> _userIdsToPlayers = null!;
@@ -95,7 +95,12 @@ namespace Elympics
             if (deserializedData is ElympicsInputList inputList)
                 ProcessReceivedInputList(inputList, player);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
-                RpcMessageListReceived?.Invoke(player, rpcMessageList);
+            {
+                if (player == rpcMessageList.Sender)
+                    RpcMessageListReceived?.Invoke(rpcMessageList);
+                else
+                    ElympicsLogger.LogWarning($"[RPC] RPC Sender {rpcMessageList.Sender} is not the same as socket owner {player}. RPC will be not invoked. ");
+            }
         }
 
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)

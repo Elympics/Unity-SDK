@@ -90,6 +90,8 @@ namespace SCS
             var ticketRequest = new GetTicketRequest(
                 roomId.ToString(),
                 _gameConfig!.GameId,
+                _gameConfig.GameName,
+                _gameConfig.GameVersion,
                 Guid.Empty.ToString(),
                 string.Empty,//TODO need to understand what is the purpose of this. For now empty string is ok. k.pieta 30.11.2023
                 betAmount.ToString());

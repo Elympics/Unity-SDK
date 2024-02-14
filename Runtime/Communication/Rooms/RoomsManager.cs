@@ -122,6 +122,7 @@ namespace Elympics
 
         private void HandleJoinedRoomUpdated(RoomStateChanged roomState)
         {
+            ElympicsLogger.Log($"Room State Changed: {roomState}");
             var roomId = roomState.RoomId;
             if (_rooms.TryGetValue(roomId, out var room))
             {

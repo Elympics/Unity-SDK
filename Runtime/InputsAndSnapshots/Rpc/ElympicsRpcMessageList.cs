@@ -7,8 +7,8 @@ namespace Elympics
     public class ElympicsRpcMessageList : ElympicsDataWithTick, IToServer, IFromServer
     {
         [IgnoreMember] public override long Tick { get; set; }
-        [IgnoreMember] public ElympicsPlayer Sender { get; set; }
-        [Key(1)] public List<ElympicsRpcMessage> Messages { get; set; } = new();
+        [Key(1)] public int Sender { get; set; }
+        [Key(2)] public List<ElympicsRpcMessage> Messages { get; set; } = new();
     }
 
 }

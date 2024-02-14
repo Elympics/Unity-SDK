@@ -133,15 +133,16 @@ namespace Elympics
             foreach (var rpcMessageList in _rpcMessagesToInvokeInCurrentTick)
                 foreach (var rpcMessage in rpcMessageList.Messages)
                     if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
-                        behaviour.OnRpcInvoked(rpcMessageList.Sender, rpcMessage.MethodId, rpcMessage.Arguments);
+                        behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessageList.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
         internal void SendQueuedRpcMessages()
         {
             if (RpcMessagesToSend.Messages.Count == 0)
                 return;
-            RpcMessagesToSend.Sender = Player;
+            RpcMessagesToSend.Sender = (int)Player;
             RpcMessagesToSend.Tick = Tick;
+            ElympicsLogger.Log($"Sending RPC for Player: {Player} Tick: {Tick}");
             SendRpcMessageList(RpcMessagesToSend);
             RpcMessagesToSend.Messages.Clear();
         }

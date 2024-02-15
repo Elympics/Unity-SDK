@@ -18,6 +18,7 @@ namespace Elympics
 
             ElympicsLobbyClient.AuthClientOverride = WebSocketMockSetup.MockAuthClient();
             ElympicsLobbyClient.WebSocketFactoryOverride = WebSocketMockSetup.MockWebSocketFactory;
+            RespectService.WebRequestOverride = RespectServiceWebRequestMock.MockRespectServiceWebRequest();
         }
     }
 }

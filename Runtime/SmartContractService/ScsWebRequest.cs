@@ -27,39 +27,20 @@ namespace SCS
             _authManager = authManager;
             var uriBuilder = new UriBuilder(endPoint);
             var initPath = uriBuilder.Path.TrimEnd('/');
-            _chainConfigUrl = CombinePath(uriBuilder, initPath, string.Join("/", ChainConfigRoutes.Base, ChainConfigParams.GameId));
-            _ticketUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Ticket));
-            _getPlayerReadyUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Ready));
-            _getDepositUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Deposit));
-            _postDepositAddUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.DepositAdd));
-            _getTransactionHistoryUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.TransactionHistory));
-            _postWithdrawTicketUrl = CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.DepositWithdrawTicket));
-        }
-
-        private static string CombinePath(UriBuilder uriBuilder, string initPath, string path)
-        {
-            uriBuilder.Path = string.Join("/", initPath, path);
-            return uriBuilder.Uri.ToString();
-        }
-
-        private static string FillParams(string url, Dictionary<string, string> parameters)
-        {
-            var newUrl = url;
-            foreach ((var key, var value) in parameters)
-            {
-                var replacedString = $"/:{key}";
-                if (!newUrl.Contains(replacedString))
-                    throw new InvalidOperationException($"Invalid parameters in request: {url} | {key}");
-                newUrl = newUrl.Replace(replacedString, $"/{value}");
-            }
-            return newUrl;
+            _chainConfigUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", ChainConfigRoutes.Base, ChainConfigParams.GameId));
+            _ticketUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Ticket));
+            _getPlayerReadyUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Ready));
+            _getDepositUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.Deposit));
+            _postDepositAddUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.DepositAdd));
+            _getTransactionHistoryUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.TransactionHistory));
+            _postWithdrawTicketUrl = ElympicsWebClient.CombinePath(uriBuilder, initPath, string.Join("/", PlayerRoutes.Base, PlayerRoutes.DepositWithdrawTicket));
         }
 
         public async UniTask<GetTicketResponse> GetTicket(GetTicketRequest request, CancellationToken ct = default)
         {
             var authorization = GetAuthBearer();
             var tcs = new UniTaskCompletionSource<GetTicketResponse>();
-            ElympicsWebClient.SendPostRequest(_ticketUrl, request, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendPostRequest(_ticketUrl, request, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             return await tcs.Task;
         }
 
@@ -67,7 +48,7 @@ namespace SCS
         {
             var authorization = GetAuthBearer();
             var tcs = new UniTaskCompletionSource<object>();
-            ElympicsWebClient.SendPutRequest(_ticketUrl, request, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendPutRequest(_ticketUrl, request, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             _ = await tcs.Task;
         }
 
@@ -90,7 +71,7 @@ namespace SCS
                     nameof(versionId), versionId.ToString()
                 },
             };
-            ElympicsWebClient.SendGetRequest(_getPlayerReadyUrl, query, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendGetRequest(_getPlayerReadyUrl, query, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             return await tcs.Task;
         }
 
@@ -104,7 +85,7 @@ namespace SCS
                     nameof(gameId), gameId
                 },
             };
-            ElympicsWebClient.SendGetRequest(_getDepositUrl, query, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendGetRequest(_getDepositUrl, query, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
 
             var response = await tcs.Task;
             return response.Deposits.Select(x => new DepositState(x)).ToList();
@@ -115,7 +96,7 @@ namespace SCS
             var authorization = GetAuthBearer();
             var tcs = new UniTaskCompletionSource<AddDepositResponse>();
 
-            ElympicsWebClient.SendPostRequest(_postDepositAddUrl, request, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendPostRequest(_postDepositAddUrl, request, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
 
             var response = await tcs.Task;
             return response.TransactionsToSign.Select(x => new TransactionToSign
@@ -130,7 +111,7 @@ namespace SCS
         {
             var authorization = GetAuthBearer();
             var tcs = new UniTaskCompletionSource<object>();
-            ElympicsWebClient.SendPostRequest(_postWithdrawTicketUrl, null, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendPostRequest(_postWithdrawTicketUrl, null, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             _ = await tcs.Task;
         }
 
@@ -147,7 +128,7 @@ namespace SCS
                     nameof(limit), limit.ToString()
                 },
             };
-            ElympicsWebClient.SendGetRequest(_getTransactionHistoryUrl, query, authorization, CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendGetRequest(_getTransactionHistoryUrl, query, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             var response = await tcs.Task;
 
             return response.Transactions.Select(x => new FinalizedTransaction
@@ -173,8 +154,8 @@ namespace SCS
                     nameof(gameId), gameId
                 },
             };
-            var requestUrl = FillParams(_chainConfigUrl, parameters);
-            ElympicsWebClient.SendGetRequest(requestUrl, null, authorization, CreateResponseHandler(tcs), ct);
+            var requestUrl = ElympicsWebClient.FillParams(_chainConfigUrl, ":", parameters);
+            ElympicsWebClient.SendGetRequest(requestUrl, null, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             return await tcs.Task;
         }
 
@@ -183,8 +164,5 @@ namespace SCS
             var authorization = _authManager.AuthData?.BearerAuthorization ?? throw new InvalidOperationException("Authentication is required to perform the operation.");
             return authorization;
         }
-
-        private Action<Result<TResult, Exception>> CreateResponseHandler<TResult>(UniTaskCompletionSource<TResult> tcs) =>
-            result => _ = result.IsSuccess ? tcs.TrySetResult(result.Value) : tcs.TrySetException(result.Error);
     }
 }

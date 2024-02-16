@@ -14,6 +14,7 @@ namespace Elympics
     {
         public bool Initialized { get; private set; }
 
+
         public readonly ValueParameter<bool> IsElympicsOnlineServer = new("ELYMPICS", parse: ParseBoolFlag);
         public readonly ValueParameter<bool> IsElympicsOnlineBot = new("ELYMPICS_BOT", parse: ParseBoolFlag);
 
@@ -33,6 +34,9 @@ namespace Elympics
             "elympics-leaderboards",
             parse: ParseUri);
         public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
+            parse: ParseUri);
+
+        public readonly Parameter<Uri> RespectEndpoint = new("ELYMPICS_RESPECT", "elympicsRespect", "elympics-respect",
             parse: ParseUri);
 
         public readonly ValueParameter<bool> ShouldUseWebRtc = new("ELYMPICS_USE_WEBRTC", null, "elympics-use-webrtc",

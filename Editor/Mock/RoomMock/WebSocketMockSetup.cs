@@ -79,24 +79,19 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(Ws, createRoom);
                             var (teamSize, teamCount) = GetQueueOrThrow(createRoom.QueueName, Ws, createRoom);
 
-                            var room = new RoomStateChanged(
-                                Guid.NewGuid(),
+                            var room = new RoomStateChanged(Guid.NewGuid(),
                                 DateTime.Now,
                                 createRoom.RoomName,
                                 "ZZZZZZZZ",
                                 true,
-                                new MatchmakingData(
-                                    DateTime.Now,
-                                    MatchmakingState.Unlocked,
-                                    createRoom.QueueName,
-                                    teamCount,
-                                    teamSize,
-                                    createRoom.CustomMatchmakingData,
-                                    null),
-                            new List<UserInfo>
-                            {
-                                new(UserId, 0, false),
-                            }, createRoom.IsPrivate, createRoom.IsEphemeral, createRoom.CustomRoomData);
+                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null),
+                                new List<UserInfo>
+                                {
+                                    new(UserId, 0, false, UserId.ToString()),
+                                },
+                                createRoom.IsPrivate,
+                                createRoom.IsEphemeral,
+                                createRoom.CustomRoomData);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
@@ -114,7 +109,7 @@ namespace Elympics
                             ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, Ws, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(UserId, joinWithRoomId.TeamIndex, false)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(UserId, joinWithRoomId.TeamIndex, false, UserId.ToString())));
                             SendSuccessResponse(Ws, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -125,7 +120,7 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(Ws, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, Ws, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(UserId, joinWithJoinCode.TeamIndex, false)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(UserId, joinWithJoinCode.TeamIndex, false, UserId.ToString())));
                             SendSuccessResponse(Ws, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -173,8 +168,7 @@ namespace Elympics
                             var room = GetCurrentRoom();
                             ThrowIfTeamFull(changeTeam.TeamIndex, room, Ws, changeTeam);
 
-                            UpdateUsers(ref room, room.Users.Select(u => u.UserId == UserId
-                                ? u with { TeamIndex = changeTeam.TeamIndex } : u));
+                            UpdateUsers(ref room, room.Users.Select(u => u.UserId == UserId ? u with { TeamIndex = changeTeam.TeamIndex } : u));
                             SendSuccessResponse(Ws, changeTeam);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -186,8 +180,11 @@ namespace Elympics
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == UserId);
                             ThrowIfAlreadyReady(user, Ws, setReady);
-                            UpdateUsers(ref room, room.Users.Select(u => u.UserId == UserId
-                                ? u with { IsReady = true } : u));
+                            UpdateUsers(ref room,
+                                room.Users.Select(u => u.UserId == UserId ? u with
+                                {
+                                    IsReady = true
+                                } : u));
                             SendSuccessResponse(Ws, setReady);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -199,8 +196,11 @@ namespace Elympics
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == UserId);
                             ThrowIfAlreadyUnReady(user, Ws, setUnready);
-                            UpdateUsers(ref room, room.Users.Select(u => u.UserId == UserId
-                                ? u with { IsReady = false } : u));
+                            UpdateUsers(ref room,
+                                room.Users.Select(u => u.UserId == UserId ? u with
+                                {
+                                    IsReady = false
+                                } : u));
                             SendSuccessResponse(Ws, setUnready);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -290,8 +290,11 @@ namespace Elympics
         public static void MakeAllPlayersReadyForRoom(Guid roomId)
         {
             var room = WebSocketMockBackendSession.Rooms[roomId];
-            UpdateUsers(ref room, room.Users.Select(u => u.UserId != UserId
-                ? u with { IsReady = true } : u));
+            UpdateUsers(ref room,
+                room.Users.Select(u => u.UserId != UserId ? u with
+                {
+                    IsReady = true
+                } : u));
             UpdateTime(ref room);
             SendResponse(Ws, room);
         }
@@ -477,7 +480,9 @@ namespace Elympics
 
         private static void ThrowIfTeamFull(uint? teamIndex, RoomStateChanged room, IWebSocket ws, LobbyOperation joinWithRoomId)
         {
-            if (teamIndex == null || room.MatchmakingData == null || room.Users.Count(u => u.TeamIndex == teamIndex) < room.MatchmakingData.TeamCount)
+            if (teamIndex == null
+                || room.MatchmakingData == null
+                || room.Users.Count(u => u.TeamIndex == teamIndex) < room.MatchmakingData.TeamCount)
                 return;
             SendFailResponse(ws, joinWithRoomId, ErrorBlame.UserError, ErrorKind.TeamFull, room.RoomId, "Team full");
             throw new MessageHandledException();
@@ -519,7 +524,8 @@ namespace Elympics
 
         private static void ThrowIfMatchingWatchListState(IWebSocket ws, LobbyOperation trackingState)
         {
-            if ((trackingState is WatchRooms && !WebSocketMockBackendSession.TracksRoomList) || (trackingState is UnwatchRooms && WebSocketMockBackendSession.TracksRoomList))
+            if ((trackingState is WatchRooms && !WebSocketMockBackendSession.TracksRoomList)
+                || (trackingState is UnwatchRooms && WebSocketMockBackendSession.TracksRoomList))
                 return;
             SendFailResponse(ws, trackingState, ErrorBlame.UserError, ErrorKind.Unspecified, null, $"Room list tracking already in state {trackingState}");
             throw new MessageHandledException();
@@ -557,31 +563,23 @@ namespace Elympics
 
         private static void SendResponseInternal(IWebSocket ws, IFromLobby fromLobby) => ws.OnMessage += Raise.Event<WebSocketMessageEventHandler>(MessagePackSerializer.Serialize(fromLobby));
 
-        private static void UpdateRoomOnList(IWebSocket ws, RoomStateChanged room) => SendResponse(ws, new RoomListChanged(new List<ListedRoomChange> { new(room.RoomId, CreatePublicRoomState(room)) }));
+        private static void UpdateRoomOnList(IWebSocket ws, RoomStateChanged room) => SendResponse(ws,
+            new RoomListChanged(new List<ListedRoomChange>
+            {
+                new(room.RoomId, CreatePublicRoomState(room))
+            }));
 
         private static MatchData GetDummyMatchData(IReadOnlyList<Guid> matchedPlayers) =>
-            new(Guid.NewGuid(),
-                MatchState.Initializing,
-                GetDummyMatchDetails(matchedPlayers),
-                null);
+            new(Guid.NewGuid(), MatchState.Initializing, GetDummyMatchDetails(matchedPlayers), null);
 
         private static MatchDetails GetDummyMatchDetails(IReadOnlyList<Guid> matchedPlayers) =>
-            new(matchedPlayers,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                Array.Empty<byte>(),
-                Array.Empty<float>());
+            new(matchedPlayers, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>());
 
         private static PublicRoomState CreatePublicRoomState(RoomStateChanged roomState)
         {
-            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate,
-                roomState.MatchmakingData!.State, roomState.MatchmakingData.QueueName,
-                roomState.MatchmakingData.TeamCount, roomState.MatchmakingData.TeamSize,
-                roomState.MatchmakingData.CustomData);
+            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate, roomState.MatchmakingData!.State, roomState.MatchmakingData.QueueName, roomState.MatchmakingData.TeamCount, roomState.MatchmakingData.TeamSize, roomState.MatchmakingData.CustomData);
 
-            return new PublicRoomState(roomState.RoomId, roomState.LastUpdate, roomState.RoomName, roomState.HasPrivilegedHost,
-                matchmakingData, roomState.Users, roomState.IsPrivate, roomState.CustomData);
+            return new PublicRoomState(roomState.RoomId, roomState.LastUpdate, roomState.RoomName, roomState.HasPrivilegedHost, matchmakingData, roomState.Users, roomState.IsPrivate, roomState.CustomData);
         }
     }
 }

@@ -651,6 +651,7 @@ MonoBehaviour:
   pageSize: 5
   queue: 
   gameVersion: 0
+  leaderboardType: 0
   timeScope: 1
   customTimeScopeFrom: 2023-04-21T12:00:00+02:00
   customTimeScopeTo: 2023-04-22T12:00:00+02:00
@@ -1182,6 +1183,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1431631347}
   - component: {fileID: 1431631346}
+  - component: {fileID: 1431631348}
   m_Layer: 0
   m_Name: ElympicsLobby
   m_TagString: Untagged
@@ -1201,10 +1203,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fd80fb1f7856404a988224a406da737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  asyncEventsDispatcher: {fileID: 1431631348}
   authenticateOnAwakeWith: 1
   ethSigner: {fileID: 0}
   authenticateOnAwake: 1
   migratedAuthSettings: 1
+  shouldLoadGameplaySceneAfterMatchmaking: 1
+  currentRegion: 
 --- !u!4 &1431631347
 Transform:
   m_ObjectHideFlags: 0
@@ -1220,6 +1225,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1431631348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1431631345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd55e11dca40e6646982daee3830002a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1434383145
 GameObject:
   m_ObjectHideFlags: 0

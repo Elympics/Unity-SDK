@@ -104,9 +104,9 @@ csharp_wrap_parameters_style = chop_if_long
 csharp_wrap_after_declaration_lpar = true
 csharp_wrap_chained_binary_expressions = chop_if_long
 csharp_wrap_before_binary_opsign = true
-csharp_max_initializer_elements_on_line = 0
+csharp_max_initializer_elements_on_line = 1
 csharp_wrap_before_binary_pattern_op = true
-csharp_wrap_chained_binary_patterns = chop_if_long
+csharp_wrap_chained_binary_patterns = wrap_if_long
 
 ### Add missing cases to switch expression
 dotnet_diagnostic.IDE0072.severity = suggestion
@@ -171,7 +171,7 @@ csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true
-csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_object_initializers = false
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
 csharp_indent_case_contents = true
@@ -204,7 +204,7 @@ csharp_space_between_empty_square_brackets = false
 csharp_space_between_square_brackets = false
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
-csharp_wrap_ternary_expr_style = chop_always
+csharp_wrap_ternary_expr_style = wrap_if_long
 
 ## ReSharper
 csharp_empty_block_style = together

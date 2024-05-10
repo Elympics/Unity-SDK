@@ -48,7 +48,7 @@ public class LeaderboardTester : MonoBehaviour
         var totalPages = (int)Math.Ceiling(result.TotalRecords / (float)pageSize);
         Debug.Log($"Fetched leaderboards: {result.Entries.Count} entries, page {result.PageNumber} of {totalPages}");
         foreach (var entry in result.Entries)
-            Debug.Log($"{entry.Position}. Score: {entry.Score} User: {entry.UserId} When: {entry.ScoredAt?.LocalDateTime}");
+            Debug.Log($"{entry.Position}. Score: {entry.Score} User: {entry.UserId} When: {entry.ScoredAt?.LocalDateTime} MatchId: {entry.MatchId} TournamentId: {entry.TournamentId} NickName: {entry.Nickname}");
     }
 
     private static void CustomFailHandler(LeaderboardFetchError fetchError)

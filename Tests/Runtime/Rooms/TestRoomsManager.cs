@@ -142,14 +142,22 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void JoinRoomThatIsAlreadyListedInPublicRoomListAndRoomStateIsUpdated()
         {
-            var currentUser = new UserInfo(Guid.NewGuid(), 0, false);
+            var currentUser = new UserInfo(Guid.NewGuid(), 0, false, string.Empty);
             var currentMmData = new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>());
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
-                new(_roomIdForTesting, new PublicRoomState(_roomIdForTesting, _roomStateChanged.LastUpdate, _roomStateChanged.RoomName, true, currentMmData, new List<UserInfo>
-                {
-                    currentUser,
-                }, false, new Dictionary<string, string>())),
+                new(_roomIdForTesting,
+                    new PublicRoomState(_roomIdForTesting,
+                        _roomStateChanged.LastUpdate,
+                        _roomStateChanged.RoomName,
+                        true,
+                        currentMmData,
+                        new List<UserInfo>
+                        {
+                            currentUser,
+                        },
+                        false,
+                        new Dictionary<string, string>())),
             });
 
             // Act
@@ -183,7 +191,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, null, true),
+                    new(Guid.Empty, null, true, string.Empty),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -210,10 +218,18 @@ namespace Elympics.Tests.Rooms
         {
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
-                new(_roomIdForTesting, new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch, "test room name", true, new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
-                {
-                    new (Guid.NewGuid(), 0, false)
-                }, false, new Dictionary<string, string>())),
+                new(_roomIdForTesting,
+                    new PublicRoomState(_roomIdForTesting,
+                        DateTime.UnixEpoch,
+                        "test room name",
+                        true,
+                        new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                        new List<UserInfo>
+                        {
+                            new(Guid.NewGuid(), 0, false, string.Empty)
+                        },
+                        false,
+                        new Dictionary<string, string>())),
             });
             _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.RoomListUpdatedInvoked);
 
@@ -226,10 +242,17 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void AvailableRoomListShouldBeExpandedCorrectlyWhenRoomListUpdateIsReceived()
         {
-            var roomState = new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch, "test room name", true, new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
-            {
-                new(Guid.Empty, 0, false)
-            }, false, new Dictionary<string, string>());
+            var roomState = new PublicRoomState(_roomIdForTesting,
+                DateTime.UnixEpoch,
+                "test room name",
+                true,
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, false, string.Empty)
+                },
+                false,
+                new Dictionary<string, string>());
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
                 new(_roomIdForTesting, roomState),
@@ -246,10 +269,17 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void AvailableRoomListShouldBeReducedCorrectlyWhenRoomListUpdateIsReceived()
         {
-            var roomState = new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch, "test room name", true, new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
-            {
-                new(Guid.Empty, 0, false)
-            }, false, new Dictionary<string, string>());
+            var roomState = new PublicRoomState(_roomIdForTesting,
+                DateTime.UnixEpoch,
+                "test room name",
+                true,
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, false, string.Empty)
+                },
+                false,
+                new Dictionary<string, string>());
             _roomsClientMock.InvokeRoomListChanged(new RoomListChanged(new List<ListedRoomChange>
             {
                 new(_roomIdForTesting, roomState),
@@ -269,19 +299,33 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void AvailableRoomListShouldBeModifiedCorrectlyWhenRoomListUpdateIsReceived()
         {
-            var roomState = new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch, "test room name", true, new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
-            {
-                new(Guid.Empty, 0, false)
-            }, false, new Dictionary<string, string>());
+            var roomState = new PublicRoomState(_roomIdForTesting,
+                DateTime.UnixEpoch,
+                "test room name",
+                true,
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, false, string.Empty)
+                },
+                false,
+                new Dictionary<string, string>());
             _roomsClientMock.InvokeRoomListChanged(new RoomListChanged(new List<ListedRoomChange>
             {
                 new(_roomIdForTesting, roomState),
             }));
 
-            var modifiedState = new PublicRoomState(_roomIdForTesting, DateTime.UnixEpoch + TimeSpan.FromSeconds(1), "test room name modified", true, new PublicMatchmakingData(DateTime.UnixEpoch + TimeSpan.FromSeconds(1), MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()), new List<UserInfo>
-            {
-                new(Guid.Empty, 0, false)
-            }, false, new Dictionary<string, string>());
+            var modifiedState = new PublicRoomState(_roomIdForTesting,
+                DateTime.UnixEpoch + TimeSpan.FromSeconds(1),
+                "test room name modified",
+                true,
+                new PublicMatchmakingData(DateTime.UnixEpoch + TimeSpan.FromSeconds(1), MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, false, string.Empty)
+                },
+                false,
+                new Dictionary<string, string>());
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
                 new(_roomIdForTesting, modifiedState),
@@ -343,7 +387,7 @@ namespace Elympics.Tests.Rooms
             _roomStateChanged = _roomStateChanged with
             {
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
@@ -354,7 +398,7 @@ namespace Elympics.Tests.Rooms
         {
             _roomStateChanged = _roomStateChanged with
             {
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
 
@@ -373,7 +417,7 @@ namespace Elympics.Tests.Rooms
         {
             _roomStateChanged = _roomStateChanged with
             {
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.HostChangedInvoked);

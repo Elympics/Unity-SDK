@@ -27,11 +27,13 @@ namespace Elympics.Tests.Rooms
         private static readonly Guid TestRoomGuid = new(1234, 56, 78, Enumerable.Repeat<byte>(90, 8).ToArray());
         private static readonly Guid TestHostGuid = new(999, 666, 55, Enumerable.Repeat<byte>(20, 8).ToArray());
 
+        private static readonly string TestHostNickname = "Nickname_" + TestHostGuid;
+
         [SetUp]
         public void ResetMocks()
         {
             WsSessionMock.Reset();
-            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, null), Guid.Empty, "", "");
+            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
             RoomsClient.Session = WsSessionMock;
         }
 

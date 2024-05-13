@@ -16,6 +16,7 @@ namespace Elympics
     public static class WebSocketMockSetup
     {
         private static readonly Guid UserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        private static readonly string Nickname = "Nickname_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
         public static readonly WebSocketMockBackendSession WebSocketMockBackendSession;
 
@@ -43,7 +44,7 @@ namespace Elympics
             ac.When(x => x.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<Action<Result<AuthData, string>>>(), Arg.Any<CancellationToken>())).Do(x =>
             {
                 var onResult = (Action<Result<AuthData, string>>)x[1];
-                onResult?.Invoke(Result<AuthData, string>.Success(new AuthData(UserId, "faketoken", AuthType.ClientSecret)));
+                onResult?.Invoke(Result<AuthData, string>.Success(new AuthData(UserId, "faketoken", Nickname, AuthType.ClientSecret)));
             });
             return ac;
         }

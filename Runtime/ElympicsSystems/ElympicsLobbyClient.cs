@@ -305,7 +305,7 @@ namespace Elympics
             if (result.IsSuccess)
             {
                 AuthData = result.Value;
-                ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId}.");
+                ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
             }
             else
                 ElympicsLogger.LogError($"{authType} authentication failed: {result.Error}");

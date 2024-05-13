@@ -7,9 +7,9 @@ namespace Elympics
     public class AuthenticationData : AuthData
     {
         public AuthenticationData(AuthData authData)
-            : base(authData.UserId, authData.JwtToken, authData.AuthType) { }
+            : base(authData.UserId, authData.JwtToken, authData.Nickname, authData.AuthType) { }
         public AuthenticationData(Guid userId, string jwtToken, AuthType authType = AuthType.None)
-            : base(userId, jwtToken, authType) { }
+            : base(userId, jwtToken, string.Empty, authType) { }
         public AuthenticationData(AuthenticationDataResponse response, AuthType authType = AuthType.None)
             : base(response, authType) { }
     }

@@ -194,7 +194,7 @@ namespace Elympics.Tests
             var webClientMock = new ElympicsMockWebClient();
             ElympicsWebClient.Instance = webClientMock;
             webClientMock.AddHandler("/" + AuthRoutes.EthAddressNonce, _ => new EthAddressNonceResponse { nonce = Guid.Empty.ToString() });
-            var expectedAuthData = new AuthData(Guid.Empty, "", AuthType.EthAddress);
+            var expectedAuthData = new AuthData(Guid.Empty, "", "", AuthType.EthAddress);
             webClientMock.AddHandler("/" + AuthRoutes.EthAddressAuth, _ => new AuthenticationDataResponse
             {
                 jwtToken = expectedAuthData.JwtToken,

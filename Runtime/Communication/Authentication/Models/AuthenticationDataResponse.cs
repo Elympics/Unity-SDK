@@ -7,5 +7,6 @@ namespace Elympics.Models.Authentication
     {
         public string userId;
         public string jwtToken;
+        public string nickname;
     }
 }

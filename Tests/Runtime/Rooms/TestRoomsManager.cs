@@ -184,7 +184,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator HappyPathStartingQuickMatchShouldSucceed() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, ""), Guid.Empty, "", regionName);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
             var readyState = _roomStateChanged with
@@ -1096,7 +1096,7 @@ namespace Elympics.Tests.Rooms
             };
 
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, ""), Guid.Empty, "", regionName);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _matchLauncherMock.ShouldLoadGameplaySceneAfterMatchmaking = true;
 

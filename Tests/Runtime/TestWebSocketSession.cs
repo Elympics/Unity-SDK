@@ -26,7 +26,7 @@ namespace Elympics.Tests
         private static readonly AsyncEventsDispatcherMock Dispatcher = new();
         private static readonly WebSocketMock WsMock = new();
         private static readonly LobbySerializerMock SerializerMock = new();
-        private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), string.Empty);
+        private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);
         private static readonly SessionConnectionDetails ConnectionDetails = new("url", AuthData, default, string.Empty, string.Empty);
 
         private static readonly LobbySerializerMock.Methods SerializerForConnection = new()

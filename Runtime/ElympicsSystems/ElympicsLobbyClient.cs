@@ -371,7 +371,13 @@ namespace Elympics
         [PublicAPI]
         public void ChangeRegionAndReconnectToLobby(string newRegion)
         {
-            currentRegion = newRegion ?? throw new ArgumentNullException(nameof(newRegion));
+            if (string.IsNullOrEmpty(newRegion))
+                throw new ArgumentNullException(nameof(newRegion));
+
+            if (ElympicsRegions.AllAvailableRegions.Contains(currentRegion) is false)
+                throw new ArgumentException($"The specified region must be one of the available regions listed in {nameof(ElympicsRegions.AllAvailableRegions)}.");
+
+            currentRegion = newRegion;
             ConnectToLobby().Forget();
         }
 

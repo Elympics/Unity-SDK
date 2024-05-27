@@ -187,14 +187,25 @@ namespace Elympics.Tests.Rooms
             var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
-            var readyState = _roomStateChanged with
+
+            var teamChangedState = _roomStateChanged with
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, null, true, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty),
                 },
-                LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
+                LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
+
+            var readyState = teamChangedState with
+            {
+                Users = new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, true, string.Empty),
+                },
+                LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
+            };
+
             var matchmakingState = readyState with
             {
                 MatchmakingData = readyState.MatchmakingData! with
@@ -205,13 +216,32 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = readyState.LastUpdate + TimeSpan.FromSeconds(1),
             };
 
+            var matchDataState = matchmakingState with
+            {
+                MatchmakingData = matchmakingState.MatchmakingData with
+                {
+                    MatchData = new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }), string.Empty)
+                },
+                LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
+            };
+
             _joiningQueueMock.AddRoomIdInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _roomsClientMock.SetReadyInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(readyState);
-            _roomsClientMock.StartMatchmakingInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(matchmakingState);
+            _roomsClientMock.SetTeamChangedInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(teamChangedState);
+            _roomsClientMock.StartMatchmakingInvoked += _ => MatchmakingFlow().Forget();
 
             // Act
             _ = await _roomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>());
+
+            async UniTask MatchmakingFlow()
+            {
+                _roomsClientMock.InvokeRoomStateChanged(matchmakingState);
+                await UniTask.Delay(TimeSpan.FromSeconds(1));
+                _roomsClientMock.InvokeRoomStateChanged(matchDataState);
+            }
+
         });
+
 
         [Test]
         public void RoomListUpdatedEventShouldBeInvokedAfterReceivingUpdatedRoomList()

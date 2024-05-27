@@ -43,11 +43,14 @@ namespace SCS
         public UniTask ChangeTeam(uint? teamIndex) => _room.ChangeTeam(teamIndex);
         public async UniTask MarkYourselfReady(byte[]? gameEngineData, float[]? matchmakerData, CancellationToken ct = default)
         {
-            if (_scsService.CurrentChain == null || (_room.State.MatchmakingData!.CustomData.TryGetValue(SmartContractServiceMatchMakingCustomData.BetAmountKey, out var betValue) && betValue == "0"))
+            if (_scsService.CurrentChain == null || (_room.State.MatchmakingData!.CustomData.TryGetValue(SmartContractServiceMatchMakingCustomData.BetAmountKey, out var betValue) && betValue == "0") || _room.IsQuickMatch)
             {
                 await _room.MarkYourselfReady(gameEngineData, matchmakerData);
                 return;
             }
+
+            //TODO: SmartContractService has to be aware relation between queue and SmartContractDeploymentId (check Lobby->MatchmakerGameBinModel).
+            //Then remove this quickMatch check and check for queues. k.pieta 27.05.2024. For now we depend on backend checks.
 
             if (!_room.State.MatchmakingData!.CustomData.ContainsKey(SmartContractServiceMatchMakingCustomData.BetAmountKey))
                 throw new SmartContractServiceException($"Matchmaking CustomData does not contains BetAmount key <color=red>{SmartContractServiceMatchMakingCustomData.BetAmountKey}</color>");
@@ -90,6 +93,7 @@ namespace SCS
         public UniTask Leave() => _room.Leave();
         void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff) => _room.UpdateState(roomState, in stateDiff);
         void IRoom.UpdateState(PublicRoomState roomState) => _room.UpdateState(roomState);
+        bool IRoom.IsQuickMatch => _room.IsQuickMatch;
         public void Dispose() => _room.Dispose();
     }
 }

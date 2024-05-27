@@ -44,7 +44,11 @@ internal class RoomClientMock : IRoomsClient
         return RoomIdReturnTask ?? UniTask.FromResult(Guid.Empty);
     }
 
-    public UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default) => throw new NotImplementedException();
+    public UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default)
+    {
+        SetTeamChangedInvoked.Invoke((roomId, teamIndex));
+        return UniTask.CompletedTask;
+    }
 
     public UniTask SetReady(
         Guid roomId,
@@ -89,6 +93,7 @@ internal class RoomClientMock : IRoomsClient
     public (Guid RoomId, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithRoomIdInvokedArgs { get; private set; }
     public (string JoinCode, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithJoinCodeInvokedArgs { get; private set; }
     public event Action<(Guid RoomId, byte[]? GameEngineData, float[]? MatchmakerData, CancellationToken Ct)>? SetReadyInvoked;
+    public event Action<(Guid RoomId, uint? newTeamIndex)> SetTeamChangedInvoked;
     public event Action<(Guid RoomId, Guid HostId)>? StartMatchmakingInvoked;
     public (Guid RoomId, CancellationToken Ct)? LeaveRoomArgs { get; private set; }
 

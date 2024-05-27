@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
 
@@ -65,6 +66,9 @@ namespace Elympics
         private bool _isJoined;
         private bool _isCancellingInProgress;
         private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
+        private readonly bool _isEphemeral;
+        private Guid LocalUserId => _client.SessionConnectionDetails.AuthData.UserId;
+        private readonly TimeSpan _webApiTimeoutFallback = TimeSpan.FromSeconds(5);
 
         public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, RoomStateChanged initialState, bool isJoined = false)
         {
@@ -73,6 +77,7 @@ namespace Elympics
             _roomId = roomId;
             _state = new RoomState(initialState);
             _isJoined = isJoined;
+            _isEphemeral = initialState.IsEphemeral;
         }
 
         public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState)
@@ -95,6 +100,8 @@ namespace Elympics
             _state.Update(roomState);
         }
 
+        bool IRoom.IsQuickMatch => _state is { RoomName: RoomUtil.QuickMatchRoomName, IsPrivate: true } && _isEphemeral;
+
         public void Dispose()
         {
             if (IsDisposed)
@@ -107,10 +114,11 @@ namespace Elympics
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            if (teamIndex.HasValue && teamIndex.Value >= _state.MatchmakingData!.TeamCount)
+            if (teamIndex.HasValue
+                && teamIndex.Value >= _state.MatchmakingData!.TeamCount)
                 throw new ArgumentOutOfRangeException(nameof(teamIndex), teamIndex, $"Chosen team index must be lesser than {_state.MatchmakingData.TeamCount} or null");
             ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Change team to {teamIndex}.");
-            return _client.ChangeTeam(_roomId, teamIndex);
+            return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().TeamIndex == teamIndex, _webApiTimeoutFallback));
         }
 
         public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
@@ -120,17 +128,20 @@ namespace Elympics
             ThrowIfNoMatchmaking();
             gameEngineData ??= Array.Empty<byte>();
             matchmakerData ??= Array.Empty<float>();
-            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Mark yourself {_client.SessionConnectionDetails.AuthData.UserId} ready.");
-            return _client.SetReady(_roomId, gameEngineData, matchmakerData);
+            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Mark yourself {LocalUserId} ready.");
+            //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
+            return _client.SetReady(_roomId, gameEngineData, matchmakerData).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().IsReady, _webApiTimeoutFallback));
         }
+
+        private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
 
         public UniTask MarkYourselfUnready()
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Mark yourself {_client.SessionConnectionDetails.AuthData.UserId} unready.");
-            return _client.SetUnready(_roomId);
+            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Mark yourself {LocalUserId} unready.");
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().IsReady is false, _webApiTimeoutFallback));
         }
 
         public UniTask StartMatchmaking()
@@ -180,19 +191,10 @@ namespace Elympics
                     _isCancellingInProgress = false;
                 }
 
-            bool IsInValidStateToCancel()
-            {
-                return _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking
-                    or MatchmakingState.Matchmaking
-                    or MatchmakingState.CancellingMatchmaking;
-            }
+            bool IsInValidStateToCancel() => _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
         }
 
-        public UniTask UpdateRoomParams(
-            string? roomName = null,
-            bool? isPrivate = null,
-            IReadOnlyDictionary<string, string>? customRoomData = null,
-            IReadOnlyDictionary<string, string>? customMatchmakingData = null)
+        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? customRoomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -217,23 +219,11 @@ namespace Elympics
             if (dictMemorySize > DictionaryExtensions.MaxDictMemorySize)
                 throw new RoomDataMemoryException(roomName, dictMemorySize);
 
-            var roomNameToSend = roomName != _state.RoomName
-                ? roomName
-                : null;
-            var isPrivateToSend = isPrivate != _state.IsPrivate
-                ? isPrivate
-                : null;
-            var customRoomDataToSend = !customRoomDataIsTheSame
-                ? customRoomData
-                : null;
-            var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame
-                ? customMatchmakingData
-                : null;
-            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Sending Room Params to update:{Environment.NewLine}"
-                + $" NewRoomName: {roomNameToSend}{Environment.NewLine}"
-                + $" isPrivate {isPrivateToSend}{Environment.NewLine}"
-                + $" customRoomDataSize: {customRoomDataToSend?.Count}{Environment.NewLine}"
-                + $" customMatchmakingDataSize: {customMatchmakingDataToSend?.Count}{Environment.NewLine}");
+            var roomNameToSend = roomName != _state.RoomName ? roomName : null;
+            var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
+            var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
+            var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
+            ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Sending Room Params to update:{Environment.NewLine}" + $" NewRoomName: {roomNameToSend}{Environment.NewLine}" + $" isPrivate {isPrivateToSend}{Environment.NewLine}" + $" customRoomDataSize: {customRoomDataToSend?.Count}{Environment.NewLine}" + $" customMatchmakingDataSize: {customMatchmakingDataToSend?.Count}{Environment.NewLine}");
             return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend);
         }
 
@@ -244,18 +234,13 @@ namespace Elympics
             ThrowIfNoMatchmaking();
             var matchmakingData = State.MatchmakingData!;
             if (matchmakingData.MatchmakingState is not MatchmakingState.Playing)
-                throw new InvalidOperationException($"Can't play match outside {MatchmakingState.Playing} matchmaking state. "
-                    + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
-            var matchData = matchmakingData.MatchData ?? throw new InvalidOperationException("No match data available. "
-                + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
+                throw new InvalidOperationException($"Can't play match outside {MatchmakingState.Playing} matchmaking state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
+            var matchData = matchmakingData.MatchData ?? throw new InvalidOperationException("No match data available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             if (matchData.State is not MatchState.Running)
-                throw new InvalidOperationException($"Can't play match outside {MatchState.Running} match state. "
-                    + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
-            var matchDetails = matchData.MatchDetails ?? throw new InvalidOperationException("No match details available. "
-                + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
+                throw new InvalidOperationException($"Can't play match outside {MatchState.Running} match state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
+            var matchDetails = matchData.MatchDetails ?? throw new InvalidOperationException("No match details available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
             ElympicsLogger.Log($"[{nameof(Room)}]Id:{_roomId}. Play available match {matchData.MatchId}");
-            _matchLauncher.PlayMatch(new MatchmakingFinishedData(matchData.MatchId, matchDetails, matchmakingData.QueueName,
-                _client.SessionConnectionDetails.RegionName));
+            _matchLauncher.PlayMatch(new MatchmakingFinishedData(matchData.MatchId, matchDetails, matchmakingData.QueueName, _client.SessionConnectionDetails.RegionName));
         }
 
         public UniTask Leave()

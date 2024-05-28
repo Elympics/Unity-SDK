@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsTechDemoConfig
   m_EditorClassIdentifier: 
-  gameName: MenuController
-  gameId: 4f239f87-a345-4275-a0f1-0c474e9201de
-  gameVersion: menuctr-1
-  players: 2
-  gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
-  gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
+  gameName: TechDemo
+  gameId: 4f1a8596-8ba7-45c7-89dc-50d8562e4796
+  gameVersion: 22
+  players: 1
+  gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
+  gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,
     type: 3}
   botsInServer: 1
   useWeb: 0

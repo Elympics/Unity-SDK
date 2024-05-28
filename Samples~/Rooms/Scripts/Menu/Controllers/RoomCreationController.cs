@@ -39,4 +39,18 @@ public class RoomCreationController : BaseWindow
 
     [UsedImplicitly]
     public void ShowRoomChoiceView() => RoomsNavigationController.Instance.ShowRoomChoiceView();
+
+    
+    [UsedImplicitly]
+    public async void CreateSoloRoom()
+    {
+        try
+        {
+            _ = await RoomsUtility.RoomsManager.CreateAndJoinRoom(roomViewElements.RoomName.text, "solo", true, true, new Dictionary<string, string>(), NewCustomMatchmakingData());
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Room creation failed: {e.Message}");
+        }
+    }
 }

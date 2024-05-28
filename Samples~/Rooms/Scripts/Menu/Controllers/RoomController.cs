@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Rooms.Models;
 using JetBrains.Annotations;
@@ -283,9 +284,8 @@ public class RoomController : BaseWindow
             statusText.text = string.Format(RoomStatusMessages.MatchmakingStartCountdownMessage, i);
             yield return new WaitForSeconds(1);
         }
-
         if (AmIHost)
-            _ = _currentRoom.StartMatchmaking();
+            _currentRoom.StartMatchmaking().Forget();
     }
 
     private void LockPlayersInRoom(bool shouldBeLocked)

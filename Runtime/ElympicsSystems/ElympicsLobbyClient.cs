@@ -26,7 +26,7 @@ namespace Elympics
     {
         public static ElympicsLobbyClient? Instance { get; private set; }
 
-        internal static IAuthClient AuthClientOverride = null;
+        internal static IAuthClient? AuthClientOverride = null;
         internal static WebSocketSession.WebSocketFactory WebSocketFactoryOverride = null;
 
         #region Authentication
@@ -264,7 +264,6 @@ namespace Elympics
         [Obsolete("Use " + nameof(AuthenticateWith) + " instead")]
         [PublicAPI]
         public void Authenticate() => AuthenticateWith(AuthType.ClientSecret);
-        public void AuthenticateWithEth() => AuthenticateWith(AuthType.EthAddress);
 
         public void AuthenticateWith(AuthType authType, string? region = null, bool customRegion = false)
         {

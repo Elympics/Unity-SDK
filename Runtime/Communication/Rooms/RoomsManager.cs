@@ -38,7 +38,8 @@ namespace Elympics
 
         #endregion Aggregated room events
 
-        public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _operationTimeout = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _quickJoinTimeout = TimeSpan.FromSeconds(15);
 
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private readonly IRoomJoiningQueue _joiningQueue;
@@ -53,7 +54,8 @@ namespace Elympics
         {
             add
             {
-                if (value != null && _roomDecorators.IndexOf(value) == -1)
+                if (value != null
+                    && _roomDecorators.IndexOf(value) == -1)
                     _roomDecorators.Add(value);
             }
             remove
@@ -62,6 +64,7 @@ namespace Elympics
                     _ = _roomDecorators.RemoveAll(x => x == value);
             }
         }
+
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
 
         public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiningQueue? joiningQueue = null)
@@ -156,7 +159,7 @@ namespace Elympics
             _rooms.Add(room.RoomId, room);
         }
 
-        internal void InvokeEventsBasedOnStateDiff(Guid roomId, RoomStateDiff stateDiff)
+        private void InvokeEventsBasedOnStateDiff(Guid roomId, RoomStateDiff stateDiff)
         {
             if (!stateDiff.UpdatedState)
                 return;
@@ -199,7 +202,8 @@ namespace Elympics
         {
             if (stateDiff.MatchDataArgs == null)
                 return;
-            if (!_matchLauncher.ShouldLoadGameplaySceneAfterMatchmaking || _matchLauncher.IsCurrentlyInMatch)
+            if (!_matchLauncher.ShouldLoadGameplaySceneAfterMatchmaking
+                || _matchLauncher.IsCurrentlyInMatch)
                 return;
             _rooms[roomId].PlayAvailableMatch();
         }
@@ -214,7 +218,8 @@ namespace Elympics
         public bool TryGetAvailableRoom(Guid roomId, out IRoom? room)
         {
             room = null;
-            if (_rooms.TryGetValue(roomId, out var availableRoom) && !availableRoom.IsJoined)
+            if (_rooms.TryGetValue(roomId, out var availableRoom)
+                && !availableRoom.IsJoined)
                 room = availableRoom;
             return room is not null;
         }
@@ -224,7 +229,8 @@ namespace Elympics
         public bool TryGetJoinedRoom(Guid roomId, out IRoom? room)
         {
             room = null;
-            if (_rooms.TryGetValue(roomId, out var joinedRoom) && joinedRoom.IsJoined)
+            if (_rooms.TryGetValue(roomId, out var joinedRoom)
+                && joinedRoom.IsJoined)
                 room = joinedRoom;
             return room is not null;
         }
@@ -264,8 +270,6 @@ namespace Elympics
 
         public async UniTask<IRoom> StartQuickMatch(string queueName, byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
         {
-            const string quickMatchRoomName = "quick-match";
-
             if (queueName == null)
                 throw new ArgumentNullException(nameof(queueName));
             gameEngineData ??= Array.Empty<byte>();
@@ -275,14 +279,16 @@ namespace Elympics
             IRoom? room = null;
             try
             {
-                var ackTask = _client.CreateRoom(quickMatchRoomName, true, true, queueName, true, new Dictionary<string, string>(), new Dictionary<string, string>(), ct);
+                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, new Dictionary<string, string>(), new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
+                var users = room.State.Users;
+
+                await room.ChangeTeam(0);
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
-                await ResultUtils.WaitUntil(() => room.State.Users.All(x => x.IsReady), OperationTimeout, ct);
 
                 await room.StartMatchmaking();
-                await ResultUtils.WaitUntil(() => (room.State.MatchmakingData?.MatchmakingState).IsInsideMatchmaking(), OperationTimeout, ct);
+                await ResultUtils.WaitUntil(() => _stateDiff.MatchDataArgs is not null, _quickJoinTimeout, ct);
 
                 MatchmakingDataChanged += OnMatchmakingDataChanged;
                 return room;
@@ -300,7 +306,8 @@ namespace Elympics
             void OnMatchmakingDataChanged(MatchmakingDataChangedArgs args)
             {
                 // ReSharper disable AccessToModifiedClosure
-                if (room == null || room.IsDisposed)
+                if (room == null
+                    || room.IsDisposed)
                 {
                     MatchmakingDataChanged -= OnMatchmakingDataChanged;
                     return;
@@ -325,7 +332,8 @@ namespace Elympics
 
         private async UniTask<IRoom> JoinRoom(Guid roomId, uint? teamIndex)
         {
-            if (_rooms.TryGetValue(roomId, out var room) && room.IsJoined)
+            if (_rooms.TryGetValue(roomId, out var room)
+                && room.IsJoined)
                 throw new RoomAlreadyJoinedException(roomId);
             using var queueEntry = _joiningQueue.AddRoomId(roomId);
             return await SetupRoomTracking(_client.JoinRoom(roomId, teamIndex), shouldSkipQueueCheck: true);
@@ -334,11 +342,12 @@ namespace Elympics
         private async UniTask<IRoom> SetupRoomTracking(UniTask<Guid> mainOperation, bool shouldSkipQueueCheck = false, CancellationToken ct = default)
         {
             var roomId = await mainOperation;
-            if (_rooms.TryGetValue(roomId, out var room) && room.IsJoined)
+            if (_rooms.TryGetValue(roomId, out var room)
+                && room.IsJoined)
                 throw new RoomAlreadyJoinedException(roomId);
             using var queueEntry = _joiningQueue.AddRoomId(roomId, shouldSkipQueueCheck);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
-            await ResultUtils.WaitUntil(() => _rooms.TryGetValue(roomId, out var roomToJoin) && roomToJoin.IsJoined, OperationTimeout, linkedCts.Token);
+            await ResultUtils.WaitUntil(() => _rooms.TryGetValue(roomId, out var roomToJoin) && roomToJoin.IsJoined, _operationTimeout, linkedCts.Token);
             return _rooms[roomId];
         }
     }

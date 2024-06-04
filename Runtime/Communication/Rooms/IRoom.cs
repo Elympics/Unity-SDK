@@ -41,5 +41,7 @@ namespace Elympics
         internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff);
 
         internal void UpdateState(PublicRoomState roomState);
+
+        internal bool IsQuickMatch { get; }
     }
 }

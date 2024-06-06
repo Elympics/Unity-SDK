@@ -12,16 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsTechDemoConfig
   m_EditorClassIdentifier: 
-  gameName: TechDemo
-  gameId: a9b2cd8b-ad30-4fe0-812c-351b7c3ca264
-  gameVersion: 21
+  gameName: MenuController
+  gameId: 4f239f87-a345-4275-a0f1-0c474e9201de
+  gameVersion: menuctr-1
   players: 2
-  gameplayScene: Assets/Samples/TechDemo/TechDemo.unity
-  gameplaySceneAsset: {fileID: 102900000, guid: 69dd9c1d70a588c4fba23ad579800771,
+  gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
+  gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1
   useWeb: 0
-  legacyMatchmakingClient: 0
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
@@ -43,7 +42,6 @@ MonoBehaviour:
   detailedNetworkLog: 0
   mode: 2
   halfRemoteMode: 0
-  useWebInHalfRemote: 1
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102

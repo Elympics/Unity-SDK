@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Libraries;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -50,16 +51,17 @@ namespace Elympics
                 GameEngineData = testPlayerData.gameEngineData,
                 MatchmakerData = testPlayerData.matchmakerData,
             };
-            Connect();
+            Connect().Forget();
         }
 
-        private void Connect()
+        private async UniTask Connect()
         {
             ElympicsLogger.LogWarning($"Starting {AuthType.ClientSecret} authentication...");
             try
             {
                 var clientSecret = ElympicsLobbyClient.GetOrCreateClientSecret();
-                _authClient.AuthenticateWithClientSecret(clientSecret, OnAuthenticated);
+                var results = await _authClient.AuthenticateWithClientSecret(clientSecret);
+                OnAuthenticated(results);
             }
             catch (Exception e)
             {

@@ -1,0 +1,15 @@
+namespace Elympics
+{
+    public struct RegionData
+    {
+        /// <summary>
+        /// Name of the region.
+        /// </summary>
+        public string Name { get; init; }
+
+        /// <summary>
+        /// If true, there will be no validation check if region is listed in <see cref="ElympicsRegions.AllAvailableRegions"/>
+        /// </summary>
+        public bool IsCustom { get; init; }
+    }
+}

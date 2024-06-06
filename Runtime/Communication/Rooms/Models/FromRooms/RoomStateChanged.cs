@@ -48,7 +48,7 @@ namespace Elympics.Rooms.Models
             + $"{nameof(Users)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", Users)}{Environment.NewLine}"
             + $"{nameof(IsPrivate)}:{IsPrivate}{Environment.NewLine}"
             + $"{nameof(IsEphemeral)}:{IsEphemeral}{Environment.NewLine}"
-            + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Value}, Value = {kv.Key}"))}{Environment.NewLine}";
+            + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Key}, Value = {kv.Value}"))}{Environment.NewLine}";
 
         public override int GetHashCode()
         {

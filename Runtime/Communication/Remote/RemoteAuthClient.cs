@@ -18,6 +18,8 @@ namespace Elympics
         private readonly string _ethAddressNonceUrl;
         private readonly string _ethAddressAuthUrl;
 
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+
         public RemoteAuthClient(string authEndpoint)
         {
             var uriBuilder = new UriBuilder(authEndpoint);
@@ -30,101 +32,88 @@ namespace Elympics
             _ethAddressAuthUrl = uriBuilder.Uri.ToString();
         }
 
-        public void AuthenticateWithClientSecret(string clientSecret, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
+        public async UniTask<Result<AuthData, string>> AuthenticateWithClientSecret(string clientSecret, CancellationToken ct = default)
         {
-            void OnResponse(Result<AuthenticationDataResponse, Exception> result)
-            {
-                onResult(result.IsSuccess
-                    ? Result<AuthData, string>.Success(new AuthData(result.Value, AuthType.ClientSecret))
-                    : Result<AuthData, string>.Failure(result.Error.Message));
-            }
+            using var delayCts = new CancellationTokenSource();
+            using var timer = delayCts.CancelAfterSlim(_timeout, DelayType.Realtime);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, delayCts.Token);
 
+            var putTcs = new UniTaskCompletionSource<Result<AuthenticationDataResponse, Exception>>();
             var requestModel = new ClientSecretAuthRequest { clientSecret = clientSecret };
-            ElympicsWebClient.SendPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, callback: OnResponse, ct: ct);
+            ElympicsWebClient.SendPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, null, result => putTcs.TrySetResult(result), ct: ct);
+            var putTcsResult = await putTcs.Task.SuppressCancellationThrow();
+            if (putTcsResult.IsCanceled is false)
+                return putTcsResult.Result.IsSuccess ? Result<AuthData, string>.Success(new AuthData(putTcsResult.Result.Value, AuthType.ClientSecret)) : Result<AuthData, string>.Failure(putTcsResult.Result.Error.Message);
+
+            return Result<AuthData, string>.Failure(ct.IsCancellationRequested ? "Request cancelled." : "Timeout.");
         }
 
-        public void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default)
+        public async UniTask<Result<AuthData, string>> AuthenticateWithEthAddress(IEthSigner ethSigner, CancellationToken ct = default)
         {
             var ethAddress = ethSigner.Address;
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (ethAddress == null)
-            {
-                onResult(Result<AuthData, string>.Failure(
-                    $"Address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)} cannot be null"));
-                return;
-            }
+                return Result<AuthData, string>.Failure($"Address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)} cannot be null");
 
             var addressMatch = _ethAddressRegex.Match(ethAddress);
             if (!addressMatch.Success)
-            {
-                onResult(Result<AuthData, string>.Failure(
-                    $"Invalid format for address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)}: "
-                    + ethAddress));
-                return;
-            }
+                return Result<AuthData, string>.Failure($"Invalid format for address provided by {nameof(IEthSigner)}.{nameof(IEthSigner.Address)}: " + ethAddress);
 
             var addressHasPrefix = addressMatch.Groups[1].Success;
             if (!addressHasPrefix)
                 ethAddress = "0x" + ethAddress;
 
             var nonceRequest = new EthAddressNonceRequest { address = ethAddress };
-            ElympicsWebClient.SendPutRequest<EthAddressNonceResponse>(_ethAddressNonceUrl, nonceRequest, callback: r => OnNonceResponse(r).Forget(), ct: ct);
 
-            async UniTaskVoid OnNonceResponse(Result<EthAddressNonceResponse, Exception> result)
+            var putTcs = new UniTaskCompletionSource<Result<EthAddressNonceResponse, Exception>>();
+            ElympicsWebClient.SendPutRequest<EthAddressNonceResponse>(_ethAddressNonceUrl, nonceRequest, null, OnPutFinish, ct: ct);
+            var putResult = await putTcs.Task;
+            if (putResult.IsFailure)
+                return Result<AuthData, string>.Failure(putResult.Error.Message);
+
+            string? typedData;
+            string? signature;
+            try
             {
-                if (result.IsFailure)
-                {
-                    onResult(Result<AuthData, string>.Failure(result.Error.Message));
-                    return;
-                }
-
-                string? typedData;
-                string? signature;
-                try
-                {
-                    typedData = ethSigner.ProvideTypedData(result.Value.nonce);
-                    signature = await ethSigner.SignAsync(typedData, ct);
-                }
-                catch (Exception e)
-                {
-                    onResult(Result<AuthData, string>.Failure(e.ToString()));
-                    return;
-                }
-
-                if (signature == null)
-                {
-                    onResult(Result<AuthData, string>.Failure(
-                        $"Signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)} cannot be null"));
-                    return;
-                }
-
-                var signatureMatch = _ethSignatureRegex.Match(signature);
-                if (!signatureMatch.Success)
-                {
-                    onResult(Result<AuthData, string>.Failure(
-                        $"Invalid format for signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)}: "
-                        + signature));
-                    return;
-                }
-
-                var signatureHasPrefix = signatureMatch.Groups[1].Success;
-                if (!signatureHasPrefix)
-                    signature = "0x" + signature;
-
-                var authRequest = new EthAddressAuthRequest
-                {
-                    typedData = typedData,
-                    signature = signature,
-                };
-                ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, callback: OnAuthResponse, ct: ct);
+                typedData = ethSigner.ProvideTypedData(putResult.Value.nonce);
+                signature = await ethSigner.SignAsync(typedData, ct);
+            }
+            catch (Exception e)
+            {
+                return Result<AuthData, string>.Failure(e.ToString());
             }
 
-            void OnAuthResponse(Result<AuthenticationDataResponse, Exception> result)
+            if (signature == null)
+                return Result<AuthData, string>.Failure($"Signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)} cannot be null");
+
+            var signatureMatch = _ethSignatureRegex.Match(signature);
+            if (!signatureMatch.Success)
+                return Result<AuthData, string>.Failure($"Invalid format for signature provided by {nameof(IEthSigner)}.{nameof(IEthSigner.SignAsync)}: " + signature);
+
+            var signatureHasPrefix = signatureMatch.Groups[1].Success;
+            if (!signatureHasPrefix)
+                signature = "0x" + signature;
+
+            var authRequest = new EthAddressAuthRequest
             {
-                onResult(result.IsSuccess
-                    ? Result<AuthData, string>.Success(new AuthData(result.Value, AuthType.EthAddress))
-                    : Result<AuthData, string>.Failure(result.Error.Message));
-            }
+                typedData = typedData,
+                signature = signature,
+            };
+            using var delayCts = new CancellationTokenSource();
+            using var timer = delayCts.CancelAfterSlim(_timeout, DelayType.Realtime);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, delayCts.Token);
+
+            var postTcs = new UniTaskCompletionSource<Result<AuthenticationDataResponse, Exception>>();
+
+
+            ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, null, OnPostFinish, ct: ct);
+            var (isCanceled, results) = await postTcs.Task.SuppressCancellationThrow();
+            if (isCanceled is false)
+                return results.IsSuccess ? Result<AuthData, string>.Success(new AuthData(results.Value, AuthType.EthAddress)) : Result<AuthData, string>.Failure(results.Error.Message);
+
+            return Result<AuthData, string>.Failure(ct.IsCancellationRequested ? "Request cancelled." : "Timeout.");
+            void OnPostFinish(Result<AuthenticationDataResponse, Exception> result) => postTcs.TrySetResult(result);
+            void OnPutFinish(Result<EthAddressNonceResponse, Exception> result) => putTcs.TrySetResult(result);
         }
     }
 }

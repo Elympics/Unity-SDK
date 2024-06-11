@@ -263,11 +263,11 @@ namespace Elympics
         /// Performs standard authentication. Has to be run before joining an online match requiring client-secret auth type.
         /// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
         /// </summary>
-        [Obsolete("Use " + nameof(AuthenticateWithAsync) + " instead")]
+        [Obsolete("Use " + nameof(ConnectToElympicsAsync) + " instead")]
         [PublicAPI]
         public void Authenticate() => LegacyAuth(AuthType.ClientSecret).Forget();
 
-        [Obsolete("Use " + nameof(AuthenticateWithAsync) + " instead")]
+        [Obsolete("Use " + nameof(ConnectToElympicsAsync) + " instead")]
         [PublicAPI]
         public void AuthenticateWith(AuthType authType) => LegacyAuth(authType).Forget();
 
@@ -326,7 +326,7 @@ namespace Elympics
             await ConnectToLobby();
         }
 
-        public async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
+        private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
         {
             ElympicsLogger.Log($"Starting {authType} authentication...");
 

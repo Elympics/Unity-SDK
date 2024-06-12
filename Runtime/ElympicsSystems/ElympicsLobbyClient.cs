@@ -188,7 +188,10 @@ namespace Elympics
             ElympicsLogger.Log($"Initialized {nameof(ElympicsLobbyClient)}.");
 
             if (AuthenticateOnAwakeWith != AuthType.None)
-                AuthenticateWith(AuthenticateOnAwakeWith);
+                ConnectToElympicsAsync(new ConnectionData()
+                {
+                    AuthType = authenticateOnAwakeWith
+                }).Forget();
         }
 
         private WebSocketSession CreateWebSocketSession()
@@ -217,22 +220,16 @@ namespace Elympics
                 _webSocketSession.Value.Dispose();
         }
 
-        /// <summary>
-        /// Use cached AuthData to perform authentication. Fails if JwtToken is expired.
-        /// Remember to keep the authData secure between sessions. Please note, that leaking AuthData may result in player account breach.
-        /// </summary>
-        /// <param name="cachedData"></param>
-        /// <param name="autoRetryIfExpired">If true, perform automatic call to Auth service with the same <see cref="AuthType"/></param>
-        [PublicAPI]
-        public void AuthenticateWithCachedData(AuthData cachedData, bool autoRetryIfExpired = false)
+        private async UniTask<Result<AuthData, string>?> AuthenticateWithCachedData(CachedAuthData data)
         {
-            if (cachedData is null)
-                throw new ArgumentException($"{nameof(cachedData)} cannot be null.");
+            if (data.CachedData is null)
+                throw new ArgumentException($"{nameof(data.CachedData)} cannot be null.");
 
+            var cachedData = data.CachedData;
             ElympicsLogger.Log($"Starting cached {cachedData.AuthType} authentication...");
 
-            if (CanAuthenticate(cachedData.AuthType) == false)
-                return;
+            if (CanAuthenticate(cachedData.AuthType, out var failure) == false)
+                return failure;
 
             _authInProgress = true;
             try
@@ -241,15 +238,21 @@ namespace Elympics
 
                 if (isJwtTokenExpired == false)
                 {
-                    OnAuthenticatedWith(cachedData.AuthType).Invoke(Result<AuthData, string>.Success(cachedData));
+                    var result = Result<AuthData, string>.Success(cachedData);
+                    OnAuthenticatedWith(cachedData.AuthType, result);
+                    return result;
                 }
-                else if (autoRetryIfExpired)
+                else if (data.AutoRetryIfExpired)
                 {
                     _authInProgress = false;
-                    AuthenticateWith(cachedData.AuthType);
+                    return await AuthenticateWithAsync(cachedData.AuthType);
                 }
                 else
-                    OnAuthenticatedWith(cachedData.AuthType).Invoke(Result<AuthData, string>.Failure("Jwt token has expired."));
+                {
+                    var result = Result<AuthData, string>.Failure("Jwt token has expired.");
+                    OnAuthenticatedWith(cachedData.AuthType, result);
+                    return result;
+                }
             }
             finally
             {
@@ -261,37 +264,103 @@ namespace Elympics
         /// Performs standard authentication. Has to be run before joining an online match requiring client-secret auth type.
         /// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
         /// </summary>
-        [Obsolete("Use " + nameof(AuthenticateWith) + " instead")]
+        [Obsolete("Use " + nameof(ConnectToElympicsAsync) + " instead")]
         [PublicAPI]
-        public void Authenticate() => AuthenticateWith(AuthType.ClientSecret);
+        public void Authenticate() => LegacyAuth(AuthType.ClientSecret).Forget();
 
-        public void AuthenticateWith(AuthType authType, string? region = null, bool customRegion = false)
+        [Obsolete("Use " + nameof(ConnectToElympicsAsync) + " instead")]
+        [PublicAPI]
+        public void AuthenticateWith(AuthType authType) => LegacyAuth(authType).Forget();
+
+        public async UniTask ConnectToElympicsAsync(ConnectionData data)
+        {
+            var regionReconnectionRequested = data.AuthFromCacheData is null && data.AuthType is null && data.Region is not null;
+
+            if (regionReconnectionRequested)
+            {
+                var region = data.Region!.Value;
+                if (currentRegion == region.Name)
+                {
+                    ElympicsLogger.LogWarning($"New region {region.Name} is the same as currentRegion {currentRegion}.");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(region.Name))
+                    throw new ElympicsException("New region cannot be null or empty.");
+
+                await ChangeRegionAndReconnectToLobby(region);
+            }
+            else
+            {
+                if (data.Region is not null)
+                {
+                    var region = data.Region.Value;
+                    ThrowIfRegionValidationFailed(region);
+                    currentRegion = region.Name;
+                }
+
+                Result<AuthData, string>? result = null;
+
+                if (data.AuthFromCacheData is not null)
+                    result = await AuthenticateWithCachedData(data.AuthFromCacheData.Value);
+                else if (data.AuthType is not null)
+                    result = await AuthenticateWithAsync(data.AuthType.Value);
+
+                if (result is not null)
+                {
+                    if (result.IsSuccess)
+                    {
+                        await ConnectToLobby();
+                        await RoomsManager.CheckJoinedRoomStatus();
+                    }
+                    else
+                        ElympicsLogger.LogError(result.Error);
+                }
+            }
+        }
+
+        private async UniTask LegacyAuth(AuthType authType) => await ConnectToElympicsAsync(new ConnectionData()
+        {
+            AuthType = authType
+        });
+
+        private async UniTask ChangeRegionAndReconnectToLobby(RegionData regionData)
+        {
+            ThrowIfRegionValidationFailed(regionData);
+            currentRegion = regionData.Name;
+            if (RoomsManager.ListJoinedRooms().Count > 0)
+                ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
+            await ConnectToLobby();
+        }
+
+        private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
         {
             ElympicsLogger.Log($"Starting {authType} authentication...");
 
-            if (CanAuthenticate(authType) == false)
-                return;
-            if (region is not null)
-                ThrowIfNonCustomRegionValidationFailed(region, customRegion);
-
-            currentRegion = region!;
+            if (CanAuthenticate(authType, out var failure) == false)
+                return failure;
 
             _authInProgress = true;
+            Result<AuthData, string>? authResult = null;
             try
             {
                 switch (authType)
                 {
                     case AuthType.ClientSecret:
-                        _auth.AuthenticateWithClientSecret(_clientSecret, OnAuthenticatedWith(authType));
+                        authResult = await _auth.AuthenticateWithClientSecret(_clientSecret);
                         break;
                     case AuthType.EthAddress:
-                        _auth.AuthenticateWithEthAddress(ethSigner, OnAuthenticatedWith(authType));
+                        authResult = await _auth.AuthenticateWithEthAddress(ethSigner);
                         break;
                     case AuthType.None:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
                 }
+                if (authResult != null)
+                    OnAuthenticatedWith(authType, authResult);
+                _authInProgress = false;
+                return authResult;
             }
             catch
             {
@@ -299,17 +368,6 @@ namespace Elympics
                 throw;
             }
         }
-
-        /// <summary>
-        /// Performs authentication of specified type. Has to be run before joining an online match.
-        /// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
-        /// </summary>
-        /// <param name="authType">Type of authentication to be performed.</param>
-        private Action<Result<AuthData, string>> OnAuthenticatedWith(AuthType authType) => result =>
-        {
-            OnAuthenticatedWith(authType, result);
-            _authInProgress = false;
-        };
 
         private void OnAuthenticatedWith(AuthType authType, Result<AuthData, string> result)
         {
@@ -328,7 +386,6 @@ namespace Elympics
                 {
                     eventName = nameof(AuthenticationSucceeded);
                     AuthenticationSucceeded?.Invoke(result.Value);
-                    ConnectToLobby().Forget();
                 }
                 else
                 {
@@ -377,39 +434,14 @@ namespace Elympics
             ConnectToLobby().Forget();
         }
 
-        /// <summary>
-        /// Changes region and reconnect Lobby as authorized user. Use <see cref="AuthenticateWith"/> if user is not authenticated.
-        /// </summary>
-        /// <param name="newRegion">Name of new region.</param>
-        /// <param name="customRegion">If true, there will be no validation check if region is listed in <see cref="ElympicsRegions.AllAvailableRegions"/></param>
-        [PublicAPI]
-        public void ChangeRegionAndReconnectToLobby(string newRegion, bool customRegion = false)
+        private static void ThrowIfRegionValidationFailed(RegionData regionData)
         {
-            if (currentRegion == newRegion)
-            {
-                ElympicsLogger.LogWarning($"New region {newRegion} is the same as currentRegion {currentRegion}.");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(newRegion))
-                throw new ArgumentNullException(nameof(newRegion));
-
-            ThrowIfNonCustomRegionValidationFailed(newRegion, customRegion);
-
-            currentRegion = newRegion;
-
-            if (RoomsManager.ListJoinedRooms().Count > 0)
-                ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
-            ConnectToLobby().Forget();
-        }
-        private static void ThrowIfNonCustomRegionValidationFailed(string newRegion, bool customRegion)
-        {
-            if (customRegion is false
-                && ElympicsRegions.AllAvailableRegions.Contains(newRegion) is false)
+            if (regionData.IsCustom is false
+                && ElympicsRegions.AllAvailableRegions.Contains(regionData.Name) is false)
                 throw new ArgumentException($"The specified region must be one of the available regions listed in {nameof(ElympicsRegions.AllAvailableRegions)}.");
         }
 
-        private async UniTaskVoid ConnectToLobby()
+        private async UniTask ConnectToLobby()
         {
             ElympicsLogger.Log("Connecting to lobby...");
             DisconnectFromLobby();
@@ -431,7 +463,14 @@ namespace Elympics
             }
         }
 
-        private void DisconnectFromLobby() => _webSocketSession.Value.Disconnect();
+        private void DisconnectFromLobby()
+        {
+            if (!_webSocketSession.Value.IsConnected)
+                return;
+
+            ElympicsLogger.Log($"Closing current websocket.");
+            _webSocketSession.Value.Disconnect();
+        }
 
 
         private void LogSettingUpGame(string gameModeName) =>
@@ -658,26 +697,27 @@ namespace Elympics
             return PlayerPrefs.GetString(key);
         }
 
-        private bool CanAuthenticate(AuthType authType)
+        private bool CanAuthenticate(AuthType authType, out Result<AuthData, string>? failure)
         {
             if (!Enum.IsDefined(typeof(AuthType), authType)
                 || authType == AuthType.None)
             {
-                ElympicsLogger.LogError($"Invalid authentication type: {authType}.");
+                failure = Result<AuthData, string>.Failure($"Invalid authentication type: {authType}.");
                 return false;
             }
 
             if (IsAuthenticated)
             {
-                ElympicsLogger.LogError($"User already authenticated (with {AuthData!.AuthType} auth type).");
+                failure = Result<AuthData, string>.Failure($"User already authenticated (with {AuthData!.AuthType} auth type).");
                 return false;
             }
 
             if (_authInProgress)
             {
-                ElympicsLogger.LogError("Authentication already in progress.");
+                failure = Result<AuthData, string>.Failure("Authentication already in progress.");
                 return false;
             }
+            failure = null;
             return true;
         }
 

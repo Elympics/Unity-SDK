@@ -52,5 +52,6 @@ namespace Elympics
         UniTask<IRoom> StartQuickMatch(string queueName, byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
 
         public event Func<IRoom, IRoom>? RoomSetUp;
+        internal UniTask CheckJoinedRoomStatus();
     }
 }

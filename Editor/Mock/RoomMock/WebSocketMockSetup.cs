@@ -41,7 +41,7 @@ namespace Elympics
         private static IAuthClient CreateMockAuthClient()
         {
             var ac = Substitute.For<IAuthClient>();
-            ac.When(x => x.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<Action<Result<AuthData, string>>>(), Arg.Any<CancellationToken>())).Do(x =>
+            ac.When(x => x.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>())).Do(x =>
             {
                 var onResult = (Action<Result<AuthData, string>>)x[1];
                 onResult?.Invoke(Result<AuthData, string>.Success(new AuthData(UserId, "faketoken", Nickname, AuthType.ClientSecret)));

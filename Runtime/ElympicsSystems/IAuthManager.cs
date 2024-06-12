@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using JetBrains.Annotations;
 
@@ -16,13 +17,14 @@ namespace Elympics
         public Guid? UserGuid { get; }
         public bool IsAuthenticated { get; }
 
+
         /// <summary>
         /// Performs authentication of specified type. Has to be run before joining an online match.
         /// </summary>
         /// <param name="authType">Type of authentication to be performed.</param>
-        /// <param name="region"> Region to connect. If default, it will use last used region or default <see cref="ElympicsRegions.Warsaw"/></param>
-        /// <param name="customRegion">If true, there will be no validation check if region is listed in <see cref="ElympicsRegions.AllAvailableRegions"/></param>
-        void AuthenticateWith(AuthType authType, string? region, bool customRegion = false);
+        [Obsolete("Use " + nameof(ConnectToElympicsAsync) + " instead")]
+        void AuthenticateWith(AuthType authType);
+        UniTask ConnectToElympicsAsync(ConnectionData connectionData);
 
         /// <summary>
         /// Resets the authentication state.

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
@@ -10,37 +11,52 @@ public class MenuController : MonoBehaviour
 {
     [SerializeField] private Button playButton;
     [SerializeField] private Button rejoinButton;
+    [SerializeField] private Button changeRegionButton;
     [SerializeField] private InputField halfRemotePlayerId;
+    [SerializeField] private string regionToJoin;
 
     private const string PlayOnlineText = "Play Online";
-    private const string CancelMatchmakingText = "Cancel matchmaking";
-
     private const string RejoinOnlineText = "Rejoin Online";
-    private const string CancelRejoinText = "Cancel rejoin";
 
+    private IRoomsManager _roomsManager;
     private Text _playButtonText;
     private Text _rejoinButtonText;
     private CancellationTokenSource _cts;
     private string _closestRegion;
 
-    private void Start()
+    private async void Start()
     {
-        if (ElympicsLobbyClient.Instance.IsAuthenticated)
-            HandleAuthenticated(ElympicsLobbyClient.Instance.AuthData);
-        else
-            ElympicsLobbyClient.Instance.AuthenticationSucceeded += HandleAuthenticated;
-        ElympicsLobbyClient.Instance.Matchmaker.MatchmakingCancelledGuid += _ => ResetState();
-        ElympicsLobbyClient.Instance.Matchmaker.MatchmakingFailed += _ => ResetState();
-        _ = ChooseRegion();
+        _roomsManager = ElympicsLobbyClient.Instance!.RoomsManager;
 
-        _playButtonText = playButton.GetComponentInChildren<Text>();
-        _rejoinButtonText = rejoinButton.GetComponentInChildren<Text>();
-        ResetState();
+        await ElympicsLobbyClient.Instance!.ConnectToElympicsAsync(new ConnectionData()
+        {
+            AuthType = AuthType.ClientSecret,
+            Region = new RegionData()
+            {
+                Name = "warsaw",
+                IsCustom = false,
+            }
+        });
+        playButton.interactable = true;
+        rejoinButton.interactable = true;
+        changeRegionButton.interactable = true;
+        ElympicsLobbyClient.Instance.RoomsManager.JoinedRoom += OnRoomJoined;
 
         if (!ElympicsClonesManager.IsClone())
             return;
         halfRemotePlayerId.text = ElympicsGameConfig.GetHalfRemotePlayerIndex(0).ToString();
         halfRemotePlayerId.placeholder.GetComponent<Text>().enabled = true;
+
+
+    }
+    private void OnRoomJoined(JoinedRoomArgs obj)
+    {
+        Debug.Log("Joined room.");
+        var room = _roomsManager.ListJoinedRooms().Where(x => x.RoomId == obj.RoomId).ToList()[0];
+        if (room.IsMatchAvailable)
+        {
+            room.PlayAvailableMatch();
+        }
     }
 
     private void ResetState()
@@ -51,28 +67,7 @@ public class MenuController : MonoBehaviour
         _cts = null;
     }
 
-    private void HandleAuthenticated(AuthData authData)
-    {
-        if (_closestRegion != null)
-            playButton.interactable = true;
-
-        ElympicsLobbyClient.Instance.HasAnyUnfinishedMatch(isUnfinishedMatchAvailable => rejoinButton.interactable = isUnfinishedMatchAvailable, Debug.LogError);
-    }
-
-    private async UniTaskVoid ChooseRegion()
-    {
-        _closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
-        if (string.IsNullOrEmpty(_closestRegion))
-            _closestRegion = ElympicsRegions.Warsaw;
-        Debug.Log($"Selected region: {ElympicsRegions.Warsaw}");
-        if (ElympicsLobbyClient.Instance.IsAuthenticated)
-            playButton.interactable = true;
-    }
-
-    public void OnPlayLocalClicked()
-    {
-        ElympicsLobbyClient.Instance.PlayOffline();
-    }
+    public void OnPlayLocalClicked() => ElympicsLobbyClient.Instance.PlayOffline();
 
     public void OnPlayHalfRemoteClicked()
     {
@@ -80,10 +75,7 @@ public class MenuController : MonoBehaviour
         ElympicsLobbyClient.Instance.PlayHalfRemote(playerId);
     }
 
-    public void OnStartHalfRemoteServer()
-    {
-        ElympicsLobbyClient.Instance.StartHalfRemoteServer();
-    }
+    public void OnStartHalfRemoteServer() => ElympicsLobbyClient.Instance.StartHalfRemoteServer();
 
     public void OnPlayOnlineClicked()
     {
@@ -92,22 +84,29 @@ public class MenuController : MonoBehaviour
             ResetState();
             return;
         }
-
         _cts = new CancellationTokenSource();
-        _playButtonText.text = CancelMatchmakingText;
-        ElympicsLobbyClient.Instance.PlayOnlineInRegion(_closestRegion, cancellationToken: _cts.Token);
+        ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("Default", null, null, _cts!.Token).Forget();
     }
 
     public void OnRejoinOnlineClicked()
     {
-        if (_cts != null)
+        var rooms = _roomsManager.ListJoinedRooms();
+        if (rooms.Count > 0
+            && rooms[0].IsMatchAvailable)
         {
-            ResetState();
-            return;
+            rooms[0].PlayAvailableMatch();
         }
+    }
 
-        _cts = new CancellationTokenSource();
-        _rejoinButtonText.text = CancelRejoinText;
-        ElympicsLobbyClient.Instance.RejoinLastOnlineMatch(ct: _cts.Token);
+    public void OnChangeRegionClicked()
+    {
+        ElympicsLobbyClient.Instance!.ConnectToElympicsAsync(new ConnectionData()
+        {
+            Region = new RegionData()
+            {
+                Name = regionToJoin,
+                IsCustom = false,
+            }
+        }).Forget();
     }
 }

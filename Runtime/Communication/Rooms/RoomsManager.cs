@@ -39,7 +39,7 @@ namespace Elympics
         #endregion Aggregated room events
 
         private readonly TimeSpan _operationTimeout = TimeSpan.FromSeconds(5);
-        private readonly TimeSpan _quickJoinTimeout = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan _quickJoinTimeout = TimeSpan.FromSeconds(10);
 
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private readonly IRoomJoiningQueue _joiningQueue;
@@ -282,8 +282,6 @@ namespace Elympics
                 var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, new Dictionary<string, string>(), new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
-                var users = room.State.Users;
-
                 await room.ChangeTeam(0);
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
 
@@ -350,5 +348,7 @@ namespace Elympics
             await ResultUtils.WaitUntil(() => _rooms.TryGetValue(roomId, out var roomToJoin) && roomToJoin.IsJoined, _operationTimeout, linkedCts.Token);
             return _rooms[roomId];
         }
+
+        async UniTask IRoomsManager.CheckJoinedRoomStatus() => await UniTask.CompletedTask;
     }
 }

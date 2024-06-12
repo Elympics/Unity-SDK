@@ -420,9 +420,8 @@ namespace Elympics
         [UsedImplicitly]
         public static void BuildAndUploadServerInBatchmode(string username, string password)
         {
-            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            if (gameConfig == null)
-                throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
+            _ = ElympicsConfig.LoadCurrentElympicsGameConfig()
+                             ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
                 throw new ArgumentNullException(nameof(username));
             if (string.IsNullOrEmpty(password))

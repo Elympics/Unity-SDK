@@ -3,7 +3,6 @@ using MessagePack;
 namespace Elympics.Models.Matchmaking.WebSocket
 {
     [MessagePackObject]
-    public readonly struct Pong : IFromLobby, IToLobby
-    {
-    }
+    public readonly struct Pong : IFromMatchmaker, IToMatchmaker
+    { }
 }

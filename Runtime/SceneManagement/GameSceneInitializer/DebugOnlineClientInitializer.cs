@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Libraries;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -27,7 +28,7 @@ namespace Elympics
             var elympicsConfig = ElympicsConfig.Load();
 
             _authClient = new RemoteAuthClient(elympicsConfig.ElympicsAuthEndpoint);
-            _matchmakerClient = MatchmakerClientFactory.Create(_elympicsGameConfig, elympicsConfig.ElympicsLobbyEndpoint);
+            _matchmakerClient = new WebSocketMatchmakerClient(elympicsConfig.ElympicsLobbyEndpoint);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
             _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.Log($"Match found: {matchId}.");
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
@@ -50,16 +51,17 @@ namespace Elympics
                 GameEngineData = testPlayerData.gameEngineData,
                 MatchmakerData = testPlayerData.matchmakerData,
             };
-            Connect();
+            Connect().Forget();
         }
 
-        private void Connect()
+        private async UniTask Connect()
         {
             ElympicsLogger.LogWarning($"Starting {AuthType.ClientSecret} authentication...");
             try
             {
-                var clientSecret = Guid.NewGuid().ToString();
-                _authClient.AuthenticateWithClientSecret(clientSecret, OnAuthenticated);
+                var clientSecret = ElympicsLobbyClient.GetOrCreateClientSecret();
+                var results = await _authClient.AuthenticateWithClientSecret(clientSecret);
+                OnAuthenticated(results);
             }
             catch (Exception e)
             {
@@ -84,7 +86,7 @@ namespace Elympics
             if (string.IsNullOrEmpty(regionName))
                 regionName = null;
 
-            ElympicsLobbyClient.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData,
+            ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData,
                 _initialPlayerData.GameEngineData, testMatchData.queueName, regionName, false);
 
             _matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData

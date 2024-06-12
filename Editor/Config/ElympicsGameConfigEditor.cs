@@ -35,7 +35,6 @@ namespace Elympics.Editor
         private SerializedProperty _botsInServer;
 
         private SerializedProperty _useWeb;
-        private SerializedProperty _legacyMatchmakingClient;
         private SerializedProperty _connectionConfig;
 
         private SerializedProperty _ticksPerSecond;
@@ -50,7 +49,6 @@ namespace Elympics.Editor
         private SerializedProperty _detailedNetworkLog;
         private SerializedProperty _mode;
         private SerializedProperty _halfRemoteMode;
-        private SerializedProperty _useWebInHalfRemote;
         private SerializedProperty _ipForHalfRemoteMode;
         private SerializedProperty _tcpPortForHalfRemoteMode;
         private SerializedProperty _webPortForHalfRemoteMode;
@@ -90,7 +88,6 @@ namespace Elympics.Editor
             _botsInServer = serializedObject.FindProperty("botsInServer");
 
             _useWeb = serializedObject.FindProperty("useWeb");
-            _legacyMatchmakingClient = serializedObject.FindProperty("legacyMatchmakingClient");
             _connectionConfig = serializedObject.FindProperty("connectionConfig");
 
             _ticksPerSecond = serializedObject.FindProperty("ticksPerSecond");
@@ -105,7 +102,6 @@ namespace Elympics.Editor
             _detailedNetworkLog = serializedObject.FindProperty("detailedNetworkLog");
             _mode = serializedObject.FindProperty("mode");
             _halfRemoteMode = serializedObject.FindProperty("halfRemoteMode");
-            _useWebInHalfRemote = serializedObject.FindProperty("useWebInHalfRemote");
             _ipForHalfRemoteMode = serializedObject.FindProperty("ipForHalfRemoteMode");
             _tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
             _webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
@@ -149,6 +145,8 @@ namespace Elympics.Editor
                 EditorGUI.EndDisabledGroup();
                 EditorGUILayout.Separator();
             }
+            if (!Guid.TryParse(_config.gameId, out _))
+                EditorGUILayout.HelpBox(Label_GameIdIsNotGuidError, MessageType.Error);
 
             DrawGameplayScene();
 
@@ -160,7 +158,6 @@ namespace Elympics.Editor
 
             BeginSection("Client");
             DrawUseWeb(summaryLabelStyle);
-            _ = EditorGUILayout.PropertyField(_legacyMatchmakingClient, new GUIContent("Legacy matchmaking", "Use long polling instead of WebSockets"));
             _ = EditorGUILayout.PropertyField(_connectionConfig, new GUIContent("Client connection config"));
             EditorGUILayout.Space();
 
@@ -324,13 +321,12 @@ namespace Elympics.Editor
                     break;
                 case ElympicsGameConfig.HalfRemoteModeEnum.Client:
                 case ElympicsGameConfig.HalfRemoteModeEnum.Bot:
+#pragma warning disable IDE0045
                     if (ElympicsGameConfig.IsOverridenInHalfRemoteByClone())
                         EditorGUI.EndDisabledGroup();
 
-                    DrawUseWebInHalfRemoteClient();
-
                     _ = EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
-                    if (ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue))
+                    if (ElympicsGameConfig.GetUseWeb(_useWeb.boolValue))
                         _ = EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Web port of server"));
                     else
                         _ = EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("TCP port of server"));
@@ -342,6 +338,7 @@ namespace Elympics.Editor
                         _ = EditorGUILayout.IntField("Used player index", ElympicsGameConfig.GetHalfRemotePlayerIndex(_playerIndexForHalfRemoteMode.intValue));
                     else
                         _ = EditorGUILayout.PropertyField(_playerIndexForHalfRemoteMode, new GUIContent("Used player index"));
+#pragma warning enable IDE0045
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -380,18 +377,6 @@ namespace Elympics.Editor
             }
 
             EditorGUILayout.Separator();
-        }
-
-        private void DrawUseWebInHalfRemoteClient()
-        {
-            if (ElympicsGameConfig.IsOverridenByWebGL())
-            {
-                EditorGUI.BeginDisabledGroup(true);
-                _ = EditorGUILayout.Toggle("Use HTTPS/WebRTC (forced by WebGL)", ElympicsGameConfig.GetUseWebInHalfRemote(_useWebInHalfRemote.boolValue));
-                EditorGUI.EndDisabledGroup();
-            }
-            else
-                _ = EditorGUILayout.PropertyField(_useWebInHalfRemote, new GUIContent("Use HTTPS/WebRTC"));
         }
 
         private void DrawInitialMatchData()
@@ -434,10 +419,7 @@ namespace Elympics.Editor
 
         private float FactorSlider(string label, float value, float min, float max) => FloatSliderWithUnit(new GUIContent(label), value, min, max, string.Empty);
 
-        private int TickSlider(GUIContent content, int value, int left, int right)
-        {
-            return IntSliderWithUnit(content, value, left, right, "ticks");
-        }
+        private int TickSlider(GUIContent content, int value, int left, int right) => IntSliderWithUnit(content, value, left, right, "ticks");
 
         private int IntSliderWithUnit(GUIContent content, int value, int left, int right, string unit)
         {
@@ -457,15 +439,9 @@ namespace Elympics.Editor
             return newValue;
         }
 
-        private int TicksToMs(int ticks)
-        {
-            return (int)Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
-        }
+        private int TicksToMs(int ticks) => (int)Math.Round(ticks * 1000.0 / _ticksPerSecond.intValue);
 
-        private int MsToTicks(int milliseconds)
-        {
-            return (int)Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
-        }
+        private int MsToTicks(int milliseconds) => (int)Math.Round(_ticksPerSecond.intValue * milliseconds / 1000.0);
 
         [CustomPropertyDrawer(typeof(ElympicsGameConfig.InitialUserData))]
         public class InitialUserDataPropertyDrawer : PropertyDrawer

@@ -36,13 +36,21 @@ namespace Elympics
 #endif
         private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 
-        internal string ElympicsApiEndpoint => GetV2Endpoint("api");
-        internal string ElympicsLobbyEndpoint => GetV2Endpoint("lobby");
-        internal string ElympicsAuthEndpoint => GetV2Endpoint("auth");
-        internal string ElympicsLeaderboardsEndpoint => GetV2Endpoint("leaderboardservice");
-        internal string ElympicsGameServersEndpoint => elympicsGameServersEndpoint;
+        internal string ElympicsApiEndpoint => ApplicationParameters.Parameters.ApiEndpoint.GetValue(GetV2Endpoint("api"))
+            .GetAbsoluteOrRelativeString();
+        internal string ElympicsLobbyEndpoint => ApplicationParameters.Parameters.LobbyEndpoint.GetValue(GetV2Endpoint("lobby"))
+            .GetAbsoluteOrRelativeString();
+        internal string ElympicsAuthEndpoint => ApplicationParameters.Parameters.AuthEndpoint.GetValue(GetV2Endpoint("auth"))
+            .GetAbsoluteOrRelativeString();
+        internal string ElympicsLeaderboardsEndpoint => ApplicationParameters.Parameters.LeaderboardsEndpoint.GetValue(GetV2Endpoint("leaderboardservice"))
+            .GetAbsoluteOrRelativeString();
+        internal string ElympicsGameServersEndpoint => ApplicationParameters.Parameters.GameServersEndpoint.GetValue(new UriBuilder(elympicsGameServersEndpoint).Uri)
+            .GetAbsoluteOrRelativeString();
+        internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
+            .GetAbsoluteOrRelativeString();
 
-        private string GetV2Endpoint(string serviceName) =>
+        [PublicAPI]
+        public Uri GetV2Endpoint(string serviceName) =>
             elympicsWebEndpoint.AppendPathSegments("v2", serviceName);
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;

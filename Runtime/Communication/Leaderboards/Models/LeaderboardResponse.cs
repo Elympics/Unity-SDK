@@ -9,8 +9,10 @@ namespace Elympics
     {
         public string userId;
         public string matchId;
+        public Guid tournamentId;
         public int position;
         public float points;
         public string endedAt;
+        public string nickname;
     };
 }

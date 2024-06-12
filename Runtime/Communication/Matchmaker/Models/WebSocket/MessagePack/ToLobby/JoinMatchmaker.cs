@@ -3,7 +3,7 @@ using MessagePack;
 namespace Elympics.Models.Matchmaking.WebSocket
 {
     [MessagePackObject]
-    public readonly struct JoinMatchmaker : IToLobby
+    public readonly struct JoinMatchmaker : IToMatchmaker
     {
         [Key(0)] public string QueueName { get; }
         [Key(1)] public string RegionName { get; }
@@ -18,7 +18,7 @@ namespace Elympics.Models.Matchmaking.WebSocket
             MatchmakerData = matchmakerData;
         }
 
-        public JoinMatchmaker(JoinMatchmakerData joinMatchmakerData)
+        internal JoinMatchmaker(JoinMatchmakerData joinMatchmakerData)
         {
             QueueName = joinMatchmakerData.QueueName;
             RegionName = joinMatchmakerData.RegionName;

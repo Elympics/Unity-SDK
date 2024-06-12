@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using GameBotCore.V1._3;
 
@@ -25,15 +24,15 @@ namespace Elympics
             var botConfiguration = new BotConfiguration
             {
                 Difficulty = 0,
-                UserId = userId,
-                MatchPlayers = playersList.Select(x => x.UserId).ToList(),
+                UserId = userId.ToString(),
+                MatchPlayers = playersList.Select(x => x.UserId.ToString()).ToList(),
                 MatchId = null,
                 MatchmakerData = playersList[playerIndex].MatchmakerData,
                 GameEngineData = playersList[playerIndex].GameEngineData,
             };
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, new Guid(userId), elympicsGameConfig.UseWebInHalfRemote);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, userId, elympicsGameConfig.UseWeb);
 
             _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);

@@ -6,8 +6,8 @@ namespace Elympics.Models.Authentication
 
         public const string ClientSecretAuth = "clientSecretAuth";
 
-        public const string EthAddressNonce = "ethAddressNonce";
-        public const string EthAddressAuth = "ethAddressAuth";
+        public const string EthAddressNonce = "ethAddressV2Nonce";
+        public const string EthAddressAuth = "ethAddressV2Auth";
 
         public const string LoginStatus = "loginStatus";
     }

@@ -17,20 +17,20 @@ namespace Elympics.Tests
 
         private static IEnumerable<EqualityComparerTestCase<int>> IntTestCasesWithToleranceTooLow => new List<EqualityComparerTestCase<int>>
         {
-            new EqualityComparerTestCase<int>(0, 1, 0f),
-            new EqualityComparerTestCase<int>(int.MinValue, 0, 10e5f),
-            new EqualityComparerTestCase<int>(0, int.MinValue, 10e5f),
-            new EqualityComparerTestCase<int>(int.MinValue, int.MaxValue, 10e5f)
+            new (0, 1, 0f),
+            new (int.MinValue, 0, 10e5f),
+            new (0, int.MinValue, 10e5f),
+            new (int.MinValue, int.MaxValue, 10e5f)
         };
 
         private static IEnumerable<EqualityComparerTestCase<int>> IntTestCasesWithToleranceSufficient => new List<EqualityComparerTestCase<int>>
         {
-            new EqualityComparerTestCase<int>(0, 0, 0f),
-            new EqualityComparerTestCase<int>(0, 0, 100f),  // (much) greater than needed
-			new EqualityComparerTestCase<int>(0, 1, 1f),
-            new EqualityComparerTestCase<int>(int.MinValue, 0, -(float)int.MinValue),
-            new EqualityComparerTestCase<int>(0, int.MinValue, -(float)int.MinValue),
-            new EqualityComparerTestCase<int>(int.MinValue, int.MaxValue, -(float)int.MinValue * 2)
+            new (0, 0, 0f),
+            new (0, 0, 100f),  // (much) greater than needed
+			new (0, 1, 1f),
+            new (int.MinValue, 0, -(float)int.MinValue),
+            new (0, int.MinValue, -(float)int.MinValue),
+            new (int.MinValue, int.MaxValue, -(float)int.MinValue * 2)
         };
 
         [Test]

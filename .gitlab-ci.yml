@@ -1,6 +1,7 @@
 variables:
   NODE_VERSION: "18.13.0"
   DOTNET_VERSION: "6.0"
+  MESSAGEPACK_VERSION: "2.5.124"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
   UNITY_ARCH: linux-il2cpp-1.0.1
@@ -14,7 +15,7 @@ stages:
   - prepare-license
   - prepare-project
   - test
-  - check-style
+  - check
   - trigger
   - pre-release
   - release
@@ -187,7 +188,7 @@ verify-formatting:
   extends:
     - .unity_image
     - .cond.license
-  stage: check-style
+  stage: check
   needs:
     - job: test:playmode
       artifacts: false
@@ -209,6 +210,35 @@ verify-formatting:
     expire_in: 2 weeks
     reports:
       codequality: format-report.codequality.json
+
+verify-messagepack-generated:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: check
+  needs:
+    - job: test:playmode
+      artifacts: false
+    - job: test:editmode
+      artifacts: false
+    - job: create-testing-project
+      artifacts: true
+  variables:
+    GIT_DEPTH: 1
+    ORIGINAL_GENERATED_PATH: "${UNITY_DIR}/Assets/ElympicsSDK/Runtime/Plugins/MessagePackGenerated.cs"
+    CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
+  before_script:
+    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+    - apt-get update && apt-get install -y --no-install-recommends jq dotnet-sdk-$DOTNET_VERSION
+    - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
+  script:
+    - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'
+    - diff "$ORIGINAL_GENERATED_PATH" "$CORRECT_GENERATED_PATH"
+  artifacts:
+    when: always
+    paths:
+      - MessagePackGenerated.cs
+    expire_in: 1 day
 
 .trigger:
   extends: .cond.releasebranch
@@ -298,6 +328,8 @@ check-if-release-possible:
     - job: test:editmode
       artifacts: false
     - job: verify-formatting
+      artifacts: false
+    - job: verify-messagepack-generated
       artifacts: false
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends git

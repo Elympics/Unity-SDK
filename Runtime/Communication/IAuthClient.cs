@@ -1,12 +1,12 @@
-using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 
 namespace Elympics
 {
     internal interface IAuthClient
     {
-        void AuthenticateWithClientSecret(string clientSecret, Action<Result<AuthData, string>> onResult, CancellationToken ct = default);
-        void AuthenticateWithEthAddress(IEthSigner ethSigner, Action<Result<AuthData, string>> onResult, CancellationToken ct = default);
+        UniTask<Result<AuthData, string>> AuthenticateWithClientSecret(string clientSecret, CancellationToken ct = default);
+        UniTask<Result<AuthData, string>> AuthenticateWithEthAddress(IEthSigner ethSigner, CancellationToken ct = default);
     }
 }

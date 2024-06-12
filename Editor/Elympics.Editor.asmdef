@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "Elympics",
-        "MessagePack"
+        "MessagePack",
+        "UniTask"
     ],
     "includePlatforms": [
         "Editor"
@@ -12,7 +13,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Elympics.Newtonsoft.Json.dll"
+        "Elympics.Newtonsoft.Json.dll",
+        "NSubstitute.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

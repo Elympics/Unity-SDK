@@ -29,7 +29,21 @@ namespace Elympics
             return _uriBuilder.Uri.ToString();
         }
 
-        internal abstract void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default);
+        internal void JoinMatchmakerAsync(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default)
+        {
+            var modifiedData = new JoinMatchmakerData
+            {
+                GameId = ApplicationParameters.Parameters.GameId.GetValue(joinMatchmakerData.GameId),
+                GameVersion = ApplicationParameters.Parameters.VersionName.GetValue(joinMatchmakerData.GameVersion),
+                MatchmakerData = joinMatchmakerData.MatchmakerData,
+                GameEngineData = joinMatchmakerData.GameEngineData,
+                QueueName = ApplicationParameters.Parameters.Queue.GetValue(joinMatchmakerData.QueueName),
+                RegionName = ApplicationParameters.Parameters.Region.GetValue(joinMatchmakerData.RegionName),
+            };
+            JoinMatchmakerInternal(modifiedData, authData, ct);
+        }
+
+        protected abstract void JoinMatchmakerInternal(JoinMatchmakerData joinMatchmakerData, AuthData authData, CancellationToken ct = default);
 
         public void CheckForAnyUnfinishedMatch(Guid gameId, string gameVersion, AuthData authData, Action<bool> onCompleted, Action<Exception> onError, CancellationToken ct = default)
         {

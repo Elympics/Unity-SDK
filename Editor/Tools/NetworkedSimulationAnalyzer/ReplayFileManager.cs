@@ -32,15 +32,15 @@ namespace Elympics
             if (string.IsNullOrEmpty(path))
                 return false;
 
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-            using (var br = new BinaryReader(fs))
-                if (!DeserializeServerData(br, tickListDisplayer, tickDataDisplayer))
-                {
-                    _ = EditorUtility.DisplayDialog("Wrong replay file", "Could not read provided file or it was uncompatible, outdated or had wrong format. " +
-                        "File is considered uncompatible, when gameID, game name, " +
-                        "game version or number of players is different than in the file provided.", "OK");
-                    return false;
-                }
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var br = new BinaryReader(fs);
+            if (!DeserializeServerData(br, tickListDisplayer, tickDataDisplayer))
+            {
+                _ = EditorUtility.DisplayDialog("Wrong replay file", "Could not read provided file or it was uncompatible, outdated or had wrong format. " +
+                                                                     "File is considered uncompatible, when gameID, game name, " +
+                                                                     "game version or number of players is different than in the file provided.", "OK");
+                return false;
+            }
 
             return true;
         }

@@ -1,31 +1,40 @@
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
+
+#nullable enable
 
 namespace Elympics
 {
+    [PublicAPI]
     public interface IEthSigner
     {
         /// <summary>
-        /// Method for providing Ethereum public address.
-        /// It is called by Elympics in authentication process.
+        /// Property providing Ethereum public address.
+        /// It is retrieved by Elympics in authentication process.
         /// </summary>
-        /// <param name="ct">Cancellation token managed by Elympics.</param>
-        Task<string> ProvideAddressAsync(CancellationToken ct = default);
+        string Address { get; }
 
         /// <summary>
-        /// Method for preparing a message for the player to sign. It MUST contain the nonce passed in the argument.
+        /// Method for preparing typed data for the player to sign. It MUST contain the nonce passed in the argument.
         /// It is called by Elympics in authentication process.
         /// </summary>
-        /// <param name="nonce">A nonce to be included in the message.</param>
-        /// <returns>Human-readable message for a player to sign</returns>
-        string ProvideMessage(string nonce);
+        /// <param name="nonce">A nonce to be included in the data.</param>
+        /// <returns>
+        /// Human-readable typed data message (in format defined by <see cref="Blockchain.TypedData.Login"/>)
+        /// for a player to sign (serialized to JSON according to EIP-712).
+        /// </returns>
+        string ProvideTypedData(string nonce);
 
         /// <summary>
-        /// Method for signing authentication message from Elympics using "personal_sign" Ethereum method.
+        /// Method for signing authentication message from Elympics using "eth_signTypedData_v4" Ethereum method.
         /// It is called by Elympics in authentication process.
         /// </summary>
-        /// <param name="message">Hex-encoded UTF-8 message to sign using "personal_sign" algorithm.</param>
+        /// <param name="typedData">
+        /// Human-readable typed data (in format defined by <see cref="Blockchain.TypedData.Login"/>
+        /// and serialized to JSON according to EIP-712) to sign using "eth_signTypedData_v4" algorithm.
+        /// </param>
         /// <param name="ct">Cancellation token managed by Elympics.</param>
-        Task<string> SignAsync(string message, CancellationToken ct = default);
+        UniTask<string> SignAsync(string typedData, CancellationToken ct = default);
     }
 }

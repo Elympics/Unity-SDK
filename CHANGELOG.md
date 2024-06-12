@@ -1,3 +1,32 @@
+## [0.10.0](https://github.com/Elympics/Unity-SDK/compare/v0.9.2...v0.10.0) (2024-06-12)
+
+
+### Bug Fixes 🪲
+
+* add validation for new region ([4f20f53](https://github.com/Elympics/Unity-SDK/commit/4f20f53636b2c2bb48ce0f5f94b12b07288c469b))
+* Don't call Application.Quit on server immediately after sending match results ([810aa46](https://github.com/Elympics/Unity-SDK/commit/810aa46d2bea8f845b3f0aae042aeb8ef98c00d9))
+* Rename WebSocket-related JS methods to prevent conflicts ([fb0ca7d](https://github.com/Elympics/Unity-SDK/commit/fb0ca7dc3742e8751fb97b06457888f7fe5d8c64))
+* Unsubscribe from event ([e12706e](https://github.com/Elympics/Unity-SDK/commit/e12706ef2c23fa08517c1b01f37d53db090f4067))
+
+
+### Features
+
+* add async method for connecting with Elympics ([2b63656](https://github.com/Elympics/Unity-SDK/commit/2b63656b19fe18a8e68bf5439d36fbf523b7c755))
+* add initial region for Authentication ([a968be6](https://github.com/Elympics/Unity-SDK/commit/a968be69d98883729afda35e5050012f27ec7881))
+* add nickname to Authdata ([decae46](https://github.com/Elympics/Unity-SDK/commit/decae4644f97a142dc17eab5c009840734d45718))
+* add nickname to leaderboard response and room userinfo ([431ed4d](https://github.com/Elympics/Unity-SDK/commit/431ed4dbd3789a07fc63c60cba8423d540b2abda))
+* add respect service ([cc9b914](https://github.com/Elympics/Unity-SDK/commit/cc9b9149cb8e2bbdfbdd02e32fc3fb79eb79c873))
+* Authenticate with cached data. ([9238cf7](https://github.com/Elympics/Unity-SDK/commit/9238cf79aff4d6fe3a13243cfbca28fe22fdf757))
+* Correct parsing optional in protobuf ([18b22d5](https://github.com/Elympics/Unity-SDK/commit/18b22d5cf092abaa146e13595f6f91c53f2e81b0))
+* Extend initial match data model ([1ff5953](https://github.com/Elympics/Unity-SDK/commit/1ff5953cc940616e1d6450e6d801e906ffa34e13))
+* HalfRemote and Local working with new IGameEngine interface ([45553c8](https://github.com/Elympics/Unity-SDK/commit/45553c84a7227a13784b0f64fe6409f667158ed0))
+* Introduce Room System. ([78f4af5](https://github.com/Elympics/Unity-SDK/commit/78f4af53a369552d7fa326d3ee422e928c6d5ec4))
+* Introduce Smart Contract Service ([5a59610](https://github.com/Elympics/Unity-SDK/commit/5a596102b4e37f2ce8556f792a7c7885b8a44d19))
+* Make Elympics API addresses and client secret configurable through env variables ([a83244a](https://github.com/Elympics/Unity-SDK/commit/a83244a5f38723ad9b26df4fa12ff671a93c2519))
+* Provide a mocking system for Rooms ([527fbca](https://github.com/Elympics/Unity-SDK/commit/527fbcade39d0f07f19fafc93f19998941345fa8))
+
+
+
 ## [0.9.2](https://github.com/Elympics/Unity-SDK/compare/v0.9.1...v0.9.2) (2023-09-25)
 
 

@@ -13,6 +13,7 @@ namespace Elympics.Lobby.Models
     // [Union(5, typeof(ShowAuthResponse))] - not needed
     [Union(6, typeof(RoomIdOperationResult))]
     [Union(7, typeof(RoomListChanged))]
+    [Union(8, typeof(GameDataResponse))]
     public interface IFromLobby
     { }
 }

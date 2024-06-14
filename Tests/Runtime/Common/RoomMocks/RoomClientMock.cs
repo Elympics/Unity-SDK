@@ -12,6 +12,7 @@ internal class RoomClientMock : IRoomsClient
 {
     public event Action<RoomStateChanged>? RoomStateChanged;
     public event Action<LeftRoomArgs>? LeftRoom;
+    public event Action<GameDataResponse>? GameDataResponse;
     public event Action<RoomListChanged>? RoomListChanged;
 
     public SessionConnectionDetails SessionConnectionDetails =>

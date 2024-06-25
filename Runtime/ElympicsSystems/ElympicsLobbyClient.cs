@@ -33,7 +33,10 @@ namespace Elympics
 
         [SerializeField] private AsyncEventsDispatcher? asyncEventsDispatcher;
         [SerializeField] private AuthType authenticateOnAwakeWith = AuthType.ClientSecret;
+
         [SerializeField] private ElympicsEthSigner? ethSigner;
+        private ITelegramSigner? _telegramSigner;
+
 
         // TODO: remove the following measures of backwards compatibility one day ~dsygocki 2023-04-28
         private AuthType AuthenticateOnAwakeWith => migratedAuthSettings
@@ -319,6 +322,9 @@ namespace Elympics
             }
         }
 
+        [PublicAPI]
+        public void RegisterEthSigner(ElympicsEthSigner signer) => ethSigner = signer is not null ? signer : throw new ArgumentNullException(nameof(signer));
+
         private async UniTask LegacyAuth(AuthType authType) => await ConnectToElympicsAsync(new ConnectionData()
         {
             AuthType = authType
@@ -351,6 +357,9 @@ namespace Elympics
                         break;
                     case AuthType.EthAddress:
                         authResult = await _auth.AuthenticateWithEthAddress(ethSigner);
+                        break;
+                    case AuthType.Telegram:
+                        authResult = await _auth.AuthenticateWithTelegram(_telegramSigner);
                         break;
                     case AuthType.None:
                         break;

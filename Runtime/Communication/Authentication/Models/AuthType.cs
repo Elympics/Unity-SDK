@@ -8,5 +8,6 @@ namespace Elympics.Models.Authentication
         None = 0,
         ClientSecret = 1,
         EthAddress = 2,
+        Telegram = 3,
     }
 }

@@ -115,5 +115,6 @@ namespace Elympics
             void OnPostFinish(Result<AuthenticationDataResponse, Exception> result) => postTcs.TrySetResult(result);
             void OnPutFinish(Result<EthAddressNonceResponse, Exception> result) => putTcs.TrySetResult(result);
         }
+        public async UniTask<Result<AuthData, string>> AuthenticateWithTelegram(ITelegramSigner telegramSigner, CancellationToken ct = default) => await UniTask.FromResult(Result<AuthData, string>.Failure($"Implicit authorization is not supported for the specified authentication type: {AuthType.Telegram}."));
     }
 }

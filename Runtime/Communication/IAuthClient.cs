@@ -8,5 +8,6 @@ namespace Elympics
     {
         UniTask<Result<AuthData, string>> AuthenticateWithClientSecret(string clientSecret, CancellationToken ct = default);
         UniTask<Result<AuthData, string>> AuthenticateWithEthAddress(IEthSigner ethSigner, CancellationToken ct = default);
+        UniTask<Result<AuthData, string>> AuthenticateWithTelegram(ITelegramSigner tonSigner, CancellationToken ct = default);
     }
 }

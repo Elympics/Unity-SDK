@@ -38,7 +38,7 @@ namespace Elympics.Rooms.Models
             + $"{nameof(QueueName)}:{QueueName}{Environment.NewLine}"
             + $"{nameof(TeamCount)}:{TeamCount}{Environment.NewLine}"
             + $"{nameof(TeamSize)}:{TeamSize}{Environment.NewLine}"
-            + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Value}, Value = {kv.Key}"))}{Environment.NewLine}"
+            + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Key}, Value = {kv.Value}"))}{Environment.NewLine}"
             + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
 
         public override int GetHashCode() => HashCode.Combine(State, LastStateUpdate, QueueName, TeamSize, TeamCount, MatchData, CustomData.Count);

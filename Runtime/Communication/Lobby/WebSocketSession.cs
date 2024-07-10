@@ -41,17 +41,15 @@ namespace Elympics.Lobby
                 if (_isConnected == value)
                     return;
                 _isConnected = value;
-                _dispatcher.Enqueue(value
-                    ? () => Connected?.Invoke()
-                    : () => Disconnected?.Invoke());
+                _dispatcher.Enqueue(value ? () => Connected?.Invoke() : () => Disconnected?.Invoke());
             }
         }
+
         private bool _isConnected;
 
         public SessionConnectionDetails ConnectionDetails =>
-            IsConnected
-                ? _connectionDetails!.Value
-                : throw new InvalidOperationException($"{nameof(WebSocketSession)} is not connected.");
+            IsConnected ? _connectionDetails!.Value : throw new InvalidOperationException($"{nameof(WebSocketSession)} is not connected.");
+
         private SessionConnectionDetails? _connectionDetails;
 
         public WebSocketSession(IAsyncEventsDispatcher dispatcher, WebSocketFactory? wsFactory = null, ILobbySerializer? serializer = null)
@@ -115,16 +113,16 @@ namespace Elympics.Lobby
             _isDisposed = true;
         }
 
-        public UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
+        public async UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
             if (!IsConnected)
                 throw ElympicsLogger.LogException(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var ackTask = WaitForOperationResult(message.OperationId, OperationTimeout, linkedCts.Token);
             SendMessage(message);
-            return ackTask;
+            var result = await WaitForOperationResult(message.OperationId, OperationTimeout, linkedCts.Token);
+            return result;
         }
 
         private async UniTask OpenWebSocket(IWebSocket ws)
@@ -220,9 +218,7 @@ namespace Elympics.Lobby
 
         private void HandleClose(WebSocketCloseCode code, string reason)
         {
-            _dispatcher.Enqueue(code != WebSocketCloseCode.Normal
-                ? () => ElympicsLogger.LogError($"Connection closed abnormally [{code}] {reason}")
-                : () => ElympicsLogger.Log($"Connection closed gracefully [{code}] {reason}"));
+            _dispatcher.Enqueue(code != WebSocketCloseCode.Normal ? () => ElympicsLogger.LogError($"Connection closed abnormally [{code}] {reason}") : () => ElympicsLogger.Log($"Connection closed gracefully [{code}] {reason}"));
 
             if (IsConnected)
                 Reconnect().Forget();
@@ -245,11 +241,7 @@ namespace Elympics.Lobby
         }
 
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
-            ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success
-                ? tcs.TrySetResult(result)
-                : tcs.TrySetException(new LobbyOperationException(result)),
-                handler => _operationResultHandlers.TryAdd(operationId, handler),
-                _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);
+            ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)), handler => _operationResultHandlers.TryAdd(operationId, handler), _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);
 
         private void DispatchWithCancellation(Action action) =>
             _dispatcher.Enqueue(action.WithCancellation(Token));

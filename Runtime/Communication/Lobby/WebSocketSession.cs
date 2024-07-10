@@ -18,11 +18,13 @@ namespace Elympics.Lobby
 
         public TimeSpan OpeningTimeout = TimeSpan.FromSeconds(5);
         public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
+        public TimeSpan AutomaticDisconnectThreshold = TimeSpan.FromSeconds(30);
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
+        private TimeoutController _disconnectTimeoutController = new();
         private CancellationToken Token => _cts?.Token ?? new CancellationToken(true);
 
         private bool _isDisposed;
@@ -79,6 +81,8 @@ namespace Elympics.Lobby
                 await EstablishSession(gameId, gameVersion, regionName);
                 _connectionDetails = details;
                 IsConnected = true;
+
+                AutoDisconnectOnTimeoutAsync().Forget();
             }
             catch (OperationCanceledException)
             {
@@ -191,6 +195,7 @@ namespace Elympics.Lobby
 #endif
                 if (message is Ping)
                 {
+                    _disconnectTimeoutController.Reset();
                     SendMessage(new Pong());
                     return;
                 }
@@ -209,7 +214,6 @@ namespace Elympics.Lobby
                 ElympicsLogger.LogException(e);
             }
         }
-
         private void HandleError(string message)
         {
             Disconnect();
@@ -239,7 +243,18 @@ namespace Elympics.Lobby
                 _dispatcher.Enqueue(() => _ = ElympicsLogger.LogException(e));
             }
         }
+        private async UniTaskVoid AutoDisconnectOnTimeoutAsync()
+        {
+            var disconnectThresholdPassed = await UniTask.Delay(AutomaticDisconnectThreshold, cancellationToken: _disconnectTimeoutController.Timeout(AutomaticDisconnectThreshold)).SuppressCancellationThrow();
 
+            if (disconnectThresholdPassed)
+            {
+                Disconnect();
+                ElympicsLogger.Log("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
+            }
+            else
+                AutoDisconnectOnTimeoutAsync().Forget();
+        }
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)), handler => _operationResultHandlers.TryAdd(operationId, handler), _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);
 

@@ -114,8 +114,22 @@ namespace Elympics
             _joiningQueue.Clear();
             foreach (var (roomId, room) in clearedRooms)
             {
-                room.Dispose();
-                LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.RoomClosed));
+                try
+                {
+                    if (room.IsJoined)
+                    {
+                        room.Dispose();
+                        LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.RoomClosed));
+                    }
+                    else
+                    {
+                        room.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _ = ElympicsLogger.LogException(ex);
+                }
             }
             _cts = new CancellationTokenSource();
         }

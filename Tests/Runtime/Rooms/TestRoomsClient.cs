@@ -19,6 +19,7 @@ namespace Elympics.Tests.Rooms
     internal class TestRoomsClient
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
+
         private static readonly RoomsClient RoomsClient = new()
         {
             Session = WsSessionMock,
@@ -33,7 +34,7 @@ namespace Elympics.Tests.Rooms
         public void ResetMocks()
         {
             WsSessionMock.Reset();
-            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
+            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "", false);
             RoomsClient.Session = WsSessionMock;
         }
 
@@ -185,15 +186,19 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator SettingReadyShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new SetReady(TestRoomGuid, new byte[]
-            {
-                1,
-                2,
-                3, }, new[]
-            {
-                0.1f,
-                0.2f,
-                0.3f, });
+            var expectedMessage = new SetReady(TestRoomGuid,
+                new byte[]
+                {
+                    1,
+                    2,
+                    3,
+                },
+                new[]
+                {
+                    0.1f,
+                    0.2f,
+                    0.3f,
+                });
 
             // Act
             await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData);
@@ -205,15 +210,19 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator SettingReadyShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new SetReady(TestRoomGuid, new byte[]
-            {
-                1,
-                2,
-                3, }, new[]
-            {
-                0.1f,
-                0.2f,
-                0.3f, });
+            var expectedMessage = new SetReady(TestRoomGuid,
+                new byte[]
+                {
+                    1,
+                    2,
+                    3,
+                },
+                new[]
+                {
+                    0.1f,
+                    0.2f,
+                    0.3f,
+                });
             RoomsClient.Session = null;
 
             // Act

@@ -48,6 +48,7 @@ namespace Elympics
             .GetAbsoluteOrRelativeString();
         internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
             .GetAbsoluteOrRelativeString();
+        internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Lobby.Models.Routes.Base).ToString();
 
         [PublicAPI]
         public Uri GetV2Endpoint(string serviceName) =>

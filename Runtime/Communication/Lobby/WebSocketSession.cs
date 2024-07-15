@@ -5,6 +5,8 @@ using Cysharp.Threading.Tasks;
 using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
+using UnityEngine;
+using Ping = Elympics.Lobby.Models.Ping;
 
 #nullable enable
 
@@ -24,7 +26,7 @@ namespace Elympics.Lobby
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
-        private TimeoutController _timeoutController = new();
+        private TimeoutController _timeoutController;
         private CancellationToken Token => _cts?.Token ?? new CancellationToken(true);
 
         private bool _isDisposed;
@@ -69,6 +71,7 @@ namespace Elympics.Lobby
             if (_cts is not null)
                 throw ElympicsLogger.LogException(new InvalidOperationException("Connecting already in progress."));
             _cts = new CancellationTokenSource();
+            _timeoutController = new TimeoutController(_cts, DelayType.Realtime);
             var (url, protocol) = wsUrl.ToWebSocketAddress(authData.JwtToken);
             _ws = _wsFactory(url, protocol);
             _ws.OnError += HandleError;
@@ -81,8 +84,6 @@ namespace Elympics.Lobby
                 await EstablishSession(gameId, gameVersion, regionName);
                 _connectionDetails = details;
                 IsConnected = true;
-
-                _timeoutController = new TimeoutController();
                 AutoDisconnectOnTimeout().Forget();
             }
             catch (OperationCanceledException)
@@ -102,7 +103,7 @@ namespace Elympics.Lobby
                 return;
             _cts.Cancel();
             _cts.Dispose();
-            _timeoutController.Reset();
+            _timeoutController.Dispose();
             _cts = null;
             _operationResultHandlers.Clear();
             ResetWebSocket();
@@ -248,7 +249,8 @@ namespace Elympics.Lobby
         private async UniTaskVoid AutoDisconnectOnTimeout()
         {
             await UniTask.WaitUntilCanceled(cancellationToken: _timeoutController.Timeout(_automaticDisconnectThreshold));
-            Disconnect();
+            if (_isConnected)
+                Disconnect();
         }
         private void ResetTimeout() => _ = _timeoutController.Timeout(_automaticDisconnectThreshold);
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>

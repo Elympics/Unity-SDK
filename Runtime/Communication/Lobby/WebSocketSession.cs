@@ -5,7 +5,6 @@ using Cysharp.Threading.Tasks;
 using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
-using UnityEngine;
 using Ping = Elympics.Lobby.Models.Ping;
 
 #nullable enable

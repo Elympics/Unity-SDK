@@ -23,7 +23,7 @@ namespace Elympics.Tests
     [Category("WebSocket")]
     public class TestWebSocketSession
     {
-        private static readonly AsyncEventsDispatcherMock Dispatcher = new();
+        private static readonly IAsyncEventsDispatcher Dispatcher = AsyncEventsDispatcherMockSetup.CreateMockAsyncEventsDispatcher();
         private static readonly WebSocketMock WsMock = new();
         private static readonly LobbySerializerMock SerializerMock = new();
         private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);

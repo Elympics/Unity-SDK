@@ -249,7 +249,10 @@ namespace Elympics.Lobby
         {
             await UniTask.WaitUntilCanceled(cancellationToken: _timeoutController.Timeout(_automaticDisconnectThreshold));
             if (_isConnected)
+            {
+                ElympicsLogger.LogWarning("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
                 Disconnect();
+            }
         }
         private void ResetTimeout() => _ = _timeoutController.Timeout(_automaticDisconnectThreshold);
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>

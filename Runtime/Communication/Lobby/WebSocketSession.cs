@@ -18,7 +18,7 @@ namespace Elympics.Lobby
 
         public TimeSpan OpeningTimeout = TimeSpan.FromSeconds(5);
         public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
-        public TimeSpan AutomaticDisconnectThreshold = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan _automaticDisconnectThreshold = TimeSpan.FromSeconds(30);
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
 
@@ -245,7 +245,7 @@ namespace Elympics.Lobby
         }
         private async UniTaskVoid AutoDisconnectOnTimeoutAsync()
         {
-            var disconnectThresholdPassed = await UniTask.Delay(AutomaticDisconnectThreshold, cancellationToken: _disconnectTimeoutController.Timeout(AutomaticDisconnectThreshold)).SuppressCancellationThrow();
+            var disconnectThresholdPassed = await UniTask.Delay(_automaticDisconnectThreshold, cancellationToken: _disconnectTimeoutController.Timeout(_automaticDisconnectThreshold)).SuppressCancellationThrow();
 
             if (disconnectThresholdPassed)
             {

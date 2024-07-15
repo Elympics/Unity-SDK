@@ -351,6 +351,11 @@ namespace Elympics
             return Ws;
         }
 
+        public static void SendPing()
+        {
+            SendResponse(WebSocket, new Ping());
+        }
+
         public static void MakeAllPlayersReadyForRoom(Guid roomId)
         {
             var room = WebSocketMockBackendSession.Rooms[roomId];

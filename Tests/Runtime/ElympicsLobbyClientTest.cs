@@ -27,7 +27,9 @@ namespace Elympics.Tests
         private const string AuthClientFieldName = "_auth";
         private const string WebSocketSessionName = "_webSocketSession";
         private const string WebSocketFactory = "_wsFactory";
+        private const string PingTimeoutThreshold = "_automaticDisconnectThreshold";
         private const int TestsTimeoutMs = 1000;
+        private const double PingTimeoutSec = 1.1;
 
 
         private const string ExpiredClientAuthJwt =
@@ -59,6 +61,11 @@ namespace Elympics.Tests
             Assert.NotNull(webSocketFactory);
 
             webSocketFactory.SetValue(lazyWebSocketObject.Value, (WebSocketSession.WebSocketFactory)MockWebSocket);
+
+            var webSocketSession = lazyWebSocketObject.Value;
+            var pingDisconnectTimeout = webSocketSession.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == PingTimeoutThreshold);
+
+            pingDisconnectTimeout!.SetValue(webSocketSession,TimeSpan.FromSeconds(PingTimeoutSec));
         }
 
         [UnityTest]

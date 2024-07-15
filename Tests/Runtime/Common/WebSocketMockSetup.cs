@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby.Models;
@@ -8,49 +9,92 @@ using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 
 #nullable enable
 namespace Elympics
 {
-    public static class WebSocketMockSetup
+    internal static class WebSocketMockSetup
     {
-        private static readonly Guid UserId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-        private static readonly string Nickname = "Nickname_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+        private static readonly Guid UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        private const string Nickname = "nickname";
+
+        private const string FakeJwt = @"{
+  ""header"": {
+    ""alg"": ""RS256"",
+    ""typ"": ""JWT""
+  },
+  ""payload"": {
+    ""nameid"": ""057f2883-b4b4-4cc6-895f-e1332da86567"",
+    ""auth-type"": ""client-secret"",
+    ""nbf"": 1718803982,
+    ""exp"": 111,
+    ""iat"": 1718803982
+  },
+  ""signature"": ""rX85CHYGCpo2V1J6hXRj0rRySi-n7qxjiuwS98P9zS6W-hfKHKsApWJQeLUZ4_0DCUr8AE-YdkbYESKwv6Jl5OuyHDH4QCIVuTkCVrbT4duCiopitcVqwNubQARpTc7lApDAxihAtmdVUuUwz26po2ntlgv-p_JdHqN1g5Uk3vr9miKDdBzvSwSWwN1NP2cGEvzqlAs3wHtw4GYZChX_RugjM-vppuovQMOkwxJ7IvQXV7kb00ucpj71u9EmTmQFN9RMnB8b4c5K7-kXCM-_L2PNAC6MZX2-OExNWklQtqTUD3oF-dJFRH4Hew_ZEgt_SBw37NWN1NSfT2q1wnXh0TDpFPPnZSqYUGNYl7mhOlLrPWNi5e4dpiawy-23760qDmj4kriyqOPcVCzWTbmcvcEe-ktwBIo9MNwYZvQCFJ7yZfsdVTlw7WdBO9_Kf6JZNVZ7Rc6jjCN3OPmCJShTLg7GbiHOp9Bl8637mXXV7GwTzqZxoyAvU9ysRyRXC3kMkUEew0oyAr8eCXU1k-8DIiK_AYdzAUIqSfgV74MwONqQtmrxbGx8kw_l4D15ha7vOMI0QoN9Tu62ElFBgwk2j-1ysH7_7D_sx-9wYD-gUUaOIgL2e71cLzxzzQ0RJYh984BE6RawW4-mzjiR3J8g9NYPRhT-911w-F_HGRTXCZ4""
+}";
 
         public static readonly WebSocketMockBackendSession WebSocketMockBackendSession;
 
         private static readonly IAuthClient AuthClient;
-        private static readonly IWebSocket WebSocket;
         private static CancellationTokenSource? cts;
         private static readonly IWebSocket Ws = Substitute.For<IWebSocket>();
+        private static bool isInRoom;
 
         // source https://github.com/Thundernerd/Unity3D-NSubstitute/blob/main/Editor/NSubstitute.dll
         static WebSocketMockSetup()
         {
             WebSocketMockBackendSession = new WebSocketMockBackendSession();
-            AuthClient = CreateMockAuthClient();
+            AuthClient = CreateAuthClientMock();
             WebSocket = CreateMockWebSocket();
         }
 
 #pragma warning disable IDE0060
-        internal static IWebSocket MockWebSocketFactory(string url, string? protocol = null) => WebSocket;
+        internal static IWebSocket WebSocket;
 #pragma warning restore IDE0060
         internal static IAuthClient MockAuthClient() => AuthClient;
 
-        private static IAuthClient CreateMockAuthClient()
+        private static IAuthClient CreateAuthClientMock()
         {
+            var token = EncodeJwtFromJson(FakeJwt);
+            var taskResult = UniTask.FromResult(Result<AuthData, string>.Success(new AuthData(UserId, token, Nickname, AuthType.ClientSecret)));
             var ac = Substitute.For<IAuthClient>();
-            ac.When(x => x.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>())).Do(x =>
-            {
-                var onResult = (Action<Result<AuthData, string>>)x[1];
-                onResult?.Invoke(Result<AuthData, string>.Success(new AuthData(UserId, "faketoken", Nickname, AuthType.ClientSecret)));
-            });
+            _ = ac.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(taskResult);
             return ac;
         }
 
         private class MessageHandledException : Exception
         { }
+
+        public static string EncodeJwtFromJson(string json)
+        {
+            var jwtObject = JObject.Parse(json);
+
+            var expireTime = DateTime.UtcNow.AddHours(1);
+            var epochTimeSpan = expireTime - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var epochTime = (long)epochTimeSpan.TotalSeconds;
+            var header = jwtObject["header"]!.ToString(Formatting.None);
+            jwtObject!["payload"]!["exp"] = epochTime;
+            var payload = jwtObject["payload"]!.ToString(Formatting.None);
+            var signature = jwtObject["signature"]!.ToString();
+
+            var encodedHeader = Base64UrlEncode(Encoding.UTF8.GetBytes(header));
+            var encodedPayload = Base64UrlEncode(Encoding.UTF8.GetBytes(payload));
+            var encodedSignature = Base64UrlEncode(Encoding.UTF8.GetBytes(signature));
+
+            return $"{encodedHeader}.{encodedPayload}.{encodedSignature}";
+        }
+
+        public static string Base64UrlEncode(byte[] input)
+        {
+            var output = Convert.ToBase64String(input);
+            output = output.Replace('+', '-'); // Replace '+' with '-'
+            output = output.Replace('/', '_'); // Replace '/' with '_'
+            output = output.TrimEnd('='); // Remove any trailing '='
+            return output;
+        }
 
         private static IWebSocket CreateMockWebSocket()
         {
@@ -73,6 +117,25 @@ namespace Elympics
                         case JoinLobby joinLobby:
                         {
                             SendSuccessResponse(Ws, joinLobby);
+                            var gameResponse = new GameDataResponse(isInRoom ? 1 : 0);
+                            SendResponse(Ws, gameResponse);
+                            var room = new RoomStateChanged(Guid.NewGuid(),
+                                DateTime.Now,
+                                "RoomName",
+                                "ZZZZZZZZ",
+                                true,
+                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null),
+                                new List<UserInfo>
+                                {
+                                    new(UserId, 0, false, UserId.ToString()),
+                                },
+                                true,
+                                false,
+                                new Dictionary<string, string>());
+
+                            WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
+                            WebSocketMockBackendSession.Rooms[room.RoomId] = room;
+                            SendResponse(Ws, room);
                             break;
                         }
                         case CreateRoom createRoom:
@@ -298,6 +361,12 @@ namespace Elympics
                 } : u));
             UpdateTime(ref room);
             SendResponse(Ws, room);
+        }
+
+        public static void IsUserInRoom(bool inRoom)
+        {
+            isInRoom = inRoom;
+            ElympicsLogger.Log($"[MOCK] User is assigned to room {inRoom}");
         }
 
         public static void SimulateRoomParametersChange(Guid roomId, string? roomName, bool? isPrivate, Dictionary<string, string>? customRoomData, Dictionary<string, string>? customMatchmakingData)

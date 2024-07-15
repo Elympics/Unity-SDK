@@ -26,9 +26,6 @@ namespace Elympics
     {
         public static ElympicsLobbyClient? Instance { get; private set; }
 
-        internal static IAuthClient? AuthClientOverride = null;
-        internal static WebSocketSession.WebSocketFactory WebSocketFactoryOverride = null;
-
         #region Authentication
 
         [SerializeField] private AsyncEventsDispatcher? asyncEventsDispatcher;
@@ -178,7 +175,7 @@ namespace Elympics
                 return;
             }
 
-            _auth = AuthClientOverride ?? new RemoteAuthClient(_config.ElympicsAuthEndpoint);
+            _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
             ShouldLoadGameplaySceneAfterMatchmaking = shouldLoadGameplaySceneAfterMatchmaking;
             _roomsManager.Value.Reset(); // calling Value initializes RoomsManager and its dependencies (RoomsClient, WebSocketSession) ~dsygocki 2023-12-06
@@ -201,7 +198,7 @@ namespace Elympics
         {
             if (asyncEventsDispatcher == null)
                 throw new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}");
-            return new WebSocketSession(asyncEventsDispatcher, WebSocketFactoryOverride);
+            return new WebSocketSession(asyncEventsDispatcher);
         }
 
         private RoomsClient CreateRoomsClient() => new()
@@ -385,8 +382,6 @@ namespace Elympics
                 AuthData = result.Value;
                 ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
             }
-            else
-                ElympicsLogger.LogError($"{authType} authentication failed: {result.Error}");
 
             string? eventName = null;
             try

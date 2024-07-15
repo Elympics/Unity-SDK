@@ -30,8 +30,6 @@ public class RoomController : BaseWindow
     private PlayerSeat[] _playerSeats;
     private Dictionary<int, Guid[]> _teams = new();
 
-    private static bool alreadyCheckedForMatchRejoin = false;
-
     private bool IsActive => roomCanvasGroup.blocksRaycasts;
     private IRoom FirstJoinedRoom => RoomsUtility.RoomsManager.ListJoinedRooms().FirstOrDefault();
 
@@ -43,11 +41,7 @@ public class RoomController : BaseWindow
     private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.UserId);
 
     [SerializeField] private Button recconectButton;
-    private void OnApplicationQuit()
-    {
-        if (_currentRoom != null && !_currentRoom.IsDisposed && _currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Unlocked)
-            _ = _currentRoom.Leave();
-    }
+
     public void InitController()
     {
         recconectButton.gameObject.SetActive(false);

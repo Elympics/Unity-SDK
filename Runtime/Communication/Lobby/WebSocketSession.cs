@@ -24,7 +24,7 @@ namespace Elympics.Lobby
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
-        private TimeoutController _disconnectTimeoutController = new();
+        private CancellationTokenSource? _autoDisconnectCts;
         private CancellationToken Token => _cts?.Token ?? new CancellationToken(true);
 
         private bool _isDisposed;
@@ -82,7 +82,8 @@ namespace Elympics.Lobby
                 _connectionDetails = details;
                 IsConnected = true;
 
-                AutoDisconnectOnTimeoutAsync().Forget();
+                _autoDisconnectCts = new();
+                AutoDisconnectOnTimeoutAsync(_autoDisconnectCts.Token).Forget();
             }
             catch (OperationCanceledException)
             {
@@ -101,6 +102,7 @@ namespace Elympics.Lobby
                 return;
             _cts.Cancel();
             _cts.Dispose();
+            _autoDisconnectCts?.Cancel();
             _cts = null;
             _operationResultHandlers.Clear();
             ResetWebSocket();
@@ -195,7 +197,11 @@ namespace Elympics.Lobby
 #endif
                 if (message is Ping)
                 {
-                    _disconnectTimeoutController.Reset();
+                    _autoDisconnectCts?.Cancel();
+                    _autoDisconnectCts = new();
+                    AutoDisconnectOnTimeoutAsync(_autoDisconnectCts.Token).Forget();
+
+                    ElympicsLogger.Log("ResetTimer");
                     SendMessage(new Pong());
                     return;
                 }
@@ -243,17 +249,13 @@ namespace Elympics.Lobby
                 _dispatcher.Enqueue(() => _ = ElympicsLogger.LogException(e));
             }
         }
-        private async UniTaskVoid AutoDisconnectOnTimeoutAsync()
+        private async UniTaskVoid AutoDisconnectOnTimeoutAsync(CancellationToken token)
         {
-            var disconnectThresholdPassed = await UniTask.Delay(_automaticDisconnectThreshold, cancellationToken: _disconnectTimeoutController.Timeout(_automaticDisconnectThreshold)).SuppressCancellationThrow();
-
-            if (disconnectThresholdPassed)
-            {
-                Disconnect();
-                ElympicsLogger.Log("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
-            }
-            else
-                AutoDisconnectOnTimeoutAsync().Forget();
+            _ = await UniTask.Delay(_automaticDisconnectThreshold, cancellationToken: token).SuppressCancellationThrow();
+            if (!IsConnected)
+                return;
+            Disconnect();
+            ElympicsLogger.Log("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
         }
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)), handler => _operationResultHandlers.TryAdd(operationId, handler), _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);

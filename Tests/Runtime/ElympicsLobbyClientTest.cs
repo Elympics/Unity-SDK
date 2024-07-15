@@ -65,7 +65,7 @@ namespace Elympics.Tests
             var webSocketSession = lazyWebSocketObject.Value;
             var pingDisconnectTimeout = webSocketSession.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == PingTimeoutThreshold);
 
-            pingDisconnectTimeout!.SetValue(webSocketSession,TimeSpan.FromSeconds(PingTimeoutSec));
+            pingDisconnectTimeout!.SetValue(webSocketSession, TimeSpan.FromSeconds(PingTimeoutSec));
         }
 
         [UnityTest]
@@ -193,6 +193,53 @@ namespace Elympics.Tests
             Assert.AreEqual(cache.AuthType, _sut.AuthData!.AuthType);
         });
 
+        [UnityTest]
+        public IEnumerator DisconnectWebSocket() => UniTask.ToCoroutine(async () =>
+        {
+            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            {
+                AuthType = AuthType.ClientSecret
+            });
+
+            var disconnectedCalled = false;
+            _sut.WebSocketSession.Disconnected += () => disconnectedCalled = true;
+
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutSec + 2));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: false } });
+            Assert.IsTrue(disconnectedCalled);
+        });
+        [UnityTest]
+        public IEnumerator DisconnectWebSocket_Reconnect() => UniTask.ToCoroutine(async () =>
+        {
+            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            {
+                AuthType = AuthType.ClientSecret,
+                Region = new RegionData()
+                {
+                    Name = ElympicsRegions.Warsaw
+                }
+            });
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutSec + 2));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: false } });
+
+            var authenticationCalled = false;
+            var connectedCalled = false;
+
+            _sut.WebSocketSession.Connected += () => connectedCalled = true;
+            _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
+
+            await _sut.ConnectToElympicsAsync(new ConnectionData()
+            {
+                Region = new RegionData()
+                {
+                    Name = ElympicsRegions.Mumbai
+                }
+            });
+            await UniTask.Delay(TimeSpan.FromSeconds(1));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: true } });
+            Assert.IsFalse(authenticationCalled);
+            Assert.IsTrue(connectedCalled);
+        });
         [TearDown]
         public void CleanUp()
         {

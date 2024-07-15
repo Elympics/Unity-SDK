@@ -114,6 +114,10 @@ namespace Elympics
                 {
                     switch (msg)
                     {
+                        case Pong pong:
+                        {
+                            break;
+                        }
                         case JoinLobby joinLobby:
                         {
                             SendSuccessResponse(Ws, joinLobby);

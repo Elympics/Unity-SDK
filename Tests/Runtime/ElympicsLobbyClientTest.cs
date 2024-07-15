@@ -194,6 +194,30 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
+        public IEnumerator GetPingToPreventDisconnection() => UniTask.ToCoroutine(async () =>
+        {
+            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            {
+                AuthType = AuthType.ClientSecret
+            });
+
+            var disconnectedCalled = false;
+            _sut.WebSocketSession.Disconnected += () => disconnectedCalled = true;
+            WebSocketMockSetup.SendPing(); //TODO: Mock this in WebSocketMockSetup.
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutSec - 0.1d));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: true } });
+            Assert.IsFalse(disconnectedCalled);
+            WebSocketMockSetup.SendPing();
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutSec - 0.1d));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: true } });
+            Assert.IsFalse(disconnectedCalled);
+            WebSocketMockSetup.SendPing();
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutSec - 0.1d));
+            Assert.IsTrue(_sut is { IsAuthenticated: true, WebSocketSession: { IsConnected: true } });
+            Assert.IsFalse(disconnectedCalled);
+        });
+
+        [UnityTest]
         public IEnumerator DisconnectWebSocket() => UniTask.ToCoroutine(async () =>
         {
             await _sut!.ConnectToElympicsAsync(new ConnectionData()

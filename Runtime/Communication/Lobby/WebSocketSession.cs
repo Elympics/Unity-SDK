@@ -201,7 +201,6 @@ namespace Elympics.Lobby
                     _autoDisconnectCts = new();
                     AutoDisconnectOnTimeoutAsync(_autoDisconnectCts.Token).Forget();
 
-                    ElympicsLogger.Log("ResetTimer");
                     SendMessage(new Pong());
                     return;
                 }

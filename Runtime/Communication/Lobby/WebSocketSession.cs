@@ -251,8 +251,8 @@ namespace Elympics.Lobby
         }
         private async UniTaskVoid AutoDisconnectOnTimeoutAsync(CancellationToken token)
         {
-            _ = await UniTask.Delay(_automaticDisconnectThreshold, cancellationToken: token).SuppressCancellationThrow();
-            if (!IsConnected)
+            var isCancelled = await UniTask.Delay(_automaticDisconnectThreshold, cancellationToken: token).SuppressCancellationThrow();
+            if (isCancelled)
                 return;
             Disconnect();
             ElympicsLogger.Log("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");

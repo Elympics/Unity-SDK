@@ -282,7 +282,8 @@ namespace Elympics.Tests
                     Name = ElympicsRegions.Warsaw
                 }
             });
-            Assert.IsTrue(_sut is { IsAuthenticated: false, WebSocketSession: { IsConnected: false } });
+            Assert.IsFalse(_sut.IsAuthenticated);
+            Assert.IsFalse(_sut.WebSocketSession.IsConnected);
         });
         [TearDown]
         public void CleanUp()

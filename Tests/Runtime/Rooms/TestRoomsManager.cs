@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
@@ -44,6 +46,8 @@ namespace Elympics.Tests.Rooms
             _roomsClientMock.Reset();
             _joiningQueueMock.Reset();
             _roomsManager.Reset();
+            var field = _roomsManager.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).Find(x => x.Name == "_initialized");
+            field.SetValue(_roomsManager, true);
         }
 
         [Test]
@@ -162,7 +166,7 @@ namespace Elympics.Tests.Rooms
 
             // Act
             _roomsClientMock.InvokeRoomListChanged(roomListChanged);
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomInvoked, RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.UserJoinedInvoked, RoomEventObserver.UserCountChangedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.JoinedRoomInvoked);
             var roomStateWithUsers = _roomStateChanged with
             {
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),

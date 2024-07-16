@@ -26,14 +26,14 @@ namespace Elympics
     {
         public static ElympicsLobbyClient? Instance { get; private set; }
 
-        internal static IAuthClient? AuthClientOverride = null;
-        internal static WebSocketSession.WebSocketFactory WebSocketFactoryOverride = null;
-
         #region Authentication
 
         [SerializeField] private AsyncEventsDispatcher? asyncEventsDispatcher;
         [SerializeField] private AuthType authenticateOnAwakeWith = AuthType.ClientSecret;
+
         [SerializeField] private ElympicsEthSigner? ethSigner;
+        private ITelegramSigner? _telegramSigner;
+
 
         // TODO: remove the following measures of backwards compatibility one day ~dsygocki 2023-04-28
         private AuthType AuthenticateOnAwakeWith => migratedAuthSettings
@@ -175,7 +175,7 @@ namespace Elympics
                 return;
             }
 
-            _auth = AuthClientOverride ?? new RemoteAuthClient(_config.ElympicsAuthEndpoint);
+            _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
             ShouldLoadGameplaySceneAfterMatchmaking = shouldLoadGameplaySceneAfterMatchmaking;
             _roomsManager.Value.Reset(); // calling Value initializes RoomsManager and its dependencies (RoomsClient, WebSocketSession) ~dsygocki 2023-12-06
@@ -198,7 +198,7 @@ namespace Elympics
         {
             if (asyncEventsDispatcher == null)
                 throw new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}");
-            return new WebSocketSession(asyncEventsDispatcher, WebSocketFactoryOverride);
+            return new WebSocketSession(asyncEventsDispatcher);
         }
 
         private RoomsClient CreateRoomsClient() => new()
@@ -319,6 +319,9 @@ namespace Elympics
             }
         }
 
+        [PublicAPI]
+        public void RegisterEthSigner(ElympicsEthSigner signer) => ethSigner = signer is not null ? signer : throw new ArgumentNullException(nameof(signer));
+
         private async UniTask LegacyAuth(AuthType authType) => await ConnectToElympicsAsync(new ConnectionData()
         {
             AuthType = authType
@@ -352,6 +355,9 @@ namespace Elympics
                     case AuthType.EthAddress:
                         authResult = await _auth.AuthenticateWithEthAddress(ethSigner);
                         break;
+                    case AuthType.Telegram:
+                        authResult = await _auth.AuthenticateWithTelegram(_telegramSigner);
+                        break;
                     case AuthType.None:
                         break;
                     default:
@@ -376,8 +382,6 @@ namespace Elympics
                 AuthData = result.Value;
                 ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
             }
-            else
-                ElympicsLogger.LogError($"{authType} authentication failed: {result.Error}");
 
             string? eventName = null;
             try

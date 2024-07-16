@@ -35,6 +35,20 @@ namespace Elympics.Lobby
             throw new LobbyOperationException("Operation timed out");
         }
 
+        public static async UniTask<T> WithTimeout<T>(this UniTaskCompletionSource<T> tcs, TimeSpan timeout, CancellationToken ct = default)
+        {
+            using var delayCts = new CancellationTokenSource();
+            using var timer = delayCts.CancelAfterSlim(timeout, DelayType.Realtime);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, delayCts.Token);
+            using var registration = linkedCts.Token.RegisterWithoutCaptureExecutionContext(tcs.TrySetCanceledAndIgnoreResult);
+
+            var (canceled, data) = await tcs.Task.SuppressCancellationThrow();
+            if (!canceled)
+                return data;
+
+            throw new LobbyOperationException("Operation timed out");
+        }
+
 
         public static async UniTask WaitUntil(Func<bool> predicate, TimeSpan timeout, CancellationToken ct = default)
         {
@@ -56,11 +70,10 @@ namespace Elympics.Lobby
 
             void HandleOperationResult(IFromLobby message, IPromise<ValueTuple> tcs)
             {
-                if (message is not OperationResult result || result.OperationId != operationId)
+                if (message is not OperationResult result
+                    || result.OperationId != operationId)
                     return;
-                _ = result.Success
-                    ? tcs.TrySetResult(new ValueTuple())
-                    : tcs.TrySetException(new LobbyOperationException(result));
+                _ = result.Success ? tcs.TrySetResult(new ValueTuple()) : tcs.TrySetException(new LobbyOperationException(result));
             }
         }
     }

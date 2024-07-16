@@ -17,6 +17,7 @@ namespace Elympics
         public event Action<RoomListUpdatedArgs>? RoomListUpdated;
         public event Action<JoinedRoomUpdatedArgs>? JoinedRoomUpdated;
 
+        [Obsolete("This event will be not supported in the future.")]
         public event Action<JoinedRoomArgs>? JoinedRoom;
         public event Action<LeftRoomArgs>? LeftRoom;
 
@@ -50,6 +51,8 @@ namespace Elympics
 
         private readonly RoomStateDiff _stateDiff = new();
 
+        private UniTaskCompletionSource<GameDataResponse>? _tcs;
+
         public event Func<IRoom, IRoom>? RoomSetUp
         {
             add
@@ -66,6 +69,7 @@ namespace Elympics
         }
 
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
+        private bool _initialized;
 
         public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiningQueue? joiningQueue = null)
         {
@@ -77,6 +81,7 @@ namespace Elympics
 
         private void SubscribeClient()
         {
+            _client.GameDataResponse += HandleGameDataResponse;
             _client.RoomListChanged += HandleRoomListChanged;
             _client.RoomStateChanged += HandleJoinedRoomUpdated;
             _client.LeftRoom += HandleLeftRoom;
@@ -114,14 +119,30 @@ namespace Elympics
             _joiningQueue.Clear();
             foreach (var (roomId, room) in clearedRooms)
             {
-                room.Dispose();
-                LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.RoomClosed));
+                try
+                {
+                    if (room.IsJoined)
+                    {
+                        room.Dispose();
+                        LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.RoomClosed));
+                    }
+                    else
+                    {
+                        room.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _ = ElympicsLogger.LogException(ex);
+                }
             }
             _cts = new CancellationTokenSource();
+            _initialized = false;
         }
 
         private void HandleJoinedRoomUpdated(RoomStateChanged roomState)
         {
+            ElympicsLogger.Log($"Room State Changed: {roomState}");
             var roomId = roomState.RoomId;
             if (_rooms.TryGetValue(roomId, out var room))
             {
@@ -140,7 +161,9 @@ namespace Elympics
                 });
                 SetStateDiffToInitializeState();
             }
-            InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
+            if (_initialized)
+                InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
+
             PlayAvailableMatchIfApplicable(roomId, _stateDiff);
             return;
 
@@ -150,6 +173,13 @@ namespace Elympics
                 _stateDiff.UpdatedState = true;
                 _stateDiff.InitializedState = true;
             }
+        }
+
+        private void HandleGameDataResponse(GameDataResponse obj)
+        {
+            ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
+            _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
+            _ = _tcs.TrySetResult(obj);
         }
 
         private void AddRoomToDictionary(IRoom room)
@@ -165,7 +195,10 @@ namespace Elympics
                 return;
             JoinedRoomUpdated?.Invoke(new JoinedRoomUpdatedArgs(roomId));
             if (stateDiff.InitializedState)
+            {
                 JoinedRoom?.Invoke(new JoinedRoomArgs(roomId));
+                return;
+            }
             foreach (var userThatJoined in stateDiff.UsersThatJoined)
                 UserJoined?.Invoke(new UserJoinedArgs(roomId, userThatJoined));
             foreach (var userThatLeft in stateDiff.UsersThatLeft)
@@ -349,6 +382,48 @@ namespace Elympics
             return _rooms[roomId];
         }
 
-        async UniTask IRoomsManager.CheckJoinedRoomStatus() => await UniTask.CompletedTask;
+        async UniTask IRoomsManager.CheckJoinedRoomStatus()
+        {
+            var counter = 0;
+            try
+            {
+                _client.RoomStateChanged += OnRoomStateChanged;
+                _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
+                var result = await _tcs.WithTimeout(_operationTimeout, _cts.Token);
+                if (result is null)
+                {
+                    _initialized = true;
+                    return;
+                }
+
+                var matchRoomsJoined = result.JoinedMatchRooms;
+                if (matchRoomsJoined <= 0)
+                {
+                    _initialized = true;
+                    return;
+                }
+
+                var currentJoinedMatchRooms = _rooms.Count(pair => pair.Value.IsJoined && pair.Value.IsMatchRoom());
+                counter += currentJoinedMatchRooms;
+                var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, _operationTimeout, _cts.Token).SuppressCancellationThrow();
+                if (canceled)
+                    ElympicsLogger.LogWarning("Waiting for init room state timeout.");
+
+                _initialized = true;
+            }
+            finally
+            {
+                _client.RoomStateChanged -= OnRoomStateChanged;
+                _tcs = null;
+            }
+            return;
+
+            void OnRoomStateChanged(RoomStateChanged obj)
+            {
+                if (_rooms[obj.RoomId].IsMatchRoom())
+                    // ReSharper disable once AccessToModifiedClosure
+                    ++counter;
+            }
+        }
     }
 }

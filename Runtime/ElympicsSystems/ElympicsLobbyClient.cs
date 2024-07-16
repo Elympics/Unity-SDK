@@ -331,10 +331,11 @@ namespace Elympics
         {
             ThrowIfRegionValidationFailed(regionData);
             currentRegion = regionData.Name;
-            if (RoomsManager.ListJoinedRooms().Count > 0)
+            if (IsAuthenticated && RoomsManager.ListJoinedRooms().Count > 0)
                 ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
             await ConnectToLobby();
-            await RoomsManager.CheckJoinedRoomStatus();
+            if (IsAuthenticated)
+                await RoomsManager.CheckJoinedRoomStatus();
         }
 
         private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)

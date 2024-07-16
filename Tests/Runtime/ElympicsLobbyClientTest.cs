@@ -264,6 +264,18 @@ namespace Elympics.Tests
             Assert.IsFalse(authenticationCalled);
             Assert.IsTrue(connectedCalled);
         });
+        [UnityTest]
+        public IEnumerator ConnectToElympicsRegionOnly() => UniTask.ToCoroutine(async () =>
+        {
+            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            {
+                Region = new RegionData()
+                {
+                    Name = ElympicsRegions.Warsaw
+                }
+            });
+            Assert.IsTrue(_sut is { IsAuthenticated: false, WebSocketSession: { IsConnected: false } });
+        });
         [TearDown]
         public void CleanUp()
         {

@@ -1,3 +1,19 @@
+## [0.11.0](https://github.com/Elympics/Unity-SDK/compare/v0.10.0...v0.11.0) (2024-07-16)
+
+
+### Bug Fixes 🪲
+
+* add request for initial room status check ([3de0a28](https://github.com/Elympics/Unity-SDK/commit/3de0a286e7ef3cac4887d0cb2818c5719b2e6e75))
+* left room event exception handling ([fecd4e7](https://github.com/Elympics/Unity-SDK/commit/fecd4e7d115ae2d22a33600fcb2007211b3ef382))
+
+
+### Features
+
+* add new sample: Elympics lobby interaction using room system ([047942b](https://github.com/Elympics/Unity-SDK/commit/047942baa129cfaacba815ad1a3c8d26c0e47cea))
+* add telegram authentication type ([160a322](https://github.com/Elympics/Unity-SDK/commit/160a32227a0588dd65dddbe8fdc4db8146e14837))
+
+
+
 ## [0.10.0](https://github.com/Elympics/Unity-SDK/compare/v0.9.2...v0.10.0) (2024-06-12)
 
 

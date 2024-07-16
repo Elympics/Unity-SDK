@@ -342,7 +342,7 @@ namespace Elympics
                 SendResponse(Ws, room);
             UpdateRoomOnList(Ws, room);
         }
-
+        public static void CancelPingToken() => pingCts?.Cancel();
         private static void UpdateUsers(ref RoomStateChanged roomStateChanged, IEnumerable<UserInfo> users)
         {
             roomStateChanged = roomStateChanged with

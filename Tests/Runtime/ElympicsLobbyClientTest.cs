@@ -292,6 +292,7 @@ namespace Elympics.Tests
             if (_sut!.IsAuthenticated)
                 _sut.SignOut();
             _ = _sut.MockIWebSocket(UserId, Nickname, false, null).SetPingThresholdTimeout(TimeSpan.FromSeconds(DefaultPingTimeoutSec));
+            WebSocketMockSetup.CancelPingToken();
         }
 
         public void Setup()

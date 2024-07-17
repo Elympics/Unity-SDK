@@ -34,7 +34,7 @@ namespace Elympics.Tests
             Serialize = data => data is LobbyOperation operation ? operation.OperationId.ToByteArray() : Array.Empty<byte>(),
             Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
         };
-
+        private static CancellationTokenSource _cts = new();
         private record UnknownMessage : IFromLobby, IToLobby;
         private record UnknownOperation : LobbyOperation;
 
@@ -464,7 +464,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1)).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(0.1), cancellationToken: _cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 
@@ -642,5 +642,11 @@ namespace Elympics.Tests
 
             Assert.That(Thread.CurrentThread.ManagedThreadId, Is.EqualTo(mainThreadId));
         });
+        [TearDown]
+        public void CleanUp()
+        {
+            ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
+            _cts.Cancel();
+        }
     }
 }

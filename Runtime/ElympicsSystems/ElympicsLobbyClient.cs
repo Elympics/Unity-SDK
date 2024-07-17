@@ -160,7 +160,7 @@ namespace Elympics
             if (asyncEventsDispatcher == null)
                 throw new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null.");
             _config = ElympicsConfig.Load() ?? throw new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found.");
-            _config.CurrentGameSwitched += UpdateGameConfig;
+            _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
 
             Instance = this;
@@ -331,9 +331,11 @@ namespace Elympics
         {
             ThrowIfRegionValidationFailed(regionData);
             currentRegion = regionData.Name;
-            if (RoomsManager.ListJoinedRooms().Count > 0)
+            if (IsAuthenticated && RoomsManager.ListJoinedRooms().Count > 0)
                 ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
             await ConnectToLobby();
+            if (IsAuthenticated)
+                await RoomsManager.CheckJoinedRoomStatus();
         }
 
         private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
@@ -430,12 +432,13 @@ namespace Elympics
             ElympicsLogger.Log("Signed out.");
         }
 
-        private void UpdateGameConfig()
+        private async UniTask UpdateGameConfig()
         {
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
             ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
 
-            ConnectToLobby().Forget();
+            await ConnectToLobby();
+            await RoomsManager.CheckJoinedRoomStatus();
         }
 
         private static void ThrowIfRegionValidationFailed(RegionData regionData)

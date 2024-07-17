@@ -23,7 +23,7 @@ namespace Elympics.Tests
     [Category("WebSocket")]
     public class TestWebSocketSession
     {
-        private static readonly AsyncEventsDispatcherMock Dispatcher = new();
+        private static readonly IAsyncEventsDispatcher Dispatcher = AsyncEventsDispatcherMockSetup.CreateMockAsyncEventsDispatcher();
         private static readonly WebSocketMock WsMock = new();
         private static readonly LobbySerializerMock SerializerMock = new();
         private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);
@@ -34,13 +34,14 @@ namespace Elympics.Tests
             Serialize = data => data is LobbyOperation operation ? operation.OperationId.ToByteArray() : Array.Empty<byte>(),
             Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
         };
-
+        private static CancellationTokenSource cts = new();
         private record UnknownMessage : IFromLobby, IToLobby;
         private record UnknownOperation : LobbyOperation;
 
         [SetUp]
         public void ResetMocks()
         {
+            cts = new();
             WsMock.Reset();
             SerializerMock.Reset();
         }
@@ -464,7 +465,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1)).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(0.1), cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 
@@ -642,5 +643,11 @@ namespace Elympics.Tests
 
             Assert.That(Thread.CurrentThread.ManagedThreadId, Is.EqualTo(mainThreadId));
         });
+        [TearDown]
+        public void CleanUp()
+        {
+            ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
+            cts.Cancel();
+        }
     }
 }

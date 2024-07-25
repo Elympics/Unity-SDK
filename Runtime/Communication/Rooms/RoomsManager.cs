@@ -110,7 +110,7 @@ namespace Elympics
             RoomListUpdated?.Invoke(new RoomListUpdatedArgs(roomListChanged.Changes.Select(change => change.RoomId).ToList()));
         }
 
-        public void Reset()
+        void IRoomsManager.Reset()
         {
             _cts.Cancel();
             _cts.Dispose();

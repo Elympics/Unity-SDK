@@ -207,7 +207,7 @@ namespace Elympics.Tests
             });
 
             var disconnectedCalled = false;
-            _sut.WebSocketSession.Disconnected += () => disconnectedCalled = true;
+            _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec * 2));
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
@@ -224,7 +224,7 @@ namespace Elympics.Tests
             });
 
             var disconnectedCalled = false;
-            _sut.WebSocketSession.Disconnected += () => disconnectedCalled = true;
+            _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
             Assert.IsTrue(_sut.IsAuthenticated);
@@ -241,7 +241,7 @@ namespace Elympics.Tests
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
             _sut!.WebSocketSession.Connected += () => connectedCalled = true;
             _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
-            _sut.WebSocketSession.Disconnected += () => disconnectedCalled = true;
+            _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,

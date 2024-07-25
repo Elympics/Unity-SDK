@@ -16,7 +16,7 @@ namespace Elympics.Tests.Common.RoomMocks
             add => throw new NotImplementedException();
             remove => throw new NotImplementedException();
         }
-        public event Action? Disconnected
+        public event Action<DisconnectionData>? Disconnected
         {
             add => throw new NotImplementedException();
             remove => throw new NotImplementedException();
@@ -33,8 +33,7 @@ namespace Elympics.Tests.Common.RoomMocks
 
         public UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
             throw new NotImplementedException();
-
-        public void Disconnect() => throw new NotImplementedException();
+        public void Disconnect(DisconnectionReason reason) => throw new NotImplementedException();
 
         public UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
         {

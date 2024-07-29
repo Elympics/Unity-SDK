@@ -53,5 +53,6 @@ namespace Elympics
 
         public event Func<IRoom, IRoom>? RoomSetUp;
         internal UniTask CheckJoinedRoomStatus();
+        internal void Reset();
     }
 }

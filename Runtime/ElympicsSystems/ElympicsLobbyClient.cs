@@ -96,7 +96,7 @@ namespace Elympics
 
         private readonly Lazy<WebSocketSession> _webSocketSession = new(() => Instance.CreateWebSocketSession());
         private readonly Lazy<RoomsClient> _roomsClient = new(() => Instance.CreateRoomsClient());
-        private readonly Lazy<RoomsManager> _roomsManager = new(() => Instance.CreateRoomsManager());
+        private readonly Lazy<IRoomsManager> _roomsManager = new(() => Instance.CreateRoomsManager());
 
         #endregion Rooms
 
@@ -210,14 +210,18 @@ namespace Elympics
         {
             var webSocketSession = _webSocketSession.Value;
             var roomsManager = new RoomsManager(this, _roomsClient.Value);
-            webSocketSession.Disconnected += roomsManager.Reset;
+            webSocketSession.Disconnected += OnWebSocketDisconnected;
             return roomsManager;
         }
+        private void OnWebSocketDisconnected(DisconnectionData _) => RoomsManager.Reset();
 
         private void OnDestroy()
         {
             if (_webSocketSession.IsValueCreated)
+            {
+                _webSocketSession.Value.Disconnected -= OnWebSocketDisconnected;
                 _webSocketSession.Value.Dispose();
+            }
         }
 
         private async UniTask<Result<AuthData, string>?> AuthenticateWithCachedData(CachedAuthData data)
@@ -476,7 +480,7 @@ namespace Elympics
                 return;
 
             ElympicsLogger.Log($"Closing current websocket.");
-            _webSocketSession.Value.Disconnect();
+            _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
         }
 
 

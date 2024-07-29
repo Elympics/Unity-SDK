@@ -48,7 +48,7 @@ namespace Elympics.Tests.Rooms
             _cts = new();
             _roomsClientMock.Reset();
             _joiningQueueMock.Reset();
-            _roomsManager.Reset();
+            ((IRoomsManager)_roomsManager).Reset();
             var field = _roomsManager.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).Find(x => x.Name == "_initialized");
             field.SetValue(_roomsManager, true);
         }
@@ -1214,7 +1214,7 @@ namespace Elympics.Tests.Rooms
         {
             _cts?.Cancel();
             _eventRegister.Reset();
-            _roomsManager.Reset();
+            ((IRoomsManager)_roomsManager).Reset();
             _matchLauncherMock.Reset();
         }
     }

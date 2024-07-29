@@ -34,6 +34,7 @@ namespace Elympics.Tests
             Serialize = data => data is LobbyOperation operation ? operation.OperationId.ToByteArray() : Array.Empty<byte>(),
             Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
         };
+
         private static CancellationTokenSource cts = new();
         private record UnknownMessage : IFromLobby, IToLobby;
         private record UnknownOperation : LobbyOperation;
@@ -105,13 +106,13 @@ namespace Elympics.Tests
             var disconnectedCalled = false;
 
             session.Disconnected += SetDisconnected;
-            session.Disconnect();
+            session.Disconnect(DisconnectionReason.Closed);
             session.Disconnected -= SetDisconnected;
 
             Assert.True(disconnectedCalled);
             Assert.False(session.IsConnected);
 
-            void SetDisconnected() => disconnectedCalled = true;
+            void SetDisconnected(DisconnectionData data) => disconnectedCalled = true;
         }
 
         [UnityTest]
@@ -556,7 +557,7 @@ namespace Elympics.Tests
 
             Assert.False(session.IsConnected);
             _ = await AssertThrowsAsync<ObjectDisposedException>(session.Connect(ConnectionDetails));
-            _ = Assert.Throws<ObjectDisposedException>(session.Disconnect);
+            _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoom(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });
 

@@ -23,7 +23,7 @@ namespace Elympics.Tests
     [Category("WebSocket")]
     public class TestWebSocketSession
     {
-        private static readonly AsyncEventsDispatcherMock Dispatcher = new();
+        private static readonly IAsyncEventsDispatcher Dispatcher = AsyncEventsDispatcherMockSetup.CreateMockAsyncEventsDispatcher();
         private static readonly WebSocketMock WsMock = new();
         private static readonly LobbySerializerMock SerializerMock = new();
         private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);
@@ -35,12 +35,14 @@ namespace Elympics.Tests
             Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
         };
 
+        private static CancellationTokenSource cts = new();
         private record UnknownMessage : IFromLobby, IToLobby;
         private record UnknownOperation : LobbyOperation;
 
         [SetUp]
         public void ResetMocks()
         {
+            cts = new();
             WsMock.Reset();
             SerializerMock.Reset();
         }
@@ -104,13 +106,13 @@ namespace Elympics.Tests
             var disconnectedCalled = false;
 
             session.Disconnected += SetDisconnected;
-            session.Disconnect();
+            session.Disconnect(DisconnectionReason.Closed);
             session.Disconnected -= SetDisconnected;
 
             Assert.True(disconnectedCalled);
             Assert.False(session.IsConnected);
 
-            void SetDisconnected() => disconnectedCalled = true;
+            void SetDisconnected(DisconnectionData data) => disconnectedCalled = true;
         }
 
         [UnityTest]
@@ -464,7 +466,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1)).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(0.1), cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 
@@ -555,7 +557,7 @@ namespace Elympics.Tests
 
             Assert.False(session.IsConnected);
             _ = await AssertThrowsAsync<ObjectDisposedException>(session.Connect(ConnectionDetails));
-            _ = Assert.Throws<ObjectDisposedException>(session.Disconnect);
+            _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoom(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });
 
@@ -642,5 +644,11 @@ namespace Elympics.Tests
 
             Assert.That(Thread.CurrentThread.ManagedThreadId, Is.EqualTo(mainThreadId));
         });
+        [TearDown]
+        public void CleanUp()
+        {
+            ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
+            cts.Cancel();
+        }
     }
 }

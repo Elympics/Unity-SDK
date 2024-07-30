@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
@@ -28,6 +29,7 @@ namespace Elympics.Tests.Rooms
         private readonly RoomEventObserver _eventRegister;
         private RoomStateChanged _roomStateChanged;
         private readonly Guid _roomIdForTesting = new("10100000000000000000000000000001");
+        private CancellationTokenSource _cts;
 
         public TestRoomsManager()
         {
@@ -43,9 +45,10 @@ namespace Elympics.Tests.Rooms
         public void SetUp()
         {
             _roomStateChanged = RoomsTestUtility.PrepareInitialRoomState(_roomIdForTesting);
+            _cts = new();
             _roomsClientMock.Reset();
             _joiningQueueMock.Reset();
-            _roomsManager.Reset();
+            ((IRoomsManager)_roomsManager).Reset();
             var field = _roomsManager.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).Find(x => x.Name == "_initialized");
             field.SetValue(_roomsManager, true);
         }
@@ -112,7 +115,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomThatIsAlreadyBeingJoinedWithRoomIdShouldResultInException() => UniTask.ToCoroutine(async () =>
         {
-            _roomsClientMock.RoomIdReturnTask = UniTask.Delay(TimeSpan.FromSeconds(10), DelayType.DeltaTime).ContinueWith(() => _roomIdForTesting);
+            _roomsClientMock.RoomIdReturnTask = UniTask.Delay(TimeSpan.FromSeconds(10), DelayType.DeltaTime, cancellationToken: _cts.Token).ContinueWith(() => _roomIdForTesting);
             _roomsManager.JoinRoom(_roomIdForTesting, null).Forget(_ => { });
             await UniTask.WaitUntil(() => _roomsClientMock.JoinRoomWithRoomIdInvokedArgs.HasValue);
 
@@ -130,7 +133,7 @@ namespace Elympics.Tests.Rooms
         {
             const string testJoinCode = "testJoinCode";
 
-            _roomsClientMock.RoomIdReturnTask = UniTask.Delay(TimeSpan.FromSeconds(10), DelayType.DeltaTime).ContinueWith(() => _roomIdForTesting);
+            _roomsClientMock.RoomIdReturnTask = UniTask.Delay(TimeSpan.FromSeconds(10), DelayType.DeltaTime, cancellationToken: _cts.Token).ContinueWith(() => _roomIdForTesting);
             _roomsManager.JoinRoom(null, testJoinCode).Forget(_ => { });
             await UniTask.WaitUntil(() => _roomsClientMock.JoinRoomWithJoinCodeInvokedArgs.HasValue);
 
@@ -1209,8 +1212,9 @@ namespace Elympics.Tests.Rooms
         [TearDown]
         public void Reset()
         {
+            _cts?.Cancel();
             _eventRegister.Reset();
-            _roomsManager.Reset();
+            ((IRoomsManager)_roomsManager).Reset();
             _matchLauncherMock.Reset();
         }
     }

@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
+using Ping = Elympics.Lobby.Models.Ping;
 
 #nullable enable
 
@@ -13,16 +14,18 @@ namespace Elympics.Lobby
     internal class WebSocketSession : IWebSocketSessionInternal, IWebSocketSession, IDisposable
     {
         public event Action? Connected;
-        public event Action? Disconnected;
+        public event Action<DisconnectionData>? Disconnected;
         public event Action<IFromLobby>? MessageReceived;
 
         public TimeSpan OpeningTimeout = TimeSpan.FromSeconds(5);
         public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _automaticDisconnectThreshold = TimeSpan.FromSeconds(30);
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
+        private TimeoutController _timeoutController;
         private CancellationToken Token => _cts?.Token ?? new CancellationToken(true);
 
         private bool _isDisposed;
@@ -33,19 +36,7 @@ namespace Elympics.Lobby
 
         private readonly ILobbySerializer _serializer;
 
-        public bool IsConnected
-        {
-            get => _isConnected;
-            private set
-            {
-                if (_isConnected == value)
-                    return;
-                _isConnected = value;
-                _dispatcher.Enqueue(value ? () => Connected?.Invoke() : () => Disconnected?.Invoke());
-            }
-        }
-
-        private bool _isConnected;
+        public bool IsConnected { get; private set; }
 
         public SessionConnectionDetails ConnectionDetails =>
             IsConnected ? _connectionDetails!.Value : throw new InvalidOperationException($"{nameof(WebSocketSession)} is not connected.");
@@ -67,18 +58,20 @@ namespace Elympics.Lobby
             if (_cts is not null)
                 throw ElympicsLogger.LogException(new InvalidOperationException("Connecting already in progress."));
             _cts = new CancellationTokenSource();
+            _timeoutController = new TimeoutController(_cts, DelayType.Realtime);
             var (url, protocol) = wsUrl.ToWebSocketAddress(authData.JwtToken);
             _ws = _wsFactory(url, protocol);
             _ws.OnError += HandleError;
             _ws.OnClose += HandleClose;
             _ws.OnMessage += HandleMessage;
-            using var ctr = ct.RegisterWithoutCaptureExecutionContext(Disconnect);
+            using var ctr = ct.RegisterWithoutCaptureExecutionContext(() => Disconnect(DisconnectionReason.Unknown));
             try
             {
                 await OpenWebSocket(_ws);
                 await EstablishSession(gameId, gameVersion, regionName);
                 _connectionDetails = details;
-                IsConnected = true;
+                SetConnectedState();
+                AutoDisconnectOnTimeout().Forget();
             }
             catch (OperationCanceledException)
             {
@@ -87,26 +80,44 @@ namespace Elympics.Lobby
                 throw;
             }
         }
-
-        public void Disconnect()
+        public void Disconnect(DisconnectionReason reason)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            IsConnected = false;
+            SetDisconnectedState(reason);
             if (_cts is null)
                 return;
             _cts.Cancel();
             _cts.Dispose();
+            _timeoutController.Dispose();
             _cts = null;
             _operationResultHandlers.Clear();
             ResetWebSocket();
+        }
+
+        private void SetConnectedState()
+        {
+            if (IsConnected)
+                return;
+
+            IsConnected = true;
+            _dispatcher.Enqueue(() => Connected?.Invoke());
+        }
+
+        private void SetDisconnectedState(DisconnectionReason reason)
+        {
+            if (IsConnected is false)
+                return;
+
+            IsConnected = false;
+            _dispatcher.Enqueue(() => Disconnected?.Invoke(new DisconnectionData(reason)));
         }
 
         public void Dispose()
         {
             if (_isDisposed)
                 return;
-            Disconnect();
+            Disconnect(DisconnectionReason.ApplicationShutdown);
             Connected = null;
             Disconnected = null;
             MessageReceived = null;
@@ -191,6 +202,7 @@ namespace Elympics.Lobby
 #endif
                 if (message is Ping)
                 {
+                    ResetTimeout();
                     SendMessage(new Pong());
                     return;
                 }
@@ -209,10 +221,9 @@ namespace Elympics.Lobby
                 ElympicsLogger.LogException(e);
             }
         }
-
         private void HandleError(string message)
         {
-            Disconnect();
+            Disconnect(DisconnectionReason.Error);
             _dispatcher.Enqueue(() => ElympicsLogger.LogError(message));
         }
 
@@ -223,11 +234,11 @@ namespace Elympics.Lobby
             if (IsConnected)
                 Reconnect().Forget();
             else
-                Disconnect();
+                Disconnect(DisconnectionReason.Closed);
         }
         private async UniTask Reconnect()
         {
-            Disconnect();
+            Disconnect(DisconnectionReason.Reconnection);
             _dispatcher.Enqueue(() => ElympicsLogger.Log("Reconnecting to lobby..."));
             try
             {
@@ -239,7 +250,16 @@ namespace Elympics.Lobby
                 _dispatcher.Enqueue(() => _ = ElympicsLogger.LogException(e));
             }
         }
-
+        private async UniTaskVoid AutoDisconnectOnTimeout()
+        {
+            await UniTask.WaitUntilCanceled(cancellationToken: _timeoutController.Timeout(_automaticDisconnectThreshold));
+            if (IsConnected)
+            {
+                ElympicsLogger.LogWarning("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
+                Disconnect(DisconnectionReason.Timeout);
+            }
+        }
+        private void ResetTimeout() => _ = _timeoutController.Timeout(_automaticDisconnectThreshold);
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)), handler => _operationResultHandlers.TryAdd(operationId, handler), _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);
 

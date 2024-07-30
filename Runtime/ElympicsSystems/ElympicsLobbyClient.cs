@@ -96,7 +96,7 @@ namespace Elympics
 
         private readonly Lazy<WebSocketSession> _webSocketSession = new(() => Instance.CreateWebSocketSession());
         private readonly Lazy<RoomsClient> _roomsClient = new(() => Instance.CreateRoomsClient());
-        private readonly Lazy<RoomsManager> _roomsManager = new(() => Instance.CreateRoomsManager());
+        private readonly Lazy<IRoomsManager> _roomsManager = new(() => Instance.CreateRoomsManager());
 
         #endregion Rooms
 
@@ -160,7 +160,7 @@ namespace Elympics
             if (asyncEventsDispatcher == null)
                 throw new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null.");
             _config = ElympicsConfig.Load() ?? throw new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found.");
-            _config.CurrentGameSwitched += UpdateGameConfig;
+            _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
 
             Instance = this;
@@ -210,14 +210,18 @@ namespace Elympics
         {
             var webSocketSession = _webSocketSession.Value;
             var roomsManager = new RoomsManager(this, _roomsClient.Value);
-            webSocketSession.Disconnected += roomsManager.Reset;
+            webSocketSession.Disconnected += OnWebSocketDisconnected;
             return roomsManager;
         }
+        private void OnWebSocketDisconnected(DisconnectionData _) => RoomsManager.Reset();
 
         private void OnDestroy()
         {
             if (_webSocketSession.IsValueCreated)
+            {
+                _webSocketSession.Value.Disconnected -= OnWebSocketDisconnected;
                 _webSocketSession.Value.Dispose();
+            }
         }
 
         private async UniTask<Result<AuthData, string>?> AuthenticateWithCachedData(CachedAuthData data)
@@ -331,9 +335,11 @@ namespace Elympics
         {
             ThrowIfRegionValidationFailed(regionData);
             currentRegion = regionData.Name;
-            if (RoomsManager.ListJoinedRooms().Count > 0)
+            if (IsAuthenticated && RoomsManager.ListJoinedRooms().Count > 0)
                 ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
             await ConnectToLobby();
+            if (IsAuthenticated)
+                await RoomsManager.CheckJoinedRoomStatus();
         }
 
         private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
@@ -430,12 +436,13 @@ namespace Elympics
             ElympicsLogger.Log("Signed out.");
         }
 
-        private void UpdateGameConfig()
+        private async UniTask UpdateGameConfig()
         {
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
             ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
 
-            ConnectToLobby().Forget();
+            await ConnectToLobby();
+            await RoomsManager.CheckJoinedRoomStatus();
         }
 
         private static void ThrowIfRegionValidationFailed(RegionData regionData)
@@ -473,7 +480,7 @@ namespace Elympics
                 return;
 
             ElympicsLogger.Log($"Closing current websocket.");
-            _webSocketSession.Value.Disconnect();
+            _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
         }
 
 

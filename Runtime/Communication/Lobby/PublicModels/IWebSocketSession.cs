@@ -7,7 +7,7 @@ namespace Elympics
     public interface IWebSocketSession
     {
         public event Action? Connected;
-        public event Action? Disconnected;
+        public event Action<DisconnectionData>? Disconnected;
 
         public bool IsConnected { get; }
     }

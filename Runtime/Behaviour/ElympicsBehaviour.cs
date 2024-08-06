@@ -70,7 +70,10 @@ namespace Elympics
         public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo method)
         {
             if (_isReconciling)
+            {
+                ElympicsLogger.LogWarning($"RPC {method.Name} will not be captured during reconciliation.");
                 return false;
+            }
             if (_isInvokingRpc)
                 return false;
             if (ElympicsBase.IsLocalMode)
@@ -85,10 +88,13 @@ namespace Elympics
         }
 
         [UsedImplicitly]  // from generated IL code
-        public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo _)
+        public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo methodInfo)
         {
             if (_isReconciling)
+            {
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
                 return false;
+            }
             if (_isInvokingRpc)
             {
                 _isInvokingRpc = false;

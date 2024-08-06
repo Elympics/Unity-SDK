@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
-
+#nullable enable
 namespace Elympics
 {
     internal static class ElympicsLogTemplates

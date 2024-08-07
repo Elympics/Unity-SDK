@@ -1,3 +1,21 @@
+## [0.12.0](https://github.com/Elympics/Unity-SDK/compare/v0.11.0...v0.12.0) (2024-07-30)
+
+### BREAKING CHANGES
+
+* IWebSocketSession.Disconnected event signature change ([012819e](https://github.com/Elympics/Unity-SDK/commit/012819e59dca7677db1ef759596b7ffed451aca8))
+
+
+### Bug Fixes 🪲
+
+* add new webrtc library for macos ([c33ad2a](https://github.com/Elympics/Unity-SDK/commit/c33ad2a74de1513027e4e5aefdde2d7946d5f7ba))
+
+
+### Features
+
+* add web socket automatic disconnect detection ([cd99533](https://github.com/Elympics/Unity-SDK/commit/cd995331819fbf178352cd54eca22fe02adec6bf))
+
+
+
 ## [0.11.0](https://github.com/Elympics/Unity-SDK/compare/v0.10.0...v0.11.0) (2024-07-16)
 
 

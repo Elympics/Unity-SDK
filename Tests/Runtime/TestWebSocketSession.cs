@@ -27,7 +27,7 @@ namespace Elympics.Tests
         private static readonly WebSocketMock WsMock = new();
         private static readonly LobbySerializerMock SerializerMock = new();
         private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);
-        private static readonly SessionConnectionDetails ConnectionDetails = new("url", AuthData, default, string.Empty, string.Empty);
+        private static readonly SessionConnectionDetails ConnectionDetails = new("url", AuthData, default, string.Empty, string.Empty, false);
 
         private static readonly LobbySerializerMock.Methods SerializerForConnection = new()
         {
@@ -151,9 +151,8 @@ namespace Elympics.Tests
 
             using var cts = new CancellationTokenSource();
             WsMock.ConnectCalled += HandleConnectCalled;
-            var canceled = await session.Connect(ConnectionDetails, cts.Token).SuppressCancellationThrow();
+            _ = await AssertThrowsAsync<OperationCanceledException>(async () => await session.Connect(ConnectionDetails, cts.Token));
 
-            Assert.True(canceled);
             Assert.False(session.IsConnected);
 
             void HandleConnectCalled()
@@ -178,7 +177,7 @@ namespace Elympics.Tests
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
-            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
+
             _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
 
             Assert.False(session.IsConnected);
@@ -187,6 +186,7 @@ namespace Elympics.Tests
             {
                 WsMock.ConnectCalled -= HandleConnectCalled;
                 WsMock.InvokeOnError(errorMessage);
+                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             }
         });
 
@@ -198,7 +198,6 @@ namespace Elympics.Tests
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
-            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
 
             Assert.False(session.IsConnected);
@@ -214,6 +213,7 @@ namespace Elympics.Tests
             {
                 WsMock.SendCalled -= HandleMessageSent;
                 WsMock.InvokeOnError(errorMessage);
+                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             }
         });
 
@@ -225,8 +225,8 @@ namespace Elympics.Tests
 
             await ConnectWebSocketSessionAndAssert(session);
 
-            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             WsMock.InvokeOnError(errorMessage);
+            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
         });
 
@@ -238,7 +238,7 @@ namespace Elympics.Tests
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
-            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
+
             _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
 
             Assert.False(session.IsConnected);
@@ -247,6 +247,7 @@ namespace Elympics.Tests
             {
                 WsMock.ConnectCalled -= HandleConnectCalled;
                 WsMock.InvokeOnClose(WebSocketCloseCode.Abnormal, errorMessage);
+                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             }
         });
 
@@ -258,7 +259,6 @@ namespace Elympics.Tests
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
-            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
 
             Assert.False(session.IsConnected);
@@ -274,6 +274,7 @@ namespace Elympics.Tests
             {
                 WsMock.SendCalled -= HandleMessageSent;
                 WsMock.InvokeOnClose(WebSocketCloseCode.Abnormal, errorMessage);
+                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             }
         });
 
@@ -556,7 +557,7 @@ namespace Elympics.Tests
             session.Dispose();
 
             Assert.False(session.IsConnected);
-            _ = await AssertThrowsAsync<ObjectDisposedException>(session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<ObjectDisposedException>(async () => await session.Connect(ConnectionDetails));
             _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoom(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });
@@ -648,6 +649,7 @@ namespace Elympics.Tests
         public void CleanUp()
         {
             ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
+            WsMock.Reset();
             cts.Cancel();
         }
     }

@@ -26,7 +26,7 @@ namespace Elympics.Tests.Rooms
 
         private static readonly Guid RoomIdForTesting = new("10100000000000000000000000000001");
         private static readonly RoomStateChanged InitialRoomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting);
-        private static readonly SessionConnectionDetails ConnectionDetails = new("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", RegionName);
+        private static readonly SessionConnectionDetails ConnectionDetails = new("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", RegionName, true);
 
         [Test]
         public void TestRoomStateUpdate()

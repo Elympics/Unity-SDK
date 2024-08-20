@@ -13,7 +13,7 @@ namespace Elympics.Lobby
         event Action<DisconnectionData>? Disconnected;
         event Action<IFromLobby>? MessageReceived;
 
-        SessionConnectionDetails ConnectionDetails { get; }
+        SessionConnectionDetails? ConnectionDetails { get; }
         UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default);
         void Disconnect(DisconnectionReason reason);
 

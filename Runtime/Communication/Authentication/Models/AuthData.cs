@@ -25,5 +25,17 @@ namespace Elympics.Models.Authentication
             AuthType = authType;
             Nickname = response.nickname;
         }
+        private bool Equals(AuthData other) => UserId.Equals(other.UserId) && JwtToken == other.JwtToken && AuthType == other.AuthType && Nickname == other.Nickname;
+        public override bool Equals(object obj)
+        {
+            if (obj is null)
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != GetType())
+                return false;
+            return Equals((AuthData)obj);
+        }
+        public override int GetHashCode() => HashCode.Combine(UserId, JwtToken, (int)AuthType, Nickname);
     }
 }

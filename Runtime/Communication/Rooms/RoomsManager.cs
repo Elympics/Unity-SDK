@@ -384,6 +384,9 @@ namespace Elympics
 
         async UniTask IRoomsManager.CheckJoinedRoomStatus()
         {
+            if (_initialized)
+                return;
+
             var counter = 0;
             try
             {

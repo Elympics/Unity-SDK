@@ -24,13 +24,7 @@ namespace Elympics.Tests.Common.RoomMocks
 
         public event Action<IFromLobby>? MessageReceived;
         public bool IsConnected => throw new NotImplementedException();
-        public SessionConnectionDetails ConnectionDetails
-        {
-            get => _connectionDetails ?? throw new InvalidOperationException();
-            set => _connectionDetails = value;
-        }
-        private SessionConnectionDetails? _connectionDetails;
-
+        public SessionConnectionDetails? ConnectionDetails { get; set; }
         public UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
             throw new NotImplementedException();
         public void Disconnect(DisconnectionReason reason) => throw new NotImplementedException();
@@ -51,7 +45,7 @@ namespace Elympics.Tests.Common.RoomMocks
         {
             ExecutedOperations.Clear();
             ResultToReturn = new OperationResult(Guid.Empty);
-            _connectionDetails = null;
+            ConnectionDetails = null;
         }
     }
 }

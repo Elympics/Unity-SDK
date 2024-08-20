@@ -38,10 +38,12 @@ namespace Elympics
                 Ws.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
             });
 
-            Ws.When(x => x.Close()).Do(_ =>
+            Ws.When(x => x.Close(Arg.Any<WebSocketCloseCode>(), Arg.Any<string>())).Do(info =>
             {
+                var reason = (WebSocketCloseCode)info.Args()[0];
+                var details = (string)info.Args()[1];
                 ElympicsLogger.Log("[MOCK] Closed called");
-                Ws.OnClose += Raise.Event<WebSocketCloseEventHandler>();
+                Ws.OnClose += Raise.Event<WebSocketCloseEventHandler>(reason, details);
                 pingCts?.Cancel();
             });
 

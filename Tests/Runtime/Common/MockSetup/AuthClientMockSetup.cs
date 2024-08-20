@@ -10,12 +10,24 @@ namespace Elympics
 {
     internal static class AuthClientMockSetup
     {
-        public static IAuthClient CreateDefaultIAuthClient(string jwt, Guid userId, string nickname, AuthType authType)
+        public static IAuthClient CreateSuccessIAuthClient(string jwt, Guid userId, string nickname)
         {
             var token = EncodeJwtFromJson(jwt);
-            var taskResult = UniTask.FromResult(Result<AuthData, string>.Success(new AuthData(userId, token, nickname, authType)));
+            var clientSecretTaskResult = UniTask.FromResult(Result<AuthData, string>.Success(new AuthData(userId, token, nickname, AuthType.ClientSecret)));
+            var ethAdressTaskResult = UniTask.FromResult(Result<AuthData, string>.Success(new AuthData(userId, token, nickname, AuthType.EthAddress)));
             var ac = Substitute.For<IAuthClient>();
-            _ = ac.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(taskResult);
+            _ = ac.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(clientSecretTaskResult);
+            _ = ac.AuthenticateWithEthAddress(Arg.Any<IEthSigner>(), Arg.Any<CancellationToken>()).Returns(ethAdressTaskResult);
+
+            return ac;
+        }
+        public static IAuthClient CreateFailureIAuthClient()
+        {
+            var clientSecretTaskResult = UniTask.FromResult(Result<AuthData, string>.Failure("Failed to authenticate with clientSecret"));
+            var ethAdressTaskResult = UniTask.FromResult(Result<AuthData, string>.Failure("Failed to authenticate with ethAdress"));
+            var ac = Substitute.For<IAuthClient>();
+            _ = ac.AuthenticateWithClientSecret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(clientSecretTaskResult);
+            _ = ac.AuthenticateWithEthAddress(Arg.Any<IEthSigner>(), Arg.Any<CancellationToken>()).Returns(ethAdressTaskResult);
             return ac;
         }
         private static string EncodeJwtFromJson(string json)

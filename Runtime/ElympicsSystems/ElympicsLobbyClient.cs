@@ -13,7 +13,6 @@ using UnityEditor;
 #endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using LobbyRoutes = Elympics.Lobby.Models.Routes;
 
 #nullable enable
 
@@ -60,13 +59,14 @@ namespace Elympics
 
         public event Action<AuthData>? AuthenticationSucceeded;
         public event Action<string>? AuthenticationFailed;
+
+        private IAuthClient _auth = null!;
         public AuthData? AuthData { get; private set; }
         public Guid? UserGuid => AuthData?.UserId;
         public bool IsAuthenticated => AuthData != null;
-
-        private IAuthClient _auth = null!;
-        private bool _authInProgress;
+        private bool _connectionInProgress;
         private string? _clientSecret;
+        private SessionConnectionFactory _sessionConnectionFactory = null!;
 
         #endregion Authentication
 
@@ -94,9 +94,9 @@ namespace Elympics
         [PublicAPI]
         public IRoomsManager RoomsManager => _roomsManager.IsValueCreated ? _roomsManager.Value : throw new InvalidOperationException($"The instance of {nameof(ElympicsLobbyClient)} has not been initialized correctly.");
 
-        private readonly Lazy<WebSocketSession> _webSocketSession = new(() => Instance.CreateWebSocketSession());
-        private readonly Lazy<RoomsClient> _roomsClient = new(() => Instance.CreateRoomsClient());
-        private readonly Lazy<IRoomsManager> _roomsManager = new(() => Instance.CreateRoomsManager());
+        private readonly Lazy<WebSocketSession> _webSocketSession = new(() => Instance!.CreateWebSocketSession());
+        private readonly Lazy<RoomsClient> _roomsClient = new(() => Instance!.CreateRoomsClient());
+        private readonly Lazy<IRoomsManager> _roomsManager = new(() => Instance!.CreateRoomsManager());
 
         #endregion Rooms
 
@@ -166,6 +166,7 @@ namespace Elympics
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
+            _sessionConnectionFactory = new SessionConnectionFactory(new StandardRegionValidator());
 
             ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n" + "Available games:\n" + string.Join("\n", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}")));
 
@@ -224,46 +225,6 @@ namespace Elympics
             }
         }
 
-        private async UniTask<Result<AuthData, string>?> AuthenticateWithCachedData(CachedAuthData data)
-        {
-            if (data.CachedData is null)
-                throw new ArgumentException($"{nameof(data.CachedData)} cannot be null.");
-
-            var cachedData = data.CachedData;
-            ElympicsLogger.Log($"Starting cached {cachedData.AuthType} authentication...");
-
-            if (CanAuthenticate(cachedData.AuthType, out var failure) == false)
-                return failure;
-
-            _authInProgress = true;
-            try
-            {
-                var isJwtTokenExpired = JwtTokenUtil.IsJwtExpired(cachedData.JwtToken);
-
-                if (isJwtTokenExpired == false)
-                {
-                    var result = Result<AuthData, string>.Success(cachedData);
-                    OnAuthenticatedWith(cachedData.AuthType, result);
-                    return result;
-                }
-                else if (data.AutoRetryIfExpired)
-                {
-                    _authInProgress = false;
-                    return await AuthenticateWithAsync(cachedData.AuthType);
-                }
-                else
-                {
-                    var result = Result<AuthData, string>.Failure("Jwt token has expired.");
-                    OnAuthenticatedWith(cachedData.AuthType, result);
-                    return result;
-                }
-            }
-            finally
-            {
-                _authInProgress = false;
-            }
-        }
-
         /// <summary>
         /// Performs standard authentication. Has to be run before joining an online match requiring client-secret auth type.
         /// Done automatically on awake depending on <see cref="authenticateOnAwakeWith"/> value.
@@ -278,48 +239,37 @@ namespace Elympics
 
         public async UniTask ConnectToElympicsAsync(ConnectionData data)
         {
-            var regionReconnectionRequested = data.AuthFromCacheData is null && data.AuthType is null && data.Region is not null;
+            if (data.AuthFromCacheData is null
+                && data.AuthType is null
+                && data.Region == null)
+                throw new ArgumentNullException("All data parameters are null");
 
-            if (regionReconnectionRequested)
+
+            if (_connectionInProgress)
+                throw new ElympicsException("Connection already in progress");
+
+            try
             {
-                var region = data.Region!.Value;
-                if (currentRegion == region.Name)
-                {
-                    ElympicsLogger.LogWarning($"New region {region.Name} is the same as currentRegion {currentRegion}.");
-                    return;
-                }
+                _connectionInProgress = true;
+                ElympicsLogger.Log("Start connecting to Elympics.");
+                var authorizeToElympics = GetAuthStrategy(AuthData is not null);
+                var authResult = await authorizeToElympics.Authorize(data);
+                OnAuthenticatedWith(authResult);
 
-                if (string.IsNullOrEmpty(region.Name))
-                    throw new ElympicsException("New region cannot be null or empty.");
-
-                await ChangeRegionAndReconnectToLobby(region);
+                var lobbyConnection = GetConnectionStrategy(AuthData is not null, _webSocketSession.Value.IsConnected);
+                var connectionDetails = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, data.Region);
+                await lobbyConnection.Connect(connectionDetails);
+                currentRegion = connectionDetails.RegionName;
+                await RoomsManager.CheckJoinedRoomStatus();
             }
-            else
+            catch (Exception e)
             {
-                if (data.Region is not null)
-                {
-                    var region = data.Region.Value;
-                    ThrowIfRegionValidationFailed(region);
-                    currentRegion = region.Name;
-                }
-
-                Result<AuthData, string>? result = null;
-
-                if (data.AuthFromCacheData is not null)
-                    result = await AuthenticateWithCachedData(data.AuthFromCacheData.Value);
-                else if (data.AuthType is not null)
-                    result = await AuthenticateWithAsync(data.AuthType.Value);
-
-                if (result is not null)
-                {
-                    if (result.IsSuccess)
-                    {
-                        await ConnectToLobby();
-                        await RoomsManager.CheckJoinedRoomStatus();
-                    }
-                    else
-                        ElympicsLogger.LogError(result.Error);
-                }
+                AuthData = null;
+                throw new ElympicsException(e.Message);
+            }
+            finally
+            {
+                _connectionInProgress = false;
             }
         }
 
@@ -330,72 +280,20 @@ namespace Elympics
         {
             AuthType = authType
         });
-
-        private async UniTask ChangeRegionAndReconnectToLobby(RegionData regionData)
+        private void OnAuthenticatedWith(Result<AuthData, string> result)
         {
-            ThrowIfRegionValidationFailed(regionData);
-            currentRegion = regionData.Name;
-            if (IsAuthenticated && RoomsManager.ListJoinedRooms().Count > 0)
-                ElympicsLogger.LogWarning("It is recommended to disconnect user from rooms before reconnecting to new region.");
-            await ConnectToLobby();
-            if (IsAuthenticated)
-                await RoomsManager.CheckJoinedRoomStatus();
-        }
-
-        private async UniTask<Result<AuthData, string>?> AuthenticateWithAsync(AuthType authType)
-        {
-            ElympicsLogger.Log($"Starting {authType} authentication...");
-
-            if (CanAuthenticate(authType, out var failure) == false)
-                return failure;
-
-            _authInProgress = true;
-            Result<AuthData, string>? authResult = null;
-            try
-            {
-                switch (authType)
-                {
-                    case AuthType.ClientSecret:
-                        authResult = await _auth.AuthenticateWithClientSecret(_clientSecret);
-                        break;
-                    case AuthType.EthAddress:
-                        authResult = await _auth.AuthenticateWithEthAddress(ethSigner);
-                        break;
-                    case AuthType.Telegram:
-                        authResult = await _auth.AuthenticateWithTelegram(_telegramSigner);
-                        break;
-                    case AuthType.None:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
-                }
-                if (authResult != null)
-                    OnAuthenticatedWith(authType, authResult);
-                _authInProgress = false;
-                return authResult;
-            }
-            catch
-            {
-                _authInProgress = false;
-                throw;
-            }
-        }
-
-        private void OnAuthenticatedWith(AuthType authType, Result<AuthData, string> result)
-        {
-            if (result.IsSuccess)
-            {
-                AuthData = result.Value;
-                ElympicsLogger.Log($"{authType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
-            }
-
             string? eventName = null;
             try
             {
                 if (result.IsSuccess)
                 {
-                    eventName = nameof(AuthenticationSucceeded);
-                    AuthenticationSucceeded?.Invoke(result.Value);
+                    if (result.Value != null)
+                    {
+                        AuthData = result.Value;
+                        ElympicsLogger.Log($"{result.Value.AuthType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
+                        eventName = nameof(AuthenticationSucceeded);
+                        AuthenticationSucceeded?.Invoke(AuthData);
+                    }
                 }
                 else
                 {
@@ -412,68 +310,25 @@ namespace Elympics
             {
                 _ = ElympicsLogger.LogException($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e);
             }
+            if (result.IsFailure)
+                throw new ElympicsException($"Authentication failed {result.Error}");
         }
-
         public void SignOut()
         {
             ElympicsLogger.Log("Trying to sign out...");
 
-            if (_authInProgress)
-            {
-                ElympicsLogger.LogError("Authentication already in progress. Wait for it to complete before signing out");
-                return;
-            }
+            if (_connectionInProgress)
+                throw new ElympicsException("Connection already in progress. Wait for it to complete before signing out");
 
             if (!IsAuthenticated)
-            {
-                ElympicsLogger.LogError("User is not authenticated");
-                return;
-            }
+                throw new ElympicsException("User is not authenticated");
 
             AuthData = null;
+
             DisconnectFromLobby();
 
             ElympicsLogger.Log("Signed out.");
         }
-
-        private async UniTask UpdateGameConfig()
-        {
-            _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
-            ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
-
-            await ConnectToLobby();
-            await RoomsManager.CheckJoinedRoomStatus();
-        }
-
-        private static void ThrowIfRegionValidationFailed(RegionData regionData)
-        {
-            if (regionData.IsCustom is false
-                && ElympicsRegions.AllAvailableRegions.Contains(regionData.Name) is false)
-                throw new ArgumentException($"The specified region must be one of the available regions listed in {nameof(ElympicsRegions.AllAvailableRegions)}.");
-        }
-
-        private async UniTask ConnectToLobby()
-        {
-            ElympicsLogger.Log("Connecting to lobby...");
-            DisconnectFromLobby();
-            if (!IsAuthenticated)
-            {
-                ElympicsLogger.Log("Connecting canceled because user is not authenticated.");
-                return;
-            }
-
-            var connectionDetails = new SessionConnectionDetails(_config.ElympicsLobbyEndpoint.AppendPathSegments(LobbyRoutes.Base).ToString(), AuthData!, new Guid(_gameConfig.GameId), _gameConfig.GameVersion, currentRegion);
-            try
-            {
-                await _webSocketSession.Value.Connect(connectionDetails);
-                ElympicsLogger.Log("Successfully connected to lobby.\n Connection details: {connectionDetails}");
-            }
-            catch (Exception e)
-            {
-                _ = ElympicsLogger.LogException(e);
-            }
-        }
-
         private void DisconnectFromLobby()
         {
             if (!_webSocketSession.Value.IsConnected)
@@ -482,7 +337,25 @@ namespace Elympics
             ElympicsLogger.Log($"Closing current websocket.");
             _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
         }
+        private async UniTask UpdateGameConfig()
+        {
+            _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
+            ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
 
+            try
+            {
+                if (AuthData is not null)
+                {
+                    var connectionStrategy = GetConnectionStrategy(true, _webSocketSession.Value.IsConnected);
+                    var newSession = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, new RegionData(currentRegion));
+                    await connectionStrategy.Connect(newSession);
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = ElympicsLogger.LogException(ex);
+            }
+        }
 
         private void LogSettingUpGame(string gameModeName) =>
             ElympicsLogger.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
@@ -638,6 +511,19 @@ namespace Elympics
             _matchmaker.RejoinLastMatchAsync(new Guid(_gameConfig.GameId), _gameConfig.GameVersion, AuthData, ct);
         }
 
+        private AuthorizationStrategy GetAuthStrategy(bool isAuthorized) => isAuthorized switch
+        {
+            true => new AuthorizedStrategy(AuthData, _auth, _clientSecret, ethSigner, _telegramSigner),
+            false => new UnauthorizedStrategy(_auth, _clientSecret, ethSigner, _telegramSigner),
+        };
+
+        private ConnectionStrategy GetConnectionStrategy(bool isAuthenticated, bool isConnected) => (isAuthenticated, isConnected) switch
+        {
+            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value),
+            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value),
+            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value),
+        };
+
         private bool CanJoinMatch()
         {
             if (_matchmakingInProgress)
@@ -707,31 +593,6 @@ namespace Elympics
             }
             return PlayerPrefs.GetString(key);
         }
-
-        private bool CanAuthenticate(AuthType authType, out Result<AuthData, string>? failure)
-        {
-            if (!Enum.IsDefined(typeof(AuthType), authType)
-                || authType == AuthType.None)
-            {
-                failure = Result<AuthData, string>.Failure($"Invalid authentication type: {authType}.");
-                return false;
-            }
-
-            if (IsAuthenticated)
-            {
-                failure = Result<AuthData, string>.Failure($"User already authenticated (with {AuthData!.AuthType} auth type).");
-                return false;
-            }
-
-            if (_authInProgress)
-            {
-                failure = Result<AuthData, string>.Failure("Authentication already in progress.");
-                return false;
-            }
-            failure = null;
-            return true;
-        }
-
         private static string CreateNewClientSecret() => Guid.NewGuid().ToString();
 
         internal enum JoinedMatchMode

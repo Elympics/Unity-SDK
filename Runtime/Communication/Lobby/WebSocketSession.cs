@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby.Models;
@@ -25,7 +26,6 @@ namespace Elympics.Lobby
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
-        private TimeoutController _timeoutController;
         private CancellationToken Token => _cts?.Token ?? new CancellationToken(true);
 
         private bool _isDisposed;
@@ -35,13 +35,11 @@ namespace Elympics.Lobby
         private readonly WebSocketFactory _wsFactory;
 
         private readonly ILobbySerializer _serializer;
+        private Stopwatch? _timer;
 
         public bool IsConnected { get; private set; }
 
-        public SessionConnectionDetails ConnectionDetails =>
-            IsConnected ? _connectionDetails!.Value : throw new InvalidOperationException($"{nameof(WebSocketSession)} is not connected.");
-
-        private SessionConnectionDetails? _connectionDetails;
+        public SessionConnectionDetails? ConnectionDetails { get; private set; }
 
         public WebSocketSession(IAsyncEventsDispatcher dispatcher, WebSocketFactory? wsFactory = null, ILobbySerializer? serializer = null)
         {
@@ -52,13 +50,12 @@ namespace Elympics.Lobby
 
         public async UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default)
         {
-            var (wsUrl, authData, gameId, gameVersion, regionName) = details;
+            var (wsUrl, authData, gameId, gameVersion, regionName, _) = details;
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
             if (_cts is not null)
                 throw ElympicsLogger.LogException(new InvalidOperationException("Connecting already in progress."));
             _cts = new CancellationTokenSource();
-            _timeoutController = new TimeoutController(_cts, DelayType.Realtime);
             var (url, protocol) = wsUrl.ToWebSocketAddress(authData.JwtToken);
             _ws = _wsFactory(url, protocol);
             _ws.OnError += HandleError;
@@ -69,9 +66,12 @@ namespace Elympics.Lobby
             {
                 await OpenWebSocket(_ws);
                 await EstablishSession(gameId, gameVersion, regionName);
-                _connectionDetails = details;
+                ConnectionDetails = details;
+                ElympicsLogger.Log($"[{nameof(WebSocketSession)}] Successfully connected to {ConnectionDetails}");
                 SetConnectedState();
-                AutoDisconnectOnTimeout().Forget();
+                _timer = new Stopwatch();
+                _timer.Start();
+                AutoDisconnectOnTimeout(_cts.Token).Forget();
             }
             catch (OperationCanceledException)
             {
@@ -87,9 +87,9 @@ namespace Elympics.Lobby
             SetDisconnectedState(reason);
             if (_cts is null)
                 return;
+            _timer?.Stop();
             _cts.Cancel();
             _cts.Dispose();
-            _timeoutController.Dispose();
             _cts = null;
             _operationResultHandlers.Clear();
             ResetWebSocket();
@@ -162,7 +162,7 @@ namespace Elympics.Lobby
             {
                 _ws.Close();
             }
-            catch
+            catch (Exception e)
             { /* ignored */
             }
             _ws = null;
@@ -177,7 +177,7 @@ namespace Elympics.Lobby
                 {
                     var typeName = message.GetType().FullName;
                     if (_serializer.TryGetHumanReadableRepresentation(data, out var representation))
-                        ElympicsLogger.Log($"Sending WebSocket message: {typeName} to: {_connectionDetails?.Url}\n{representation}");
+                        ElympicsLogger.Log($"Sending WebSocket message: {typeName} to: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
                 _ws?.Send(data);
@@ -197,12 +197,12 @@ namespace Elympics.Lobby
                 {
                     var typeName = message.GetType().FullName;
                     if (_serializer.TryGetHumanReadableRepresentation(data, out var representation))
-                        ElympicsLogger.Log($"Received WebSocket message: {typeName} from: {_connectionDetails?.Url}\n{representation}");
+                        ElympicsLogger.Log($"Received WebSocket message: {typeName} from: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
                 if (message is Ping)
                 {
-                    ResetTimeout();
+                    DispatchWithCancellation(() => _timer?.Reset());
                     SendMessage(new Pong());
                     return;
                 }
@@ -242,7 +242,7 @@ namespace Elympics.Lobby
             _dispatcher.Enqueue(() => ElympicsLogger.Log("Reconnecting to lobby..."));
             try
             {
-                await Connect(_connectionDetails!.Value);
+                await Connect(ConnectionDetails!.Value);
                 _dispatcher.Enqueue(() => ElympicsLogger.Log("Reconnected."));
             }
             catch (Exception e)
@@ -250,16 +250,29 @@ namespace Elympics.Lobby
                 _dispatcher.Enqueue(() => _ = ElympicsLogger.LogException(e));
             }
         }
-        private async UniTaskVoid AutoDisconnectOnTimeout()
-        {
-            await UniTask.WaitUntilCanceled(cancellationToken: _timeoutController.Timeout(_automaticDisconnectThreshold));
-            if (IsConnected)
+        private async UniTaskVoid AutoDisconnectOnTimeout(CancellationToken cancellationToken) => await UniTask.RunOnThreadPool(() =>
             {
-                ElympicsLogger.LogWarning("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
-                Disconnect(DisconnectionReason.Timeout);
-            }
-        }
-        private void ResetTimeout() => _ = _timeoutController.Timeout(_automaticDisconnectThreshold);
+                while (true)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return;
+
+                    if (_timer is null)
+                        return;
+
+                    if (!(_timer.Elapsed.TotalSeconds > _automaticDisconnectThreshold.TotalSeconds))
+                        continue;
+
+                    if (IsConnected is false)
+                        return;
+
+                    ElympicsLogger.LogWarning("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
+                    Disconnect(DisconnectionReason.Timeout);
+                    return;
+                }
+            },
+            true,
+            cancellationToken);
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout, tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)), handler => _operationResultHandlers.TryAdd(operationId, handler), _ => _operationResultHandlers.TryRemove(operationId, out var _), ct);
 

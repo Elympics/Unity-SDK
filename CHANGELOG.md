@@ -1,3 +1,17 @@
+## [0.13.0](https://github.com/Elympics/Unity-SDK/compare/v0.12.0...v0.13.0) (2024-08-20)
+
+
+### Bug Fixes 🪲
+
+* add warning log for rpc call ([50dfb68](https://github.com/Elympics/Unity-SDK/commit/50dfb68757d6b6abb5f81695e28e71abedecd28f))
+
+
+### Features
+
+* refactor connect to elympics flow ([93358ef](https://github.com/Elympics/Unity-SDK/commit/93358ef88e6e66f8b758aa8a0f8d65820f0eccaf))
+
+
+
 ## [0.12.0](https://github.com/Elympics/Unity-SDK/compare/v0.11.0...v0.12.0) (2024-07-30)
 
 ### BREAKING CHANGES

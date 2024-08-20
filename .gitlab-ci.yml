@@ -27,19 +27,24 @@ default:
 
 workflow:
   rules:
-    - if: '$CI_COMMIT_BRANCH'
-    - if: '$CI_COMMIT_TAG'
+    - if: "$CI_COMMIT_BRANCH"
+    - if: "$CI_COMMIT_TAG"
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
 
 .cond.license:
   rules:
-    - if: '$UNITY_LICENSE != null'
+    - if: "$UNITY_LICENSE != null"
       when: always
 
 .cond.releasebranch:
   rules: &cond_releasebranch_rules
     - if: '$CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
+
+.cond.mergerequest.target.main:
+  rules: &cond_mergerequest_target_main
+    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
       when: always
 
 .cond.release.auto:
@@ -116,7 +121,7 @@ get-branch-version:
 
 get-activation-file:
   rules:
-    - if: '$UNITY_LICENSE == null'
+    - if: "$UNITY_LICENSE == null"
       when: manual
   stage: prepare-license
   variables:
@@ -256,13 +261,19 @@ verify-messagepack-generated:
     GIT_DEPTH: 1
 
 trigger:tanks:
-  extends: .trigger
+  extends:
+    - .trigger
+  rules:
+    - *cond_mergerequest_target_main
   trigger:
     project: unity/tanks
     strategy: depend
 
 trigger:spellz:
-  extends: .trigger
+  extends:
+    - .trigger
+  rules:
+    - *cond_mergerequest_target_main
   trigger:
     project: unity/spellz/gameplay
     strategy: depend

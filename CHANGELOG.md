@@ -1,21 +1,13 @@
-## [0.13.0](https://github.com/Elympics/Unity-SDK/compare/v0.11.0...v0.13.0) (2024-08-20)
+## [0.13.0](https://github.com/Elympics/Unity-SDK/compare/v0.12.0...v0.13.0) (2024-08-20)
 
 
 ### Bug Fixes 🪲
 
-* add wraning log for rpc call ([50dfb68](https://github.com/Elympics/Unity-SDK/commit/50dfb68757d6b6abb5f81695e28e71abedecd28f))
-* cancel test tasks ([31101a8](https://github.com/Elympics/Unity-SDK/commit/31101a830dfa3df6df9e1749faa9f947b16c93a4))
-* cancel WebSocketMockSetup ping token ([1b11af5](https://github.com/Elympics/Unity-SDK/commit/1b11af53a3eba8ff833ff5f6fc81bfb8f71dfd1f))
-* don't disconnect if cancelled. ([09425fe](https://github.com/Elympics/Unity-SDK/commit/09425fe1dfe267055eb64f011bfd5fd3e01aa279))
-* mr formatting ([38f5865](https://github.com/Elympics/Unity-SDK/commit/38f5865597ee125c3302639c92a9fc4226d8805e))
-* split asserts ([6fb3905](https://github.com/Elympics/Unity-SDK/commit/6fb3905207047a7a89628b237e798aae85888ffb))
-* swap new CancellationToken instance to TimeoutController ([42ce288](https://github.com/Elympics/Unity-SDK/commit/42ce2889bab8afb677a9adf78f6de38c6ea62719))
-* webrtc on macos ([c33ad2a](https://github.com/Elympics/Unity-SDK/commit/c33ad2a74de1513027e4e5aefdde2d7946d5f7ba))
+* add warning log for rpc call ([50dfb68](https://github.com/Elympics/Unity-SDK/commit/50dfb68757d6b6abb5f81695e28e71abedecd28f))
 
 
 ### Features
 
-* add web socket automatic disconnect detection ([cd99533](https://github.com/Elympics/Unity-SDK/commit/cd995331819fbf178352cd54eca22fe02adec6bf))
 * refactor connect to elympics flow ([93358ef](https://github.com/Elympics/Unity-SDK/commit/93358ef88e6e66f8b758aa8a0f8d65820f0eccaf))
 
 

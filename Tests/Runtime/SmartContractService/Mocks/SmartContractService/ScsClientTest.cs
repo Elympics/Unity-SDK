@@ -29,9 +29,10 @@ namespace SCS.Tests
             {
                 if (_roomsManager.ListJoinedRooms().Count > 0)
                 {
+                    var gameData = string.Empty;
                     var guid = _roomsManager.ListJoinedRooms()[0].RoomId;
                     var amount = BigInteger.Parse("1000000000000000000000000");
-                    var result = await _scs.GetTicket(guid, amount);
+                    var result = await _scs.GetTicket(guid, amount, gameData);
                     Debug.Log($"[ScsClientTest] Got Ticket {result.TypedData}");
                 }
             }
@@ -45,10 +46,11 @@ namespace SCS.Tests
         {
             try
             {
+                var gameData = string.Empty;
                 var roomId = Guid.NewGuid();
                 Debug.Log($"RoomId: {roomId}");
                 var amount = new BigInteger(100);
-                var result = await _scs.GetTicket(roomId, amount);
+                var result = await _scs.GetTicket(roomId, amount, gameData);
                 Debug.Log($"[ScsClientTest] Got Ticket {result.TypedData}");
                 var signature = await _scs.SignTypedDataMessage(result.TypedData);
                 Debug.Log($"[ScsClientTest] Got Signature {signature}");
@@ -62,10 +64,11 @@ namespace SCS.Tests
 
         public async void ScsPlayerReadyFlow()
         {
+            var gameData = string.Empty;
             var roomId = Guid.NewGuid();
             Debug.Log($"RoomId: {roomId}");
             var amount = new BigInteger(100);
-            var result = await _scs.GetTicket(roomId, amount);
+            var result = await _scs.GetTicket(roomId, amount, gameData);
             Debug.Log($"[ScsClientTest] Got Ticket {result.TypedData}");
             var signature = await _scs.SignTypedDataMessage(result.TypedData);
             Debug.Log($"[ScsClientTest] Got Signature {signature}");

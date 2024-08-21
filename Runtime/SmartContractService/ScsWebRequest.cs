@@ -146,7 +146,6 @@ namespace SCS
         }
         public async UniTask<GetConfigResponse> GetChainConfig(string gameId, CancellationToken ct = default)
         {
-            var authorization = GetAuthBearer();
             var tcs = new UniTaskCompletionSource<GetConfigResponse>();
             var parameters = new Dictionary<string, string>
             {
@@ -155,7 +154,7 @@ namespace SCS
                 },
             };
             var requestUrl = ElympicsWebClient.FillParams(_chainConfigUrl, ":", parameters);
-            ElympicsWebClient.SendGetRequest(requestUrl, null, authorization, ElympicsWebClient.CreateResponseHandler(tcs), ct);
+            ElympicsWebClient.SendGetRequest(requestUrl, null, null, ElympicsWebClient.CreateResponseHandler(tcs), ct);
             return await tcs.Task;
         }
 

@@ -58,7 +58,10 @@ namespace SCS
             if (!BigInteger.TryParse(_room.State.MatchmakingData!.CustomData[SmartContractServiceMatchMakingCustomData.BetAmountKey], out var betAmount))
                 throw new SmartContractServiceException($"Could not parse betAmount to valid BigInteger value {_room.State.MatchmakingData.CustomData[SmartContractServiceMatchMakingCustomData.BetAmountKey]}");
 
-            var getTicket = await _scsService.GetTicket(_room.RoomId, betAmount);
+            if (_room.State.CustomData.TryGetValue(SmartContractServiceRoomCustomData.GameDataKey, out var gameData) is false)
+                gameData = string.Empty;
+            var getTicket = await _scsService.GetTicket(_room.RoomId, betAmount, gameData);
+
             ct.ThrowIfCancellationRequested();
             var signedMessage = await _scsService.SignTypedDataMessage(getTicket.TypedData);
             ct.ThrowIfCancellationRequested();

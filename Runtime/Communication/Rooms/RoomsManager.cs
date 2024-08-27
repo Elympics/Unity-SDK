@@ -103,6 +103,12 @@ namespace Elympics
                 {
                     if (!existingRoom.IsJoined)
                         existingRoom.UpdateState(stateUpdate);
+                    else if (existingRoom.IsJoined
+                             && stateUpdate.RoomContainUser(_client.SessionConnectionDetails.AuthData!.UserId) is false)
+                    {
+                        existingRoom.UpdateState(stateUpdate);
+                        existingRoom.IsJoined = false;
+                    }
                 }
                 else
                     AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, stateUpdate));

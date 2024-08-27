@@ -233,7 +233,7 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
             var matchmakingData = State.MatchmakingData!;
-            if (matchmakingData.MatchmakingState is not MatchmakingState.Playing)
+            if (this.IsEligibleToPlayMatch() is false)
                 throw new InvalidOperationException($"Can't play match outside {MatchmakingState.Playing} matchmaking state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             var matchData = matchmakingData.MatchData ?? throw new InvalidOperationException("No match data available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             if (matchData.State is not MatchState.Running)
@@ -242,7 +242,6 @@ namespace Elympics
             ElympicsLogger.Log($"[{nameof(Room)}]Id:{_roomId}. Play available match {matchData.MatchId}");
             _matchLauncher.PlayMatch(new MatchmakingFinishedData(matchData.MatchId, matchDetails, matchmakingData.QueueName, _client.SessionConnectionDetails.RegionName));
         }
-
         public UniTask Leave()
         {
             ThrowIfDisposed();

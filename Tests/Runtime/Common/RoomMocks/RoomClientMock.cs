@@ -17,8 +17,11 @@ internal class RoomClientMock : IRoomsClient
 
     public SessionConnectionDetails SessionConnectionDetails =>
         _sessionConnectionDetails ?? throw new InvalidOperationException();
+
     private SessionConnectionDetails? _sessionConnectionDetails;
 
+    private bool _throwTimeOutException;
+    private RoomStateChanged? _matchMakingDataOnTimeOutException;
     public UniTask<Guid> CreateRoom(
         string roomName,
         bool isPrivate,
@@ -51,11 +54,7 @@ internal class RoomClientMock : IRoomsClient
         return UniTask.CompletedTask;
     }
 
-    public UniTask SetReady(
-        Guid roomId,
-        byte[]? gameEngineData,
-        float[]? matchmakerData,
-        CancellationToken ct = default)
+    public UniTask SetReady(Guid roomId, byte[]? gameEngineData, float[]? matchmakerData, CancellationToken ct = default)
     {
         SetReadyInvoked?.Invoke((roomId, gameEngineData, matchmakerData, ct));
         return UniTask.CompletedTask;
@@ -66,7 +65,20 @@ internal class RoomClientMock : IRoomsClient
     public UniTask LeaveRoom(Guid roomId, CancellationToken ct = default)
     {
         LeaveRoomArgs = (roomId, ct);
+        LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.UserLeft));
         return UniTask.CompletedTask;
+    }
+
+    public void IncludeMatchmakingDataAndThrowLobbyOperationException(RoomStateChanged roomStateChanged)
+    {
+        _throwTimeOutException = true;
+        _matchMakingDataOnTimeOutException = roomStateChanged;
+    }
+
+    public void DontRequestTimeout()
+    {
+        _throwTimeOutException = false;
+        _matchMakingDataOnTimeOutException = null;
     }
 
     public UniTask UpdateRoomParams(
@@ -80,7 +92,15 @@ internal class RoomClientMock : IRoomsClient
 
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)
     {
-        StartMatchmakingInvoked?.Invoke((roomId, hostId));
+        if (_throwTimeOutException)
+        {
+            InvokeRoomStateChanged(_matchMakingDataOnTimeOutException);
+            throw new LobbyOperationException("Time out.");
+        }
+        else
+        {
+            StartMatchmakingInvoked?.Invoke((roomId, hostId));
+        }
         return UniTask.CompletedTask;
     }
 
@@ -94,7 +114,7 @@ internal class RoomClientMock : IRoomsClient
     public (Guid RoomId, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithRoomIdInvokedArgs { get; private set; }
     public (string JoinCode, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithJoinCodeInvokedArgs { get; private set; }
     public event Action<(Guid RoomId, byte[]? GameEngineData, float[]? MatchmakerData, CancellationToken Ct)>? SetReadyInvoked;
-    public event Action<(Guid RoomId, uint? newTeamIndex)> SetTeamChangedInvoked;
+    public event Action<(Guid RoomId, uint? newTeamIndex)>? SetTeamChangedInvoked;
     public event Action<(Guid RoomId, Guid HostId)>? StartMatchmakingInvoked;
     public (Guid RoomId, CancellationToken Ct)? LeaveRoomArgs { get; private set; }
 
@@ -114,5 +134,7 @@ internal class RoomClientMock : IRoomsClient
         StartMatchmakingInvoked = null;
         LeaveRoomArgs = null;
         _sessionConnectionDetails = null;
+        _throwTimeOutException = false;
+        SetTeamChangedInvoked = null;
     }
 }

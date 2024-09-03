@@ -319,9 +319,33 @@ namespace Elympics
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
 
                 await room.StartMatchmaking();
-                await ResultUtils.WaitUntil(() => _stateDiff.MatchDataArgs is not null, _quickJoinTimeout, ct);
+                _client.LeftRoom += OnQuickRoomLeft;
 
-                MatchmakingDataChanged += OnMatchmakingDataChanged;
+                var isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();
+                if (isCanceled)
+                {
+                    try
+                    {
+                        await room.CancelMatchmaking();
+                        await room.Leave();
+                    }
+                    catch (Exception e)
+                    {
+                        if (room.State.MatchmakingData?.MatchmakingState == MatchmakingState.Unlocked)
+                        {
+                            await room.Leave();
+                        }
+                        else if (room.IsEligibleToPlayMatch())
+                        {
+                            return room;
+                        }
+                        else
+                        {
+                            ElympicsLogger.Log("Unexpected quickmatch error.");
+                            throw e;
+                        }
+                    }
+                }
                 return room;
             }
             catch
@@ -334,21 +358,22 @@ namespace Elympics
                 throw;
             }
 
-            void OnMatchmakingDataChanged(MatchmakingDataChangedArgs args)
+            void OnQuickRoomLeft(LeftRoomArgs args)
             {
                 // ReSharper disable AccessToModifiedClosure
                 if (room == null
                     || room.IsDisposed)
                 {
-                    MatchmakingDataChanged -= OnMatchmakingDataChanged;
+                    _client.LeftRoom -= OnQuickRoomLeft;
                     return;
                 }
                 if (args.RoomId != room.RoomId)
                     return;
-                if ((room.State.MatchmakingData?.MatchmakingState).IsInsideMatchmakingOrMatch())
-                    return;
-                MatchmakingDataChanged -= OnMatchmakingDataChanged;
-                room.Leave().Forget();
+                // if ((room.State.MatchmakingData?.MatchmakingState).IsInsideMatchmakingOrMatch())
+                // return;
+                _client.LeftRoom -= OnQuickRoomLeft;
+                if (_rooms.Remove(room.RoomId, out var removedRoom))
+                    removedRoom.Dispose();
                 // ReSharper restore AccessToModifiedClosure
             }
         }

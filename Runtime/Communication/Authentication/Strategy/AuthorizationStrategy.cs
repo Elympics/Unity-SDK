@@ -37,9 +37,9 @@ namespace Elympics
 
                 return Result<AuthData, string>.Failure("JWT Token has expired.");
             }
-            catch
+            catch (Exception e)
             {
-                throw new ElympicsException("Authentication failed");
+                throw new ElympicsException("Authentication failed. Reason:" + Environment.NewLine + e.ToString());
             }
 
         }
@@ -57,9 +57,9 @@ namespace Elympics
                     _ => throw new ArgumentOutOfRangeException(nameof(authType), authType, null)
                 };
             }
-            catch
+            catch (Exception e)
             {
-                throw new ElympicsException("Authentication failed");
+                throw new ElympicsException("Authentication failed. Reason:" + Environment.NewLine + e.ToString());
             }
         }
     }

@@ -28,7 +28,7 @@ namespace Elympics
         private IMatchClient _matchClient;
 
         // Prediction
-        private IRoundTripTimeCalculator _roundTripTimeCalculator;
+        internal IRoundTripTimeCalculator RoundTripTimeCalculator;
         private ClientTickCalculator _clientTickCalculator;
         private PredictionBuffer _predictionBuffer;
 
@@ -52,11 +52,11 @@ namespace Elympics
             _matchClient = matchClient;
 
             elympicsBehavioursManager.InitializeInternal(this);
-            _roundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
+            RoundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
 #endif
-            _clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator, elympicsGameConfig);
+            _clientTickCalculator = new ClientTickCalculator(RoundTripTimeCalculator, elympicsGameConfig);
             _predictionBuffer = new PredictionBuffer(elympicsGameConfig);
 
             SetupCallbacks();
@@ -96,7 +96,7 @@ namespace Elympics
 
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
-            _roundTripTimeCalculator.OnSynchronized(data);
+            RoundTripTimeCalculator.OnSynchronized(data);
             OnConnected(data);
         }
 

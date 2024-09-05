@@ -1,3 +1,13 @@
+## [0.13.1](https://github.com/Elympics/Unity-SDK/compare/v0.13.0...v0.13.1) (2024-09-05)
+
+
+### Bug Fixes 🪲
+
+* quickmatch rooms + tests ([f240ad6](https://github.com/Elympics/Unity-SDK/commit/f240ad6f71537342d790fb4c793421e71796418d))
+* specific error logs on authFailed ([b51a1dd](https://github.com/Elympics/Unity-SDK/commit/b51a1dd33ff114bca499a278340428e0e080d0f4))
+
+
+
 ## [0.13.0](https://github.com/Elympics/Unity-SDK/compare/v0.12.0...v0.13.0) (2024-08-20)
 
 

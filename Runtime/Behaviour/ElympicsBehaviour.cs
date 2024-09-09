@@ -26,6 +26,7 @@ namespace Elympics
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
         [SerializeField] internal ElympicsPlayer visibleFor = ElympicsPlayer.All;
+
         [SerializeField]
         internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
         {
@@ -54,19 +55,19 @@ namespace Elympics
             internal set => networkId = value;
         }
 
-        [UsedImplicitly]  // from generated IL code
-        public void ValidateRpcContext(ElympicsRpcProperties _, MethodInfo method)
+        [UsedImplicitly] // from generated IL code
+        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties _, MethodInfo method)
         {
-            if (ElympicsBase.CurrentCallContext == ElympicsBase.CallContext.RpcInvoking)
+            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
                 return;
-            if (ElympicsBase.CurrentCallContext is not ElympicsBase.CallContext.ElympicsUpdate
-                and not ElympicsBase.CallContext.Initialize)
-                throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: "
-                    + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
-                    + $"or {nameof(IInitializable.Initialize)}");
+            if (ElympicsBase.Config.Prediction is false)
+                return;
+            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
+                return;
+            throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: " + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} " + $"or {nameof(IInitializable.Initialize)}");
         }
 
-        [UsedImplicitly]  // from generated IL code
+        [UsedImplicitly] // from generated IL code
         public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo method)
         {
             if (_isReconciling)
@@ -78,16 +79,17 @@ namespace Elympics
                 return false;
             if (ElympicsBase.IsLocalMode)
                 return false;
-            if (ElympicsBase.IsServer && ElympicsBase.IsBot && properties.Direction == ElympicsRpcDirection.PlayerToServer)
+            if (ElympicsBase.IsServer
+                && ElympicsBase.IsBot
+                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
                 return false;
-            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer
-                    && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
+            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
                 || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
                 throw new RpcDirectionMismatchException(properties, method);
             return true;
         }
 
-        [UsedImplicitly]  // from generated IL code
+        [UsedImplicitly] // from generated IL code
         public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo methodInfo)
         {
             if (_isReconciling)
@@ -104,12 +106,14 @@ namespace Elympics
             // TODO: This may introduce unwanted behavior. ~dsygocki 2023-08-07
             if (ElympicsBase.IsLocalMode)
                 return true;
-            if (ElympicsBase.IsServer && ElympicsBase.IsBot && properties.Direction == ElympicsRpcDirection.PlayerToServer)
+            if (ElympicsBase.IsServer
+                && ElympicsBase.IsBot
+                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
                 return true;
             return false;
         }
 
-        [UsedImplicitly]  // from generated IL code
+        [UsedImplicitly] // from generated IL code
         public void OnRpcCaptured(ElympicsRpcProperties _, MethodInfo method, object target, params object[] arguments)
         {
             var rpcMethod = new RpcMethod(method, target);
@@ -142,6 +146,7 @@ namespace Elympics
         /// Provides Elympics-specific game instance data and methods.
         /// </summary>
         public IElympics Elympics => ElympicsBase;
+
         internal ElympicsBase ElympicsBase { get; private set; }
         public bool IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
         public bool IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);
@@ -179,7 +184,8 @@ namespace Elympics
                 throw new ReadNotEnoughException(this);
 
             inputReader = null;
-            if (_tickBasedInputByPlayer.TryGetValue(player, out var tickBasedInput) && ElympicsBase.Tick - tickBasedInput.Tick <= absenceTick)
+            if (_tickBasedInputByPlayer.TryGetValue(player, out var tickBasedInput)
+                && ElympicsBase.Tick - tickBasedInput.Tick <= absenceTick)
             {
                 _inputReader.FeedDataForReading(tickBasedInput.Data);
                 inputReader = _inputReader;
@@ -193,7 +199,8 @@ namespace Elympics
 
         private void OnValidate()
         {
-            if (!forceNetworkId && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
+            if (!forceNetworkId
+                && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
                 UpdateSerializedNetworkId();
 
             _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
@@ -210,10 +217,7 @@ namespace Elympics
 
         private bool IsMyNetworkIdTaken()
         {
-            return FindObjectsOfType<ElympicsBehaviour>()
-                .Where(behaviour => behaviour != this)
-                .Select(behaviour => behaviour.NetworkId)
-                .Contains(networkId);
+            return FindObjectsOfType<ElympicsBehaviour>().Where(behaviour => behaviour != this).Select(behaviour => behaviour.NetworkId).Contains(networkId);
         }
 
         internal void UpdateSerializedNetworkId()
@@ -223,8 +227,7 @@ namespace Elympics
         }
 
         private void OnDrawGizmos()
-        {
-        }
+        { }
 #endif
 
         internal void InitializeInternal(ElympicsBase elympicsBase)
@@ -275,9 +278,7 @@ namespace Elympics
                             }
                         }
                         else
-                            ElympicsLogger.LogError($"Cannot synchronize {nameof(ElympicsVar)} {field.Name} "
-                                + $"in {field.DeclaringType}, because it hasn't been initialized "
-                                + "(its value is null).");
+                            ElympicsLogger.LogError($"Cannot synchronize {nameof(ElympicsVar)} {field.Name} " + $"in {field.DeclaringType}, because it hasn't been initialized " + "(its value is null).");
                     }
                 }
                 if (componentVars.Count > 0)
@@ -387,7 +388,8 @@ namespace Elympics
 
         internal void ElympicsUpdate()
         {
-            if (!isUpdatableForNonOwners && !IsPredictableTo(ElympicsBase.Player))
+            if (!isUpdatableForNonOwners
+                && !IsPredictableTo(ElympicsBase.Player))
                 return;
 
             var previousCallContext = ElympicsBase.CurrentCallContext;

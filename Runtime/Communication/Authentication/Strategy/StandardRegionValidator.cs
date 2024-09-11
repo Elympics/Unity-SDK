@@ -1,7 +1,11 @@
+using System.Collections.Generic;
+
 namespace Elympics
 {
-    public class StandardRegionValidator : IRegionValidator
+    internal class StandardRegionValidator : IRegionValidator
     {
-        public bool IsRegionValid(RegionData regionData) => regionData.IsCustom || regionData.Name == string.Empty || ElympicsRegions.AllAvailableRegions.Contains(regionData.Name);
+        public StandardRegionValidator(List<string> availableRegions) => GetAvailableRegions = availableRegions;
+        public bool IsRegionValid(RegionData regionData) => regionData.Name == string.Empty || GetAvailableRegions.Contains(regionData.Name);
+        public List<string> GetAvailableRegions { get; }
     }
 }

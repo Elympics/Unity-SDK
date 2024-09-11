@@ -1,9 +1,12 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
 using HybridWebSocket;
+using NSubstitute;
 using NUnit.Framework;
 
 namespace Elympics.Tests
@@ -15,6 +18,7 @@ namespace Elympics.Tests
         private const string AsyncEventDispatcherFieldName = "_dispatcher";
         private const string WebSocketFactory = "_wsFactory";
         private const string AuthClientFieldName = "_auth";
+        private const string AvailableRegionRetriever = "_regionRetriever";
 
         public static ElympicsLobbyClient MockIWebSocket(
             this ElympicsLobbyClient sut,
@@ -64,6 +68,18 @@ namespace Elympics.Tests
             authField.SetValue(sut, mockAuthClient);
             return sut;
         }
+
+        public static ElympicsLobbyClient MockIAvailableRegionRetriever(this ElympicsLobbyClient sut, params string[] regions)
+        {
+            var availableRegionRetriever = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == AvailableRegionRetriever);
+            Assert.NotNull(availableRegionRetriever);
+
+            var regionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
+            _ = regionRetrieverMock.GetAvailableRegions().Returns(UniTask.FromResult(new List<string>(regions)));
+            availableRegionRetriever.SetValue(sut, regionRetrieverMock);
+            return sut;
+        }
+
         public static ElympicsLobbyClient SetPingThresholdTimeout(this ElympicsLobbyClient sut, TimeSpan newTimeout)
         {
             var webSocketSessionField = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == WebSocketSessionName);

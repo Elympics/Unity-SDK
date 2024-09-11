@@ -219,7 +219,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
                 ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId, regionsResponse =>
                 {
                     _availableRegions = regionsResponse.Select(x => x.Name).ToList();
-                    ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", regionsResponse)}");
+                    ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", _availableRegions)}");
                 }, () =>
                 {
                     _availableRegions = new List<string>();

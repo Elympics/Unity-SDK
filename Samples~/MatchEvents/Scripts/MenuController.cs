@@ -62,7 +62,8 @@ namespace MatchEvents
 
         private async void ChooseRegion()
         {
-            _closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
+            var availableRegions = await ElympicsRegions.GetAvailableRegions();
+            _closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(availableRegions)).Region;
             if (string.IsNullOrEmpty(_closestRegion))
                 _closestRegion = ElympicsRegions.Warsaw;
             Debug.Log($"Selected region: {ElympicsRegions.Warsaw}");

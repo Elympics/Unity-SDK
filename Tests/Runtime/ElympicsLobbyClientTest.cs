@@ -57,7 +57,10 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, false, null, out _);
+            _ = _sut!
+                .MockSuccessIAuthClient(FakeJwt, UserId, Nickname)
+                .MockIWebSocket(UserId, Nickname, false, null, out _)
+                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas);
         }
         private static AuthType[] connectTestValue = { AuthType.ClientSecret, AuthType.EthAddress };
 

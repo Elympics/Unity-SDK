@@ -34,7 +34,7 @@ namespace Elympics.Tests.Rooms
         public void ResetMocks()
         {
             WsSessionMock.Reset();
-            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "", false);
+            WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
             RoomsClient.Session = WsSessionMock;
         }
 

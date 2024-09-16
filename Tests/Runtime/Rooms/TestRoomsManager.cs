@@ -191,7 +191,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator HappyPathStartingQuickMatchShouldSucceed() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName, true);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
 
@@ -253,7 +253,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator QuickMatchLobbyOperationException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName, true);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
 
@@ -318,7 +318,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator CanQuickMatchAgainAfterTimeoutException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName, true);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
 
@@ -1307,7 +1307,7 @@ namespace Elympics.Tests.Rooms
             };
 
             const string regionName = "test-region";
-            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName, true);
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
             _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
             _matchLauncherMock.ShouldLoadGameplaySceneAfterMatchmaking = true;
 

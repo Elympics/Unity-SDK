@@ -44,7 +44,8 @@ workflow:
 
 .cond.mergerequest.target.main:
   rules: &cond_mergerequest_target_main
-    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
       when: always
 
 .cond.release.auto:
@@ -263,8 +264,7 @@ verify-messagepack-generated:
 trigger:tanks:
   extends:
     - .trigger
-  rules:
-    - *cond_mergerequest_target_main
+  rules: *cond_mergerequest_target_main
   trigger:
     project: unity/tanks
     strategy: depend
@@ -272,8 +272,7 @@ trigger:tanks:
 trigger:spellz:
   extends:
     - .trigger
-  rules:
-    - *cond_mergerequest_target_main
+  rules: *cond_mergerequest_target_main
   trigger:
     project: unity/spellz/gameplay
     strategy: depend

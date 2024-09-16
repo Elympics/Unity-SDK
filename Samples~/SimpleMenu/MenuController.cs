@@ -34,7 +34,6 @@ public class MenuController : MonoBehaviour
             Region = new RegionData()
             {
                 Name = "warsaw",
-                IsCustom = false,
             }
         });
         playButton.interactable = true;
@@ -105,7 +104,6 @@ public class MenuController : MonoBehaviour
             Region = new RegionData()
             {
                 Name = regionToJoin,
-                IsCustom = false,
             }
         }).Forget();
     }

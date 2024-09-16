@@ -46,7 +46,7 @@ namespace Elympics
         public static async UniTask<List<string>> GetAvailableRegions()
         {
             var builder = new UriBuilder(ElympicsConfig.Load()!.ElympicsApiEndpoint);
-            builder.Path += ElympicsApiModels.ApiModels.Regions.Routes.BaseRouteUnityFormat;
+            builder.Path += "/" + ElympicsApiModels.ApiModels.Regions.Routes.BaseRouteUnityFormat;
             var completionSource = new UniTaskCompletionSource<AvailableRegionsResponseModel>();
             var url = builder.Uri.ToString();
             ElympicsWebClient.SendGetRequest<AvailableRegionsResponseModel>(url, null, null, OnResponse);

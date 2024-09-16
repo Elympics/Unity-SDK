@@ -181,24 +181,19 @@ namespace Elympics
             return authTokenMid;
         }
 
-        public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
+        [Obsolete("Available regions are gameId agnostic. Use" + nameof(GetAvailableRegions))]
+        public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure) => GetAvailableRegions(updateProperty, onFailure);
+
+        public static void GetAvailableRegions(Action<List<RegionResponseModel>> updateProperty, Action onFailure)
         {
             ElympicsLogger.Log("Getting available regions...");
 
-            CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+            var uri = GetCombinedUrl(ElympicsWebEndpoint, Regions.BaseRoute);
+            _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
-            void OnContinuation(bool success)
+            void OnCompleted(UnityWebRequest webRequest)
             {
-                if (!success)
-                    return;
-
-                var uri = GetCombinedUrl(ElympicsWebEndpoint, Regions.BaseRoute, gameId);
-                _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
-
-                void OnCompleted(UnityWebRequest webRequest)
-                {
-                    GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
-                }
+                GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
             }
         }
 

@@ -50,7 +50,7 @@ namespace Elympics.Lobby
 
         public async UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default)
         {
-            var (wsUrl, authData, gameId, gameVersion, regionName, _) = details;
+            var (wsUrl, authData, gameId, gameVersion, regionName) = details;
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
             if (_cts is not null)

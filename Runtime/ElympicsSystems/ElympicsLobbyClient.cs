@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -142,6 +143,10 @@ namespace Elympics
         [SerializeField] private string currentRegion = string.Empty;
         [PublicAPI] public string CurrentRegion => currentRegion;
 
+        [PublicAPI] public IReadOnlyCollection<string>? AvailableRegions { get; private set; }
+
+        private IAvailableRegionRetriever _regionRetriever = null!;
+
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;
 
@@ -162,11 +167,10 @@ namespace Elympics
             _config = ElympicsConfig.Load() ?? throw new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found.");
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
-
+            _regionRetriever = new DefaultRegionRetriever();
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
-            _sessionConnectionFactory = new SessionConnectionFactory(new StandardRegionValidator());
 
             ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n" + "Available games:\n" + string.Join("\n", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}")));
 
@@ -251,6 +255,9 @@ namespace Elympics
             try
             {
                 _connectionInProgress = true;
+                var availableRegions = await _regionRetriever.GetAvailableRegions();
+                _sessionConnectionFactory = new SessionConnectionFactory(new StandardRegionValidator(availableRegions));
+                AvailableRegions = availableRegions;
                 ElympicsLogger.Log("Start connecting to Elympics.");
                 var authorizeToElympics = GetAuthStrategy(AuthData is not null);
                 var authResult = await authorizeToElympics.Authorize(data);
@@ -417,9 +424,12 @@ namespace Elympics
             if (!CanJoinMatch())
                 return;
 
-            var closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions)).Region;
-            if (string.IsNullOrEmpty(closestRegion))
-                closestRegion = fallbackRegion;
+            var availableRegions = await ElympicsRegions.GetAvailableRegions();
+            var closestRegion = fallbackRegion;
+
+            if (availableRegions is not null)
+                closestRegion = (await ElympicsCloudPing.ChooseClosestRegion(availableRegions)).Region;
+
             SetupMatchAndJoinMatchmaker(closestRegion, matchmakerData, gameEngineData, queueName, loadGameplaySceneOnFinished, cancellationToken);
         }
 

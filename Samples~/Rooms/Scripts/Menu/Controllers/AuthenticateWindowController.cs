@@ -105,7 +105,6 @@ public class AuthenticateWindowController : BaseWindow
                 Region = new RegionData()
                 {
                     Name = regionsDropdown.options[regionsDropdown.value].text,
-                    IsCustom = false
                 },
                 AuthFromCacheData = logWithCachedData ? LoadCachedData() : null
             });
@@ -155,7 +154,6 @@ public class AuthenticateWindowController : BaseWindow
             var region = new RegionData()
             {
                 Name = regionsDropdown.options[regionsDropdown.value].text,
-                IsCustom = false
             };
             var connectionData = new ConnectionData()
             {

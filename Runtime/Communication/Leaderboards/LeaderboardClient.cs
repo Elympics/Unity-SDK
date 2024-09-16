@@ -119,7 +119,7 @@ namespace Elympics
             };
         }
 
-        private static void DefaultFailure(LeaderboardFetchError error) => ElympicsLogger.LogError(error.ToString());
+        private static void DefaultFailure(LeaderboardFetchError error) => ElympicsLogger.LogWarning(error.ToString());
     }
 
     public enum LeaderboardGameVersion

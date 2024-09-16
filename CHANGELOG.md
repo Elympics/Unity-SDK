@@ -1,3 +1,17 @@
+## [0.13.2](https://github.com/Elympics/Unity-SDK/compare/v0.13.1...v0.13.2) (2024-09-16)
+
+
+### Bug Fixes 🪲
+
+* update public room when user not in room ([503652f](https://github.com/Elympics/Unity-SDK/commit/503652fb5d8c9d7aef00564ccec631b7964e71c8))
+
+
+### Features
+
+* add region check each elympics connection ([b7c48b5](https://github.com/Elympics/Unity-SDK/commit/b7c48b5b379d123479b423e2a8217cfe735daa8f))
+
+
+
 ## [0.13.1](https://github.com/Elympics/Unity-SDK/compare/v0.13.0...v0.13.1) (2024-09-05)
 
 

@@ -1,7 +1,7 @@
 ## [0.13.3](https://github.com/Elympics/Unity-SDK/compare/v0.13.2...v0.13.3) (2024-09-16)
 
 
-### Bug Fixes 🪲
+### Hot Fixes 🪲
 
 * add slash to uri ([469ef96](https://github.com/Elympics/Unity-SDK/commit/469ef96b9008db7964c2bd09523ef69674f608e3))
 

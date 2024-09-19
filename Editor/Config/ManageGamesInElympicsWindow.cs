@@ -92,7 +92,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
         elympicsWebEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsWebEndpoint");
         elympicsGameServersEndpoint = elympicsConfigSerializedObject.FindProperty("elympicsGameServersEndpoint");
 
-        if (elympicsWebEndpointChecker == null || elympicsGameServersEndpointChecker == null)
+        if (elympicsWebEndpointChecker == null
+            || elympicsGameServersEndpointChecker == null)
         {
             elympicsWebEndpointChecker = new EditorEndpointChecker();
             elympicsGameServersEndpointChecker = new EditorEndpointChecker();
@@ -121,7 +122,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private void OnGUI()
     {
-        if (BuildPipeline.isBuildingPlayer || GetManageGamesInElympicsWindowData() == false)
+        if (BuildPipeline.isBuildingPlayer
+            || GetManageGamesInElympicsWindowData() == false)
             return;
 
         elympicsWebEndpointChecker.Update();
@@ -216,15 +218,17 @@ public class ManageGamesInElympicsWindow : EditorWindow
                     _accountGames = availableGamesOnline;
                 });
                 var gameId = ((List<ElympicsGameConfig>)availableGames.GetValue())[currentGameIndex.intValue].gameId;
-                ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId, regionsResponse =>
-                {
-                    _availableRegions = regionsResponse.Select(x => x.Name).ToList();
-                    ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", _availableRegions)}");
-                }, () =>
-                {
-                    _availableRegions = new List<string>();
-                    ElympicsLogger.LogError($"Error receiving regions for game ID: {gameId}");
-                });
+                ElympicsWebIntegration.GetAvailableRegionsForGameId(gameId,
+                    regionsResponse =>
+                    {
+                        _availableRegions = regionsResponse.Select(x => x.Name).ToList();
+                        ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", _availableRegions)}");
+                    },
+                    () =>
+                    {
+                        _availableRegions = new List<string>();
+                        ElympicsLogger.LogError($"Error receiving regions for game ID: {gameId}");
+                    });
             });
             GUI.FocusControl(null);
         }
@@ -252,7 +256,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
         if (availableGames.GetValue() == null)
             availableGames.SetValue(new List<ElympicsGameConfig>());
 
-        if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
+        if (chosenGameProperty != null
+            && chosenGameProperty.objectReferenceValue != null)
         {
             currentGameIndex.intValue = _customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>)availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
             DrawAvailableRegionSection();
@@ -364,6 +369,21 @@ public class ManageGamesInElympicsWindow : EditorWindow
             ElympicsWebIntegration.BuildAndUploadGame();
             GUIUtility.ExitGUI();
         }
+        _customInspectorDrawer.Space();
+        if (_customInspectorDrawer.DrawButtonCentered("Log Uploaded Versions", _resizableCenteredLabelWidth, 20))
+        {
+            if (!ElympicsWebIntegration.IsConnectedToElympics())
+                return;
+            ElympicsWebIntegration.GetGameVersionsForGameId(activeGameConfig.gameId,
+                gameVersions =>
+                {
+                    var log = string.Format("{0,-15} {1,-20}\n", "Game Version", "Upload Time");
+                    foreach (var gameVersion in gameVersions.Versions)
+                        log += string.Format("{0,-15} {1,40}\n", gameVersion.Version, gameVersion.UploadedTime);
+
+                    Debug.Log(log);
+                });
+        }
 
         var wrappedLabelHeight = (int)_guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(UploadGameInfo), position.width * 0.8f);
         _customInspectorDrawer.DrawLabelCentered(UploadGameInfo, _resizableCenteredLabelWidth, wrappedLabelHeight, true);
@@ -454,8 +474,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
     {
         if (elympicsWebEndpointChecker.IsRequestSuccessful)
             return true;
-        ElympicsLogger.LogError("Cannot connect to Elympics cloud! "
-            + "Check your Internet connection and configured Elympics endpoints.");
+        ElympicsLogger.LogError("Cannot connect to Elympics cloud! " + "Check your Internet connection and configured Elympics endpoints.");
         return false;
     }
 }

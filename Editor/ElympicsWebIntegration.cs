@@ -53,8 +53,7 @@ namespace Elympics
         {
             if (ElympicsConfig.IsLogin)
                 return true;
-            ElympicsLogger.LogError("Not logged in to Elympics cloud. "
-                + "Check your Internet connection, configured credentials and Elympics endpoints.");
+            ElympicsLogger.LogError("Not logged in to Elympics cloud. " + "Check your Internet connection, configured credentials and Elympics endpoints.");
             return false;
         }
 
@@ -176,7 +175,7 @@ namespace Elympics
         {
             var authTokenParts = authToken.Split('.');
             var authTokenMidPadded = authTokenParts[1].PadRight(4 * ((authTokenParts[1].Length + 3) / 4), '=');
-            var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/')));  // JWT is encoded as URL-safe base64, some characters have to be replaced
+            var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/'))); // JWT is encoded as URL-safe base64, some characters have to be replaced
             var authTokenMid = JsonConvert.DeserializeObject<JwtMidPart>(authTokenMidStr);
             return authTokenMid;
         }
@@ -207,6 +206,28 @@ namespace Elympics
             {
                 var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
+
+                var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
+                if (gameVersionsWebRequest != null)
+                    if (!gameVersionsWebRequest.isDone)
+                        gameVersionsWebRequest.Abort();
+                gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
+
+                void OnCompleted(UnityWebRequest webRequest)
+                {
+                    if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions, silent))
+                        updateProperty?.Invoke(gameVersions);
+                }
+            }
+        }
+
+        public static void GetGameVersionsForGameId(string gameId, Action<GameVersionsResponseModel> updateProperty, bool silent = false)
+        {
+            CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
+
+            void OnContinuation(bool success)
+            {
+                var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
                 if (gameVersionsWebRequest != null)
@@ -295,11 +316,12 @@ namespace Elympics
         public static void PostPlayEvent(string mode)
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            PostTelemetryEvent(UsageStatisticsRoutes.Play, new PlayRequest
-            {
-                gameId = gameConfig.GameId,
-                mode = mode,
-            });
+            PostTelemetryEvent(UsageStatisticsRoutes.Play,
+                new PlayRequest
+                {
+                    gameId = gameConfig.GameId,
+                    mode = mode,
+                });
         }
 
         public static void PostStopEvent()
@@ -379,33 +401,36 @@ namespace Elympics
                 }
 
                 var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-                _ = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath }, webRequest =>
-                {
-                    try
+                _ = ElympicsEditorWebClient.SendEnginePostRequestApi(url,
+                    currentGameConfig.GameVersion,
+                    new[] { enginePath, botPath },
+                    webRequest =>
                     {
-                        HandleUploadResults(currentGameConfig, webRequest);
-                    }
-                    catch (ElympicsException e)
-                    {
-                        _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "OK");
-                        ElympicsLogger.LogError(e.Message);
-                    }
+                        try
+                        {
+                            HandleUploadResults(currentGameConfig, webRequest);
+                        }
+                        catch (ElympicsException e)
+                        {
+                            _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "OK");
+                            ElympicsLogger.LogError(e.Message);
+                        }
 
-                    EditorUtility.ClearProgressBar();
-                    completed?.Invoke(webRequest);
-                    GameUploadedToTheCloud?.Invoke();
-                });
+                        EditorUtility.ClearProgressBar();
+                        completed?.Invoke(webRequest);
+                        GameUploadedToTheCloud?.Invoke();
+                    });
             }
 
         }
 
         private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
         {
-            if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
+            if (webRequest.IsProtocolError()
+                || webRequest.IsConnectionError())
             {
                 var errorMessage = ParseResponseErrors(webRequest);
-                ElympicsLogger.LogError($"Upload failed for game {currentGameConfig.GameName} "
-                    + $"with version: {currentGameConfig.GameVersion}.\nGame ID: {currentGameConfig.GameId}.");
+                ElympicsLogger.LogError($"Upload failed for game {currentGameConfig.GameName} " + $"with version: {currentGameConfig.GameVersion}.\nGame ID: {currentGameConfig.GameId}.");
                 throw new ElympicsException(errorMessage);
             }
 
@@ -415,8 +440,7 @@ namespace Elympics
         [UsedImplicitly]
         public static void BuildAndUploadServerInBatchmode(string username, string password)
         {
-            _ = ElympicsConfig.LoadCurrentElympicsGameConfig()
-                             ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
+            _ = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
                 throw new ArgumentNullException(nameof(username));
             if (string.IsNullOrEmpty(password))
@@ -526,7 +550,8 @@ namespace Elympics
         private static bool TryDeserializeResponse<T>(UnityWebRequest webRequest, string actionName, out T deserializedResponse, bool silent = false)
         {
             deserializedResponse = default;
-            if (webRequest.IsProtocolError() || webRequest.IsConnectionError())
+            if (webRequest.IsProtocolError()
+                || webRequest.IsConnectionError())
             {
                 var errorMessage = ParseResponseErrors(webRequest, silent);
                 if (!silent)
@@ -570,7 +595,8 @@ namespace Elympics
                     _ = ElympicsLogger.LogException(e);
             }
 
-            if (errorModel?.Errors == null || errorModel.Errors.Count == 0)
+            if (errorModel?.Errors == null
+                || errorModel.Errors.Count == 0)
                 return $"Received error response code {request.responseCode} with error:\n{request.downloadHandler.text}";
 
             var errors = string.Join("\n", errorModel.Errors.SelectMany(r => r.Value.Select(x => $"[{r.Key}] {x}")));

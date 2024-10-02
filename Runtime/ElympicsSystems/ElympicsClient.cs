@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace Elympics
 {
+    [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsClient)]
     public class ElympicsClient : ElympicsBase
     {
         [SerializeField] private bool connectOnStart = true;

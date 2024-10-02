@@ -21,6 +21,7 @@ using UnityEngine.SceneManagement;
 
 namespace Elympics
 {
+    [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsLobbyClient)]
     [RequireComponent(typeof(AsyncEventsDispatcher))]
     public class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager
     {

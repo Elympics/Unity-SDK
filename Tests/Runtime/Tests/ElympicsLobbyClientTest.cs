@@ -1,14 +1,10 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -19,10 +15,10 @@ namespace Elympics.Tests
 {
     [Category("ElympicsLobbyClient")]
     [SuppressMessage("ReSharper", "HeapView.BoxingAllocation")]
-    public class ElympicsLobbyClientTest : IPrebuildSetup
+    public class ElympicsLobbyClientTest : ElympicsMonoBaseTest
     {
         private ElympicsLobbyClient? _sut;
-        private const string TestNameScene = "ElympicsLobbyClientTestScene";
+        public override string SceneName => "ElympicsLobbyClientTestScene";
         private const int TestsTimeoutMs = 1000;
         private const double PingTimeoutTestSec = 1.1;
         private const double DefaultPingTimeoutSec = 30;
@@ -53,7 +49,7 @@ namespace Elympics.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            SceneManager.LoadScene(TestNameScene);
+            SceneManager.LoadScene(SceneName);
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
@@ -490,72 +486,5 @@ namespace Elympics.Tests
             WebSocketMockSetup.CancelPingToken();
         }
 
-        public void Setup()
-        {
-#if UNITY_EDITOR
-            ElympicsLogger.Log("Setup configs");
-            var config = ElympicsConfig.Load();
-            if (config == null)
-            {
-                if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
-                {
-                    ElympicsLogger.Log("Creating Elympics resources directory...");
-                    _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
-                }
-
-                var newConfig = ScriptableObject.CreateInstance<ElympicsConfig>();
-
-                const string resourcesDirectory = "Assets/Resources/";
-                var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(resourcesDirectory + ElympicsConfig.PathInResources + ".asset");
-                AssetDatabase.CreateAsset(newConfig, assetPathAndName);
-
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-                config = newConfig;
-            }
-            var currentConfigs = Resources.LoadAll<ElympicsGameConfig>("Elympics");
-            if (currentConfigs is null
-                || currentConfigs.Length == 0)
-            {
-                var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
-                if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
-                {
-                    ElympicsLogger.Log("Creating Elympics Resources directory...");
-                    _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
-                    ElympicsLogger.Log("Elympics Resources directory created successfully.");
-                }
-
-                AssetDatabase.CreateAsset(gameConfig, ElympicsConfig.ElympicsResourcesPath + "/ElympicsGameConfig.asset");
-                config.availableGames = new()
-                {
-                    gameConfig
-                };
-                config.currentGame = 0;
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-            }
-            if (config.availableGames == null
-                || config.availableGames.Count == 0)
-            {
-                var games = config.availableGames ?? new List<ElympicsGameConfig>();
-                games.Add(currentConfigs![0]);
-                config.availableGames = games;
-                config.currentGame = 0;
-            }
-            ElympicsLogger.Log($"Current test elympicsConfig has {config.availableGames.Count} games and current game index is {config.currentGame}");
-            var currentScenes = EditorBuildSettings.scenes.ToList();
-            if (currentScenes.Any(x => x.path.Contains(TestNameScene)))
-                return;
-
-            var guids = AssetDatabase.FindAssets(TestNameScene + " t:Scene");
-            if (guids.Length != 1)
-                throw new ArgumentException($"There cannot be more than 1 {TestNameScene} scene asset.");
-
-            var scene = AssetDatabase.GUIDToAssetPath(guids[0]);
-            var editorBuildSettingScene = new EditorBuildSettingsScene(scene, true);
-            currentScenes.Add(editorBuildSettingScene);
-            EditorBuildSettings.scenes = currentScenes.ToArray();
-#endif
-        }
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Elympics
 {
+    [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsServer)]
     public class ElympicsServer : ElympicsBase
     {
         private static readonly ElympicsPlayer ServerPlayer = ElympicsPlayer.World;

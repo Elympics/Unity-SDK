@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Elympics
 {
+    [DefaultExecutionOrder(ElympicsExecutionOrder.GameSceneManager)]
     public class GameSceneManager : MonoBehaviour
     {
         [SerializeField] private ElympicsClient elympicsClient;

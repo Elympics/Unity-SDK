@@ -1,3 +1,22 @@
+## [0.14.0](https://github.com/Elympics/Unity-SDK/compare/v0.13.3...v0.14.0) (2024-10-04)
+
+### BREAKING CHANGES
+
+* Add mandatory initialization method for SCS ([5e3991](https://github.com/Elympics/Unity-SDK/commit/5e3991b77b8bae964ab503289cff2b08e9cd3d6c))
+
+
+### Bug Fixes 🪲
+
+* execution order from const ([4c3ca6f](https://github.com/Elympics/Unity-SDK/commit/4c3ca6f51d0360ddf0c8f99a28835f1eaf5c897a))
+* refactor available region url creation ([a48b1c7](https://github.com/Elympics/Unity-SDK/commit/a48b1c726e6f82bc2a2d4df9815a260d3fd5ed6e))
+
+
+### Features
+
+* log uploaded version to the console ([d02a61f](https://github.com/Elympics/Unity-SDK/commit/d02a61f936e3485df709f0d652d6076ccd7a52be))
+
+
+
 ## [0.13.3](https://github.com/Elympics/Unity-SDK/compare/v0.13.2...v0.13.3) (2024-09-16)
 
 

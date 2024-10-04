@@ -19,6 +19,7 @@ namespace Elympics
 
         [Obsolete("This event will be not supported in the future.")]
         public event Action<JoinedRoomArgs>? JoinedRoom;
+
         public event Action<LeftRoomArgs>? LeftRoom;
 
         public event Action<UserJoinedArgs>? UserJoined;
@@ -307,7 +308,13 @@ namespace Elympics
             throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
         }
 
-        public async UniTask<IRoom> StartQuickMatch(string queueName, byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
+        public async UniTask<IRoom> StartQuickMatch(
+            string queueName,
+            byte[]? gameEngineData = null,
+            float[]? matchmakerData = null,
+            Dictionary<string, string>? customRoomData = null,
+            Dictionary<string, string>? customMatchmakingData = null,
+            CancellationToken ct = default)
         {
             if (queueName == null)
                 throw new ArgumentNullException(nameof(queueName));
@@ -318,7 +325,7 @@ namespace Elympics
             IRoom? room = null;
             try
             {
-                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, new Dictionary<string, string>(), new Dictionary<string, string>(), ct);
+                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, customRoomData ?? new Dictionary<string, string>(), customMatchmakingData ?? new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
                 await room.ChangeTeam(0);

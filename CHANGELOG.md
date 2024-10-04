@@ -1,5 +1,9 @@
 ## [0.14.0](https://github.com/Elympics/Unity-SDK/compare/v0.13.3...v0.14.0) (2024-10-04)
 
+### BREAKING CHANGES
+
+* Add mandatory initialization method for SCS ([5e3991](https://github.com/Elympics/Unity-SDK/commit/5e3991b77b8bae964ab503289cff2b08e9cd3d6c))
+
 
 ### Bug Fixes 🪲
 
@@ -9,7 +13,6 @@
 
 ### Features
 
-* add tournament info data ([9c19f0f](https://github.com/Elympics/Unity-SDK/commit/9c19f0f8e9d6c8dd26224b2668e45993e6b503aa))
 * log uploaded version to the console ([d02a61f](https://github.com/Elympics/Unity-SDK/commit/d02a61f936e3485df709f0d652d6076ccd7a52be))
 
 

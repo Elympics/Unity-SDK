@@ -33,6 +33,7 @@ namespace Elympics
 	/// A thread-safe class which holds a queue with actions to execute on the next Update() method. It can be used to make calls to the main thread for
 	/// things such as UI Manipulation in Unity. It was developed for use in combination with the Firebase Unity plugin, which uses separate threads for event handling
 	/// </summary>
+	[DefaultExecutionOrder(ElympicsExecutionOrder.AsyncEventsDispatcher)]
 	public class AsyncEventsDispatcher : MonoBehaviour, IAsyncEventsDispatcher
 	{
 		public static AsyncEventsDispatcher Instance { get; set; }

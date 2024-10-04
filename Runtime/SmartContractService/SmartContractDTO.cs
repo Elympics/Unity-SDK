@@ -5,7 +5,7 @@ using System;
 namespace SCS
 {
     [Serializable]
-    public struct SmartContract
+    public struct SmartContractDTO
     {
         public string Type;
         public string Address;

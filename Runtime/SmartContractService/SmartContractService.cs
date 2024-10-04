@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using SCS.InternalModels.Player;
@@ -10,22 +11,34 @@ using UnityEngine;
 
 namespace SCS
 {
+    [DefaultExecutionOrder(ElympicsExecutionOrders.SmartContractService)]
     public class SmartContractService : MonoBehaviour, ISmartContractService
     {
         private const string ServiceName = "scs";
 
-        internal static IScsWebRequest? ScsWebRequestOverride;
-
-        [SerializeField] private SmartContractServiceConfig? config;
         private IRoomsManager? _roomsManager;
         private ElympicsLobbyClient? _lobby;
         private IWallet? _currentWallet;
         private IScsWebRequest _scsWebRequest = null!;
         private ElympicsGameConfig? _gameConfig;
-        public ChainConfig? CurrentChain { get; private set; }
-
+        public ChainConfig? CurrentChain => ThrowIfDisposedOrReturnChainConfig();
+        private ChainConfig? _currentChain;
+        private bool Initilized => _currentChain is not null;
+        private TimeSpan _getChainTimeout = TimeSpan.FromSeconds(15);
+        private CancellationTokenSource? _cts = null;
+        public static SmartContractService Instance { get; private set; }
         private void Awake()
         {
+            if (Instance != null)
+            {
+                ElympicsLogger.LogError("SmartContractService instance already exists. Destroying object.");
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            DontDestroyOnLoad(this);
+
+
             var elympicsConfig = ElympicsConfig.Load()
                 ?? throw new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found.");
             _gameConfig = elympicsConfig.GetCurrentGameConfig()
@@ -33,16 +46,49 @@ namespace SCS
             // ReSharper disable once Unity.NoNullCoalescing
             _lobby = ElympicsLobbyClient.Instance
                 ?? throw new InvalidOperationException($"No {nameof(ElympicsLobbyClient)} instance found.");
-            _scsWebRequest = ScsWebRequestOverride
-                ?? new ScsWebRequest(_lobby, elympicsConfig.GetV2Endpoint(ServiceName).ToString());
-            _roomsManager = _lobby.RoomsManager;
-            if (config != null)
-                CurrentChain = config.GetChainConfigForGameId(_gameConfig.GameId);
 
+            _scsWebRequest = new ScsWebRequest(_lobby, elympicsConfig.GetV2Endpoint(ServiceName).ToString());
+
+            _roomsManager = _lobby.RoomsManager;
             _roomsManager.RoomSetUp += OnRoomSetUp;
         }
+        public async UniTask Initialize()
+        {
+            if (Initilized)
+            {
+                ElympicsLogger.LogWarning("Chain config has already been initialized.");
+                return;
+            }
+            if (_cts is not null)
+            {
+                ElympicsLogger.LogWarning("Chain config is currently being downloaded.");
+                return;
+            }
+            try
+            {
+                _cts = new CancellationTokenSource(_getChainTimeout);
+                var configResponse = await _scsWebRequest.GetChainConfig(_gameConfig!.GameId, _cts.Token);
 
-
+                _currentChain = new ChainConfig
+                {
+                    ChainId = configResponse.ChainId.ToString(),
+                    ChainName = configResponse.ChainName,
+                    NativeCurrencyName = configResponse.NativeCurrencyName,
+                    NativeCurrencySymbol = configResponse.NativeCurrencySymbol,
+                    NativeCurrencyDecimals = configResponse.NativeCurrencyDecimals,
+                    PublicRpcUrl = configResponse.PublicRpcUrl,
+                    Contracts = configResponse.SmartContracts.ConvertAll(x => x.Map())
+                };
+            }
+            catch (ElympicsException exception)
+            {
+                _ = ElympicsLogger.LogException(exception);
+            }
+            finally
+            {
+                _cts = null;
+            }
+        }
         public UniTask<GetConfigResponse> GetChainConfigForGame(string gameId) => _scsWebRequest.GetChainConfig(gameId);
         public void RegisterWallet(IWallet wallet) => _currentWallet = wallet;
 
@@ -84,7 +130,7 @@ namespace SCS
         //todo change Guid.Empty to true value of game version id ~pzdanowski 05.01.2024
         UniTask<SetPlayerReadyResponse> ISmartContractService.SetPlayerReady(Guid roomId, BigInteger betAmount) => _scsWebRequest.SetPlayerReady(roomId, betAmount, new Guid(_gameConfig!.gameId), Guid.Empty);
 
-        UniTask<GetTicketResponse> ISmartContractService.GetTicket(Guid roomId, BigInteger betAmount)
+        UniTask<GetTicketResponse> ISmartContractService.GetTicket(Guid roomId, BigInteger betAmount, string gameData)
         {
             ThrowIfNoWallet();
             var ticketRequest = new GetTicketRequest(
@@ -93,7 +139,7 @@ namespace SCS
                 _gameConfig.GameName,
                 _gameConfig.GameVersion,
                 Guid.Empty.ToString(),
-                string.Empty,//TODO need to understand what is the purpose of this. For now empty string is ok. k.pieta 30.11.2023
+                gameData,
                 betAmount.ToString());
             return _scsWebRequest.GetTicket(ticketRequest);
         }
@@ -115,7 +161,6 @@ namespace SCS
         }
 
         #endregion
-
         private IRoom OnRoomSetUp(IRoom room) => SmartContractRoomAdapter.CreateInstance(room, this);
 
         private void ThrowIfNoWallet()
@@ -123,7 +168,18 @@ namespace SCS
             if (_currentWallet == null)
                 throw new SmartContractServiceException("Please register Wallet to Smart Contract Service");
         }
-
+        private ChainConfig ThrowIfDisposedOrReturnChainConfig()
+        {
+            ThrowIfNotInitilized();
+            return _currentChain!.Value;
+        }
+        private void ThrowIfNotInitilized()
+        {
+            if (Initilized is false)
+                throw new SmartContractServiceException(
+                    "Smart contract service not initilized.\n " +
+                    $"Please use the {nameof(Initialize)} method or ensure that the game ID is paired with the ChainConfig.");
+        }
         private void OnDestroy()
         {
             if (_roomsManager != null)

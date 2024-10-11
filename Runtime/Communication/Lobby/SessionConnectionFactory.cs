@@ -20,7 +20,7 @@ namespace Elympics
             if (_regionValidator.IsRegionValid(regionData.Value))
                 return new SessionConnectionDetails(url, authData, gameId, gameVersion, regionData.Value.Name);
 
-            throw new ElympicsException($"The specified region must be one of the available regions {string.Join(" | ", _regionValidator.GetAvailableRegions)}");
+            throw new ElympicsException($"The specified region \"{regionData.Value.Name}\" must be one of the available regions {string.Join(" | ", _regionValidator.GetAvailableRegions)}");
         }
     }
 }

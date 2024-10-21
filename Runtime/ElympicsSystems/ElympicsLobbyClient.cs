@@ -35,6 +35,9 @@ namespace Elympics
         [SerializeField] private ElympicsEthSigner? ethSigner;
         private ITelegramSigner? _telegramSigner;
 
+        [PublicAPI]
+        public IGameplaySceneMonitor? GameplaySceneMonitor { get; private set; }
+
 
         // TODO: remove the following measures of backwards compatibility one day ~dsygocki 2023-04-28
         private AuthType AuthenticateOnAwakeWith => migratedAuthSettings
@@ -130,7 +133,8 @@ namespace Elympics
         private bool shouldLoadGameplaySceneAfterMatchmaking = true;
 
         public bool ShouldLoadGameplaySceneAfterMatchmaking { get; set; }
-        public bool IsCurrentlyInMatch => gameObject.FindObjectsOfTypeOnScene<ElympicsBase>().Any();
+        [Obsolete("Use " + nameof(ElympicsLobbyClient) + "." + nameof(Instance) + "." + nameof(IGameplaySceneMonitor) + "." + nameof(IGameplaySceneMonitor.IsCurrentlyInMatch) + " instead.")]
+        public bool IsCurrentlyInMatch => GameplaySceneMonitor!.IsCurrentlyInMatch;
 
         #endregion Matchmaking
 
@@ -155,7 +159,6 @@ namespace Elympics
         {
             if (!ApplicationParameters.InitializeParameters())
                 ExitUtility.ExitGame();
-
             if (Instance != null)
             {
                 ElympicsLogger.LogWarning($"An instance of {nameof(ElympicsLobbyClient)} already exists. " + $"Destroying {gameObject} game object...");
@@ -183,6 +186,7 @@ namespace Elympics
 
             _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
+            GameplaySceneMonitor = new GameplaySceneMonitor(_gameConfig.gameplayScene);
             ShouldLoadGameplaySceneAfterMatchmaking = shouldLoadGameplaySceneAfterMatchmaking;
             _roomsManager.Value.Reset(); // calling Value initializes RoomsManager and its dependencies (RoomsClient, WebSocketSession) ~dsygocki 2023-12-06
             Matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
@@ -228,6 +232,7 @@ namespace Elympics
                 _webSocketSession.Value.Disconnected -= OnWebSocketDisconnected;
                 _webSocketSession.Value.Dispose();
             }
+            GameplaySceneMonitor?.Dispose();
         }
 
         /// <summary>
@@ -349,6 +354,7 @@ namespace Elympics
         {
             _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
             ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
+            GameplaySceneMonitor!.GameConfigChanged(_gameConfig.gameplayScene);
 
             try
             {

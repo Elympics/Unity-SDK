@@ -49,8 +49,13 @@ namespace Elympics
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null);
         UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null);
-        UniTask<IRoom> StartQuickMatch(string queueName, byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
-
+        UniTask<IRoom> StartQuickMatch(
+            string queueName,
+            byte[]? gameEngineData = null,
+            float[]? matchmakerData = null,
+            Dictionary<string, string>? customRoomData = null,
+            Dictionary<string, string>? customMatchmakingData = null,
+            CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;
         internal UniTask CheckJoinedRoomStatus();
         internal void Reset();

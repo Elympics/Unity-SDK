@@ -32,8 +32,9 @@ namespace Elympics
         public static IWebSocket CreateMockWebSocket(Guid userId, string nickname, bool createInitialRoom, double? pingDelay)
         {
             Ws.ClearSubstitute();
-            Ws.When(x => x.Connect()).Do(_ =>
+            Ws.When(x => x.Connect()).Do(async _ =>
             {
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5));
                 ElympicsLogger.Log("[MOCK] Connect called");
                 Ws.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
             });

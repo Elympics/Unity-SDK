@@ -108,7 +108,7 @@ namespace Elympics
                              && stateUpdate.RoomContainUser(_client.SessionConnectionDetails.AuthData!.UserId) is false)
                     {
                         existingRoom.UpdateState(stateUpdate);
-                        existingRoom.IsJoined = false;
+                        existingRoom.ToggleJoinStatus(false);
                     }
                 }
                 else
@@ -156,22 +156,26 @@ namespace Elympics
                 room.UpdateState(roomState, _stateDiff);
                 if (!room.IsJoined)
                 {
-                    room.IsJoined = true;
+                    room.ToggleJoinStatus(true);
                     _stateDiff.InitializedState = true;
                 }
             }
             else
             {
-                AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, roomState)
-                {
-                    IsJoined = true
-                });
+                IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
+                newRoom.ToggleJoinStatus(true);
+                AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();
             }
+
+            var matchFound = _stateDiff.MatchDataArgs != null;
+            if (matchFound)
+                _matchLauncher.MatchFound();
+
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
 
-            PlayAvailableMatchIfApplicable(roomId, _stateDiff);
+            PlayAvailableMatchIfApplicable(roomId, matchFound);
             return;
 
             void SetStateDiffToInitializeState()
@@ -238,20 +242,18 @@ namespace Elympics
                     CustomMatchmakingDataChanged?.Invoke(new CustomMatchmakingDataChangedArgs(roomId, newKey, newValue));
         }
 
-        private void PlayAvailableMatchIfApplicable(Guid roomId, RoomStateDiff stateDiff)
+        private void PlayAvailableMatchIfApplicable(Guid roomId, bool matchFound)
         {
-            if (stateDiff.MatchDataArgs == null)
+            if (matchFound is false)
                 return;
-            if (!_matchLauncher.ShouldLoadGameplaySceneAfterMatchmaking
-                || _matchLauncher.IsCurrentlyInMatch)
-                return;
-            _rooms[roomId].PlayAvailableMatch();
+            if (_matchLauncher is { ShouldLoadGameplaySceneAfterMatchmaking: true, IsCurrentlyInMatch: false })
+                _rooms[roomId].PlayAvailableMatch();
         }
 
         private void HandleLeftRoom(LeftRoomArgs args)
         {
             if (_rooms.TryGetValue(args.RoomId, out var room))
-                room.IsJoined = false;
+                room.ToggleJoinStatus(false);
             LeftRoom?.Invoke(args);
         }
 

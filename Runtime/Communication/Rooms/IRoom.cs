@@ -18,7 +18,9 @@ namespace Elympics
         public sealed string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
-        bool IsJoined { get; internal set; }
+
+        bool IsJoined { get; }
+
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
 
@@ -38,10 +40,24 @@ namespace Elympics
 
         UniTask Leave();
 
-        internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff);
+        internal void ToggleJoinStatus(bool isJoined)
+        {
 
-        internal void UpdateState(PublicRoomState roomState);
+        }
 
-        internal bool IsQuickMatch { get; }
+        internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        {
+
+        }
+
+        internal void UpdateState(PublicRoomState roomState)
+        {
+
+        }
+
+        internal bool IsQuickMatch => false;
+
+        internal UniTask StartMatchmakingInternal() => UniTask.CompletedTask;
+        internal UniTask CancelMatchmakingInternal(CancellationToken ct = default) => UniTask.CompletedTask;
     }
 }

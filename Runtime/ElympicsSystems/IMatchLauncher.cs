@@ -1,3 +1,5 @@
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
 using JetBrains.Annotations;
 
@@ -14,5 +16,10 @@ namespace Elympics
         MatchmakingFinishedData? MatchDataGuid { get; }
 
         void PlayMatch(MatchmakingFinishedData matchData);
+
+        UniTask StartMatchmaking(IRoom room);
+
+        UniTask CancelMatchmaking(IRoom room, CancellationToken ct);
+        void MatchFound();
     }
 }

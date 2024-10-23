@@ -78,6 +78,7 @@ namespace Elympics.Tests
             currentScenes.Add(editorBuildSettingScene);
             EditorBuildSettings.scenes = currentScenes.ToArray();
 #endif
+
         }
     }
 }

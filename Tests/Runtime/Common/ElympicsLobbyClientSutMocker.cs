@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
+using Elympics.Rooms.Models;
 using HybridWebSocket;
 using NSubstitute;
 using NUnit.Framework;
@@ -19,6 +20,7 @@ namespace Elympics.Tests
         private const string WebSocketFactory = "_wsFactory";
         private const string AuthClientFieldName = "_auth";
         private const string AvailableRegionRetriever = "_regionRetriever";
+        private const string RoomsManager = "_roomsManager";
 
         public static ElympicsLobbyClient MockIWebSocket(
             this ElympicsLobbyClient sut,
@@ -77,6 +79,27 @@ namespace Elympics.Tests
             var regionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
             _ = regionRetrieverMock.GetAvailableRegions().Returns(UniTask.FromResult(new List<string>(regions)));
             availableRegionRetriever.SetValue(sut, regionRetrieverMock);
+            return sut;
+        }
+
+        public static ElympicsLobbyClient MockIRoomManager(this ElympicsLobbyClient sut)
+        {
+            var lazyRoomsManager = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == RoomsManager);
+            Assert.NotNull(lazyRoomsManager);
+            var roomManagerMock = Substitute.For<IRoomsManager>();
+            var roomClient = Substitute.For<IRoomsClient>();
+            _ = roomClient.StartMatchmaking(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(UniTask.CompletedTask);
+#pragma warning disable IDE0017
+            IRoom room = new Room(sut, roomClient, Guid.Empty, new RoomStateChanged(Guid.Empty, DateTime.Now, string.Empty, null, false, new MatchmakingData(DateTime.Now, MatchmakingState.Playing, "test", 1, 1, new Dictionary<string, string>(), new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null)), new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty) }, false, false, null));
+            room.ToggleJoinStatus(true);
+#pragma warning restore IDE0017
+            _ = roomManagerMock.ListJoinedRooms().Returns(new List<IRoom>()
+            {
+                room
+            });
+
+            var lazy = new Lazy<IRoomsManager>(roomManagerMock);
+            lazyRoomsManager.SetValue(sut, lazy);
             return sut;
         }
 

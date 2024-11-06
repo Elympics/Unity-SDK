@@ -19,6 +19,7 @@ namespace Elympics
 
         [Obsolete("This event will be not supported in the future.")]
         public event Action<JoinedRoomArgs>? JoinedRoom;
+
         public event Action<LeftRoomArgs>? LeftRoom;
 
         public event Action<UserJoinedArgs>? UserJoined;
@@ -107,7 +108,7 @@ namespace Elympics
                              && stateUpdate.RoomContainUser(_client.SessionConnectionDetails.AuthData!.UserId) is false)
                     {
                         existingRoom.UpdateState(stateUpdate);
-                        existingRoom.IsJoined = false;
+                        existingRoom.ToggleJoinStatus(false);
                     }
                 }
                 else
@@ -155,22 +156,26 @@ namespace Elympics
                 room.UpdateState(roomState, _stateDiff);
                 if (!room.IsJoined)
                 {
-                    room.IsJoined = true;
+                    room.ToggleJoinStatus(true);
                     _stateDiff.InitializedState = true;
                 }
             }
             else
             {
-                AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, roomState)
-                {
-                    IsJoined = true
-                });
+                IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
+                newRoom.ToggleJoinStatus(true);
+                AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();
             }
+
+            var matchFound = _stateDiff.MatchDataArgs != null;
+            if (matchFound)
+                _matchLauncher.MatchFound();
+
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
 
-            PlayAvailableMatchIfApplicable(roomId, _stateDiff);
+            PlayAvailableMatchIfApplicable(roomId, matchFound);
             return;
 
             void SetStateDiffToInitializeState()
@@ -237,20 +242,18 @@ namespace Elympics
                     CustomMatchmakingDataChanged?.Invoke(new CustomMatchmakingDataChangedArgs(roomId, newKey, newValue));
         }
 
-        private void PlayAvailableMatchIfApplicable(Guid roomId, RoomStateDiff stateDiff)
+        private void PlayAvailableMatchIfApplicable(Guid roomId, bool matchFound)
         {
-            if (stateDiff.MatchDataArgs == null)
+            if (matchFound is false)
                 return;
-            if (!_matchLauncher.ShouldLoadGameplaySceneAfterMatchmaking
-                || _matchLauncher.IsCurrentlyInMatch)
-                return;
-            _rooms[roomId].PlayAvailableMatch();
+            if (_matchLauncher is { ShouldLoadGameplaySceneAfterMatchmaking: true, IsCurrentlyInMatch: false })
+                _rooms[roomId].PlayAvailableMatch();
         }
 
         private void HandleLeftRoom(LeftRoomArgs args)
         {
             if (_rooms.TryGetValue(args.RoomId, out var room))
-                room.IsJoined = false;
+                room.ToggleJoinStatus(false);
             LeftRoom?.Invoke(args);
         }
 
@@ -307,7 +310,13 @@ namespace Elympics
             throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
         }
 
-        public async UniTask<IRoom> StartQuickMatch(string queueName, byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
+        public async UniTask<IRoom> StartQuickMatch(
+            string queueName,
+            byte[]? gameEngineData = null,
+            float[]? matchmakerData = null,
+            Dictionary<string, string>? customRoomData = null,
+            Dictionary<string, string>? customMatchmakingData = null,
+            CancellationToken ct = default)
         {
             if (queueName == null)
                 throw new ArgumentNullException(nameof(queueName));
@@ -318,7 +327,7 @@ namespace Elympics
             IRoom? room = null;
             try
             {
-                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, new Dictionary<string, string>(), new Dictionary<string, string>(), ct);
+                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, customRoomData ?? new Dictionary<string, string>(), customMatchmakingData ?? new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
                 await room.ChangeTeam(0);

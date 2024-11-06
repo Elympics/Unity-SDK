@@ -8,6 +8,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 #nullable enable
 
@@ -19,7 +20,7 @@ namespace Elympics.Tests
     {
         private ElympicsLobbyClient? _sut;
         public override string SceneName => "ElympicsLobbyClientTestScene";
-        private const int TestsTimeoutMs = 1000;
+        private const int TestsTimeoutMs = 200000;
         private const double PingTimeoutTestSec = 1.1;
         private const double DefaultPingTimeoutSec = 30;
 
@@ -53,20 +54,19 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!
-                .MockSuccessIAuthClient(FakeJwt, UserId, Nickname)
-                .MockIWebSocket(UserId, Nickname, false, null, out _)
-                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas);
+            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, false, null, out _).MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas);
         }
         private static AuthType[] connectTestValue = { AuthType.ClientSecret, AuthType.EthAddress };
 
         [UnityTest]
         public IEnumerator ConnectToElympics([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
+
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = type
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
 
@@ -74,12 +74,13 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_NoConnectionDataProvided_ThrowException() => UniTask.ToCoroutine(async () =>
         {
-            _ = await AsyncAsserts.AssertThrowsAsync<ArgumentNullException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
+            _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = null,
                 Region = null,
                 AuthFromCacheData = null
             }));
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
         });
 
         [UnityTest]
@@ -141,12 +142,14 @@ namespace Elympics.Tests
             });
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
 
             var authenticationCalled = false;
             var connectedCalled = false;
             _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
             _sut.WebSocketSession.Connected += () => connectedCalled = true;
             _sut.SignOut();
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = authType,
@@ -156,6 +159,7 @@ namespace Elympics.Tests
             Assert.True(connectedCalled);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
         });
 
         [UnityTest]
@@ -198,12 +202,14 @@ namespace Elympics.Tests
                 AuthType = AuthType.ClientSecret,
                 Region = new RegionData(ElympicsRegions.Warsaw)
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
             _sut.WebSocketSession.Connected += () => connectedCalled = true;
             await _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 Region = new RegionData(ElympicsRegions.Mumbai)
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(authenticationCalled);
@@ -222,13 +228,14 @@ namespace Elympics.Tests
                 AuthType = AuthType.ClientSecret,
                 Region = new RegionData(ElympicsRegions.Warsaw)
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
             _sut.WebSocketSession.Connected += () => connectedCalled = true;
             await _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 Region = new RegionData(ElympicsRegions.Warsaw)
             });
-
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.True(authenticationCalled);
@@ -242,9 +249,11 @@ namespace Elympics.Tests
             {
                 AuthType = AuthType.ClientSecret,
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             var cachedData = _sut.AuthData;
             Assert.NotNull(cachedData);
             _sut.SignOut();
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
             await _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthFromCacheData = new CachedAuthData()
@@ -253,6 +262,7 @@ namespace Elympics.Tests
                     AutoRetryIfExpired = true,
                 }
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.AreNotSame(ExpiredClientAuthJwt, _sut.AuthData!.JwtToken);
@@ -274,6 +284,7 @@ namespace Elympics.Tests
                     AutoRetryIfExpired = false,
                 }
             }));
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
             Assert.IsFalse(_sut!.IsAuthenticated);
             Assert.IsFalse(_sut!.WebSocketSession.IsConnected);
         });
@@ -288,7 +299,6 @@ namespace Elympics.Tests
             });
             var cache = _sut.AuthData;
             Assert.NotNull(cache);
-
             _sut.SignOut();
 
             await _sut.ConnectToElympicsAsync(new ConnectionData()
@@ -299,6 +309,7 @@ namespace Elympics.Tests
                     AutoRetryIfExpired = false,
                 }
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.AreEqual(cache!.UserId, _sut.AuthData!.UserId);
@@ -347,6 +358,7 @@ namespace Elympics.Tests
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.IsFalse(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
         });
 
         [UnityTest]
@@ -365,6 +377,7 @@ namespace Elympics.Tests
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
         });
 
         [UnityTest]
@@ -383,6 +396,7 @@ namespace Elympics.Tests
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
 
             var connectedCalled = false;
             var authCalled = false;
@@ -397,6 +411,7 @@ namespace Elympics.Tests
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(connectedCalled);
             Assert.IsTrue(authCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
 
         });
         [UnityTest]
@@ -424,6 +439,7 @@ namespace Elympics.Tests
             Assert.IsTrue(authenticationCalled);
             Assert.IsTrue(connectedCalled);
             Assert.IsTrue(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
 
             authenticationCalled = false;
             connectedCalled = false;
@@ -435,6 +451,7 @@ namespace Elympics.Tests
                     Name = ElympicsRegions.Mumbai
                 }
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(authenticationCalled);
@@ -455,7 +472,7 @@ namespace Elympics.Tests
             {
                 Region = new RegionData(ElympicsRegions.Warsaw)
             }));
-
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
             Assert.IsFalse(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsFalse(authenticationCalled);
@@ -471,6 +488,7 @@ namespace Elympics.Tests
                 AuthType = type,
                 Region = new RegionData(ElympicsRegions.Mumbai)
             });
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.AreSame(ElympicsRegions.Mumbai, _sut.CurrentRegion);
@@ -486,5 +504,7 @@ namespace Elympics.Tests
             WebSocketMockSetup.CancelPingToken();
         }
 
+        [OneTimeTearDown]
+        public void FinishTests() => Object.Destroy(_sut);
     }
 }

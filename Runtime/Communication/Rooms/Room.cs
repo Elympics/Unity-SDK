@@ -19,21 +19,9 @@ namespace Elympics
 
         public bool IsDisposed { get; private set; }
 
-        public bool IsJoined
-        {
-            get => ((IRoom)this).IsJoined;
-            internal set => ((IRoom)this).IsJoined = value;
-        }
+        public bool IsJoined => ThrowIfDisposedOrReturn(_isJoined);
 
-        bool IRoom.IsJoined
-        {
-            get => ThrowIfDisposedOrReturn(_isJoined);
-            set
-            {
-                ThrowIfDisposed();
-                _isJoined = value;
-            }
-        }
+        private bool _isJoined;
 
         public bool HasMatchmakingEnabled
         {
@@ -63,8 +51,6 @@ namespace Elympics
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
         private readonly RoomState _state;
-        private bool _isJoined;
-        private bool _isCancellingInProgress;
         private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
         private readonly bool _isEphemeral;
         private Guid LocalUserId => _client.SessionConnectionDetails.AuthData.UserId;
@@ -88,6 +74,7 @@ namespace Elympics
             _state = new RoomState(initialState);
         }
 
+        void IRoom.ToggleJoinStatus(bool isJoined) => _isJoined = isJoined;
         void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
@@ -154,8 +141,10 @@ namespace Elympics
                 throw new RoomRequirementsException("Not all players are ready.");
 
             ElympicsLogger.Log($"[{nameof(Room)}] Start matchmaking for Room: {_roomId}");
-            return _client.StartMatchmaking(_roomId, _state.Host.UserId);
+            return _matchLauncher.StartMatchmaking(this);
         }
+
+        UniTask IRoom.StartMatchmakingInternal() => _client.StartMatchmaking(_roomId, _state.Host.UserId);
 
         public async UniTask CancelMatchmaking(CancellationToken ct = default)
         {
@@ -163,17 +152,21 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
 
-            if (_isCancellingInProgress)
-                throw new MatchmakingException("Matchmaking cancellation has been already requested.");
-
             if (!IsInValidStateToCancel())
                 throw new MatchmakingException($"Can't cancel matchmaking during {_state.MatchmakingData!.MatchmakingState} state.");
+            await _matchLauncher.CancelMatchmaking(this, ct);
+            return;
 
+            bool IsInValidStateToCancel() => _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
+        }
+
+        async UniTask IRoom.CancelMatchmakingInternal(CancellationToken ct)
+        {
             while (true)
+            {
                 try
                 {
                     ct.ThrowIfCancellationRequested();
-                    _isCancellingInProgress = true;
                     ElympicsLogger.Log($"[{nameof(Room)}] Id:{_roomId}. Cancel matchmaking.");
                     await _client.CancelMatchmaking(_roomId, ct);
                     return;
@@ -186,12 +179,7 @@ namespace Elympics
                     ct.ThrowIfCancellationRequested();
                     await UniTask.Delay(_forceCancelTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 }
-                finally
-                {
-                    _isCancellingInProgress = false;
-                }
-
-            bool IsInValidStateToCancel() => _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
+            }
         }
 
         public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? customRoomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null)

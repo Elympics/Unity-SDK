@@ -126,7 +126,7 @@ namespace Elympics
                 throw new InvalidOperationException("Missing WebSocket session object.");
             if (roomHostId == null)
                 throw new RoomPrivilegeException($"Cannot call ${methodName} on rooms without host.");
-            var expectedUserId = SessionConnectionDetails.AuthData.UserId;
+            var expectedUserId = SessionConnectionDetails.AuthData!.UserId;
             if (expectedUserId != null && roomHostId != expectedUserId)
                 throw new RoomPrivilegeException($"Only hosts can call ${methodName} method.");
 

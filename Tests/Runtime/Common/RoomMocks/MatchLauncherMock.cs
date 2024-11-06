@@ -1,4 +1,7 @@
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
+using UnityEngine;
 
 #nullable enable
 
@@ -12,6 +15,17 @@ namespace Elympics.Tests.Common.RoomMocks
         public MatchmakingFinishedData? MatchDataGuid { get; set; }
 
         public void PlayMatch(MatchmakingFinishedData matchData) => PlayMatchCalledArgs = matchData;
+        public UniTask StartMatchmaking(IRoom room)
+        {
+            Debug.Log($"[{nameof(MatchLauncherMock)}] Start matchmaking");
+            return room.StartMatchmakingInternal();
+        }
+        public UniTask CancelMatchmaking(IRoom room, CancellationToken ct)
+        {
+            Debug.Log($"[{nameof(MatchLauncherMock)}] Matchmaking canceled");
+            return room.CancelMatchmakingInternal(ct);
+        }
+        public void MatchFound() => Debug.Log($"[{nameof(MatchLauncherMock)}] Match found");
 
         public MatchmakingFinishedData? PlayMatchCalledArgs;
 

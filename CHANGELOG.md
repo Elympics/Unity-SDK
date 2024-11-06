@@ -1,3 +1,14 @@
+## [0.14.1](https://github.com/Elympics/Unity-SDK/compare/v0.14.0...v0.14.1) (2024-11-06)
+
+
+### Features
+
+* add internal elympics lobby state machine ([51801b7](https://github.com/Elympics/Unity-SDK/commit/51801b733e02cabd64548961089a6f67948ac801))
+* add room and match custom data to quickmatch ([b5ab366](https://github.com/Elympics/Unity-SDK/commit/b5ab3662108725e8864857ed41ad35d295832e3f))
+* gameplay start/finish events ([4e5fd64](https://github.com/Elympics/Unity-SDK/commit/4e5fd6490dab7db58f05ce19804e5d7ffa17ead0))
+
+
+
 ## [0.14.0](https://github.com/Elympics/Unity-SDK/compare/v0.13.3...v0.14.0) (2024-10-04)
 
 ### BREAKING CHANGES

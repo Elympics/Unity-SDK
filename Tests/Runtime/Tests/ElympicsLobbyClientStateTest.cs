@@ -15,6 +15,7 @@ namespace Elympics.Tests
     public class ElympicsLobbyClientStateTest : ElympicsMonoBaseTest
     {
         public override string SceneName => "ElympicsLobbyClientStateMachineTestScene";
+        public override bool RequiresElympicsConfig => true;
         private ElympicsLobbyClient _sut;
 
         private static readonly Guid UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");

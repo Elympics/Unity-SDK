@@ -20,6 +20,7 @@ namespace Elympics.Tests
     {
         private ElympicsLobbyClient? _sut;
         public override string SceneName => "ElympicsLobbyClientTestScene";
+        public override bool RequiresElympicsConfig => true;
         private const int TestsTimeoutMs = 200000;
         private const double PingTimeoutTestSec = 1.1;
         private const double DefaultPingTimeoutSec = 30;

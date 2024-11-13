@@ -1,3 +1,9 @@
+## [0.14.2](https://github.com/Elympics/Unity-SDK/compare/v0.14.1...v0.14.2) (2024-11-13)
+
+### Chore:
+* refactor test abstraction for internal projects ([d14821](https://github.com/Elympics/Unity-SDK/commit/d14821c7f89982159cea87534b7efdbc239e9665))
+
+
 ## [0.14.1](https://github.com/Elympics/Unity-SDK/compare/v0.14.0...v0.14.1) (2024-11-06)
 
 

@@ -7,30 +7,30 @@ namespace Elympics
     [Serializable]
     public class ElympicsRandom : ElympicsVar<ElympicsRandomInternal>, IRng
     {
-        public override void Serialize(BinaryWriter bw) => bw.Write(Value.rng.state);
+        public override void Serialize(BinaryWriter bw) => bw.Write(Value.Rng.state);
 
         protected override ElympicsRandomInternal DeserializeInternal(BinaryReader br) => new(br.ReadUInt32());
 
-        public float Range(float minInclusive, float maxInclusive) => Value.rng.NextFloat(minInclusive, maxInclusive);
+        public float Range(float minInclusive, float maxInclusive) => Value.Rng.NextFloat(minInclusive, maxInclusive);
 
-        public int Range(int minInclusive, int maxInclusive) => Value.rng.NextInt(minInclusive, maxInclusive);
+        public int Range(int minInclusive, int maxInclusive) => Value.Rng.NextInt(minInclusive, maxInclusive);
 
-        public float value => Value.rng.NextFloat();
+        public float value => Value.Rng.NextFloat();
     }
 
     public readonly struct ElympicsRandomInternal : IEquatable<ElympicsRandomInternal>
     {
-        public readonly Random rng;
+        public readonly Random Rng;
 
-        public ElympicsRandomInternal(uint state) => this.rng.state = state;
+        public ElympicsRandomInternal(uint state) => Rng.state = state;
 
-        public bool Equals(ElympicsRandomInternal other) => other.rng.state == this.rng.state;
+        public bool Equals(ElympicsRandomInternal other) => other.Rng.state == Rng.state;
 
         public override bool Equals(object obj) => obj is ElympicsRandomInternal other && Equals(other);
 
-        public override int GetHashCode() => rng.GetHashCode();
+        public override int GetHashCode() => Rng.GetHashCode();
 
-        public static implicit operator Random(ElympicsRandomInternal random) => random.rng;
+        public static implicit operator Random(ElympicsRandomInternal random) => random.Rng;
         public static implicit operator ElympicsRandomInternal(Random random) => new(random.state);
     }
 

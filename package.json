@@ -63,5 +63,8 @@
       "description": "Showcase of the rooms feature ",
       "path": "Samples~/Rooms"
     }
-  ]
+  ],
+  "dependencies": {
+    "com.unity.mathematics": "1.2.6"
+  }
 }

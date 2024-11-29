@@ -11,6 +11,11 @@ namespace Elympics
 
         protected override ElympicsRandomInternal DeserializeInternal(BinaryReader br) => new(br.ReadUInt32());
 
+        private ElympicsRandom(uint state) : base(new ElympicsRandomInternal(state)) { }
+
+        public static ElympicsRandom FromState(uint state) => new(state);
+        public static ElympicsRandom FromSeed(uint seed) => new(new Random(seed).state);
+
         public float NextFloat(float minInclusive, float maxInclusive) => Value.Rng.NextFloat(minInclusive, maxInclusive);
 
         public int NextInt(int minInclusive, int maxInclusive) => Value.Rng.NextInt(minInclusive, maxInclusive);

@@ -11,21 +11,41 @@ namespace Elympics
 
         protected override ElympicsRandomInternal DeserializeInternal(BinaryReader br) => new(br.ReadUInt32());
 
-        private ElympicsRandom(uint state) : base(new ElympicsRandomInternal(state)) { }
+        private ElympicsRandom(uint seed) : base(new ElympicsRandomInternal(new Random(seed).state)) { }
 
-        public static ElympicsRandom FromState(uint state) => new(state);
-        public static ElympicsRandom FromSeed(uint seed) => new(new Random(seed).state);
+        public void SetState(uint state) => Value = new(state);
 
-        public float NextFloat(float minInclusive, float maxInclusive) => Value.Rng.NextFloat(minInclusive, maxInclusive);
+        public float NextFloat(float minInclusive, float maxInclusive)
+        {
+            var rng = Value.Rng;
+            var result = rng.NextFloat(minInclusive, maxInclusive);
+            Value = new(rng.state);
 
-        public int NextInt(int minInclusive, int maxInclusive) => Value.Rng.NextInt(minInclusive, maxInclusive);
+            return result;
+        }
 
-        public float NextFloat() => Value.Rng.NextFloat();
+        public int NextInt(int minInclusive, int maxInclusive)
+        {
+            var rng = Value.Rng;
+            var result = rng.NextInt(minInclusive, maxInclusive);
+            Value = new(rng.state);
+
+            return result;
+        }
+
+        public float NextFloat()
+        {
+            var rng = Value.Rng;
+            var result = rng.NextFloat();
+            Value = new(rng.state);
+
+            return result;
+        }
     }
 
-    public readonly struct ElympicsRandomInternal : IEquatable<ElympicsRandomInternal>
+    public struct ElympicsRandomInternal : IEquatable<ElympicsRandomInternal>
     {
-        internal readonly Random Rng;
+        internal Random Rng;
 
         internal ElympicsRandomInternal(uint state) => Rng.state = state;
 

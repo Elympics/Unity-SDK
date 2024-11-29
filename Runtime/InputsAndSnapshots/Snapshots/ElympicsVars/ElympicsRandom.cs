@@ -10,9 +10,7 @@ namespace Elympics
         public override void Serialize(BinaryWriter bw) => bw.Write(Value.Rng.state);
 
         protected override ElympicsRandomInternal DeserializeInternal(BinaryReader br) => new(br.ReadUInt32());
-
-        private ElympicsRandom(uint seed) : base(new ElympicsRandomInternal(new Random(seed).state)) { }
-
+        
         public void SetState(uint state) => Value = new(state);
 
         public float NextFloat(float minInclusive, float maxInclusive)

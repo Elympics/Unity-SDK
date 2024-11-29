@@ -11,9 +11,9 @@ namespace Elympics
 
         protected override ElympicsRandomInternal DeserializeInternal(BinaryReader br) => new(br.ReadUInt32());
 
-        public float Range(float minInclusive, float maxInclusive) => Value.Rng.NextFloat(minInclusive, maxInclusive);
+        public float NextFloat(float minInclusive, float maxInclusive) => Value.Rng.NextFloat(minInclusive, maxInclusive);
 
-        public int Range(int minInclusive, int maxInclusive) => Value.Rng.NextInt(minInclusive, maxInclusive);
+        public int NextInt(int minInclusive, int maxInclusive) => Value.Rng.NextInt(minInclusive, maxInclusive);
 
         public float NextFloat() => Value.Rng.NextFloat();
     }

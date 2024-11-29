@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace Elympics
 {
-    public class DefaultServerHandler : ElympicsMonoBehaviour, IServerHandlerGuid
+    public class DefaultServerHandlerr : ElympicsMonoBehaviour, IServerHandlerGuid
     {
-        private static readonly TimeSpan StartGameTimeout = TimeSpan.FromSeconds(30);
+        private TimeSpan _startGameTimeout;
 
         private int _playersNumber;
         private DateTime _waitToStartFinishTime;
@@ -22,6 +22,8 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
+            var timeoutSec = ElympicsConfig.LoadCurrentElympicsGameConfig().ConnectionConfig.sessionConnectTimeout;
+            _startGameTimeout = TimeSpan.FromSeconds(timeoutSec);
             _playersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
@@ -44,7 +46,7 @@ namespace Elympics
 
         private IEnumerator WaitForGameStartOrEnd()
         {
-            _waitToStartFinishTime = DateTime.Now + StartGameTimeout;
+            _waitToStartFinishTime = DateTime.Now + _startGameTimeout;
 
             while (DateTime.Now < _waitToStartFinishTime)
             {

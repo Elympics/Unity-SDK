@@ -75,6 +75,10 @@ var LibraryWebRtc = {
                 this.unreliableEnded();
             }.bind(this);
 
+            this.pc.oniceconnectionstatechange = (ev) =>{
+              console.log("[WebRTC] ICE Connection state changed to: ", this.pc.iceConnectionState);
+            };
+
             this.createOffer = function () {
                 this.pc.createOffer()
                     .then(function (offer) {

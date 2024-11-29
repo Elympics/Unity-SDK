@@ -70,22 +70,20 @@ namespace Elympics
 
         private void RemoveLastTicksToCurrentMaxTick()
         {
-            for (var i = _inputs.Count - 1; i >= 0; i--)
-            {
-                if (_inputs.Keys[i] <= MaxTick)
-                    break;
-                _inputs.RemoveAt(i);
-            }
+            lock (_inputs)
+                for (var i = _inputs.Count - 1; i >= 0; i--)
+                {
+                    if (_inputs.Keys[i] <= MaxTick)
+                        break;
+                    _inputs.RemoveAt(i);
+                }
         }
 
         private void RemoveFirstTicksToCurrentMinTick()
         {
-            for (var i = 0; i < _inputs.Count; i++)
-            {
-                if (_inputs.Keys[i] >= MinTick)
-                    break;
-                _inputs.RemoveAt(i);
-            }
+            lock (_inputs)
+                while (_inputs.Count > 0 && _inputs.Keys[0] < MinTick)
+                    _inputs.RemoveAt(0);
         }
     }
 }

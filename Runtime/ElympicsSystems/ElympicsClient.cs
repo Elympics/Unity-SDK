@@ -108,6 +108,7 @@ namespace Elympics
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
                 _matchClient.Synchronized -= OnSynchronized;
                 _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
+                _matchClient.Dispose();
             }
 
             _logToFile?.DeInit();
@@ -140,6 +141,8 @@ namespace Elympics
             if (_clientTickCalculator.Results.CanPredict)
                 using (ElympicsMarkers.Elympics_ProcessingInputMarker.Auto())
                     ProcessInput();
+
+            SendBufferInput(Tick);
 
             if (Config.Prediction)
             {
@@ -237,7 +240,7 @@ namespace Elympics
 
             AddMetadataToInput(input);
             _lastDelayedInputTick = _clientTickCalculator.Results.DelayedInputTick;
-            SendInput(input);
+            AddInputToSendBuffer(input);
             _ = _predictionBuffer.AddInputToBuffer(input);
         }
 
@@ -247,7 +250,9 @@ namespace Elympics
             input.Player = Player;
         }
 
-        private void SendInput(ElympicsInput input) => _matchClient.SendInput(input);
+        private void AddInputToSendBuffer(ElympicsInput input) => _matchClient.AddInputToSendBuffer(input);
+
+        private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
 
         protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
             _matchClient.SendRpcMessageList(rpcMessageList);

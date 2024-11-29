@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
@@ -20,7 +21,9 @@ namespace Elympics
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
         public event Action<byte[]> InGameDataUnreliableReceived;
 
-        private readonly RingBuffer<ElympicsInput> _inputRingBuffer;
+        private readonly RingBufferElympicsDataWithTick<ElympicsInput> _input;
+        private readonly ElympicsInput[] _inputsBuffer;
+        private readonly List<ElympicsInput> _inputsToSend;
 
         private readonly WaitForSeconds _synchronizationDelay;
         private readonly HalfRemoteLagConfig _lagConfig;
@@ -32,7 +35,9 @@ namespace Elympics
 
         public HalfRemoteMatchClientAdapter(ElympicsGameConfig config)
         {
-            _inputRingBuffer = new RingBuffer<ElympicsInput>(config.InputsToSendBufferSize);
+            _input = new RingBufferElympicsDataWithTick<ElympicsInput>(config.InputsToSendBufferSize);
+            _inputsBuffer = new ElympicsInput[config.InputsToSendBufferSize];
+            _inputsToSend = new List<ElympicsInput>(config.InputsToSendBufferSize);
             _lagConfig = config.HalfRemoteLagConfig;
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
         }
@@ -64,11 +69,25 @@ namespace Elympics
         public void PlayerConnected() => _client.PlayerConnected();
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
-        public async Task SendInput(ElympicsInput input)
+        public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
+        public async Task SendBufferInput(long tick)
         {
-            _inputRingBuffer.PushBack(input);
-            var data = new ElympicsInputList { Values = _inputRingBuffer.ToList() };
-            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
+            if (_input.Count() > 0)
+            {
+                GetInputCollectionToSend();
+                var data = new ElympicsInputList { Values = _inputsToSend };
+                await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
+            }
+        }
+
+        private void GetInputCollectionToSend()
+        {
+            Array.Clear(_inputsBuffer, 0, _inputsBuffer.Length);
+            _inputsToSend.Clear();
+            _input.GetInputListNonAlloc(_inputsBuffer, out var collectionSize);
+
+            for (var i = 0; i < collectionSize; i++)
+                _inputsToSend.Add(_inputsBuffer[i]);
         }
 
         public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
@@ -76,9 +95,7 @@ namespace Elympics
 
         public async Task SendRawDataToServer(byte[] rawData, bool reliable)
         {
-            Action<byte[]> sendDataAsync = reliable
-                ? _client.SendInputReliable
-                : _client.SendInputUnreliable;
+            Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;
 
             await RunWithLag(() => sendDataAsync(rawData));
         }
@@ -101,10 +118,22 @@ namespace Elympics
         private void ProcessDataFromServer(byte[] serializedData)
         {
             var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(serializedData);
-            if (deserializedData is ElympicsSnapshot snapshot)
-                SnapshotReceived?.Invoke(snapshot);
-            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
-                RpcMessageListReceived?.Invoke(rpcMessageList);
+            switch (deserializedData)
+            {
+                case ElympicsSnapshot snapshot:
+                {
+                    _input.UpdateMinTick(snapshot.Tick + 1);
+                    SnapshotReceived?.Invoke(snapshot);
+                    break;
+                }
+                case ElympicsRpcMessageList rpcMessageList:
+                    RpcMessageListReceived?.Invoke(rpcMessageList);
+                    break;
+                // ReSharper disable once RedundantEmptySwitchSection
+                default:
+                    //Do nothing.
+                    break;
+            }
         }
 
         private async UniTask RunWithLag(Action action)
@@ -166,5 +195,6 @@ namespace Elympics
         }
 
         private bool NotDisconnected() => !_playerDisconnected;
+        public void Dispose() => _input?.Dispose();
     }
 }

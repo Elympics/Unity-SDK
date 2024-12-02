@@ -138,6 +138,10 @@ namespace Elympics
             internal set => predictableFor = value;
         }
 
+        /// <summary>
+        /// Provides Elympics-specific game instance data and methods.
+        /// </summary>
+        public IElympics Elympics => ElympicsBase;
         internal ElympicsBase ElympicsBase { get; private set; }
         public bool IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
         public bool IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);

@@ -177,7 +177,7 @@ namespace Elympics
         public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader, int absenceTick = DefaultAbsenceTickParameter)
         {
             if (ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.ElympicsUpdate)
-                throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
+                throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.ElympicsBehavioursManager.ElympicsUpdate)}");
             if (!HasAnyInput)
                 throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");
             if (!_inputReader.AllBytesRead())

@@ -4,16 +4,26 @@ namespace Elympics
 {
     internal abstract class GameClientInitializer : GameSceneInitializer
     {
+        protected ElympicsBehavioursManager ElympicsBehavioursManager { get; private set; }
         private ElympicsClient _client;
 
-        public override void Initialize(ElympicsClient client, ElympicsBot bot, ElympicsServer server, ElympicsGameConfig elympicsGameConfig)
+        public override void Initialize(
+            ElympicsClient client,
+            ElympicsBot bot,
+            ElympicsServer server,
+            ElympicsSinglePlayer singlePlayer,
+            ElympicsGameConfig config,
+            ElympicsBehavioursManager behavioursManager)
         {
-            Time.fixedDeltaTime = elympicsGameConfig.TickDuration;
+            ElympicsBehavioursManager = behavioursManager;
+            Time.fixedDeltaTime = config.TickDuration;
 
             _client = client;
             bot.Destroy();
             server.Destroy();
-            InitializeClient(client, elympicsGameConfig);
+            // singlePlayer.Destroy();
+            InitializeClient(client, config);
+            behavioursManager.InitializeInternal(client);
         }
 
         public override void Dispose()

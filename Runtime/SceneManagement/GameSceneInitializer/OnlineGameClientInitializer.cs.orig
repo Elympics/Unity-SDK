@@ -61,7 +61,12 @@ namespace Elympics
                 IsBot = false,
                 MatchmakerData = matchmakerData,
                 GameEngineData = gameEngineData
-            }, ElympicsBehavioursManager, gameLogger);
+<<<<<<< HEAD
+            },
+                gameLogger);
+=======
+            }, ElympicsBehavioursManager);
+>>>>>>> baff26e9 (feat: use DI for ElympicsBehavioursManager in ElympicsBase)
         }
     }
 }

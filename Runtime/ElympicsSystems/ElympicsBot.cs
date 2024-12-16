@@ -16,11 +16,10 @@ namespace Elympics
         private GameBotAdapter _gameBotAdapter;
 
 
-        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter)
+        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter, ElympicsBehavioursManager elympicsBehavioursManager)
         {
-            InitializeInternal(elympicsGameConfig);
+            InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _gameBotAdapter = gameBotAdapter;
-            elympicsBehavioursManager.InitializeInternal(this);
             _gameBotAdapter.SnapshotReceived += OnSnapshotReceived;
             _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesToInvoke;
             _gameBotAdapter.InitializedWithMatchPlayerData += data =>
@@ -44,20 +43,20 @@ namespace Elympics
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
 
-        protected override void ElympicsFixedUpdate()
+        internal override void ElympicsFixedUpdate()
         {
             ElympicsSnapshot snapshot;
             lock (LastReceivedSnapshotLock)
                 snapshot = _lastReceivedSnapshot;
-            elympicsBehavioursManager.ApplySnapshot(snapshot);
+            ElympicsBehavioursManager.ApplySnapshot(snapshot);
             ProcessInput(snapshot.Tick);
             InvokeQueuedRpcMessages();
-            elympicsBehavioursManager.CommitVars();
-            elympicsBehavioursManager.ElympicsUpdate();
+            ElympicsBehavioursManager.CommitVars();
+            ElympicsBehavioursManager.ElympicsUpdate();
             SendQueuedRpcMessages();
         }
 
-        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
             _gameBotAdapter.SendRpcMessageList(rpcMessageList);
 
         private void ProcessInput(long snapshotTick)
@@ -67,7 +66,7 @@ namespace Elympics
             SendInput(input);
         }
 
-        private ElympicsInput CollectRawInput() => elympicsBehavioursManager.OnInputForBot();
+        private ElympicsInput CollectRawInput() => ElympicsBehavioursManager.OnInputForBot();
 
         private void AddMetadataToInput(ElympicsInput input, long snapshotTick)
         {

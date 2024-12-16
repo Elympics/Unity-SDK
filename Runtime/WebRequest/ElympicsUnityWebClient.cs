@@ -9,7 +9,13 @@ namespace Elympics
 {
     internal class ElympicsUnityWebClient : ElympicsWebClient
     {
-        protected override void SendRequest<T>(string method, string url, object jsonBody = null, string authorization = null, Action<Result<T, Exception>> callback = null, CancellationToken ct = default)
+        protected override void SendRequest<T>(
+            string method,
+            string url,
+            object jsonBody = null,
+            string authorization = null,
+            Action<Result<T, Exception>> callback = null,
+            CancellationToken ct = default)
         {
             var uri = new Uri(url);
             var request = new UnityWebRequest(uri, method)
@@ -50,7 +56,8 @@ namespace Elympics
             return JsonUtility.ToJson(obj);
         }
 
-        private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<Result<T, Exception>> callback, CancellationToken ct) where T : class
+        private static void CallCallbackOnCompleted<T>(UnityWebRequestAsyncOperation requestOp, Action<Result<T, Exception>> callback, CancellationToken ct)
+            where T : class
         {
             void RunCallback(Result<T, Exception> result)
             {
@@ -78,7 +85,8 @@ namespace Elympics
 #endif
                 if (requestOp.webRequest.responseCode != 200)
                 {
-                    RunCallback(Result<T, Exception>.Failure(new ElympicsException($"{requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}")));
+                    RunCallback(Result<T, Exception>.Failure(
+                        new ElympicsException($"{requestOp.webRequest.responseCode} - {requestOp.webRequest.error}\n{requestOp.webRequest.downloadHandler.text}")));
                     return;
                 }
 

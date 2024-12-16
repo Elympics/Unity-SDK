@@ -4,19 +4,27 @@ namespace Elympics
 {
     internal abstract class GameBotInitializer : GameSceneInitializer
     {
-        public override void Initialize(ElympicsClient client, ElympicsBot bot, ElympicsServer server, ElympicsGameConfig elympicsGameConfig)
+        public override void Initialize(
+            ElympicsClient client,
+            ElympicsBot bot,
+            ElympicsServer server,
+            ElympicsSinglePlayer singlePlayer,
+            ElympicsGameConfig config,
+            ElympicsBehavioursManager behavioursManager)
         {
-            Time.maximumDeltaTime = elympicsGameConfig.TickDuration * 2;
-            Application.targetFrameRate = elympicsGameConfig.TicksPerSecond * 2;
+            Time.maximumDeltaTime = config.TickDuration * 2;
+            Application.targetFrameRate = config.TicksPerSecond * 2;
 
             var gameBotAdapter = new GameBotAdapter();
 
             // ElympicsBot has to setup callbacks BEFORE initializing GameBotAdapter - possible loss of events like Init ~pprzestrzelski 27.08.2021
-            bot.InitializeInternal(elympicsGameConfig, gameBotAdapter);
-            InitializeBot(bot, elympicsGameConfig, gameBotAdapter);
+            bot.InitializeInternal(config, gameBotAdapter, behavioursManager);
+            InitializeBot(bot, config, gameBotAdapter);
+            behavioursManager.InitializeInternal(bot);
 
             client.Destroy();
             server.Destroy();
+            // singlePlayer.Destroy();
         }
 
         protected abstract void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter);

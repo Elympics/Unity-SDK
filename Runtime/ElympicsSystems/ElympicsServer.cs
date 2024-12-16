@@ -17,7 +17,7 @@ namespace Elympics
         public override ElympicsPlayer Player => _currentPlayer;
         public override bool IsServer => true;
         public override bool IsBot => _currentIsBot;
-        public override bool IsClient => _currentIsClient;
+        public override bool IsClient => HandlingClientsInServer;
 
         private bool _handlingBotsOverride;
 
@@ -38,14 +38,14 @@ namespace Elympics
 
         private protected override void TryAttachTickAnalysis()
         {
-            TickAnalysis?.Attach(snapshot => elympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true), _playerData?.Select(x => x.IsBot).ToArray());
+            TickAnalysis?.Attach(snapshot => ElympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true), _playerData?.Select(x => x.IsBot).ToArray());
         }
 
         #endregion TickAnalysis
 
-        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
+        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, ElympicsBehavioursManager elympicsBehavioursManager, bool handlingBotsOverride = false, bool handlingClientsOverride = false)
         {
-            InitializeInternal(elympicsGameConfig);
+            InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _tickToPlayerInputHolder = new Dictionary<int, TickToPlayerInput>();
             SwitchBehaviourToServer();
             _handlingBotsOverride = handlingBotsOverride;
@@ -53,7 +53,6 @@ namespace Elympics
             _gameEngineAdapter = gameEngineAdapter;
             Tick = 0;
             _inputList = new List<ElympicsInput>();
-            elympicsBehavioursManager.InitializeInternal(this);
             SetupCallbacks();
             LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
@@ -65,7 +64,7 @@ namespace Elympics
             _gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
             {
                 _playerData = args.Data;
-                elympicsBehavioursManager.OnServerInit(args.Data);
+                ElympicsBehavioursManager.OnServerInit(args.Data);
                 InitializeBotsAndClientInServer(args.Data);
                 SetInitialized();
                 args.OnInitialized();
@@ -78,7 +77,7 @@ namespace Elympics
             if (HandlingBotsInServer)
             {
                 var dataOfBots = data.Where(x => x.IsBot).ToList();
-                elympicsBehavioursManager.OnBotsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfBots));
+                ElympicsBehavioursManager.OnBotsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfBots));
 
                 _playersOfBots = dataOfBots.Select(x => x.Player).ToArray();
                 CallPlayerConnectedFromBotsOrClients(_playersOfBots);
@@ -87,7 +86,7 @@ namespace Elympics
             if (HandlingClientsInServer)
             {
                 var dataOfClients = data.Where(x => !x.IsBot).ToList();
-                elympicsBehavioursManager.OnClientsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfClients));
+                ElympicsBehavioursManager.OnClientsOnServerInit(new InitialMatchPlayerDatasGuid(dataOfClients));
 
                 _playersOfClients = dataOfClients.Select(x => x.Player).ToArray();
                 CallPlayerConnectedFromBotsOrClients(_playersOfClients);
@@ -98,12 +97,12 @@ namespace Elympics
         private void CallPlayerConnectedFromBotsOrClients(IEnumerable<ElympicsPlayer> players)
         {
             foreach (var player in players)
-                elympicsBehavioursManager.OnPlayerConnected(player);
+                ElympicsBehavioursManager.OnPlayerConnected(player);
         }
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && !(TickAnalysis?.Paused ?? false);
 
-        protected override void ElympicsFixedUpdate()
+        internal override void ElympicsFixedUpdate()
         {
             using (ElympicsMarkers.Elympics_GatheringClientInputMarker.Auto())
             {
@@ -125,13 +124,13 @@ namespace Elympics
             }
 
             using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
-                elympicsBehavioursManager.SetCurrentInputs(_inputList);
+                ElympicsBehavioursManager.SetCurrentInputs(_inputList);
 
             InvokeQueuedRpcMessages();
-            elympicsBehavioursManager.CommitVars();
+            ElympicsBehavioursManager.CommitVars();
 
             using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
-                elympicsBehavioursManager.ElympicsUpdate();
+                ElympicsBehavioursManager.ElympicsUpdate();
         }
 
         private static ElympicsInput ClientInputGetter(ElympicsBehavioursManager manager) => manager.OnInputForClient();
@@ -142,7 +141,7 @@ namespace Elympics
             foreach (var playerOfBotOrClient in players)
             {
                 switchElympicsBaseBehaviour(playerOfBotOrClient);
-                var input = onInput(elympicsBehavioursManager);
+                var input = onInput(ElympicsBehavioursManager);
                 input.Tick = Tick;
                 input.Player = playerOfBotOrClient;
                 _gameEngineAdapter.AddBotsOrClientsInServerInputToBuffer(input, playerOfBotOrClient);
@@ -158,7 +157,7 @@ namespace Elympics
                 {
                     // gather state info from scene and send to clients
                     PopulateTickToPlayerInputHolder();
-                    var snapshots = elympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
+                    var snapshots = ElympicsBehavioursManager.GetSnapshotsToSend(_tickToPlayerInputHolder, _gameEngineAdapter.Players);
                     AddMetadataToSnapshots(snapshots, TickStartUtc);
 
                     _gameEngineAdapter.SendSnapshotsToPlayers(snapshots);
@@ -221,7 +220,7 @@ namespace Elympics
             snapshot.Tick = Tick;
         }
 
-        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
             _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, true);
 
         private void SwitchBehaviourToServer()

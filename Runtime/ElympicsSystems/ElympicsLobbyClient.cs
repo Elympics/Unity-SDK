@@ -487,6 +487,9 @@ namespace Elympics
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)
         {
             MatchDataGuid = matchData;
+            var isSinglePlayer = string.IsNullOrEmpty(matchData.WebServerAddress) && string.IsNullOrEmpty(matchData.TcpUdpServerAddress);
+            isSinglePlayer = true;
+            SetUpMatch(isSinglePlayer ? JoinedMatchMode.SinglePlayer : JoinedMatchMode.Online);
             LoadGameplayScene();
         }
 
@@ -582,6 +585,7 @@ namespace Elympics
         {
             Online,
             Local,
+            SinglePlayer,
             HalfRemoteClient,
             HalfRemoteServer,
         }

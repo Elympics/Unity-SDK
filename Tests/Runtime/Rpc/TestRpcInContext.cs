@@ -44,7 +44,7 @@ namespace Elympics.Tests
             _elympicsBehaviour.PredictableFor = ElympicsPlayer.All;
             _elympicsObject.GetComponent<ElympicsBehaviour>().PredictableFor = ElympicsPlayer.All;
 
-            _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>());
+            _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
             _act = _rpcHolder switch
             {
@@ -85,14 +85,14 @@ namespace Elympics.Tests
         private void SetupBeforeUpdate()
         {
             SetupBeforeInitialization();
-            _elympicsInstance.elympicsBehavioursManager.InitializeInternal(_elympicsInstance);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance);
         }
 
         private void SetupBeforePhysicsUpdate()
         {
             SetupBeforeUpdate();
             CreateTriggerCube();
-            _elympicsInstance.elympicsBehavioursManager.ElympicsUpdate();
+            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
         }
 
         private void CreateBehavioursManager()
@@ -103,8 +103,8 @@ namespace Elympics.Tests
             Assert.NotNull(behavioursManager);
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
-            _elympicsInstance.elympicsBehavioursManager = behavioursManager;
             behavioursManager.factory = factory;
+            _elympicsInstance.ElympicsBehavioursManager = behavioursManager;
         }
 
         private void CreateTriggerCube()
@@ -165,13 +165,13 @@ namespace Elympics.Tests
         #region Act methods
 
         private void RunInitialization() =>
-            _elympicsInstance.elympicsBehavioursManager.InitializeInternal(_elympicsInstance);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance);
         private void RunUpdate() =>
-            _elympicsInstance.elympicsBehavioursManager.ElympicsUpdate();
+            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
         private void MoveTriggerAndRunUpdate()
         {
             _trigger!.GetComponent<Rigidbody>().position = new Vector3(0, 0, 0);
-            _elympicsInstance.elympicsBehavioursManager.ElympicsUpdate();
+            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
         }
 
         #endregion Act methods

@@ -74,6 +74,9 @@ workflow:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
 
+.alpine_image:
+  image: alpine:latest
+
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
 
@@ -136,6 +139,15 @@ get-activation-file:
     paths:
       - $UNITY_ACTIVATION_FILE
     expire_in: 10 min
+
+check-commits:
+  extends:
+    - .alpine_image
+  stage: prepare-project
+  before_script:
+   - apk add git
+  script:
+    - ./.scripts/ci/check_for_tmp_commits.sh
 
 create-testing-project:
   extends:
@@ -217,6 +229,8 @@ verify-formatting:
     expire_in: 2 weeks
     reports:
       codequality: format-report.codequality.json
+
+
 
 verify-messagepack-generated:
   extends:

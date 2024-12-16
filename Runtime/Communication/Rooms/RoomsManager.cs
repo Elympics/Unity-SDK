@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
@@ -311,8 +312,6 @@ namespace Elympics
 
         public UniTask StopTrackingAvailableRooms() => _client.UnwatchRooms();
 
-        #region Public API
-
         [PublicAPI]
         public UniTask<IRoom> CreateAndJoinRoom(
             string roomName,
@@ -341,6 +340,20 @@ namespace Elympics
                 return JoinRoom(roomId.Value, teamIndex);
             throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
         }
+
+        public async UniTask<IRoom> StartSinglePlayer(
+            string queueName,
+            byte[]? gameEngineData = null,
+            float[]? matchmakerData = null,
+            Dictionary<string, string>? customRoomData = null,
+            Dictionary<string, string>? customMatchmakingData = null,
+            CancellationToken ct = default)
+        {
+            customMatchmakingData ??= new Dictionary<string, string>();
+            customMatchmakingData.Add(RoomUtil.SinglePlayerMatchmakingKey, "true");
+            return await StartQuickMatch(queueName, gameEngineData, matchmakerData, customRoomData, customMatchmakingData, ct);
+        }
+
         [PublicAPI]
         public async UniTask<IRoom> StartQuickMatch(
             string queueName,
@@ -361,6 +374,8 @@ namespace Elympics
             IRoom? room = null;
             try
             {
+                _ = logger.SetQueue(RoomUtil.QuickMatchRoomName);
+
                 var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName,
                     true,
                     true,
@@ -371,11 +386,10 @@ namespace Elympics
                     betDetails,
                     ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
+                _ = logger.SetRoomId(room.RoomId.ToString());
 
-                await room.ChangeTeam(0);
-                await room.MarkYourselfReady(gameEngineData, matchmakerData);
+                await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room);
 
-                await room.StartMatchmaking();
                 _client.LeftRoom += OnQuickRoomLeft;
 
                 var isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();
@@ -412,7 +426,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                if (room != null && !room.IsDisposed && room.IsJoined)
+                if (room is { IsDisposed: false, IsJoined: true })
                     await room.Leave();
 
                 room = null;
@@ -440,9 +454,12 @@ namespace Elympics
                 // ReSharper restore AccessToModifiedClosure
             }
         }
-
-        #endregion
-
+        private static async Task SetupQuickRoomAndStartMatchmaking(byte[] gameEngineData, float[] matchmakerData, IRoom room)
+        {
+            await room.ChangeTeam(0);
+            await room.MarkYourselfReady(gameEngineData, matchmakerData);
+            await room.StartMatchmaking();
+        }
         private async UniTask<IRoom> JoinRoom(string joinCode, uint? teamIndex)
         {
             var existingRoom = _rooms.Values.FirstOrDefault(x => x.State.JoinCode == joinCode);

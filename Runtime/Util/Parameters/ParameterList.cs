@@ -39,9 +39,9 @@ namespace Elympics
         public readonly Parameter<Uri> RespectEndpoint = new("ELYMPICS_RESPECT", "elympicsRespect", "elympics-respect",
             parse: ParseUri);
 
-        public readonly ValueParameter<bool> ShouldUseWebRtc = new("ELYMPICS_USE_WEBRTC", null, "elympics-use-webrtc",
+        public readonly ValueParameter<bool> ShouldUseWebRtc = new("ELYMPICS_USE_WEBRTC", "elympicsUseWebrtc", "elympics-use-webrtc",
             parse: ParseBoolFlag);
-        public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", null, "elympics-use-tcp-udp",
+        public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", "elympicsUseTcpUdp", "elympics-use-tcp-udp",
             parse: ParseBoolFlag);
 
         public readonly Parameter<string> ClientSecret =

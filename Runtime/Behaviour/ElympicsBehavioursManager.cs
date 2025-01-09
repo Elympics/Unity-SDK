@@ -133,6 +133,7 @@ namespace Elympics
                 Data = new List<KeyValuePair<int, byte[]>>(),
             };
 
+            //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
             foreach (var (networkId, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
             {
                 if (!elympicsBehaviour.HasAnyState)
@@ -183,6 +184,7 @@ namespace Elympics
                 snapshots[player] = snapshot;
             }
 
+            //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
             foreach (var (networkId, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
             {
                 if (!elympicsBehaviour.HasAnyState)

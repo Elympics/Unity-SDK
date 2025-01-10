@@ -1,3 +1,13 @@
+## [0.14.3](https://github.com/Elympics/Unity-SDK/compare/v0.14.2...v0.14.3) (2025-01-10)
+
+
+### Features
+
+* add protocol query keys ([63d878e](https://github.com/Elympics/Unity-SDK/commit/63d878ee3a4760a693316cd07c4f36bd545af71f))
+* expose ElympicsBehaviour.ElympicsBase ([171dc86](https://github.com/Elympics/Unity-SDK/commit/171dc86fa57bf3acba1f55eb74e60593267881a6))
+
+
+
 ## [0.14.2](https://github.com/Elympics/Unity-SDK/compare/v0.14.1...v0.14.2) (2024-11-13)
 
 ### Chore:

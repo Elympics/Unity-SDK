@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
@@ -14,12 +15,17 @@ namespace Elympics
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
         private readonly IGameServerClient _gameServerClient;
-        private readonly RingBuffer<ElympicsInput> _inputRingBuffer;
+        private readonly RingBufferElympicsDataWithTick<ElympicsInput> _input;
+
+        private readonly ElympicsInput[] _inputsBuffer;
+        private readonly List<ElympicsInput> _inputsToSend;
 
         public RemoteMatchClient(IGameServerClient gameServerClient, ElympicsGameConfig config)
         {
             _gameServerClient = gameServerClient;
-            _inputRingBuffer = new RingBuffer<ElympicsInput>(config.InputsToSendBufferSize);
+            _input = new RingBufferElympicsDataWithTick<ElympicsInput>(config.InputsToSendBufferSize);
+            _inputsBuffer = new ElympicsInput[config.InputsToSendBufferSize];
+            _inputsToSend = new List<ElympicsInput>(config.InputsToSendBufferSize);
 
             gameServerClient.Synchronized += OnSynchronized;
             gameServerClient.InGameDataReliableReceived += ProcessReceivedInGameData;
@@ -31,16 +37,43 @@ namespace Elympics
         private void ProcessReceivedInGameData(InGameDataMessage message)
         {
             var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(Convert.FromBase64String(message.Data));
-            if (deserializedData is ElympicsSnapshot snapshot)
-                SnapshotReceived?.Invoke(snapshot);
-            else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
-                RpcMessageListReceived?.Invoke(rpcMessageList);
+            switch (deserializedData)
+            {
+                case ElympicsSnapshot snapshot:
+                {
+                    _input.UpdateMinTick(snapshot.Tick + 1);
+                    SnapshotReceived?.Invoke(snapshot);
+                    break;
+                }
+                case ElympicsRpcMessageList rpcMessageList:
+                    RpcMessageListReceived?.Invoke(rpcMessageList);
+                    break;
+                // ReSharper disable once RedundantEmptySwitchSection
+                default:
+                    //Do Nothing.
+                    break;
+            }
         }
 
-        public async Task SendInput(ElympicsInput input)
+        public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
+
+        private void GetInputCollectionToSend()
         {
-            _inputRingBuffer.PushBack(input);
-            await SendDataToServer(new ElympicsInputList { Values = _inputRingBuffer.ToList() }, false);
+            Array.Clear(_inputsBuffer, 0, _inputsBuffer.Length);
+            _inputsToSend.Clear();
+            _input.GetInputListNonAlloc(_inputsBuffer, out var collectionSize);
+
+            for (var i = 0; i < collectionSize; i++)
+                _inputsToSend.Add(_inputsBuffer[i]);
+        }
+
+        public async Task SendBufferInput(long tick)
+        {
+            if (_input.Count() > 0)
+            {
+                GetInputCollectionToSend();
+                await SendDataToServer(new ElympicsInputList { Values = _inputsToSend }, false);
+            }
         }
 
         public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
@@ -49,10 +82,9 @@ namespace Elympics
         private async Task SendDataToServer(IToServer data, bool reliable)
         {
             var dataSerialized = MessagePackSerializer.Serialize(data);
-            Func<byte[], Task> sendDataAsync = reliable
-                ? _gameServerClient.SendInGameDataReliableAsync
-                : _gameServerClient.SendInGameDataUnreliableAsync;
+            Func<byte[], Task> sendDataAsync = reliable ? _gameServerClient.SendInGameDataReliableAsync : _gameServerClient.SendInGameDataUnreliableAsync;
             await sendDataAsync(dataSerialized);
         }
+        public void Dispose() => _input?.Dispose();
     }
 }

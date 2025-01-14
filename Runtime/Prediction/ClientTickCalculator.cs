@@ -38,6 +38,7 @@ namespace Elympics
             {
                 newPredictionTick = lastPredictedTick;
                 canPredict = false;
+                ElympicsLogger.LogWarning($"Pausing prediction, difference between expected tick and next tick is too large ({exactToExpectedTickDiff}). Next tick: {expectedPredictionTick} Expected tick: {calculatedNextTickExact}");
             }
             else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var ticksToCatchup))
             {
@@ -46,6 +47,7 @@ namespace Elympics
                 {
                     Results.WasTickJumpForced = true;
                     Results.TicksToCatchup = ticksToCatchup;
+                    ElympicsLogger.LogWarning($"Client was unable to maintain required simulation speed. Forcing tick jump, jumping {ticksToCatchup} ticks. Last received tick: {lastReceivedTick} Last predicted tick: {lastPredictedTick} New prediction tick: {newPredictionTick}.");
                 }
             }
             else

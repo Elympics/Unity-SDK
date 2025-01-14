@@ -36,6 +36,7 @@ MonoBehaviour:
   maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
+  inputToSendBufferSize: 1
   maxAllowedLagInTicks: 15
   prediction: 1
   predictionLimitInTicks: 8
@@ -50,11 +51,6 @@ MonoBehaviour:
     queueName: 
     regionName: 
   testPlayers:
-  - userId: 0
-    isBot: 0
-    botDifficulty: 0
-    gameEngineData: 
-    matchmakerData: []
   - userId: 0
     isBot: 0
     botDifficulty: 0

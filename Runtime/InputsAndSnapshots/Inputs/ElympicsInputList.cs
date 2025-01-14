@@ -4,8 +4,8 @@ using MessagePack;
 namespace Elympics
 {
     [MessagePackObject]
-    public struct ElympicsInputList : IToServer
+    public class ElympicsInputList : IToServer
     {
-        [Key(0)] public List<ElympicsInput> Values { get; set; }
+        [Key(0)] public IList<ElympicsInput> Values { get; set; }
     }
 }

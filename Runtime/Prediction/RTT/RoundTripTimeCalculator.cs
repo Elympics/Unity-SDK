@@ -8,20 +8,15 @@ namespace Elympics
         public TimeSpan LastRoundTripTime { get; private set; }
         public TimeSpan LastLocalClockOffset { get; private set; }
 
-        private const int MaxRttSamples = 3;
+        private const int MaxRttSamples = 50;
         private readonly RunningAvg _rttRunningAvg = new(MaxRttSamples);
 
         private const int MaxLcoSamples = 5;
         private readonly RunningMedian _lcoRunningMedian = new(MaxLcoSamples);
 
         public TimeSpan AverageRoundTripTime { get; private set; }
+        public TimeSpan RoundTripTimeStandardDeviation { get; private set; }
         public TimeSpan AverageLocalClockOffset { get; private set; }
-
-        public RoundTripTimeCalculator(IMatchClient matchClient, IMatchConnectClient matchConnectClient)
-        {
-            matchConnectClient.ConnectedWithSynchronizationData += OnSynchronized;
-            matchClient.Synchronized += OnSynchronized;
-        }
 
         public void OnSynchronized(TimeSynchronizationData data)
         {
@@ -35,10 +30,12 @@ namespace Elympics
 
         private void CalculateNewAverageRoundTripTime(TimeSpan rtt)
         {
-            // Log-normal distribution
-            var rttLn = Math.Log(rtt.TotalMilliseconds);
-            var newRttAvg = _rttRunningAvg.AddAndGetAvg(rttLn);
-            AverageRoundTripTime = TimeSpan.FromMilliseconds(Math.Exp(newRttAvg));
+            _rttRunningAvg.Add(rtt.TotalMilliseconds);
+
+            var (avg, stdDev) = _rttRunningAvg.GetAvgAndStdDev();
+
+            AverageRoundTripTime = TimeSpan.FromMilliseconds(avg);
+            RoundTripTimeStandardDeviation = TimeSpan.FromMilliseconds(stdDev);
         }
 
         private void CalculateNewAverageLocalClockOffset(TimeSpan lcoTicks)

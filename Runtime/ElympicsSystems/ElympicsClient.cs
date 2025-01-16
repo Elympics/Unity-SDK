@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using Elympics.AssemblyCommunicator;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -17,10 +18,12 @@ namespace Elympics
         private int networkConditionsLogInterval = 5;
 
         private const uint PredictionBlockedThreshold = 10;
-
         private ElympicsPlayer _player;
         public override ElympicsPlayer Player => _player;
         public override bool IsClient => true;
+
+        /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
+        public static event Action<TimeSynchronizationData, long> TimeSynchronized;
 
         private bool _started;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
@@ -50,6 +53,11 @@ namespace Elympics
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData, ElympicsLoggerContext logger)
         {
+            if (CrossAssemblyEventBroadcaster.I == 0)
+                ElympicsLogger.Log("CrossAssemblyEventBroadcaster initialized");
+            else
+                ElympicsLogger.Log("CrossAssemblyEventBroadcaster initialized???");
+
             _logger = logger.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig);
             _player = initialMatchPlayerData.Player;
@@ -57,7 +65,7 @@ namespace Elympics
             _matchClient = matchClient;
 
             elympicsBehavioursManager.InitializeInternal(this);
-            RoundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
+            RoundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
 #endif
@@ -86,7 +94,7 @@ namespace Elympics
         private void SetupCallbacks()
         {
             _matchClient.SnapshotReceived += OnSnapshotReceived;
-            _matchClient.Synchronized += OnSynchronized;
+            _matchClient.Synchronized += OnMatchClientSynchronized;
             _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
             _matchConnectClient.DisconnectedByServer += OnDisconnectedByServer;
             _matchConnectClient.DisconnectedByClient += OnDisconnectedByClient;
@@ -104,7 +112,15 @@ namespace Elympics
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
             RoundTripTimeCalculator.OnSynchronized(data);
+            TimeSynchronized?.Invoke(data, Tick);
             OnConnected(data);
+        }
+
+        private void OnMatchClientSynchronized(TimeSynchronizationData data)
+        {
+            OnSynchronized(data);
+            RoundTripTimeCalculator.OnSynchronized(data);
+            TimeSynchronized?.Invoke(data, Tick);
         }
 
         private void OnDestroy()
@@ -112,7 +128,7 @@ namespace Elympics
             if (_matchClient != null)
             {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
-                _matchClient.Synchronized -= OnSynchronized;
+                _matchClient.Synchronized -= OnMatchClientSynchronized;
                 _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
                 _matchClient.Dispose();
             }
@@ -362,4 +378,6 @@ namespace Elympics
 
         #endregion
     }
+
+    public class TestClassThatShouldCauseAnError : ElympicsSdkObserver<int> { }
 }

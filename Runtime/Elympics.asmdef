@@ -5,7 +5,8 @@
         "ParrelSync",
         "UniTask",
         "MessagePack",
-        "MessagePack.Annotations"
+        "MessagePack.Annotations",
+        "AssemblyCommunicator"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

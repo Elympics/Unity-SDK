@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
+using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -10,7 +11,7 @@ using MatchTcpModels.Messages;
 
 namespace MatchTcpClients
 {
-    public abstract class GameServerClient : IGameServerClient
+    internal abstract class GameServerClient : IGameServerClient
     {
         private protected readonly GameServerClientConfig Config;
 
@@ -39,11 +40,13 @@ namespace MatchTcpClients
 
         private protected event Action<ConnectedMessage> SessionConnected;
 
-        protected GameServerClient(
-            IGameServerSerializer serializer,
-            GameServerClientConfig config)
+        private ElympicsLoggerContext _logger;
+
+        protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, ElympicsLoggerContext logger)
         {
-            ElympicsLogger.Log($"Game server client of type {GetType().Name} will be used.");
+            _logger = logger.WithContext(nameof(GameServerClient));
+            var log = _logger.WithMethodName();
+            log.Log($"Game server client of type {GetType().Name} will be used.");
 
             _serializer = serializer;
             Config = config;
@@ -103,9 +106,11 @@ namespace MatchTcpClients
         {
             var sessionConnectedCompletionSource = new TaskCompletionSource<bool>();
 
+            var logger = _logger.WithMethodName();
+
             void OnSessionConnected(ConnectedMessage message)
             {
-                ElympicsLogger.Log("Connected using reliable channel.");
+                logger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
                 _clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
                 sessionConnectedCompletionSource.SetResult(true);
@@ -118,7 +123,7 @@ namespace MatchTcpClients
                 if (!await TryInitializeSessionAsync(ct))
                     return false;
 
-                ElympicsLogger.Log("Establishing connection...");
+                logger.Log("Establishing connection...");
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var sessionConnectedCompletionTask = sessionConnectedCompletionSource.Task;
                 var timeoutTask = TaskUtil.Delay(Config.SessionConnectTimeout, cts.Token).CatchOperationCanceledException();
@@ -129,7 +134,7 @@ namespace MatchTcpClients
                     return true;
                 }
 
-                ElympicsLogger.LogError("Could not establish the connection.");
+                logger.Error("Could not establish the connection.");
                 return false;
             }
             finally
@@ -169,7 +174,8 @@ namespace MatchTcpClients
         {
             _ = ClientDisconnectedCts.Token.Register(() =>
             {
-                ElympicsLogger.Log("Client disconnected.");
+                var log = _logger.WithMethodName();
+                log.Log("Client disconnected.");
                 Disconnected?.Invoke();
             });
 
@@ -184,15 +190,19 @@ namespace MatchTcpClients
             _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
             _clientSynchronizer.TimedOut += () =>
             {
-                ElympicsLogger.Log("Synchronize timed out, disconnecting...");
+                var log = _logger.WithMethodName();
+                log.Log("Synchronize timed out, disconnecting...");
                 Disconnect();
             };
         }
 
         public void Disconnect()
         {
-            ElympicsLogger.Log("Aborting connection.");
-            ClientDisconnectedCts?.Cancel();
+            if (ClientDisconnectedCts == null)
+                return;
+            var logger = _logger.WithMethodName();
+            logger.Log("Aborting connection.");
+            ClientDisconnectedCts.Cancel();
             ClientDisconnectedCts = null;
         }
 
@@ -210,7 +220,8 @@ namespace MatchTcpClients
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"Error in {GetType().Name} receiving a message using reliable channel", e);
+                var log = _logger.WithMethodName();
+                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using reliable channel", e));
             }
         }
 
@@ -290,7 +301,8 @@ namespace MatchTcpClients
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"Error in {GetType().Name} receiving a message using unreliable channel", e);
+                var log = _logger.WithMethodName();
+                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using unreliable channel", e));
             }
         }
 

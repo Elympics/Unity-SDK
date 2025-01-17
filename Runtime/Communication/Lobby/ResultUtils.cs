@@ -32,7 +32,7 @@ namespace Elympics.Lobby
             }
 
             ct.ThrowIfCancellationRequested();
-            throw new LobbyOperationException("Operation timed out");
+            throw new LobbyOperationException($"Operation {nameof(WaitForResult)} timed out");
         }
 
         public static async UniTask<T> WithTimeout<T>(this UniTaskCompletionSource<T> tcs, TimeSpan timeout, CancellationToken ct = default)
@@ -46,7 +46,7 @@ namespace Elympics.Lobby
             if (!canceled)
                 return data;
 
-            throw new LobbyOperationException("Operation timed out");
+            throw new LobbyOperationException($"Operation {nameof(WithTimeout)} timed out");
         }
 
 
@@ -61,7 +61,7 @@ namespace Elympics.Lobby
                 return;
 
             ct.ThrowIfCancellationRequested();
-            throw new LobbyOperationException("Operation timed out");
+            throw new LobbyOperationException($"Operation {nameof(WaitUntil)} timed out");
         }
 
         public static Action<IFromLobby, IPromise<ValueTuple>> GetOperationResultHandler(Guid operationId)

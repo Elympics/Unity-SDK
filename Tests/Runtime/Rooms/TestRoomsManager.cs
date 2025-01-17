@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -14,6 +15,7 @@ using Elympics.Tests.Common.RoomMocks;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using static Elympics.Tests.Common.AsyncAsserts;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -36,7 +38,8 @@ namespace Elympics.Tests.Rooms
             _matchLauncherMock = new MatchLauncherMock();
             _roomsClientMock = new RoomClientMock();
             _joiningQueueMock = new RoomJoiningQueueMock();
-            _roomsManager = new RoomsManager(_matchLauncherMock, _roomsClientMock, _joiningQueueMock);
+            var logger = new ElympicsLoggerContext(new Guid(), string.Empty, string.Empty);
+            _roomsManager = new RoomsManager(_matchLauncherMock, _roomsClientMock, logger, _joiningQueueMock);
             _eventRegister = new RoomEventObserver(_roomsManager);
             _roomStateChanged = RoomsTestUtility.PrepareInitialRoomState(_roomIdForTesting);
         }

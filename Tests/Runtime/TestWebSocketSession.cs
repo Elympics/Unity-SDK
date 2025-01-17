@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
@@ -57,7 +58,7 @@ namespace Elympics.Tests
 
         private static WebSocketSession CreateWebSocketSession(LobbySerializerMock.Methods? serializerMethods = null)
         {
-            var session = new WebSocketSession(Dispatcher, (_, _) => WsMock, SerializerMock);
+            var session = new WebSocketSession(Dispatcher, new ElympicsLoggerContext(new Guid(), string.Empty, string.Empty), (_, _) => WsMock, SerializerMock);
             if (serializerMethods.HasValue)
                 _ = SerializerMock.UpdateMethods(serializerMethods.Value);
             return session;
@@ -438,8 +439,7 @@ namespace Elympics.Tests
             var operation = new UnknownOperation();
             WsMock.SendCalled += HandleMessageSent;
 
-            LogAssert.Expect(LogType.Exception, new Regex($".*{nameof(InvalidOperationException)}.*"));
-            _ = await AssertThrowsAsync<InvalidOperationException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
+            _ = await AssertThrowsAsync<ElympicsException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
 
             static void HandleMessageSent(byte[] data)
             {

@@ -5,16 +5,16 @@ namespace Elympics
 {
     internal abstract class AuthorizationStrategy
     {
-        protected readonly IAuthClient AuthClient;
-        protected string ClientSecret;
-        protected ElympicsEthSigner EthSigner;
-        protected ITelegramSigner TelegramSigner;
+        private readonly IAuthClient _authClient;
+        private readonly string _clientSecret;
+        private readonly ElympicsEthSigner _ethSigner;
+        private readonly ITelegramSigner _telegramSigner;
         internal AuthorizationStrategy(IAuthClient authClient, string clientSecret, ElympicsEthSigner ethSigner, ITelegramSigner telegramSigner)
         {
-            AuthClient = authClient;
-            ClientSecret = clientSecret;
-            EthSigner = ethSigner;
-            TelegramSigner = telegramSigner;
+            _authClient = authClient;
+            _clientSecret = clientSecret;
+            _ethSigner = ethSigner;
+            _telegramSigner = telegramSigner;
         }
         public abstract UniTask<Result<AuthData, string>> Authorize(ConnectionData data);
 
@@ -45,14 +45,13 @@ namespace Elympics
         }
         protected async UniTask<Result<AuthData, string>> AuthenticateWithAsync(AuthType authType)
         {
-            ElympicsLogger.Log($"Starting {authType} authentication...");
             try
             {
                 return authType switch
                 {
-                    AuthType.ClientSecret => await AuthClient.AuthenticateWithClientSecret(ClientSecret),
-                    AuthType.EthAddress => await AuthClient.AuthenticateWithEthAddress(EthSigner),
-                    AuthType.Telegram => await AuthClient.AuthenticateWithTelegram(TelegramSigner),
+                    AuthType.ClientSecret => await _authClient.AuthenticateWithClientSecret(_clientSecret),
+                    AuthType.EthAddress => await _authClient.AuthenticateWithEthAddress(_ethSigner),
+                    AuthType.Telegram => await _authClient.AuthenticateWithTelegram(_telegramSigner),
                     AuthType.None => Result<AuthData, string>.Success(null),
                     _ => throw new ArgumentOutOfRangeException(nameof(authType), authType, null)
                 };

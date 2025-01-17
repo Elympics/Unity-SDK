@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
@@ -374,6 +375,7 @@ namespace Elympics.Tests
             var disconnectedCalled = false;
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
+            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
@@ -393,6 +395,7 @@ namespace Elympics.Tests
             var disconnectedCalled = false;
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
+            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
@@ -434,6 +437,7 @@ namespace Elympics.Tests
                     Name = ElympicsRegions.Warsaw
                 }
             });
+            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);

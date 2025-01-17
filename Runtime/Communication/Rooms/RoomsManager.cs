@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -71,12 +73,14 @@ namespace Elympics
 
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
         private bool _initialized;
+        private ElympicsLoggerContext _logger;
 
-        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiningQueue? joiningQueue = null)
+        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, ElympicsLoggerContext logger, IRoomJoiningQueue? joiningQueue = null)
         {
             _matchLauncher = matchLauncher;
             _client = roomsClient;
             _joiningQueue = joiningQueue ?? new RoomJoiningQueue();
+            _logger = logger.WithContext(nameof(RoomsManager));
             SubscribeClient();
         }
 
@@ -171,7 +175,11 @@ namespace Elympics
             var mmCompleted = _stateDiff.MatchDataArgs != null;
             var matchFound = _stateDiff.MatchDataArgs != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
             if (mmCompleted)
+            {
+                _ = _logger.WithMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
+                _ = _logger.WithServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
                 _matchLauncher.MatchFound();
+            }
 
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
@@ -325,12 +333,15 @@ namespace Elympics
             matchmakerData ??= Array.Empty<float>();
             ct.ThrowIfCancellationRequested();
 
+            var logger = _logger.WithMethodName();
             IRoom? room = null;
             try
             {
+                _ = logger.WithQueue(RoomUtil.QuickMatchRoomName);
                 var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, customRoomData ?? new Dictionary<string, string>(), customMatchmakingData ?? new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
+                _ = logger.WithRoomId(room.RoomId.ToString());
                 await room.ChangeTeam(0);
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
 
@@ -341,11 +352,14 @@ namespace Elympics
 
                 if (isCanceled is false)
                 {
+                    _ = logger.WithMatchId(room.State.MatchmakingData?.MatchData?.MatchId.ToString());
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
-                    if (string.IsNullOrEmpty(error))
-                        return room;
+                    if (!string.IsNullOrEmpty(error))
+                        throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick math room. Error: {error}"));
 
-                    throw new LobbyOperationException($"Failed to create quick math room. Error: {error}");
+                    _ = logger.WithServerAddress(room.State.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, room.State.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
+                    logger.Log("Quick Match Founded.");
+                    return room;
                 }
 
                 try
@@ -353,32 +367,37 @@ namespace Elympics
                     await room.CancelMatchmaking();
                     await room.Leave();
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     if (room.State.MatchmakingData?.MatchmakingState == MatchmakingState.Unlocked)
+                    {
                         await room.Leave();
+                        _ = logger.WithNoRoom();
+                    }
                     else if (room.IsEligibleToPlayMatch())
                         return room;
                     else
                     {
-                        ElympicsLogger.Log("Unexpected quickmatch error.");
-                        throw;
+                        _ = logger.WithNoRoom();
+                        throw logger.CaptureAndThrow(e);
                     }
                 }
                 return room;
             }
-            catch
+            catch (Exception e)
             {
                 if (room == null)
                     throw;
 
                 await room.Leave();
                 room = null;
-                throw;
+                _ = logger.WithNoRoom();
+                throw logger.CaptureAndThrow(e);
             }
 
             void OnQuickRoomLeft(LeftRoomArgs args)
             {
+                _ = _logger.WithNoRoom();
                 // ReSharper disable AccessToModifiedClosure
                 if (room == null
                     || room.IsDisposed)

@@ -35,6 +35,7 @@ namespace Elympics
 
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot _lastReceivedSnapshot;
+        private readonly ElympicsSnapshot _mergedSnapshot = new();
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
@@ -275,6 +276,7 @@ namespace Elympics
             var forceSnapShot = receivedSnapshot.Tick > Tick;
 
             ElympicsSnapshot historySnapshot = null;
+            ElympicsSnapshot newSnapshot;
 
             if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
                 return;
@@ -283,12 +285,27 @@ namespace Elympics
                 return;
 
             if (forceSnapShot)
+            {
+                //TO DO: Forcing should be triggered by server which should send a full snapshot when forcing jump forward
+                //Not all snapshots sent by server contain data about all objects, so current implementation will only correctly set
+                //data for objects that happen to be in this snapshot
                 historySnapshot = receivedSnapshot;
+                newSnapshot = receivedSnapshot;
+            }
+            else
+            {
+                //Not all snapshots sent by server contain data about all objects, but if we want to go back to a previous tick to resimulate
+                //we have to revert states of all objects, so we take missing data from local snapshot
+                _mergedSnapshot.DeepCopyFrom(receivedSnapshot);
+                _mergedSnapshot.FillMissingFrom(historySnapshot);
+                newSnapshot = _mergedSnapshot;
+            }
 
             elympicsBehavioursManager.OnPreReconcile();
 
             Tick = receivedSnapshot.Tick;
-            elympicsBehavioursManager.ApplySnapshot(receivedSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
+
+            elympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
             elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
             elympicsBehavioursManager.CommitVars();
 

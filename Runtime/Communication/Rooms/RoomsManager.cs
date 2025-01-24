@@ -168,8 +168,9 @@ namespace Elympics
                 SetStateDiffToInitializeState();
             }
 
-            var matchFound = _stateDiff.MatchDataArgs != null;
-            if (matchFound)
+            var mmCompleted = _stateDiff.MatchDataArgs != null;
+            var matchFound = _stateDiff.MatchDataArgs != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
+            if (mmCompleted)
                 _matchLauncher.MatchFound();
 
             if (_initialized)
@@ -337,39 +338,42 @@ namespace Elympics
                 _client.LeftRoom += OnQuickRoomLeft;
 
                 var isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();
-                if (isCanceled)
+
+                if (isCanceled is false)
                 {
-                    try
-                    {
-                        await room.CancelMatchmaking();
+                    var error = room.State.MatchmakingData?.MatchData?.FailReason;
+                    if (string.IsNullOrEmpty(error))
+                        return room;
+
+                    throw new LobbyOperationException($"Failed to create quick math room. Error: {error}");
+                }
+
+                try
+                {
+                    await room.CancelMatchmaking();
+                    await room.Leave();
+                }
+                catch (Exception)
+                {
+                    if (room.State.MatchmakingData?.MatchmakingState == MatchmakingState.Unlocked)
                         await room.Leave();
-                    }
-                    catch (Exception e)
+                    else if (room.IsEligibleToPlayMatch())
+                        return room;
+                    else
                     {
-                        if (room.State.MatchmakingData?.MatchmakingState == MatchmakingState.Unlocked)
-                        {
-                            await room.Leave();
-                        }
-                        else if (room.IsEligibleToPlayMatch())
-                        {
-                            return room;
-                        }
-                        else
-                        {
-                            ElympicsLogger.Log("Unexpected quickmatch error.");
-                            throw e;
-                        }
+                        ElympicsLogger.Log("Unexpected quickmatch error.");
+                        throw;
                     }
                 }
                 return room;
             }
             catch
             {
-                if (room != null)
-                {
-                    await room.Leave();
-                    room = null;
-                }
+                if (room == null)
+                    throw;
+
+                await room.Leave();
+                room = null;
                 throw;
             }
 

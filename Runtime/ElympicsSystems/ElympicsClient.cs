@@ -209,7 +209,7 @@ namespace Elympics
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 
-            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
+            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a network lag spike. "
                 + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
         }
 

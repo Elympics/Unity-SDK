@@ -9,7 +9,7 @@
 ### Features
 
 * introduction to previous input buffer ([a21ef62](https://github.com/Elympics/Unity-SDK/commit/a21ef62cc3ed2ede09d619313feb487cea268e8f))
-* merge received snapshot with local one ([36ed11c](https://github.com/Elympics/Unity-SDK/commit/36ed11ca850d3b6f1ea272fa2fceac32bd61eeae))
+* add missing ElympicsBehaviour states in server snapshot from local one ([36ed11c](https://github.com/Elympics/Unity-SDK/commit/36ed11ca850d3b6f1ea272fa2fceac32bd61eeae))
 
 
 

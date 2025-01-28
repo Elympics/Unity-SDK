@@ -35,9 +35,7 @@ namespace Elympics
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= _lastUpdate)
             {
-                ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}"
-                    + $"Local Last Update {_lastUpdate:HH:mm:ss.ffff}"
-                    + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
+                ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}" + $"Local Last Update {_lastUpdate:HH:mm:ss.ffff}" + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
                 return;
             }
 
@@ -81,22 +79,18 @@ namespace Elympics
                 stateDiff.UsersThatJoined.Add(newUser);
             }
 
-            stateDiff.UpdatedMatchmakingData = (MatchmakingData == null && stateUpdate.MatchmakingData != null)
-                || (MatchmakingData != null && !MatchmakingData.Equals(stateUpdate.MatchmakingData));
+            stateDiff.UpdatedMatchmakingData = (MatchmakingData == null && stateUpdate.MatchmakingData != null) || (MatchmakingData != null && !MatchmakingData.Equals(stateUpdate.MatchmakingData));
 
             var cachedCustomMatchmakingData = MatchmakingData?.CustomData;
-            var isCustomMatchmakingDataChanged =
-                !cachedCustomMatchmakingData.IsTheSame(stateUpdate.MatchmakingData?.CustomData);
+            var isCustomMatchmakingDataChanged = !cachedCustomMatchmakingData.IsTheSame(stateUpdate.MatchmakingData?.CustomData);
             if (isCustomMatchmakingDataChanged)
-                CaptureDifferencesBetween(stateDiff.NewCustomMatchmakingData, cachedCustomMatchmakingData,
-                    stateUpdate.MatchmakingData?.CustomData);
+                CaptureDifferencesBetween(stateDiff.NewCustomMatchmakingData, cachedCustomMatchmakingData, stateUpdate.MatchmakingData?.CustomData);
 
             if (stateDiff.UpdatedMatchmakingData)
             {
-                if (IsMatchAvailable(stateUpdate.MatchmakingData?.MatchData) && !IsMatchAvailable(MatchmakingData?.MatchData))
-                    stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId,
-                        stateUpdate.MatchmakingData!.MatchData!.MatchId, stateUpdate.MatchmakingData.QueueName,
-                        stateUpdate.MatchmakingData.MatchData);
+                if ((IsMatchAvailable(stateUpdate.MatchmakingData?.MatchData) && !IsMatchAvailable(MatchmakingData?.MatchData))
+                    || (IsMatchmakingFailed(stateUpdate.MatchmakingData?.MatchData) && !IsMatchmakingFailed(MatchmakingData?.MatchData)))
+                    stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId, stateUpdate.MatchmakingData!.MatchData!.MatchId, stateUpdate.MatchmakingData.QueueName, stateUpdate.MatchmakingData.MatchData);
 
                 var oldMmState = MatchmakingData?.MatchmakingState;
                 var newMmState = stateUpdate.MatchmakingData?.State;
@@ -106,9 +100,15 @@ namespace Elympics
             }
 
             Update(stateUpdate);
+            return;
+
             static bool IsMatchAvailable(MatchData? matchData) =>
                 matchData is { State: MatchState.Running, MatchDetails: not null };
+
+            static bool IsMatchmakingFailed(MatchData? matchData) =>
+                matchData is { State: MatchState.InitializingFailed };
         }
+
 
         private static void CaptureDifferencesBetween(Dictionary<string, string?> diffCapture, IReadOnlyDictionary<string, string>? oldVersion, IReadOnlyDictionary<string, string>? newVersion)
         {

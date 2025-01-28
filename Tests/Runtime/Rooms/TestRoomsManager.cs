@@ -315,6 +315,71 @@ namespace Elympics.Tests.Rooms
         });
 
         [UnityTest]
+        public IEnumerator QuickMatchLobbyMatchmakingInitializingFailed() => UniTask.ToCoroutine(async () =>
+        {
+            const string regionName = "test-region";
+            var connectionDetails = new SessionConnectionDetails("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", regionName);
+            _roomsClientMock.SetSessionConnectionDetails(connectionDetails);
+            _roomsClientMock.RoomIdReturnTask = UniTask.FromResult(_roomIdForTesting);
+
+            var teamChangedState = _roomStateChanged with
+            {
+                Users = new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, false, string.Empty),
+                },
+                LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
+            };
+
+            var readyState = teamChangedState with
+            {
+                Users = new List<UserInfo>
+                {
+                    new(Guid.Empty, 0, true, string.Empty),
+                },
+                LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
+            };
+
+            var matchmakingState = readyState with
+            {
+                MatchmakingData = readyState.MatchmakingData! with
+                {
+                    State = MatchmakingState.RequestingMatchmaking,
+                    LastStateUpdate = readyState.LastUpdate + TimeSpan.FromSeconds(1),
+                },
+                LastUpdate = readyState.LastUpdate + TimeSpan.FromSeconds(1),
+            };
+
+            var matchDataState = matchmakingState with
+            {
+                MatchmakingData = matchmakingState.MatchmakingData with
+                {
+                    State = MatchmakingState.Unlocked,
+                    MatchData = new MatchData(Guid.Empty, MatchState.InitializingFailed, null, "Test Fail Reason")
+                },
+                LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
+            };
+
+            _joiningQueueMock.AddRoomIdInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
+            _roomsClientMock.SetReadyInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(readyState);
+            _roomsClientMock.SetTeamChangedInvoked += _ => _roomsClientMock.InvokeRoomStateChanged(teamChangedState);
+            _roomsClientMock.StartMatchmakingInvoked += _ => MatchmakingFlow().Forget();
+            // Act
+            var cts = new CancellationTokenSource();
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await _roomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>()));
+            cts.Dispose();
+            Assert.AreEqual(0, _roomsManager.ListJoinedRooms().Count);
+
+            async UniTask MatchmakingFlow()
+            {
+                _roomsClientMock.InvokeRoomStateChanged(matchmakingState);
+                await UniTask.Delay(TimeSpan.FromSeconds(1));
+                _roomsClientMock.InvokeRoomStateChanged(matchDataState);
+            }
+
+        });
+
+        [UnityTest]
         public IEnumerator CanQuickMatchAgainAfterTimeoutException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";

@@ -1,3 +1,18 @@
+## [0.15.0](https://github.com/Elympics/Unity-SDK/compare/v0.14.3...v0.15.0) (2025-01-28)
+
+
+### Bug Fixes 🪲
+
+* throw exception when error during quickMatch ([2a0ebea](https://github.com/Elympics/Unity-SDK/commit/2a0ebea03dd60854d8b76185cbb5ed63d8af2134))
+
+
+### Features
+
+* introduction to previous input buffer ([a21ef62](https://github.com/Elympics/Unity-SDK/commit/a21ef62cc3ed2ede09d619313feb487cea268e8f))
+* merge received snapshot with local one ([36ed11c](https://github.com/Elympics/Unity-SDK/commit/36ed11ca850d3b6f1ea272fa2fceac32bd61eeae))
+
+
+
 ## [0.14.3](https://github.com/Elympics/Unity-SDK/compare/v0.14.2...v0.14.3) (2025-01-10)
 
 

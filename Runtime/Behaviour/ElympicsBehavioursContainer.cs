@@ -11,9 +11,17 @@ namespace Elympics
         private readonly SortedDictionary<int, ElympicsBehaviour> _elympicsBehavioursPredictable = new();
         private readonly SortedDictionary<int, ElympicsBehaviour> _elympicsBehavioursUnpredictable = new();
 
+        /// <summary>Dictionary where values are ElympicBehaviours and keys are their network IDs.</summary>
+        /// <remarks>This dictionary is sorted by network ID in ascending order.</remarks>
         public IReadOnlyDictionary<int, ElympicsBehaviour> Behaviours => _elympicsBehaviours;
+        /// <summary>Dictionary where values are ElympicBehaviours for which <see cref="ElympicsBehaviour.HasAnyInput"/> is true and keys are their network IDs.</summary>
+        /// <remarks>This dictionary is sorted by network ID in ascending order.</remarks>
         public IReadOnlyDictionary<int, ElympicsBehaviour> BehavioursWithInput => _elympicsBehavioursWithInput;
+        /// <summary>Dictionary where values are ElympicBehaviours that are predictable for <see cref="_player"/> and keys are their network IDs.</summary>
+        /// <remarks>This dictionary is sorted by network ID in ascending order.</remarks>
         public IReadOnlyDictionary<int, ElympicsBehaviour> BehavioursPredictable => _elympicsBehavioursPredictable;
+        /// <summary>Dictionary where values are ElympicBehaviours that are not predictable for <see cref="_player"/> and keys are their network IDs.</summary>
+        /// <remarks>This dictionary is sorted by network ID in ascending order.</remarks>
         public IReadOnlyDictionary<int, ElympicsBehaviour> BehavioursUnpredictable => _elympicsBehavioursUnpredictable;
 
         public ElympicsBehavioursContainer(ElympicsPlayer player)

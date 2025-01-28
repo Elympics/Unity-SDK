@@ -41,6 +41,7 @@ namespace Elympics.Editor
         private SerializedProperty _minTickRateFactor;
         private SerializedProperty _maxTickRateFactor;
         private SerializedProperty _snapshotSendingPeriodInTicks;
+        private SerializedProperty _inputToSendBufferSize;
         private SerializedProperty _inputLagTicks;
         private SerializedProperty _maxAllowedLagInTicks;
         private SerializedProperty _prediction;
@@ -94,6 +95,7 @@ namespace Elympics.Editor
             _minTickRateFactor = serializedObject.FindProperty("minClientTickRateFactor");
             _maxTickRateFactor = serializedObject.FindProperty("maxClientTickRateFactor");
             _snapshotSendingPeriodInTicks = serializedObject.FindProperty("snapshotSendingPeriodInTicks");
+            _inputToSendBufferSize = serializedObject.FindProperty("inputToSendBufferSize");
             _inputLagTicks = serializedObject.FindProperty("inputLagTicks");
             _maxAllowedLagInTicks = serializedObject.FindProperty("maxAllowedLagInTicks");
             _prediction = serializedObject.FindProperty("prediction");
@@ -168,6 +170,7 @@ namespace Elympics.Editor
             EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only for client. The exact value will be determined each tick base on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
             _snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
             _inputLagTicks.intValue = TickSliderConvertedToMs("Input lag", _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
+            _inputToSendBufferSize.intValue = IntSliderWithUnit(new GUIContent("Input Buffer Size"), _inputToSendBufferSize.intValue, 1, 100, "");
             _maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
             _ = EditorGUILayout.PropertyField(_prediction, new GUIContent("Prediction"));
             _predictionLimitInTicks.intValue = TickSliderConvertedToMs("Prediction limit", _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);

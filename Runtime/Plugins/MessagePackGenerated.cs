@@ -55,15 +55,15 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.ErrorKind?), 3 },
                 { typeof(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>), 4 },
                 { typeof(global::System.Collections.Generic.Dictionary<long, global::Elympics.ElympicsSnapshotPlayerInput>), 5 },
-                { typeof(global::System.Collections.Generic.IReadOnlyDictionary<string, string>), 6 },
-                { typeof(global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>), 7 },
-                { typeof(global::System.Collections.Generic.IReadOnlyList<global::Elympics.UserInfo>), 8 },
-                { typeof(global::System.Collections.Generic.IReadOnlyList<global::System.Guid>), 9 },
-                { typeof(global::System.Collections.Generic.KeyValuePair<int, byte[]>), 10 },
-                { typeof(global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>), 11 },
-                { typeof(global::System.Collections.Generic.List<(string, string)>), 12 },
-                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>), 13 },
-                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsInput>), 14 },
+                { typeof(global::System.Collections.Generic.IList<global::Elympics.ElympicsInput>), 6 },
+                { typeof(global::System.Collections.Generic.IReadOnlyDictionary<string, string>), 7 },
+                { typeof(global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>), 8 },
+                { typeof(global::System.Collections.Generic.IReadOnlyList<global::Elympics.UserInfo>), 9 },
+                { typeof(global::System.Collections.Generic.IReadOnlyList<global::System.Guid>), 10 },
+                { typeof(global::System.Collections.Generic.KeyValuePair<int, byte[]>), 11 },
+                { typeof(global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>), 12 },
+                { typeof(global::System.Collections.Generic.List<(string, string)>), 13 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>), 14 },
                 { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>), 15 },
                 { typeof(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>), 16 },
                 { typeof(global::System.Guid[]), 17 },
@@ -147,15 +147,15 @@ namespace MessagePack.Resolvers
                 case 3: return new global::MessagePack.Formatters.NullableFormatter<global::Elympics.ErrorKind>();
                 case 4: return new global::MessagePack.Formatters.DictionaryFormatter<int, global::Elympics.TickToPlayerInput>();
                 case 5: return new global::MessagePack.Formatters.DictionaryFormatter<long, global::Elympics.ElympicsSnapshotPlayerInput>();
-                case 6: return new global::MessagePack.Formatters.InterfaceReadOnlyDictionaryFormatter<string, string>();
-                case 7: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::Elympics.Rooms.Models.ListedRoomChange>();
-                case 8: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::Elympics.UserInfo>();
-                case 9: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::System.Guid>();
-                case 10: return new global::MessagePack.Formatters.KeyValuePairFormatter<int, byte[]>();
-                case 11: return new global::MessagePack.Formatters.ListFormatter<(string, global::System.Collections.Generic.List<(string, string)>)>();
-                case 12: return new global::MessagePack.Formatters.ListFormatter<(string, string)>();
-                case 13: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsBehaviourMetadata>();
-                case 14: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsInput>();
+                case 6: return new global::MessagePack.Formatters.InterfaceListFormatter2<global::Elympics.ElympicsInput>();
+                case 7: return new global::MessagePack.Formatters.InterfaceReadOnlyDictionaryFormatter<string, string>();
+                case 8: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::Elympics.Rooms.Models.ListedRoomChange>();
+                case 9: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::Elympics.UserInfo>();
+                case 10: return new global::MessagePack.Formatters.InterfaceReadOnlyListFormatter<global::System.Guid>();
+                case 11: return new global::MessagePack.Formatters.KeyValuePairFormatter<int, byte[]>();
+                case 12: return new global::MessagePack.Formatters.ListFormatter<(string, global::System.Collections.Generic.List<(string, string)>)>();
+                case 13: return new global::MessagePack.Formatters.ListFormatter<(string, string)>();
+                case 14: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsBehaviourMetadata>();
                 case 15: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsRpcMessage>();
                 case 16: return new global::MessagePack.Formatters.ListFormatter<global::System.Collections.Generic.KeyValuePair<int, byte[]>>();
                 case 17: return new global::MessagePack.Formatters.ArrayFormatter<global::System.Guid>();
@@ -1403,16 +1403,22 @@ namespace MessagePack.Formatters.Elympics
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.ElympicsInputList value, global::MessagePack.MessagePackSerializerOptions options)
         {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(1);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsInput>>(formatterResolver).Serialize(ref writer, value.Values, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IList<global::Elympics.ElympicsInput>>(formatterResolver).Serialize(ref writer, value.Values, options);
         }
 
         public global::Elympics.ElympicsInputList Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
-                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
+                return null;
             }
 
             options.Security.DepthStep(ref reader);
@@ -1425,7 +1431,7 @@ namespace MessagePack.Formatters.Elympics
                 switch (i)
                 {
                     case 0:
-                        ____result.Values = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsInput>>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.Values = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IList<global::Elympics.ElympicsInput>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();

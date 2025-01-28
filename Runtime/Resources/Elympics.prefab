@@ -160,7 +160,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4462764667887762435}
   - component: {fileID: 7761056987631085800}
-  - component: {fileID: 1662540664021179433}
+  - component: {fileID: 778477889166288857}
   m_Layer: 0
   m_Name: DefaultServerHandler
   m_TagString: Untagged
@@ -212,7 +212,7 @@ MonoBehaviour:
   - stageDurationInMiliseconds: 1000
     frequencyInMiliseconds: 1000
     maxStageDurationInMiliseconds: 5000
---- !u!114 &1662540664021179433
+--- !u!114 &778477889166288857
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

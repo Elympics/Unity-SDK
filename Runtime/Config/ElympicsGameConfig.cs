@@ -39,6 +39,7 @@ namespace Elympics
         [SerializeField] private int inputLagTicks = 2;
         [SerializeField] private int inputToSendBufferSize = InputsToSendBufferSizeDefault;
         [SerializeField] private int maxAllowedLagInTicks = 15;
+        [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private bool prediction = true;
         [SerializeField] private int predictionLimitInTicks = 8;
 
@@ -93,6 +94,7 @@ namespace Elympics
         public ushort TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
         public ushort WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
         public int InputsToSendBufferSize => inputToSendBufferSize;
+        public int ForceJumpThresholdInTicks => forceJumpThresholdInTicks;
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
         public int PlayerIndexForHalfRemoteMode

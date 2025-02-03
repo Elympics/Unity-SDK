@@ -21,7 +21,6 @@ MonoBehaviour:
     type: 3}
   botsInServer: 1
   useWeb: 0
-  legacyMatchmakingClient: 0
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
@@ -37,13 +36,14 @@ MonoBehaviour:
   maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
+  inputToSendBufferSize: 3
   maxAllowedLagInTicks: 15
+  forceJumpTresholdInTicks: 6
   prediction: 1
   predictionLimitInTicks: 8
   detailedNetworkLog: 0
   mode: 2
   halfRemoteMode: 0
-  useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102

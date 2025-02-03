@@ -44,6 +44,7 @@ namespace Elympics.Editor
         private SerializedProperty _inputToSendBufferSize;
         private SerializedProperty _inputLagTicks;
         private SerializedProperty _maxAllowedLagInTicks;
+        private SerializedProperty _forceJumpThresholdInTicks;
         private SerializedProperty _prediction;
         private SerializedProperty _predictionLimitInTicks;
 
@@ -98,6 +99,7 @@ namespace Elympics.Editor
             _inputToSendBufferSize = serializedObject.FindProperty("inputToSendBufferSize");
             _inputLagTicks = serializedObject.FindProperty("inputLagTicks");
             _maxAllowedLagInTicks = serializedObject.FindProperty("maxAllowedLagInTicks");
+            _forceJumpThresholdInTicks = serializedObject.FindProperty("forceJumpThresholdInTicks");
             _prediction = serializedObject.FindProperty("prediction");
             _predictionLimitInTicks = serializedObject.FindProperty("predictionLimitInTicks");
 
@@ -172,6 +174,7 @@ namespace Elympics.Editor
             _inputLagTicks.intValue = TickSliderConvertedToMs(new GUIContent("Input lag", "The amount of time clients should stay ahead of the server"), _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
             _inputToSendBufferSize.intValue = IntSliderWithUnit(new GUIContent("Input Buffer Size", "Number of ticks from which input shuld be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions"), _inputToSendBufferSize.intValue, 1, 100, "ticks");
             _maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
+            _forceJumpThresholdInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Force jump threshold", "How far behind the desired tick client has to be to force a jump to that tick"), _forceJumpThresholdInTicks.intValue, 0, _inputLagTicks.intValue * 3);
             _ = EditorGUILayout.PropertyField(_prediction, new GUIContent("Prediction"));
             _predictionLimitInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Prediction limit", "How much further ahead of server than it is supposed to can client go before it stops to wait for server"), _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
             _ = serializedObject.ApplyModifiedProperties();

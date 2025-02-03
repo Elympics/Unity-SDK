@@ -164,16 +164,16 @@ namespace Elympics.Editor
             EditorGUILayout.Space();
 
             _ticksPerSecond.intValue = TickSlider("Ticks per second", _ticksPerSecond.intValue, MinTicks, MaxTicks);
-            _minTickRateFactor.floatValue = FactorSlider("Min factor", _minTickRateFactor.floatValue, MinTickRateFactor, DefaultTickRateFactor);
-            _maxTickRateFactor.floatValue = FactorSlider("Max factor", _maxTickRateFactor.floatValue, DefaultTickRateFactor, MaxTickRateFactor);
+            _minTickRateFactor.floatValue = FactorSlider(new GUIContent("Min factor", "How much can client decrease the tick rate to avoid getting too far ahead of the server"), _minTickRateFactor.floatValue, MinTickRateFactor, DefaultTickRateFactor);
+            _maxTickRateFactor.floatValue = FactorSlider(new GUIContent("Max factor", "How much can client increase the tick rate to keep up with the server"), _maxTickRateFactor.floatValue, DefaultTickRateFactor, MaxTickRateFactor);
             var text = _minTickRateFactor.floatValue == _maxTickRateFactor.floatValue ? $"{_ticksPerSecond.intValue} ticks" : $"From {Mathf.Floor(_minTickRateFactor.floatValue * _ticksPerSecond.intValue)} To {Mathf.Ceil(_maxTickRateFactor.floatValue * _ticksPerSecond.intValue)} ticks";
-            EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only for client. The exact value will be determined each tick base on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
+            EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only to client. The exact value will be determined each tick base on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
             _snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
-            _inputLagTicks.intValue = TickSliderConvertedToMs("Input lag", _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
-            _inputToSendBufferSize.intValue = IntSliderWithUnit(new GUIContent("Input Buffer Size"), _inputToSendBufferSize.intValue, 1, 100, "");
+            _inputLagTicks.intValue = TickSliderConvertedToMs(new GUIContent("Input lag", "The amount of time clients should stay ahead of the server"), _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
+            _inputToSendBufferSize.intValue = IntSliderWithUnit(new GUIContent("Input Buffer Size", "Number of ticks from which input shuld be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions"), _inputToSendBufferSize.intValue, 1, 100, "ticks");
             _maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
             _ = EditorGUILayout.PropertyField(_prediction, new GUIContent("Prediction"));
-            _predictionLimitInTicks.intValue = TickSliderConvertedToMs("Prediction limit", _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
+            _predictionLimitInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Prediction limit", "How much further ahead of server than it is supposed to can client go before it stops to wait for server"), _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
             _ = serializedObject.ApplyModifiedProperties();
             EditorGUILayout.LabelField(new GUIContent("Total prediction limit", "With input lag and snapshot sending period included"), new GUIContent($"{TicksToMs(_config.TotalPredictionLimitInTicks)} ms"), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
             EndSection();
@@ -421,6 +421,7 @@ namespace Elympics.Editor
         private int TickSlider(string label, int value, int left, int right) => TickSlider(new GUIContent(label), value, left, right);
 
         private float FactorSlider(string label, float value, float min, float max) => FloatSliderWithUnit(new GUIContent(label), value, min, max, string.Empty);
+        private float FactorSlider(GUIContent content, float value, float min, float max) => FloatSliderWithUnit(content, value, min, max, string.Empty);
 
         private int TickSlider(GUIContent content, int value, int left, int right) => IntSliderWithUnit(content, value, left, right, "ticks");
 

@@ -121,10 +121,7 @@ namespace Elympics.Editor
             _verifyGameScenePath = true;
         }
 
-        private void OnDestroy()
-        {
-            CurrentGameVersionUploadedToTheCloudStatus.Disable();
-        }
+        private void OnDestroy() => CurrentGameVersionUploadedToTheCloudStatus.Disable();
 
         public override void OnInspectorGUI()
         {

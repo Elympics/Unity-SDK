@@ -163,17 +163,17 @@ namespace Elympics.Editor
             EditorGUILayout.Space();
 
             _ticksPerSecond.intValue = TickSlider("Ticks per second", _ticksPerSecond.intValue, MinTicks, MaxTicks);
-            _minTickRateFactor.floatValue = FactorSlider(new GUIContent("Min factor", "How much can client decrease the tick rate to avoid getting too far ahead of the server"), _minTickRateFactor.floatValue, MinTickRateFactor, DefaultTickRateFactor);
-            _maxTickRateFactor.floatValue = FactorSlider(new GUIContent("Max factor", "How much can client increase the tick rate to keep up with the server"), _maxTickRateFactor.floatValue, DefaultTickRateFactor, MaxTickRateFactor);
+            _minTickRateFactor.floatValue = FactorSlider(new GUIContent("Min factor", "How much client can decrease the tick rate to avoid getting too far ahead of the server"), _minTickRateFactor.floatValue, MinTickRateFactor, DefaultTickRateFactor);
+            _maxTickRateFactor.floatValue = FactorSlider(new GUIContent("Max factor", "How much client can increase the tick rate to keep up with the server"), _maxTickRateFactor.floatValue, DefaultTickRateFactor, MaxTickRateFactor);
             var text = _minTickRateFactor.floatValue == _maxTickRateFactor.floatValue ? $"{_ticksPerSecond.intValue} ticks" : $"From {Mathf.Floor(_minTickRateFactor.floatValue * _ticksPerSecond.intValue)} To {Mathf.Ceil(_maxTickRateFactor.floatValue * _ticksPerSecond.intValue)} ticks";
-            EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only to client. The exact value will be determined each tick base on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
+            EditorGUILayout.LabelField(new GUIContent("Client Tick per second", "This applies only to client. The exact value will be determined each tick based on network conditions"), new GUIContent(text), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
             _snapshotSendingPeriodInTicks.intValue = TickSlider("Send snapshot every", _snapshotSendingPeriodInTicks.intValue, MinTicks, _ticksPerSecond.intValue);
             _inputLagTicks.intValue = TickSliderConvertedToMs(new GUIContent("Input lag", "The amount of time clients should stay ahead of the server"), _inputLagTicks.intValue, MinInputLagTicks, MsToTicks(MaxInputLagMs));
             _inputToSendBufferSize.intValue = IntSliderWithUnit(new GUIContent("Input Buffer Size", "Number of ticks from which input shuld be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions"), _inputToSendBufferSize.intValue, 1, 100, "ticks");
             _maxAllowedLagInTicks.intValue = Math.Max(TickSliderConvertedToMs("Max allowed lag", _maxAllowedLagInTicks.intValue, 0, MsToTicks(MaxLagInMs)), 0);
             _forceJumpThresholdInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Force jump threshold", "How far behind the desired tick client has to be to force a jump to that tick"), _forceJumpThresholdInTicks.intValue, 0, _inputLagTicks.intValue * 3);
             _ = EditorGUILayout.PropertyField(_prediction, new GUIContent("Prediction"));
-            _predictionLimitInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Prediction limit", "How much further ahead of server than it is supposed to can client go before it stops to wait for server"), _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
+            _predictionLimitInTicks.intValue = TickSliderConvertedToMs(new GUIContent("Prediction limit", "How much further ahead of server than it is supposed to client can go before it stops to wait for server"), _predictionLimitInTicks.intValue, 0, _maxAllowedLagInTicks.intValue);
             _ = serializedObject.ApplyModifiedProperties();
             EditorGUILayout.LabelField(new GUIContent("Total prediction limit", "With input lag and snapshot sending period included"), new GUIContent($"{TicksToMs(_config.TotalPredictionLimitInTicks)} ms"), new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight });
             EndSection();

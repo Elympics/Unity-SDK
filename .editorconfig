@@ -107,6 +107,8 @@ csharp_wrap_before_binary_opsign = true
 csharp_max_initializer_elements_on_line = 1
 csharp_wrap_before_binary_pattern_op = true
 csharp_wrap_chained_binary_patterns = wrap_if_long
+csharp_force_chop_compound_if_expression = false
+csharp_force_chop_compound_while_expression = false
 
 ### Add missing cases to switch expression
 dotnet_diagnostic.IDE0072.severity = suggestion

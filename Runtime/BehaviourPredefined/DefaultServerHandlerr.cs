@@ -9,6 +9,7 @@ namespace Elympics
 {
     public class DefaultServerHandlerr : ElympicsMonoBehaviour, IServerHandlerGuid
     {
+        [SerializeField] private float startGameTimeoutSeconds = 30;
         private TimeSpan _startGameTimeout;
 
         private int _playersNumber;
@@ -22,8 +23,7 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
-            var timeoutSec = ElympicsConfig.LoadCurrentElympicsGameConfig().ConnectionConfig.sessionConnectTimeout;
-            _startGameTimeout = TimeSpan.FromSeconds(timeoutSec);
+            _startGameTimeout = TimeSpan.FromSeconds(startGameTimeoutSeconds);
             _playersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "

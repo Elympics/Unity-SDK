@@ -12,8 +12,8 @@ using WebRtcWrapper;
 
 namespace Elympics.Libraries
 {
-    public static class WebRtcFactory
-    {
+  public static class WebRtcFactory
+  {
 #if UNITY_WEBGL && !UNITY_EDITOR
 		private class WebRtcClientAdapter : IWebRtcClient
 		{
@@ -41,17 +41,19 @@ namespace Elympics.Libraries
 			public event Action<byte[]> UnreliableReceived;
 			public event Action<string> UnreliableReceivingError;
 			public event Action         UnreliableReceivingEnded;
+            public event Action<string> IceConnectionStateChanged;
+            public event Action<string> ConnectionStateChanged;
 
-			public event Action<string> OfferCreated;
+            public event Action<string> OfferCreated;
 
 			public void Dispose()
 			{
 				HandleInstanceDestroy(_instanceId);
 			}
 
-			public void CreateOffer()
+			public void CreateOffer(bool restart)
 			{
-				WebRtcCreateOffer(_instanceId);
+				WebRtcCreateOffer(_instanceId, restart);
 			}
 
 			public void OnAnswer(string answerJson)
@@ -79,6 +81,10 @@ namespace Elympics.Libraries
 			public void OnUnreliableError(string error)   => UnreliableReceivingError?.Invoke(error);
 			public void OnUnreliableEnded()               => UnreliableReceivingEnded?.Invoke();
 
+            public void OnIceConnectionStateChanged(string newState) => IceConnectionStateChanged?.Invoke(newState);
+
+            public void OnConnectionStateChanged(string newState) => ConnectionStateChanged?.Invoke(newState);
+
 			public void OnOffer(string offerJson) => OfferCreated?.Invoke(offerJson);
 		}
 
@@ -89,6 +95,10 @@ namespace Elympics.Libraries
 		public delegate void OnReceivingErrorCallback(int instanceId, IntPtr errorPtr);
 
 		public delegate void OnReceivingEndedCallback(int instanceId);
+
+        public delegate void OnIceConnectionStateChanged(int instanceId, IntPtr newState);
+
+        public delegate void OnConnectionStateChanged(int instanceId, IntPtr newState);
 
 		public delegate void OnOfferCallback(int instanceId, IntPtr offer);
 
@@ -116,11 +126,18 @@ namespace Elympics.Libraries
 		[DllImport("__Internal")]
 		public static extern void WebRtcSetOnUnreliableEnded(OnReceivingEndedCallback callback);
 
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnIceConnectionStateChanged(OnIceConnectionStateChanged callback);
+
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnConnectionStateChanged(OnConnectionStateChanged callback);
+
+
 		[DllImport("__Internal")]
 		public static extern void WebRtcSetOnOffer(OnOfferCallback callback);
 
 		[DllImport("__Internal")]
-		public static extern void WebRtcCreateOffer(int instanceId);
+		public static extern void WebRtcCreateOffer(int instanceId, bool restart);
 
 		[DllImport("__Internal")]
 		public static extern void WebRtcOnAnswer(int instanceId, string answer);
@@ -144,6 +161,8 @@ namespace Elympics.Libraries
 			WebRtcSetOnUnreliableReceived(DelegateOnUnreliableReceived);
 			WebRtcSetOnUnreliableError(DelegateOnUnreliableError);
 			WebRtcSetOnUnreliableEnded(DelegateOnUnreliableEnded);
+            WebRtcSetOnIceConnectionStateChanged(DelegateOnIceConnectionStateChanged);
+            WebRtcSetOnConnectionStateChanged(DelegateOnConnectionStateChanged);
 			WebRtcSetOnOffer(DelegateOnOffer);
 
 			_isInitialized = true;
@@ -217,6 +236,26 @@ namespace Elympics.Libraries
 			instanceRef.OnUnreliableEnded();
 		}
 
+        [MonoPInvokeCallback(typeof(OnIceConnectionStateChanged))]
+        public static void DelegateOnIceConnectionStateChanged(int instanceId, IntPtr newState)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var errorMsg = Marshal.PtrToStringAuto(newState);
+            instanceRef.OnIceConnectionStateChanged(errorMsg);
+        }
+
+        [MonoPInvokeCallback(typeof(OnConnectionStateChanged))]
+        public static void DelegateOnConnectionStateChanged(int instanceId, IntPtr newState)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var errorMsg = Marshal.PtrToStringAuto(newState);
+            instanceRef.OnConnectionStateChanged(errorMsg);
+        }
+
 		[MonoPInvokeCallback(typeof(OnOfferCallback))]
 		public static void DelegateOnOffer(int instanceId, IntPtr offerPtr)
 		{
@@ -228,8 +267,8 @@ namespace Elympics.Libraries
 		}
 #endif
 
-        public static IWebRtcClient CreateInstance()
-        {
+    public static IWebRtcClient CreateInstance()
+    {
 #if UNITY_WEBGL && !UNITY_EDITOR
 			if (!_isInitialized)
 				Initialize();
@@ -240,8 +279,8 @@ namespace Elympics.Libraries
 
 			return wrapper;
 #else
-            return new WebRtcClient();
+      return new WebRtcClient();
 #endif
-        }
     }
+  }
 }

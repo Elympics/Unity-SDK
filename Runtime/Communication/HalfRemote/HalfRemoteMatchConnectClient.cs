@@ -123,7 +123,7 @@ namespace Elympics
                 offer = s;
                 offerSet = true;
             };
-            _webRtcClient.CreateOffer();
+            _webRtcClient.CreateOffer(false);
 
             for (var i = 0; i < MaxOfferWaitingIntervals; i++)
             {

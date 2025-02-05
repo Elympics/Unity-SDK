@@ -5,6 +5,7 @@ using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
+using UnityEngine;
 
 namespace Elympics
 {
@@ -154,6 +155,7 @@ namespace Elympics
                 if (connected)
                     return;
 
+                logger.Log("Connection Failed.");
                 ConnectingFailed?.Invoke();
                 connectedCallback?.Invoke(false);
             }
@@ -178,10 +180,11 @@ namespace Elympics
 
             _ = _gameServerClient.ConnectAsync(ct).ContinueWith(t =>
                 {
+                    Debug.Log("Continuation.");
                     if (t.IsFaulted)
                         logger.Exception(new ElympicsException("Could not connect to the game server", t.Exception));
                     else
-                        ConnectedCallback(t.Result);
+                        ConnectedCallback(t.Result);//
                 },
                 ct);
         }

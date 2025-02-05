@@ -8,6 +8,7 @@ using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
+using UnityEngine;
 
 namespace MatchTcpClients
 {
@@ -68,7 +69,10 @@ namespace MatchTcpClients
             UnreliableClient.CreateAndBind();
 
             if (!await ConnectInternalAsync(ct))
+            {
+                Debug.Log("Returning False.");
                 return false;
+            }
 
             Connected?.Invoke();
             InitClientDisconnectedCts();
@@ -203,6 +207,7 @@ namespace MatchTcpClients
             var logger = _logger.WithMethodName();
             logger.Log("Aborting connection.");
             ClientDisconnectedCts.Cancel();
+            ClientDisconnectedCts.Dispose();
             ClientDisconnectedCts = null;
         }
 

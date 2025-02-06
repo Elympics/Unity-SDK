@@ -355,7 +355,7 @@ namespace Elympics
                     _ = logger.WithMatchId(room.State.MatchmakingData?.MatchData?.MatchId.ToString());
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
                     if (!string.IsNullOrEmpty(error))
-                        throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick math room. Error: {error}"));
+                        throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
 
                     _ = logger.WithServerAddress(room.State.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, room.State.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
                     logger.Log("Quick Match Founded.");

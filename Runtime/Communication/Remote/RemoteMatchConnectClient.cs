@@ -87,10 +87,11 @@ namespace Elympics
 
         public void Disconnect()
         {
+            var logger = _logger.WithMethodName();
+            logger.Log("Disconnected by client.");
             if (!_connected)
                 return;
             _connected = false;
-
 
             DisconnectedByClient?.Invoke();
             _gameServerClient.Disconnect();
@@ -196,6 +197,8 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
+            var logger = _logger.WithMethodName();
+            logger.Log("Connected and synchronized with game-server.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _ = _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
@@ -208,8 +211,7 @@ namespace Elympics
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
         {
-            if (!message.AuthenticatedSuccessfully
-                || !string.IsNullOrEmpty(message.ErrorMessage))
+            if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
                 AuthenticatedUserMatchFailedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
@@ -223,8 +225,7 @@ namespace Elympics
 
         private void OnAuthenticatedAsSpectator(AuthenticatedAsSpectatorMessage message)
         {
-            if (!message.AuthenticatedSuccessfully
-                || !string.IsNullOrEmpty(message.ErrorMessage))
+            if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
                 AuthenticatedAsSpectatorWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
@@ -238,18 +239,26 @@ namespace Elympics
 
         private void OnMatchJoined(MatchJoinedMessage message)
         {
+            var logger = _logger.WithMethodName();
             if (!string.IsNullOrEmpty(message.ErrorMessage))
             {
+                logger.Error($"Can't join match {message.MatchId}.{Environment.NewLine}Error: {message.ErrorMessage}");
                 MatchJoinedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
                 return;
             }
 
+            logger.Log($"Match joined {message.MatchId}.");
             MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
             _matchJoinedCallback?.Invoke();
         }
 
-        private void OnMatchEnded(MatchEndedMessage message) => MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
+        private void OnMatchEnded(MatchEndedMessage message)
+        {
+            var logger = _logger.WithMethodName();
+            logger.Log($"Match Ended.");
+            MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
+        }
 
         private void OnDisconnectedWhileConnectingAndJoining()
         {
@@ -260,6 +269,8 @@ namespace Elympics
         {
             if (_connecting)
                 return;
+            var logger = _logger.WithMethodName();
+            logger.Log("Disconnected by server.");
             TryDisconnectByServerIfNotConnected();
         }
 

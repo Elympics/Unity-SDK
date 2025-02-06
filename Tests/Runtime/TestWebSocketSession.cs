@@ -557,7 +557,7 @@ namespace Elympics.Tests
             session.Dispose();
 
             Assert.False(session.IsConnected);
-            _ = await AssertThrowsAsync<ObjectDisposedException>(async () => await session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<ElympicsException>(async () => await session.Connect(ConnectionDetails));
             _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoom(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });

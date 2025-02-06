@@ -80,15 +80,15 @@ namespace Elympics
             var deserializedData = MessagePackSerializer.Deserialize<IToServer>(data);
 
             if (deserializedData is ElympicsInput input)
-                AddInputToBuffer(input, player);
+                AddInputToBuffer(input, player, true);
             else if (deserializedData is ElympicsInputList inputList)
                 foreach (var value in inputList.Values)
-                    AddInputToBuffer(value, player);
+                    AddInputToBuffer(value, player, value.Tick == inputList.Values[^1].Tick);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
                 RpcMessageListReceived?.Invoke(rpcMessageList);
         }
 
-        private void AddInputToBuffer(ElympicsInput input, ElympicsPlayer player)
+        private void AddInputToBuffer(ElympicsInput input, ElympicsPlayer player, bool latestInput)
         {
             input.Player = player;
             if (!PlayerInputBuffers.TryGetValue(player, out var buffer))
@@ -99,11 +99,11 @@ namespace Elympics
 
             var added = buffer.TryAddData(input);
 
-            if (added is false)
+            if (added is false && latestInput)
                 ElympicsLogger.LogWarning($"Input for Tick {input.Tick} from player {player} was not added to input buffer because it was not in range [{buffer.MinTick}, {buffer.MaxTick}].");
         }
 
-        internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input, ElympicsPlayer player) => AddInputToBuffer(input, player);
+        internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input, ElympicsPlayer player) => AddInputToBuffer(input, player, true);
 
         public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
         public void OnPlayerDisconnected(string userId) => PlayerDisconnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
@@ -121,9 +121,7 @@ namespace Elympics
         internal void BroadcastDataToPlayers(IFromServer data, bool reliable)
         {
             var serializedData = MessagePackSerializer.Serialize(data);
-            var sendData = reliable
-                ? InGameDataForPlayerOnReliableChannelGenerated
-                : InGameDataForPlayerOnUnreliableChannelGenerated;
+            var sendData = reliable ? InGameDataForPlayerOnReliableChannelGenerated : InGameDataForPlayerOnUnreliableChannelGenerated;
             foreach (var userData in _initialMatchData.UserData)
                 sendData?.Invoke(serializedData, userData.UserId.ToString());
         }
@@ -136,9 +134,7 @@ namespace Elympics
 
         private void SendDataToPlayer(IFromServer data, ElympicsPlayer player, bool reliable)
         {
-            var sendData = reliable
-                ? InGameDataForPlayerOnReliableChannelGenerated
-                : InGameDataForPlayerOnUnreliableChannelGenerated;
+            var sendData = reliable ? InGameDataForPlayerOnReliableChannelGenerated : InGameDataForPlayerOnUnreliableChannelGenerated;
             var userId = _playersToUserIds[player];
             var serializedData = MessagePackSerializer.Serialize(data);
             sendData?.Invoke(serializedData, userId.ToString());
@@ -154,8 +150,7 @@ namespace Elympics
 
             if (result.Count != Players.Length)
             {
-                ElympicsLogger.LogError($"Invalid length of match result: expected {Players.Length}, "
-                    + $"has {result.Count}.");
+                ElympicsLogger.LogError($"Invalid length of match result: expected {Players.Length}, " + $"has {result.Count}.");
                 GameEnded?.Invoke(null);
                 return;
             }

@@ -20,7 +20,6 @@ namespace Elympics.ElympicsSystems.Internal
             {
                 Client.CheckConnectionDataOrThrow(data);
                 await Client.FetchAvailableRegions();
-                ElympicsLogger.Log("Start connecting to Elympics.");
                 await Client.Authorize(data);
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();

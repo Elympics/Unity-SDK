@@ -117,10 +117,9 @@ namespace Elympics
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;
 
+        internal static ElympicsLoggerContext LoggerContext;
         private void Awake()
         {
-            if (!ApplicationParameters.InitializeParameters())
-                ExitUtility.ExitGame();
             if (Instance != null)
             {
                 ElympicsLogger.LogWarning($"An instance of {nameof(ElympicsLobbyClient)} already exists. " + $"Destroying {gameObject} game object...");
@@ -128,24 +127,32 @@ namespace Elympics
                 return;
             }
 
+
+            if (!ApplicationParameters.InitializeParameters())
+                ExitUtility.ExitGame();
+
             if (asyncEventsDispatcher == null)
-                throw new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null.");
-            _config = ElympicsConfig.Load() ?? throw new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found.");
+                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null."));
+
+            _config = ElympicsConfig.Load() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
+
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
-            _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
+            _gameConfig = _config.GetCurrentGameConfig() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
+            LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId, ElympicsConfig.SdkVersion, _gameConfig.GameId)
+            {
+                Context = nameof(ElympicsLobbyClient),
+            }.WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
+            var awakeLogger = LoggerContext.WithMethodName();
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
 
-            ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} menu scene...\n" + "Available games:\n" + string.Join("\n", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}")));
+            awakeLogger.Log($"Initializing Elympics menu scene... {Environment.NewLine} Available games: {Environment.NewLine} {string.Join($"{Environment.NewLine}", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}"))}");
 
             if (string.IsNullOrEmpty(_config.ElympicsLobbyEndpoint))
-            {
-                ElympicsLogger.LogError("Elympics authentication endpoint not set. " + $"Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}].");
-                return;
-            }
+                throw awakeLogger.CaptureAndThrow(new ArgumentException($"Elympics authentication endpoint not set. Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}].", nameof(_config.ElympicsAuthEndpoint)));
 
             _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
@@ -159,7 +166,7 @@ namespace Elympics
             Matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
             Matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
-            ElympicsLogger.Log($"Initialized {nameof(ElympicsLobbyClient)}.");
+            awakeLogger.Log("Initialized");
 
             CurrentState = new DisconnectedState(this);
             if (AuthenticateOnAwakeWith != AuthType.None)
@@ -176,12 +183,13 @@ namespace Elympics
         {
             try
             {
+                var logger = LoggerContext.WithMethodName();
                 await CurrentState.Connect(data);
             }
             catch (Exception e)
             {
                 AuthData = null;
-                throw new ElympicsException(e.Message);
+                throw LoggerContext.CaptureAndThrow(e);
             }
         }
 
@@ -228,6 +236,7 @@ namespace Elympics
 
         private void OnAuthenticatedWith(Result<AuthData, string> result)
         {
+            var logger = LoggerContext.WithMethodName();
             string? eventName = null;
             try
             {
@@ -236,7 +245,7 @@ namespace Elympics
                     if (result.Value != null)
                     {
                         AuthData = result.Value;
-                        ElympicsLogger.Log($"{result.Value.AuthType} authentication successful with user id: {AuthData.UserId} Nickname: {AuthData.Nickname}.");
+                        logger.WithUserId(result.Value.UserId.ToString()).WithNickname(result.Value.Nickname).WithAuthType(result.Value.AuthType).Log("Authentication completed.");
                         eventName = nameof(AuthenticationSucceeded);
                         AuthenticationSucceeded?.Invoke(AuthData);
                     }
@@ -254,10 +263,10 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e);
+                logger.Exception(new ElympicsException($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e));
             }
             if (result.IsFailure)
-                throw new ElympicsException($"Authentication failed {result.Error}");
+                throw logger.CaptureAndThrow(new ElympicsException($"Authentication failed {result.Error}"));
         }
         private void DisconnectFromLobby()
         {
@@ -287,8 +296,7 @@ namespace Elympics
                 _ = ElympicsLogger.LogException(ex);
             }
         }
-        private void LogSettingUpGame(string gameModeName) =>
-            ElympicsLogger.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
+        private void LogSettingUpGame(string gameModeName) => LoggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
 
         private AuthorizationStrategy GetAuthStrategy(bool isAuthorized) => isAuthorized switch
         {
@@ -298,9 +306,9 @@ namespace Elympics
 
         private ConnectionStrategy GetConnectionStrategy(bool isAuthenticated, bool isConnected) => (isAuthenticated, isConnected) switch
         {
-            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value),
-            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value),
-            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value),
+            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value, LoggerContext),
+            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value, LoggerContext),
+            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value, LoggerContext),
         };
 
 
@@ -326,8 +334,8 @@ namespace Elympics
         private WebSocketSession CreateWebSocketSession()
         {
             if (asyncEventsDispatcher == null)
-                throw new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}");
-            return new WebSocketSession(asyncEventsDispatcher);
+                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
+            return new WebSocketSession(asyncEventsDispatcher, LoggerContext);
         }
 
         private RoomsClient CreateRoomsClient() => new()
@@ -338,7 +346,7 @@ namespace Elympics
         private RoomsManager CreateRoomsManager()
         {
             var webSocketSession = _webSocketSession.Value;
-            var roomsManager = new RoomsManager(this, _roomsClient.Value);
+            var roomsManager = new RoomsManager(this, _roomsClient.Value, LoggerContext);
             webSocketSession.Disconnected += OnWebSocketDisconnected;
             return roomsManager;
         }
@@ -397,7 +405,7 @@ namespace Elympics
 
         internal void SignOutInternal()
         {
-            ElympicsLogger.Log("Trying to sign out...");
+            var logger = LoggerContext.WithMethodName();
 
             if (!IsAuthenticated)
                 throw new ElympicsException("User is not authenticated");
@@ -405,8 +413,7 @@ namespace Elympics
             AuthData = null;
 
             DisconnectFromLobby();
-
-            ElympicsLogger.Log("Signed out.");
+            logger.WithNoUser().WithNoConnection().WithNoRoom().Log("Signed out on user request.");
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)

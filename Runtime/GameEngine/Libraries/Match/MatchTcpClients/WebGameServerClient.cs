@@ -2,28 +2,32 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
+using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using WebRtcWrapper;
 
 namespace MatchTcpClients
 {
-    public sealed class WebGameServerClient : GameServerClient
+    internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
         private readonly Func<IWebRtcClient> _webRtcFactory;
 
         private IWebRtcClient _webRtcClient;
         private string _answer;
+        private ElympicsLoggerContext _logger;
 
         public WebGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
-            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config)
+            ElympicsLoggerContext logger,
+            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
+            _logger = logger.WithContext(nameof(WebGameServerClient));
         }
 
         public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
@@ -49,13 +53,14 @@ namespace MatchTcpClients
 
         protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
         {
+            var logger = _logger.WithMethodName();
             _webRtcClient.ReceiveWithThread();
             _answer = null;
             var (offer, offerSet) = await TryCreateOfferAsync();
             if (!offerSet)
-                ElympicsLogger.LogError("Error creating WebRTC offer.");
+                logger.Error("Error creating WebRTC offer.");
             if (string.IsNullOrEmpty(offer))
-                ElympicsLogger.LogError("Created WebRTC offer is null or empty.");
+                logger.Error("Created WebRTC offer is null or empty.");
             if (!offerSet || string.IsNullOrEmpty(offer))
             {
                 Disconnect();
@@ -65,7 +70,7 @@ namespace MatchTcpClients
             var response = await WaitForWebResponseAsync(_signalingClient, offer, ct);
             if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
             {
-                ElympicsLogger.LogError("No valid WebRTC answer has been received.");
+                logger.Error("No valid WebRTC answer has been received.");
                 Disconnect();
                 return false;
             }
@@ -76,14 +81,16 @@ namespace MatchTcpClients
 
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
-            ElympicsLogger.Log("Setting up WebRTC client...");
+            var logger = _logger.WithMethodName();
+            logger.Log("Setting up WebRTC client...");
             _webRtcClient.OnAnswer(_answer);
-            ElympicsLogger.Log("Client initialized successfully.");
+            logger.Log("Client initialized successfully.");
             return Task.FromResult(true);
         }
 
         private async Task<WebSignalingClientResponse> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
         {
+            var logger = _logger.WithMethodName();
             WebSignalingClientResponse response = null;
             for (var i = 0; i < Config.OfferMaxRetries; i++)
             {
@@ -100,7 +107,7 @@ namespace MatchTcpClients
 
                 var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
 
-                ElympicsLogger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
+                logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
                 signalingClient.ReceivedResponse += OnAnswerReceived;
                 signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
@@ -110,7 +117,7 @@ namespace MatchTcpClients
 
                 if (response?.IsError == false)
                     break;
-                ElympicsLogger.LogError($"WebRTC answer error: {response?.Text}");
+                logger.Error($"WebRTC answer error: {response?.Text}");
 
                 await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
             }

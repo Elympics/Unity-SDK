@@ -1,27 +1,30 @@
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 
 namespace Elympics
 {
     internal abstract class ConnectionStrategy
     {
-        protected readonly WebSocketSession WebSocketSession;
-
-        protected ConnectionStrategy(WebSocketSession webSocketSession) => WebSocketSession = webSocketSession;
+        private readonly WebSocketSession _webSocketSession;
+        private readonly ElympicsLoggerContext _logger;
+        protected ConnectionStrategy(WebSocketSession webSocketSession, ElympicsLoggerContext logger)
+        {
+            _webSocketSession = webSocketSession;
+            _logger = logger;
+        }
 
         public abstract UniTask Connect(SessionConnectionDetails newConnectionDetails);
 
         protected async UniTask ConnectToLobby(SessionConnectionDetails connectionDetails)
         {
-            ElympicsLogger.Log("Connecting to lobby...");
-            await WebSocketSession.Connect(connectionDetails);
-            ElympicsLogger.Log($"Successfully connected to lobby.\n Connection details: {connectionDetails}");
+            await _webSocketSession.Connect(connectionDetails);
         }
 
         protected void DisconnectFromLobby(DisconnectionReason reason)
         {
-            if (WebSocketSession.IsConnected)
-                WebSocketSession.Disconnect(reason);
+            if (_webSocketSession.IsConnected)
+                _webSocketSession.Disconnect(reason);
         }
     }
 }

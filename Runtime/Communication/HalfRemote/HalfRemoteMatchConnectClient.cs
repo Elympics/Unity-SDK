@@ -15,7 +15,7 @@ using WebRtcWrapper;
 
 namespace Elympics
 {
-    public class HalfRemoteMatchConnectClient : IMatchConnectClient
+    internal class HalfRemoteMatchConnectClient : IMatchConnectClient
     {
         private const int ConnectMaxRetries = 50;
         private const int WaitTimeToRetryConnectInSeconds = 1;
@@ -66,9 +66,7 @@ namespace Elympics
 
         public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
         {
-            return _useWeb
-                ? ConnectUsingWeb(OnConnectedCallback, ct)
-                : ConnectUsingTcp(OnConnectedCallback, ct);
+            return _useWeb ? ConnectUsingWeb(OnConnectedCallback, ct) : ConnectUsingTcp(OnConnectedCallback, ct);
 
             void OnConnectedCallback(bool connected)
             {
@@ -86,7 +84,8 @@ namespace Elympics
         {
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
-                if (!Application.isPlaying || ct.IsCancellationRequested)
+                if (!Application.isPlaying
+                    || ct.IsCancellationRequested)
                     yield break;
                 try
                 {
@@ -160,15 +159,12 @@ namespace Elympics
                     answer = _webResponse.Text;
                     break;
                 }
-                ElympicsLogger.LogError(_webResponse?.IsError == true
-                    ? _webResponse.Text
-                    : "Response not received from WebRTC client.");
+                ElympicsLogger.LogError(_webResponse?.IsError == true ? _webResponse.Text : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))
             {
-                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error "
-                    + "or an issue with signaling server.");
+                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error " + "or an issue with signaling server.");
                 connectedCallback.Invoke(false);
                 yield break;
             }
@@ -200,8 +196,7 @@ namespace Elympics
 
             if (!channelOpened)
             {
-                ElympicsLogger.LogError("WebRTC channel not open after "
-                    + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
+                ElympicsLogger.LogError("WebRTC channel not open after " + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
                 connectedCallback.Invoke(false);
                 yield break;
             }

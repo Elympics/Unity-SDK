@@ -55,7 +55,7 @@ namespace Elympics.Editor
             var getMethodInfoMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
             var getRpcPropertiesMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
 
-            var validateRpcContextMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ValidateRpcContext));
+            var throwIfRpcContextNotValidMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ThrowIfRpcContextNotValid));
             var shouldBeCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
             var onRpcCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldBeInvokedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvoked));
@@ -80,7 +80,7 @@ namespace Elympics.Editor
             var callGetElympicsBehaviour = rpcILProcessor.Create(OpCodes.Call, getElympicsBehaviourMethodReference);
             var loadMethodInfoFromVariable = rpcILProcessor.Create(OpCodes.Ldloc, methodInfoVariable);
             var loadRpcPropertiesFromVariable = rpcILProcessor.Create(OpCodes.Ldloc, rpcPropertiesVariable);
-            var callValidateRpcContext = rpcILProcessor.Create(OpCodes.Call, validateRpcContextMethodReference);
+            var callValidateRpcContext = rpcILProcessor.Create(OpCodes.Call, throwIfRpcContextNotValidMethodReference);
             var callShouldBeCaptured = rpcILProcessor.Create(OpCodes.Call, shouldBeCapturedMethodReference);
             var branchShouldBeCapturedMethod = rpcILProcessor.Create(OpCodes.Brfalse, shouldBeInvokedBranch);
             var callOnRpcCaptured = rpcILProcessor.Create(OpCodes.Call, onRpcCapturedMethodReference);

@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 
 namespace Elympics
@@ -7,7 +8,7 @@ namespace Elympics
     {
         private readonly SessionConnectionDetails _currentSession;
 
-        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession) : base(webSocketSession) => _currentSession = currentSession;
+        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerContext logger) : base(webSocketSession, logger) => _currentSession = currentSession;
 
         public override async UniTask Connect(SessionConnectionDetails newConnectionDetails)
         {

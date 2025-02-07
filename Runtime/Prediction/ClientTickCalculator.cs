@@ -4,7 +4,6 @@ namespace Elympics
 {
     public class ClientTickCalculator
     {
-        private const float TimeThresholdToHoldPredictionDownSeconds = 0.3f;
         private const float TimeThresholdToForceJumpSeconds = 0.2f;
         private const double MaxTickAheadWithNoChange = 1.0d;
         private const float LerpRatio = 0.35f;
@@ -32,15 +31,9 @@ namespace Elympics
             var exactToExpectedTickDiff = calculatedNextTickExact - expectedPredictionTick;
 
             long newPredictionTick;
-            var tickDiffInSec = exactToExpectedTickDiff * _config.TickDuration;
             bool canPredict;
-            if (DoesClientNeedToHoldPrediction(tickDiffInSec))
-            {
-                newPredictionTick = lastPredictedTick;
-                canPredict = false;
-                ElympicsLogger.LogWarning($"Pausing prediction, difference between expected tick and next tick is too large ({exactToExpectedTickDiff}). Next tick: {expectedPredictionTick} Expected tick: {calculatedNextTickExact}");
-            }
-            else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, tickDiffInSec, lastPredictedTick, lastReceivedTick, out var ticksToCatchup))
+
+            if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, lastPredictedTick, lastReceivedTick, out var ticksToCatchup))
             {
                 canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, ticksToCatchup);
                 if (canPredict)
@@ -98,12 +91,14 @@ namespace Elympics
             Results.ElympicsUpdateTickRate = newTickRate;
         }
 
-        private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, double calculatedAndExpectedTickDiffInSec, long lastPredictionTick, long lastReceivedTick, out long ticksToCatchup)
+        private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, long lastPredictionTick, long lastReceivedTick, out long ticksToCatchup)
         {
+            var tickDiff = (long)Math.Floor(calculatedAndExpectedTickDiff);
             ticksToCatchup = 0;
-            if (calculatedAndExpectedTickDiffInSec > TimeThresholdToForceJumpSeconds)
+
+            if (tickDiff > _config.ForceJumpThresholdInTicks)
             {
-                ticksToCatchup = (long)Math.Floor(calculatedAndExpectedTickDiff);
+                ticksToCatchup = tickDiff;
 
                 if (lastPredictionTick + ticksToCatchup < lastReceivedTick)
                 {
@@ -130,11 +125,6 @@ namespace Elympics
             tickTotal += (clientTickStartDelayVsReceived + _roundTripTimeCalculator.AverageRoundTripTime).TotalSeconds * _config.TicksPerSecond;
             tickTotal += receivedTick;
             return tickTotal;
-        }
-
-        private bool DoesClientNeedToHoldPrediction(double calculatedAndExpectedTickDiffInSec)
-        {
-            return calculatedAndExpectedTickDiffInSec < -TimeThresholdToHoldPredictionDownSeconds;
         }
     }
 }

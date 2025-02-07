@@ -36,7 +36,9 @@ MonoBehaviour:
   maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
+  inputToSendBufferSize: 3
   maxAllowedLagInTicks: 25
+  forceJumpTresholdInTicks: 6
   prediction: 1
   predictionLimitInTicks: 25
   detailedNetworkLog: 0
@@ -52,11 +54,6 @@ MonoBehaviour:
   testPlayers:
   - userId: p0
     isBot: 0
-    botDifficulty: 0
-    gameEngineData: 
-    matchmakerData: []
-  - userId: p1
-    isBot: 1
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []

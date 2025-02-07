@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -23,8 +24,7 @@ namespace Elympics
 
         private bool _started;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
-        public IMatchConnectClient MatchConnectClient => _matchConnectClient
-            ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
+        public IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
         private IMatchClient _matchClient;
 
@@ -46,8 +46,11 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData)
+        private ElympicsLoggerContext _logger;
+
+        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData, ElympicsLoggerContext logger)
         {
+            _logger = logger.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig);
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;
@@ -70,12 +73,14 @@ namespace Elympics
 
             if (connectOnStart)
                 StartCoroutine(ConnectAndJoinAsPlayer(success =>
-                {
-                    if (success)
-                        ElympicsLogger.Log("Successfully connected to the game server.");
-                    else
-                        ElympicsLogger.LogError("Could not connect to the game server.");
-                }, default));
+                    {
+                        var log = _logger.WithMethodName();
+                        if (success)
+                            log.Log("Successfully connected to the game server.");
+                        else
+                            log.Error("Could not connect to the game server.");
+                    },
+                    default));
         }
 
         private void SetupCallbacks()
@@ -118,7 +123,8 @@ namespace Elympics
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
         {
             lock (LastReceivedSnapshotLock)
-                if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
+                if (_lastReceivedSnapshot == null
+                    || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
                     _lastReceivedSnapshot = elympicsSnapshot;
 
             if (!_started)
@@ -201,16 +207,14 @@ namespace Elympics
             if (_clientTickCalculator.Results.CanPredict)
             {
                 if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
-                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. "
-                        + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
                 _currentTicksWithoutPrediction = 0;
                 return;
             }
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 
-            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
-                + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
         }
 
         private void LogNetworkConditionsInInterval()
@@ -278,10 +282,13 @@ namespace Elympics
             ElympicsSnapshot historySnapshot = null;
             ElympicsSnapshot newSnapshot;
 
-            if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
+            if (!forceSnapShot
+                && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
                 return;
 
-            if (!forceSnapShot && elympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot) && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
+            if (!forceSnapShot
+                && elympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)
+                && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
                 return;
 
             if (forceSnapShot)

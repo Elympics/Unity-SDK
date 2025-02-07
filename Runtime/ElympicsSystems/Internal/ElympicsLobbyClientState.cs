@@ -7,6 +7,7 @@ namespace Elympics.ElympicsSystems.Internal
     internal abstract class ElympicsLobbyClientState
     {
         protected readonly ElympicsLobbyClient Client;
+
         public ElympicsState State;
         private const string WarningMessageFormat = "{0} during {1} state";
         private const string ErrorMessageFormat = "Must not {0} during {1} state";

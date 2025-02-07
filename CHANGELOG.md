@@ -1,3 +1,24 @@
+## [0.15.1](https://github.com/Elympics/Unity-SDK/compare/v0.15.0...v0.15.1) (2025-02-07)
+
+
+### Bug Fixes 🪲
+
+* grammar errors in tooltips ([aaa6576](https://github.com/Elympics/Unity-SDK/commit/aaa6576d9ccef8a48534ff2c905b002c0f8719f6))
+* send rpc outside updateContex ([3bc17b9](https://github.com/Elympics/Unity-SDK/commit/3bc17b96154e4033a7dacbd3aa926bafeb4fbb5a))
+* use expression body for method ([32f122f](https://github.com/Elympics/Unity-SDK/commit/32f122ffed1fea9ba999f709a2057b750e12c6ad))
+
+
+### Features
+
+* add elympics logs for remote matchClient ([e2c4d00](https://github.com/Elympics/Unity-SDK/commit/e2c4d00689ed1fbdc06209c2451516acd0f41992))
+* Add jump threshold to game config ([69df921](https://github.com/Elympics/Unity-SDK/commit/69df9219c911cadb594480a1f53454df4106d072))
+* add tooltips for configs ([f0892eb](https://github.com/Elympics/Unity-SDK/commit/f0892ebb302c00ebcd2647a300d6a1f526591dfa))
+* improve warning message ([a994bec](https://github.com/Elympics/Unity-SDK/commit/a994becd56e83c23af8a3f6111fc6869040ab107))
+* internal ElympicsLogger client ([d188f62](https://github.com/Elympics/Unity-SDK/commit/d188f623a5c6aebe53013bfbe7803bfadd126fda))
+* remove duplicated logic ([a2a56c0](https://github.com/Elympics/Unity-SDK/commit/a2a56c0dba42e1642bdf8de82971f86d3a270a55))
+
+
+
 ## [0.15.0](https://github.com/Elympics/Unity-SDK/compare/v0.14.3...v0.15.0) (2025-01-28)
 
 

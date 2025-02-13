@@ -278,5 +278,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             IsConnected = false;
             _tcpClient = null;
         }
+        public void Dispose()
+        { }
     }
 }

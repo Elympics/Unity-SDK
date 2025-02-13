@@ -30,13 +30,15 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         public void CreateAndBind()
         {
             IsConnected = true;
-            _webRtcClient.UnreliableReceivingEnded += () =>
-            {
-                ElympicsLogger.Log($"{nameof(WebRtcUnreliableNetworkClient)} receiving ended");
-                IsConnected = false;
-                Disconnected?.Invoke();
-            };
-            _webRtcClient.UnreliableReceived += data => DataReceived?.Invoke(data);
+            _webRtcClient.UnreliableReceivingEnded += OnWebRtcClientOnUnreliableReceivingEnded;
+            _webRtcClient.UnreliableReceived += OnWebRtcClientOnUnreliableReceived;
+        }
+        private void OnWebRtcClientOnUnreliableReceived(byte[] data) => DataReceived?.Invoke(data);
+        private void OnWebRtcClientOnUnreliableReceivingEnded()
+        {
+            ElympicsLogger.Log($"{nameof(WebRtcUnreliableNetworkClient)} receiving ended");
+            IsConnected = false;
+            Disconnected?.Invoke();
         }
 
         public void CreateAndBind(int port) => throw new NotImplementedException();
@@ -58,5 +60,10 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
         public Task<bool> SendToAsync(byte[] payload, IPEndPoint destination) => throw new NotImplementedException();
+        public void Dispose()
+        {
+            _webRtcClient.UnreliableReceivingEnded -= OnWebRtcClientOnUnreliableReceivingEnded;
+            _webRtcClient.UnreliableReceived -= OnWebRtcClientOnUnreliableReceived;
+        }
     }
 }

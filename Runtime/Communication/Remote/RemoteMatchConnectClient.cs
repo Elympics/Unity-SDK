@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
@@ -176,14 +177,7 @@ namespace Elympics
 
             logger.Log(_useWeb ? $"Connecting to game server by WebSocket/WebRTC" : $"Connecting to game server by TCP/UDP");
 
-            _ = _gameServerClient.ConnectAsync(ct).ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                        logger.Exception(new ElympicsException("Could not connect to the game server", t.Exception));
-                    else
-                        ConnectedCallback(t.Result);
-                },
-                ct);
+            yield return UniTask.ToCoroutine(() => _gameServerClient.ConnectAsync(ct).AsUniTask().ContinueWith(ConnectedCallback));
         }
 
         private void FinishConnecting(Action unsetCallbacks)

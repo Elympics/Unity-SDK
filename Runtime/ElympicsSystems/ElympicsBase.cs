@@ -54,7 +54,10 @@ namespace Elympics
             {
                 instance = value;
                 TickAnalysis?.Detach();
-                instance?.TryAttachTickAnalysis();
+#pragma warning disable IDE0031
+                if (instance != null)
+                    instance.TryAttachTickAnalysis();
+#pragma warning enable IDE0031
             }
         }
 
@@ -69,7 +72,10 @@ namespace Elympics
             {
                 tickAnalysis?.Detach();
                 tickAnalysis = value;
-                Instance?.TryAttachTickAnalysis();
+#pragma warning disable IDE0031
+                if (Instance != null)
+                    Instance.TryAttachTickAnalysis();
+#pragma warning enable IDE0031
             }
         }
 
@@ -211,8 +217,7 @@ namespace Elympics
         }
 
         protected virtual void ElympicsLateFixedUpdate()
-        {
-        }
+        { }
 
         #region ClientCallbacks
 
@@ -254,7 +259,7 @@ namespace Elympics
         public virtual bool IsServer => false;
         public virtual bool IsClient => false;
         public bool IsClientOrBot => IsClient || IsBot;
-        internal bool IsLocalMode => IsServer && IsClient;  // assuming there is only one client (and Unlimited Bots Work)
+        internal bool IsLocalMode => IsServer && IsClient; // assuming there is only one client (and Unlimited Bots Work)
 
         public float TickDuration => Config.TickDuration;
         public int TicksPerSecond => Config.TicksPerSecond;

@@ -1,3 +1,18 @@
+## [0.15.2](https://github.com/Elympics/Unity-SDK/compare/v0.15.1...v0.15.2) (2025-02-13)
+
+
+### Bug Fixes 🪲
+
+* call IClientHandlerGuid.OnConnectingFailed ([c58f0a0](https://github.com/Elympics/Unity-SDK/commit/c58f0a0041b145377f43dbc8169d66423f10264c))
+* call IClientHandlerGuid.OnDisconnectedByServer handler ([a3a9f6a](https://github.com/Elympics/Unity-SDK/commit/a3a9f6aa654b9a55b073b03de585223e94dc369a))
+
+
+### Features
+
+* add retry option for webrtc connection ([cab8807](https://github.com/Elympics/Unity-SDK/commit/cab8807679e8090ea67f6ccd2d6cb613f7798407))
+
+
+
 ## [0.15.1](https://github.com/Elympics/Unity-SDK/compare/v0.15.0...v0.15.1) (2025-02-07)
 
 

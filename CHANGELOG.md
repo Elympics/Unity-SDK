@@ -3,8 +3,8 @@
 
 ### Bug Fixes 🪲
 
-* call OnConnectingFailed ([c58f0a0](https://github.com/Elympics/Unity-SDK/commit/c58f0a0041b145377f43dbc8169d66423f10264c))
-* call OnDisconnectedByServer handler ([a3a9f6a](https://github.com/Elympics/Unity-SDK/commit/a3a9f6aa654b9a55b073b03de585223e94dc369a))
+* call IClientHandlerGuid.OnConnectingFailed ([c58f0a0](https://github.com/Elympics/Unity-SDK/commit/c58f0a0041b145377f43dbc8169d66423f10264c))
+* call IClientHandlerGuid.OnDisconnectedByServer handler ([a3a9f6a](https://github.com/Elympics/Unity-SDK/commit/a3a9f6aa654b9a55b073b03de585223e94dc369a))
 
 
 ### Features

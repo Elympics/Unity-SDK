@@ -69,10 +69,7 @@ namespace MatchTcpClients
             UnreliableClient.CreateAndBind();
 
             if (!await ConnectInternalAsync(ct))
-            {
-                Debug.Log("Returning False.");
                 return false;
-            }
 
             Connected?.Invoke();
             InitClientDisconnectedCts();

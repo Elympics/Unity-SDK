@@ -12,7 +12,7 @@ namespace Elympics
         [Tooltip("Automatically kill Game Server if player will not join in " + nameof(startGameTimeoutSeconds) + " seconds")]
         [SerializeField] private bool autoTerminateServer = true;
 
-        [SerializeField] private float startGameTimeoutSeconds = 30;
+        [SerializeField] private float startGameTimeoutSeconds = 180;
         private TimeSpan _startGameTimeout;
         private int _playersNumber;
         private DateTime _waitToStartFinishTime;

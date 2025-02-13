@@ -28,13 +28,15 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         public void CreateAndBind()
         {
             IsConnected = true;
-            _webRtcClient.ReliableReceivingEnded += () =>
-            {
-                ElympicsLogger.Log($"{nameof(WebRtcReliableNetworkClient)} receiving ended");
-                IsConnected = false;
-                Disconnected?.Invoke();
-            };
-            _webRtcClient.ReliableReceived += data => DataReceived?.Invoke(data);
+            _webRtcClient.ReliableReceivingEnded += OnWebRtcClientOnReliableReceivingEnded;
+            _webRtcClient.ReliableReceived += OnWebRtcClientOnReliableReceived;
+        }
+        private void OnWebRtcClientOnReliableReceived(byte[] data) => DataReceived?.Invoke(data);
+        private void OnWebRtcClientOnReliableReceivingEnded()
+        {
+            ElympicsLogger.Log($"{nameof(WebRtcReliableNetworkClient)} receiving ended");
+            IsConnected = false;
+            Disconnected?.Invoke();
         }
 
         public void CreateAndBind(int port) => throw new NotImplementedException();
@@ -51,6 +53,11 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         public void Disconnect()
         {
             IsConnected = false;
+        }
+        public void Dispose()
+        {
+            _webRtcClient.ReliableReceivingEnded -= OnWebRtcClientOnReliableReceivingEnded;
+            _webRtcClient.ReliableReceived -= OnWebRtcClientOnReliableReceived;
         }
     }
 }

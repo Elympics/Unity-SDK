@@ -1,5 +1,4 @@
 using System;
-using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
@@ -7,7 +6,6 @@ using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using Plugins.Elympics.Runtime.GameEngine.Libraries.Match.MatchTcpClients;
-using UnityEngine;
 using WebRtcWrapper;
 
 namespace MatchTcpClients
@@ -22,6 +20,7 @@ namespace MatchTcpClients
         private ElympicsLoggerContext _logger;
         private CancellationTokenSource _stateCancellationTokenSource;
         private CancellationTokenSource _linkedCts;
+
         public WebGameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, IGameServerWebSignalingClient signalingClient, ElympicsLoggerContext logger, Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
@@ -45,7 +44,9 @@ namespace MatchTcpClients
         {
             _webRtcClient?.Dispose();
             _webRtcClient = _webRtcFactory();
+            ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
+            UnreliableClient?.Dispose();
             UnreliableClient = new WebRtcUnreliableNetworkClient(_webRtcClient);
         }
 
@@ -59,7 +60,7 @@ namespace MatchTcpClients
                 for (var i = 0; i < Config.SessionConnectRetries; i++)
                 {
                     if (i > 0)
-                        CreateNetworkClients();
+                        Initialize();
 
                     _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
@@ -110,13 +111,13 @@ namespace MatchTcpClients
             return false;
         }
 
-        void OnConnectionStateChanged(string newState)
+        private void OnConnectionStateChanged(string newState)
         {
             if (newState is RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed or RtcPeerConnectionStates.Disconnected)
                 _stateCancellationTokenSource?.Cancel();
         }
 
-        void OnIceConnectionStateChanged(string newState)
+        private void OnIceConnectionStateChanged(string newState)
         {
             if (newState is RtcPeerIceConnectionStates.Failed or RtcPeerIceConnectionStates.Closed or RtcPeerIceConnectionStates.Disconnected)
                 _stateCancellationTokenSource?.Cancel();

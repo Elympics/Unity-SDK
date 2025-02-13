@@ -25,8 +25,9 @@ namespace MatchTcpClients.Synchronizer
 
         private Action<PingClientResponseMessage> _pingResponseCallback;
 
-        public ClientSynchronizer(ClientSynchronizerConfig config)
+        public ClientSynchronizer(ClientSynchronizerConfig config, string sessionToken)
         {
+            _sessionToken = sessionToken;
             _config = config;
         }
 

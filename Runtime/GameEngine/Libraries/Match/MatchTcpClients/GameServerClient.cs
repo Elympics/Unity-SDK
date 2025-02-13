@@ -8,7 +8,6 @@ using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
-using UnityEngine;
 
 namespace MatchTcpClients
 {
@@ -57,28 +56,19 @@ namespace MatchTcpClients
         {
             Disconnect();
 
-            CreateNetworkClients();
-
-            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig);
-            ClientDisconnectedCts = new CancellationTokenSource();
-
-            InitializeNetworkClients();
-            InitClientSynchronizer();
-
-            ReliableClient.CreateAndBind();
-            UnreliableClient.CreateAndBind();
+            Initialize();
 
             if (!await ConnectInternalAsync(ct))
                 return false;
 
             Connected?.Invoke();
-            InitClientDisconnectedCts();
             if (!IsConnected)
             {
                 Disconnect();
                 return false;
             }
 
+            InitClientSynchronizer();
             var synchronizationData = await TryInitialSynchronizeAsync(ct);
             if (synchronizationData == null)
             {
@@ -89,6 +79,20 @@ namespace MatchTcpClients
             ConnectedAndSynchronized?.Invoke(synchronizationData);
             _ = _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token).ConfigureAwait(false);
             return true;
+        }
+
+        protected void Initialize()
+        {
+            CreateNetworkClients();
+
+            ClientDisconnectedCts?.Dispose();
+            ClientDisconnectedCts = new CancellationTokenSource();
+
+            InitClientDisconnectedCts();
+            InitializeNetworkClients();
+
+            ReliableClient.CreateAndBind();
+            UnreliableClient.CreateAndBind();
         }
 
         protected abstract void CreateNetworkClients();
@@ -113,7 +117,7 @@ namespace MatchTcpClients
             {
                 logger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
-                _clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
+                //_clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
                 sessionConnectedCompletionSource.SetResult(true);
             }
 
@@ -185,6 +189,7 @@ namespace MatchTcpClients
 
         private void InitClientSynchronizer()
         {
+            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig, SessionToken);
             _clientSynchronizer.ReliablePingGenerated += async command => await SendReliableCommand(command);
             _clientSynchronizer.UnreliablePingGenerated += async command => await SendUnreliableCommand(command);
             _clientSynchronizer.AuthenticateUnreliableGenerated += async command => await SendUnreliableCommand(command);
@@ -281,13 +286,16 @@ namespace MatchTcpClients
 
         public async Task AuthenticateMatchUserSecretAsync(string userSecret) =>
             await SendReliableCommand(new AuthenticateMatchUserSecretCommand { UserSecret = userSecret });
+
         public async Task AuthenticateAsSpectatorAsync() =>
             await SendReliableCommand(new AuthenticateAsSpectatorCommand());
+
         public async Task JoinMatchAsync() =>
             await SendReliableCommand(new JoinMatchCommand());
 
         public async Task SendInGameDataReliableAsync(byte[] data) =>
             await SendReliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
+
         public async Task SendInGameDataUnreliableAsync(byte[] data) =>
             await SendUnreliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
 

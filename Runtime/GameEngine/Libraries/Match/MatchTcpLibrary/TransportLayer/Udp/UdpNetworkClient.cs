@@ -196,5 +196,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             // If UdpClient is closed UdpReceived should close either
             _udpClient = null;
         }
+        public void Dispose()
+        { }
     }
 }

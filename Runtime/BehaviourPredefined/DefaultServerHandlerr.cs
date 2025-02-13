@@ -9,9 +9,11 @@ namespace Elympics
 {
     public class DefaultServerHandlerr : ElympicsMonoBehaviour, IServerHandlerGuid
     {
+        [Tooltip("Automatically kill Game Server if player will not join in " + nameof(startGameTimeoutSeconds) + " seconds")]
+        [SerializeField] private bool autoTerminateServer = true;
+
         [SerializeField] private float startGameTimeoutSeconds = 30;
         private TimeSpan _startGameTimeout;
-
         private int _playersNumber;
         private DateTime _waitToStartFinishTime;
         private bool _gameStarted;
@@ -23,7 +25,7 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
-            _startGameTimeout = TimeSpan.FromSeconds(startGameTimeoutSeconds);
+
             _playersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
@@ -41,6 +43,11 @@ namespace Elympics
                 _ = sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
             ElympicsLogger.Log(sb.ToString());
 
+
+            if (!autoTerminateServer)
+                return;
+
+            _startGameTimeout = TimeSpan.FromSeconds(startGameTimeoutSeconds);
             _ = StartCoroutine(WaitForGameStartOrEnd());
         }
 

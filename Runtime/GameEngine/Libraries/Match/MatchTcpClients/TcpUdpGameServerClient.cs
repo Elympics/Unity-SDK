@@ -27,7 +27,9 @@ namespace MatchTcpClients
 
         protected override void CreateNetworkClients()
         {
+            ReliableClient?.Dispose();
             ReliableClient = CreateTcpNetworkClient();
+            UnreliableClient?.Dispose();
             UnreliableClient = CreateUdpNetworkClient();
         }
 

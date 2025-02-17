@@ -24,7 +24,7 @@ namespace Elympics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void Initialize()
         {
-            SessionId = new Guid();
+            SessionId = Guid.NewGuid();
             timer = new Stopwatch();
             timer.Start();
         }

@@ -5,71 +5,109 @@ namespace Elympics.ElympicsSystems.Internal
 {
     internal static class LoggerContextBuilder
     {
-        public static ElympicsLoggerContext WithRegion(this ElympicsLoggerContext current, string region)
+        #region Modify Context
+
+        public static ElympicsLoggerContext SetRegion(this ElympicsLoggerContext current, string region)
         {
             current.ConnectionContext.Region = region;
             return current;
         }
 
-        public static ElympicsLoggerContext WithLobbyUrl(this ElympicsLoggerContext current, string url)
+        public static ElympicsLoggerContext SetLobbyUrl(this ElympicsLoggerContext current, string url)
         {
             current.ConnectionContext.LobbyUrl = url;
             return current;
         }
 
-        public static ElympicsLoggerContext WithUserId(this ElympicsLoggerContext current, string userId)
+        public static ElympicsLoggerContext SetUserId(this ElympicsLoggerContext current, string userId)
         {
             current.UserContext.UserId = userId;
             return current;
         }
 
-        public static ElympicsLoggerContext WithNickname(this ElympicsLoggerContext current, string nickname)
+        public static ElympicsLoggerContext SetNickname(this ElympicsLoggerContext current, string nickname)
         {
             current.UserContext.Nickname = nickname;
             return current;
         }
 
-        public static ElympicsLoggerContext WithNoUser(this ElympicsLoggerContext current)
+        public static ElympicsLoggerContext SetNoUser(this ElympicsLoggerContext current)
         {
             current.UserContext.Clear();
             return current;
         }
 
-        public static ElympicsLoggerContext WithNoConnection(this ElympicsLoggerContext current)
+        public static ElympicsLoggerContext SetNoConnection(this ElympicsLoggerContext current)
         {
             current.ConnectionContext.Clear();
             return current;
         }
 
-        public static ElympicsLoggerContext WithAuthType(this ElympicsLoggerContext current, AuthType authType)
+        public static ElympicsLoggerContext SetAuthType(this ElympicsLoggerContext current, AuthType authType)
         {
             current.UserContext.AuthType = authType.ToString();
             return current;
         }
 
-        public static ElympicsLoggerContext WithWalletAddress(this ElympicsLoggerContext current, string walletAddress)
+        public static ElympicsLoggerContext SetWalletAddress(this ElympicsLoggerContext current, string walletAddress)
         {
             current.UserContext.WalletAddress = walletAddress;
             return current;
         }
 
-        public static ElympicsLoggerContext WithCapabilities(this ElympicsLoggerContext current, string capabilities)
+        public static ElympicsLoggerContext SetCapabilities(this ElympicsLoggerContext current, string capabilities)
         {
             current.PlayPadContext.Capabilities = capabilities;
             return current;
         }
 
-        public static ElympicsLoggerContext WithFeatureAccess(this ElympicsLoggerContext current, string featureAccess)
+        public static ElympicsLoggerContext SetFeatureAccess(this ElympicsLoggerContext current, string featureAccess)
         {
             current.PlayPadContext.FeatureAccess = featureAccess;
             return current;
         }
 
-        public static ElympicsLoggerContext WithTournamentId(this ElympicsLoggerContext current, string tournamentId)
+        public static ElympicsLoggerContext SetTournamentId(this ElympicsLoggerContext current, string tournamentId)
         {
             current.PlayPadContext.TournamentId = tournamentId;
             return current;
         }
+
+
+        public static ElympicsLoggerContext SetQueue(this ElympicsLoggerContext current, string queueName)
+        {
+            current.RoomContext.QueueName = queueName;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetRoomId(this ElympicsLoggerContext current, string roomId)
+        {
+            current.RoomContext.RoomId = roomId;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetMatchId(this ElympicsLoggerContext current, string matchId)
+        {
+            current.RoomContext.MatchId = matchId;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetServerAddress(this ElympicsLoggerContext current, string tcpUdpServerAddress = "", string webServerAddress = "")
+        {
+            current.RoomContext.TcpUdpServerAddress = tcpUdpServerAddress;
+            current.RoomContext.WebServerAddress = webServerAddress;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetNoRoom(this ElympicsLoggerContext current)
+        {
+            current.RoomContext.Clear();
+            return current;
+        }
+
+        #endregion
+
+        #region Return New Context
 
         public static ElympicsLoggerContext WithMethodName(this ElympicsLoggerContext current, [CallerMemberName] string methodName = "")
         {
@@ -83,41 +121,8 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
-                LogMessage = current.LogMessage,
-                Time = current.Time,
             };
             return logger;
-        }
-
-        public static ElympicsLoggerContext WithQueue(this ElympicsLoggerContext current, string queueName)
-        {
-            current.RoomContext.QueueName = queueName;
-            return current;
-        }
-
-        public static ElympicsLoggerContext WithRoomId(this ElympicsLoggerContext current, string roomId)
-        {
-            current.RoomContext.RoomId = roomId;
-            return current;
-        }
-
-        public static ElympicsLoggerContext WithMatchId(this ElympicsLoggerContext current, string matchId)
-        {
-            current.RoomContext.MatchId = matchId;
-            return current;
-        }
-
-        public static ElympicsLoggerContext WithServerAddress(this ElympicsLoggerContext current, string tcpUdpServerAddress = "", string webServerAddress = "")
-        {
-            current.RoomContext.TcpUdpServerAddress = tcpUdpServerAddress;
-            current.RoomContext.WebServerAddress = webServerAddress;
-            return current;
-        }
-
-        public static ElympicsLoggerContext WithNoRoom(this ElympicsLoggerContext current)
-        {
-            current.RoomContext.Clear();
-            return current;
         }
 
         public static ElympicsLoggerContext WithApp(this ElympicsLoggerContext current, string app)
@@ -132,8 +137,6 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
-                LogMessage = current.LogMessage,
-                Time = current.Time,
             };
             return logger;
         }
@@ -150,10 +153,10 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
-                LogMessage = current.LogMessage,
-                Time = current.Time,
             };
             return logger;
         }
+
+        #endregion
     }
 }

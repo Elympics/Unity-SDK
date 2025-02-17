@@ -11,9 +11,12 @@ namespace Elympics
 {
     internal static class ElympicsLogger
     {
-        internal const string TimeFormat = "yyyy-MM-ddTHH:mm:ss.fffffffZ";
         internal static ElympicsLoggerContext? CurrentContext;
         internal static Guid SessionId;
+        internal static string TimeNow => DateTime.UtcNow.ToString(TimeFormat);
+        private const string TimeFormat = "yyyy-MM-ddTHH:mm:ss.fffffffZ";
+
+        private const string LogStringFormat = "[{0,-28}] [{1}] {2}";
         private const string AppPrefixFormat = "[{0}] ";
         private const string DefaultApp = "ElympicsSdk";
 
@@ -24,33 +27,34 @@ namespace Elympics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void Initialize()
         {
-            SessionId = new Guid();
+            SessionId = Guid.NewGuid();
             timer = new Stopwatch();
             timer.Start();
         }
 
-#if !UNITY_EDITOR
-        private static string FormatTimeSpan(TimeSpan ts) =>
-            $"[{ts.TotalHours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}] ";
-#endif
-
-        public static string PrependWithDetails(string message)
+        private static string PrependWithDetails(string message)
         {
             lock (StringBuilder)
             {
                 return StringBuilder.Clear()
 #if !UNITY_EDITOR
-#endif
                     .Append(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ") + " ")
+#endif
                     .Append(string.Format(AppPrefixFormat, DefaultApp)).Append(message).ToString();
             }
+        }
+
+        private static string PrependWithDetails(string message, string time, ElympicsLoggerContext context)
+        {
+            lock (StringBuilder)
+                return StringBuilder.Clear().Append(string.Format(LogStringFormat, time, context.App, message)).AppendLine(context.ToString()).ToString();
         }
 
         public static void RegisterLoggerClient(IElympicsLoggerClient client) => Clients.Add(client);
 
         public static void UnregisterLoggerClient(IElympicsLoggerClient client) => Clients.Remove(client);
 
-        private static void InformClients(ElympicsLoggerContext context, LogLevel logLevel) => Clients.ForEach(x => x.LogCaptured(context, logLevel));
+        private static void InformClients(string message, string time, ElympicsLoggerContext context, LogLevel logLevel) => Clients.ForEach(x => x.LogCaptured(message, time, context, logLevel));
 
         #region Logs
 
@@ -58,10 +62,10 @@ namespace Elympics
         public static void Log(string message, Object context) => Debug.Log(PrependWithDetails(message), context);
         public static void LogFormat(string format, params object[] args) => Debug.LogFormat(PrependWithDetails(format), args);
         public static void LogFormat(Object context, string format, params object[] args) => Debug.LogFormat(context, PrependWithDetails(format), args);
-        public static void Log(ElympicsLoggerContext context)
+        public static void Log(string message, string time, ElympicsLoggerContext context)
         {
-            Debug.Log(context.ToString());
-            InformClients(context, LogLevel.Log);
+            Debug.Log(PrependWithDetails(message, time, context));
+            InformClients(message, time, context, LogLevel.Log);
         }
 
         #endregion
@@ -72,10 +76,10 @@ namespace Elympics
         public static void LogWarning(string message, Object context) => Debug.LogWarning(PrependWithDetails(message), context);
         public static void LogWarningFormat(string format, params object[] args) => Debug.LogWarningFormat(PrependWithDetails(format), args);
         public static void LogWarningFormat(Object context, string format, params object[] args) => Debug.LogWarningFormat(context, PrependWithDetails(format), args);
-        public static void LogWarning(ElympicsLoggerContext context)
+        public static void LogWarning(string message, string time, ElympicsLoggerContext context)
         {
-            Debug.LogWarning(context);
-            InformClients(context, LogLevel.Warning);
+            Debug.LogWarning(PrependWithDetails(message, time, context));
+            InformClients(message, time, context, LogLevel.Warning);
         }
 
         #endregion
@@ -98,10 +102,10 @@ namespace Elympics
         {
             Debug.LogErrorFormat(context, PrependWithDetails(format), args);
         }
-        public static void LogError(ElympicsLoggerContext context)
+        public static void LogError(string message, string time, ElympicsLoggerContext context)
         {
-            Debug.LogError(context);
-            InformClients(context, LogLevel.Error);
+            Debug.LogError(PrependWithDetails(message, time, context));
+            InformClients(message, time, context, LogLevel.Error);
         }
 
         #endregion
@@ -127,17 +131,17 @@ namespace Elympics
             return exception;
         }
 
-        public static Exception CaptureAndThrow(Exception exception, ElympicsLoggerContext loggerContext)
+        public static Exception CaptureAndThrow(Exception exception, string time, ElympicsLoggerContext loggerContext)
         {
             var wrappedException = exception is not ElympicsException ? new ElympicsException(loggerContext.ToString(), exception) : exception;
-            InformClients(loggerContext, LogLevel.Exception);
+            InformClients(exception.Message, time, loggerContext, LogLevel.Exception);
             return wrappedException;
         }
 
-        public static void LogException(Exception exception, ElympicsLoggerContext loggerContext, Object context = null)
+        public static void LogException(Exception exception, string time, ElympicsLoggerContext loggerContext, Object context = null)
         {
             Debug.LogException(exception, context);
-            InformClients(loggerContext, LogLevel.Exception);
+            InformClients(exception.Message, time, loggerContext, LogLevel.Exception);
         }
 
         #endregion

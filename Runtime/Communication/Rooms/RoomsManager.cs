@@ -386,10 +386,9 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                if (room == null)
-                    throw;
+                if (room != null && !room.IsDisposed && room.IsJoined)
+                    await room.Leave();
 
-                await room.Leave();
                 room = null;
                 _ = logger.WithNoRoom();
                 throw logger.CaptureAndThrow(e);

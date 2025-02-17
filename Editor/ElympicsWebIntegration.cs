@@ -175,7 +175,8 @@ namespace Elympics
         {
             var authTokenParts = authToken.Split('.');
             var authTokenMidPadded = authTokenParts[1].PadRight(4 * ((authTokenParts[1].Length + 3) / 4), '=');
-            var authTokenMidStr = Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/'))); // JWT is encoded as URL-safe base64, some characters have to be replaced
+            var authTokenMidStr =
+                Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/'))); // JWT is encoded as URL-safe base64, some characters have to be replaced
             var authTokenMid = JsonConvert.DeserializeObject<JwtMidPart>(authTokenMidStr);
             return authTokenMid;
         }
@@ -310,7 +311,7 @@ namespace Elympics
         public static void PostStartEvent()
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            PostTelemetryEvent(UsageStatisticsRoutes.Start, new StartRequest { gameId = gameConfig?.GameId });
+            PostTelemetryEvent(UsageStatisticsRoutes.Start, new StartRequest { gameId = gameConfig != null ? gameConfig.GameId : string.Empty });
         }
 
         public static void PostPlayEvent(string mode)
@@ -327,7 +328,7 @@ namespace Elympics
         public static void PostStopEvent()
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            var requestBody = new StopRequest { gameId = gameConfig?.GameId };
+            var requestBody = new StopRequest { gameId = gameConfig != null ? gameConfig.GameId : string.Empty };
             var uri = GetCombinedUrl(ElympicsWebEndpoint, UsageStatisticsRoutes.Base, UsageStatisticsRoutes.Stop);
             var asyncOperation = ElympicsEditorWebClient.SendJsonPostRequestApi(uri, requestBody, auth: ElympicsConfig.IsLogin);
             while (asyncOperation.isDone)

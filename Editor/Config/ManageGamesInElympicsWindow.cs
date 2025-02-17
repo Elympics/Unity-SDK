@@ -17,7 +17,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private const string NoGameSetupsInfo = "<i>You don't have any available games yet. Click button below to create first Elympics Config!</i>";
 
-    private const string UploadGameInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. " + "It's required to first upload a game version if you want to play it in online mode.";
+    private const string UploadGameInfo = "Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. "
+        + "It's required to first upload a game version if you want to play it in online mode.";
 
     private const string ImportExistingsGamesInfo = "<i>or import existing games (e.g. samples)</i>";
 
@@ -53,7 +54,12 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData;
 
-    public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfigSerializedObject, SerializedProperty currentGameIndex, SerializedProperty availableGames, SerializedProperty elympicsWebEndpoint, SerializedProperty elympicsGameServersEndpoint)
+    public static ManageGamesInElympicsWindow ShowWindow(
+        SerializedObject elympicsConfigSerializedObject,
+        SerializedProperty currentGameIndex,
+        SerializedProperty availableGames,
+        SerializedProperty elympicsWebEndpoint,
+        SerializedProperty elympicsGameServersEndpoint)
     {
         ManageGamesInElympicsWindow.elympicsConfigSerializedObject = elympicsConfigSerializedObject;
         ManageGamesInElympicsWindow.currentGameIndex = currentGameIndex;
@@ -259,7 +265,9 @@ public class ManageGamesInElympicsWindow : EditorWindow
         if (chosenGameProperty != null
             && chosenGameProperty.objectReferenceValue != null)
         {
-            currentGameIndex.intValue = _customInspectorDrawer.DrawPopup("Active game:", currentGameIndex.intValue, ((List<ElympicsGameConfig>)availableGames.GetValue()).Select(x => $"{x?.GameName} ({x?.GameId})").ToArray());
+            currentGameIndex.intValue = _customInspectorDrawer.DrawPopup("Active game:",
+                currentGameIndex.intValue,
+                ((List<ElympicsGameConfig>)availableGames.GetValue()).Select(x => $"{(x != null ? x.GameName : string.Empty)} ({(x != null ? x.GameId : string.Empty)})").ToArray());
             DrawAvailableRegionSection();
             _customInspectorDrawer.DrawSerializedProperty("Local games configurations", availableGames);
             _customInspectorDrawer.Space();

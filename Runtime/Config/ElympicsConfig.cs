@@ -21,6 +21,7 @@ namespace Elympics
         [SerializeField] internal List<ElympicsGameConfig> availableGames;
 
         private static string sdkVersion;
+
         internal static string SdkVersion
         {
             get
@@ -38,16 +39,22 @@ namespace Elympics
 
         internal string ElympicsApiEndpoint => ApplicationParameters.Parameters.ApiEndpoint.GetValue(GetV2Endpoint("api"))
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsLobbyEndpoint => ApplicationParameters.Parameters.LobbyEndpoint.GetValue(GetV2Endpoint("lobby"))
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsAuthEndpoint => ApplicationParameters.Parameters.AuthEndpoint.GetValue(GetV2Endpoint("auth"))
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsLeaderboardsEndpoint => ApplicationParameters.Parameters.LeaderboardsEndpoint.GetValue(GetV2Endpoint("leaderboardservice"))
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsGameServersEndpoint => ApplicationParameters.Parameters.GameServersEndpoint.GetValue(new UriBuilder(elympicsGameServersEndpoint).Uri)
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
             .GetAbsoluteOrRelativeString();
+
         internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Lobby.Models.Routes.Base).ToString();
         internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.BaseRouteUnityFormat).ToString();
 
@@ -64,21 +71,15 @@ namespace Elympics
         public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
         {
             var elympicsConfig = Resources.Load<ElympicsConfig>(PathInResources);
-            return elympicsConfig?.GetCurrentGameConfig();
+            if (elympicsConfig == null)
+                throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
+            return elympicsConfig.GetCurrentGameConfig();
         }
 
-        [CanBeNull]
         public ElympicsGameConfig GetCurrentGameConfig()
         {
-            try
-            {
-                ValidateGameIndex(currentGame);
-                return availableGames[currentGame];
-            }
-            catch
-            {
-                return null;
-            }
+            ValidateGameIndex(currentGame);
+            return availableGames[currentGame];
         }
 
         public void SwitchGame(int game)

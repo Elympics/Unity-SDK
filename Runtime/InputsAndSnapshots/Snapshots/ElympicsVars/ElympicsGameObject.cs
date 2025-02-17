@@ -10,13 +10,9 @@ namespace Elympics
 
         public ElympicsGameObject(ElympicsBehaviour value = default, bool enableSynchronization = true)
             : base(value, enableSynchronization, new ElympicsGameObjectEqualityComparer())
-        {
-        }
+        { }
 
-        public override void Serialize(BinaryWriter bw)
-        {
-            bw.Write(Value?.networkId ?? NullReferenceNetworkId);
-        }
+        public override void Serialize(BinaryWriter bw) => bw.Write(Value != null ? Value.networkId : NullReferenceNetworkId);
 
         protected override ElympicsBehaviour DeserializeInternal(BinaryReader br)
         {

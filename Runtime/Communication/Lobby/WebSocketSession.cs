@@ -71,7 +71,7 @@ namespace Elympics.Lobby
                 await OpenWebSocket(_ws);
                 await EstablishSession(gameId, gameVersion, regionName);
                 ConnectionDetails = details;
-                logger.WithRegion(regionName).WithLobbyUrl(wsUrl).Log("Connection to lobby completed.");
+                logger.SetRegion(regionName).SetLobbyUrl(wsUrl).Log("Connection to lobby completed.");
                 SetConnectedState();
                 _timer = new Stopwatch();
                 _timer.Start();

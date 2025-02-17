@@ -57,7 +57,7 @@ namespace Elympics
 #pragma warning disable IDE0031
                 if (instance != null)
                     instance.TryAttachTickAnalysis();
-#pragma warning enable IDE0031
+#pragma warning restore IDE0031
             }
         }
 
@@ -75,7 +75,7 @@ namespace Elympics
 #pragma warning disable IDE0031
                 if (Instance != null)
                     Instance.TryAttachTickAnalysis();
-#pragma warning enable IDE0031
+#pragma warning restore IDE0031
             }
         }
 

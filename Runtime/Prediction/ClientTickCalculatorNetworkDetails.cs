@@ -10,17 +10,17 @@ namespace Elympics
         public double ExactTickCalculated;
         public int InputLagTicks;
         public long LastInputTick;
-        public long LastPredictionTick;
+        public long PreviousTick;
         public long LastReceivedTick;
         public double LcoTicks;
-        public long PredictionTick;
+        public long CurrentTick;
         public bool ReconciliationPerformed;
         public double RttTicks;
         public bool WasTickJumpForced;
         public long PredictionLimit;
         public double DefaultTickRate;
         public double TicksToCatchup;
-        public long NewPredictedTickFromCalculations;
+        public long NewTickFromCalculations;
 
         public ClientTickCalculatorNetworkDetails(ElympicsGameConfig config)
         {
@@ -33,7 +33,7 @@ namespace Elympics
             _ = sb.AppendLine("###Tick Calculation Summary###");
             if (!CanPredict)
             {
-                _ = sb.AppendLine(NewPredictedTickFromCalculations > LastReceivedTick + PredictionLimit ?
+                _ = sb.AppendLine(NewTickFromCalculations > LastReceivedTick + PredictionLimit ?
                     $"Prediction limit achieved. Max Prediction Tick {LastReceivedTick + PredictionLimit} for Prediction limit {PredictionLimit}" :
                     "Prediction was blocked.");
             }
@@ -49,17 +49,17 @@ namespace Elympics
             if (ReconciliationPerformed)
             {
                 _ = sb.AppendLine("Reconciliation was performed")
-                    .AppendLine(LastReceivedTick > LastPredictionTick ?
-                        $"No localSnapshot for Tick {LastPredictionTick}." :
+                    .AppendLine(LastReceivedTick > PreviousTick ?
+                        $"No localSnapshot for Tick {PreviousTick}." :
                         $"LocalSnapshot was different than serverSnapshot for {LastReceivedTick} Tick.");
 
                 if ((LastReceivedTick + 1) <= (PredictionLimit + 1))
-                    _ = sb.AppendLine($"Resimulation was performed for [{LastReceivedTick + 1}, {PredictionTick - 1}]");
+                    _ = sb.AppendLine($"Resimulation was performed for [{LastReceivedTick + 1}, {CurrentTick - 1}]");
             }
 
-            return sb.AppendLine($"Client predicted Tick {PredictionTick}. Last Prediction Tick was {LastPredictionTick}. Calculated Tick {NewPredictedTickFromCalculations}")
-                .AppendLine($"ExactCalculated - ExpectedTick = {ExactTickCalculated - (LastPredictionTick + 1)}")
-                .AppendLine($"ExactCalculated - Predicted = {ExactTickCalculated - NewPredictedTickFromCalculations}")
+            return sb.AppendLine($"Client Current Tick {CurrentTick}. Last Tick was {PreviousTick}. Calculated Tick {NewTickFromCalculations}")
+                .AppendLine($"ExactCalculated - ExpectedTick = {ExactTickCalculated - (PreviousTick + 1)}")
+                .AppendLine($"ExactCalculated - Current = {ExactTickCalculated - NewTickFromCalculations}")
                 .AppendLine($"New Tick Rate {ElympicsUpdateTickRate:F2} which is {ElympicsUpdateTickRate / DefaultTickRate * 100:F2}% of DefaultTickRate")
                 .AppendLine("###Network conditions###")
                 .AppendLine($"Input lag - {InputLagTicks:F} ticks")

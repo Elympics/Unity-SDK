@@ -72,8 +72,9 @@ namespace Elympics.Editor
                 EditorGUI.BeginDisabledGroup(true);
                 _ = EditorGUILayout.PropertyField(_availableGames, new GUIContent("Local games configurations"), true);
 
-                _ = EditorGUILayout.Popup(new GUIContent("Active game"), _currentGameIndex.intValue,
-                    ((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{x?.GameName} - {x?.GameId}")
+                _ = EditorGUILayout.Popup(new GUIContent("Active game"),
+                    _currentGameIndex.intValue,
+                    ((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{(x != null ? x.GameName : string.Empty)} - {(x != null ? x.GameId : string.Empty)}")
                     .ToArray());
                 EditorGUI.EndDisabledGroup();
 
@@ -103,8 +104,11 @@ namespace Elympics.Editor
         private void DrawButtonManageGamesInElympics()
         {
             if (GUILayout.Button("Manage games in Elympics"))
-                _ = ManageGamesInElympicsWindow.ShowWindow(serializedObject, _currentGameIndex, _availableGames,
-                    _elympicsWebEndpoint, _elympicsGameServersEndpoint);
+                _ = ManageGamesInElympicsWindow.ShowWindow(serializedObject,
+                    _currentGameIndex,
+                    _availableGames,
+                    _elympicsWebEndpoint,
+                    _elympicsGameServersEndpoint);
 
             EditorGUILayout.Separator();
         }

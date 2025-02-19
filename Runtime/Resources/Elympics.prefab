@@ -224,6 +224,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4967bf53bd4b41139812c0f989b90db2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  autoTerminateServer: 1
+  autoTerminationOnLeft: 1
+  startGameTimeoutSeconds: 180
 --- !u!1 &5110940247115840882
 GameObject:
   m_ObjectHideFlags: 0

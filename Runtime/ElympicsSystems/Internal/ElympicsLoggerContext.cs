@@ -55,14 +55,14 @@ namespace Elympics.ElympicsSystems.Internal
             ElympicsLogger.CurrentContext = this;
         }
 
-        public void Log(string message) => ElympicsLogger.Log(message, ElympicsLogger.TimeNow, this);
+        public void Log(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
 
-        public void Warning(string message) => ElympicsLogger.LogWarning(message, ElympicsLogger.TimeNow, this);
+        public void Warning(string message) => ElympicsLogger.LogWarning(message, TimeUtil.DateTimeNowToString, this);
 
-        public void Error(string message) => ElympicsLogger.LogError(message, ElympicsLogger.TimeNow, this);
+        public void Error(string message) => ElympicsLogger.LogError(message, TimeUtil.DateTimeNowToString, this);
 
-        public Exception CaptureAndThrow(Exception exception) => ElympicsLogger.CaptureAndThrow(exception, ElympicsLogger.TimeNow, this);
-        public void Exception(Exception exception) => ElympicsLogger.LogException(exception, ElympicsLogger.TimeNow, this);
+        public Exception CaptureAndThrow(Exception exception) => ElympicsLogger.CaptureAndThrow(exception, TimeUtil.DateTimeNowToString, this);
+        public void Exception(Exception exception) => ElympicsLogger.LogException(exception, TimeUtil.DateTimeNowToString, this);
 
         public override string ToString() =>
             $"{nameof(Context)}: {Context} | " + $"{nameof(MethodName)}: {MethodName} | " + $"{Environment.NewLine}{AppContext}" + $"{Environment.NewLine}{UserContext}" + $"{Environment.NewLine}{ConnectionContext}" + $"{Environment.NewLine}{RoomContext}" + $"{Environment.NewLine}{PlayPadContext}";

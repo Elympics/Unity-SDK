@@ -13,8 +13,6 @@ namespace Elympics
     {
         internal static ElympicsLoggerContext? CurrentContext;
         internal static Guid SessionId;
-        internal static string TimeNow => DateTime.UtcNow.ToString(TimeFormat);
-        private const string TimeFormat = "yyyy-MM-ddTHH:mm:ss.fffffffZ";
 
         private const string LogStringFormat = "[{0,-28}] [{1}] {2}";
         private const string AppPrefixFormat = "[{0}] ";

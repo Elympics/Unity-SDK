@@ -1,3 +1,18 @@
+## [0.15.3](https://github.com/Elympics/Unity-SDK/compare/v0.15.2...v0.15.3) (2025-02-26)
+
+
+### Bug Fixes 🪲
+
+* add invariantCulture option for log times. ([d0e3660](https://github.com/Elympics/Unity-SDK/commit/d0e36600e942df21a9d2231d2cfe891f526a9bdc))
+* fix internal guid creation ([358ced5](https://github.com/Elympics/Unity-SDK/commit/358ced5cbe8906594a55fbe72fe486c08e58ce61))
+* fix physics when prediction is off ([af0a045](https://github.com/Elympics/Unity-SDK/commit/af0a0451122bc04abf77f6e64f230bc2b3e0b15f))
+* improve exception handling when starting a quick match ([4c79591](https://github.com/Elympics/Unity-SDK/commit/4c795916d3447df9326f85e70e0ce36f08b24df6))
+* make internal logger thread safe ([9b407b4](https://github.com/Elympics/Unity-SDK/commit/9b407b4b37845e87decf6b6933d81a3cb240e8f4))
+* more control over default server handler ([957367e](https://github.com/Elympics/Unity-SDK/commit/957367e2028bcaa6f4357446b0c4d5486723066e))
+* refactor internal contextBuilder method names ([ff8f03a](https://github.com/Elympics/Unity-SDK/commit/ff8f03ac4e4c7625044370ef10a6c81153ade73e))
+
+
+
 ## [0.15.2](https://github.com/Elympics/Unity-SDK/compare/v0.15.1...v0.15.2) (2025-02-13)
 
 

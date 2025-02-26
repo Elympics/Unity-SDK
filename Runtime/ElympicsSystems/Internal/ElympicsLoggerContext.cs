@@ -9,7 +9,6 @@ namespace Elympics.ElympicsSystems.Internal
         public const string ElympicsContextApp = "ElympicsSdk";
         public const string GameplayContextApp = "ElympicsGame";
         public const string PlayPadContextApp = "PlayPadSdk";
-        private const string LogFormat = "[{0,-28}] [{1}]";
         public Guid SessionId;
         public string App;
         public AppContext AppContext;
@@ -19,8 +18,6 @@ namespace Elympics.ElympicsSystems.Internal
         public PlayPadContext PlayPadContext;
         public string Context;
         public string MethodName;
-        public string Time;
-        public string LogMessage;
 
         public ElympicsLoggerContext(Guid sessionId, string version, string gameId)
         {
@@ -51,8 +48,6 @@ namespace Elympics.ElympicsSystems.Internal
                 FeatureAccess = null
             };
             Context = null;
-            LogMessage = null;
-            Time = null;
             MethodName = null;
             if (ElympicsLogger.CurrentContext.HasValue)
                 return;
@@ -60,42 +55,17 @@ namespace Elympics.ElympicsSystems.Internal
             ElympicsLogger.CurrentContext = this;
         }
 
-        public void Log(string message)
-        {
-            LogMessage = message;
-            Time = DateTime.UtcNow.ToString(ElympicsLogger.TimeFormat);
-            ElympicsLogger.Log(this);
-        }
+        public void Log(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
 
-        public void Warning(string message)
-        {
-            LogMessage = message;
-            Time = DateTime.UtcNow.ToString(ElympicsLogger.TimeFormat);
-            ElympicsLogger.LogWarning(this);
-        }
+        public void Warning(string message) => ElympicsLogger.LogWarning(message, TimeUtil.DateTimeNowToString, this);
 
-        public void Error(string message)
-        {
-            LogMessage = message;
-            Time = DateTime.UtcNow.ToString(ElympicsLogger.TimeFormat);
-            ElympicsLogger.LogError(this);
-        }
+        public void Error(string message) => ElympicsLogger.LogError(message, TimeUtil.DateTimeNowToString, this);
 
-        public Exception CaptureAndThrow(Exception exception)
-        {
-            LogMessage = exception.Message;
-            Time = DateTime.UtcNow.ToString(ElympicsLogger.TimeFormat);
-            return ElympicsLogger.CaptureAndThrow(exception, this);
-        }
-        public void Exception(Exception exception)
-        {
-            LogMessage = exception.Message;
-            Time = DateTime.UtcNow.ToString(ElympicsLogger.TimeFormat);
-            ElympicsLogger.LogException(exception, this);
-        }
+        public Exception CaptureAndThrow(Exception exception) => ElympicsLogger.CaptureAndThrow(exception, TimeUtil.DateTimeNowToString, this);
+        public void Exception(Exception exception) => ElympicsLogger.LogException(exception, TimeUtil.DateTimeNowToString, this);
 
         public override string ToString() =>
-            $"{string.Format(LogFormat, Time, App)} {LogMessage}{Environment.NewLine}" + $"{nameof(Context)}: {Context} | " + $"{nameof(MethodName)}: {MethodName} | " + $"{Environment.NewLine}{AppContext}" + $"{Environment.NewLine}{UserContext}" + $"{Environment.NewLine}{ConnectionContext}" + $"{Environment.NewLine}{RoomContext}" + $"{Environment.NewLine}{PlayPadContext}";
+            $"{nameof(Context)}: {Context} | " + $"{nameof(MethodName)}: {MethodName} | " + $"{Environment.NewLine}{AppContext}" + $"{Environment.NewLine}{UserContext}" + $"{Environment.NewLine}{ConnectionContext}" + $"{Environment.NewLine}{RoomContext}" + $"{Environment.NewLine}{PlayPadContext}";
     }
 
     internal class AppContext

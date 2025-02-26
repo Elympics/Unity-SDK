@@ -9,28 +9,36 @@ namespace Elympics
 {
     public class DefaultServerHandlerr : ElympicsMonoBehaviour, IServerHandlerGuid
     {
-        [Tooltip("Automatically kill Game Server if player will not join in " + nameof(startGameTimeoutSeconds) + " seconds")]
+        [Tooltip("Automatically kill Game Server if no player will join in " + nameof(startGameTimeoutSeconds) + " seconds")]
         [SerializeField] private bool autoTerminateServer = true;
 
+        [Tooltip("Automatically kill Game Server if any/all players leave the game.")]
+        [SerializeField] protected TerminationOption autoTerminationOnLeft = TerminationOption.Any;
+
+        [Min(180)]
         [SerializeField] private float startGameTimeoutSeconds = 180;
+
+        // ReSharper disable MemberCanBePrivate.Global
+        protected int PlayersNumber;
+        protected bool GameStarted;
+        protected readonly HashSet<ElympicsPlayer> PlayersConnected = new();
+        // ReSharper restore MemberCanBePrivate.Global
+
         private TimeSpan _startGameTimeout;
-        private int _playersNumber;
         private DateTime _waitToStartFinishTime;
-        private bool _gameStarted;
+        private readonly WaitForSeconds _checkInterval = new(5);
 
-        private readonly HashSet<ElympicsPlayer> _playersConnected = new();
-
-        public void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
+        public virtual void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
         {
             if (!IsEnabledAndActive)
                 return;
 
-
-            _playersNumber = initialMatchPlayerDatas.Count;
+            PlayersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
-            ElympicsLogger.Log($"Game initialized for {initialMatchPlayerDatas.Count} players "
-                               + $"(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
+            ElympicsLogger.Log(
+                $"Game initialized for {initialMatchPlayerDatas.Count} players(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
             ElympicsLogger.Log($"Waiting for {humansPlayers} human players to connect.");
+
             var sb = new StringBuilder()
                 .AppendLine($"MatchId: {initialMatchPlayerDatas.MatchId}")
                 .AppendLine($"QueueName: {initialMatchPlayerDatas.QueueName}")
@@ -40,9 +48,10 @@ namespace Elympics
                 .AppendLine($"ExternalGameData: {initialMatchPlayerDatas.ExternalGameData?.Length.ToString() ?? "null"}");
 
             foreach (var playerData in initialMatchPlayerDatas)
-                _ = sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
-            ElympicsLogger.Log(sb.ToString());
+                _ = sb.AppendLine(
+                    $"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
 
+            ElympicsLogger.Log(sb.ToString());
 
             if (!autoTerminateServer)
                 return;
@@ -57,49 +66,71 @@ namespace Elympics
 
             while (DateTime.Now < _waitToStartFinishTime)
             {
-                if (_gameStarted)
+                if (GameStarted)
                     yield break;
 
                 ElympicsLogger.Log("Not all players connected yet...");
-                yield return new WaitForSeconds(5);
+                yield return _checkInterval;
             }
-
-            ElympicsLogger.LogWarning("Forcing game server to quit because some players did not connect on time.\n"
-                                      + "Connected players: "
-                                      + string.Join(", ", _playersConnected));
+            ElympicsLogger.LogWarning(
+                $"Forcing game server to quit because conditions for {nameof(TerminationOption)}.{autoTerminationOnLeft} were met.");
             Elympics.EndGame();
         }
 
-        public void OnPlayerDisconnected(ElympicsPlayer player)
+        public virtual void OnPlayerDisconnected(ElympicsPlayer player)
         {
             if (!IsEnabledAndActive)
                 return;
 
+            _ = PlayersConnected.Remove(player);
             ElympicsLogger.Log($"Player {player} disconnected.");
-            ElympicsLogger.LogWarning("Forcing game server to quit because one of the players disconnected.");
-            Elympics.EndGame();
+
+            switch (autoTerminationOnLeft)
+            {
+                case TerminationOption.Any when GameStarted:
+                case TerminationOption.All when GameStarted && PlayersConnected.Count == 0:
+                    ElympicsLogger.LogWarning($"Forcing game server to quit because {autoTerminationOnLeft} players left.");
+                    CloseMatch();
+                    break;
+                case TerminationOption.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
-        public void OnPlayerConnected(ElympicsPlayer player)
+        /// <summary>
+        /// Used for cases after the game has started
+        /// </summary>
+        protected virtual void CloseMatch() => Elympics.EndGame();
+
+        public virtual void OnPlayerConnected(ElympicsPlayer player)
         {
             if (!IsEnabledAndActive)
                 return;
 
             ElympicsLogger.Log($"Player {player} connected.");
 
-            _ = _playersConnected.Add(player);
-            if (_playersConnected.Count != _playersNumber || _gameStarted)
-                return;
+            _ = PlayersConnected.Add(player);
 
-            _gameStarted = true;
+            if (GameStarted)
+                OnPlayerRejoined();
+            else if (PlayersConnected.Count == PlayersNumber)
+                OnGameStarted();
+        }
+
+        protected virtual void OnPlayerRejoined() { }
+        protected virtual void OnGameStarted()
+        {
+            GameStarted = true;
             ElympicsLogger.Log("All players have connected.");
         }
+
 
         // This Unity event method is necessary for the script to have a checkbox in Inspector.
         // https://forum.unity.com/threads/why-do-some-components-have-enable-disable-checkboxes-in-the-inspector-while-others-dont.390770/#post-2547484
         // ReSharper disable once Unity.RedundantEventFunction
         private void Start()
-        {
-        }
+        { }
     }
 }

@@ -245,7 +245,7 @@ namespace Elympics
                     if (result.Value != null)
                     {
                         AuthData = result.Value;
-                        logger.WithUserId(result.Value.UserId.ToString()).WithNickname(result.Value.Nickname).WithAuthType(result.Value.AuthType).Log("Authentication completed.");
+                        logger.SetUserId(result.Value.UserId.ToString()).SetNickname(result.Value.Nickname).SetAuthType(result.Value.AuthType).Log("Authentication completed.");
                         eventName = nameof(AuthenticationSucceeded);
                         AuthenticationSucceeded?.Invoke(AuthData);
                     }
@@ -413,7 +413,7 @@ namespace Elympics
             AuthData = null;
 
             DisconnectFromLobby();
-            logger.WithNoUser().WithNoConnection().WithNoRoom().Log("Signed out on user request.");
+            logger.SetNoUser().SetNoConnection().SetNoRoom().Log("Signed out on user request.");
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)

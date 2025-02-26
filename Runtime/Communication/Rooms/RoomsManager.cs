@@ -176,8 +176,8 @@ namespace Elympics
             var matchFound = _stateDiff.MatchDataArgs != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
             if (mmCompleted)
             {
-                _ = _logger.WithMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
-                _ = _logger.WithServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
+                _ = _logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
+                _ = _logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
                 _matchLauncher.MatchFound();
             }
 
@@ -337,11 +337,11 @@ namespace Elympics
             IRoom? room = null;
             try
             {
-                _ = logger.WithQueue(RoomUtil.QuickMatchRoomName);
+                _ = logger.SetQueue(RoomUtil.QuickMatchRoomName);
                 var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, customRoomData ?? new Dictionary<string, string>(), customMatchmakingData ?? new Dictionary<string, string>(), ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
-                _ = logger.WithRoomId(room.RoomId.ToString());
+                _ = logger.SetRoomId(room.RoomId.ToString());
                 await room.ChangeTeam(0);
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
 
@@ -352,12 +352,12 @@ namespace Elympics
 
                 if (isCanceled is false)
                 {
-                    _ = logger.WithMatchId(room.State.MatchmakingData?.MatchData?.MatchId.ToString());
+                    _ = logger.SetMatchId(room.State.MatchmakingData?.MatchData?.MatchId.ToString());
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
                     if (!string.IsNullOrEmpty(error))
                         throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
 
-                    _ = logger.WithServerAddress(room.State.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, room.State.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
+                    _ = logger.SetServerAddress(room.State.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, room.State.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
                     logger.Log("Quick Match Founded.");
                     return room;
                 }
@@ -372,13 +372,13 @@ namespace Elympics
                     if (room.State.MatchmakingData?.MatchmakingState == MatchmakingState.Unlocked)
                     {
                         await room.Leave();
-                        _ = logger.WithNoRoom();
+                        _ = logger.SetNoRoom();
                     }
                     else if (room.IsEligibleToPlayMatch())
                         return room;
                     else
                     {
-                        _ = logger.WithNoRoom();
+                        _ = logger.SetNoRoom();
                         throw logger.CaptureAndThrow(e);
                     }
                 }
@@ -386,18 +386,17 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                if (room == null)
-                    throw;
+                if (room != null && !room.IsDisposed && room.IsJoined)
+                    await room.Leave();
 
-                await room.Leave();
                 room = null;
-                _ = logger.WithNoRoom();
+                _ = logger.SetNoRoom();
                 throw logger.CaptureAndThrow(e);
             }
 
             void OnQuickRoomLeft(LeftRoomArgs args)
             {
-                _ = _logger.WithNoRoom();
+                _ = _logger.SetNoRoom();
                 // ReSharper disable AccessToModifiedClosure
                 if (room == null
                     || room.IsDisposed)

@@ -39,7 +39,7 @@ namespace Elympics
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
-        private long _lastPredictedTick;
+        private long _previousTick;
         private long _lastDelayedInputTick;
 
         private List<ElympicsInput> _inputList;
@@ -141,7 +141,7 @@ namespace Elympics
             lock (LastReceivedSnapshotLock)
                 receivedSnapshot = _lastReceivedSnapshot;
 
-            _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, _lastPredictedTick, _lastDelayedInputTick, receivedSnapshot.TickStartUtc, TickStartUtc);
+            _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, _previousTick, _lastDelayedInputTick, receivedSnapshot.TickStartUtc, TickStartUtc);
 
             _predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
 
@@ -161,7 +161,7 @@ namespace Elympics
                 using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
                     if (_clientTickCalculator.Results.CanPredict)
                     {
-                        Tick = _clientTickCalculator.Results.PredictionTick;
+                        Tick = _clientTickCalculator.Results.CurrentTick;
 
                         using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
                             ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
@@ -178,7 +178,7 @@ namespace Elympics
                         using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
                             ProcessSnapshot(Tick);
 
-                        _lastPredictedTick = Tick;
+                        _previousTick = Tick;
                     }
             }
             else
@@ -186,6 +186,7 @@ namespace Elympics
                 ApplyFullSnapshot(receivedSnapshot);
                 InvokeQueuedRpcMessages();
                 elympicsBehavioursManager.CommitVars();
+                _previousTick = Tick;
             }
 
             ElympicsUpdateDuration = 1 / _clientTickCalculator.Results.ElympicsUpdateTickRate;
@@ -265,7 +266,7 @@ namespace Elympics
         private void ApplyPredictedInput()
         {
             _inputList.Clear();
-            if (_predictionBuffer.TryGetInputFromBuffer(_clientTickCalculator.Results.PredictionTick, out var predictedInput))
+            if (_predictionBuffer.TryGetInputFromBuffer(_clientTickCalculator.Results.CurrentTick, out var predictedInput))
                 _inputList.Add(predictedInput);
             elympicsBehavioursManager.SetCurrentInputs(_inputList);
         }
@@ -321,7 +322,7 @@ namespace Elympics
             _ = _predictionBuffer.AddOrReplaceSnapshotInBuffer(currentSnapshot);
 
             var startResimulation = _clientTickCalculator.Results.LastReceivedTick + 1;
-            var endResimulation = _clientTickCalculator.Results.PredictionTick - 1;
+            var endResimulation = _clientTickCalculator.Results.CurrentTick - 1;
             using (ElympicsMarkers.Elympics_ResimulationkMarker.Auto())
                 for (var resimulationTick = startResimulation; resimulationTick <= endResimulation; resimulationTick++)
                 {

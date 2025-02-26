@@ -3,6 +3,6 @@ namespace Elympics
 {
     internal interface IElympicsLoggerClient
     {
-        void LogCaptured(ElympicsLoggerContext context, LogLevel level);
+        void LogCaptured(string message, string time, ElympicsLoggerContext log, LogLevel level);
     }
 }

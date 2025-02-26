@@ -19,7 +19,7 @@ namespace Elympics
             _config = config;
         }
 
-        public void CalculateNextTick(long lastReceivedTick, long lastPredictedTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
+        public void CalculateNextTick(long lastReceivedTick, long previousTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
         {
             Results.Reset();
             var lastReceivedTickStart = receivedTickStartUtc.ToLocalTime();
@@ -27,37 +27,37 @@ namespace Elympics
 
             var calculatedNextTickExact = CalculateTotalDelayInTicks(lastReceivedTick, lastReceivedTickStart, clientTickStart);
 
-            var expectedPredictionTick = lastPredictedTick + 1;
+            var expectedPredictionTick = previousTick + 1;
             var exactToExpectedTickDiff = calculatedNextTickExact - expectedPredictionTick;
 
-            long newPredictionTick;
+            long newTick;
             bool canPredict;
 
-            if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, lastPredictedTick, lastReceivedTick, out var ticksToCatchup))
+            if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, previousTick, lastReceivedTick, out var ticksToCatchup))
             {
-                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick, ticksToCatchup);
+                canPredict = TrySetNextTick(lastReceivedTick, previousTick, out newTick, ticksToCatchup);
                 if (canPredict)
                 {
                     Results.WasTickJumpForced = true;
                     Results.TicksToCatchup = ticksToCatchup;
-                    ElympicsLogger.LogWarning($"Client was unable to maintain required simulation speed. Forcing tick jump, jumping {ticksToCatchup} ticks. Last received tick: {lastReceivedTick} Last predicted tick: {lastPredictedTick} New prediction tick: {newPredictionTick}.");
+                    ElympicsLogger.LogWarning($"Client was unable to maintain required simulation speed. Forcing tick jump, jumping {ticksToCatchup} ticks. Last received tick: {lastReceivedTick} Last predicted tick: {previousTick} New prediction tick: {newTick}.");
                 }
             }
             else
             {
-                canPredict = TrySetNextTick(lastReceivedTick, lastPredictedTick, out newPredictionTick);
+                canPredict = TrySetNextTick(lastReceivedTick, previousTick, out newTick);
             }
 
             Results.LastReceivedTick = lastReceivedTick;
             Results.ExactTickCalculated = calculatedNextTickExact;
             Results.CanPredict = canPredict;
-            Results.LastPredictionTick = lastPredictedTick;
+            Results.PreviousTick = previousTick;
             Results.LastInputTick = lastDelayInputTick;
-            Results.NewPredictedTickFromCalculations = newPredictionTick;
+            Results.NewTickFromCalculations = newTick;
             if (canPredict)
             {
-                Results.PredictionTick = newPredictionTick;
-                Results.DelayedInputTick = newPredictionTick;
+                Results.CurrentTick = newTick;
+                Results.DelayedInputTick = newTick;
             }
 
             Results.PredictionLimit = _config.TotalPredictionLimitInTicks;
@@ -71,7 +71,7 @@ namespace Elympics
 
         private void UpdateElympicsUpdateInterval()
         {
-            var diffInTicks = Results.ExactTickCalculated - Results.PredictionTick;
+            var diffInTicks = Results.ExactTickCalculated - Results.CurrentTick;
             var isClientTooFast = diffInTicks < 0;
             // We don't want to slow down client ASAP due to the fact slowing down, can lead to lack of inputs on server as client will not be able to deliver inputs on time.
             var needsUpdateIntervalAdjustment = diffInTicks <= -MaxTickAheadWithNoChange;
@@ -91,7 +91,7 @@ namespace Elympics
             Results.ElympicsUpdateTickRate = newTickRate;
         }
 
-        private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, long lastPredictionTick, long lastReceivedTick, out long ticksToCatchup)
+        private bool DoesClientNeedsToForceJumpToTheFuture(double calculatedAndExpectedTickDiff, long previousTick, long lastReceivedTick, out long ticksToCatchup)
         {
             var tickDiff = (long)Math.Floor(calculatedAndExpectedTickDiff);
             ticksToCatchup = 0;
@@ -100,9 +100,9 @@ namespace Elympics
             {
                 ticksToCatchup = tickDiff;
 
-                if (lastPredictionTick + ticksToCatchup < lastReceivedTick)
+                if (previousTick + ticksToCatchup < lastReceivedTick)
                 {
-                    ticksToCatchup = lastReceivedTick - lastPredictionTick;
+                    ticksToCatchup = lastReceivedTick - previousTick;
                 }
 
                 return true;
@@ -111,9 +111,9 @@ namespace Elympics
             return false;
         }
 
-        private bool TrySetNextTick(long lastReceivedTick, long lastPredictedTick, out long newTick, long offset = 0)
+        private bool TrySetNextTick(long lastReceivedTick, long previousTick, out long newTick, long offset = 0)
         {
-            newTick = lastPredictedTick + 1 + offset;
+            newTick = previousTick + 1 + offset;
             return newTick <= lastReceivedTick + _config.TotalPredictionLimitInTicks;
         }
 

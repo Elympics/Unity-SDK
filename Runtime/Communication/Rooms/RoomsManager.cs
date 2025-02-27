@@ -341,19 +341,6 @@ namespace Elympics
             throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
         }
 
-        public async UniTask<IRoom> StartSinglePlayer(
-            string queueName,
-            byte[]? gameEngineData = null,
-            float[]? matchmakerData = null,
-            Dictionary<string, string>? customRoomData = null,
-            Dictionary<string, string>? customMatchmakingData = null,
-            CancellationToken ct = default)
-        {
-            customMatchmakingData ??= new Dictionary<string, string>();
-            customMatchmakingData.Add(RoomUtil.SinglePlayerMatchmakingKey, "true");
-            return await StartQuickMatch(queueName, gameEngineData, matchmakerData, customRoomData, customMatchmakingData, ct);
-        }
-
         [PublicAPI]
         public async UniTask<IRoom> StartQuickMatch(
             string queueName,

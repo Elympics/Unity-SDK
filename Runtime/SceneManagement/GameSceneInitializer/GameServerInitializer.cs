@@ -1,3 +1,5 @@
+using Elympics.ElympicsSystems;
+using Elympics.SnapshotAnalysis;
 using UnityEngine;
 
 namespace Elympics
@@ -7,23 +9,30 @@ namespace Elympics
         protected virtual bool HandlingBotsOverride => false;
         protected virtual bool HandlingClientsOverride => false;
 
+        protected GameEngineAdapter GameEngineAdapter;
+        protected ElympicsBehavioursManager BehavioursManager;
+        protected ElympicsServer Server;
+        protected ElympicsGameConfig GameConfig;
+
         public override void Initialize(
             ElympicsClient client,
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsSinglePlayer singlePlayer,
-            ElympicsGameConfig config,
+            ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            Time.maximumDeltaTime = config.TickDuration * 2;
-            Application.targetFrameRate = config.TicksPerSecond * 2;
+            Time.maximumDeltaTime = gameConfig.TickDuration * 2;
+            Application.targetFrameRate = gameConfig.TicksPerSecond * 2;
 
-            var gameEngine = new GameEngineAdapter(config);
-
+            GameEngineAdapter = new GameEngineAdapter(gameConfig);
+            BehavioursManager = behavioursManager;
+            Server = server;
+            GameConfig = gameConfig;
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
-            server.InitializeInternal(config, gameEngine, behavioursManager, HandlingBotsOverride, HandlingClientsOverride);
-            InitializeGameServer(config, gameEngine);
-            behavioursManager.InitializeInternal(server);
+            Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
+            InitializeGameServer(GameConfig, GameEngineAdapter);
+            BehavioursManager.InitializeInternal(Server);
 
             client.Destroy();
             bot.Destroy();
@@ -31,5 +40,10 @@ namespace Elympics
         }
 
         protected abstract void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter);
+
+        protected abstract SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector();
+        protected abstract IServerPlayerHandler ProvideInputRetriever();
+
+        protected abstract IServerElympicsUpdateLoop ProvideElympicsUpdateLoop();
     }
 }

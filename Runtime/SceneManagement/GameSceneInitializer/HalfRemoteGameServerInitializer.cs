@@ -1,6 +1,7 @@
-using System;
 using System.Net;
 using System.Threading;
+using Elympics.ElympicsSystems;
+using Elympics.SnapshotAnalysis;
 using GameEngineCore.V1._4;
 using UnityConnectors.HalfRemote;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
@@ -12,13 +13,11 @@ namespace Elympics
         private SimpleHttpSignalingServer _signalingServer;
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
-        private SinglePlayerLogMonitor _logger;
         private CancellationTokenSource _systemToken;
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _systemToken = new CancellationTokenSource();
-            _logger = new SinglePlayerLogMonitor(Guid.NewGuid().ToString(),"jwt" ,elympicsGameConfig.gameVersion, ElympicsConfig.Load(), _systemToken.Token);
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
                 gameEngineAdapter,
                 new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.TcpPortForHalfRemoteMode),
@@ -49,6 +48,10 @@ namespace Elympics
             _halfRemoteGameEngineProtoConnector.Listen();
             _signalingServer.RunAsync(_signalingServerCts.Token);
         }
+        protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() =>
+            GameConfig.RecordSnapshots ? new EditorSnapshotAnalysisCollector(GameConfig.SnapshotFilePath) : new NullSnapshotAnalysisCollector();
+        protected override IServerPlayerHandler ProvideInputRetriever() => new NullServerPlayerHandler();
+        protected override IServerElympicsUpdateLoop ProvideElympicsUpdateLoop() => new DefaultServerElympicsUpdateLoop(BehavioursManager, GameEngineAdapter, Server, GameConfig);
 
         public override void Dispose()
         {

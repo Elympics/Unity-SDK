@@ -39,7 +39,7 @@ namespace Elympics
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress,
                 matchData.MatchId.ToString(), matchData.RegionName);
-            var gameLogger = ElympicsLogger.CurrentContext!.Value.WithApp(ElympicsLoggerContext.GameplayContextApp);
+            var gameLogger = ElympicsLogger.CurrentContext!.Value.SetGameMode("online").WithApp(ElympicsLoggerContext.GameplayContextApp);
             var gameServerClient = elympicsGameConfig.UseWeb
                 ? (GameServerClient)new WebGameServerClient(serializer, config,
                     new HttpSignalingClient(webSignalingEndpoint),
@@ -54,13 +54,10 @@ namespace Elympics
                 elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
             elympicsGameConfig.players = matchData.MatchedPlayers.Length;
-            client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid
+            client.InitializeInternal(elympicsGameConfig, matchConnectClient, matchClient, new InitialMatchPlayerDataGuid(player, gameEngineData, matchmakerData)
             {
-                Player = player,
                 UserId = userId,
                 IsBot = false,
-                MatchmakerData = matchmakerData,
-                GameEngineData = gameEngineData
             }, ElympicsBehavioursManager, gameLogger);
         }
     }

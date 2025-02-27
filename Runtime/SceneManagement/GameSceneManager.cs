@@ -35,9 +35,6 @@ namespace Elympics
             }
         }
 
-        private void OnDisable()
-        {
-            _gameSceneInitializer?.Dispose();
-        }
+        private void OnDisable() => _gameSceneInitializer?.Dispose();
     }
 }

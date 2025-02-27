@@ -33,6 +33,11 @@ namespace Elympics.ElympicsSystems.Internal
 
         }
         public override UniTask ReConnect(ConnectionData reconnectionData) => UniTask.CompletedTask;
+        public override async UniTask WatchReplay()
+        {
+            ElympicsLogger.LogError(GenerateErrorMessage(nameof(WatchReplay)));
+            await UniTask.CompletedTask;
+        }
         public override async UniTask FinishMatch()
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));

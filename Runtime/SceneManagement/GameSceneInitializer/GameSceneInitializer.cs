@@ -7,7 +7,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsSinglePlayer singlePlayer,
-            ElympicsGameConfig config,
+            ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager);
 
         public virtual void Dispose()

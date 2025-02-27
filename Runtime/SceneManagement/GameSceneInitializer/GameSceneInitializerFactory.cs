@@ -5,7 +5,6 @@ namespace Elympics
 {
     internal static class GameSceneInitializerFactory
     {
-#pragma warning disable IDE0060 // Remove unused parameter
         public static GameSceneInitializer Create(ElympicsGameConfig elympicsGameConfig)
         {
             if (ApplicationParameters.ShouldLoadElympicsOnlineBot)
@@ -24,6 +23,8 @@ namespace Elympics
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => new LocalGameServerInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote => InitializeHalfRemotePlayers(elympicsGameConfig),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer => InitializeDebugOnlinePlayer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay => new EditorSnapshotReplayInitializer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer => new SinglePlayerGameInitializer(),
                 _ => throw new ArgumentOutOfRangeException(nameof(elympicsGameConfig.GameplaySceneDebugMode)),
             };
         }
@@ -35,6 +36,7 @@ namespace Elympics
             ElympicsLobbyClient.JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
             ElympicsLobbyClient.JoinedMatchMode.Local => new LocalGameServerInitializer(),
             ElympicsLobbyClient.JoinedMatchMode.SinglePlayer => new SinglePlayerGameInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
             _ => throw new ArgumentOutOfRangeException(nameof(ElympicsLobbyClient.Instance.MatchMode)),
         };
 

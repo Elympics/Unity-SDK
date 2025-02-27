@@ -74,7 +74,7 @@ namespace Elympics
                     return;
 
                 _halfRemoteMatchClientAdapter.PlayerConnected();
-                ConnectedWithSynchronizationData?.Invoke(new TimeSynchronizationData { LocalClockOffset = TimeSpan.Zero, RoundTripDelay = TimeSpan.Zero, UnreliableReceivedAnyPing = false, UnreliableWaitingForFirstPing = true });
+                ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
                 AuthenticatedUserMatchWithUserId?.Invoke(_userId);
                 MatchJoinedWithMatchId?.Invoke(MatchId);
             }

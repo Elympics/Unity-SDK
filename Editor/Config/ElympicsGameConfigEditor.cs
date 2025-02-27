@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -54,6 +56,8 @@ namespace Elympics.Editor
         private SerializedProperty _ipForHalfRemoteMode;
         private SerializedProperty _tcpPortForHalfRemoteMode;
         private SerializedProperty _webPortForHalfRemoteMode;
+        private SerializedProperty _recordSnapshots;
+        private SerializedProperty _snapshotFilePath;
         private SerializedProperty _playerIndexForHalfRemoteMode;
         private SerializedProperty _testMatchDataQueue;
         private SerializedProperty _testMatchDataRegion;
@@ -109,6 +113,8 @@ namespace Elympics.Editor
             _ipForHalfRemoteMode = serializedObject.FindProperty("ipForHalfRemoteMode");
             _tcpPortForHalfRemoteMode = serializedObject.FindProperty("tcpPortForHalfRemoteMode");
             _webPortForHalfRemoteMode = serializedObject.FindProperty("webPortForHalfRemoteMode");
+            _recordSnapshots = serializedObject.FindProperty("recordSnapshots");
+            _snapshotFilePath = serializedObject.FindProperty("snapshotFilePath");
             _playerIndexForHalfRemoteMode = serializedObject.FindProperty("playerIndexForHalfRemoteMode");
             var testMatchData = serializedObject.FindProperty("testMatchData");
             _testMatchDataQueue = testMatchData.FindPropertyRelative(nameof(ElympicsGameConfig.InitialMatchData.queueName));
@@ -209,6 +215,13 @@ namespace Elympics.Editor
                     DisplayGameVersionInfo();
                     DrawInitialMatchData();
                     break;
+                case ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay:
+                    EditorGUILayout.LabelField("Replay previously recorded match using snapshots from a file.", summaryLabelStyle);
+                    DrawSnapshotReplay();
+                    break;
+                case ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer:
+                    EditorGUILayout.LabelField("Play locally acting as server and client at the same time.", summaryLabelStyle);
+                    break;
                 default:
                     break;
             }
@@ -218,6 +231,25 @@ namespace Elympics.Editor
             EndSection();
 
             EditorStyles.label.wordWrap = cachedWordWrap;
+        }
+
+        private void DrawSnapshotReplay()
+        {
+            _ = EditorGUILayout.PropertyField(_snapshotFilePath, new GUIContent("Snapshot file path", "Path to a file or a folder where snapshots are stored."));
+
+            if (string.IsNullOrWhiteSpace(_snapshotFilePath.stringValue))
+            {
+                EditorGUILayout.HelpBox("Snapshot file path is required.", MessageType.Error, true);
+            }
+            else if (_snapshotFilePath.stringValue.EndsWith(Path.DirectorySeparatorChar) || _snapshotFilePath.stringValue.EndsWith(Path.AltDirectorySeparatorChar))
+            {
+                if (!Directory.Exists(_snapshotFilePath.stringValue))
+                    EditorGUILayout.HelpBox("Snapshot file path is invalid or points to a folder that does not exist or can't be accessed.", MessageType.Error, true);
+            }
+            else if (!File.Exists(_snapshotFilePath.stringValue) && !File.Exists(_snapshotFilePath.stringValue + EditorSnapshotAnalysisCollector.DefaultFileExtension))
+            {
+                EditorGUILayout.HelpBox("Snapshot file path is invalid or points to a file that does not exist or can't be accessed.", MessageType.Error, true);
+            }
         }
 
         private void DisplayGameVersionInfo()
@@ -321,6 +353,11 @@ namespace Elympics.Editor
                     _ = EditorGUILayout.PropertyField(_ipForHalfRemoteMode, new GUIContent("IP Address of server"));
                     _ = EditorGUILayout.PropertyField(_tcpPortForHalfRemoteMode, new GUIContent("Port TCP server listens on"));
                     _ = EditorGUILayout.PropertyField(_webPortForHalfRemoteMode, new GUIContent("Port Web server listens on"));
+                    _ = EditorGUILayout.PropertyField(_recordSnapshots, new GUIContent("Record snapshots", "Save snapshots to a file to analyze and replay them later"));
+
+                    if (_recordSnapshots.boolValue)
+                        _ = EditorGUILayout.PropertyField(_snapshotFilePath, new GUIContent("Snapshot file path", "Path to a folder or a specific file where snapshots should be saved"));
+
                     break;
                 case ElympicsGameConfig.HalfRemoteModeEnum.Client:
                 case ElympicsGameConfig.HalfRemoteModeEnum.Bot:

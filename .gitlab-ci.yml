@@ -144,6 +144,8 @@ check-commits:
   extends:
     - .alpine_image
   stage: prepare-project
+  variables:
+    GIT_DEPTH: 0
   before_script:
    - apk add git
   script:

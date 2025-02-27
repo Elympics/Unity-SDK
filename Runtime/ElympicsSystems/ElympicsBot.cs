@@ -8,6 +8,7 @@ namespace Elympics
 
         public override ElympicsPlayer Player => _gameBotAdapter.Player;
         public override bool IsBot => true;
+        public override long Tick => 0;
 
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot _lastReceivedSnapshot;

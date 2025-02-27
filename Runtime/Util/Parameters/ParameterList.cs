@@ -39,6 +39,9 @@ namespace Elympics
         public readonly Parameter<Uri> RespectEndpoint = new("ELYMPICS_RESPECT", "elympicsRespect", "elympics-respect",
             parse: ParseUri);
 
+        public readonly Parameter<Uri> ReplaySource = new("ELYMPICS_REPLAY", "elympicsReplay", "elympics-replay",
+            parse: ParseUri);
+
         public readonly ValueParameter<bool> ShouldUseWebRtc = new("ELYMPICS_USE_WEBRTC", "elympicsUseWebrtc", "elympics-use-webrtc",
             parse: ParseBoolFlag);
         public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", "elympicsUseTcpUdp", "elympics-use-tcp-udp",

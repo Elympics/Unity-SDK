@@ -409,6 +409,12 @@ namespace Elympics
                 }
         }
 
+        internal void OnRender(in RenderData data)
+        {
+            foreach (var render in _componentsContainer.Renderers)
+                render.Render(data);
+        }
+
         internal void OnPreReconcile()
         {
             _isReconciling = true;

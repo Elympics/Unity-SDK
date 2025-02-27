@@ -39,6 +39,11 @@ namespace Elympics.ElympicsSystems.Internal
             Client.SwitchState(ElympicsState.PlayingMatch);
             await Client.CurrentState.PlayMatch(matchData);
         }
+        public override async UniTask WatchReplay()
+        {
+            Client.SwitchState(ElympicsState.WatchReplay);
+            await Client.CurrentState.WatchReplay();
+        }
 
         public override async UniTask ReConnect(ConnectionData reconnectionData)
         {

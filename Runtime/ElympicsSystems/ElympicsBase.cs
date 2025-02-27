@@ -19,18 +19,18 @@ namespace Elympics
 
         internal readonly ElympicsRpcMessageList RpcMessagesToSend = new();
         internal readonly List<ElympicsRpcMessageList> RpcMessagesToInvoke = new();
-        protected static readonly object RpcMessagesToInvokeLock = new();
+        private static readonly object RpcMessagesToInvokeLock = new();
         private readonly List<ElympicsRpcMessageList> _rpcMessagesToInvokeInCurrentTick = new();
 
         private readonly Stopwatch _elympicsUpdateStopwatch = new();
-        private long _fixedUpdatesCounter;
         private double _timer;
 
         private DateTime _previousUtcForDeltaTime = DateTime.UtcNow;
         private double MaxDeltaTime => 3 * TickDuration;
 
         protected virtual double MaxUpdateTimeWarningThreshold => ElympicsUpdateDuration;
-        private protected DateTime TickStartUtc;
+        internal DateTime TickStartUtc { get; set; }
+        internal DateTime TickEndUtc { get; set; }
         internal ElympicsGameConfig Config { get; private set; }
 
         internal CallContext CurrentCallContext { get; set; } = CallContext.None;
@@ -38,53 +38,17 @@ namespace Elympics
 
         internal bool Initialized { get; private set; }
 
-        internal void SetInitialized()
+        protected void SetInitialized()
         {
             Initialized = true;
-            Instance = this;
             ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
         }
 
-        private static ElympicsBase instance;
-
-        private static ElympicsBase Instance
+        protected void SetDeInitialized()
         {
-            get => instance;
-            set
-            {
-                instance = value;
-                TickAnalysis?.Detach();
-#pragma warning disable IDE0031
-                if (instance != null)
-                    instance.TryAttachTickAnalysis();
-#pragma warning restore IDE0031
-            }
+            Initialized = false;
+            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) DeInitialized for player ID: {Player}");
         }
-
-        #region TickAnalysis
-
-        private static ITickAnalysis tickAnalysis;
-
-        internal static ITickAnalysis TickAnalysis
-        {
-            private protected get => tickAnalysis;
-            set
-            {
-                tickAnalysis?.Detach();
-                tickAnalysis = value;
-#pragma warning disable IDE0031
-                if (Instance != null)
-                    Instance.TryAttachTickAnalysis();
-#pragma warning restore IDE0031
-            }
-        }
-
-        private protected virtual void TryAttachTickAnalysis()
-        {
-            TickAnalysis?.Attach(snapshot => ElympicsBehavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true));
-        }
-
-        #endregion TickAnalysis
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, ElympicsBehavioursManager elympicsBehavioursManager)
         {
@@ -109,7 +73,7 @@ namespace Elympics
 
             var currentUtc = DateTime.UtcNow;
             _timer += CalculateDeltaBasedOnUtcNow(currentUtc);
-
+            var elympicsUpdateCalled = false;
             while (_timer >= ElympicsUpdateDuration)
             {
                 _timer -= ElympicsUpdateDuration;
@@ -125,13 +89,20 @@ namespace Elympics
                 ElympicsFixedUpdate();
 
                 _elympicsUpdateStopwatch.Stop();
+                TickEndUtc = TickStartUtc + _elympicsUpdateStopwatch.Elapsed;
                 if (Config.DetailedNetworkLog)
                     LogElympicsTickThrottle();
 
                 ElympicsLateFixedUpdate();
-                _fixedUpdatesCounter++;
+                elympicsUpdateCalled = true;
             }
-
+            var alpha = _timer / ElympicsUpdateDuration;
+            var renderData = new RenderData()
+            {
+                Alpha = Convert.ToSingle(alpha),
+                FirstFrame = elympicsUpdateCalled
+            };
+            ElympicsRenderUpdate(renderData);
             _elympicsUpdateStopwatch.Reset();
             _elympicsUpdateStopwatch.Start();
         }
@@ -144,7 +115,7 @@ namespace Elympics
             return deltaTime;
         }
 
-        protected internal void InvokeQueuedRpcMessages()
+        internal void InvokeQueuedRpcMessages()
         {
             _rpcMessagesToInvokeInCurrentTick.Clear();
             lock (RpcMessagesToInvokeLock)
@@ -161,23 +132,13 @@ namespace Elympics
                         behaviour.OnRpcInvoked(rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
-        protected internal void SendQueuedRpcMessages()
+        internal void SendQueuedRpcMessages()
         {
             if (RpcMessagesToSend.Messages.Count == 0)
                 return;
             RpcMessagesToSend.Tick = Tick;
             SendRpcMessageList(RpcMessagesToSend);
             RpcMessagesToSend.Messages.Clear();
-        }
-
-        protected ElympicsSnapshotWithMetadata CreateLocalSnapshotWithMetadata()
-        {
-            var localSnapshotWithMetadata = ElympicsBehavioursManager.GetLocalSnapshotWithMetadata();
-            localSnapshotWithMetadata.Tick = Tick;
-            localSnapshotWithMetadata.TickStartUtc = TickStartUtc;
-            localSnapshotWithMetadata.TickEndUtc = DateTime.UtcNow;
-            localSnapshotWithMetadata.FixedUpdateNumber = _fixedUpdatesCounter;
-            return localSnapshotWithMetadata;
         }
 
         private void LogFixedUpdateThrottle()
@@ -188,7 +149,8 @@ namespace Elympics
                 ElympicsLogger.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
         }
 
-        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) => $"Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) =>
+            $"Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         private void LogElympicsTickThrottle()
         {
@@ -198,7 +160,8 @@ namespace Elympics
                 ElympicsLogger.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
         }
 
-        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) => $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) =>
+            $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
         public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour)
         {
@@ -219,6 +182,8 @@ namespace Elympics
 
         protected virtual void ElympicsLateFixedUpdate()
         { }
+
+        protected virtual void ElympicsRenderUpdate(in RenderData renderData) { }
 
         #region ClientCallbacks
 
@@ -259,13 +224,15 @@ namespace Elympics
         public virtual bool IsBot => false;
         public virtual bool IsServer => false;
         public virtual bool IsClient => false;
+
+        public virtual bool IsReplay => false;
         public bool IsClientOrBot => IsClient || IsBot;
         internal bool IsLocalMode => IsServer && IsClient; // assuming there is only one client (and Unlimited Bots Work)
 
         public float TickDuration => Config.TickDuration;
         public int TicksPerSecond => Config.TicksPerSecond;
 
-        public long Tick { get; internal set; }
+        public abstract long Tick { get; }
 
         #region Client
 

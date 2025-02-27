@@ -9,17 +9,17 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsSinglePlayer singlePlayer,
-            ElympicsGameConfig config,
+            ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            Time.maximumDeltaTime = config.TickDuration * 2;
-            Application.targetFrameRate = config.TicksPerSecond * 2;
+            Time.maximumDeltaTime = gameConfig.TickDuration * 2;
+            Application.targetFrameRate = gameConfig.TicksPerSecond * 2;
 
             var gameBotAdapter = new GameBotAdapter();
 
             // ElympicsBot has to setup callbacks BEFORE initializing GameBotAdapter - possible loss of events like Init ~pprzestrzelski 27.08.2021
-            bot.InitializeInternal(config, gameBotAdapter, behavioursManager);
-            InitializeBot(bot, config, gameBotAdapter);
+            bot.InitializeInternal(gameConfig, gameBotAdapter, behavioursManager);
+            InitializeBot(bot, gameConfig, gameBotAdapter);
             behavioursManager.InitializeInternal(bot);
 
             client.Destroy();

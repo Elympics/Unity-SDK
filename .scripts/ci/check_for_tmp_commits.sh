@@ -2,7 +2,7 @@
 
 echo "Starting check_for_tmp_commits.sh"
 
-commit_count=$(git log HEAD...origin/develop --grep='tmp:' |wc -w)
+commit_count=$(git --no-pager log origin/develop..HEAD --grep='^tmp:' |wc -w)
 
 if [ "$commit_count" -gt 0 ]; then
     echo "Found commit(s) containing 'tmp:'"

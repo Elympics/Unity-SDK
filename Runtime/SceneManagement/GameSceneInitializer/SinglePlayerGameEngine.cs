@@ -11,27 +11,39 @@ namespace Elympics
         private readonly IGameEngine _gameEngine;
         private readonly ElympicsLoggerContext _logger;
         private readonly string _url;
+        private readonly ElympicsBehavioursManager _behavioursManager;
+        private readonly Guid _matchId;
         private const string EndGamePath = "matches/run";
-        public SinglePlayerGameEngine(IGameEngine gameEngineAdapter, ElympicsConfig config, ElympicsLoggerContext logger)
+        public SinglePlayerGameEngine(IGameEngine gameEngineAdapter, ElympicsConfig config, ElympicsLoggerContext logger, ElympicsBehavioursManager behavioursManager, Guid matchId)
         {
             _logger = logger.WithContext(nameof(SinglePlayerGameEngine));
             _url = string.Join("/", config.ElympicsApiEndpoint, EndGamePath);
+            _behavioursManager = behavioursManager;
+            _matchId = matchId;
             _gameEngine = gameEngineAdapter;
             _gameEngine.GameEnded += OnGameEnded;
         }
         private void OnGameEnded(ResultMatchUserDatas obj)
         {
             var logger = _logger.WithMethodName();
-            logger.Log("SinglePlayer game ended. Sending results.");
 
-            var requestData = new MatchEndedRequestDTO
-            {
-                matchId = ElympicsLobbyClient.Instance!.MatchDataGuid!.MatchId.ToString(),
-            };
+            _behavioursManager.OnMatchEnded(_matchId);
+            _behavioursManager.OnDisconnectedByServer();
 
-            var jwt = ElympicsLobbyClient.Instance.AuthData?.BearerAuthorization ?? throw new ElympicsException("User is not authorized.");
+            logger.Log("SinglePlayer game ended.");
 
-            ElympicsWebClient.SendPostRequest<MatchEndedResponseDTO>(_url, requestData, jwt, Callback);
+            if (Application.isEditor)
+                return;
+
+            //TO DO: uncomment this once ready
+            // var requestData = new MatchEndedRequestDTO
+            // {
+            //     matchId = ElympicsLobbyClient.Instance!.MatchDataGuid!.MatchId.ToString(),
+            // };
+            //
+            // var jwt = ElympicsLobbyClient.Instance.AuthData?.BearerAuthorization ?? throw new ElympicsException("User is not authenticated.");
+            //
+            // ElympicsWebClient.SendPostRequest<MatchEndedResponseDTO>(_url, requestData, jwt, Callback);
         }
         private void Callback(Result<MatchEndedResponseDTO, Exception> obj)
         {

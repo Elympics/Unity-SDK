@@ -1,3 +1,5 @@
+using Elympics.ElympicsSystems;
+using Elympics.SnapshotAnalysis;
 using GameEngineCore.V1._4;
 using UnityEngine;
 
@@ -17,6 +19,10 @@ namespace Elympics
 
             Application.targetFrameRate = -1;
         }
+        protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() => new NullSnapshotAnalysisCollector();
+        protected override IServerPlayerHandler ProvideInputRetriever() => new SinglePlayerPlayerHandler(Server, GameEngineAdapter, BehavioursManager);
+
+        protected override IServerElympicsUpdateLoop ProvideElympicsUpdateLoop() => new DefaultServerElympicsUpdateLoop(BehavioursManager, GameEngineAdapter, Server, GameConfig);
 
         public override void Dispose()
         {

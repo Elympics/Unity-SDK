@@ -18,6 +18,7 @@ namespace Elympics.ElympicsSystems.Internal
         public PlayPadContext PlayPadContext;
         public string Context;
         public string MethodName;
+        public string GameMode;
 
         public ElympicsLoggerContext(Guid sessionId)
         {
@@ -53,6 +54,7 @@ namespace Elympics.ElympicsSystems.Internal
             };
             Context = null;
             MethodName = null;
+            GameMode = null;
             if (ElympicsLogger.CurrentContext.HasValue)
                 return;
 

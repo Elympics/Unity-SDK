@@ -12,6 +12,7 @@ namespace Elympics.ElympicsSystems.Internal
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
+        public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
         public override async UniTask ReConnect(ConnectionData reconnectionData)
         {
             _matchmakingCancelRequested = false;

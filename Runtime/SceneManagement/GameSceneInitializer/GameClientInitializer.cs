@@ -12,18 +12,18 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsSinglePlayer singlePlayer,
-            ElympicsGameConfig config,
+            ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
             ElympicsBehavioursManager = behavioursManager;
-            Time.fixedDeltaTime = config.TickDuration;
+            Time.fixedDeltaTime = gameConfig.TickDuration;
 
             _client = client;
             bot.Destroy();
             server.Destroy();
             // singlePlayer.Destroy();
-            InitializeClient(client, config);
-            behavioursManager.InitializeInternal(client);
+            //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympcisBase zamiast od argumentow.
+            InitializeClient(client, gameConfig);
         }
 
         public override void Dispose()

@@ -186,7 +186,7 @@ namespace Elympics.Lobby
             {
                 _ws.Close();
             }
-            catch (Exception e)
+            catch (Exception)
             { /* ignored */
             }
             _ws = null;

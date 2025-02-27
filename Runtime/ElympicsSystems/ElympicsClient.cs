@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using Elympics.AssemblyCommunicator;
+using Elympics.AssemblyCommunicator.Events;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -53,11 +54,6 @@ namespace Elympics
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData, ElympicsLoggerContext logger)
         {
-            if (CrossAssemblyEventBroadcaster.I == 0)
-                ElympicsLogger.Log("CrossAssemblyEventBroadcaster initialized");
-            else
-                ElympicsLogger.Log("CrossAssemblyEventBroadcaster initialized???");
-
             _logger = logger.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig);
             _player = initialMatchPlayerData.Player;
@@ -112,16 +108,18 @@ namespace Elympics
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
             RoundTripTimeCalculator.OnSynchronized(data);
-            TimeSynchronized?.Invoke(data, Tick);
+            RaiseRttReceived(data);
             OnConnected(data);
         }
 
         private void OnMatchClientSynchronized(TimeSynchronizationData data)
         {
             OnSynchronized(data);
-            RoundTripTimeCalculator.OnSynchronized(data);
+            RaiseRttReceived(data);
             TimeSynchronized?.Invoke(data, Tick);
         }
+
+        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent<RttReceived>(new() { Rtt = (float)data.RoundTripDelay.TotalMilliseconds, Tick = Tick });
 
         private void OnDestroy()
         {
@@ -378,6 +376,4 @@ namespace Elympics
 
         #endregion
     }
-
-    public class TestClassThatShouldCauseAnError : ElympicsSdkObserver<int> { }
 }

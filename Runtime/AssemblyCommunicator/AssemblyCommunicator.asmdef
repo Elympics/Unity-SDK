@@ -1,12 +1,16 @@
 {
     "name": "AssemblyCommunicator",
     "rootNamespace": "Elympics.AssemblyCommunicator",
-    "references": [],
+    "references": [
+        "GUID:645313404a2d0c44abd9febb05cd1212"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "System.Runtime.CompilerServices.Unsafe.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

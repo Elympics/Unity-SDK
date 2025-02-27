@@ -6,7 +6,8 @@
         "UniTask",
         "MessagePack",
         "MessagePack.Annotations",
-        "AssemblyCommunicator"
+        "AssemblyCommunicator",
+        "Elympics.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

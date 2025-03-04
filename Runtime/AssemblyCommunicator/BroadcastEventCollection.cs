@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Elympics.AssemblyCommunicator
 {
-    public static partial class CrossAssemblyEventBroadcaster
+    internal static partial class CrossAssemblyEventBroadcaster
     {
         /// <summary>
         /// Collection of events that can be looked up by their argument type.

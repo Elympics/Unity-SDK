@@ -20,7 +20,7 @@ namespace Elympics.AssemblyCommunicator
     /// The assembly that raises an event should never subscribe to it, because this would introduce similar issues as singleton pattern.
     /// Use instance references and dependency injection within an assembly instead.
     /// </remarks>
-    public static partial class CrossAssemblyEventBroadcaster
+    internal static partial class CrossAssemblyEventBroadcaster
     {
         private static readonly BroadcastEventCollection Events = new();
 
@@ -57,8 +57,6 @@ namespace Elympics.AssemblyCommunicator
 
         internal static bool IsValidObserverType(Type type) => !type.IsValueType; //Boxed struct will become eligible for garbage collection as soon as it is added when it's wrapped in WeakReference, so using structs here would be pointless
         internal static bool IsValidEventArgumentTypeForObserverInAssembly(Assembly observerAssembly, Type argumentType) => !argumentType.Assembly.Equals(observerAssembly); //Assemblies can't subscribe to their own events (see class summary for details)
-
-        private static void AddEvent<T>() => Events.AddEvent(new ElympicsEvent<T>());
 
         /// <summary>Calls <see cref="IElympicsObserver{T}.OnEvent(T)"/> on each observer registered with <see cref="AddObserver{T}(IElympicsObserver{T})"/>.</summary>
         /// <typeparam name="T">Type of the raised event's argument that uniquely identifies that event.</typeparam>

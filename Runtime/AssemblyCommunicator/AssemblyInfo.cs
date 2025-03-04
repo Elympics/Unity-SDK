@@ -1,3 +1,16 @@
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Elympics")]
+[assembly: InternalsVisibleTo("Elympics.Tests")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Tests.PlayMode")]
 [assembly: InternalsVisibleTo("Elympics.Tests.AssemblyCommunicator")]
+[assembly: InternalsVisibleTo("AssemblyCommunicator")]
+[assembly: InternalsVisibleTo("Elympics.Editor")]
+[assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
+[assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Editor")]
+[assembly: InternalsVisibleTo("SmartContractService")]
+[assembly: InternalsVisibleTo("SmartContractService.Editor")]
+[assembly: InternalsVisibleTo("SmartContractService.Test")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]

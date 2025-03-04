@@ -66,7 +66,11 @@ namespace Elympics.AssemblyCommunicator
 
         /// <summary>Calls <see cref="IElympicsObserver{T}.OnEvent(T)"/> on each observer registered with <see cref="AddObserver{T}(IElympicsObserver{T})"/>.</summary>
         /// <typeparam name="T">Type of the raised event's argument that uniquely identifies that event.</typeparam>
-        public static void RaiseEvent<T>(T argument) => GetOrAddEvent<T>().Raise(argument);
+        public static void RaiseEvent<T>(T argument)
+        {
+            if (Events.TryGetEvent<T>(out var elympicsEvent))
+                elympicsEvent.Raise(argument);
+        }
 
         /// <summary>Registers <paramref name="observer"/> on which <see cref="IElympicsObserver{T}.OnEvent(T)"/> will be called whenever <see cref="RaiseEvent{T}(T)"/> is called.</summary>
         /// <remarks>

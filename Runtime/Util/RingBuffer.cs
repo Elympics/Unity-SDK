@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,6 @@ namespace Elympics
     {
         private readonly T[] _buffer;
         private int _end;
-        private int _size;
 
         public RingBuffer(int capacity)
         {
@@ -16,11 +17,15 @@ namespace Elympics
                 throw new ArgumentException("Circular buffer cannot have negative or zero capacity.", nameof(capacity));
 
             _buffer = new T[capacity];
-            _end = _size == capacity ? 0 : _size;
+            _end = Count == capacity ? 0 : Count;
         }
 
-        private bool IsFull => _size == _buffer.Length;
-        private bool IsEmpty => _size == 0;
+        public T this[int i] => i < Count ? _buffer[i] : throw new IndexOutOfRangeException();
+
+        public int Count { get; private set; }
+
+        private bool IsFull => Count == _buffer.Length;
+        private bool IsEmpty => Count == 0;
 
         public void PushBack(T item)
         {
@@ -33,21 +38,21 @@ namespace Elympics
             {
                 _buffer[_end] = item;
                 Increment(ref _end);
-                ++_size;
+                ++Count;
             }
         }
 
-        public List<T> ToList() => _buffer.Take(_size).ToList();
+        public List<T> ToList() => _buffer.Take(Count).ToList();
 
         public T[] ToArray()
         {
-            var newArray = new T[_size];
+            var newArray = new T[Count];
             var newArrayOffset = 0;
 
             if (IsEmpty)
                 return newArray;
 
-            Array.Copy(_buffer, 0, newArray, newArrayOffset, _size);
+            Array.Copy(_buffer, 0, newArray, newArrayOffset, Count);
             return newArray;
         }
 

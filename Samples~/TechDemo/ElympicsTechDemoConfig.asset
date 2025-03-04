@@ -24,6 +24,7 @@ MonoBehaviour:
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
+    sessionConnectRetries: 5
     synchronizerTimeout: 20
     minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
@@ -38,11 +39,11 @@ MonoBehaviour:
   inputLagTicks: 2
   inputToSendBufferSize: 3
   maxAllowedLagInTicks: 25
-  forceJumpTresholdInTicks: 6
+  forceJumpThresholdInTicks: 6
   prediction: 1
   predictionLimitInTicks: 25
   detailedNetworkLog: 0
-  mode: 2
+  mode: 1
   halfRemoteMode: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101

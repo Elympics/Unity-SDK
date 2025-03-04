@@ -1,4 +1,6 @@
 using System;
+using Elympics.AssemblyCommunicator;
+using Elympics.AssemblyCommunicator.Events;
 using UnityEngine.SceneManagement;
 
 #nullable enable
@@ -37,6 +39,7 @@ namespace Elympics
             IsCurrentlyInMatch = false;
             UpdateGameplayScenePathFromPending();
             GameplayFinished?.Invoke();
+            CrossAssemblyEventBroadcaster.RaiseEvent(new GameplayFinished());
         }
         private void UpdateGameplayScenePathFromPending()
         {

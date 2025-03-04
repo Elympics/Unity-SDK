@@ -4,7 +4,6 @@ using System.IO;
 
 namespace Elympics.AssemblyCommunicator.Events
 {
-    [ElympicsEvent(ElympicsEventAttribute.ElympicsSDK)]
     public struct RttReceived
     {
         /// <summary>Round trip time in miliseconds.</summary>

@@ -37,7 +37,10 @@ namespace MatchTcpClients
         {
             ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
             if (!await TryConnectSessionAsync(ct))
+            {
+                ElympicsLogger.LogError("Could not establish the reliable connection.");
                 return false;
+            }
 
             ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
             if (await UnreliableClient.ConnectAsync(_endpoint))

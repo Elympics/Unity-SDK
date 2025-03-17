@@ -66,12 +66,14 @@ namespace Elympics
         public IGameplaySceneMonitor GameplaySceneMonitor { get; private set; } = null!;
 
         [PublicAPI]
-        public IWebSocketSession WebSocketSession => _webSocketSession.IsValueCreated ? _webSocketSession.Value : throw new InvalidOperationException($"The instance of {nameof(ElympicsLobbyClient)} has not been initialized correctly.");
+        public IWebSocketSession WebSocketSession => _webSocketSession.IsValueCreated ? _webSocketSession.Value
+            : throw new InvalidOperationException($"The instance of {nameof(ElympicsLobbyClient)} has not been initialized correctly.");
 
         #region Rooms
 
         [PublicAPI]
-        public IRoomsManager RoomsManager => _roomsManager.IsValueCreated ? _roomsManager.Value : throw new InvalidOperationException($"The instance of {nameof(ElympicsLobbyClient)} has not been initialized correctly.");
+        public IRoomsManager RoomsManager => _roomsManager.IsValueCreated ? _roomsManager.Value
+            : throw new InvalidOperationException($"The instance of {nameof(ElympicsLobbyClient)} has not been initialized correctly.");
 
         private readonly Lazy<WebSocketSession> _webSocketSession = new(() => Instance!.CreateWebSocketSession());
         private readonly Lazy<RoomsClient> _roomsClient = new(() => Instance!.CreateRoomsClient());
@@ -96,7 +98,13 @@ namespace Elympics
 
         internal JoinedMatchMode MatchMode { get; private set; }
 
-        [Tooltip("Default starting value. The value can be changed at runtime using " + nameof(ElympicsLobbyClient) + "." + nameof(Instance) + "." + nameof(ShouldLoadGameplaySceneAfterMatchmaking) + " property.")]
+        [Tooltip("Default starting value. The value can be changed at runtime using "
+            + nameof(ElympicsLobbyClient)
+            + "."
+            + nameof(Instance)
+            + "."
+            + nameof(ShouldLoadGameplaySceneAfterMatchmaking)
+            + " property.")]
         [SerializeField]
         private bool shouldLoadGameplaySceneAfterMatchmaking = true;
 
@@ -137,7 +145,8 @@ namespace Elympics
             _config = ElympicsConfig.Load() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
 
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
-            _gameConfig = _config.GetCurrentGameConfig() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
+            _gameConfig = _config.GetCurrentGameConfig()
+                ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
             LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId, ElympicsConfig.SdkVersion, _gameConfig.GameId)
             {
                 Context = nameof(ElympicsLobbyClient),
@@ -149,10 +158,12 @@ namespace Elympics
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
 
-            awakeLogger.Log($"Initializing Elympics menu scene... {Environment.NewLine} Available games: {Environment.NewLine} {string.Join($"{Environment.NewLine}", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}"))}");
+            awakeLogger.Log(
+                $"Initializing Elympics menu scene... {Environment.NewLine} Available games: {Environment.NewLine} {string.Join($"{Environment.NewLine}", _config.AvailableGames.Select(game => $"{game.GameName} (ID: {game.GameId}), version {game.GameVersion}"))}");
 
             if (string.IsNullOrEmpty(_config.ElympicsLobbyEndpoint))
-                throw awakeLogger.CaptureAndThrow(new ArgumentException($"Elympics authentication endpoint not set. Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}].", nameof(_config.ElympicsAuthEndpoint)));
+                throw awakeLogger.CaptureAndThrow(new ArgumentException($"Elympics authentication endpoint not set. Finish configuration using [{ElympicsEditorMenuPaths.SETUP_MENU_PATH}].",
+                    nameof(_config.ElympicsAuthEndpoint)));
 
             _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
             _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
@@ -227,8 +238,11 @@ namespace Elympics
             LoadGameplayScene();
         }
 
-        [PublicAPI]
-        public void PlayMatch(MatchmakingFinishedData matchData) => CurrentState.PlayMatch(matchData);
+        public void PlayMatch(MatchmakingFinishedData matchData)
+        {
+            LoggerContext.Log($"Play match {matchData.MatchId}");
+            CurrentState.PlayMatch(matchData).Forget();
+        }
 
         #endregion
 
@@ -257,7 +271,8 @@ namespace Elympics
                 }
 
                 eventName = nameof(AuthenticatedGuid);
-                AuthenticatedGuid?.Invoke(result.IsSuccess ? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value)) : Result<AuthenticationData, string>.Failure(result.Error));
+                AuthenticatedGuid?.Invoke(
+                    result.IsSuccess ? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value)) : Result<AuthenticationData, string>.Failure(result.Error));
                 eventName = nameof(Authenticated);
                 Authenticated?.Invoke(result.IsSuccess, result.Value?.UserId.ToString() ?? "", result.Value?.JwtToken ?? "", result.Error);
             }
@@ -278,7 +293,8 @@ namespace Elympics
         }
         private async UniTask UpdateGameConfig()
         {
-            _gameConfig = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
+            _gameConfig = _config.GetCurrentGameConfig()
+                ?? throw new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly.");
             ElympicsLogger.Log($"Current game has been changed to {_gameConfig.GameName} (ID: {_gameConfig.GameId}).");
             GameplaySceneMonitor!.GameConfigChanged(_gameConfig.gameplayScene);
 
@@ -296,7 +312,8 @@ namespace Elympics
                 _ = ElympicsLogger.LogException(ex);
             }
         }
-        private void LogSettingUpGame(string gameModeName) => LoggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
+        private void LogSettingUpGame(string gameModeName) =>
+            LoggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
 
         private AuthorizationStrategy GetAuthStrategy(bool isAuthorized) => isAuthorized switch
         {
@@ -317,7 +334,9 @@ namespace Elympics
         private void LoadGameplayScene() => SceneManager.LoadScene(_gameConfig.GameplayScene);
 
         private const string ClientSecretPlayerPrefsKeyBase = "Elympics/AuthToken";
-        private static string ClientSecretPlayerPrefsKey => ElympicsClonesManager.IsClone() ? $"{ClientSecretPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}" : ClientSecretPlayerPrefsKeyBase;
+
+        private static string ClientSecretPlayerPrefsKey =>
+            ElympicsClonesManager.IsClone() ? $"{ClientSecretPlayerPrefsKeyBase}_clone_{ElympicsClonesManager.GetCloneNumber()}" : ClientSecretPlayerPrefsKeyBase;
 
         private static string CreateNewClientSecret() => Guid.NewGuid().ToString();
 
@@ -338,7 +357,7 @@ namespace Elympics
             return new WebSocketSession(asyncEventsDispatcher, LoggerContext);
         }
 
-        private RoomsClient CreateRoomsClient() => new()
+        private RoomsClient CreateRoomsClient() => new(LoggerContext)
         {
             Session = _webSocketSession.Value
         };
@@ -448,7 +467,8 @@ namespace Elympics
         {
             var serializedMmData = matchmakerData != null ? "[" + string.Join(", ", matchmakerData.Select(x => x.ToString(CultureInfo.InvariantCulture))) + "]" : "null";
             var serializedGeData = gameEngineData != null ? Convert.ToBase64String(gameEngineData) : "null";
-            ElympicsLogger.Log($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\nSupplied matchmaker data: {serializedMmData}\n" + $"Supplied game engine data: {serializedGeData}");
+            ElympicsLogger.Log($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\nSupplied matchmaker data: {serializedMmData}\n"
+                + $"Supplied game engine data: {serializedGeData}");
             if (loadGameplaySceneOnFinished)
                 ElympicsLogger.Log("Gameplay scene will be loaded after matchmaking succeeds.");
         }

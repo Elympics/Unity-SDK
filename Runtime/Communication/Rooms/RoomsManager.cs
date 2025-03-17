@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+using JetBrains.Annotations;
 using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
@@ -167,6 +168,7 @@ namespace Elympics
             else
             {
                 IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
+                _ = _logger.SetRegion(roomState.MatchmakingData?.QueueName).SetRoomId(roomState.RoomId.ToString());
                 newRoom.ToggleJoinStatus(true);
                 AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();
@@ -263,6 +265,7 @@ namespace Elympics
         {
             if (_rooms.TryGetValue(args.RoomId, out var room))
                 room.ToggleJoinStatus(false);
+            _ = _logger.SetNoRoom();
             LeftRoom?.Invoke(args);
         }
 
@@ -292,6 +295,9 @@ namespace Elympics
 
         public UniTask StopTrackingAvailableRooms() => _client.UnwatchRooms();
 
+        #region Public API
+
+        [PublicAPI]
         public UniTask<IRoom> CreateAndJoinRoom(
             string roomName,
             string queueName,
@@ -309,7 +315,7 @@ namespace Elympics
             var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData);
             return SetupRoomTracking(ackTask);
         }
-
+        [PublicAPI]
         public UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
         {
             if (joinCode != null)
@@ -318,7 +324,7 @@ namespace Elympics
                 return JoinRoom(roomId.Value, teamIndex);
             throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
         }
-
+        [PublicAPI]
         public async UniTask<IRoom> StartQuickMatch(
             string queueName,
             byte[]? gameEngineData = null,
@@ -337,11 +343,16 @@ namespace Elympics
             IRoom? room = null;
             try
             {
-                _ = logger.SetQueue(RoomUtil.QuickMatchRoomName);
-                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName, true, true, queueName, true, customRoomData ?? new Dictionary<string, string>(), customMatchmakingData ?? new Dictionary<string, string>(), ct);
+                var ackTask = _client.CreateRoom(RoomUtil.QuickMatchRoomName,
+                    true,
+                    true,
+                    queueName,
+                    true,
+                    customRoomData ?? new Dictionary<string, string>(),
+                    customMatchmakingData ?? new Dictionary<string, string>(),
+                    ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
-                _ = logger.SetRoomId(room.RoomId.ToString());
                 await room.ChangeTeam(0);
                 await room.MarkYourselfReady(gameEngineData, matchmakerData);
 
@@ -352,12 +363,10 @@ namespace Elympics
 
                 if (isCanceled is false)
                 {
-                    _ = logger.SetMatchId(room.State.MatchmakingData?.MatchData?.MatchId.ToString());
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
                     if (!string.IsNullOrEmpty(error))
                         throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
 
-                    _ = logger.SetServerAddress(room.State.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, room.State.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
                     logger.Log("Quick Match Founded.");
                     return room;
                 }
@@ -414,6 +423,9 @@ namespace Elympics
                 // ReSharper restore AccessToModifiedClosure
             }
         }
+
+        #endregion
+
         private async UniTask<IRoom> JoinRoom(string joinCode, uint? teamIndex)
         {
             var existingRoom = _rooms.Values.FirstOrDefault(x => x.State.JoinCode == joinCode);

@@ -127,7 +127,7 @@ namespace Elympics
 
         public static Exception CaptureAndThrow(Exception exception, string time, ElympicsLoggerContext loggerContext)
         {
-            var wrappedException = exception is not ElympicsException ? new ElympicsException(loggerContext.ToString(), exception) : exception;
+            var wrappedException = exception is not ElympicsException ? new ElympicsException(exception.Message, exception) : exception;
             InformClients(exception.Message, time, loggerContext, LogLevel.Exception);
             return wrappedException;
         }

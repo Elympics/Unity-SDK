@@ -154,7 +154,8 @@ namespace Elympics
 
         private void HandleJoinedRoomUpdated(RoomStateChanged roomState)
         {
-            ElympicsLogger.Log($"Room State Changed: {roomState}");
+            var logger = _logger.WithMethodName();
+            logger.Log($"Handle room update.{Environment.NewLine}{roomState}");
             var roomId = roomState.RoomId;
             if (_rooms.TryGetValue(roomId, out var room))
             {
@@ -168,7 +169,7 @@ namespace Elympics
             else
             {
                 IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
-                _ = _logger.SetRegion(roomState.MatchmakingData?.QueueName).SetRoomId(roomState.RoomId.ToString());
+                _ = logger.SetRegion(roomState.MatchmakingData?.QueueName).SetRoomId(roomState.RoomId.ToString());
                 newRoom.ToggleJoinStatus(true);
                 AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();

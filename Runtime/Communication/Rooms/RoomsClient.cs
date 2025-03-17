@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
@@ -13,10 +14,13 @@ namespace Elympics
 {
     internal class RoomsClient : IRoomsClient
     {
+        private readonly ElympicsLoggerContext _logger;
         public event Action<GameDataResponse>? GameDataResponse;
         public event Action<RoomStateChanged>? RoomStateChanged;
         public event Action<LeftRoomArgs>? LeftRoom;
         public event Action<RoomListChanged>? RoomListChanged;
+
+        public RoomsClient(ElympicsLoggerContext logger) => _logger = logger.WithContext(nameof(RoomsClient));
 
         public SessionConnectionDetails SessionConnectionDetails =>
             Session?.ConnectionDetails ?? throw new InvalidOperationException("Missing WebSocket session object.");
@@ -33,6 +37,7 @@ namespace Elympics
                     _session.MessageReceived += HandleMessage;
             }
         }
+
         private IWebSocketSessionInternal? _session;
 
         private void HandleMessage(IFromLobby message)
@@ -64,28 +69,50 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            CancellationToken ct = default) =>
-            ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData), ct).ContinueWith(result => result.RoomId);
-
-        public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default) =>
-            ExecuteOperation<RoomIdOperationResult>(new JoinWithRoomId(roomId, teamIndex), ct)
+            CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Create room {roomName}");
+            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData), ct)
                 .ContinueWith(result => result.RoomId);
+        }
 
-        public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default) =>
-            ExecuteOperation<RoomIdOperationResult>(new JoinWithJoinCode(joinCode, teamIndex), ct)
+        public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Join room {roomId}");
+            return ExecuteOperation<RoomIdOperationResult>(new JoinWithRoomId(roomId, teamIndex), ct)
                 .ContinueWith(result => result.RoomId);
+        }
 
-        public UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default) =>
-            ExecuteOperation(new ChangeTeam(roomId, teamIndex), ct);
+        public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Join room using join code.");
+            return ExecuteOperation<RoomIdOperationResult>(new JoinWithJoinCode(joinCode, teamIndex), ct)
+                .ContinueWith(result => result.RoomId);
+        }
 
-        public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default) =>
-            ExecuteOperation(new SetReady(roomId, gameEngineData, matchmakerData), ct);
+        public UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Set new team {teamIndex}.");
+            return ExecuteOperation(new ChangeTeam(roomId, teamIndex), ct);
+        }
 
-        public UniTask SetUnready(Guid roomId, CancellationToken ct = default) =>
-            ExecuteOperation(new SetUnready(roomId), ct);
+        public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Set ready.");
+            return ExecuteOperation(new SetReady(roomId, gameEngineData, matchmakerData), ct);
+        }
 
-        public UniTask LeaveRoom(Guid roomId, CancellationToken ct = default) =>
-            ExecuteOperation(new LeaveRoom(roomId), ct);
+        public UniTask SetUnready(Guid roomId, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Set unready.");
+            return ExecuteOperation(new SetUnready(roomId), ct);
+        }
+
+        public UniTask LeaveRoom(Guid roomId, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Leave room.");
+            return ExecuteOperation(new LeaveRoom(roomId), ct);
+        }
 
         public UniTask UpdateRoomParams(
             Guid roomId,
@@ -97,11 +124,17 @@ namespace Elympics
             CancellationToken ct = default) =>
             ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData), ct);
 
-        public UniTask StartMatchmaking(Guid roomId, Guid hostId) =>
-            ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId), default);
+        public UniTask StartMatchmaking(Guid roomId, Guid hostId)
+        {
+            _logger.WithMethodName().Log($"Start matchmaking.");
+            return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId), default);
+        }
 
-        public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default) =>
-            ExecuteOperation(new CancelMatchmaking(roomId), ct);
+        public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default)
+        {
+            _logger.WithMethodName().Log($"Cancel matchmaking.");
+            return ExecuteOperation(new CancelMatchmaking(roomId), ct);
+        }
         public UniTask WatchRooms(CancellationToken ct = default) => ExecuteOperation(new WatchRooms(), ct);
         public UniTask UnwatchRooms(CancellationToken ct = default) => ExecuteOperation(new UnwatchRooms(), ct);
 

@@ -25,21 +25,6 @@ namespace Elympics.Tests
         private const string Nickname = "nickname";
         private const string? AvatarUrl = null;
 
-        private const string FakeJwt = @"{
-  ""header"": {
-    ""alg"": ""RS256"",
-    ""typ"": ""JWT""
-  },
-  ""payload"": {
-    ""nameid"": ""057f2883-b4b4-4cc6-895f-e1332da86567"",
-    ""auth-type"": ""client-secret"",
-    ""nbf"": 1718803982,
-    ""exp"": 111,
-    ""iat"": 1718803982
-  },
-  ""signature"": ""rX85CHYGCpo2V1J6hXRj0rRySi-n7qxjiuwS98P9zS6W-hfKHKsApWJQeLUZ4_0DCUr8AE-YdkbYESKwv6Jl5OuyHDH4QCIVuTkCVrbT4duCiopitcVqwNubQARpTc7lApDAxihAtmdVUuUwz26po2ntlgv-p_JdHqN1g5Uk3vr9miKDdBzvSwSWwN1NP2cGEvzqlAs3wHtw4GYZChX_RugjM-vppuovQMOkwxJ7IvQXV7kb00ucpj71u9EmTmQFN9RMnB8b4c5K7-kXCM-_L2PNAC6MZX2-OExNWklQtqTUD3oF-dJFRH4Hew_ZEgt_SBw37NWN1NSfT2q1wnXh0TDpFPPnZSqYUGNYl7mhOlLrPWNi5e4dpiawy-23760qDmj4kriyqOPcVCzWTbmcvcEe-ktwBIo9MNwYZvQCFJ7yZfsdVTlw7WdBO9_Kf6JZNVZ7Rc6jjCN3OPmCJShTLg7GbiHOp9Bl8637mXXV7GwTzqZxoyAvU9ysRyRXC3kMkUEew0oyAr8eCXU1k-8DIiK_AYdzAUIqSfgV74MwONqQtmrxbGx8kw_l4D15ha7vOMI0QoN9Tu62ElFBgwk2j-1ysH7_7D_sx-9wYD-gUUaOIgL2e71cLzxzzQ0RJYh984BE6RawW4-mzjiR3J8g9NYPRhT-911w-F_HGRTXCZ4""
-}";
-
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -47,8 +32,10 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
-                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas).MockIRoomManager();
+            _ = _sut!.MockSuccessIAuthClient(UserId, Nickname)
+                .MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
+                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas)
+                .MockIRoomManager();
         }
 
         public List<(ElympicsState, ElympicsState)> _stateTransitions = new();

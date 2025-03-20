@@ -45,9 +45,6 @@ namespace MatchTcpClients
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, ElympicsLoggerContext logger)
         {
             _logger = logger.WithContext(nameof(GameServerClient));
-            var log = _logger.WithMethodName();
-            log.Log($"Game server client of type {GetType().Name} will be used.");
-
             _serializer = serializer;
             Config = config;
         }
@@ -174,12 +171,7 @@ namespace MatchTcpClients
 
         private void InitClientDisconnectedCts()
         {
-            _ = ClientDisconnectedCts.Token.Register(() =>
-            {
-                var log = _logger.WithMethodName();
-                log.Log("Client disconnected.");
-                Disconnected?.Invoke();
-            });
+            _ = ClientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
 
             ReliableClient.Disconnected += Disconnect;
         }

@@ -89,10 +89,10 @@ namespace Elympics
         public void Disconnect()
         {
             var logger = _logger.WithMethodName();
-            logger.Log("Disconnected by client.");
             if (!_connected)
                 return;
             _connected = false;
+            logger.Log("Disconnected by client.");
 
             DisconnectedByClient?.Invoke();
             _gameServerClient.Disconnect();
@@ -191,8 +191,6 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
-            var logger = _logger.WithMethodName();
-            logger.Log("Connected and synchronized with game-server.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _ = _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
@@ -242,7 +240,7 @@ namespace Elympics
                 return;
             }
 
-            logger.Log($"Match joined {message.MatchId}.");
+            logger.Log($"Match joined.");
             MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
             _matchJoinedCallback?.Invoke();
         }

@@ -240,7 +240,7 @@ namespace Elympics
 
         public void PlayMatch(MatchmakingFinishedData matchData)
         {
-            LoggerContext.Log($"Play match {matchData.MatchId}");
+            LoggerContext.Log($"Play match.");
             CurrentState.PlayMatch(matchData).Forget();
         }
 

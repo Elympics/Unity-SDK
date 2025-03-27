@@ -119,7 +119,7 @@ namespace Elympics
             TimeSynchronized?.Invoke(data, Tick);
         }
 
-        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived() { Rtt = (float)data.RoundTripDelay.TotalMilliseconds, Tick = Tick });
+        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived() { rtt = (float)data.RoundTripDelay.TotalMilliseconds, tick = Tick });
 
         private void OnDestroy()
         {

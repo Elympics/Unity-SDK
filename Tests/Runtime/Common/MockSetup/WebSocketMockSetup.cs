@@ -29,7 +29,7 @@ namespace Elympics
         private class MessageHandledException : Exception
         { }
 
-        public static IWebSocket CreateMockWebSocket(Guid userId, string nickname, bool createInitialRoom, double? pingDelay)
+        public static IWebSocket CreateMockWebSocket(Guid userId, string nickname, string? avatarUrl, bool createInitialRoom, double? pingDelay)
         {
             Ws.ClearSubstitute();
             Ws.When(x => x.Connect()).Do(async _ =>
@@ -76,7 +76,7 @@ namespace Elympics
                                     new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null),
                                     new List<UserInfo>
                                     {
-                                        new(userId, 0, false, nickname),
+                                        new(userId, 0, false, nickname, avatarUrl),
                                     },
                                     true,
                                     false,
@@ -86,11 +86,13 @@ namespace Elympics
                                 WebSocketMockBackendSession.Rooms[room.RoomId] = room;
                                 SendResponse(Ws, room);
                             }
+
                             if (pingDelay is not null)
                             {
                                 pingCts = new CancellationTokenSource();
                                 SchedulePingMessage(Ws, pingDelay.Value, pingCts.Token).Forget();
                             }
+
                             break;
                         }
                         case CreateRoom createRoom:
@@ -106,7 +108,7 @@ namespace Elympics
                                 new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null),
                                 new List<UserInfo>
                                 {
-                                    new(userId, 0, false, nickname),
+                                    new(userId, 0, false, nickname, avatarUrl),
                                 },
                                 createRoom.IsPrivate,
                                 createRoom.IsEphemeral,
@@ -128,7 +130,7 @@ namespace Elympics
                             ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, Ws, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl)));
                             SendSuccessResponse(Ws, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -139,7 +141,7 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(Ws, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, Ws, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl)));
                             SendSuccessResponse(Ws, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(Ws, room);
@@ -253,6 +255,7 @@ namespace Elympics
                             {
                                 ElympicsLogger.Log($"[MOCK] Canceled matchmaking.");
                             }
+
                             break;
                         }
                         case CancelMatchmaking cancelMatchmaking:
@@ -305,6 +308,7 @@ namespace Elympics
             });
             return Ws;
         }
+
         private static async UniTask SchedulePingMessage(IWebSocket ws, double delay, CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
@@ -314,11 +318,11 @@ namespace Elympics
             }
         }
 
-        public static void MakeAllPlayersReadyForRoom(Guid roomId, Guid UserId)
+        public static void MakeAllPlayersReadyForRoom(Guid roomId, Guid userId)
         {
             var room = WebSocketMockBackendSession.Rooms[roomId];
             UpdateUsers(ref room,
-                room.Users.Select(u => u.UserId != UserId ? u with
+                room.Users.Select(u => u.UserId != userId ? u with
                 {
                     IsReady = true
                 } : u));
@@ -345,7 +349,9 @@ namespace Elympics
                 SendResponse(Ws, room);
             UpdateRoomOnList(Ws, room);
         }
+
         public static void CancelPingToken() => pingCts?.Cancel();
+
         private static void UpdateUsers(ref RoomStateChanged roomStateChanged, IEnumerable<UserInfo> users)
         {
             roomStateChanged = roomStateChanged with
@@ -418,13 +424,11 @@ namespace Elympics
                 UpdateTime(ref room);
                 SendResponse(ws, room);
                 cts = null;
-
             }
             catch (OperationCanceledException)
             {
                 ElympicsLogger.Log("[MOCK] Cancelling matchmaking simulation.");
             }
-
         }
 
         private static void SetMatchmakingState(ref RoomStateChanged room, MatchmakingState newState)
@@ -461,7 +465,12 @@ namespace Elympics
         {
             if (room.MatchmakingData!.State is MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking)
                 return;
-            SendFailResponse(ws, matchmakingOperation, ErrorBlame.UserError, ErrorKind.Unspecified, roomId, $"Cant's cancel matchmaking in states different than {MatchmakingState.Matchmaking} or {MatchmakingState.CancellingMatchmaking}.");
+            SendFailResponse(ws,
+                matchmakingOperation,
+                ErrorBlame.UserError,
+                ErrorKind.Unspecified,
+                roomId,
+                $"Can't cancel matchmaking in states different than {MatchmakingState.Matchmaking} or {MatchmakingState.CancellingMatchmaking}.");
             throw new MessageHandledException();
         }
 
@@ -612,9 +621,21 @@ namespace Elympics
 
         private static PublicRoomState CreatePublicRoomState(RoomStateChanged roomState)
         {
-            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate, roomState.MatchmakingData!.State, roomState.MatchmakingData.QueueName, roomState.MatchmakingData.TeamCount, roomState.MatchmakingData.TeamSize, roomState.MatchmakingData.CustomData);
+            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate,
+                roomState.MatchmakingData!.State,
+                roomState.MatchmakingData.QueueName,
+                roomState.MatchmakingData.TeamCount,
+                roomState.MatchmakingData.TeamSize,
+                roomState.MatchmakingData.CustomData);
 
-            return new PublicRoomState(roomState.RoomId, roomState.LastUpdate, roomState.RoomName, roomState.HasPrivilegedHost, matchmakingData, roomState.Users, roomState.IsPrivate, roomState.CustomData);
+            return new PublicRoomState(roomState.RoomId,
+                roomState.LastUpdate,
+                roomState.RoomName,
+                roomState.HasPrivilegedHost,
+                matchmakingData,
+                roomState.Users,
+                roomState.IsPrivate,
+                roomState.CustomData);
         }
     }
 }

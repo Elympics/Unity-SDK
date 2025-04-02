@@ -9,7 +9,7 @@ namespace Elympics
     public static class ElympicsTools
     {
         [MenuItem(ElympicsEditorMenuPaths.MANAGE_GAMES_IN_ELYMPICS, priority = 1)]
-        private static void OpenManageGamesInElympicsWindow()
+        internal static void OpenManageGamesInElympicsWindow()
         {
             var elympicsConfig = LoadOrCreateConfig();
             var serializedElympicsConfig = new SerializedObject(elympicsConfig);

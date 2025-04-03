@@ -26,6 +26,7 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default);
         UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);
@@ -40,6 +41,7 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default);
         UniTask StartMatchmaking(Guid roomId, Guid hostId);
         UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default);

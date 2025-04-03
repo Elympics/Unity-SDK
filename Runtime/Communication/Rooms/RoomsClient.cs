@@ -69,10 +69,11 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default)
         {
             _logger.WithMethodName().Log($"Create room {roomName}");
-            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData), ct)
+            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betDetailsSlim), ct)
                 .ContinueWith(result => result.RoomId);
         }
 
@@ -121,8 +122,9 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default) =>
-            ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData), ct);
+            ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetailsSlim), ct);
 
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {

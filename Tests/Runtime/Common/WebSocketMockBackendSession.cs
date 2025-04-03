@@ -41,6 +41,8 @@ namespace Elympics
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
                     new Dictionary<string, string>(),
+                    null,
+                    null,
                     null),
                 new List<UserInfo>
                 {
@@ -65,6 +67,8 @@ namespace Elympics
                     Queues[queueName2].TeamCount,
                     Queues[queueName2].TeamSize,
                     new Dictionary<string, string>(),
+                    null,
+                    null,
                     null),
                 new List<UserInfo>
                 {
@@ -89,6 +93,8 @@ namespace Elympics
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
                     new Dictionary<string, string>(),
+                    null,
+                    null,
                     null),
                 new List<UserInfo>
                 {

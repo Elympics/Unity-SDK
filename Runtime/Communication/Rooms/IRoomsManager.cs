@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
 #nullable enable
@@ -47,7 +48,8 @@ namespace Elympics
             bool isSingleTeam,
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
-            IReadOnlyDictionary<string, string>? customMatchmakingData = null);
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsSlim? betDetailsSlim = null);
         UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null);
         UniTask<IRoom> StartQuickMatch(
             string queueName,
@@ -55,6 +57,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;
         internal UniTask CheckJoinedRoomStatus();

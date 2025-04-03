@@ -106,8 +106,10 @@ namespace Elympics.Tests
                         1,
                         1,
                         new Dictionary<string, string>(),
-                        new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null)),
-                    new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty, null) },
+                        new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null),
+                        null,
+                        null),
+                    new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty, string.Empty) },
                     false,
                     false,
                     null));

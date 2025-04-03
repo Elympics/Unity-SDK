@@ -42,7 +42,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null);
             WsSessionMock.ResultToReturn = new RoomIdOperationResult(Guid.Empty, TestRoomGuid);
 
             // Act
@@ -61,7 +61,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null);
             RoomsClient.Session = null;
 
             // Act
@@ -80,7 +80,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfIncompatibleResultIsReturned() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null);
             WsSessionMock.ResultToReturn = new OperationResult(Guid.Empty);
 
             // Act

@@ -305,7 +305,8 @@ namespace Elympics
             bool isSingleTeam,
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
-            IReadOnlyDictionary<string, string>? customMatchmakingData = null)
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsSlim? betDetailsSlim = null)
         {
             if (roomName == null)
                 throw new ArgumentNullException(nameof(roomName));
@@ -313,7 +314,7 @@ namespace Elympics
                 throw new ArgumentNullException(nameof(queueName));
             customRoomData ??= new Dictionary<string, string>();
             customMatchmakingData ??= new Dictionary<string, string>();
-            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData);
+            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData, betDetailsSlim);
             return SetupRoomTracking(ackTask);
         }
         [PublicAPI]
@@ -332,6 +333,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsSlim? betDetailsSlim = null,
             CancellationToken ct = default)
         {
             if (queueName == null)
@@ -351,6 +353,7 @@ namespace Elympics
                     true,
                     customRoomData ?? new Dictionary<string, string>(),
                     customMatchmakingData ?? new Dictionary<string, string>(),
+                    betDetailsSlim,
                     ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 

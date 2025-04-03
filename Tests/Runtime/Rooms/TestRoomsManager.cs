@@ -152,8 +152,8 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void JoinRoomThatIsAlreadyListedInPublicRoomListAndRoomStateIsUpdated()
         {
-            var currentUser = new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null);
-            var currentMmData = new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>());
+            var currentUser = new UserInfo(Guid.NewGuid(), 0, false, string.Empty, string.Empty);
+            var currentMmData = new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null);
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
                 new(_roomIdForTesting,
@@ -187,6 +187,8 @@ namespace Elympics.Tests.Rooms
                     currentMmData.TeamCount,
                     currentMmData.TeamSize,
                     currentMmData.CustomData,
+                    null,
+                    null,
                     null)
             };
             _roomsClientMock.InvokeRoomStateChanged(roomStateWithUsers);
@@ -516,7 +518,7 @@ namespace Elympics.Tests.Rooms
                         DateTime.UnixEpoch,
                         "test room name",
                         true,
-                        new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                        new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null),
                         new List<UserInfo>
                         {
                             new(Guid.NewGuid(), 0, false, string.Empty, null),
@@ -539,7 +541,7 @@ namespace Elympics.Tests.Rooms
                 DateTime.UnixEpoch,
                 "test room name",
                 true,
-                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null),
                 new List<UserInfo>
                 {
                     new(Guid.Empty, 0, false, string.Empty, null),
@@ -566,7 +568,7 @@ namespace Elympics.Tests.Rooms
                 DateTime.UnixEpoch,
                 "test room name",
                 true,
-                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null),
                 new List<UserInfo>
                 {
                     new(Guid.Empty, 0, false, string.Empty, null),
@@ -596,7 +598,7 @@ namespace Elympics.Tests.Rooms
                 DateTime.UnixEpoch,
                 "test room name",
                 true,
-                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null),
                 new List<UserInfo>
                 {
                     new(Guid.Empty, 0, false, string.Empty, null),
@@ -612,7 +614,7 @@ namespace Elympics.Tests.Rooms
                 DateTime.UnixEpoch + TimeSpan.FromSeconds(1),
                 "test room name modified",
                 true,
-                new PublicMatchmakingData(DateTime.UnixEpoch + TimeSpan.FromSeconds(1), MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
+                new PublicMatchmakingData(DateTime.UnixEpoch + TimeSpan.FromSeconds(1), MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>(), null),
                 new List<UserInfo>
                 {
                     new(Guid.Empty, 0, false, string.Empty, null),

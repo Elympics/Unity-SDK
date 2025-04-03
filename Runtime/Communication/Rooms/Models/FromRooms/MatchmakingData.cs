@@ -15,7 +15,9 @@ namespace Elympics.Rooms.Models
         [property: Key(3)] uint TeamCount,
         [property: Key(4)] uint TeamSize,
         [property: Key(5)] IReadOnlyDictionary<string, string> CustomData,
-        [property: Key(6)] MatchData? MatchData)
+        [property: Key(6)] MatchData? MatchData,
+        [property: Key(7)] RoomTournamentDetails? TournamentDetails,
+        [property: Key(8)] RoomBetDetails? BetDetails)
     {
         public virtual bool Equals(MatchmakingData? other)
         {
@@ -42,5 +44,88 @@ namespace Elympics.Rooms.Models
             + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
 
         public override int GetHashCode() => HashCode.Combine(State, LastStateUpdate, QueueName, TeamSize, TeamCount, MatchData, CustomData.Count);
+    }
+
+    [MessagePackObject]
+    public class RoomTournamentDetails
+    {
+        [Key(0)] public string TournamentId { get; set; }
+        [Key(1)] public ChainType? ChainType { get; set; }
+    }
+
+    public enum ChainType
+    {
+        TON = 0,
+        EVM = 1,
+    }
+
+    [MessagePackObject]
+    public class RoomBetDetails
+    {
+        [Key(0)] public decimal BetValue { get; set; }
+        [Key(1)] public RoomCoin Coin { get; set; }
+
+        public override bool Equals(object? obj) => obj is RoomBetDetails other && BetValue == other.BetValue && Coin.Equals(other.Coin);
+
+        public override int GetHashCode() => HashCode.Combine(BetValue, Coin);
+
+        public static bool operator ==(RoomBetDetails? left, RoomBetDetails? right) => Equals(left, right);
+
+        public static bool operator !=(RoomBetDetails? left, RoomBetDetails? right) => !Equals(left, right);
+    }
+
+    [MessagePackObject]
+    public class RoomCoin
+    {
+        [Key(0)] public Guid CoinId { get; set; }
+        [Key(1)] public RoomChain Chain { get; set; }
+        [Key(2)] public RoomCurrency Currency { get; set; }
+
+        protected bool Equals(RoomCoin other) => CoinId.Equals(other.CoinId) && Chain.Equals(other.Chain) && Currency.Equals(other.Currency);
+
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCoin other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(CoinId, Chain, Currency);
+
+        public static bool operator ==(RoomCoin? left, RoomCoin? right) => Equals(left, right);
+
+        public static bool operator !=(RoomCoin? left, RoomCoin? right) => !Equals(left, right);
+    }
+
+    [MessagePackObject]
+    public class RoomChain
+    {
+        [Key(0)] public int ExternalId { get; set; }
+        [Key(1)] public ChainType Type { get; set; }
+        [Key(2)] public string Name { get; set; }
+
+        protected bool Equals(RoomChain other) => ExternalId == other.ExternalId && Type == other.Type && Name == other.Name;
+
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomChain other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(ExternalId, (int)Type, Name);
+
+        public static bool operator ==(RoomChain? left, RoomChain? right) => Equals(left, right);
+
+        public static bool operator !=(RoomChain? left, RoomChain? right) => !Equals(left, right);
+    }
+
+    [MessagePackObject]
+    public class RoomCurrency
+    {
+        [Key(0)] public string Ticker { get; set; } = null!;
+        [Key(1)] public string? Address { get; set; }
+        [Key(2)] public int Decimals { get; set; }
+        [Key(3)] public string IconUrl { get; set; } = null!;
+
+        protected bool Equals(RoomCurrency other) => Ticker == other.Ticker && Address == other.Address && Decimals == other.Decimals && IconUrl == other.IconUrl;
+
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCurrency other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(Ticker, Address, Decimals, IconUrl);
+
+        public static bool operator ==(RoomCurrency? left, RoomCurrency? right) => Equals(left, right);
+
+        public static bool operator !=(RoomCurrency? left, RoomCurrency? right) => !Equals(left, right);
     }
 }

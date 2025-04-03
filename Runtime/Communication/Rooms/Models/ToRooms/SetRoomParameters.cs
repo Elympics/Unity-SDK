@@ -13,7 +13,9 @@ namespace Elympics.Rooms.Models
         [property: Key(2)] string? RoomName,
         [property: Key(3)] bool? IsPrivate,
         [property: Key(4)] IReadOnlyDictionary<string, string>? CustomRoomData,
-        [property: Key(5)] IReadOnlyDictionary<string, string>? CustomMatchmakingData) : LobbyOperation
+        [property: Key(5)] IReadOnlyDictionary<string, string>? CustomMatchmakingData,
+        [property: Key(6)] RoomTournamentDetails? TournamentDetails, //TO DO: Start using this in SDK and on backend instead of CustomMatchmakingData
+        [property: Key(7)] RoomBetDetailsSlim? BetDetailsSlim) : LobbyOperation
     {
         [SerializationConstructor]
         public SetRoomParameters(
@@ -22,7 +24,9 @@ namespace Elympics.Rooms.Models
             string? roomName,
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
-            IReadOnlyDictionary<string, string>? customMatchmakingData) : this(roomId, roomName, isPrivate, customRoomData, customMatchmakingData) =>
+            IReadOnlyDictionary<string, string>? customMatchmakingData,
+            RoomTournamentDetails? tournamentDetails,
+            RoomBetDetailsSlim? betDetailsSlim) : this(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, tournamentDetails, betDetailsSlim) =>
             OperationId = operationId;
 
         public virtual bool Equals(SetRoomParameters? other)
@@ -39,5 +43,12 @@ namespace Elympics.Rooms.Models
         }
 
         public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), RoomId, RoomName ?? "", IsPrivate, CustomRoomData?.Count ?? 0, CustomMatchmakingData?.Count ?? 0);
+    }
+
+    [MessagePackObject]
+    public class RoomBetDetailsSlim
+    {
+        [Key(0)] public decimal BetValue { get; set; }
+        [Key(1)] public Guid CoinId { get; set; }
     }
 }

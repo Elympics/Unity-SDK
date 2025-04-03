@@ -177,7 +177,7 @@ namespace Elympics
             }
         }
 
-        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? customRoomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null)
+        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? customRoomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetDetailsSlim? betDetailsSlim = null)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -206,7 +206,7 @@ namespace Elympics
             var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
-            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend);
+            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betDetailsSlim);
         }
 
         public void PlayAvailableMatch()

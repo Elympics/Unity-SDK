@@ -11,11 +11,11 @@ namespace Elympics.AssemblyCommunicator
 {
     /// <summary>
     /// Allows an assembly to raise events that other assemblies can subscribe to.
-    /// Each event has one argument and type of that argument identifies that event, so it needs to be unique to tha event across all assemblies using this class.
+    /// Each event has one argument and type of that argument identifies that event, so it needs to be unique to that event across all assemblies using this class.
     /// </summary>
     /// <remarks>
     /// All members of this class are not thread safe and should be used from the main thread.
-    /// This class should be used for application wide events, like ending a match.
+    /// This class should be used for application-wide events, like ending a match.
     /// Each event should only be raised from one assembly.
     /// The assembly that raises an event should never subscribe to it, because this would introduce similar issues as singleton pattern.
     /// Use instance references and dependency injection within an assembly instead.

@@ -11,7 +11,7 @@ namespace Elympics.ElympicsSystems.Internal
         public const string PlayPadContextApp = "PlayPadSdk";
         public Guid SessionId;
         public string App;
-        public AppContext AppContext;
+        public ElympicsContext ElympicsContext;
         public UserContext UserContext;
         public ConnectionContext ConnectionContext;
         public RoomContext RoomContext;
@@ -19,14 +19,14 @@ namespace Elympics.ElympicsSystems.Internal
         public string Context;
         public string MethodName;
 
-        public ElympicsLoggerContext(Guid sessionId, string version, string gameId)
+        public ElympicsLoggerContext(Guid sessionId)
         {
             App = null;
             SessionId = sessionId;
-            AppContext = new AppContext
+            ElympicsContext = new ElympicsContext
             {
-                Version = version,
-                GameId = gameId
+                SdkVersion = null,
+                GameId = null,
             };
             UserContext = new UserContext
             {
@@ -43,6 +43,8 @@ namespace Elympics.ElympicsSystems.Internal
             };
             PlayPadContext = new PlayPadContext
             {
+                ProtocolVersion = null,
+                SdkVersion = null,
                 Capabilities = null,
                 TournamentId = null,
                 FeatureAccess = null
@@ -65,21 +67,27 @@ namespace Elympics.ElympicsSystems.Internal
         public void Exception(Exception exception) => ElympicsLogger.LogException(exception, TimeUtil.DateTimeNowToString, this);
 
         public override string ToString() =>
-            $"{nameof(Context)}: {Context} | " + $"{nameof(MethodName)}: {MethodName} | " + $"{Environment.NewLine}{AppContext}" + $"{Environment.NewLine}{UserContext}" + $"{Environment.NewLine}{ConnectionContext}" + $"{Environment.NewLine}{RoomContext}" + $"{Environment.NewLine}{PlayPadContext}";
+            $"{nameof(Context)}: {Context} | "
+            + $"{nameof(MethodName)}: {MethodName} | "
+            + $"{Environment.NewLine}{ElympicsContext}"
+            + $"{Environment.NewLine}{UserContext}"
+            + $"{Environment.NewLine}{ConnectionContext}"
+            + $"{Environment.NewLine}{RoomContext}"
+            + $"{Environment.NewLine}{PlayPadContext}";
     }
 
-    internal class AppContext
+    internal class ElympicsContext
     {
-        public string Version;
+        public string SdkVersion;
         public string GameId;
 
         public void Clear()
         {
-            Version = string.Empty;
+            SdkVersion = string.Empty;
             GameId = string.Empty;
         }
 
-        public override string ToString() => $"{nameof(Version)}: {Version} | " + $"{nameof(GameId)}: {GameId} | ";
+        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | " + $"{nameof(GameId)}: {GameId} | ";
     }
 
     internal class UserContext
@@ -97,7 +105,8 @@ namespace Elympics.ElympicsSystems.Internal
             WalletAddress = string.Empty;
         }
 
-        public override string ToString() => $"{nameof(UserId)}: {UserId} | " + $"{nameof(Nickname)}: {Nickname} | " + $"{nameof(AuthType)}: {AuthType} | " + $"{nameof(WalletAddress)}: {WalletAddress} | ";
+        public override string ToString() =>
+            $"{nameof(UserId)}: {UserId} | " + $"{nameof(Nickname)}: {Nickname} | " + $"{nameof(AuthType)}: {AuthType} | " + $"{nameof(WalletAddress)}: {WalletAddress} | ";
     }
 
     internal class ConnectionContext
@@ -126,15 +135,25 @@ namespace Elympics.ElympicsSystems.Internal
             TcpUdpServerAddress = string.Empty;
             WebServerAddress = string.Empty;
         }
-        public override string ToString() => $"{nameof(RoomId)}: {RoomId} | " + $"{nameof(QueueName)}: {QueueName} | " + $"{nameof(MatchId)}: {MatchId} | " + $"{nameof(TcpUdpServerAddress)}: {TcpUdpServerAddress} | " + $"{nameof(WebServerAddress)}: {WebServerAddress} | ";
+        public override string ToString() => $"{nameof(RoomId)}: {RoomId} | "
+            + $"{nameof(QueueName)}: {QueueName} | "
+            + $"{nameof(MatchId)}: {MatchId} | "
+            + $"{nameof(TcpUdpServerAddress)}: {TcpUdpServerAddress} | "
+            + $"{nameof(WebServerAddress)}: {WebServerAddress} | ";
     }
 
     internal class PlayPadContext
     {
+        public string SdkVersion;
+        public string ProtocolVersion;
         public string Capabilities;
         public string TournamentId;
         public string FeatureAccess;
 
-        public override string ToString() => $"{nameof(Capabilities)}: {Capabilities} | " + $"{nameof(TournamentId)}: {TournamentId} | " + $"{nameof(FeatureAccess)}: {FeatureAccess} | ";
+        public override string ToString() => $"{nameof(Capabilities)}: {Capabilities} | "
+            + $"{nameof(TournamentId)}: {TournamentId} | "
+            + $"{nameof(FeatureAccess)}: {FeatureAccess} | "
+            + $"{nameof(SdkVersion)}: {SdkVersion} | "
+            + $"{nameof(ProtocolVersion)}: {ProtocolVersion} | ";
     }
 }

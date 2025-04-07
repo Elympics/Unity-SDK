@@ -58,7 +58,7 @@ namespace Elympics.Tests
 
         private static WebSocketSession CreateWebSocketSession(LobbySerializerMock.Methods? serializerMethods = null)
         {
-            var session = new WebSocketSession(Dispatcher, new ElympicsLoggerContext(new Guid(), string.Empty, string.Empty), (_, _) => WsMock, SerializerMock);
+            var session = new WebSocketSession(Dispatcher, new ElympicsLoggerContext(new Guid()), (_, _) => WsMock, SerializerMock);
             if (serializerMethods.HasValue)
                 _ = SerializerMock.UpdateMethods(serializerMethods.Value);
             return session;

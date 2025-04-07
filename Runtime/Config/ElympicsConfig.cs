@@ -71,9 +71,9 @@ namespace Elympics
         public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
         {
             var elympicsConfig = Resources.Load<ElympicsConfig>(PathInResources);
-            if (elympicsConfig == null)
-                throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
-            return elympicsConfig.GetCurrentGameConfig();
+            if (elympicsConfig)
+                return elympicsConfig.GetCurrentGameConfig();
+            throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
         }
 
         public ElympicsGameConfig GetCurrentGameConfig()

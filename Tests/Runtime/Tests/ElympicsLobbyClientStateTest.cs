@@ -10,6 +10,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+
+#nullable enable
+
 namespace Elympics.Tests
 {
     public class ElympicsLobbyClientStateTest : ElympicsMonoBaseTest
@@ -20,6 +23,7 @@ namespace Elympics.Tests
 
         private static readonly Guid UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         private const string Nickname = "nickname";
+        private const string? AvatarUrl = null;
 
         private const string FakeJwt = @"{
   ""header"": {
@@ -43,7 +47,8 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, false, null, out _).MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas).MockIRoomManager();
+            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
+                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas).MockIRoomManager();
         }
 
         public List<(ElympicsState, ElympicsState)> _stateTransitions = new();
@@ -115,6 +120,7 @@ namespace Elympics.Tests
                 _sut.SwitchState(ElympicsState.Connected);
                 _sut.SignOut();
             }
+
             _sut.StateChanged -= OnStateChanged;
         }
 
@@ -122,6 +128,7 @@ namespace Elympics.Tests
         public void FinishTests() => Object.Destroy(_sut);
 
         private void OnStateChanged(ElympicsState oldState, ElympicsState newState) => _stateTransitions.Add((oldState, newState));
+
         private void AssertStateTransition(int index, ElympicsState expectedOld, ElympicsState expectedNew)
         {
             Assert.AreEqual((int)_stateTransitions[index].Item1, (int)expectedOld);

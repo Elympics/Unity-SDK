@@ -152,7 +152,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void JoinRoomThatIsAlreadyListedInPublicRoomListAndRoomStateIsUpdated()
         {
-            var currentUser = new UserInfo(Guid.NewGuid(), 0, false, string.Empty);
+            var currentUser = new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null);
             var currentMmData = new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>());
             var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
             {
@@ -181,7 +181,13 @@ namespace Elympics.Tests.Rooms
                     currentUser,
                     _roomStateChanged.Users[0]
                 },
-                MatchmakingData = new MatchmakingData(currentMmData.LastStateUpdate, currentMmData.State, currentMmData.QueueName, currentMmData.TeamCount, currentMmData.TeamSize, currentMmData.CustomData, null)
+                MatchmakingData = new MatchmakingData(currentMmData.LastStateUpdate,
+                    currentMmData.State,
+                    currentMmData.QueueName,
+                    currentMmData.TeamCount,
+                    currentMmData.TeamSize,
+                    currentMmData.CustomData,
+                    null)
             };
             _roomsClientMock.InvokeRoomStateChanged(roomStateWithUsers);
 
@@ -202,7 +208,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
@@ -211,7 +217,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, true, string.Empty),
+                    new(Guid.Empty, 0, true, string.Empty, null),
                 },
                 LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -230,7 +236,10 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
-                    MatchData = new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }), string.Empty)
+                    MatchData = new MatchData(Guid.Empty,
+                        MatchState.Running,
+                        new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+                        string.Empty)
                 },
                 LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -249,7 +258,6 @@ namespace Elympics.Tests.Rooms
                 await UniTask.Delay(TimeSpan.FromSeconds(1));
                 _roomsClientMock.InvokeRoomStateChanged(matchDataState);
             }
-
         });
 
         [UnityTest]
@@ -264,7 +272,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
@@ -273,7 +281,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, true, string.Empty),
+                    new(Guid.Empty, 0, true, string.Empty, null),
                 },
                 LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -293,7 +301,10 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
                     State = MatchmakingState.Matched,
-                    MatchData = new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }), string.Empty)
+                    MatchData = new MatchData(Guid.Empty,
+                        MatchState.Running,
+                        new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+                        string.Empty)
                 },
                 LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -314,7 +325,6 @@ namespace Elympics.Tests.Rooms
                 await UniTask.Delay(TimeSpan.FromSeconds(1));
                 _roomsClientMock.InvokeRoomStateChanged(matchDataState);
             }
-
         });
 
         [UnityTest]
@@ -329,7 +339,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
@@ -338,7 +348,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, true, string.Empty),
+                    new(Guid.Empty, 0, true, string.Empty, null),
                 },
                 LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -379,7 +389,6 @@ namespace Elympics.Tests.Rooms
                 await UniTask.Delay(TimeSpan.FromSeconds(1));
                 _roomsClientMock.InvokeRoomStateChanged(matchDataState);
             }
-
         });
 
         [UnityTest]
@@ -394,7 +403,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
@@ -403,7 +412,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, true, string.Empty),
+                    new(Guid.Empty, 0, true, string.Empty, null),
                 },
                 LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -423,7 +432,10 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
                     State = MatchmakingState.Matched,
-                    MatchData = new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }), string.Empty)
+                    MatchData = new MatchData(Guid.Empty,
+                        MatchState.Running,
+                        new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+                        string.Empty)
                 },
                 LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -445,7 +457,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty),
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1)
             };
@@ -454,7 +466,7 @@ namespace Elympics.Tests.Rooms
             {
                 Users = new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, true, string.Empty),
+                    new(Guid.Empty, 0, true, string.Empty, null),
                 },
                 LastUpdate = teamChangedState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -474,7 +486,10 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
                     State = MatchmakingState.Matched,
-                    MatchData = new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }), string.Empty)
+                    MatchData = new MatchData(Guid.Empty,
+                        MatchState.Running,
+                        new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+                        string.Empty)
                 },
                 LastUpdate = matchmakingState.LastUpdate + TimeSpan.FromSeconds(1),
             };
@@ -488,7 +503,6 @@ namespace Elympics.Tests.Rooms
                 await UniTask.Delay(TimeSpan.FromSeconds(1));
                 _roomsClientMock.InvokeRoomStateChanged(matchDataState);
             }
-
         });
 
 
@@ -505,7 +519,7 @@ namespace Elympics.Tests.Rooms
                         new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
                         new List<UserInfo>
                         {
-                            new(Guid.NewGuid(), 0, false, string.Empty)
+                            new(Guid.NewGuid(), 0, false, string.Empty, null),
                         },
                         false,
                         new Dictionary<string, string>())),
@@ -528,7 +542,7 @@ namespace Elympics.Tests.Rooms
                 new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
                 new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty)
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 false,
                 new Dictionary<string, string>());
@@ -555,7 +569,7 @@ namespace Elympics.Tests.Rooms
                 new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
                 new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty)
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 false,
                 new Dictionary<string, string>());
@@ -585,7 +599,7 @@ namespace Elympics.Tests.Rooms
                 new PublicMatchmakingData(DateTime.UnixEpoch, MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
                 new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty)
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 false,
                 new Dictionary<string, string>());
@@ -601,7 +615,7 @@ namespace Elympics.Tests.Rooms
                 new PublicMatchmakingData(DateTime.UnixEpoch + TimeSpan.FromSeconds(1), MatchmakingState.Unlocked, "test queue name", 2, 2, new Dictionary<string, string>()),
                 new List<UserInfo>
                 {
-                    new(Guid.Empty, 0, false, string.Empty)
+                    new(Guid.Empty, 0, false, string.Empty, null),
                 },
                 false,
                 new Dictionary<string, string>());
@@ -666,7 +680,7 @@ namespace Elympics.Tests.Rooms
             _roomStateChanged = _roomStateChanged with
             {
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
@@ -677,7 +691,7 @@ namespace Elympics.Tests.Rooms
         {
             _roomStateChanged = _roomStateChanged with
             {
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
 
@@ -696,7 +710,7 @@ namespace Elympics.Tests.Rooms
         {
             _roomStateChanged = _roomStateChanged with
             {
-                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty)).ToList(),
+                Users = _roomStateChanged.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.HostChangedInvoked);
@@ -813,7 +827,10 @@ namespace Elympics.Tests.Rooms
 
             const string newKey2 = "testKey2";
             const string newValue2 = "testValue2";
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked);
             _roomStateChanged = _roomStateChanged with
             {
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
@@ -858,7 +875,10 @@ namespace Elympics.Tests.Rooms
                 },
             };
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked);
             _roomStateChanged = _roomStateChanged with
             {
                 LastUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
@@ -958,7 +978,10 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked, RoomEventObserver.CustomRoomDataChangedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked,
+                RoomEventObserver.CustomRoomDataChangedInvoked);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.True(_roomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
@@ -1010,7 +1033,9 @@ namespace Elympics.Tests.Rooms
 
 
         [Test]
-        public void TestMatchmakingStartedInvokedAndMatchmakingMatchmakingStateChangedInvoked([ValueSource(nameof(matchmakingStartedTestCases))] (MatchmakingData cachedState, MatchmakingData newState) statesTuple)
+        public void TestMatchmakingStartedInvokedAndMatchmakingMatchmakingStateChangedInvoked(
+            [ValueSource(nameof(matchmakingStartedTestCases))]
+            (MatchmakingData cachedState, MatchmakingData newState) statesTuple)
         {
             _roomStateChanged = _roomStateChanged with
             {
@@ -1028,7 +1053,10 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.MatchmakingStartedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.MatchmakingStartedInvoked);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
         }
@@ -1050,7 +1078,9 @@ namespace Elympics.Tests.Rooms
         };
 
         [Test]
-        public void TestMatchmakingEndedAndMatchmakingMatchmakingStateChangedInvoked([ValueSource(nameof(matchmakingEndedTestCases))] (MatchmakingData? cachedState, MatchmakingData? newState) statesTuple)
+        public void TestMatchmakingEndedAndMatchmakingMatchmakingStateChangedInvoked(
+            [ValueSource(nameof(matchmakingEndedTestCases))]
+            (MatchmakingData? cachedState, MatchmakingData? newState) statesTuple)
         {
             var (cachedState, newState) = statesTuple;
             if (newState != null)
@@ -1072,7 +1102,10 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = newState,
             };
 
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.MatchmakingEndedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.MatchmakingEndedInvoked);
 
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
 
@@ -1100,7 +1133,10 @@ namespace Elympics.Tests.Rooms
                     LastStateUpdate = _roomStateChanged.LastUpdate + TimeSpan.FromSeconds(1),
                 },
             };
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.MatchDataReceivedInvoked);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.MatchDataReceivedInvoked);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
         }
@@ -1124,7 +1160,10 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.CustomMatchmakingDataChanged);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.CustomMatchmakingDataChanged);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.IsTrue(_roomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey));
@@ -1157,7 +1196,11 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.CustomMatchmakingDataChanged, RoomEventObserver.CustomMatchmakingDataChanged);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.CustomMatchmakingDataChanged,
+                RoomEventObserver.CustomMatchmakingDataChanged);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.IsTrue(_roomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
@@ -1203,7 +1246,11 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.CustomMatchmakingDataChanged, RoomEventObserver.CustomMatchmakingDataChanged);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.CustomMatchmakingDataChanged,
+                RoomEventObserver.CustomMatchmakingDataChanged);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.False(_roomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
@@ -1252,7 +1299,10 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.CustomMatchmakingDataChanged);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.CustomMatchmakingDataChanged);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.True(_roomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
@@ -1309,7 +1359,11 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            _eventRegister.ResetInvocationStatusAndRegisterAssertion(RoomEventObserver.JoinedRoomUpdatedInvoked, RoomEventObserver.MatchmakingDataChangedInvoked, RoomEventObserver.CustomMatchmakingDataChanged, RoomEventObserver.CustomMatchmakingDataChanged);
+            _eventRegister.ResetInvocationStatusAndRegisterAssertion(
+                RoomEventObserver.JoinedRoomUpdatedInvoked,
+                RoomEventObserver.MatchmakingDataChangedInvoked,
+                RoomEventObserver.CustomMatchmakingDataChanged,
+                RoomEventObserver.CustomMatchmakingDataChanged);
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
             _eventRegister.AssertIfInvoked();
             Assert.True(_roomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
@@ -1383,7 +1437,8 @@ namespace Elympics.Tests.Rooms
             _roomsClientMock.InvokeRoomStateChanged(_roomStateChanged);
 
             Assert.That(_matchLauncherMock.PlayMatchCalledArgs, Is.Not.Null);
-            Assert.That(_matchLauncherMock.PlayMatchCalledArgs, Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!, _roomStateChanged.MatchmakingData.QueueName, regionName)));
+            Assert.That(_matchLauncherMock.PlayMatchCalledArgs,
+                Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!, _roomStateChanged.MatchmakingData.QueueName, regionName)));
         }
 
         [Test]

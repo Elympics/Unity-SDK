@@ -1857,11 +1857,12 @@ namespace MessagePack.Formatters.Elympics
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(4);
+            writer.WriteArrayHeader(5);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.UserId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
             writer.Write(value.IsReady);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Nickname, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.AvatarUrl, options);
         }
 
         public global::Elympics.UserInfo Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -1878,6 +1879,7 @@ namespace MessagePack.Formatters.Elympics
             var __TeamIndex__ = default(uint?);
             var __IsReady__ = default(bool);
             var __Nickname__ = default(string);
+            var __AvatarUrl__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
@@ -1895,13 +1897,16 @@ namespace MessagePack.Formatters.Elympics
                     case 3:
                         __Nickname__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 4:
+                        __AvatarUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.UserInfo(__UserId__, __TeamIndex__, __IsReady__, __Nickname__);
+            var ____result = new global::Elympics.UserInfo(__UserId__, __TeamIndex__, __IsReady__, __Nickname__, __AvatarUrl__);
             reader.Depth--;
             return ____result;
         }

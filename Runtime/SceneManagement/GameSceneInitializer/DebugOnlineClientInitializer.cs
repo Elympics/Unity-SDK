@@ -108,7 +108,8 @@ namespace Elympics
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress, matchData.MatchId.ToString(), _elympicsGameConfig.TestMatchData.regionName);
-            var logger = ElympicsLogger.CurrentContext?.WithApp(ElympicsLoggerContext.GameplayContextApp) ?? new ElympicsLoggerContext(new Guid(), ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
+            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(new Guid());
+            logger = logger.WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
             var gameServerClient = _elympicsGameConfig.UseWeb ? (GameServerClient)new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint), logger, WebRtcFactory.CreateInstance) : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, logger, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);

@@ -147,10 +147,10 @@ namespace Elympics
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig()
                 ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
-            LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId, ElympicsConfig.SdkVersion, _gameConfig.GameId)
+            LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
             {
                 Context = nameof(ElympicsLobbyClient),
-            }.WithApp(ElympicsLoggerContext.ElympicsContextApp);
+            }.SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId).WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
             var awakeLogger = LoggerContext.WithMethodName();

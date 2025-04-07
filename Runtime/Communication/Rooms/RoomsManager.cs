@@ -169,7 +169,7 @@ namespace Elympics
             else
             {
                 IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
-                _ = logger.SetRegion(roomState.MatchmakingData?.QueueName).SetRoomId(roomState.RoomId.ToString());
+                _ = logger.SetQueue(roomState.MatchmakingData?.QueueName).SetRoomId(roomState.RoomId.ToString());
                 newRoom.ToggleJoinStatus(true);
                 AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();

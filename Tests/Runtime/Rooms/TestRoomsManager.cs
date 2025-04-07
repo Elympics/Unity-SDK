@@ -38,7 +38,7 @@ namespace Elympics.Tests.Rooms
             _matchLauncherMock = new MatchLauncherMock();
             _roomsClientMock = new RoomClientMock();
             _joiningQueueMock = new RoomJoiningQueueMock();
-            var logger = new ElympicsLoggerContext(new Guid(), string.Empty, string.Empty);
+            var logger = new ElympicsLoggerContext(new Guid());
             _roomsManager = new RoomsManager(_matchLauncherMock, _roomsClientMock, logger, _joiningQueueMock);
             _eventRegister = new RoomEventObserver(_roomsManager);
             _roomStateChanged = RoomsTestUtility.PrepareInitialRoomState(_roomIdForTesting);

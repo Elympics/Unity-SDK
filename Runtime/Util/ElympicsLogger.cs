@@ -45,7 +45,11 @@ namespace Elympics
         private static string PrependWithDetails(string message, string time, ElympicsLoggerContext context)
         {
             lock (StringBuilder)
-                return StringBuilder.Clear().Append(string.Format(LogStringFormat, time, context.App, message)).AppendLine(context.ToString()).ToString();
+                return StringBuilder.Clear()
+                    .Append(string.Format(LogStringFormat, time, context.App, message))
+                    .AppendLine()
+                    .Append(context.ToString())
+                    .ToString();
         }
 
         private static void InformClients(string message, string time, ElympicsLoggerContext context, LogLevel logLevel) => CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent() { Message = message, Time = time, Context = context, LogLevel = logLevel });

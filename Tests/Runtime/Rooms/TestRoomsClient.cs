@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
@@ -20,7 +21,7 @@ namespace Elympics.Tests.Rooms
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
-        private static readonly RoomsClient RoomsClient = new()
+        private static readonly RoomsClient RoomsClient = new(new ElympicsLoggerContext(Guid.Empty))
         {
             Session = WsSessionMock,
         };
@@ -45,7 +46,13 @@ namespace Elympics.Tests.Rooms
             WsSessionMock.ResultToReturn = new RoomIdOperationResult(Guid.Empty, TestRoomGuid);
 
             // Act
-            _ = await RoomsClient.CreateRoom(expectedMessage.RoomName, expectedMessage.IsPrivate, expectedMessage.IsEphemeral, expectedMessage.QueueName, expectedMessage.IsSingleTeam, expectedMessage.CustomRoomData, expectedMessage.CustomMatchmakingData);
+            _ = await RoomsClient.CreateRoom(expectedMessage.RoomName,
+                expectedMessage.IsPrivate,
+                expectedMessage.IsEphemeral,
+                expectedMessage.QueueName,
+                expectedMessage.IsSingleTeam,
+                expectedMessage.CustomRoomData,
+                expectedMessage.CustomMatchmakingData);
 
             Assert.That(WsSessionMock.ExecutedOperations, Has.Count.EqualTo(1));
             Assert.That(WsSessionMock.ExecutedOperations[0], Is.EqualTo(expectedMessage));
@@ -58,7 +65,13 @@ namespace Elympics.Tests.Rooms
             RoomsClient.Session = null;
 
             // Act
-            var result = await ((UniTask)UniTask.Create(async () => await RoomsClient.CreateRoom(expectedMessage.RoomName, expectedMessage.IsPrivate, expectedMessage.IsEphemeral, expectedMessage.QueueName, expectedMessage.IsSingleTeam, expectedMessage.CustomRoomData, expectedMessage.CustomMatchmakingData))).Catch();
+            var result = await ((UniTask)UniTask.Create(async () => await RoomsClient.CreateRoom(expectedMessage.RoomName,
+                expectedMessage.IsPrivate,
+                expectedMessage.IsEphemeral,
+                expectedMessage.QueueName,
+                expectedMessage.IsSingleTeam,
+                expectedMessage.CustomRoomData,
+                expectedMessage.CustomMatchmakingData))).Catch();
 
             Assert.That(result, Is.InstanceOf<InvalidOperationException>());
             Assert.That(WsSessionMock.ExecutedOperations, Is.Empty);
@@ -71,7 +84,13 @@ namespace Elympics.Tests.Rooms
             WsSessionMock.ResultToReturn = new OperationResult(Guid.Empty);
 
             // Act
-            var result = await UniTask.Create(async () => await (UniTask)RoomsClient.CreateRoom(expectedMessage.RoomName, expectedMessage.IsPrivate, expectedMessage.IsEphemeral, expectedMessage.QueueName, expectedMessage.IsSingleTeam, expectedMessage.CustomRoomData, expectedMessage.CustomMatchmakingData)).Catch();
+            var result = await UniTask.Create(async () => await (UniTask)RoomsClient.CreateRoom(expectedMessage.RoomName,
+                expectedMessage.IsPrivate,
+                expectedMessage.IsEphemeral,
+                expectedMessage.QueueName,
+                expectedMessage.IsSingleTeam,
+                expectedMessage.CustomRoomData,
+                expectedMessage.CustomMatchmakingData)).Catch();
 
             Assert.That(result, Is.InstanceOf<UnexpectedRoomResultException>());
             Assert.That(WsSessionMock.ExecutedOperations, Has.Count.EqualTo(1));
@@ -336,7 +355,10 @@ namespace Elympics.Tests.Rooms
 
         private static readonly List<ProperlyHandledMessageTestCase> ProperlyHandledMessageTestCases = new()
         {
-            new ProperlyHandledMessageTestCase(new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>()), nameof(IRoomsClient.RoomStateChanged), new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>())),
+            new ProperlyHandledMessageTestCase(
+                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>()),
+                nameof(IRoomsClient.RoomStateChanged),
+                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>())),
             new ProperlyHandledMessageTestCase(new RoomWasLeft(TestRoomGuid, LeavingReason.UserLeft), nameof(IRoomsClient.LeftRoom), new LeftRoomArgs(TestRoomGuid, LeavingReason.UserLeft)),
         };
 

@@ -5,7 +5,9 @@
         "ParrelSync",
         "UniTask",
         "MessagePack",
-        "MessagePack.Annotations"
+        "MessagePack.Annotations",
+        "AssemblyCommunicator",
+        "Elympics.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

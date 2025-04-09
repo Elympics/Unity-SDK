@@ -67,7 +67,7 @@ namespace MatchTcpClients
                     _stateCancellationTokenSource = new CancellationTokenSource();
                     _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
 
-                    logger.Log($"Session Connection attempt #{i + 1}");
+                    logger.Log($"Establish the connection attempt #{i + 1}");
                     var (offer, offerSet) = await TryCreateOfferAsync(false);
                     if (!offerSet)
                         logger.Error("Error creating WebRTC offer.");
@@ -96,6 +96,8 @@ namespace MatchTcpClients
                     _linkedCts.Dispose();
                     if (connected)
                         return true;
+                    else
+                        logger.Warning("Could not establish the connection.");
 
                 }
                 logger.Error("Failed to establish WebRtc connection.");
@@ -160,7 +162,7 @@ namespace MatchTcpClients
 
                 if (response?.IsError == false)
                     break;
-                logger.Error($"WebRTC answer error: {response?.Text}");
+                logger.Warning($"WebRTC answer error: {response?.Text}");
 
                 await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
             }

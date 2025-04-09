@@ -15,7 +15,8 @@ namespace Elympics
 
             if (playersList.Count <= playerIndex)
                 throw ElympicsLogger.LogException("Half Remote client won't be initialized because " + $"no data for player ID: {playerIndex} was found in \"Test players\" list. " + $"The list has only {playersList.Count} entries. " + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            var logger = ElympicsLogger.CurrentContext?.WithApp(ElympicsLoggerContext.GameplayContextApp) ?? new ElympicsLoggerContext(new Guid(), ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(new Guid());
+            logger = logger.WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData;
             var gameEngineData = playersList[playerIndex].GameEngineData;

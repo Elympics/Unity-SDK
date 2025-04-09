@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using Elympics.AssemblyCommunicator;
+using Elympics.AssemblyCommunicator.Events;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -17,10 +19,12 @@ namespace Elympics
         private int networkConditionsLogInterval = 5;
 
         private const uint PredictionBlockedThreshold = 10;
-
         private ElympicsPlayer _player;
         public override ElympicsPlayer Player => _player;
         public override bool IsClient => true;
+
+        /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
+        public static event Action<TimeSynchronizationData, long> TimeSynchronized;
 
         private bool _started;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
@@ -57,7 +61,7 @@ namespace Elympics
             _matchClient = matchClient;
 
             elympicsBehavioursManager.InitializeInternal(this);
-            RoundTripTimeCalculator = new RoundTripTimeCalculator(_matchClient, _matchConnectClient);
+            RoundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
 #endif
@@ -86,7 +90,7 @@ namespace Elympics
         private void SetupCallbacks()
         {
             _matchClient.SnapshotReceived += OnSnapshotReceived;
-            _matchClient.Synchronized += OnSynchronized;
+            _matchClient.Synchronized += OnMatchClientSynchronized;
             _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
             _matchConnectClient.DisconnectedByServer += OnDisconnectedByServer;
             _matchConnectClient.DisconnectedByClient += OnDisconnectedByClient;
@@ -104,15 +108,25 @@ namespace Elympics
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
             RoundTripTimeCalculator.OnSynchronized(data);
+            RaiseRttReceived(data);
             OnConnected(data);
         }
+
+        private void OnMatchClientSynchronized(TimeSynchronizationData data)
+        {
+            OnSynchronized(data);
+            RaiseRttReceived(data);
+            TimeSynchronized?.Invoke(data, Tick);
+        }
+
+        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived() { rtt = (float)data.RoundTripDelay.TotalMilliseconds, tick = Tick });
 
         private void OnDestroy()
         {
             if (_matchClient != null)
             {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
-                _matchClient.Synchronized -= OnSynchronized;
+                _matchClient.Synchronized -= OnMatchClientSynchronized;
                 _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
                 _matchClient.Dispose();
             }

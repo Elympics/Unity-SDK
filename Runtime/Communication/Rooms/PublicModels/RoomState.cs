@@ -30,8 +30,6 @@ namespace Elympics
 
         internal void Update(RoomStateChanged stateUpdate, in RoomStateDiff stateDiff)
         {
-            ElympicsLogger.Log($"[{nameof(RoomState)}] New Room Update{Environment.NewLine}{stateUpdate}");
-
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= _lastUpdate)
             {

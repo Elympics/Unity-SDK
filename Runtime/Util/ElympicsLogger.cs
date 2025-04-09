@@ -1,8 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Elympics.AssemblyCommunicator;
 using Elympics.ElympicsSystems.Internal;
+using Elympics.Events;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -20,7 +21,6 @@ namespace Elympics
 
         private static Stopwatch timer;
         private static readonly StringBuilder StringBuilder = new();
-        private static readonly List<IElympicsLoggerClient> Clients = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void Initialize()
@@ -45,14 +45,14 @@ namespace Elympics
         private static string PrependWithDetails(string message, string time, ElympicsLoggerContext context)
         {
             lock (StringBuilder)
-                return StringBuilder.Clear().Append(string.Format(LogStringFormat, time, context.App, message)).AppendLine(context.ToString()).ToString();
+                return StringBuilder.Clear()
+                    .Append(string.Format(LogStringFormat, time, context.App, message))
+                    .AppendLine()
+                    .Append(context.ToString())
+                    .ToString();
         }
 
-        public static void RegisterLoggerClient(IElympicsLoggerClient client) => Clients.Add(client);
-
-        public static void UnregisterLoggerClient(IElympicsLoggerClient client) => Clients.Remove(client);
-
-        private static void InformClients(string message, string time, ElympicsLoggerContext context, LogLevel logLevel) => Clients.ForEach(x => x.LogCaptured(message, time, context, logLevel));
+        private static void InformClients(string message, string time, ElympicsLoggerContext context, LogLevel logLevel) => CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent() { Message = message, Time = time, Context = context, LogLevel = logLevel });
 
         #region Logs
 
@@ -131,7 +131,7 @@ namespace Elympics
 
         public static Exception CaptureAndThrow(Exception exception, string time, ElympicsLoggerContext loggerContext)
         {
-            var wrappedException = exception is not ElympicsException ? new ElympicsException(loggerContext.ToString(), exception) : exception;
+            var wrappedException = exception is not ElympicsException ? new ElympicsException(exception.Message, exception) : exception;
             InformClients(exception.Message, time, loggerContext, LogLevel.Exception);
             return wrappedException;
         }

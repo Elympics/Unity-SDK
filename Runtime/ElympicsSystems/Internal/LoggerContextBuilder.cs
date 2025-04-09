@@ -99,6 +99,20 @@ namespace Elympics.ElympicsSystems.Internal
             return current;
         }
 
+        public static ElympicsLoggerContext SetElympicsContext(this ElympicsLoggerContext current, string elympicsSdk, string gameId)
+        {
+            current.ElympicsContext.SdkVersion = elympicsSdk;
+            current.ElympicsContext.GameId = gameId;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetPlayPadSdkContext(this ElympicsLoggerContext current, string protocolVersion, string sdkVersion)
+        {
+            current.PlayPadContext.SdkVersion = sdkVersion;
+            current.PlayPadContext.ProtocolVersion = protocolVersion;
+            return current;
+        }
+
         public static ElympicsLoggerContext SetNoRoom(this ElympicsLoggerContext current)
         {
             current.RoomContext.Clear();
@@ -116,7 +130,7 @@ namespace Elympics.ElympicsSystems.Internal
                 App = current.App,
                 Context = current.Context,
                 MethodName = methodName,
-                AppContext = current.AppContext,
+                ElympicsContext = current.ElympicsContext,
                 UserContext = current.UserContext,
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
@@ -132,7 +146,7 @@ namespace Elympics.ElympicsSystems.Internal
                 App = app,
                 Context = current.Context,
                 MethodName = current.MethodName,
-                AppContext = current.AppContext,
+                ElympicsContext = current.ElympicsContext,
                 UserContext = current.UserContext,
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
@@ -148,7 +162,7 @@ namespace Elympics.ElympicsSystems.Internal
                 App = current.App,
                 Context = context,
                 MethodName = current.MethodName,
-                AppContext = current.AppContext,
+                ElympicsContext = current.ElympicsContext,
                 UserContext = current.UserContext,
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,

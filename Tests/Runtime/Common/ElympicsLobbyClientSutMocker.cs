@@ -26,11 +26,12 @@ namespace Elympics.Tests
             this ElympicsLobbyClient sut,
             Guid userId,
             string nickname,
+            string? avatarUrl,
             bool createInitialRoom,
             double? pingDelay,
             out IWebSocket createdMock)
         {
-            var mock = WebSocketMockSetup.CreateMockWebSocket(userId, nickname, createInitialRoom, pingDelay);
+            var mock = WebSocketMockSetup.CreateMockWebSocket(userId, nickname, avatarUrl, createInitialRoom, pingDelay);
             SetIWebSocketMock(sut, mock);
             createdMock = mock;
             return sut;
@@ -62,6 +63,7 @@ namespace Elympics.Tests
             authField.SetValue(sut, mockAuthClient);
             return sut;
         }
+
         public static ElympicsLobbyClient MockFailureIAuthClient(this ElympicsLobbyClient sut)
         {
             var mockAuthClient = AuthClientMockSetup.CreateFailureIAuthClient();
@@ -90,7 +92,25 @@ namespace Elympics.Tests
             var roomClient = Substitute.For<IRoomsClient>();
             _ = roomClient.StartMatchmaking(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(UniTask.CompletedTask);
 #pragma warning disable IDE0017
-            IRoom room = new Room(sut, roomClient, Guid.Empty, new RoomStateChanged(Guid.Empty, DateTime.Now, string.Empty, null, false, new MatchmakingData(DateTime.Now, MatchmakingState.Playing, "test", 1, 1, new Dictionary<string, string>(), new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null)), new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty) }, false, false, null));
+            IRoom room = new Room(sut,
+                roomClient,
+                Guid.Empty,
+                new RoomStateChanged(Guid.Empty,
+                    DateTime.Now,
+                    string.Empty,
+                    null,
+                    false,
+                    new MatchmakingData(DateTime.Now,
+                        MatchmakingState.Playing,
+                        "test",
+                        1,
+                        1,
+                        new Dictionary<string, string>(),
+                        new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null)),
+                    new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty, null) },
+                    false,
+                    false,
+                    null));
             room.ToggleJoinStatus(true);
 #pragma warning restore IDE0017
             _ = roomManagerMock.ListJoinedRooms().Returns(new List<IRoom>()

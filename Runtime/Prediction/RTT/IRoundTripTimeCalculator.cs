@@ -9,6 +9,7 @@ namespace Elympics
         TimeSpan LastLocalClockOffset { get; }
 
         TimeSpan AverageRoundTripTime { get; }
+        TimeSpan RoundTripTimeStandardDeviation { get; }
         TimeSpan AverageLocalClockOffset { get; }
 
         void OnSynchronized(TimeSynchronizationData data);

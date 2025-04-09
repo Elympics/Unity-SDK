@@ -1,3 +1,19 @@
+## [0.15.4](https://github.com/Elympics/Unity-SDK/compare/v0.15.3...v0.15.4) (2025-04-09)
+
+
+### Bug Fixes 🪲
+
+* add a newline before the context is appended to log messages ([66259f6](https://github.com/Elympics/Unity-SDK/commit/66259f6496b659a45aa72a2a8700b5e1f795ad60))
+* fix log timestamp being frozen ([d34bb52](https://github.com/Elympics/Unity-SDK/commit/d34bb5296f26ed729e367c06bb12b8d7b22e35f7))
+* fix queue name being put in "Region name" field in logs ([e94619d](https://github.com/Elympics/Unity-SDK/commit/e94619dbeca838fdb6b324d37c8645b58d0e2d3f))
+
+
+### Features
+
+* add support for user avatars ([6ed20e7](https://github.com/Elympics/Unity-SDK/commit/6ed20e761cb05d7c56107d484d814daf35cf8daf))
+
+
+
 ## [0.15.3](https://github.com/Elympics/Unity-SDK/compare/v0.15.2...v0.15.3) (2025-02-26)
 
 

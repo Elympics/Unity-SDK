@@ -4,15 +4,18 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Mappers;
 using Elympics.Communication.PublicApi;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
+using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using MatchmakingState = Elympics.ElympicsSystems.Internal.MatchmakingState;
 
 #nullable enable
 
@@ -124,7 +127,7 @@ namespace Elympics
         [PublicAPI]
         public IReadOnlyCollection<RoomCoinInfo>? AvailableCoins { get; private set; }
 
-    private IAvailableRegionRetriever _regionRetriever = null!;
+        private IAvailableRegionRetriever _regionRetriever = null!;
 
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;
@@ -503,5 +506,22 @@ namespace Elympics
         }
 
         #endregion
+
+        internal void AssignRoomCoins(List<RoomCoin> objCoinData)
+        {
+            AvailableCoins = objCoinData.Select(x => x.ToRoomCoinInfo()).ToList();
+        }
+
+        internal int? FetchDecimalForCoin(Guid coinId)
+        {
+            if (AvailableCoins == null)
+                return null;
+
+            foreach (var coinInfo in AvailableCoins)
+                if (coinInfo.CoinId == coinId)
+                    return coinInfo.Currency.Decimals;
+
+            return null;
+        }
     }
 }

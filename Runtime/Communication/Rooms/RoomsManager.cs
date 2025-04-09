@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
@@ -201,6 +202,7 @@ namespace Elympics
         private void HandleGameDataResponse(GameDataResponse obj)
         {
             ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
+            ElympicsLobbyClient.Instance.AssignRoomCoins(obj.CoinData);
             _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
             _ = _tcs.TrySetResult(obj);
         }
@@ -306,7 +308,7 @@ namespace Elympics
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
-            RoomBetDetailsSlim? betDetailsSlim = null)
+            RoomBetDetailsParam? betDetails = null)
         {
             if (roomName == null)
                 throw new ArgumentNullException(nameof(roomName));
@@ -314,7 +316,7 @@ namespace Elympics
                 throw new ArgumentNullException(nameof(queueName));
             customRoomData ??= new Dictionary<string, string>();
             customMatchmakingData ??= new Dictionary<string, string>();
-            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData, betDetailsSlim);
+            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData, betDetails);
             return SetupRoomTracking(ackTask);
         }
         [PublicAPI]
@@ -333,7 +335,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
-            RoomBetDetailsSlim? betDetailsSlim = null,
+            RoomBetDetailsParam? betDetails = null,
             CancellationToken ct = default)
         {
             if (queueName == null)
@@ -353,7 +355,7 @@ namespace Elympics
                     true,
                     customRoomData ?? new Dictionary<string, string>(),
                     customMatchmakingData ?? new Dictionary<string, string>(),
-                    betDetailsSlim,
+                    betDetails,
                     ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 

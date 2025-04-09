@@ -41,17 +41,14 @@ namespace Elympics.Rooms.Models
             + $"{nameof(TeamCount)}:{TeamCount}{Environment.NewLine}"
             + $"{nameof(TeamSize)}:{TeamSize}{Environment.NewLine}"
             + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Key}, Value = {kv.Value}"))}{Environment.NewLine}"
-            + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
+            + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}"
+            + $"{nameof(BetDetails)}:{Environment.NewLine}\t{BetDetails?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
 
         public override int GetHashCode() => HashCode.Combine(State, LastStateUpdate, QueueName, TeamSize, TeamCount, MatchData, CustomData.Count);
     }
 
     [MessagePackObject]
-    public class RoomTournamentDetails
-    {
-        [Key(0)] public string TournamentId { get; set; }
-        [Key(1)] public ChainType? ChainType { get; set; }
-    }
+    public record RoomTournamentDetails([property: Key(0)] string TournamentId, [property: Key(1)] ChainType? ChainType);
 
     public enum ChainType
     {
@@ -60,18 +57,14 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public class RoomBetDetails
+    public record RoomBetDetails([property: Key(0)] string BetValue, [property: Key(1)] RoomCoin Coin)
     {
-        [Key(0)] public decimal BetValue { get; set; }
-        [Key(1)] public RoomCoin Coin { get; set; }
-
-        public override bool Equals(object? obj) => obj is RoomBetDetails other && BetValue == other.BetValue && Coin.Equals(other.Coin);
+        public virtual bool Equals(RoomBetDetails? other) => other != null && BetValue == other.BetValue && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);
 
-        public static bool operator ==(RoomBetDetails? left, RoomBetDetails? right) => Equals(left, right);
-
-        public static bool operator !=(RoomBetDetails? left, RoomBetDetails? right) => !Equals(left, right);
+        public override string ToString() => $"${nameof(BetValue)}:{BetValue}{Environment.NewLine}"
+            + $"{nameof(Coin)}: Id: {Coin.CoinId} | Ticker: {Coin.Currency.Ticker} | ChainType: {Coin.Chain.Type}";
     }
 
     [MessagePackObject]

@@ -46,9 +46,5 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public class RoomBetDetailsSlim
-    {
-        [Key(0)] public decimal BetValue { get; set; }
-        [Key(1)] public Guid CoinId { get; set; }
-    }
+    public record RoomBetDetailsSlim([property:Key(0)] string BetValue,[property:Key(1)] Guid CoinId);
 }

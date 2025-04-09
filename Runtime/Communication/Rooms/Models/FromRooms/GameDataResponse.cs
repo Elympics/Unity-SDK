@@ -23,6 +23,6 @@ namespace Elympics.Rooms.Models
 
         public override int GetHashCode() => JoinedMatchRooms.GetHashCode();
 
-        public override string ToString() => $"RoomsJoined: {JoinedMatchRooms}";
+        public override string ToString() => $"RoomsJoined: {JoinedMatchRooms} | {nameof(GameVersionId)}:{GameVersionId} | {nameof(FleetName)}:{FleetName} | Coins count: {CoinData.Count}";
     }
 }

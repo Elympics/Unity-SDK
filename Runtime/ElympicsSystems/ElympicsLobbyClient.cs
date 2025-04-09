@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.PublicApi;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
@@ -120,7 +121,10 @@ namespace Elympics
         [PublicAPI]
         public IReadOnlyCollection<string>? AvailableRegions { get; private set; }
 
-        private IAvailableRegionRetriever _regionRetriever = null!;
+        [PublicAPI]
+        public IReadOnlyCollection<RoomCoinInfo>? AvailableCoins { get; private set; }
+
+    private IAvailableRegionRetriever _regionRetriever = null!;
 
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;

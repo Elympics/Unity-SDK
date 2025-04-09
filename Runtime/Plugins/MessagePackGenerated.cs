@@ -3411,7 +3411,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(2);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.BetValue, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.BetValueRaw, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomCoin>(formatterResolver).Serialize(ref writer, value.Coin, options);
         }
 

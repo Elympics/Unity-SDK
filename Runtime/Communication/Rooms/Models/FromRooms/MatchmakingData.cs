@@ -57,8 +57,9 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public record RoomBetDetails([property: Key(0)] string BetValue, [property: Key(1)] RoomCoin Coin)
+    public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin)
     {
+        public decimal BetValue => WeiConverter.FromWei(BetValueRaw, Coin.Currency.Decimals);
         public virtual bool Equals(RoomBetDetails? other) => other != null && BetValue == other.BetValue && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);

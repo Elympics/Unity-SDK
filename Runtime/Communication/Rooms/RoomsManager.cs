@@ -210,7 +210,8 @@ namespace Elympics
         private void HandleGameDataResponse(GameDataResponse obj)
         {
             ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
-            ElympicsLobbyClient.Instance.AssignRoomCoins(obj.CoinData);
+            _ = _logger.SetGameVersionId(obj.GameVersionId).SetFleetName(obj.FleetName);
+            ElympicsLobbyClient.Instance!.AssignRoomCoins(obj.CoinData);
             _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
             _ = _tcs.TrySetResult(obj);
         }

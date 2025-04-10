@@ -176,19 +176,27 @@ namespace Elympics
                 SetStateDiffToInitializeState();
             }
 
-            var mmCompleted = _stateDiff.MatchDataArgs != null;
-            var matchFound = _stateDiff.MatchDataArgs != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
-            if (mmCompleted)
-            {
-                _ = _logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
-                _ = _logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
-                _matchLauncher.MatchFound();
-            }
+            var matchDataArgsAvailable = _stateDiff.MatchDataArgs != null;
+            var matchNotFound = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && !string.IsNullOrEmpty(_stateDiff.MatchDataArgs?.MatchData.FailReason);
+            var matchFoundSuccessfully = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
+            if (matchDataArgsAvailable)
+                logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
+
+            if (matchFoundSuccessfully || matchNotFound)
+                _matchLauncher.MatchmakingCompleted();
+
+            if (matchNotFound)
+                logger.Log($"Match not found. Reason: {_stateDiff.MatchDataArgs?.MatchData.FailReason}");
 
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
 
-            PlayAvailableMatchIfApplicable(roomId, matchFound);
+            if (matchFoundSuccessfully)
+            {
+                logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress)
+                    .Log("Matchmaking completed successfully.");
+                PlayAvailableMatchIfApplicable(roomId);
+            }
             return;
 
             void SetStateDiffToInitializeState()
@@ -256,10 +264,8 @@ namespace Elympics
                     CustomMatchmakingDataChanged?.Invoke(new CustomMatchmakingDataChangedArgs(roomId, newKey, newValue));
         }
 
-        private void PlayAvailableMatchIfApplicable(Guid roomId, bool matchFound)
+        private void PlayAvailableMatchIfApplicable(Guid roomId)
         {
-            if (matchFound is false)
-                return;
             if (_matchLauncher is { ShouldLoadGameplaySceneAfterMatchmaking: true, IsCurrentlyInMatch: false })
                 _rooms[roomId].PlayAvailableMatch();
         }

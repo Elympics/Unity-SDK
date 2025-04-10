@@ -20,6 +20,6 @@ namespace Elympics
         UniTask StartMatchmaking(IRoom room);
 
         UniTask CancelMatchmaking(IRoom room, CancellationToken ct);
-        void MatchFound();
+        void MatchmakingCompleted();
     }
 }

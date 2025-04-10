@@ -400,7 +400,7 @@ namespace Elympics
         private void OnGameplayFinished() => CurrentState.FinishMatch().Forget();
         UniTask IMatchLauncher.StartMatchmaking(IRoom room) => CurrentState.StartMatchmaking(room);
         UniTask IMatchLauncher.CancelMatchmaking(IRoom room, CancellationToken ct) => CurrentState.CancelMatchmaking(room, ct);
-        public void MatchFound() => CurrentState.MatchFound();
+        public void MatchmakingCompleted() => CurrentState.MatchFound();
 
         #endregion
 

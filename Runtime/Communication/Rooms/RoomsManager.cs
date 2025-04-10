@@ -372,8 +372,6 @@ namespace Elympics
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
                     if (!string.IsNullOrEmpty(error))
                         throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
-
-                    logger.Log("Quick Match Founded.");
                     return room;
                 }
 

@@ -59,6 +59,7 @@ namespace Elympics.Rooms.Models
     [MessagePackObject]
     public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin)
     {
+        [IgnoreMember]
         public decimal BetValue => WeiConverter.FromWei(BetValueRaw, Coin.Currency.Decimals);
         public virtual bool Equals(RoomBetDetails? other) => other != null && BetValue == other.BetValue && Coin.Equals(other.Coin);
 

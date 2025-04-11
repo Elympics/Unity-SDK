@@ -3425,7 +3425,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __BetValue__ = default(string);
+            var __BetValueRaw__ = default(string);
             var __Coin__ = default(global::Elympics.Rooms.Models.RoomCoin);
 
             for (int i = 0; i < length; i++)
@@ -3433,7 +3433,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 switch (i)
                 {
                     case 0:
-                        __BetValue__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __BetValueRaw__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 1:
                         __Coin__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomCoin>(formatterResolver).Deserialize(ref reader, options);
@@ -3444,7 +3444,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomBetDetails(__BetValue__, __Coin__);
+            var ____result = new global::Elympics.Rooms.Models.RoomBetDetails(__BetValueRaw__, __Coin__);
             reader.Depth--;
             return ____result;
         }

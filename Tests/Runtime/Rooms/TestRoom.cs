@@ -302,7 +302,7 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = InitialRoomState.MatchmakingData! with
                 {
-                    State = MatchmakingState.Matched,
+                    State = MatchmakingState.Matchmaking,
                 },
             };
             var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomState, true);

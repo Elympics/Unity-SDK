@@ -406,14 +406,11 @@ public class RoomController : BaseWindow
         var currentState = _currentRoom.State.MatchmakingData.MatchmakingState;
         if (currentState == MatchmakingState.Matchmaking)
             statusText.text = RoomStatusMessages.MatchmakingStartedMessage;
-        else if (currentState == MatchmakingState.Matched)
+        else if (currentState == MatchmakingState.Playing)
         {
             UnsubscribeFromRoomEvents();
             RoomsUtility.LastConnectedRoom = _currentRoom.RoomId;
             statusText.text = RoomStatusMessages.MatchmakingFinishedMessage;
-        }
-        else if (currentState == MatchmakingState.Playing)
-        {
             ForceLockPlayersInRoom(true);
         }
         else if (currentState == MatchmakingState.Unlocked)

@@ -300,7 +300,7 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
-                    State = MatchmakingState.Matched,
+                    State = MatchmakingState.Playing,
                     MatchData = new MatchData(Guid.Empty,
                         MatchState.Running,
                         new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
@@ -431,7 +431,7 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
-                    State = MatchmakingState.Matched,
+                    State = MatchmakingState.Playing,
                     MatchData = new MatchData(Guid.Empty,
                         MatchState.Running,
                         new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
@@ -485,7 +485,7 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = matchmakingState.MatchmakingData with
                 {
-                    State = MatchmakingState.Matched,
+                    State = MatchmakingState.Playing,
                     MatchData = new MatchData(Guid.Empty,
                         MatchState.Running,
                         new MatchDetails(matchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
@@ -1023,9 +1023,6 @@ namespace Elympics.Tests.Rooms
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.CancellingMatchmaking)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.CancellingMatchmaking)),
             (null, RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking)),
             (null, RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking)),
             (null, RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.CancellingMatchmaking)),
@@ -1065,15 +1062,12 @@ namespace Elympics.Tests.Rooms
         {
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Unlocked)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), null),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Unlocked)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matchmaking), null),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Unlocked)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Playing)),
-            (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.Matched)),
             (RoomsTestUtility.GetMatchmakingDataForState(MatchmakingState.RequestingMatchmaking), null),
         };
 

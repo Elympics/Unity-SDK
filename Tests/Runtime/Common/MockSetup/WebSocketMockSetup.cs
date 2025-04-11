@@ -396,10 +396,10 @@ namespace Elympics
                 UpdateTime(ref room);
                 SendResponse(ws, room);
 
-                await UniTask.Delay(TimeSpan.FromSeconds(5), DelayType.Realtime, PlayerLoopTiming.Update, ct);
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 if (ct.IsCancellationRequested)
                     return;
-                SetMatchmakingState(ref room, MatchmakingState.Matched);
+                SetMatchmakingState(ref room, MatchmakingState.Playing);
                 room = room with
                 {
                     MatchmakingData = room.MatchmakingData! with
@@ -407,13 +407,6 @@ namespace Elympics
                         MatchData = GetDummyMatchData(room.Users.Select(x => x.UserId).ToList()),
                     },
                 };
-                UpdateTime(ref room);
-                SendResponse(ws, room);
-
-                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime, PlayerLoopTiming.Update, ct);
-                if (ct.IsCancellationRequested)
-                    return;
-                SetMatchmakingState(ref room, MatchmakingState.Playing);
                 UpdateTime(ref room);
                 SendResponse(ws, room);
 

@@ -227,7 +227,7 @@ namespace Elympics
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
-            if (State.MatchmakingData?.MatchmakingState is MatchmakingState.Matched or MatchmakingState.Playing)
+            if (State.MatchmakingData?.MatchmakingState is MatchmakingState.Playing)
                 throw new InvalidOperationException($"Can't leave room during {_state.MatchmakingData!.MatchmakingState} state.");
             return _client.LeaveRoom(_roomId);
         }

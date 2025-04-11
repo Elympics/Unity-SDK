@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
@@ -24,7 +25,7 @@ namespace Elympics
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
 
-        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetDetailsSlim? betDetailsSlim = null);
+        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetDetailsParam? betDetailsSlim = null);
         UniTask ChangeTeam(uint? teamIndex);
         public sealed UniTask BecomeSpectator() => ChangeTeam(null);
 

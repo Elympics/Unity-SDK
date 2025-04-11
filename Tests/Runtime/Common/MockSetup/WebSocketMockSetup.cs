@@ -64,7 +64,7 @@ namespace Elympics
                         case JoinLobby joinLobby:
                         {
                             SendSuccessResponse(Ws, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0);
+                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty);
                             SendResponse(Ws, gameResponse);
                             if (createInitialRoom)
                             {
@@ -287,7 +287,8 @@ namespace Elympics
                             ThrowIfMatchingWatchListState(Ws, watchRooms);
                             WebSocketMockBackendSession.TracksRoomList = true;
                             SendSuccessResponse(Ws, watchRooms);
-                            SendResponse(Ws, new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
+                            SendResponse(Ws,
+                                new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
                             break;
                         }
                         case UnwatchRooms unwatchRooms:
@@ -621,7 +622,13 @@ namespace Elympics
 
         private static PublicRoomState CreatePublicRoomState(RoomStateChanged roomState)
         {
-            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate, roomState.MatchmakingData!.State, roomState.MatchmakingData.QueueName, roomState.MatchmakingData.TeamCount, roomState.MatchmakingData.TeamSize, roomState.MatchmakingData.CustomData, roomState.MatchmakingData.BetDetails);
+            var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate,
+                roomState.MatchmakingData!.State,
+                roomState.MatchmakingData.QueueName,
+                roomState.MatchmakingData.TeamCount,
+                roomState.MatchmakingData.TeamSize,
+                roomState.MatchmakingData.CustomData,
+                roomState.MatchmakingData.BetDetails);
 
             return new PublicRoomState(roomState.RoomId,
                 roomState.LastUpdate,

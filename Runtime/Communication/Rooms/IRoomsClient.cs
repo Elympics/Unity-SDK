@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
 
@@ -26,7 +27,7 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            RoomBetDetailsSlim? betDetailsSlim = null,
+            RoomBetDetailsParam? betDetails = null,
             CancellationToken ct = default);
         UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);
@@ -41,7 +42,7 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
-            RoomBetDetailsSlim? betDetailsSlim = null,
+            RoomBetDetailsParam? betDetailsSlim = null,
             CancellationToken ct = default);
         UniTask StartMatchmaking(Guid roomId, Guid hostId);
         UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default);

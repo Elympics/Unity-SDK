@@ -41,17 +41,14 @@ namespace Elympics.Rooms.Models
             + $"{nameof(TeamCount)}:{TeamCount}{Environment.NewLine}"
             + $"{nameof(TeamSize)}:{TeamSize}{Environment.NewLine}"
             + $"{nameof(CustomData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomData?.Select(kv => $"Key = {kv.Key}, Value = {kv.Value}"))}{Environment.NewLine}"
-            + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
+            + $"{nameof(MatchData)}:{Environment.NewLine}\t{MatchData?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}"
+            + $"{nameof(BetDetails)}:{Environment.NewLine}\t{BetDetails?.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}{Environment.NewLine}";
 
         public override int GetHashCode() => HashCode.Combine(State, LastStateUpdate, QueueName, TeamSize, TeamCount, MatchData, CustomData.Count);
     }
 
     [MessagePackObject]
-    public class RoomTournamentDetails
-    {
-        [Key(0)] public string TournamentId { get; set; }
-        [Key(1)] public ChainType? ChainType { get; set; }
-    }
+    public record RoomTournamentDetails([property: Key(0)] string TournamentId, [property: Key(1)] ChainType? ChainType);
 
     public enum ChainType
     {
@@ -60,18 +57,16 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public class RoomBetDetails
+    public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin)
     {
-        [Key(0)] public decimal BetValue { get; set; }
-        [Key(1)] public RoomCoin Coin { get; set; }
-
-        public override bool Equals(object? obj) => obj is RoomBetDetails other && BetValue == other.BetValue && Coin.Equals(other.Coin);
+        [IgnoreMember]
+        public decimal BetValue => WeiConverter.FromWei(BetValueRaw, Coin.Currency.Decimals);
+        public virtual bool Equals(RoomBetDetails? other) => other != null && BetValue == other.BetValue && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);
 
-        public static bool operator ==(RoomBetDetails? left, RoomBetDetails? right) => Equals(left, right);
-
-        public static bool operator !=(RoomBetDetails? left, RoomBetDetails? right) => !Equals(left, right);
+        public override string ToString() => $"${nameof(BetValue)}:{BetValue}{Environment.NewLine}"
+            + $"{nameof(Coin)}: Id: {Coin.CoinId} | Ticker: {Coin.Currency.Ticker} | ChainType: {Coin.Chain.Type}";
     }
 
     [MessagePackObject]
@@ -81,9 +76,8 @@ namespace Elympics.Rooms.Models
         [Key(1)] public RoomChain Chain { get; set; }
         [Key(2)] public RoomCurrency Currency { get; set; }
 
-        protected bool Equals(RoomCoin other) => CoinId.Equals(other.CoinId) && Chain.Equals(other.Chain) && Currency.Equals(other.Currency);
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCoin other && Equals(other);
+        private bool Equals(RoomCoin other) => CoinId.Equals(other.CoinId) && Chain.Equals(other.Chain) && Currency.Equals(other.Currency);
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomCoin other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(CoinId, Chain, Currency);
 
@@ -99,9 +93,8 @@ namespace Elympics.Rooms.Models
         [Key(1)] public ChainType Type { get; set; }
         [Key(2)] public string Name { get; set; }
 
-        protected bool Equals(RoomChain other) => ExternalId == other.ExternalId && Type == other.Type && Name == other.Name;
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomChain other && Equals(other);
+        private bool Equals(RoomChain other) => ExternalId == other.ExternalId && Type == other.Type && Name == other.Name;
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomChain other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(ExternalId, (int)Type, Name);
 
@@ -118,9 +111,8 @@ namespace Elympics.Rooms.Models
         [Key(2)] public int Decimals { get; set; }
         [Key(3)] public string IconUrl { get; set; } = null!;
 
-        protected bool Equals(RoomCurrency other) => Ticker == other.Ticker && Address == other.Address && Decimals == other.Decimals && IconUrl == other.IconUrl;
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCurrency other && Equals(other);
+        private bool Equals(RoomCurrency other) => Ticker == other.Ticker && Address == other.Address && Decimals == other.Decimals && IconUrl == other.IconUrl;
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomCurrency other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(Ticker, Address, Decimals, IconUrl);
 

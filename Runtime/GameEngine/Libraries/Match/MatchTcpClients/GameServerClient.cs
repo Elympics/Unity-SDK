@@ -40,7 +40,7 @@ namespace MatchTcpClients
 
         private protected event Action<ConnectedMessage> SessionConnected;
 
-        private ElympicsLoggerContext _logger;
+        private readonly ElympicsLoggerContext _logger;
 
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, ElympicsLoggerContext logger)
         {
@@ -108,11 +108,9 @@ namespace MatchTcpClients
         {
             var sessionConnectedCompletionSource = new TaskCompletionSource<bool>();
 
-            var logger = _logger.WithMethodName();
-
             void OnSessionConnected(ConnectedMessage message)
             {
-                logger.Log("Connected using reliable channel.");
+                ElympicsLogger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
                 //_clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
                 sessionConnectedCompletionSource.SetResult(true);

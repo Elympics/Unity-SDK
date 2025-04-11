@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
@@ -69,11 +70,14 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            RoomBetDetailsSlim? betDetailsSlim = null,
+            RoomBetDetailsParam? betDetails = null,
             CancellationToken ct = default)
         {
+            var betSlim = GetRoomBetDetailsSlim(betDetails);
+
             _logger.WithMethodName().Log($"Create room {roomName}");
-            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betDetailsSlim), ct)
+            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim),
+                    ct)
                 .ContinueWith(result => result.RoomId);
         }
 
@@ -122,9 +126,12 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
-            RoomBetDetailsSlim? betDetailsSlim = null,
-            CancellationToken ct = default) =>
-            ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetailsSlim), ct);
+            RoomBetDetailsParam? betDetails = null,
+            CancellationToken ct = default)
+        {
+            var betSlim = GetRoomBetDetailsSlim(betDetails);
+            return ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betSlim), ct);
+        }
 
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {
@@ -166,6 +173,20 @@ namespace Elympics
                 throw new RoomPrivilegeException($"Only hosts can call ${methodName} method.");
 
             return Session.ExecuteOperation(message, ct);
+        }
+
+        private static RoomBetDetailsSlim? GetRoomBetDetailsSlim(RoomBetDetailsParam? betDetails)
+        {
+            RoomBetDetailsSlim? betSlim = null;
+            if (betDetails.HasValue)
+            {
+                var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(betDetails.Value.CoinId);
+                if (coinDecimal == null)
+                    throw new ArgumentException($"Couldn't create bet with CoinId: {betDetails.Value.CoinId}");
+
+                betSlim = new RoomBetDetailsSlim(WeiConverter.ToWei(betDetails.Value.BetValue, coinDecimal.Value), betDetails.Value.CoinId);
+            }
+            return betSlim;
         }
     }
 }

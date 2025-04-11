@@ -21,6 +21,11 @@ namespace Elympics
         public bool IsDisposed { get; private set; }
 
         public bool IsJoined => ThrowIfDisposedOrReturn(_isJoined);
+        bool IRoom.IsJoined
+        {
+            get => IsJoined;
+            set => _isJoined = value;
+        }
 
         private bool _isJoined;
 
@@ -54,7 +59,7 @@ namespace Elympics
         private readonly RoomState _state;
         private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
         private readonly bool _isEphemeral;
-        private Guid LocalUserId => _client.SessionConnectionDetails.AuthData.UserId;
+        private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
         private readonly TimeSpan _webApiTimeoutFallback = TimeSpan.FromSeconds(5);
 
         public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, RoomStateChanged initialState, bool isJoined = false)
@@ -75,7 +80,6 @@ namespace Elympics
             _state = new RoomState(initialState);
         }
 
-        void IRoom.ToggleJoinStatus(bool isJoined) => _isJoined = isJoined;
         void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
@@ -161,7 +165,6 @@ namespace Elympics
         async UniTask IRoom.CancelMatchmakingInternal(CancellationToken ct)
         {
             while (true)
-            {
                 try
                 {
                     ct.ThrowIfCancellationRequested();
@@ -176,7 +179,6 @@ namespace Elympics
                     ct.ThrowIfCancellationRequested();
                     await UniTask.Delay(_forceCancelTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 }
-            }
         }
 
         public UniTask UpdateRoomParams(

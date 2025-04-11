@@ -113,7 +113,7 @@ namespace Elympics.Tests
                     false,
                     false,
                     null));
-            room.ToggleJoinStatus(true);
+            room.IsJoined = true;
 #pragma warning restore IDE0017
             _ = roomManagerMock.ListJoinedRooms().Returns(new List<IRoom>()
             {

@@ -20,7 +20,8 @@ namespace Elympics
 
         bool IsDisposed { get; }
 
-        bool IsJoined { get; }
+        [Obsolete("Only one room can be joined at once. See " + nameof(IRoomsManager) + "." + nameof(IRoomsManager.CurrentRoom))]
+        bool IsJoined { get; internal set; }
 
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
@@ -41,20 +42,11 @@ namespace Elympics
 
         UniTask Leave();
 
-        internal void ToggleJoinStatus(bool isJoined)
-        {
-
-        }
-
         internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
-        {
-
-        }
+        { }
 
         internal void UpdateState(PublicRoomState roomState)
-        {
-
-        }
+        { }
 
         internal bool IsQuickMatch => false;
 

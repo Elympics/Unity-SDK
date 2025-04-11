@@ -35,10 +35,17 @@ namespace Elympics
         event Action<MatchDataReceivedArgs>? MatchDataReceived;
         event Action<CustomMatchmakingDataChangedArgs>? CustomMatchmakingDataChanged;
 
+        // TODO: getter for all rooms (available + joined)
+
         bool TryGetAvailableRoom(Guid roomId, out IRoom? room);
         IReadOnlyList<IRoom> ListAvailableRooms();
+
+        [Obsolete("Only one room can be joined at once. See " + nameof(CurrentRoom))]
         bool TryGetJoinedRoom(Guid roomId, out IRoom? room);
+        [Obsolete("Only one room can be joined at once. See " + nameof(CurrentRoom))]
         IReadOnlyList<IRoom> ListJoinedRooms();
+
+        IRoom? CurrentRoom { get; }
 
         UniTask StartTrackingAvailableRooms();
         UniTask StopTrackingAvailableRooms();

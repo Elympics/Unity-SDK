@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
-using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
 using Elympics.Tests.Common.RoomMocks;
@@ -24,9 +23,11 @@ namespace Elympics.Tests.Rooms
     {
         private const string RegionName = "test-region";
 
-        private static readonly Guid RoomIdForTesting = new("10100000000000000000000000000001");
-        private static readonly RoomStateChanged InitialRoomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting);
-        private static readonly SessionConnectionDetails ConnectionDetails = new("url", new AuthData(Guid.Empty, "", ""), Guid.Empty, "", RegionName);
+        private static readonly Guid RoomId = new("10100000000000000000000000aaaa01");
+        private static readonly Guid HostId = new("10100000000000000000000000bbbb01");
+        private static readonly SessionConnectionDetails ConnectionDetails = Defaults.CreateConnectionDetails(HostId, RegionName);
+
+        private static RoomStateChanged InitialRoomState => Defaults.CreateRoomState(RoomId, HostId);
 
         [Test]
         public void TestRoomStateUpdate()
@@ -39,7 +40,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestDisposedRoom() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState);
+            var room = new Room(null!, null!, RoomId, InitialRoomState);
 
             room.Dispose();
 
@@ -64,7 +65,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CallingMethodsRequiringBeingInsideTheRoomShouldThrowIfTheRoomIsNotJoined() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState);
+            var room = new Room(null!, null!, RoomId, InitialRoomState);
 
             _ = Assert.Throws<RoomNotJoinedException>(() => _ = room.IsMatchAvailable);
             _ = await AssertThrowsAsync<RoomNotJoinedException>(async () => await room.ChangeTeam(default));
@@ -81,7 +82,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestRoomWithoutPrivilegedHost() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState with
+            var room = new Room(null!, null!, RoomId, InitialRoomState with
             {
                 HasPrivilegedHost = false,
             }, true);
@@ -92,7 +93,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestRoomWithoutMatchmakingFunctionality() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState with
+            var room = new Room(null!, null!, RoomId, InitialRoomState with
             {
                 MatchmakingData = null,
             }, true);
@@ -110,7 +111,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsNullParameters() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState, true);
+            var room = new Room(null!, null!, RoomId, InitialRoomState, true);
 
             await room.UpdateRoomParams();
 
@@ -124,7 +125,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomRoomDataExceedingMaxSizeLimit() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState, true);
+            var room = new Room(null!, null!, RoomId, InitialRoomState, true);
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_valueOverTheLimit);
             var newCustomData = new Dictionary<string, string>
@@ -137,7 +138,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomRoomDataEqualToMaxLimit() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, new RoomClientMock(), RoomIdForTesting, InitialRoomState, true);
+            var room = new Room(null!, new RoomClientMock(), RoomId, InitialRoomState, true);
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_keyInLimit);
             var newCustomData = new Dictionary<string, string>
@@ -150,7 +151,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomMatchmakingDataExceedingMaxSizeLimit() => UniTask.ToCoroutine(async () =>
         {
-            IRoom room = new Room(null!, null!, RoomIdForTesting, InitialRoomState, true);
+            IRoom room = new Room(null!, null!, RoomId, InitialRoomState, true);
             room.UpdateState(InitialRoomState, new RoomStateDiff());
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_valueOverTheLimit);
@@ -164,7 +165,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestUpdateRoomParamsWithCustomMatchmakingDataEqualToMaxLimit() => UniTask.ToCoroutine(async () =>
         {
-            IRoom room = new Room(null!, new RoomClientMock(), RoomIdForTesting, InitialRoomState, true);
+            IRoom room = new Room(null!, new RoomClientMock(), RoomId, InitialRoomState, true);
             room.UpdateState(InitialRoomState, new RoomStateDiff());
             var key = Encoding.UTF8.GetString(_keyInLimit);
             var value = Encoding.UTF8.GetString(_valueInLimit);
@@ -184,7 +185,7 @@ namespace Elympics.Tests.Rooms
             {
                 { "testKey", "testValue" },
             };
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState with
+            var room = new Room(null!, null!, RoomId, InitialRoomState with
             {
                 RoomName = roomName,
                 IsPrivate = isPrivate,
@@ -204,7 +205,7 @@ namespace Elympics.Tests.Rooms
             {
                 { "testKey", "testValue" },
             };
-            var room = new Room(null!, null!, RoomIdForTesting, InitialRoomState with
+            var room = new Room(null!, null!, RoomId, InitialRoomState with
             {
                 RoomName = roomName,
                 IsPrivate = isPrivate,
@@ -224,8 +225,8 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting, mmState: MatchmakingState.Playing);
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomState, true);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
             var matchmakingData = roomState.MatchmakingData!;
             var matchData = matchmakingData.MatchData!;
 
@@ -243,7 +244,7 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting, mmState: MatchmakingState.Playing);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
             var roomStateWithoutMatchDetails = roomState with
             {
                 MatchmakingData = roomState.MatchmakingData! with
@@ -254,7 +255,7 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomStateWithoutMatchDetails, true);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomStateWithoutMatchDetails, true);
 
             // Act
             TestDelegate testDelegate = () => room.PlayAvailableMatch();
@@ -270,7 +271,7 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting, mmState: MatchmakingState.Playing);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
             var roomStateWithoutMatchDetails = roomState with
             {
                 MatchmakingData = roomState.MatchmakingData! with
@@ -282,7 +283,7 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomStateWithoutMatchDetails, true);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomStateWithoutMatchDetails, true);
 
             // Act
             TestDelegate testDelegate = () => room.PlayAvailableMatch();
@@ -298,14 +299,14 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting, mmState: MatchmakingState.Playing) with
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing) with
             {
                 MatchmakingData = InitialRoomState.MatchmakingData! with
                 {
                     State = MatchmakingState.Matchmaking,
                 },
             };
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomState, true);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
 
             // Act
             TestDelegate testDelegate = () => room.PlayAvailableMatch();
@@ -321,7 +322,7 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = RoomsTestUtility.PrepareInitialRoomState(RoomIdForTesting, mmState: MatchmakingState.Playing) with
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing) with
             {
                 MatchmakingData = InitialRoomState.MatchmakingData! with
                 {
@@ -329,7 +330,7 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomState, true);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
 
             // Act
             TestDelegate testDelegate = () => room.PlayAvailableMatch();
@@ -349,7 +350,7 @@ namespace Elympics.Tests.Rooms
             {
                 MatchmakingData = null,
             };
-            var room = new Room(matchLauncher, roomsClient, RoomIdForTesting, roomState, true);
+            var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
 
             // Act
             TestDelegate testDelegate = () => room.PlayAvailableMatch();

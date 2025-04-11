@@ -76,9 +76,8 @@ namespace Elympics.Rooms.Models
         [Key(1)] public RoomChain Chain { get; set; }
         [Key(2)] public RoomCurrency Currency { get; set; }
 
-        protected bool Equals(RoomCoin other) => CoinId.Equals(other.CoinId) && Chain.Equals(other.Chain) && Currency.Equals(other.Currency);
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCoin other && Equals(other);
+        private bool Equals(RoomCoin other) => CoinId.Equals(other.CoinId) && Chain.Equals(other.Chain) && Currency.Equals(other.Currency);
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomCoin other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(CoinId, Chain, Currency);
 
@@ -94,9 +93,8 @@ namespace Elympics.Rooms.Models
         [Key(1)] public ChainType Type { get; set; }
         [Key(2)] public string Name { get; set; }
 
-        protected bool Equals(RoomChain other) => ExternalId == other.ExternalId && Type == other.Type && Name == other.Name;
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomChain other && Equals(other);
+        private bool Equals(RoomChain other) => ExternalId == other.ExternalId && Type == other.Type && Name == other.Name;
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomChain other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(ExternalId, (int)Type, Name);
 
@@ -113,9 +111,8 @@ namespace Elympics.Rooms.Models
         [Key(2)] public int Decimals { get; set; }
         [Key(3)] public string IconUrl { get; set; } = null!;
 
-        protected bool Equals(RoomCurrency other) => Ticker == other.Ticker && Address == other.Address && Decimals == other.Decimals && IconUrl == other.IconUrl;
-
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is RoomCurrency other && Equals(other);
+        private bool Equals(RoomCurrency other) => Ticker == other.Ticker && Address == other.Address && Decimals == other.Decimals && IconUrl == other.IconUrl;
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is RoomCurrency other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(Ticker, Address, Decimals, IconUrl);
 

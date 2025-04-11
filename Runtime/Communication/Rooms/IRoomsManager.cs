@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
-using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
 #nullable enable

@@ -180,7 +180,7 @@ namespace Elympics
             var matchNotFound = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && !string.IsNullOrEmpty(_stateDiff.MatchDataArgs?.MatchData.FailReason);
             var matchFoundSuccessfully = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
             if (matchDataArgsAvailable)
-                logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
+                _ = logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
 
             if (matchFoundSuccessfully || matchNotFound)
                 _matchLauncher.MatchmakingCompleted();

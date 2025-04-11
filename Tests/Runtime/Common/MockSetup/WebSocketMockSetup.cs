@@ -64,7 +64,7 @@ namespace Elympics
                         case JoinLobby joinLobby:
                         {
                             SendSuccessResponse(Ws, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, String.Empty);
+                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty);
                             SendResponse(Ws, gameResponse);
                             if (createInitialRoom)
                             {

@@ -85,7 +85,7 @@ namespace Elympics
 
         public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default)
         {
-            _logger.WithMethodName().Log($"Join room using join code.");
+            _logger.WithMethodName().Log("Join room using join code.");
             return ExecuteOperation<RoomIdOperationResult>(new JoinWithJoinCode(joinCode, teamIndex), ct)
                 .ContinueWith(result => result.RoomId);
         }
@@ -98,19 +98,19 @@ namespace Elympics
 
         public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default)
         {
-            _logger.WithMethodName().Log($"Set ready.");
+            _logger.WithMethodName().Log("Set ready.");
             return ExecuteOperation(new SetReady(roomId, gameEngineData, matchmakerData), ct);
         }
 
         public UniTask SetUnready(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().Log($"Set unready.");
+            _logger.WithMethodName().Log("Set unready.");
             return ExecuteOperation(new SetUnready(roomId), ct);
         }
 
         public UniTask LeaveRoom(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().Log($"Leave room.");
+            _logger.WithMethodName().Log("Leave room.");
             return ExecuteOperation(new LeaveRoom(roomId), ct);
         }
 
@@ -126,17 +126,59 @@ namespace Elympics
 
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {
-            _logger.WithMethodName().Log($"Start matchmaking.");
+            _logger.WithMethodName().Log("Start matchmaking.");
             return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId), default);
         }
 
         public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().Log($"Cancel matchmaking.");
+            _logger.WithMethodName().Log("Cancel matchmaking.");
             return ExecuteOperation(new CancelMatchmaking(roomId), ct);
         }
-        public UniTask WatchRooms(CancellationToken ct = default) => ExecuteOperation(new WatchRooms(), ct);
-        public UniTask UnwatchRooms(CancellationToken ct = default) => ExecuteOperation(new UnwatchRooms(), ct);
+
+        private enum RoomWatchingState
+        {
+            NotWatching = 0,
+            Watching,
+            WatchRequestSent,
+            UnwatchRequestSent,
+        }
+
+        private RoomWatchingState _roomWatchingState = RoomWatchingState.NotWatching;
+
+        public async UniTask WatchRooms(CancellationToken ct = default)
+        {
+            if (_roomWatchingState != RoomWatchingState.NotWatching)
+                throw new InvalidOperationException($"Cannot request watching rooms in {_roomWatchingState} state");
+            _roomWatchingState = RoomWatchingState.WatchRequestSent;
+            try
+            {
+                await ExecuteOperation(new WatchRooms(), ct);
+                _roomWatchingState = RoomWatchingState.Watching;
+            }
+            catch
+            {
+                _roomWatchingState = RoomWatchingState.NotWatching;
+                throw;
+            }
+        }
+
+        public async UniTask UnwatchRooms(CancellationToken ct = default)
+        {
+            if (_roomWatchingState != RoomWatchingState.Watching)
+                throw new InvalidOperationException($"Cannot request watching rooms in {_roomWatchingState} state");
+            _roomWatchingState = RoomWatchingState.UnwatchRequestSent;
+            try
+            {
+                await ExecuteOperation(new UnwatchRooms(), ct);
+                _roomWatchingState = RoomWatchingState.NotWatching;
+            }
+            catch
+            {
+                _roomWatchingState = RoomWatchingState.Watching;
+                throw;
+            }
+        }
 
         private UniTask ExecuteOperation(LobbyOperation message, CancellationToken ct) =>
             ExecuteOperation<OperationResult>(message, ct);

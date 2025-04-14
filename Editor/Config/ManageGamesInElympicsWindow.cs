@@ -91,6 +91,11 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         if (manageGamesInElympicsWindowData == null)
             return false;
+        if (manageGamesInElympicsWindowData.objectToSerialize == null)
+        {
+            ElympicsTools.OpenManageGamesInElympicsWindow();
+            return false;
+        }
 
         elympicsConfigSerializedObject = new SerializedObject(manageGamesInElympicsWindowData.objectToSerialize);
         currentGameIndex = elympicsConfigSerializedObject.FindProperty("currentGame");
@@ -151,14 +156,8 @@ public class ManageGamesInElympicsWindow : EditorWindow
         if (!colorsConverted)
             ConvertColorsFromHexToUnity();
 
-        if (_customInspectorDrawer == null)
-        {
-            _customInspectorDrawer = new CustomInspectorDrawer(position, 5, 15);
-        }
-        else
-        {
-            _customInspectorDrawer.PrepareToDraw(position);
-        }
+        _customInspectorDrawer ??= new CustomInspectorDrawer(position, 5, 15);
+        _customInspectorDrawer.PrepareToDraw(position);
 
         _resizableCenteredLabelWidth = (int)(position.width * 0.80f);
     }

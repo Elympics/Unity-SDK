@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elympics.Lobby.Models;
 using MessagePack;
 
@@ -5,7 +6,11 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record GameDataResponse([property: Key(0)] int JoinedMatchRooms) : IFromLobby
+    public record GameDataResponse(
+        [property: Key(0)] int JoinedMatchRooms,
+        [property: Key(1)] List<RoomCoin> CoinData,
+        [property: Key(2)] string GameVersionId,
+        [property: Key(3)] string FleetName) : IFromLobby
     {
         public virtual bool Equals(GameDataResponse? other)
         {
@@ -13,11 +18,11 @@ namespace Elympics.Rooms.Models
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return JoinedMatchRooms == other.JoinedMatchRooms;
+            return JoinedMatchRooms == other.JoinedMatchRooms && GameVersionId == other.GameVersionId && FleetName == other.FleetName;
         }
 
         public override int GetHashCode() => JoinedMatchRooms.GetHashCode();
 
-        public override string ToString() => $"RoomsJoined: {JoinedMatchRooms}";
+        public override string ToString() => $"RoomsJoined: {JoinedMatchRooms} | {nameof(GameVersionId)}:{GameVersionId} | {nameof(FleetName)}:{FleetName} | Coins count: {(CoinData != null ? CoinData.Count : "No coins found.")}";
     }
 }

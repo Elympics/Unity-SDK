@@ -64,7 +64,7 @@ namespace Elympics
                         case JoinLobby joinLobby:
                         {
                             SendSuccessResponse(Ws, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0);
+                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty);
                             SendResponse(Ws, gameResponse);
                             if (createInitialRoom)
                             {
@@ -73,7 +73,7 @@ namespace Elympics
                                     "RoomName",
                                     "ZZZZZZZZ",
                                     true,
-                                    new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null),
+                                    new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
                                     new List<UserInfo>
                                     {
                                         new(userId, 0, false, nickname, avatarUrl),
@@ -105,7 +105,7 @@ namespace Elympics
                                 createRoom.RoomName,
                                 "ZZZZZZZZ",
                                 true,
-                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null),
+                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
                                 new List<UserInfo>
                                 {
                                     new(userId, 0, false, nickname, avatarUrl),
@@ -287,7 +287,8 @@ namespace Elympics
                             ThrowIfMatchingWatchListState(Ws, watchRooms);
                             WebSocketMockBackendSession.TracksRoomList = true;
                             SendSuccessResponse(Ws, watchRooms);
-                            SendResponse(Ws, new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
+                            SendResponse(Ws,
+                                new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
                             break;
                         }
                         case UnwatchRooms unwatchRooms:
@@ -619,7 +620,8 @@ namespace Elympics
                 roomState.MatchmakingData.QueueName,
                 roomState.MatchmakingData.TeamCount,
                 roomState.MatchmakingData.TeamSize,
-                roomState.MatchmakingData.CustomData);
+                roomState.MatchmakingData.CustomData,
+                roomState.MatchmakingData.BetDetails);
 
             return new PublicRoomState(roomState.RoomId,
                 roomState.LastUpdate,

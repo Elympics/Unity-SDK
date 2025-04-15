@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
@@ -175,19 +176,27 @@ namespace Elympics
                 SetStateDiffToInitializeState();
             }
 
-            var mmCompleted = _stateDiff.MatchDataArgs != null;
-            var matchFound = _stateDiff.MatchDataArgs != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
-            if (mmCompleted)
-            {
-                _ = _logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
-                _ = _logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
-                _matchLauncher.MatchFound();
-            }
+            var matchDataArgsAvailable = _stateDiff.MatchDataArgs != null;
+            var matchNotFound = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && !string.IsNullOrEmpty(_stateDiff.MatchDataArgs?.MatchData.FailReason);
+            var matchFoundSuccessfully = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
+            if (matchDataArgsAvailable)
+                _ = logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
+
+            if (matchFoundSuccessfully || matchNotFound)
+                _matchLauncher.MatchmakingCompleted();
+
+            if (matchNotFound)
+                logger.Log($"Match not found. Reason: {_stateDiff.MatchDataArgs?.MatchData.FailReason}");
 
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
 
-            PlayAvailableMatchIfApplicable(roomId, matchFound);
+            if (matchFoundSuccessfully)
+            {
+                logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress)
+                    .Log("Matchmaking completed successfully.");
+                PlayAvailableMatchIfApplicable(roomId);
+            }
             return;
 
             void SetStateDiffToInitializeState()
@@ -201,6 +210,8 @@ namespace Elympics
         private void HandleGameDataResponse(GameDataResponse obj)
         {
             ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
+            _ = _logger.SetGameVersionId(obj.GameVersionId).SetFleetName(obj.FleetName);
+            ElympicsLobbyClient.Instance!.AssignRoomCoins(obj.CoinData);
             _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
             _ = _tcs.TrySetResult(obj);
         }
@@ -254,10 +265,8 @@ namespace Elympics
                     CustomMatchmakingDataChanged?.Invoke(new CustomMatchmakingDataChangedArgs(roomId, newKey, newValue));
         }
 
-        private void PlayAvailableMatchIfApplicable(Guid roomId, bool matchFound)
+        private void PlayAvailableMatchIfApplicable(Guid roomId)
         {
-            if (matchFound is false)
-                return;
             if (_matchLauncher is { ShouldLoadGameplaySceneAfterMatchmaking: true, IsCurrentlyInMatch: false })
                 _rooms[roomId].PlayAvailableMatch();
         }
@@ -305,7 +314,8 @@ namespace Elympics
             bool isSingleTeam,
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
-            IReadOnlyDictionary<string, string>? customMatchmakingData = null)
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsParam? betDetails = null)
         {
             if (roomName == null)
                 throw new ArgumentNullException(nameof(roomName));
@@ -313,7 +323,7 @@ namespace Elympics
                 throw new ArgumentNullException(nameof(queueName));
             customRoomData ??= new Dictionary<string, string>();
             customMatchmakingData ??= new Dictionary<string, string>();
-            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData);
+            var ackTask = _client.CreateRoom(roomName, isPrivate, false, queueName, isSingleTeam, customRoomData, customMatchmakingData, betDetails);
             return SetupRoomTracking(ackTask);
         }
         [PublicAPI]
@@ -332,6 +342,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
+            RoomBetDetailsParam? betDetails = null,
             CancellationToken ct = default)
         {
             if (queueName == null)
@@ -351,6 +362,7 @@ namespace Elympics
                     true,
                     customRoomData ?? new Dictionary<string, string>(),
                     customMatchmakingData ?? new Dictionary<string, string>(),
+                    betDetails,
                     ct);
                 room = await SetupRoomTracking(ackTask, ct: ct);
 
@@ -367,8 +379,6 @@ namespace Elympics
                     var error = room.State.MatchmakingData?.MatchData?.FailReason;
                     if (!string.IsNullOrEmpty(error))
                         throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
-
-                    logger.Log("Quick Match Founded.");
                     return room;
                 }
 

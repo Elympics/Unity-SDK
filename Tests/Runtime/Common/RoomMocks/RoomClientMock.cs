@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
 
@@ -30,6 +31,7 @@ internal class RoomClientMock : IRoomsClient
         bool isSingleTeam,
         IReadOnlyDictionary<string, string> customRoomData,
         IReadOnlyDictionary<string, string> customMatchmakingData,
+        RoomBetDetailsParam? betDetailsSlim = null,
         CancellationToken ct = default)
     {
         CreateRoomInvokedArgs = (roomName, queueName, isSingleTeam, isPrivate, isEphemeral, customRoomData, customMatchmakingData, ct);
@@ -88,6 +90,7 @@ internal class RoomClientMock : IRoomsClient
         bool? isPrivate,
         IReadOnlyDictionary<string, string>? customRoomData,
         IReadOnlyDictionary<string, string>? customMatchmakingData,
+        RoomBetDetailsParam? betDetailsSlim = null,
         CancellationToken ct = default) => UniTask.CompletedTask;
 
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)

@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Rooms.Models;
 
 #nullable enable
@@ -28,12 +29,12 @@ namespace SCS
         public bool IsJoined => _room.IsJoined;
         public bool HasMatchmakingEnabled => _room.HasMatchmakingEnabled;
         public bool IsMatchAvailable => _room.IsMatchAvailable;
-        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null)
+        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetDetailsParam? betDetailsSlim = null)
         {
             if (_scsService.CurrentChain is not null && customMatchmakingData is not null && !customMatchmakingData.ContainsKey(SmartContractServiceMatchMakingCustomData.BetAmountKey))
                 throw new SmartContractServiceException($"New customData has to contains BetAmount key <color=red>{SmartContractServiceMatchMakingCustomData.BetAmountKey}</color>");
 
-            return _room.UpdateRoomParams(roomName, isPrivate, roomCustomData, customMatchmakingData);
+            return _room.UpdateRoomParams(roomName, isPrivate, roomCustomData, customMatchmakingData, betDetailsSlim);
         }
 
         public UniTask ChangeTeam(uint? teamIndex) => _room.ChangeTeam(teamIndex);

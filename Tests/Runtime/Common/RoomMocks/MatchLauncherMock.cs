@@ -25,7 +25,7 @@ namespace Elympics.Tests.Common.RoomMocks
             Debug.Log($"[{nameof(MatchLauncherMock)}] Matchmaking canceled");
             return room.CancelMatchmakingInternal(ct);
         }
-        public void MatchFound() => Debug.Log($"[{nameof(MatchLauncherMock)}] Match found");
+        public void MatchmakingCompleted() => Debug.Log($"[{nameof(MatchLauncherMock)}] Match found");
 
         public MatchmakingFinishedData? PlayMatchCalledArgs;
 

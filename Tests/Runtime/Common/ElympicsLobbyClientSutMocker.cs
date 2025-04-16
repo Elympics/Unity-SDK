@@ -55,9 +55,9 @@ namespace Elympics.Tests
 #pragma warning restore IDE0062
         }
 
-        public static ElympicsLobbyClient MockSuccessIAuthClient(this ElympicsLobbyClient sut, string jwt, Guid userId, string nickname)
+        public static ElympicsLobbyClient MockSuccessIAuthClient(this ElympicsLobbyClient sut, Guid userId, string nickname)
         {
-            var mockAuthClient = AuthClientMockSetup.CreateSuccessIAuthClient(jwt, userId, nickname);
+            var mockAuthClient = AuthClientMockSetup.CreateSuccessIAuthClient(userId, nickname);
             var authField = sut!.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == AuthClientFieldName);
             Assert.NotNull(authField);
             authField.SetValue(sut, mockAuthClient);

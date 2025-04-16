@@ -341,7 +341,7 @@ namespace Elympics.Editor
                         _ = EditorGUILayout.IntField("Used player index", ElympicsGameConfig.GetHalfRemotePlayerIndex(_playerIndexForHalfRemoteMode.intValue));
                     else
                         _ = EditorGUILayout.PropertyField(_playerIndexForHalfRemoteMode, new GUIContent("Used player index"));
-#pragma warning enable IDE0045
+#pragma warning restore IDE0045
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

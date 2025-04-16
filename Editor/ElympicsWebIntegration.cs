@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Web;
 using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -496,16 +495,6 @@ namespace Elympics
             }
 
             return true;
-        }
-
-        private static string AppendQueryParamsToUrl(string url, Dictionary<string, string> queryParamsDict)
-        {
-            var uriBuilder = new UriBuilder(url);
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            foreach (var queryParam in queryParamsDict)
-                query.Add(queryParam.Key, queryParam.Value);
-            uriBuilder.Query = query.ToString();
-            return uriBuilder.ToString();
         }
 
         private static void CheckAuthTokenAndRefreshIfNeeded(Action<bool> continuation)

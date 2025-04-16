@@ -30,21 +30,6 @@ namespace Elympics.Tests
         private const string Nickname = "nickname";
         private const string? AvatarUrl = null;
 
-        private const string FakeJwt = @"{
-  ""header"": {
-    ""alg"": ""RS256"",
-    ""typ"": ""JWT""
-  },
-  ""payload"": {
-    ""nameid"": ""057f2883-b4b4-4cc6-895f-e1332da86567"",
-    ""auth-type"": ""client-secret"",
-    ""nbf"": 1718803982,
-    ""exp"": 111,
-    ""iat"": 1718803982
-  },
-  ""signature"": ""rX85CHYGCpo2V1J6hXRj0rRySi-n7qxjiuwS98P9zS6W-hfKHKsApWJQeLUZ4_0DCUr8AE-YdkbYESKwv6Jl5OuyHDH4QCIVuTkCVrbT4duCiopitcVqwNubQARpTc7lApDAxihAtmdVUuUwz26po2ntlgv-p_JdHqN1g5Uk3vr9miKDdBzvSwSWwN1NP2cGEvzqlAs3wHtw4GYZChX_RugjM-vppuovQMOkwxJ7IvQXV7kb00ucpj71u9EmTmQFN9RMnB8b4c5K7-kXCM-_L2PNAC6MZX2-OExNWklQtqTUD3oF-dJFRH4Hew_ZEgt_SBw37NWN1NSfT2q1wnXh0TDpFPPnZSqYUGNYl7mhOlLrPWNi5e4dpiawy-23760qDmj4kriyqOPcVCzWTbmcvcEe-ktwBIo9MNwYZvQCFJ7yZfsdVTlw7WdBO9_Kf6JZNVZ7Rc6jjCN3OPmCJShTLg7GbiHOp9Bl8637mXXV7GwTzqZxoyAvU9ysRyRXC3kMkUEew0oyAr8eCXU1k-8DIiK_AYdzAUIqSfgV74MwONqQtmrxbGx8kw_l4D15ha7vOMI0QoN9Tu62ElFBgwk2j-1ysH7_7D_sx-9wYD-gUUaOIgL2e71cLzxzzQ0RJYh984BE6RawW4-mzjiR3J8g9NYPRhT-911w-F_HGRTXCZ4""
-}";
-
         private const string ExpiredClientAuthJwt =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiIwNTdmMjg4My1iNGI0LTRjYzYtODk1Zi1lMTMzMmRhODY1NjciLCJhdXRoLXR5cGUiOiJjbGllbnQtc2VjcmV0IiwibmJmIjoxNzE4MzczOTc4LCJleHAiOjE3MTg0NjAzNzgsImlhdCI6MTcxODM3Mzk3OH0.O0h2FLCSA69a-D_GLeL6zo_Bqf8D6bW1n8o1Ue8TM1D8bDPv8KPblwBG13JyM76RJf30l7I77RjnYwmYvIxdMn1y8p14QtPkf_-nmxCEyRztE-7el44ud_z7gvzREJ0V0P89_BxPlJfIWG4kXdQGTczERRg4SkQWZyyMtTNNcXtK_KdREmDQm8_QXC9u15xcwVnjUxWfyCevcD-7djl2Sx_S1GFCKJDOsseBtWp8nTAtcCFFEioZDQh0cSf6G773eqFK_sy_jzCNPCGlJ7SCc6qs3MR2Fgg31P3jfQ7vtz1qrVC2mz86WPNQqwXvL9PubfxEL06g5xh9qcGUJuvXAehnaAG6iB098RvvBbHbM55p9cTaXtjk9DalZfMnwAEyEX9dfa6nLQhTMuWjQ8pScGcyG_RybbS932TaTdz_YiVFhnDmGKTugZLWVwLvJPVeri-o8E-BRY4bldKYTX5_ro26jY9tfPgYBi6H8K_alG5hx_A2Hf3Evyd3oWphMl61muReBqmLduL1jUr1V22C4rDPXToQgqhVp_y3p9iGI10tRRmywChFANYeRU2vtBKRQxazvUMCwgjCR8rpHz6JICcP6dlsmgW0WZmc4H0UkC_gAavQVHBpPlq0Ggd8Xf-Ihlx1MymLSCGoid0Ou09vWCAGbiQalnup-TDXjnJINDw";
 
@@ -57,7 +42,8 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!.MockSuccessIAuthClient(FakeJwt, UserId, Nickname).MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
+            _ = _sut!.MockSuccessIAuthClient(UserId, Nickname)
+                .MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
                 .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas);
         }
 
@@ -105,7 +91,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_And_Repeat_SameValues() => UniTask.ToCoroutine(async () =>
         {
-            var authType = AuthType.ClientSecret;
+            const AuthType authType = AuthType.ClientSecret;
             var region = new RegionData(ElympicsRegions.Warsaw);
 
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
@@ -136,7 +122,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_And_Repeat_SameValues_With_SignOut() => UniTask.ToCoroutine(async () =>
         {
-            var authType = AuthType.ClientSecret;
+            const AuthType authType = AuthType.ClientSecret;
             var region = new RegionData(ElympicsRegions.Warsaw);
 
             await _sut!.ConnectToElympicsAsync(new ConnectionData()

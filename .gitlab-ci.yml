@@ -8,6 +8,7 @@ variables:
   PACKAGE_DIR: $CI_PROJECT_DIR
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
+  PACKAGE_DIR: ${UNITY_DIR}/Packages/com.daftmobile.elympics
   FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
 
 stages:
@@ -231,7 +232,7 @@ verify-messagepack-generated:
       artifacts: true
   variables:
     GIT_DEPTH: 1
-    ORIGINAL_GENERATED_PATH: "${UNITY_DIR}/Assets/ElympicsSDK/Runtime/Plugins/MessagePackGenerated.cs"
+    ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
     - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb

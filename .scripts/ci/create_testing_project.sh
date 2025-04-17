@@ -2,7 +2,7 @@
 set -e
 
 echo "Creating Testing Project"
-PACKAGE_FOLDER=${UNITY_DIR}/Assets/ElympicsSDK/
+PACKAGE_FOLDER=${PACKAGE_DIR}/
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -createProject "$UNITY_DIR" \
@@ -24,8 +24,13 @@ echo "Moving Package files to appropriate directories"
 
 mkdir -p "$PACKAGE_FOLDER"
 cp -r Editor "$PACKAGE_FOLDER"
+cp -r Editor.meta "$PACKAGE_FOLDER"
 cp -r Runtime "$PACKAGE_FOLDER"
+cp -r Runtime.meta "$PACKAGE_FOLDER"
 cp -r Tests "$PACKAGE_FOLDER"
+cp -r Tests.meta "$PACKAGE_FOLDER"
+cp -r package.json "$PACKAGE_FOLDER"
+cp -r package.json.meta "$PACKAGE_FOLDER"
 cp -r Samples~ "$PACKAGE_FOLDER"
 mv "${PACKAGE_FOLDER}Samples~" "${PACKAGE_FOLDER}Samples"
 

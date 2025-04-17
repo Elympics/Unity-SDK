@@ -34,9 +34,8 @@ namespace Elympics.Rooms.Models
         public override string ToString() => $"{nameof(MatchedPlayersId)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", MatchedPlayersId ?? new List<Guid>())}{Environment.NewLine}"
             + $"{nameof(TcpUdpServerAddress)}:{TcpUdpServerAddress}{Environment.NewLine}"
             + $"{nameof(WebServerAddress)}:{WebServerAddress}{Environment.NewLine}"
-            + $"{nameof(UserSecret)}:{UserSecret}{Environment.NewLine}"
-            + $"{nameof(GameEngineData)}:{GameEngineData.Length}{Environment.NewLine}"
-            + $"{nameof(MatchmakerData)}:{MatchmakerData.Length}{Environment.NewLine}";
+            + $"{nameof(GameEngineData)}:{GameEngineData?.Length}{Environment.NewLine}"
+            + $"{nameof(MatchmakerData)}:{MatchmakerData?.Length}{Environment.NewLine}";
 
         public override int GetHashCode()
         {

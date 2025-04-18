@@ -23,14 +23,10 @@ fi
 echo "Moving Package files to appropriate directories"
 
 mkdir -p "$PACKAGE_FOLDER"
-cp -r Editor "$PACKAGE_FOLDER"
-cp -r Editor.meta "$PACKAGE_FOLDER"
-cp -r Runtime "$PACKAGE_FOLDER"
-cp -r Runtime.meta "$PACKAGE_FOLDER"
-cp -r Tests "$PACKAGE_FOLDER"
-cp -r Tests.meta "$PACKAGE_FOLDER"
-cp -r package.json "$PACKAGE_FOLDER"
-cp -r package.json.meta "$PACKAGE_FOLDER"
+cp -r Editor{,.meta} "$PACKAGE_FOLDER"
+cp -r Runtime{,.meta} "$PACKAGE_FOLDER"
+cp -r Tests{,.meta} "$PACKAGE_FOLDER"
+cp package.json{,.meta} "$PACKAGE_FOLDER"
 cp -r Samples~ "$PACKAGE_FOLDER"
 mv "${PACKAGE_FOLDER}Samples~" "${PACKAGE_FOLDER}Samples"
 

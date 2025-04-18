@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGE_FOLDER=${UNITY_DIR}/Assets/ElympicsSDK/
+PACKAGE_FOLDER=${PACKAGE_DIR}/
 
 mv -f ./.editorconfig $PACKAGE_FOLDER
 

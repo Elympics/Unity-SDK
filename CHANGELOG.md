@@ -1,3 +1,37 @@
+## [999.999.999](https://github.com/Elympics/Unity-SDK/compare/v0.15.4...v999.999.999) (2025-04-18)
+
+
+### Bug Fixes 🪲
+
+* file encoding ([e1ce2c6](https://github.com/Elympics/Unity-SDK/commit/e1ce2c6494ed2e37fe0942b62e48c69813a9d69b))
+* game management window initialization ([83be7c3](https://github.com/Elympics/Unity-SDK/commit/83be7c35deb7a98bcdee701739caa0ecacd1edf9))
+* issues with mutable struct ([8d72b1c](https://github.com/Elympics/Unity-SDK/commit/8d72b1cf43420b7fed5d7da7568dc5dac3880856))
+* logging null byte array ([84f7da1](https://github.com/Elympics/Unity-SDK/commit/84f7da1f44b78c68bf57514c601fd5b8879824a4))
+* message pack formatting ([bf41e70](https://github.com/Elympics/Unity-SDK/commit/bf41e70823515315ea5e4655be0734a2fc43c75d))
+* naming violations ([4d0eebb](https://github.com/Elympics/Unity-SDK/commit/4d0eebb70f4be65a7c65d6958a9e699324c1138c))
+* null ref ([46f2c7b](https://github.com/Elympics/Unity-SDK/commit/46f2c7bd2757e111689736482e848b33cd8c4378))
+* Prevent sending room tracking request multiple times ([16d4ef3](https://github.com/Elympics/Unity-SDK/commit/16d4ef3fb3fea3f9f430fbf2c738634220652517))
+* Remove Newtonsoft JSON dependency from runtime tests ([3c0a03a](https://github.com/Elympics/Unity-SDK/commit/3c0a03a3d89ab01134e906b2753fcc6c74c801c2))
+* Remove System.Web dependency ([29c4277](https://github.com/Elympics/Unity-SDK/commit/29c42777e78e64754de26ccaede0a22479e39104))
+* remove unnecessary constructor ([db1ff48](https://github.com/Elympics/Unity-SDK/commit/db1ff48181c9d4cc76b399f4e5fe6a71ce905dbf))
+* Remove unsupported platforms from .asmdef files ([de2d25a](https://github.com/Elympics/Unity-SDK/commit/de2d25ac84d51b2ab09db367cfc122ab5e07f0ae))
+* remove whitespace on empty line ([4e3a64d](https://github.com/Elympics/Unity-SDK/commit/4e3a64d77c8fc7843afe23882a91bef7f48b1d12))
+
+
+### Features
+
+* add ElympicsRandom ([5c6a15a](https://github.com/Elympics/Unity-SDK/commit/5c6a15aa6af105a9880384e9067a212db0254632))
+* add gameVersionId and fleetname to loggerContext ([53d2ca8](https://github.com/Elympics/Unity-SDK/commit/53d2ca8975b2a5beb3283752a9fce62fa30f2340))
+* add ways to create ElympicsRandom ([eb19dae](https://github.com/Elympics/Unity-SDK/commit/eb19daefcad47d7209532b021a1a50ee0137d81c))
+* BetValue as decimal ([4f0b0a5](https://github.com/Elympics/Unity-SDK/commit/4f0b0a5e81b207892d42442ac5c8e0a7af32b8fb))
+* configuring bets in rooms ([44306eb](https://github.com/Elympics/Unity-SDK/commit/44306eb1fdf21d2122cde16330cb80d37d83cd04))
+* init roomCoinInfo ([f11cb9d](https://github.com/Elympics/Unity-SDK/commit/f11cb9d579612178f0d1a9a6126c15037aea112e))
+* reafctor of roomBet ([34e2557](https://github.com/Elympics/Unity-SDK/commit/34e255717dd8bd1c5c8121e0e1bc94ecc1ac3ad8))
+* remove IRng and UnityRandom ([4a98a03](https://github.com/Elympics/Unity-SDK/commit/4a98a03b5e996a95793b8fbb0947d74b93af4b79))
+* unify naming convention ([d0e349f](https://github.com/Elympics/Unity-SDK/commit/d0e349f457eb16004f98605d4c40f37db0fdc4ec))
+
+
+
 ## [0.15.4](https://github.com/Elympics/Unity-SDK/compare/v0.15.3...v0.15.4) (2025-04-09)
 
 

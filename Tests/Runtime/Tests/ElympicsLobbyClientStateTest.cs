@@ -114,7 +114,11 @@ namespace Elympics.Tests
         [OneTimeTearDown]
         public void FinishTests() => Object.Destroy(_sut);
 
-        private void OnStateChanged(ElympicsState oldState, ElympicsState newState) => _stateTransitions.Add((oldState, newState));
+        private void OnStateChanged(ElympicsState oldState, ElympicsState newState)
+        {
+            Debug.Log($"Test state old {oldState} new {newState}");
+            _stateTransitions.Add((oldState, newState));
+        }
 
         private void AssertStateTransition(int index, ElympicsState expectedOld, ElympicsState expectedNew)
         {

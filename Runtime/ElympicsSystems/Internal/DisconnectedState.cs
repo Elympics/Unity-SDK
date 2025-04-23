@@ -32,14 +32,14 @@ namespace Elympics.ElympicsSystems.Internal
             await UniTask.CompletedTask;
 
         }
+        public override UniTask ReConnect(ConnectionData reconnectionData) => UniTask.CompletedTask;
         public override async UniTask FinishMatch()
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));
             await UniTask.CompletedTask;
         }
         public override void MatchFound()
-        {
-        }
+        { }
         public override async UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(CancelMatchmaking)));

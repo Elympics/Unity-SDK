@@ -141,9 +141,7 @@ namespace Elympics
                         LeftRoom?.Invoke(new LeftRoomArgs(roomId, LeavingReason.RoomClosed));
                     }
                     else
-                    {
                         room.Dispose();
-                    }
                 }
                 catch (Exception ex)
                 {

@@ -24,6 +24,7 @@ namespace Elympics.ElympicsSystems.Internal
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();
                 Client.SwitchState(ElympicsState.Connected);
+                Client.OnSuccessfullyConnectedToElympics(false);
             }
             catch
             {
@@ -38,6 +39,7 @@ namespace Elympics.ElympicsSystems.Internal
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
+        public override UniTask ReConnect(ConnectionData connection) => throw new ElympicsException(GenerateErrorMessage(nameof(ReConnect)));
         public override async UniTask FinishMatch()
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));

@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Mappers;
 using Elympics.Communication.PublicApi;
+using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
@@ -25,7 +26,7 @@ namespace Elympics
 {
     [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsLobbyClient)]
     [RequireComponent(typeof(AsyncEventsDispatcher))]
-    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager
+    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, IWebSocketSessionController
     {
         public static ElympicsLobbyClient? Instance { get; private set; }
         internal ElympicsLobbyClientState CurrentState { get; private set; } = null!;
@@ -54,8 +55,14 @@ namespace Elympics
         [SerializeField, HideInInspector] private bool authenticateOnAwake = true;
         [SerializeField, HideInInspector] private bool migratedAuthSettings;
 
+        [Obsolete("Use instead" + nameof(ElympicsConnectionEstablished))]
         public event Action<AuthData>? AuthenticationSucceeded;
+
+        [Obsolete]
         public event Action<string>? AuthenticationFailed;
+
+        public event Action<ElympicsConnectionData>? ElympicsConnectionEstablished;
+        public event Action<ElympicsConnectionLostData>? ElympicsConnectionLost;
 
         private IAuthClient _auth = null!;
         public AuthData? AuthData { get; internal set; }
@@ -350,10 +357,7 @@ namespace Elympics
         private void OnDestroy()
         {
             if (_webSocketSession.IsValueCreated)
-            {
-                _webSocketSession.Value.Disconnected -= OnWebSocketDisconnected;
                 _webSocketSession.Value.Dispose();
-            }
             GameplaySceneMonitor?.Dispose();
         }
 
@@ -361,7 +365,7 @@ namespace Elympics
         {
             if (asyncEventsDispatcher == null)
                 throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
-            return new WebSocketSession(asyncEventsDispatcher, LoggerContext);
+            return new WebSocketSession(this, asyncEventsDispatcher, LoggerContext);
         }
 
         private RoomsClient CreateRoomsClient() => new(LoggerContext)
@@ -371,12 +375,47 @@ namespace Elympics
 
         private RoomsManager CreateRoomsManager()
         {
-            var webSocketSession = _webSocketSession.Value;
             var roomsManager = new RoomsManager(this, _roomsClient.Value, LoggerContext);
-            webSocketSession.Disconnected += OnWebSocketDisconnected;
             return roomsManager;
         }
-        private void OnWebSocketDisconnected(DisconnectionData _) => RoomsManager.Reset();
+
+        public async UniTask ReconnectIfPossible(DisconnectionData reason)
+        {
+            RoomsManager.Reset();
+            if (reason.Reason != DisconnectionReason.Timeout)
+            {
+                ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
+                {
+                    DisconnectionData = reason
+                });
+                return;
+            }
+
+            var reconnectionData = new ConnectionData
+            {
+                AuthType = null,
+                Region = new RegionData
+                {
+                    Name = CurrentRegion,
+                },
+                AuthFromCacheData = new CachedAuthData()
+                {
+                    CachedData = AuthData,
+                }
+            };
+            await CurrentState.ReConnect(reconnectionData);
+            if (CurrentState.State == ElympicsState.Disconnected)
+                ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
+                {
+                    DisconnectionData = reason.Reason == DisconnectionReason.Reconnection ? new DisconnectionData(DisconnectionReason.Timeout) : reason,
+                });
+            else
+                ElympicsConnectionEstablished?.Invoke(new ElympicsConnectionData
+                {
+                    AuthData = AuthData,
+                    AutoReconnected = true,
+                });
+        }
 
         private ElympicsLobbyClientState FetchState(ElympicsState state)
         {
@@ -395,6 +434,7 @@ namespace Elympics
             ElympicsState.Connected => new ConnectedState(this),
             ElympicsState.Matchmaking => new MatchmakingState(this),
             ElympicsState.PlayingMatch => new PlayingMatchState(this),
+            ElympicsState.Reconnecting => new ReconnectingState(this, LoggerContext),
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
         };
         private void OnGameplayFinished() => CurrentState.FinishMatch().Forget();
@@ -432,14 +472,10 @@ namespace Elympics
         internal void SignOutInternal()
         {
             var logger = LoggerContext.WithMethodName();
-
-            if (!IsAuthenticated)
-                throw new ElympicsException("User is not authenticated");
-
             AuthData = null;
-
             DisconnectFromLobby();
-            logger.SetNoUser().SetNoConnection().SetNoRoom().Log("Signed out on user request.");
+            logger.Log("User sign out.");
+            _ = logger.SetNoUser().SetNoConnection().SetNoRoom();
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)
@@ -523,5 +559,10 @@ namespace Elympics
 
             return null;
         }
+        internal void OnSuccessfullyConnectedToElympics(bool reconnected) => ElympicsConnectionEstablished?.Invoke(new ElympicsConnectionData()
+        {
+            AuthData = AuthData,
+            AutoReconnected = reconnected,
+        });
     }
 }

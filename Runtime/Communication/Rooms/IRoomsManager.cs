@@ -27,6 +27,7 @@ namespace Elympics
         event Action<CustomRoomDataChangedArgs>? CustomRoomDataChanged;
         public event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
         public event Action<RoomNameChangedArgs>? RoomNameChanged;
+        public event Action<RoomBetAmountChangedArgs>? RoomBetAmountChanged;
 
         event Action<MatchmakingDataChangedArgs>? MatchmakingDataChanged;
         event Action<MatchmakingStartedArgs>? MatchmakingStarted;

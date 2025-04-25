@@ -194,9 +194,8 @@ namespace Elympics
             var isPrivateIsTheSame = isPrivate == null || isPrivate == _state.IsPrivate;
             var customRoomDataIsTheSame = customRoomData == null || customRoomData.IsTheSame(_state.CustomData);
             var customMatchmakingDataIsTheSame = customMatchmakingData == null || customMatchmakingData.IsTheSame(_state.MatchmakingData?.CustomData);
-            var isBetTheSame = betDetailsSlim == null
-                || (betDetailsSlim.Value.BetValue == _state.MatchmakingData?.BetDetails?.BetValue && betDetailsSlim.Value.CoinId == _state.MatchmakingData?.BetDetails.Coin.CoinId);
-            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame && isBetTheSame;
+            var betAmountIsTheSame = betDetailsSlim == null || IsTheSameBetAmount(betDetailsSlim);
+            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame && betAmountIsTheSame;
 
             if (isSameAsCurrentState)
             {
@@ -215,7 +214,7 @@ namespace Elympics
             var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
-            var betSlimToSend = IsTheSameBetAmount(betDetailsSlim) ? betDetailsSlim : null;
+            var betSlimToSend = betAmountIsTheSame ? null : betDetailsSlim;
             return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betSlimToSend);
 
             bool IsTheSameBetAmount(RoomBetAmount? betDetails)

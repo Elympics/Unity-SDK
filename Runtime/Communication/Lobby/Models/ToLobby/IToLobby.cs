@@ -1,3 +1,4 @@
+using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Rooms.Models;
 using MessagePack;
 
@@ -16,7 +17,7 @@ namespace Elympics.Lobby.Models
     [Union(8, typeof(SetUnready))]
     [Union(9, typeof(StartMatchmaking))]
     [Union(10, typeof(CancelMatchmaking))]
-    // [Union(11, typeof(ShowAuth))] - not needed
+    [Union(11, typeof(ShowAuth))]
     [Union(12, typeof(JoinWithJoinCode))]
     [Union(13, typeof(SetRoomParameters))]
     [Union(14, typeof(WatchRooms))]

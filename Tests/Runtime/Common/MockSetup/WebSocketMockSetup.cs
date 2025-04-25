@@ -1,16 +1,17 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
-
-#nullable enable
 namespace Elympics
 {
     internal static class WebSocketMockSetup
@@ -298,6 +299,12 @@ namespace Elympics
                             SendSuccessResponse(Ws, unwatchRooms);
                             break;
                         }
+                        case ShowAuth showAuth:
+                        {
+                            SendSuccessResponse(Ws, showAuth);
+                            SendResponseInternal(Ws, new ShowAuthResponse(Guid.Empty, "some-auth-type", "some-eth-address", "some-nickname", "some-avatar-url"));
+                            break;
+                        }
                         default:
                             throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
                     }
@@ -571,7 +578,7 @@ namespace Elympics
 
         private static void SendSuccessResponse(IWebSocket ws, LobbyOperation lobbyOperation, Guid? roomId = null)
         {
-            ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name}");
+            ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name} OperationId: {lobbyOperation.OperationId}");
             if (lobbyOperation is CreateRoom or JoinWithJoinCode or JoinWithRoomId)
                 SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, roomId!.Value));
             else

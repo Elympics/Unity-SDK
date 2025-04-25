@@ -23,6 +23,7 @@ namespace Elympics.ElympicsSystems.Internal
                 await Client.Authorize(data);
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();
+                await Client.GetElympicsUserData();
                 Client.SwitchState(ElympicsState.Connected);
                 Client.OnSuccessfullyConnectedToElympics(false);
             }

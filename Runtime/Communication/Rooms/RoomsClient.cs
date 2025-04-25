@@ -70,7 +70,7 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            RoomBetDetailsParam? betDetails = null,
+            RoomBetAmount? betDetails = null,
             CancellationToken ct = default)
         {
             var betSlim = GetRoomBetDetailsSlim(betDetails);
@@ -126,7 +126,7 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
-            RoomBetDetailsParam? betDetails = null,
+            RoomBetAmount? betDetails = null,
             CancellationToken ct = default)
         {
             var betSlim = GetRoomBetDetailsSlim(betDetails);
@@ -217,7 +217,7 @@ namespace Elympics
             return Session.ExecuteOperation(message, ct);
         }
 
-        private static RoomBetDetailsSlim? GetRoomBetDetailsSlim(RoomBetDetailsParam? betDetails)
+        private static RoomBetDetailsSlim? GetRoomBetDetailsSlim(RoomBetAmount? betDetails)
         {
             RoomBetDetailsSlim? betSlim = null;
             if (betDetails.HasValue)

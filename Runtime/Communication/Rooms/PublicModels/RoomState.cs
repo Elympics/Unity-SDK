@@ -33,7 +33,9 @@ namespace Elympics
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= _lastUpdate)
             {
-                ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}" + $"Local Last Update {_lastUpdate:HH:mm:ss.ffff}" + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
+                ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}"
+                    + $"Local Last Update {_lastUpdate:HH:mm:ss.ffff}"
+                    + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
                 return;
             }
 
@@ -53,6 +55,13 @@ namespace Elympics
 
             stateDiff.NewRoomName = !RoomName.Equals(stateUpdate.RoomName) ? stateUpdate.RoomName : null;
             stateDiff.NewIsPrivate = IsPrivate != stateUpdate.IsPrivate ? stateUpdate.IsPrivate : null;
+            var currentBet = MatchmakingData?.BetDetails;
+            var newBet = stateUpdate.MatchmakingData?.BetDetails;
+            if (currentBet != newBet)
+            {
+                stateDiff.UpdatedBetAmount = true;
+                stateDiff.NewBetAmount = newBet != null ? new ValueTuple<Guid, decimal>(newBet.Coin.CoinId, newBet.BetValue) : null;
+            }
 
             foreach (var oldUser in oldUsers)
             {
@@ -88,7 +97,10 @@ namespace Elympics
             {
                 if ((IsMatchAvailable(stateUpdate.MatchmakingData?.MatchData) && !IsMatchAvailable(MatchmakingData?.MatchData))
                     || (IsMatchmakingFailed(stateUpdate.MatchmakingData?.MatchData) && !IsMatchmakingFailed(MatchmakingData?.MatchData)))
-                    stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId, stateUpdate.MatchmakingData!.MatchData!.MatchId, stateUpdate.MatchmakingData.QueueName, stateUpdate.MatchmakingData.MatchData);
+                    stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId,
+                        stateUpdate.MatchmakingData!.MatchData!.MatchId,
+                        stateUpdate.MatchmakingData.QueueName,
+                        stateUpdate.MatchmakingData.MatchData);
 
                 var oldMmState = MatchmakingData?.MatchmakingState;
                 var newMmState = stateUpdate.MatchmakingData?.State;

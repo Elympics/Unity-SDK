@@ -31,7 +31,7 @@ internal class RoomClientMock : IRoomsClient
         bool isSingleTeam,
         IReadOnlyDictionary<string, string> customRoomData,
         IReadOnlyDictionary<string, string> customMatchmakingData,
-        RoomBetDetailsParam? betDetailsSlim = null,
+        RoomBetAmount? betDetailsSlim = null,
         CancellationToken ct = default)
     {
         CreateRoomInvokedArgs = (roomName, queueName, isSingleTeam, isPrivate, isEphemeral, customRoomData, customMatchmakingData, ct);
@@ -90,7 +90,7 @@ internal class RoomClientMock : IRoomsClient
         bool? isPrivate,
         IReadOnlyDictionary<string, string>? customRoomData,
         IReadOnlyDictionary<string, string>? customMatchmakingData,
-        RoomBetDetailsParam? betDetailsSlim = null,
+        RoomBetAmount? betDetailsSlim = null,
         CancellationToken ct = default) => UniTask.CompletedTask;
 
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)

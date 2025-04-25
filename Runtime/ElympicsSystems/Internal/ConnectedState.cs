@@ -39,6 +39,12 @@ namespace Elympics.ElympicsSystems.Internal
             Client.SwitchState(ElympicsState.PlayingMatch);
             await Client.CurrentState.PlayMatch(matchData);
         }
+
+        public override async UniTask ReConnect(ConnectionData reconnectionData)
+        {
+            Client.SwitchState(ElympicsState.Reconnecting);
+            await Client.CurrentState.ReConnect(reconnectionData);
+        }
         public override async UniTask FinishMatch()
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));

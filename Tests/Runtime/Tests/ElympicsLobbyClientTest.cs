@@ -1,10 +1,14 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
+using HybridWebSocket;
+using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -360,15 +364,57 @@ namespace Elympics.Tests
             {
                 AuthType = AuthType.ClientSecret
             });
-
+            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
             var disconnectedCalled = false;
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
-            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
+        });
+
+        [UnityTest]
+        public IEnumerator ConnectToElympics_And_Then_Get_Disconnected_Because_Lobby_Scales_Down() => UniTask.ToCoroutine(async () =>
+        {
+            _ = _sut!.MockIWebSocket(
+                UserId,
+                Nickname,
+                AvatarUrl,
+                true,
+                null,
+                out var webSocket);
+            List<(ElympicsState, ElympicsState)> statesCalled = new();
+            _sut.StateChanged += (oldState, newState) => statesCalled.Add((oldState, newState));
+            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            {
+                AuthType = AuthType.ClientSecret
+            });
+            var disconnectedCalled = false;
+            _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
+            LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
+            webSocket.OnClose += Raise.Event<WebSocketCloseEventHandler>(WebSocketCloseCode.Away, Arg.Any<string>());
+
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromSeconds(3));
+            await UniTask.WaitUntil(() => statesCalled.Count == 4, PlayerLoopTiming.Update, cts.Token);
+
+            Assert.IsTrue(_sut.IsAuthenticated);
+            Assert.IsTrue(_sut.WebSocketSession.IsConnected);
+            Assert.IsFalse(disconnectedCalled);
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)statesCalled[0].Item1);
+            Assert.AreEqual((int)ElympicsState.Connecting, (int)statesCalled[0].Item2);
+
+            Assert.AreEqual((int)ElympicsState.Connecting, (int)statesCalled[1].Item1);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)statesCalled[1].Item2);
+
+            Assert.AreEqual((int)ElympicsState.Connected, (int)statesCalled[2].Item1);
+            Assert.AreEqual((int)ElympicsState.Reconnecting, (int)statesCalled[2].Item2);
+
+            Assert.AreEqual((int)ElympicsState.Reconnecting, (int)statesCalled[3].Item1);
+            Assert.AreEqual((int)ElympicsState.Connected, (int)statesCalled[3].Item2);
+
             Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
         });
 

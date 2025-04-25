@@ -22,14 +22,18 @@ namespace Elympics.ElympicsSystems.Internal
             Client.PlayMatchInternal(matchData ?? throw new ArgumentNullException(nameof(matchData)));
             return UniTask.CompletedTask;
         }
+        public override async UniTask ReConnect(ConnectionData reconnectionData)
+        {
+            Client.SwitchState(ElympicsState.Reconnecting);
+            await Client.CurrentState.ReConnect(reconnectionData);
+        }
         public override async UniTask FinishMatch()
         {
             Client.SwitchState(ElympicsState.Connected);
             await UniTask.CompletedTask;
         }
         public override void MatchFound()
-        {
-        }
+        { }
         public override async UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(CancelMatchmaking)));

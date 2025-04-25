@@ -154,7 +154,8 @@ namespace Elympics
             await _matchLauncher.CancelMatchmaking(this, ct);
             return;
 
-            bool IsInValidStateToCancel() => _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
+            bool IsInValidStateToCancel() =>
+                _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
         }
 
         async UniTask IRoom.CancelMatchmakingInternal(CancellationToken ct)
@@ -178,7 +179,12 @@ namespace Elympics
             }
         }
 
-        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? customRoomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetDetailsParam? betDetailsSlim = null)
+        public UniTask UpdateRoomParams(
+            string? roomName = null,
+            bool? isPrivate = null,
+            IReadOnlyDictionary<string, string>? customRoomData = null,
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            RoomBetAmount? betDetailsSlim = null)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -188,7 +194,9 @@ namespace Elympics
             var isPrivateIsTheSame = isPrivate == null || isPrivate == _state.IsPrivate;
             var customRoomDataIsTheSame = customRoomData == null || customRoomData.IsTheSame(_state.CustomData);
             var customMatchmakingDataIsTheSame = customMatchmakingData == null || customMatchmakingData.IsTheSame(_state.MatchmakingData?.CustomData);
-            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame;
+            var isBetTheSame = betDetailsSlim == null
+                || (betDetailsSlim.Value.BetValue == _state.MatchmakingData?.BetDetails?.BetValue && betDetailsSlim.Value.CoinId == _state.MatchmakingData?.BetDetails.Coin.CoinId);
+            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame && isBetTheSame;
 
             if (isSameAsCurrentState)
             {
@@ -207,8 +215,15 @@ namespace Elympics
             var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
-            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betDetailsSlim);
+            var betSlimToSend = IsTheSameBetAmount(betDetailsSlim) ? betDetailsSlim : null;
+            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betSlimToSend);
+
+            bool IsTheSameBetAmount(RoomBetAmount? betDetails)
+            {
+                return betDetails?.CoinId == _state.MatchmakingData?.BetDetails?.Coin.CoinId && betDetails?.BetValue == _state.MatchmakingData?.BetDetails?.BetValue;
+            }
         }
+
 
         public void PlayAvailableMatch()
         {
@@ -220,8 +235,10 @@ namespace Elympics
                 throw new InvalidOperationException($"Can't play match outside {MatchmakingState.Playing} matchmaking state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             var matchData = matchmakingData.MatchData ?? throw new InvalidOperationException("No match data available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             if (matchData.State is not MatchState.Running)
-                throw new InvalidOperationException($"Can't play match outside {MatchState.Running} match state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
-            var matchDetails = matchData.MatchDetails ?? throw new InvalidOperationException("No match details available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
+                throw new InvalidOperationException($"Can't play match outside {MatchState.Running} match state. "
+                    + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
+            var matchDetails = matchData.MatchDetails
+                ?? throw new InvalidOperationException("No match details available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
             _matchLauncher.PlayMatch(new MatchmakingFinishedData(matchData.MatchId, matchDetails, matchmakingData.QueueName, _client.SessionConnectionDetails.RegionName));
         }
         public UniTask Leave()

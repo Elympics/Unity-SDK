@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 namespace Elympics.Communication.Rooms.PublicModels
 {
     [PublicAPI]
-    public struct RoomBetDetailsParam
+    public struct RoomBetAmount
     {
         public decimal BetValue;
         public Guid CoinId;

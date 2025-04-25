@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
@@ -29,6 +30,9 @@ namespace Elympics
 
     [PublicAPI]
     public record RoomPublicnessChangedArgs(Guid RoomId, bool IsPrivate);
+
+    [PublicAPI]
+    public record RoomBetAmountChangedArgs(Guid RoomId, RoomBetAmount? NewBetValue);
 
     [PublicAPI]
     public record RoomNameChangedArgs(Guid RoomId, string RoomName);

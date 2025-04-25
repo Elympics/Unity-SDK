@@ -61,7 +61,7 @@ namespace Elympics.Rooms.Models
     {
         [IgnoreMember]
         public decimal BetValue => WeiConverter.FromWei(BetValueRaw, Coin.Currency.Decimals);
-        public virtual bool Equals(RoomBetDetails? other) => other != null && BetValue == other.BetValue && Coin.Equals(other.Coin);
+        public virtual bool Equals(RoomBetDetails? other) => other != null && BetValueRaw == other.BetValueRaw && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);
 

@@ -34,6 +34,7 @@ namespace Elympics
         public event Action<UserChangedTeamArgs>? UserChangedTeam;
         public event Action<CustomRoomDataChangedArgs>? CustomRoomDataChanged;
         public event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
+        public event Action<RoomBetAmountChangedArgs>? RoomBetAmountChanged;
         public event Action<RoomNameChangedArgs>? RoomNameChanged;
 
         public event Action<MatchmakingDataChangedArgs>? MatchmakingDataChanged;
@@ -250,6 +251,13 @@ namespace Elympics
                     CustomRoomDataChanged?.Invoke(new CustomRoomDataChangedArgs(roomId, newKey, newValue));
             if (stateDiff.NewIsPrivate is not null)
                 RoomPublicnessChanged?.Invoke(new RoomPublicnessChangedArgs(roomId, stateDiff.NewIsPrivate.Value));
+            if (stateDiff.UpdatedBetAmount)
+                RoomBetAmountChanged?.Invoke(new RoomBetAmountChangedArgs(roomId,
+                    stateDiff.NewBetAmount == null ? null : new RoomBetAmount
+                    {
+                        CoinId = stateDiff.NewBetAmount.Value.CoinId,
+                        BetValue = stateDiff.NewBetAmount.Value.BetAmount,
+                    }));
             if (stateDiff.NewRoomName is not null)
                 RoomNameChanged?.Invoke(new RoomNameChangedArgs(roomId, stateDiff.NewRoomName));
             if (_stateDiff.MatchmakingStarted)
@@ -315,7 +323,7 @@ namespace Elympics
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
-            RoomBetDetailsParam? betDetails = null)
+            RoomBetAmount? betDetails = null)
         {
             if (roomName == null)
                 throw new ArgumentNullException(nameof(roomName));
@@ -342,7 +350,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
-            RoomBetDetailsParam? betDetails = null,
+            RoomBetAmount? betDetails = null,
             CancellationToken ct = default)
         {
             if (queueName == null)

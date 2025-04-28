@@ -43,9 +43,12 @@ namespace Elympics
 
             _uriUpdated = false;
             _request?.Abort();
+            _request?.Dispose();
             _request = new UnityWebRequest(_uri)
             {
-                timeout = DefaultTimeout
+                timeout = DefaultTimeout,
+                downloadHandler = null,
+                uploadHandler = null,
             };
             _request.SetTestCertificateHandlerIfNeeded();
             _ = _request.SendWebRequest();

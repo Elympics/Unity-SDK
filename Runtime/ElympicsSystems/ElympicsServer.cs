@@ -24,6 +24,8 @@ namespace Elympics
         private bool HandlingBotsInServer => _handlingBotsOverride || Config.BotsInServer;
         private bool HandlingClientsInServer { get; set; }
 
+        private bool _endGameRequested;
+        private ResultMatchPlayerDatas _matchResult;
         private GameEngineAdapter _gameEngineAdapter;
         private InitialMatchPlayerDatasGuid _playerData;
         private ElympicsPlayer[] _playersOfBots;
@@ -171,6 +173,12 @@ namespace Elympics
                 TickAnalysis.AddSnapshotToAnalysis(localSnapshotWithInputs, null, new ClientTickCalculatorNetworkDetails(Config));
             }
 
+            if (_endGameRequested)
+            {
+                _endGameRequested = false;
+                _gameEngineAdapter.EndGame(_matchResult);
+            }
+
             Tick++;
 
             foreach (var (_, inputBuffer) in _gameEngineAdapter.PlayerInputBuffers)
@@ -260,7 +268,11 @@ namespace Elympics
 
         #region IElympics
 
-        public override void EndGame(ResultMatchPlayerDatas result = null) => _gameEngineAdapter.EndGame(result);
+        public override void EndGame(ResultMatchPlayerDatas result = null)
+        {
+            _endGameRequested = true;
+            _matchResult = result;
+        }
 
         #endregion
     }

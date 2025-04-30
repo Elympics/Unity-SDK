@@ -33,7 +33,7 @@ namespace Elympics
         internal DateTime TickEndUtc { get; set; }
         internal ElympicsGameConfig Config { get; private set; }
 
-        internal CallContext CurrentCallContext { get; set; } = CallContext.None;
+        internal CallContext CurrentCallContext { get; private set; } = CallContext.None;
         internal double ElympicsUpdateDuration { get; private protected set; }
 
         internal bool Initialized { get; private set; }
@@ -58,6 +58,9 @@ namespace Elympics
             ElympicsUpdateDuration = TickDuration;
             _previousUtcForDeltaTime = DateTime.UtcNow;
         }
+
+        internal void SetPermanentCallContext(CallContext callContext) => this.CurrentCallContext = callContext;
+        internal TemporaryCallContext SetTemporaryCallContext(CallContext callContext) => new(callContext, this);
 
         public void Destroy()
         {
@@ -257,6 +260,21 @@ namespace Elympics
             ValueChanged,
             ElympicsUpdate,
             Initialize,
+        }
+
+        internal readonly ref struct TemporaryCallContext
+        {
+            private readonly CallContext _originalCallContext;
+            private readonly ElympicsBase _elympicsBase;
+
+            public TemporaryCallContext(CallContext temporaryCallContext, ElympicsBase elympicsBase)
+            {
+                _elympicsBase = elympicsBase;
+                _originalCallContext = _elympicsBase.CurrentCallContext;
+                _elympicsBase.CurrentCallContext = temporaryCallContext;
+            }
+
+            public void Dispose() => _elympicsBase.CurrentCallContext = _originalCallContext;
         }
     }
 }

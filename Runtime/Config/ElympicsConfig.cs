@@ -56,7 +56,10 @@ namespace Elympics
             .GetAbsoluteOrRelativeString();
 
         internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Lobby.Models.Routes.Base).ToString();
-        internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.BaseRouteUnityFormat).ToString();
+
+        internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.AllRegionsRouteUnityFormat).ToString();
+        internal string GameAvailableRegionsUrl(string gameId) =>
+            ElympicsApiEndpoint.AppendPathSegments(string.Format(ElympicsApiModels.ApiModels.Regions.Routes.RegionForGameIdRoute, gameId)).ToString();
 
         [PublicAPI]
         public Uri GetV2Endpoint(string serviceName) =>

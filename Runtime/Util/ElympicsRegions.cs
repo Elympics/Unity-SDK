@@ -45,9 +45,10 @@ namespace Elympics
 
         public static async UniTask<List<string>> GetAvailableRegions()
         {
-            var url = ElympicsConfig.Load()!.ElympicsAvailableRegionsUrl;
+            var config = ElympicsConfig.Load();
+            var gameId = config.GetCurrentGameConfig().gameId;
             var completionSource = new UniTaskCompletionSource<AvailableRegionsResponseModel>();
-            ElympicsWebClient.SendGetRequest<AvailableRegionsResponseModel>(url, null, null, OnResponse);
+            ElympicsWebClient.SendGetRequest<AvailableRegionsResponseModel>(config.GameAvailableRegionsUrl(gameId), null, null, OnResponse);
 
             var result = await completionSource.Task;
             return result.Regions.Select(x => x.Name).ToList();

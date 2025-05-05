@@ -1,14 +1,19 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Communication.Mappers;
 using Elympics.Communication.PublicApi;
 using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
+using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
@@ -17,9 +22,6 @@ using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MatchmakingState = Elympics.ElympicsSystems.Internal.MatchmakingState;
-
-#nullable enable
-
 #pragma warning disable CS0618
 
 namespace Elympics
@@ -66,6 +68,10 @@ namespace Elympics
 
         private IAuthClient _auth = null!;
         public AuthData? AuthData { get; internal set; }
+
+        [PublicAPI]
+        public ElympicsUser? ElympicsUser { get; internal set; }
+
         public Guid? UserGuid => AuthData?.UserId;
         public bool IsAuthenticated => AuthData != null;
         private string? _clientSecret;
@@ -273,7 +279,7 @@ namespace Elympics
                     if (result.Value != null)
                     {
                         AuthData = result.Value;
-                        logger.SetUserId(result.Value.UserId.ToString()).SetNickname(result.Value.Nickname).SetAuthType(result.Value.AuthType).Log("Authentication completed.");
+                        logger.SetUserId(result.Value.UserId.ToString()).SetAuthType(result.Value.AuthType).Log("Authentication completed.");
                         eventName = nameof(AuthenticationSucceeded);
                         AuthenticationSucceeded?.Invoke(AuthData);
                     }
@@ -473,6 +479,7 @@ namespace Elympics
         {
             var logger = LoggerContext.WithMethodName();
             AuthData = null;
+            ElympicsUser = null;
             DisconnectFromLobby();
             logger.Log("User sign out.");
             _ = logger.SetNoUser().SetNoConnection().SetNoRoom();
@@ -490,6 +497,45 @@ namespace Elympics
             var connectionDetails = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, data.Region);
             await lobbyConnection.Connect(connectionDetails);
             currentRegion = connectionDetails.RegionName;
+        }
+
+        internal async UniTask GetElympicsUserData()
+        {
+            LoggerContext.Log("Start fetching user data...");
+            _webSocketSession.Value.MessageReceived += OnMessage;
+            try
+            {
+                var result = await _webSocketSession.Value.ExecuteOperation(new ShowAuth());
+                if (result.Success is false)
+                {
+                    LoggerContext.Error("Couldn't fetch ElympicsPlayer data.");
+                    return;
+                }
+                await UniTask.WaitUntil(() => ElympicsUser is not null);
+            }
+            finally
+            {
+                _webSocketSession.Value.MessageReceived -= OnMessage;
+            }
+            return;
+
+            void OnMessage(IFromLobby message)
+            {
+                switch (message)
+                {
+                    case ShowAuthResponse response:
+                        ElympicsUser = new ElympicsUser
+                        {
+                            UserId = response.UserId,
+                            Nickname = response.Nickname,
+                            AvatarUrl = response.AvatarUrl,
+                        };
+                        LoggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
+                        return;
+                    default:
+                        return;
+                }
+            }
         }
 
         internal void SwitchState(ElympicsState newState)

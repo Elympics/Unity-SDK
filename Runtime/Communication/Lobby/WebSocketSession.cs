@@ -151,9 +151,9 @@ namespace Elympics.Lobby
                 throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
             }
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
+            var task = WaitForOperationResult(message.OperationId, OperationTimeout, linkedCts.Token);
             SendMessage(message);
-            var result = await WaitForOperationResult(message.OperationId, OperationTimeout, linkedCts.Token);
-            return result;
+            return await task;
         }
 
         private async UniTask OpenWebSocket(IWebSocket ws)

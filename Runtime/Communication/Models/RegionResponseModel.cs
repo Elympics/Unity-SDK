@@ -3,7 +3,7 @@ using System;
 namespace Elympics
 {
     [Serializable]
-    public class RegionResponseModel
+    internal class RegionResponseModel
     {
         public string Id;
         public string Name;

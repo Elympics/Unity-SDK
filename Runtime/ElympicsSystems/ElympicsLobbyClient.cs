@@ -214,7 +214,6 @@ namespace Elympics
         {
             try
             {
-                var logger = LoggerContext.WithMethodName();
                 await CurrentState.Connect(data);
             }
             catch (Exception e)

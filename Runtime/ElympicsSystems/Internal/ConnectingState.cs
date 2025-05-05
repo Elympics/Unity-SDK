@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
@@ -19,15 +20,15 @@ namespace Elympics.ElympicsSystems.Internal
             try
             {
                 Client.CheckConnectionDataOrThrow(data);
-                await Client.FetchAvailableRegions();
                 await Client.Authorize(data);
+                await Client.FetchAvailableRegions();
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();
                 await Client.GetElympicsUserData();
                 Client.SwitchState(ElympicsState.Connected);
                 Client.OnSuccessfullyConnectedToElympics(false);
             }
-            catch
+            catch (Exception)
             {
                 Client.SwitchState(ElympicsState.Disconnected);
                 throw;

@@ -11,13 +11,12 @@ using UnityEditor;
 using UnityEngine.Networking;
 using AuthRoutes = ElympicsApiModels.ApiModels.Auth.Routes;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
-using Regions = ElympicsApiModels.ApiModels.Regions.Routes;
 using Routes = ElympicsApiModels.ApiModels.Users.Routes;
 using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
 
 namespace Elympics
 {
-    public static class ElympicsWebIntegration
+    internal static class ElympicsWebIntegration
     {
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";
@@ -25,6 +24,8 @@ namespace Elympics
         private const string BotSubdirectory = "Bot";
 
         private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
+
+        private static ElympicsConfig Config => ElympicsConfig.Load();
 
         private static string RefreshEndpoint => GetCombinedUrl(ElympicsWebEndpoint, AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute);
 
@@ -119,15 +120,6 @@ namespace Elympics
 
 
         [Serializable]
-        public class RegionResponseModel
-        {
-            public string Id;
-            public string Name;
-            public string OrganizationId;
-            public string Comment;
-        }
-
-        [Serializable]
         private class JwtMidPart
         {
             public long exp = 0;
@@ -180,14 +172,12 @@ namespace Elympics
             return authTokenMid;
         }
 
-        [Obsolete("Available regions are gameId agnostic. Use" + nameof(GetAvailableRegions))]
-        public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure) => GetAvailableRegions(updateProperty, onFailure);
-
-        public static void GetAvailableRegions(Action<List<RegionResponseModel>> updateProperty, Action onFailure)
+        public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
         {
             ElympicsLogger.Log("Getting available regions...");
 
-            var uri = GetCombinedUrl(ElympicsWebEndpoint, Regions.BaseRoute);
+            var uri = string.IsNullOrEmpty(gameId) ? Config.ElympicsAvailableRegionsUrl : Config.GameAvailableRegionsUrl(gameId);
+
             _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
 
             void OnCompleted(UnityWebRequest webRequest)
@@ -276,9 +266,9 @@ namespace Elympics
         private static void GetAvailableRegionsHandler(Action<List<RegionResponseModel>> updateProperty, UnityWebRequest webRequest, Action onFailure)
         {
             ElympicsLogger.Log($"Received available regions.\nResponse code: {webRequest.responseCode}.");
-            if (TryDeserializeResponse(webRequest, "GetAvailableRegions", out List<RegionResponseModel> availableRegions))
+            if (TryDeserializeResponse(webRequest, "GetAvailableRegions", out AvailableRegionsResponseModel availableRegions))
             {
-                updateProperty?.Invoke(availableRegions);
+                updateProperty?.Invoke(availableRegions.Regions.ToList());
                 return;
             }
             onFailure?.Invoke();

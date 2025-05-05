@@ -91,8 +91,8 @@ public class AuthenticateWindowController : BaseWindow
     [UsedImplicitly]
     public void AuthenticateRoomWithCache() => AuthenticateRoomAsync(true).Forget();
     [UsedImplicitly]
-    public void AuthenticateRoom() => AuthenticateRoomAsync(false).Forget();
-    private async UniTaskVoid AuthenticateRoomAsync(bool logWithCachedData)
+    public void AuthenticateRoom() => AuthenticateRoomAsync(false).Forget(Debug.LogException);
+    private async UniTask AuthenticateRoomAsync(bool logWithCachedData)
     {
         try
         {

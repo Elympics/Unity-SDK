@@ -431,6 +431,12 @@ namespace Elympics
 
         #region ClientCallbacks
 
+        internal void InitializedByServer()
+        {
+            foreach (var initializable in _componentsContainer.Initializables)
+                initializable.InitializedByServer();
+        }
+
         internal void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)

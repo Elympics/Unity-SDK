@@ -16,7 +16,7 @@ using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
 
 namespace Elympics
 {
-    internal static class ElympicsWebIntegration
+    public static class ElympicsWebIntegration
     {
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";
@@ -172,7 +172,7 @@ namespace Elympics
             return authTokenMid;
         }
 
-        public static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
+        internal static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
         {
             ElympicsLogger.Log("Getting available regions...");
 

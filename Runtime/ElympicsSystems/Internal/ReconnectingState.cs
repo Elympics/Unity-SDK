@@ -93,6 +93,7 @@ namespace Elympics.ElympicsSystems.Internal
             return UniTask.CompletedTask;
         }
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
+        public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
         public override UniTask FinishMatch() => UniTask.CompletedTask;
         public override void MatchFound() => throw new ElympicsException(GenerateErrorMessage(nameof(MatchFound)));
     }

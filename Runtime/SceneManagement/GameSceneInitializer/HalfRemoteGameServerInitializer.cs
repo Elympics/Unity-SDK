@@ -1,5 +1,7 @@
 using System.Net;
 using System.Threading;
+using Elympics.ElympicsSystems;
+using Elympics.SnapshotAnalysis;
 using GameEngineCore.V1._4;
 using UnityConnectors.HalfRemote;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
@@ -11,9 +13,11 @@ namespace Elympics
         private SimpleHttpSignalingServer _signalingServer;
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
+        private CancellationTokenSource _systemToken;
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
+            _systemToken = new CancellationTokenSource();
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
                 gameEngineAdapter,
                 new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.TcpPortForHalfRemoteMode),
@@ -37,15 +41,21 @@ namespace Elympics
 
             gameEngineAdapter.Initialize(new InitialMatchData { UserData = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig) });
 
-            _signalingServer = new SimpleHttpSignalingServer(_halfRemoteGameEngineProtoConnector, new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
+            _signalingServer = new SimpleHttpSignalingServer(_halfRemoteGameEngineProtoConnector,
+                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
             _signalingServerCts = new CancellationTokenSource();
 
             _halfRemoteGameEngineProtoConnector.Listen();
             _signalingServer.RunAsync(_signalingServerCts.Token);
         }
+        protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() =>
+            GameConfig.RecordSnapshots ? new EditorSnapshotAnalysisCollector(GameConfig.SnapshotFilePath) : new NullSnapshotAnalysisCollector();
+        protected override IServerPlayerHandler ProvideInputRetriever() => new NullServerPlayerHandler();
+        protected override IServerElympicsUpdateLoop ProvideElympicsUpdateLoop() => new DefaultServerElympicsUpdateLoop(BehavioursManager, GameEngineAdapter, Server, GameConfig);
 
         public override void Dispose()
         {
+            _systemToken.Cancel();
             _halfRemoteGameEngineProtoConnector?.Dispose();
             _signalingServerCts?.Cancel();
         }

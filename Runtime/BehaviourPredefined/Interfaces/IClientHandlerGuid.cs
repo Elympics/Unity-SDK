@@ -21,7 +21,7 @@ namespace Elympics
         /// Called on clients-in-server initialization (after processing all initial <see cref="ElympicsBehaviour"/>s).
         /// </summary>
         /// <param name="data">Initialization data of all clients included in the server.</param>
-        /// <remarks>Used in "Local Player And Bots" development mode.</remarks>
+        /// <remarks>Used in "Local Player And Bots" development mode and in matches started in single player mode.</remarks>
         void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
         { }
 

@@ -271,7 +271,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de2b35175db441419b3e866fbda94b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  elympicsBehavioursManager: {fileID: 7529846740173844772}
   asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}
@@ -319,7 +318,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d38b60a0ea5c7fa478abfa1ffb6c05e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  elympicsBehavioursManager: {fileID: 7529846740173844772}
   asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}
@@ -378,9 +376,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d6dad245f5f168449aeb8e81f69119c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  elympicsBehavioursManager: {fileID: 7529846740173844772}
   elympicsClient: {fileID: 7529846739748366659}
   elympicsBot: {fileID: 5385409787458503955}
   elympicsServer: {fileID: 7529846741445686787}
+  elympicsSinglePlayer: {fileID: 0}
 --- !u!114 &7529846740173844772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,7 +462,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa050f8fe65dae745a8e115b4be8ae1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  elympicsBehavioursManager: {fileID: 7529846740173844772}
   asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}

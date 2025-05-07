@@ -10,6 +10,7 @@ namespace Elympics
 
         public long MinTick { get; private set; }
         public long MaxTick => MinTick + _bufferSize - 1;
+        public int Count => _inputs.Count;
 
         public ElympicsDataWithTickBuffer(int bufferSize)
         {

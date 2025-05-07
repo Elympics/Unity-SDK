@@ -4,7 +4,8 @@
     "references": [
         "Elympics",
         "MessagePack",
-        "UniTask"
+        "UniTask",
+        "AssemblyCommunicator"
     ],
     "includePlatforms": [
         "Editor"

@@ -33,6 +33,9 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
+            if (ElympicsBase.IsReplay)
+                return;
+
             PlayersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log(

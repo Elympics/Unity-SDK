@@ -4,6 +4,8 @@ namespace MatchTcpClients.Synchronizer
 {
     public class TimeSynchronizationData
     {
+        public static readonly TimeSynchronizationData Localhost = new() { LocalClockOffset = TimeSpan.Zero, RoundTripDelay = TimeSpan.Zero, UnreliableReceivedAnyPing = false, UnreliableWaitingForFirstPing = true };
+
         public TimeSpan LocalClockOffset { get; set; }
         public TimeSpan RoundTripDelay { get; set; }
 

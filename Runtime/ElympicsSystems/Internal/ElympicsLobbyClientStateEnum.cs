@@ -7,6 +7,7 @@ namespace Elympics
         Connected = 2,
         Matchmaking = 3,
         PlayingMatch = 4,
-        Reconnecting = 5,
+        WatchReplay = 5,
+        Reconnecting = 6,
     }
 }

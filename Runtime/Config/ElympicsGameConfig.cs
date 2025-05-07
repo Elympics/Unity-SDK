@@ -51,6 +51,8 @@ namespace Elympics
         [SerializeField] private string ipForHalfRemoteMode = "127.0.0.1";
         [SerializeField] private ushort tcpPortForHalfRemoteMode = 9101;
         [SerializeField] private ushort webPortForHalfRemoteMode = 9102;
+        [SerializeField] private bool recordSnapshots;
+        [SerializeField] private string snapshotFilePath;
         [SerializeField] private int playerIndexForHalfRemoteMode = 1;
         [SerializeField] private InitialMatchData testMatchData;
         [SerializeField] private List<InitialUserData> testPlayers;
@@ -93,6 +95,8 @@ namespace Elympics
         public ushort PortForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemotePort.GetValue(UseWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
         public ushort TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
         public ushort WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
+        public bool RecordSnapshots => recordSnapshots;
+        public string SnapshotFilePath => snapshotFilePath;
         public int InputsToSendBufferSize => inputToSendBufferSize;
         public int ForceJumpThresholdInTicks => forceJumpThresholdInTicks;
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
@@ -146,6 +150,8 @@ namespace Elympics
             LocalPlayerAndBots,
             HalfRemote,
             DebugOnlinePlayer,
+            SnapshotReplay,
+            SinglePlayer
         }
 
         public enum HalfRemoteModeEnum

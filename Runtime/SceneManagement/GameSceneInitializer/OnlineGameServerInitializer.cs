@@ -1,3 +1,5 @@
+using Elympics.ElympicsSystems;
+using Elympics.SnapshotAnalysis;
 using UnityConnectors;
 
 namespace Elympics
@@ -11,6 +13,9 @@ namespace Elympics
             _gameEngineProtoConnector = new GameEngineProtoConnector(gameEngineAdapter);
             _gameEngineProtoConnector.Connect();
         }
+        protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() => new ServerOnlineSnapshotAnalysisCollector(GameEngineAdapter, Server, BehavioursManager);
+        protected override IServerPlayerHandler ProvideInputRetriever() => new NullServerPlayerHandler();
+        protected override IServerElympicsUpdateLoop ProvideElympicsUpdateLoop() => new DefaultServerElympicsUpdateLoop(BehavioursManager, GameEngineAdapter, Server, GameConfig);
 
         public override void Dispose()
         {

@@ -22,6 +22,7 @@ namespace Elympics.ElympicsSystems.Internal
             Client.PlayMatchInternal(matchData ?? throw new ArgumentNullException(nameof(matchData)));
             return UniTask.CompletedTask;
         }
+        public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
         public override async UniTask ReConnect(ConnectionData reconnectionData)
         {
             Client.SwitchState(ElympicsState.Reconnecting);
@@ -29,11 +30,11 @@ namespace Elympics.ElympicsSystems.Internal
         }
         public override async UniTask FinishMatch()
         {
+            Client.FinishMatchInternal();
             Client.SwitchState(ElympicsState.Connected);
             await UniTask.CompletedTask;
         }
-        public override void MatchFound()
-        { }
+        public override void MatchFound() => ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(MatchFound)));
         public override async UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(CancelMatchmaking)));

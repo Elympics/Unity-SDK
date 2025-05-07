@@ -9,6 +9,7 @@ namespace Elympics
 
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
+            const string gameModeName = "half remote";
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
 
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
@@ -16,7 +17,7 @@ namespace Elympics
             if (playersList.Count <= playerIndex)
                 throw ElympicsLogger.LogException("Half Remote client won't be initialized because " + $"no data for player ID: {playerIndex} was found in \"Test players\" list. " + $"The list has only {playersList.Count} entries. " + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(new Guid());
-            logger = logger.WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+            logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData;
             var gameEngineData = playersList[playerIndex].GameEngineData;
@@ -26,14 +27,12 @@ namespace Elympics
             client.InitializeInternal(elympicsGameConfig,
                 _halfRemoteMatchConnectClient,
                 _halfRemoteMatchClient,
-                new InitialMatchPlayerDataGuid
+                new InitialMatchPlayerDataGuid(ElympicsPlayer.FromIndex(playerIndex), gameEngineData, matchmakerData)
                 {
-                    Player = ElympicsPlayer.FromIndex(playerIndex),
                     UserId = userId,
                     IsBot = false,
-                    MatchmakerData = matchmakerData,
-                    GameEngineData = gameEngineData
                 },
+                ElympicsBehavioursManager,
                 logger);
         }
 

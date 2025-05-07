@@ -5,7 +5,7 @@ using System.Linq;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
 using MessagePack;
-using IGameEngine = GameEngineCore.V1._4.IGameEngine;
+using IGameEngine = GameEngineCore.V2._0.IGameEngine;
 using InitialMatchData = GameEngineCore.V1._4.InitialMatchData;
 
 #pragma warning disable CS0618
@@ -23,6 +23,8 @@ namespace Elympics
         public event Action<byte[], string>? InGameDataForPlayerOnUnreliableChannelGenerated;
         public event Action<byte[]>? InGameDataForSpectatorsOnReliableChannelGenerated;
         public event Action<byte[]>? InGameDataForSpectatorsOnUnreliableChannelGenerated;
+        public event Action<ArraySegment<byte>>? SnapshotDataForReplayGenerated;
+        public event Action<ArraySegment<byte>>? SnapshotReplayInitialized;
         public event Action<ResultMatchUserDatas?>? GameEnded;
         public event Action<ElympicsPlayer>? PlayerConnected;
         public event Action<ElympicsPlayer>? PlayerDisconnected;
@@ -65,7 +67,23 @@ namespace Elympics
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
             _initialMatchData = initialMatchData;
-            ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers), () => Initialized?.Invoke()));
+            ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, false), () => Initialized?.Invoke()));
+        }
+
+        public void Initialize(InitialMatchData initialMatchData, bool isReplay)
+        {
+            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(ElympicsPlayer.FromIndex).ToArray();
+
+            var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
+
+            _playersToUserIds = ElympicsPlayerAssociations.GetPlayersToUserIds(userIds);
+            _userIdsToPlayers = ElympicsPlayerAssociations.GetUserIdsToPlayers(userIds);
+
+            foreach (var userId in userIds)
+                PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
+
+            _initialMatchData = initialMatchData;
+            ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
         }
 
         public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId) =>
@@ -103,7 +121,7 @@ namespace Elympics
                 ElympicsLogger.LogWarning($"Input for Tick {input.Tick} from player {player} was not added to input buffer because it was not in range [{buffer.MinTick}, {buffer.MaxTick}].");
         }
 
-        internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input, ElympicsPlayer player) => AddInputToBuffer(input, player, true);
+        internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input) => AddInputToBuffer(input, input.Player, true);
 
         public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
         public void OnPlayerDisconnected(string userId) => PlayerDisconnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
@@ -117,6 +135,14 @@ namespace Elympics
         {
             LatestSimulatedTickInput[player] = elympicsInput;
         }
+
+        #region Replays
+
+        internal void SaveSnapshotForReplay(ArraySegment<byte> data) => SnapshotDataForReplayGenerated?.Invoke(data);
+
+        internal void SaveReplayInitData(ArraySegment<byte> initData) => SnapshotReplayInitialized?.Invoke(initData);
+
+        #endregion
 
         internal void BroadcastDataToPlayers(IFromServer data, bool reliable)
         {

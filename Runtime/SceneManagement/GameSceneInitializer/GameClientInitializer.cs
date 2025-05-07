@@ -4,16 +4,26 @@ namespace Elympics
 {
     internal abstract class GameClientInitializer : GameSceneInitializer
     {
+        protected ElympicsBehavioursManager ElympicsBehavioursManager { get; private set; }
         private ElympicsClient _client;
 
-        public override void Initialize(ElympicsClient client, ElympicsBot bot, ElympicsServer server, ElympicsGameConfig elympicsGameConfig)
+        public override void Initialize(
+            ElympicsClient client,
+            ElympicsBot bot,
+            ElympicsServer server,
+            ElympicsSinglePlayer singlePlayer,
+            ElympicsGameConfig gameConfig,
+            ElympicsBehavioursManager behavioursManager)
         {
-            Time.fixedDeltaTime = elympicsGameConfig.TickDuration;
+            ElympicsBehavioursManager = behavioursManager;
+            Time.fixedDeltaTime = gameConfig.TickDuration;
 
             _client = client;
             bot.Destroy();
             server.Destroy();
-            InitializeClient(client, elympicsGameConfig);
+            // singlePlayer.Destroy();
+            //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympcisBase zamiast od argumentow.
+            InitializeClient(client, gameConfig);
         }
 
         public override void Dispose()

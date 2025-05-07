@@ -40,13 +40,10 @@ namespace Elympics
         public void Init3(BotConfiguration botConfiguration)
         {
             Player = ElympicsPlayer.FromIndex(botConfiguration.MatchPlayers.IndexOf(botConfiguration.UserId));
-            InitializedWithMatchPlayerData?.Invoke(new InitialMatchPlayerDataGuid
+            InitializedWithMatchPlayerData?.Invoke(new InitialMatchPlayerDataGuid(Player, botConfiguration.GameEngineData, botConfiguration.MatchmakerData)
             {
-                Player = Player,
                 IsBot = true,
                 BotDifficulty = botConfiguration.Difficulty,
-                MatchmakerData = botConfiguration.MatchmakerData,
-                GameEngineData = botConfiguration.GameEngineData,
             });
             Initialized = true;
         }

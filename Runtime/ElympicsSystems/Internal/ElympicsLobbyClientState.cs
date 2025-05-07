@@ -21,6 +21,7 @@ namespace Elympics.ElympicsSystems.Internal
         public abstract UniTask StartMatchmaking(IRoom room);
         public abstract UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default);
         public abstract UniTask PlayMatch(MatchmakingFinishedData matchData);
+        public abstract UniTask WatchReplay();
         public abstract UniTask FinishMatch();
         public abstract void MatchFound();
 

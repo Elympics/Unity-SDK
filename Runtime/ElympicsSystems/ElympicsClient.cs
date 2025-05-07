@@ -23,6 +23,9 @@ namespace Elympics
         public override ElympicsPlayer Player => _player;
         public override bool IsClient => true;
 
+        private long _tick;
+        public override long Tick => _tick;
+
         /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
         public static event Action<TimeSynchronizationData, long> TimeSynchronized;
 
@@ -52,14 +55,19 @@ namespace Elympics
 
         private ElympicsLoggerContext _logger;
 
-        internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, IMatchConnectClient matchConnectClient, IMatchClient matchClient, InitialMatchPlayerDataGuid initialMatchPlayerData, ElympicsLoggerContext logger)
+        internal void InitializeInternal(
+            ElympicsGameConfig elympicsGameConfig,
+            IMatchConnectClient matchConnectClient,
+            IMatchClient matchClient,
+            InitialMatchPlayerDataGuid initialMatchPlayerData,
+            ElympicsBehavioursManager elympicsBehavioursManager,
+            ElympicsLoggerContext logger)
         {
             _logger = logger.WithContext(nameof(ElympicsClient));
-            InitializeInternal(elympicsGameConfig);
+            InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;
             _matchClient = matchClient;
-
             elympicsBehavioursManager.InitializeInternal(this);
             RoundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
@@ -149,7 +157,7 @@ namespace Elympics
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
 
-        protected override void ElympicsFixedUpdate()
+        internal override void ElympicsFixedUpdate()
         {
             ElympicsSnapshot receivedSnapshot;
             lock (LastReceivedSnapshotLock)
@@ -175,19 +183,19 @@ namespace Elympics
                 using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
                     if (_clientTickCalculator.Results.CanPredict)
                     {
-                        Tick = _clientTickCalculator.Results.CurrentTick;
+                        _tick = _clientTickCalculator.Results.CurrentTick;
 
                         using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
                             ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
 
                         InvokeQueuedRpcMessages();
-                        elympicsBehavioursManager.CommitVars();
+                        ElympicsBehavioursManager.CommitVars();
 
                         using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                             ApplyPredictedInput();
 
                         using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
-                            elympicsBehavioursManager.ElympicsUpdate();
+                            ElympicsBehavioursManager.ElympicsUpdate();
 
                         using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
                             ProcessSnapshot(Tick);
@@ -199,7 +207,7 @@ namespace Elympics
             {
                 ApplyFullSnapshot(receivedSnapshot);
                 InvokeQueuedRpcMessages();
-                elympicsBehavioursManager.CommitVars();
+                ElympicsBehavioursManager.CommitVars();
                 _previousTick = Tick;
             }
 
@@ -213,6 +221,8 @@ namespace Elympics
                 _logToFile?.LogNetworkDetailsToFile(_clientTickCalculator.Results);
             }
         }
+
+        protected override void ElympicsRenderUpdate(in RenderData renderData) => ElympicsBehavioursManager.Render(renderData);
 
         private void CheckIfPredictionIsBlocked()
         {
@@ -246,7 +256,7 @@ namespace Elympics
 
         private void ProcessSnapshot(long predictionTick)
         {
-            var snapshot = elympicsBehavioursManager.GetLocalSnapshot();
+            var snapshot = ElympicsBehavioursManager.GetLocalSnapshot();
             snapshot.Tick = predictionTick;
             _ = _predictionBuffer.AddSnapshotToBuffer(snapshot);
         }
@@ -256,7 +266,7 @@ namespace Elympics
             ElympicsInput input;
 
             using (ElympicsMarkers.Elympics_GatheringClientInputMarker.Auto())
-                input = elympicsBehavioursManager.OnInputForClient();
+                input = ElympicsBehavioursManager.OnInputForClient();
 
             AddMetadataToInput(input);
             _lastDelayedInputTick = _clientTickCalculator.Results.DelayedInputTick;
@@ -274,7 +284,7 @@ namespace Elympics
 
         private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
 
-        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
             _matchClient.SendRpcMessageList(rpcMessageList);
 
         private void ApplyPredictedInput()
@@ -282,10 +292,10 @@ namespace Elympics
             _inputList.Clear();
             if (_predictionBuffer.TryGetInputFromBuffer(_clientTickCalculator.Results.CurrentTick, out var predictedInput))
                 _inputList.Add(predictedInput);
-            elympicsBehavioursManager.SetCurrentInputs(_inputList);
+            ElympicsBehavioursManager.SetCurrentInputs(_inputList);
         }
 
-        private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot) => elympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
+        private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot) => ElympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
 
         private void ReconcileIfRequired(ElympicsSnapshot receivedSnapshot)
         {
@@ -302,7 +312,7 @@ namespace Elympics
                 return;
 
             if (!forceSnapShot
-                && elympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)
+                && ElympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)
                 && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
                 return;
 
@@ -323,15 +333,15 @@ namespace Elympics
                 newSnapshot = _mergedSnapshot;
             }
 
-            elympicsBehavioursManager.OnPreReconcile();
+            ElympicsBehavioursManager.OnPreReconcile();
 
-            Tick = receivedSnapshot.Tick;
+            _tick = receivedSnapshot.Tick;
 
-            elympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
-            elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
-            elympicsBehavioursManager.CommitVars();
+            ElympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
+            ElympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+            ElympicsBehavioursManager.CommitVars();
 
-            var currentSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
+            var currentSnapshot = ElympicsBehavioursManager.GetLocalSnapshot();
             currentSnapshot.Tick = receivedSnapshot.Tick;
             _ = _predictionBuffer.AddOrReplaceSnapshotInBuffer(currentSnapshot);
 
@@ -340,32 +350,32 @@ namespace Elympics
             using (ElympicsMarkers.Elympics_ResimulationkMarker.Auto())
                 for (var resimulationTick = startResimulation; resimulationTick <= endResimulation; resimulationTick++)
                 {
-                    Tick = resimulationTick;
+                    _tick = resimulationTick;
                     if (_predictionBuffer.TryGetSnapshotFromBuffer(resimulationTick, out historySnapshot))
-                        elympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
-                    elympicsBehavioursManager.CommitVars();
+                        ElympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+                    ElympicsBehavioursManager.CommitVars();
 
                     _inputList.Clear();
                     if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
                         _inputList.Add(resimulatedInput);
-                    elympicsBehavioursManager.SetCurrentInputs(_inputList);
+                    ElympicsBehavioursManager.SetCurrentInputs(_inputList);
 
                     using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
-                        elympicsBehavioursManager.ElympicsUpdate();
+                        ElympicsBehavioursManager.ElympicsUpdate();
 
-                    var newResimulatedSnapshot = elympicsBehavioursManager.GetLocalSnapshot();
+                    var newResimulatedSnapshot = ElympicsBehavioursManager.GetLocalSnapshot();
                     newResimulatedSnapshot.Tick = resimulationTick;
                     _ = _predictionBuffer.AddOrReplaceSnapshotInBuffer(newResimulatedSnapshot);
                 }
 
             _clientTickCalculator.Results.ReconciliationPerformed = true;
-            elympicsBehavioursManager.OnPostReconcile();
+            ElympicsBehavioursManager.OnPostReconcile();
         }
 
         private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot)
         {
-            Tick = receivedSnapshot.Tick;
-            elympicsBehavioursManager.ApplySnapshot(receivedSnapshot);
+            _tick = receivedSnapshot.Tick;
+            ElympicsBehavioursManager.ApplySnapshot(receivedSnapshot);
         }
 
         #region IElympics

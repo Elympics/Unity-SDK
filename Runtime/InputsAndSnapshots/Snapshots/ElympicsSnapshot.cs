@@ -21,12 +21,13 @@ namespace Elympics
         public ElympicsSnapshot()
         { }
 
-        public ElympicsSnapshot(ElympicsSnapshot snapshot)
+        protected ElympicsSnapshot(ElympicsSnapshot snapshot)
         {
             Tick = snapshot.Tick;
             TickStartUtc = snapshot.TickStartUtc;
             Factory = snapshot.Factory;
             Data = snapshot.Data;
+            TickToPlayersInputData = snapshot.TickToPlayersInputData;
         }
 
         /// <summary>Turns this instance into non-recursive deep copy of <paramref name="other"/>.</summary>

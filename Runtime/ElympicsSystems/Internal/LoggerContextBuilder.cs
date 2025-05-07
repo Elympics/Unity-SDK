@@ -130,6 +130,11 @@ namespace Elympics.ElympicsSystems.Internal
             current.RoomContext.Clear();
             return current;
         }
+        public static ElympicsLoggerContext SetGameMode(this ElympicsLoggerContext current, string gameMode)
+        {
+            current.GameMode = gameMode;
+            return current;
+        }
 
         #endregion
 

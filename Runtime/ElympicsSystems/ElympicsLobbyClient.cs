@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.AssemblyCommunicator;
+using Elympics.AssemblyCommunicator.Events;
 using Elympics.Communication.Authentication.Models;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Lobby.Models.ToLobby;
@@ -17,6 +19,7 @@ using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
+using Elympics.SnapshotAnalysis.Retrievers;
 using JetBrains.Annotations;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
@@ -28,8 +31,21 @@ namespace Elympics
 {
     [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsLobbyClient)]
     [RequireComponent(typeof(AsyncEventsDispatcher))]
-    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, IWebSocketSessionController
+    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, ILobby, IWebSocketSessionController
     {
+        private const string NoGameModeName = "None";
+
+        private static readonly MatchmakingFinishedData SinglePlayerMatchmakingFinishedData = new(Guid.Empty,
+            new MatchDetails(
+                new[] { Guid.Empty },
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                Array.Empty<byte>(),
+                Array.Empty<float>()),
+            string.Empty,
+            string.Empty);
+
         public static ElympicsLobbyClient? Instance { get; private set; }
         internal ElympicsLobbyClientState CurrentState { get; private set; } = null!;
 
@@ -145,7 +161,12 @@ namespace Elympics
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;
 
-        internal static ElympicsLoggerContext LoggerContext;
+        private static ElympicsLoggerContext loggerContext;
+        SnapshotAnalysisRetriever? ILobby.SnapshotAnalysisRetriever => _snapshotAnalysisRetriever;
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        private DefaultSnapshotAnalysisRetriever? _snapshotAnalysisRetriever;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private void Awake()
         {
             if (Instance != null)
@@ -160,20 +181,24 @@ namespace Elympics
                 ExitUtility.ExitGame();
 
             if (asyncEventsDispatcher == null)
-                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null."));
+                throw loggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null."));
 
-            _config = ElympicsConfig.Load() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
+            LobbyRegister.ElympicsLobby = this;
+            _config = ElympicsConfig.Load() ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
 
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig()
-                ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
-            LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
+                ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
+            loggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
             {
                 Context = nameof(ElympicsLobbyClient),
-            }.SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId).WithApp(ElympicsLoggerContext.ElympicsContextApp);
+            }
+            .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
+            .SetGameMode(NoGameModeName)
+            .WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
-            var awakeLogger = LoggerContext.WithMethodName();
+            var awakeLogger = loggerContext.WithMethodName();
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
@@ -219,8 +244,16 @@ namespace Elympics
             catch (Exception e)
             {
                 AuthData = null;
-                throw LoggerContext.CaptureAndThrow(e);
+                throw loggerContext.CaptureAndThrow(e);
             }
+        }
+
+        [PublicAPI]
+        internal async UniTask WatchReplay(string matchId)
+        {
+            _snapshotAnalysisRetriever = new DefaultSnapshotAnalysisRetriever(_config.ElympicsReplaySource, this);
+            await _snapshotAnalysisRetriever.RetrieveSnapshotReplay(matchId);
+            WatchReplay();
         }
 
         [PublicAPI]
@@ -236,6 +269,13 @@ namespace Elympics
 
             SetUpMatch(JoinedMatchMode.Local);
             LoadGameplayScene();
+        }
+
+        [PublicAPI]
+        public void PlaySinglePlayer()
+        {
+            LogSettingUpGame("Single Player");
+            PlayMatch(SinglePlayerMatchmakingFinishedData);
         }
 
         [PublicAPI]
@@ -257,11 +297,17 @@ namespace Elympics
             LoadGameplayScene();
         }
 
+        #endregion
+
+        #region IMatchLauncher
+
         public void PlayMatch(MatchmakingFinishedData matchData)
         {
-            LoggerContext.Log($"Play match.");
+            loggerContext.Log($"Play match.");
             CurrentState.PlayMatch(matchData).Forget();
         }
+
+        public void WatchReplay() => CurrentState.WatchReplay();
 
         #endregion
 
@@ -269,7 +315,7 @@ namespace Elympics
 
         private void OnAuthenticatedWith(Result<AuthData, string> result)
         {
-            var logger = LoggerContext.WithMethodName();
+            var logger = loggerContext.WithMethodName();
             string? eventName = null;
             try
             {
@@ -332,7 +378,7 @@ namespace Elympics
             }
         }
         private void LogSettingUpGame(string gameModeName) =>
-            LoggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
+            loggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
 
         private AuthorizationStrategy GetAuthStrategy(bool isAuthorized) => isAuthorized switch
         {
@@ -342,9 +388,9 @@ namespace Elympics
 
         private ConnectionStrategy GetConnectionStrategy(bool isAuthenticated, bool isConnected) => (isAuthenticated, isConnected) switch
         {
-            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value, LoggerContext),
-            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value, LoggerContext),
-            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value, LoggerContext),
+            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value, loggerContext),
+            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value, loggerContext),
+            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value, loggerContext),
         };
 
 
@@ -369,18 +415,18 @@ namespace Elympics
         private WebSocketSession CreateWebSocketSession()
         {
             if (asyncEventsDispatcher == null)
-                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
-            return new WebSocketSession(this, asyncEventsDispatcher, LoggerContext);
+                throw loggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
+            return new WebSocketSession(this, asyncEventsDispatcher, loggerContext);
         }
 
-        private RoomsClient CreateRoomsClient() => new(LoggerContext)
+        private RoomsClient CreateRoomsClient() => new(loggerContext)
         {
             Session = _webSocketSession.Value
         };
 
         private RoomsManager CreateRoomsManager()
         {
-            var roomsManager = new RoomsManager(this, _roomsClient.Value, LoggerContext);
+            var roomsManager = new RoomsManager(this, _roomsClient.Value, loggerContext);
             return roomsManager;
         }
 
@@ -439,10 +485,23 @@ namespace Elympics
             ElympicsState.Connected => new ConnectedState(this),
             ElympicsState.Matchmaking => new MatchmakingState(this),
             ElympicsState.PlayingMatch => new PlayingMatchState(this),
-            ElympicsState.Reconnecting => new ReconnectingState(this, LoggerContext),
+            ElympicsState.WatchReplay => new WatchReplayState(this),
+            ElympicsState.Reconnecting => new ReconnectingState(this, loggerContext),
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
         };
-        private void OnGameplayFinished() => CurrentState.FinishMatch().Forget();
+        private void OnGameplayFinished()
+        {
+            CurrentState.FinishMatch().ContinueWith(UpdateLoggerContext).Forget(HandleException);
+
+            void UpdateLoggerContext() => loggerContext.SetGameMode(NoGameModeName);
+
+            void HandleException(Exception e)
+            {
+                loggerContext.Exception(e);
+                UpdateLoggerContext();
+            }
+        }
+
         UniTask IMatchLauncher.StartMatchmaking(IRoom room) => CurrentState.StartMatchmaking(room);
         UniTask IMatchLauncher.CancelMatchmaking(IRoom room, CancellationToken ct) => CurrentState.CancelMatchmaking(room, ct);
         public void MatchmakingCompleted() => CurrentState.MatchFound();
@@ -476,7 +535,7 @@ namespace Elympics
 
         internal void SignOutInternal()
         {
-            var logger = LoggerContext.WithMethodName();
+            var logger = loggerContext.WithMethodName();
             AuthData = null;
             ElympicsUser = null;
             DisconnectFromLobby();
@@ -487,6 +546,17 @@ namespace Elympics
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)
         {
             MatchDataGuid = matchData;
+
+            var isSinglePlayer = string.IsNullOrEmpty(matchData.WebServerAddress) && string.IsNullOrEmpty(matchData.TcpUdpServerAddress);
+
+            SetUpMatch(isSinglePlayer ? JoinedMatchMode.SinglePlayer : JoinedMatchMode.Online);
+            LoadGameplayScene();
+        }
+        internal void FinishMatchInternal() => _snapshotAnalysisRetriever = null;
+
+        internal void WatchReplayInternal()
+        {
+            SetUpMatch(JoinedMatchMode.SnapshotReplay);
             LoadGameplayScene();
         }
 
@@ -500,14 +570,14 @@ namespace Elympics
 
         internal async UniTask GetElympicsUserData()
         {
-            LoggerContext.Log("Start fetching user data...");
+            loggerContext.Log("Start fetching user data...");
             _webSocketSession.Value.MessageReceived += OnMessage;
             try
             {
                 var result = await _webSocketSession.Value.ExecuteOperation(new ShowAuth());
                 if (result.Success is false)
                 {
-                    LoggerContext.Error("Couldn't fetch ElympicsPlayer data.");
+                    loggerContext.Error("Couldn't fetch ElympicsPlayer data.");
                     return;
                 }
                 await UniTask.WaitUntil(() => ElympicsUser is not null);
@@ -529,7 +599,7 @@ namespace Elympics
                             Nickname = response.Nickname,
                             AvatarUrl = response.AvatarUrl,
                         };
-                        LoggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
+                        loggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
                         return;
                     default:
                         return;
@@ -542,6 +612,11 @@ namespace Elympics
             _previousState = CurrentState;
             CurrentState = FetchState(newState);
             StateChanged?.Invoke(_previousState.State, CurrentState.State);
+            CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsStateChanged
+            {
+                PreviousState = _previousState.State,
+                NewState = CurrentState.State
+            });
             ElympicsLogger.Log($"Switch state from {_previousState.State} to {CurrentState.State}");
         }
 
@@ -582,8 +657,10 @@ namespace Elympics
         {
             Online,
             Local,
+            SinglePlayer,
             HalfRemoteClient,
             HalfRemoteServer,
+            SnapshotReplay,
         }
 
         #endregion

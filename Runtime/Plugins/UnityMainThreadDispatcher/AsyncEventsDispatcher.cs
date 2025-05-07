@@ -36,7 +36,7 @@ namespace Elympics
 	[DefaultExecutionOrder(ElympicsExecutionOrder.AsyncEventsDispatcher)]
 	public class AsyncEventsDispatcher : MonoBehaviour, IAsyncEventsDispatcher
 	{
-		public static AsyncEventsDispatcher Instance { get; set; }
+		public static AsyncEventsDispatcher Instance { get; set; } = null!;
 
 		private readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 

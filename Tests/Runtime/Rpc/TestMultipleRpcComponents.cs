@@ -33,8 +33,7 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>());
-            _elympicsBase.elympicsBehavioursManager = behavioursManager;
+            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
             behavioursManager.InitializeInternal(_elympicsBase);

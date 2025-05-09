@@ -20,6 +20,8 @@ namespace Elympics
         private readonly ElympicsInput[] _inputsBuffer;
         private readonly List<ElympicsInput> _inputsToSend;
 
+        private long _lastReceivedSnapshot;
+
         public RemoteMatchClient(IGameServerClient gameServerClient, ElympicsGameConfig config)
         {
             _gameServerClient = gameServerClient;
@@ -67,12 +69,14 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
+        public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshot = tick;
+
         public async Task SendBufferInput(long tick)
         {
             if (_input.Count() > 0)
             {
                 GetInputCollectionToSend();
-                await SendDataToServer(new ElympicsInputList { Values = _inputsToSend }, false);
+                await SendDataToServer(new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshot }, false);
             }
         }
 

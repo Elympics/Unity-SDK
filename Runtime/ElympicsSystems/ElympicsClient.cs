@@ -148,9 +148,11 @@ namespace Elympics
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
         {
             lock (LastReceivedSnapshotLock)
-                if (_lastReceivedSnapshot == null
-                    || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
+                if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
+                {
                     _lastReceivedSnapshot = elympicsSnapshot;
+                    _matchClient.SetLastReceivedSnapshot(elympicsSnapshot.Tick);
+                }
 
             if (!_started)
                 StartClient();

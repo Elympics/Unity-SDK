@@ -196,8 +196,10 @@ namespace Elympics
                 foreach (var playerData in playerDatas)
                 {
                     //If player didn't receive any snapshots, don't skip any visible behaviours
-                    if (playerData.LastReceivedSnapshot >= 0 && canBeSkipped) continue;
-                    if (!elympicsBehaviour.IsVisibleTo(playerData.Player)) continue;
+                    if (playerData.LastReceivedSnapshot >= 0 && canBeSkipped)
+                        continue;
+                    if (!elympicsBehaviour.IsVisibleTo(playerData.Player))
+                        continue;
 
                     snapshots[playerData.Player].Data.Add(stateData);
                 }

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Core.Utils;
-using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 
 namespace Elympics
@@ -23,7 +22,7 @@ namespace Elympics
 
             public ElympicsBehaviourFirstSnapshotTracker(ElympicsBehavioursManager manager) => _manager = manager;
 
-            public void ProcessNewSnapshot(ElympicsSnapshot snapshot, ElympicsLoggerContext logger)
+            public void ProcessNewSnapshot(ElympicsSnapshot snapshot)
             {
                 Debug.Log($"[InitializedByServerTest] Received snapshot with IDs: [{snapshot.Data.Select(x => x.Key).CommaList()}]");
 

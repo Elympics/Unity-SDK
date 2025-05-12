@@ -59,7 +59,7 @@ namespace Elympics
             _previousUtcForDeltaTime = DateTime.UtcNow;
         }
 
-        internal void SetPermanentCallContext(CallContext callContext) => this.CurrentCallContext = callContext;
+        internal void SetPermanentCallContext(CallContext callContext) => CurrentCallContext = callContext;
         internal TemporaryCallContext SetTemporaryCallContext(CallContext callContext) => new(callContext, this);
 
         public void Destroy()

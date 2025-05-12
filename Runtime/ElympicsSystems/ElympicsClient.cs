@@ -178,7 +178,7 @@ namespace Elympics
 
             SendBufferInput(Tick);
 
-            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot, _logger);
+            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
 
             if (Config.Prediction)
             {
@@ -353,7 +353,7 @@ namespace Elympics
             var startResimulation = _clientTickCalculator.Results.LastReceivedTick + 1;
             var endResimulation = _clientTickCalculator.Results.CurrentTick - 1;
             _tick = startResimulation;
-            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot, _logger);
+            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
             _snapshotTracker.InitializeNewBehaviours();
             ElympicsBehavioursManager.CommitVars();
 

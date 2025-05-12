@@ -178,7 +178,7 @@ namespace Elympics
 
             SendBufferInput(Tick);
 
-            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
+            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot, _logger);
 
             if (Config.Prediction)
             {

@@ -349,6 +349,9 @@ namespace Elympics
 
             ElympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
             ElympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
+
+            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot, _logger);
+            _snapshotTracker.InitializeNewBehaviours();
             ElympicsBehavioursManager.CommitVars();
 
             var currentSnapshot = ElympicsBehavioursManager.GetLocalSnapshot();

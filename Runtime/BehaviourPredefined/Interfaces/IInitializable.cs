@@ -12,7 +12,7 @@ namespace Elympics
         /// </summary>
         /// <remarks>
         /// For objects that exist when client connects to a match this is called after the first snapshot received from the server is applied and before the first call to <see cref="IUpdatable.ElympicsUpdate"/>.
-        /// For objects that are spawned during a match this is called after the first snapshot from server containing them is processed (after reconciliation is performed, if necessary).
+        /// For objects that are spawned during a match this is called after the first snapshot from server containing them is processed (before resimulation is performed, if necessary).
         /// </remarks>
         void InitializedByServer() { }
     }

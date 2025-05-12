@@ -350,6 +350,9 @@ namespace Elympics
             ElympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
             ElympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
 
+            var startResimulation = _clientTickCalculator.Results.LastReceivedTick + 1;
+            var endResimulation = _clientTickCalculator.Results.CurrentTick - 1;
+            _tick = startResimulation;
             _snapshotTracker.ProcessNewSnapshot(receivedSnapshot, _logger);
             _snapshotTracker.InitializeNewBehaviours();
             ElympicsBehavioursManager.CommitVars();
@@ -358,8 +361,6 @@ namespace Elympics
             currentSnapshot.Tick = receivedSnapshot.Tick;
             _ = _predictionBuffer.AddOrReplaceSnapshotInBuffer(currentSnapshot);
 
-            var startResimulation = _clientTickCalculator.Results.LastReceivedTick + 1;
-            var endResimulation = _clientTickCalculator.Results.CurrentTick - 1;
             using (ElympicsMarkers.Elympics_ResimulationkMarker.Auto())
                 for (var resimulationTick = startResimulation; resimulationTick <= endResimulation; resimulationTick++)
                 {

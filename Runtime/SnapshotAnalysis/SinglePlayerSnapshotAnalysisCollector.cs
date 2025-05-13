@@ -11,6 +11,6 @@ namespace Elympics.SnapshotAnalysis
         protected override void SaveInitData(SnapshotSaverInitData initData)
         { }
         protected override UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer) => new();
-        protected override ValueTask SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots) => new();
+        protected override void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots) { }
     }
 }

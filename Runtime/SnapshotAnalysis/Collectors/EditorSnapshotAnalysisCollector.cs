@@ -77,14 +77,12 @@ namespace Elympics.SnapshotAnalysis
             Package.Snapshots = buffer;
             await SnapshotSerializer.SerializeToStream(_stream, Package);
         }
-        protected override async ValueTask SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots) => await SerializeAndDispose(snapshots);
 
-        private async UniTask SerializeAndDispose(ElympicsSnapshotWithMetadata[] snapshots)
+        protected override void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots)
         {
             Package.Snapshots = snapshots;
-            await SnapshotSerializer.SerializeToStream(_stream, Package);
-            if (_stream != null)
-                await _stream.DisposeAsync();
+            SnapshotSerializer.SerializeToStream(_stream, Package).Wait();
+            _stream?.Dispose();
         }
     }
 }

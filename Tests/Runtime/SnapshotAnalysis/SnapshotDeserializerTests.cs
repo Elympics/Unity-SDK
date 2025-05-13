@@ -58,19 +58,7 @@ namespace Elympics.Tests.SnapshotAnalysis
             CollectionAssert.AreEqual(snapshot.Factory.Parts, retrievedSnapshot.Factory.Parts);
         }
 
-        private static SnapshotSaverInitData CreateTestInitData()
-        {
-            return new SnapshotSaverInitData()
-            {
-                SnapshotSaverVersion = "test",
-                GameName = "test",
-                GameId = "test",
-                GameVersion = "test",
-                Players = 6,
-                SdkVersion = "test",
-                TickDuration = 30f
-            };
-        }
+        private static SnapshotSaverInitData CreateTestInitData() => new("test", "test", "test", "test", 6, "test", 30f, default, null, new List<InitialMatchPlayerDataGuid>());
 
         private static ElympicsSnapshotWithMetadata CreateTestSnapshot(long tick)
         {

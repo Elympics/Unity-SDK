@@ -8,21 +8,16 @@ namespace Elympics.SnapshotAnalysis
     [MessagePackObject]
     public class SnapshotSaverInitData
     {
-        [Key(0)] public string SnapshotSaverVersion;
-        [Key(1)] public string GameName;
-        [Key(2)] public string GameId;
-        [Key(3)] public string GameVersion;
-        [Key(4)] public int Players;
-        [Key(5)] public string SdkVersion;
-        [Key(6)] public float TickDuration;
-        [Key(7)] public CollectorMatchData CollectorMatchData;
-        [Key(8)] public byte[]? ExternalGameData;
-        [Key(9)] public IList<InitialMatchPlayerDataGuid> PlayerData;
-
-
-        public SnapshotSaverInitData()
-        { }
-
+        [Key(0)] public readonly string SnapshotSaverVersion;
+        [Key(1)] public readonly string GameName;
+        [Key(2)] public readonly string GameId;
+        [Key(3)] public readonly string GameVersion;
+        [Key(4)] public readonly int Players;
+        [Key(5)] public readonly string SdkVersion;
+        [Key(6)] public readonly float TickDuration;
+        [Key(7)] public readonly CollectorMatchData CollectorMatchData;
+        [Key(8)] public readonly byte[]? ExternalGameData;
+        [Key(9)] public readonly IList<InitialMatchPlayerDataGuid> PlayerData;
 
         public SnapshotSaverInitData(
             string snapshotSaverVersion,
@@ -48,7 +43,7 @@ namespace Elympics.SnapshotAnalysis
             PlayerData = playerData;
         }
 
-        public override bool Equals(object obj) => obj is SnapshotSaverInitData data
+        public override bool Equals(object? obj) => obj is SnapshotSaverInitData data
             && SnapshotSaverVersion == data.SnapshotSaverVersion
             && GameName == data.GameName
             && GameId == data.GameId

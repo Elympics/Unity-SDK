@@ -49,6 +49,7 @@ namespace Elympics
 
         UniTask StartTrackingAvailableRooms();
         UniTask StopTrackingAvailableRooms();
+        bool IsTrackingAvailableRooms { get; }
 
         UniTask<IRoom> CreateAndJoinRoom(
             string roomName,

@@ -108,6 +108,7 @@ internal class RoomClientMock : IRoomsClient
     public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct) => throw new NotImplementedException();
     public UniTask WatchRooms(CancellationToken ct = default) => throw new NotImplementedException();
     public UniTask UnwatchRooms(CancellationToken ct = default) => throw new NotImplementedException();
+    public bool IsWatchingRooms => false;
 
     public UniTask<Guid>? RoomIdReturnTask { get; set; }
 

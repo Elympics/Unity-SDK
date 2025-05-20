@@ -337,6 +337,8 @@ namespace Elympics
                 room.Dispose();
         }
 
+        public bool IsTrackingAvailableRooms => _client.IsWatchingRooms;
+
         public UniTask<IRoom> CreateAndJoinRoom(
             string roomName,
             string queueName,

@@ -154,6 +154,7 @@ namespace Elympics
         }
 
         private RoomWatchingState _roomWatchingState = RoomWatchingState.NotWatching;
+        public bool IsWatchingRooms => _roomWatchingState is RoomWatchingState.Watching;
 
         public async UniTask WatchRooms(CancellationToken ct = default)
         {

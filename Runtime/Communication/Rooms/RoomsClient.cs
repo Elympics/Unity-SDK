@@ -158,8 +158,16 @@ namespace Elympics
 
         public async UniTask WatchRooms(CancellationToken ct = default)
         {
-            if (_roomWatchingState != RoomWatchingState.NotWatching)
+            if (_roomWatchingState == RoomWatchingState.Watching)
+                return;
+            if (_roomWatchingState == RoomWatchingState.WatchRequestSent)
+            {
+                await UniTask.WaitUntil(() => _roomWatchingState == RoomWatchingState.Watching, cancellationToken: ct);
+                return;
+            }
+            if (_roomWatchingState == RoomWatchingState.UnwatchRequestSent)
                 throw new InvalidOperationException($"Cannot request watching rooms in {_roomWatchingState} state");
+
             _roomWatchingState = RoomWatchingState.WatchRequestSent;
             try
             {
@@ -175,8 +183,16 @@ namespace Elympics
 
         public async UniTask UnwatchRooms(CancellationToken ct = default)
         {
-            if (_roomWatchingState != RoomWatchingState.Watching)
-                throw new InvalidOperationException($"Cannot request watching rooms in {_roomWatchingState} state");
+            if (_roomWatchingState == RoomWatchingState.NotWatching)
+                return;
+            if (_roomWatchingState == RoomWatchingState.UnwatchRequestSent)
+            {
+                await UniTask.WaitUntil(() => _roomWatchingState == RoomWatchingState.NotWatching, cancellationToken: ct);
+                return;
+            }
+            if (_roomWatchingState == RoomWatchingState.WatchRequestSent)
+                throw new InvalidOperationException($"Cannot request unwatching rooms in {_roomWatchingState} state");
+
             _roomWatchingState = RoomWatchingState.UnwatchRequestSent;
             try
             {

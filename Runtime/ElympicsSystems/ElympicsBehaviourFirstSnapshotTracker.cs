@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Core.Utils;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -24,8 +22,6 @@ namespace Elympics
 
             public void ProcessNewSnapshot(ElympicsSnapshot snapshot)
             {
-                Debug.Log($"[InitializedByServerTest] Received snapshot with IDs: [{snapshot.Data.Select(x => x.Key).CommaList()}]");
-
                 foreach (var (networkId, _) in snapshot.Data)
                 {
                     //Even if creation of this behaviour was not predicted by this client it should have been created by the factory synchronization process by now,

@@ -32,7 +32,7 @@ namespace Elympics
         private string _userId;
         private HalfRemoteMatchClient _client;
         private bool _playerDisconnected;
-        private long _lastReceivedSnapshot;
+        private long _lastReceivedSnapshotTick;
 
         public HalfRemoteMatchClientAdapter(ElympicsGameConfig config)
         {
@@ -67,7 +67,7 @@ namespace Elympics
             return Synchronization();
         }
 
-        public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshot = tick;
+        public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
 
         public void PlayerConnected() => _client.PlayerConnected();
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
@@ -78,7 +78,7 @@ namespace Elympics
             if (_input.Count() > 0)
             {
                 GetInputCollectionToSend();
-                var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshot };
+                var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
                 await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
             }
         }

@@ -307,7 +307,7 @@ namespace Elympics
             CurrentState.PlayMatch(matchData).Forget();
         }
 
-        public void WatchReplay() => CurrentState.WatchReplay();
+        internal void WatchReplay() => CurrentState.WatchReplay();
 
         #endregion
 

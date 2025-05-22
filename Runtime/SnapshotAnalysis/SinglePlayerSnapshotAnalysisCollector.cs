@@ -1,7 +1,7 @@
 #nullable enable
 
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+
 namespace Elympics.SnapshotAnalysis
 {
     internal class SinglePlayerSnapshotAnalysisCollector : SnapshotAnalysisCollector
@@ -11,6 +11,6 @@ namespace Elympics.SnapshotAnalysis
         protected override void SaveInitData(SnapshotSaverInitData initData)
         { }
         protected override UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer) => new();
-        protected override ValueTask SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots) => new();
+        protected override void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots) { }
     }
 }

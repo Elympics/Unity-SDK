@@ -17,8 +17,6 @@ namespace Elympics
 
         void PlayMatch(MatchmakingFinishedData matchData);
 
-        void WatchReplay();
-
         UniTask StartMatchmaking(IRoom room);
 
         UniTask CancelMatchmaking(IRoom room, CancellationToken ct);

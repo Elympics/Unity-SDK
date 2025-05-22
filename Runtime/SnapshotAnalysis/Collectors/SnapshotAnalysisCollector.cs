@@ -1,13 +1,14 @@
 #nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics.Behaviour;
 using Elympics.SnapshotAnalysis.Serialization;
 using Plugins.Elympics.Runtime.SnapshotAnalysis.Utils;
 using UnityEngine;
+
 namespace Elympics.SnapshotAnalysis
 {
     internal abstract class SnapshotAnalysisCollector : IDisposable
@@ -97,29 +98,22 @@ namespace Elympics.SnapshotAnalysis
                 return;
 
             _disposed = true;
-            var task = SendRemainingSnapshotsOnDispose();
-            if (task.IsCompleted is false)
-                task.AsTask().Wait();
+            if (_index > 0)
+            {
+                var buffer = GetBuffer;
+                var array = new ElympicsSnapshotWithMetadata[_index];
+                Array.Copy(buffer, array, _index);
+                Debug.Log($"Last Tick to save is {array[^1].Tick}");
+                SaveLastDataAndDispose(array);
+            }
 
             Debug.Log($"{nameof(SnapshotAnalysisCollector)} Disposed");
-        }
-
-        private async ValueTask SendRemainingSnapshotsOnDispose()
-        {
-            if (_index <= 0)
-                return;
-
-            var buffer = GetBuffer;
-            var array = new ElympicsSnapshotWithMetadata[_index];
-            Array.Copy(buffer, array, _index);
-            Debug.Log($"Last Tick to save is {array[^1].Tick}");
-            await SaveLastDataAndDispose(array);
         }
 
 
         protected abstract void SaveInitData(SnapshotSaverInitData initData);
         protected abstract UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer);
-        protected abstract ValueTask SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots);
+        protected abstract void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots);
 
         private ElympicsSnapshotWithMetadata[] GetBuffer => _currentBuffer switch
         {

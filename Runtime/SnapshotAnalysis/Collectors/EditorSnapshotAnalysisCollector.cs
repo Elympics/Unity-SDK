@@ -2,7 +2,6 @@
 
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics.SnapshotAnalysis.Serialization;
 

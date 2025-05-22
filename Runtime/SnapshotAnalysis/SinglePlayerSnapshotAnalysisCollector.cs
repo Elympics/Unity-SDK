@@ -1,7 +1,7 @@
 #nullable enable
 
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+
 namespace Elympics.SnapshotAnalysis
 {
     internal class SinglePlayerSnapshotAnalysisCollector : SnapshotAnalysisCollector

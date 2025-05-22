@@ -8,7 +8,7 @@ namespace Elympics
         void Initialize() { }
 
         /// <summary>
-        /// Called on client when initial state of an ElympicsBehaviour is received from server and all <see cref="ElympicsVar"/>s are already synchronized.
+        /// Called on client when initial state of an ElympicsBehaviour is received from server and all <see cref="ElympicsVar"/>s are synchronized.
         /// </summary>
         /// <remarks>
         /// For objects that exist when client connects to a match this is called after the first snapshot received from the server is applied and before the first call to <see cref="IUpdatable.ElympicsUpdate"/>.

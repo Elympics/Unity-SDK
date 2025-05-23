@@ -115,7 +115,12 @@ namespace Elympics
         internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input) => AddInputToBuffer(input, input.Player, true);
 
         public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
-        public void OnPlayerDisconnected(string userId) => PlayerDisconnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
+        public void OnPlayerDisconnected(string userId)
+        {
+            var player = _userIdsToPlayers[new Guid(userId)];
+            PlayerDisconnected?.Invoke(player);
+            Players[(int)player].LastReceivedSnapshot = -1;
+        }
 
         public void Tick(long tick)
         {

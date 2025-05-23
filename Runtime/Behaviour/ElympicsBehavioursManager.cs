@@ -169,11 +169,11 @@ namespace Elympics
             return snapshotWithMetadata;
         }
 
-        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(ElympicsSnapshot fullSnapshot, params ElympicsPlayer[] players)
+        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(ElympicsSnapshot fullSnapshot, params PlayerData[] playerDatas)
         {
-            var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>(players.Length);
+            var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>(playerDatas.Length);
 
-            foreach (var player in players)
+            foreach (var playerData in playerDatas)
             {
                 var snapshot = new ElympicsSnapshot
                 {
@@ -183,22 +183,25 @@ namespace Elympics
                     Tick = fullSnapshot.Tick,
                     TickStartUtc = fullSnapshot.TickStartUtc
                 };
-                _ = snapshot.TickToPlayersInputData.Remove((int)player);
-                snapshots[player] = snapshot;
+                _ = snapshot.TickToPlayersInputData.Remove((int)playerData.Player);
+                snapshots[playerData.Player] = snapshot;
             }
 
             //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
             foreach (var stateData in fullSnapshot.Data)
             {
                 var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value);
 
-                if (!elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value))
+                foreach (var playerData in playerDatas)
                 {
-                    foreach (var (player, snapshot) in snapshots)
-                    {
-                        if (elympicsBehaviour.IsVisibleTo(player))
-                            snapshot.Data.Add(stateData);
-                    }
+                    //If player didn't receive any snapshots, don't skip any visible behaviours
+                    if (playerData.LastReceivedSnapshot >= 0 && canBeSkipped)
+                        continue;
+                    if (!elympicsBehaviour.IsVisibleTo(playerData.Player))
+                        continue;
+
+                    snapshots[playerData.Player].Data.Add(stateData);
                 }
             }
 

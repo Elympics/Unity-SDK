@@ -17,7 +17,7 @@ namespace Elympics
 {
     internal class GameEngineAdapter : IGameEngine
     {
-        internal ElympicsPlayer[] Players { get; private set; } = Array.Empty<ElympicsPlayer>();
+        internal PlayerData[] Players { get; private set; } = Array.Empty<PlayerData>();
 
         public event Action<byte[], string>? InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string>? InGameDataForPlayerOnUnreliableChannelGenerated;
@@ -54,25 +54,11 @@ namespace Elympics
         public void Init(IGameEngineLogger logger, GameEngineCore.V1._1.InitialMatchData initialMatchData) => throw new NotSupportedException();
         public void Init2(InitialMatchUserDatas initialMatchData) => throw new NotSupportedException();
 
-        public void Initialize(InitialMatchData initialMatchData)
-        {
-            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(ElympicsPlayer.FromIndex).ToArray();
-
-            var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
-
-            _playersToUserIds = ElympicsPlayerAssociations.GetPlayersToUserIds(userIds);
-            _userIdsToPlayers = ElympicsPlayerAssociations.GetUserIdsToPlayers(userIds);
-
-            foreach (var userId in userIds)
-                PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
-
-            _initialMatchData = initialMatchData;
-            ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, false), () => Initialized?.Invoke()));
-        }
+        public void Initialize(InitialMatchData initialMatchData) => Initialize(initialMatchData, false);
 
         public void Initialize(InitialMatchData initialMatchData, bool isReplay)
         {
-            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(ElympicsPlayer.FromIndex).ToArray();
+            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(i => new PlayerData(ElympicsPlayer.FromIndex(i))).ToArray();
 
             var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
 
@@ -97,13 +83,18 @@ namespace Elympics
             var player = _userIdsToPlayers[userId];
             var deserializedData = MessagePackSerializer.Deserialize<IToServer>(data);
 
-            if (deserializedData is ElympicsInput input)
-                AddInputToBuffer(input, player, true);
-            else if (deserializedData is ElympicsInputList inputList)
-                foreach (var value in inputList.Values)
-                    AddInputToBuffer(value, player, value.Tick == inputList.Values[^1].Tick);
+            if (deserializedData is ElympicsInputList inputList)
+                ProcessReceivedInputList(inputList, player);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
                 RpcMessageListReceived?.Invoke(rpcMessageList);
+        }
+
+        private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)
+        {
+            Players[(int)player].LastReceivedSnapshot = inputList.LastReceivedSnapshot;
+
+            foreach (var value in inputList.Values)
+                AddInputToBuffer(value, player, value.Tick == inputList.Values[^1].Tick);
         }
 
         private void AddInputToBuffer(ElympicsInput input, ElympicsPlayer player, bool latestInput)
@@ -124,7 +115,12 @@ namespace Elympics
         internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input) => AddInputToBuffer(input, input.Player, true);
 
         public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
-        public void OnPlayerDisconnected(string userId) => PlayerDisconnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
+        public void OnPlayerDisconnected(string userId)
+        {
+            var player = _userIdsToPlayers[new Guid(userId)];
+            PlayerDisconnected?.Invoke(player);
+            Players[(int)player].LastReceivedSnapshot = -1;
+        }
 
         public void Tick(long tick)
         {
@@ -184,7 +180,7 @@ namespace Elympics
             var matchResult = new ResultMatchUserDatas();
             for (var i = 0; i < result.Count; i++)
             {
-                var userId = _playersToUserIds[Players[i]];
+                var userId = _playersToUserIds[Players[i].Player];
                 matchResult.Add(new ResultMatchUserData
                 {
                     UserId = userId.ToString(),

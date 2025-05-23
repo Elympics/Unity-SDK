@@ -69,7 +69,7 @@ namespace Elympics.Tests
             _setup();
 
             _elympicsInstance.SetElympicsStatus(new ElympicsStatus(false, false, false));
-            _elympicsInstance.CurrentCallContext = ElympicsBase.CallContext.None;
+            _elympicsInstance.SetPermanentCallContext(ElympicsBase.CallContext.None);
             _elympicsInstance.ClearRpcQueues();
             _rpcHolder.Reset();
         }

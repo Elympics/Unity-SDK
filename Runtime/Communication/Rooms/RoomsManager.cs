@@ -149,12 +149,13 @@ namespace Elympics
         {
             _cts.Cancel();
             _cts.Dispose();
+
             var clearedRooms = _rooms.ToArray();
             _rooms.Clear();
             foreach (var (_, room) in clearedRooms)
                 room.Dispose();
-
             _roomJoiner.Reset();
+
             _cts = new CancellationTokenSource();
             _initialized = false;
         }
@@ -319,7 +320,17 @@ namespace Elympics
 
         public UniTask StartTrackingAvailableRooms() => _client.WatchRooms();
 
-        public UniTask StopTrackingAvailableRooms() => _client.UnwatchRooms();
+        public async UniTask StopTrackingAvailableRooms()
+        {
+            await _client.UnwatchRooms();
+            var clearedRooms = _rooms.Where(kvp => kvp.Key != CurrentRoom?.RoomId).ToArray();
+            var currentRoom = CurrentRoom;
+            _rooms.Clear();
+            if (currentRoom is not null)
+                _rooms.Add(currentRoom.RoomId, currentRoom);
+            foreach (var (_, room) in clearedRooms)
+                room.Dispose();
+        }
 
         public UniTask<IRoom> CreateAndJoinRoom(
             string roomName,

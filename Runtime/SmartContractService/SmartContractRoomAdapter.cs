@@ -27,6 +27,12 @@ namespace SCS
         public RoomState State => _room.State;
         public bool IsDisposed => _room.IsDisposed;
         public bool IsJoined => _room.IsJoined;
+        bool IRoom.IsJoined
+        {
+            get => IsJoined;
+            set => _room.IsJoined = value;
+        }
+
         public bool HasMatchmakingEnabled => _room.HasMatchmakingEnabled;
         public bool IsMatchAvailable => _room.IsMatchAvailable;
         public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetAmount? betDetailsSlim = null)
@@ -91,7 +97,6 @@ namespace SCS
         public UniTask CancelMatchmaking(CancellationToken ct = default) => _room.CancelMatchmaking(ct);
         public void PlayAvailableMatch() => _room.PlayAvailableMatch();
         public UniTask Leave() => _room.Leave();
-        void IRoom.ToggleJoinStatus(bool isJoined) => _room.ToggleJoinStatus(isJoined);
         void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff) => _room.UpdateState(roomState, in stateDiff);
         void IRoom.UpdateState(PublicRoomState roomState) => _room.UpdateState(roomState);
         bool IRoom.IsQuickMatch => _room.IsQuickMatch;

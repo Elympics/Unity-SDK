@@ -100,10 +100,8 @@ internal class RoomClientMock : IRoomsClient
             InvokeRoomStateChanged(_matchMakingDataOnTimeOutException);
             throw new LobbyOperationException("Time out.");
         }
-        else
-        {
-            StartMatchmakingInvoked?.Invoke((roomId, hostId));
-        }
+
+        StartMatchmakingInvoked?.Invoke((roomId, hostId));
         return UniTask.CompletedTask;
     }
 

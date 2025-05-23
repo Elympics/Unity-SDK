@@ -24,7 +24,7 @@ namespace Elympics
         private static string PrepareMessage(Guid? roomId, string? joinCode, bool inProgress)
         {
             _ = Sb.Clear()
-                .Append("Room ");
+                .Append("Only one room can be joined at once. A room ");
             if (roomId != null || joinCode != null)
                 _ = Sb.Append("identified by ")
                     .Append(roomId != null ? $"ID {roomId} " : $"join code {joinCode} ");

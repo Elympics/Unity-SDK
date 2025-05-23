@@ -5,7 +5,6 @@ variables:
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
   UNITY_ARCH: linux-il2cpp-1.0.1
-  PACKAGE_DIR: $CI_PROJECT_DIR
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
   PACKAGE_DIR: ${UNITY_DIR}/Packages/com.daftmobile.elympics

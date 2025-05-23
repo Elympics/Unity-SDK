@@ -174,13 +174,13 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_OneRoomIsJoined([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
             _ = _sut!.MockIWebSocket(UserId, Nickname, AvatarUrl, true, null, out _);
-            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = type
             });
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
-            Assert.AreEqual(1, _sut.RoomsManager.ListJoinedRooms().Count);
+            Assert.That(_sut.RoomsManager.CurrentRoom, Is.Not.Null);
         });
 
         [UnityTest]

@@ -84,7 +84,7 @@ public class MenuController : MonoBehaviour
             return;
         }
         _cts = new CancellationTokenSource();
-        ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("Default", null, null, null, null, null, _cts!.Token).Forget();
+        ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("Default", null, null, null, null, null, null, _cts!.Token).Forget();
     }
 
     public void OnRejoinOnlineClicked()

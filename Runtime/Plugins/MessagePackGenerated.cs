@@ -2936,7 +2936,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(10);
+            writer.WriteArrayHeader(11);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.RoomName, options);
             writer.Write(value.IsPrivate);
@@ -2947,6 +2947,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomMatchmakingData, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomTournamentDetails>(formatterResolver).Serialize(ref writer, value.TournamentDetails, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomBetDetailsSlim>(formatterResolver).Serialize(ref writer, value.BetDetailsSlim, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingTournamentId, options);
         }
 
         public global::Elympics.Rooms.Models.CreateRoom Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -2968,6 +2969,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             var __CustomMatchmakingData__ = default(global::System.Collections.Generic.IReadOnlyDictionary<string, string>);
             var __TournamentDetails__ = default(global::Elympics.Rooms.Models.RoomTournamentDetails);
             var __BetDetailsSlim__ = default(global::Elympics.Rooms.Models.RoomBetDetailsSlim);
+            var __RollingTournamentId__ = default(global::System.Guid);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -3004,13 +3006,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                     case 9:
                         __BetDetailsSlim__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomBetDetailsSlim>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 10:
+                        __RollingTournamentId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.CreateRoom(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__);
+            var ____result = new global::Elympics.Rooms.Models.CreateRoom(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentId__);
             reader.Depth--;
             return ____result;
         }

@@ -71,12 +71,31 @@ namespace Elympics
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
             RoomBetAmount? betDetails = null,
+            TournamentDetails? tournamentDetails = null,
             CancellationToken ct = default)
         {
             var betSlim = GetRoomBetDetailsSlim(betDetails);
+            var rollingTournamentId = Guid.Empty;
+
+            if (tournamentDetails != null)
+            {
+                switch (tournamentDetails.TournamentType)
+                {
+                    case TournamentType.Regular:
+                        var newData = new Dictionary<string, string>(customMatchmakingData);
+                        newData.Add(TournamentConst.TournamentIdKey, tournamentDetails.TournamentId);
+                        customMatchmakingData = newData;
+                        break;
+                    case TournamentType.Rolling:
+                        rollingTournamentId = Guid.Parse(tournamentDetails.TournamentId);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(tournamentDetails), tournamentDetails, "Unexpected tournament type.");
+                }
+            }
 
             _logger.WithMethodName().Log($"Create room {roomName}");
-            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim),
+            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentId),
                     ct)
                 .ContinueWith(result => result.RoomId);
         }

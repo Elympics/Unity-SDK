@@ -28,6 +28,7 @@ namespace Elympics
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
             RoomBetAmount? betDetails = null,
+            TournamentDetails? tournamentDetails = null,
             CancellationToken ct = default);
         UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);

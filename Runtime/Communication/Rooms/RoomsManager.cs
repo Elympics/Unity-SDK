@@ -49,6 +49,7 @@ namespace Elympics
         private CancellationTokenSource _cts = new();
 
         private readonly IRoomJoiner _roomJoiner;
+
         public IRoom? CurrentRoom
         {
             get => GetRoomByOptionalId(_roomJoiner.CurrentRoomId);
@@ -132,11 +133,15 @@ namespace Elympics
 
                 if (_rooms.TryGetValue(roomId, out var existingRoom))
                 {
-                    existingRoom.UpdateState(updatedState);
+                    if (CurrentRoom?.RoomId != roomId)
+                        existingRoom.UpdateState(updatedState);
 
                     // when a room no longer lists the player among its users
                     if (CurrentRoom?.RoomId == roomId && !updatedState.ContainsUser(_client.SessionConnectionDetails.AuthData!.UserId))
+                    {
+                        existingRoom.UpdateState(updatedState);
                         CurrentRoom = null;
+                    }
                 }
                 else
                     AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, updatedState));
@@ -405,7 +410,7 @@ namespace Elympics
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
                 if (string.IsNullOrEmpty(error))
-                    return room;  // happy path
+                    return room; // happy path
                 await LeaveAndCleanUp();
                 throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
             }

@@ -395,7 +395,7 @@ namespace Elympics
             _client.LeftRoom += OnQuickRoomLeft;
             try
             {
-                _ = logger.SetQueue(RoomUtil.QuickMatchRoomName);
+                _ = logger.SetQueue(queueName);
                 await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room, ct);
                 _client.LeftRoom += OnQuickRoomLeft;
                 isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();

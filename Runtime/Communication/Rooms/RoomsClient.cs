@@ -82,9 +82,7 @@ namespace Elympics
                 switch (tournamentDetails.TournamentType)
                 {
                     case TournamentType.Regular:
-                        var newData = new Dictionary<string, string>(customMatchmakingData);
-                        newData.Add(TournamentConst.TournamentIdKey, tournamentDetails.TournamentId);
-                        customMatchmakingData = newData;
+                        customMatchmakingData = new Dictionary<string, string>(customMatchmakingData) { { TournamentConst.TournamentIdKey, tournamentDetails.TournamentId } };
                         break;
                     case TournamentType.Rolling:
                         rollingTournamentId = Guid.Parse(tournamentDetails.TournamentId);

@@ -126,7 +126,7 @@ internal class RoomClientMock : IRoomsClient
 
     public void SetSessionConnectionDetails(SessionConnectionDetails? details) => _sessionConnectionDetails = details;
 
-    public void Reset()
+    void IRoomsClient.Reset()
     {
         RoomIdReturnTask = null;
         CreateRoomInvokedArgs = null;

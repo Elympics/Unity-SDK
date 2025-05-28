@@ -49,5 +49,7 @@ namespace Elympics
         UniTask WatchRooms(CancellationToken ct = default);
         UniTask UnwatchRooms(CancellationToken ct = default);
         bool IsWatchingRooms { get; }
+
+        internal void Reset();
     }
 }

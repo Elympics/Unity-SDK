@@ -17,7 +17,7 @@ using UnityEngine.TestTools;
 namespace Elympics.Tests.Rooms
 {
     [Category("Rooms")]
-    internal class TestRoomsClient
+    internal partial class TestRoomsClient
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
@@ -34,6 +34,7 @@ namespace Elympics.Tests.Rooms
         [SetUp]
         public void ResetMocks()
         {
+            ((IRoomsClient)RoomsClient).Reset();
             WsSessionMock.Reset();
             WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
             RoomsClient.Session = WsSessionMock;

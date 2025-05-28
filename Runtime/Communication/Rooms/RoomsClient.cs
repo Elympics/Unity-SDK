@@ -247,5 +247,11 @@ namespace Elympics
             }
             return betSlim;
         }
+
+        void IRoomsClient.Reset()
+        {
+            Session = null;
+            _roomWatchingState = RoomWatchingState.NotWatching;
+        }
     }
 }

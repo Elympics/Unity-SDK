@@ -59,6 +59,48 @@ namespace Elympics.Tests.Rooms
         });
 
         [UnityTest]
+        public IEnumerator QuickMatch_CancellationToken_CancelsAndCurrentRoomIsNull() => UniTask.ToCoroutine(async () =>
+        {
+            // Arrange
+            var userId = InitialRoomState.Users.First().UserId;
+            var connectionDetails = Defaults.CreateConnectionDetails(userId);
+            _ = RoomsClientMock.SessionConnectionDetails.Returns(connectionDetails);
+            RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
+
+            var teamChangedState = InitialRoomState
+                .WithUserTeamSwitched(userId, 0);
+
+            var readyState = teamChangedState
+                .WithUserReadinessChanged(userId, true);
+
+            var matchmakingState = readyState
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+
+            SetRoomAsTrackedWhenItGetsJoined();
+
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(readyState));
+            RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(teamChangedState));
+            MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
+                .Do(_ => EmitRoomUpdate(matchmakingState));
+
+            using var cts = new CancellationTokenSource();
+
+            // Act
+            var quickMatchTask = RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);
+
+            // Simulate cancellation after matchmaking starts but before it completes
+            await UniTask.DelayFrame(2); // Let the flow start
+            cts.Cancel();
+
+            // Assert
+            await quickMatchTask;
+            Assert.IsNull(RoomsManager.CurrentRoom, "CurrentRoom should be null after cancellation.");
+        });
+
+
+        [UnityTest]
         public IEnumerator QuickMatchLobbyOperationException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";

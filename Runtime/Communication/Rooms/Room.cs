@@ -15,12 +15,15 @@ namespace Elympics
 {
     internal class Room : IRoom
     {
+        public TimeSpan ConfirmationTimeout { private get; set; } = TimeSpan.FromSeconds(5);
+
         public Guid RoomId => ThrowIfDisposedOrReturn(_roomId);
         public RoomState State => ThrowIfDisposedOrReturn(_state);
 
         public bool IsDisposed { get; private set; }
 
         public bool IsJoined => ThrowIfDisposedOrReturn(_isJoined);
+
         bool IRoom.IsJoined
         {
             get => IsJoined;
@@ -133,7 +136,7 @@ namespace Elympics
             return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !GetLocalUser().IsReady, _webApiTimeoutFallback));
         }
 
-        public UniTask StartMatchmaking()
+        public async UniTask StartMatchmaking()
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -142,7 +145,8 @@ namespace Elympics
             if (isAnyoneNotReady)
                 throw new RoomRequirementsException("Not all players are ready.");
 
-            return _matchLauncher.StartMatchmaking(this);
+            await _matchLauncher.StartMatchmaking(this);
+            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked);
         }
 
         UniTask IRoom.StartMatchmakingInternal() => _client.StartMatchmaking(_roomId, _state.Host.UserId);
@@ -169,6 +173,7 @@ namespace Elympics
                 {
                     ct.ThrowIfCancellationRequested();
                     await _client.CancelMatchmaking(_roomId, ct);
+                    await WaitForState(() => IsDisposed || _state.MatchmakingData!.MatchmakingState == MatchmakingState.Unlocked, ct);
                     return;
                 }
                 catch (LobbyOperationException e)
@@ -250,13 +255,14 @@ namespace Elympics
                 ?? throw new InvalidOperationException("No match details available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}, current match state: {matchData.State}.");
             _matchLauncher.PlayMatch(new MatchmakingFinishedData(matchData.MatchId, matchDetails, matchmakingData.QueueName, _client.SessionConnectionDetails.RegionName));
         }
-        public UniTask Leave()
+        public async UniTask Leave()
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
             if (State.MatchmakingData?.MatchmakingState is MatchmakingState.Playing)
                 throw new InvalidOperationException($"Can't leave room during {_state.MatchmakingData!.MatchmakingState} state.");
-            return _client.LeaveRoom(_roomId);
+            await _client.LeaveRoom(_roomId);
+            await WaitForState(() => IsDisposed || !_isJoined);
         }
 
         private T ThrowIfDisposedOrReturn<T>(T val, [CallerMemberName] string methodName = "")
@@ -287,6 +293,15 @@ namespace Elympics
         {
             if (!_state.PrivilegedHost)
                 throw new RoomPrivilegeException($"Only privileged hosts can call {nameof(UpdateRoomParams)}.");
+        }
+
+        private async UniTask WaitForState(Func<bool> predicate, CancellationToken ct = default, [CallerMemberName] string callerName = "")
+        {
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfterSlim(ConfirmationTimeout);
+            var timedOut = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
+            if (timedOut)
+                throw new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
         }
     }
 }

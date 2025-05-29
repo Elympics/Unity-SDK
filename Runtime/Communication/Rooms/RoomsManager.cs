@@ -7,6 +7,7 @@ using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -44,6 +45,7 @@ namespace Elympics
         #endregion Aggregated room events
 
         public TimeSpan OperationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
+        public TimeSpan ConfirmationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
 
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private CancellationTokenSource _cts = new();
@@ -144,7 +146,7 @@ namespace Elympics
                     }
                 }
                 else
-                    AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, updatedState));
+                    AddRoomToDictionary(CreateRoom(roomId, publicState: updatedState));
             }
 
             RoomListUpdated?.Invoke(new RoomListUpdatedArgs(roomListChanged.Changes.Select(change => change.RoomId).ToList()));
@@ -181,7 +183,7 @@ namespace Elympics
             }
             else
             {
-                IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
+                var newRoom = CreateRoom(roomId, state: roomState);
                 _ = logger.SetQueue(roomState.MatchmakingData?.QueueName)
                     .SetRoomId(roomState.RoomId.ToString());
                 CurrentRoom = newRoom;
@@ -243,6 +245,15 @@ namespace Elympics
             {
                 _ = ElympicsLogger.LogException(exception);
             }
+        }
+
+        private IRoom CreateRoom(Guid id, PublicRoomState? publicState = null, RoomStateChanged? state = null)
+        {
+            if (state is null && publicState is null)
+                throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
+            return state is not null
+                ? new Room(_matchLauncher, _client, id, state) { ConfirmationTimeout = ConfirmationTimeout }
+                : new Room(_matchLauncher, _client, id, publicState!) { ConfirmationTimeout = ConfirmationTimeout };
         }
 
         private void AddRoomToDictionary(IRoom room)
@@ -410,13 +421,15 @@ namespace Elympics
             _ = logger.SetRoomId(roomId.ToString());
             var room = _rooms[roomId];
             bool isCanceled;
+            var mmCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
             try
             {
                 _ = logger.SetQueue(queueName);
                 await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room, ct);
                 _client.LeftRoom += OnQuickRoomLeft;
-                isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();
+                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, mmCts.Token);
+                isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: cancellationTokenSource.Token).SuppressCancellationThrow();
             }
             catch (Exception e)
             {
@@ -436,7 +449,7 @@ namespace Elympics
             // the process has been cancelled
             try
             {
-                await room.CancelMatchmaking(ct);
+                await room.CancelMatchmaking(mmCts.Token);
             }
             catch (Exception)
             {
@@ -445,7 +458,9 @@ namespace Elympics
             }
 
             // the cancellation was successful
-            await room.Leave();
+            if (room.IsDisposed is false)
+                await room.Leave();
+
             throw new OperationCanceledException(ct);
 
             void OnQuickRoomLeft(LeftRoomArgs args)
@@ -461,6 +476,7 @@ namespace Elympics
                 _client.LeftRoom -= OnQuickRoomLeft;
                 if (_rooms.Remove(room.RoomId, out var removedRoom))
                     removedRoom.Dispose();
+                mmCts.Cancel();
             }
 
             async UniTask LeaveAndCleanUp()

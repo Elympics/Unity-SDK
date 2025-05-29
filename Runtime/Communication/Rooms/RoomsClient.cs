@@ -168,7 +168,7 @@ namespace Elympics
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {
             _logger.WithMethodName().Log("Start matchmaking.");
-            return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId), default);
+            return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId));
         }
 
         public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default)
@@ -253,7 +253,7 @@ namespace Elympics
             throw new UnexpectedRoomResultException(typeof(T), result.GetType());
         }
 
-        private UniTask ExecuteOperationHostOnly(Guid? roomHostId, LobbyOperation message, CancellationToken ct, [CallerMemberName] string methodName = "")
+        private UniTask ExecuteOperationHostOnly(Guid? roomHostId, LobbyOperation message, CancellationToken ct = default, [CallerMemberName] string methodName = "")
         {
             if (Session == null)
                 throw new InvalidOperationException("Missing WebSocket session object.");

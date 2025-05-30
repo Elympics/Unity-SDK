@@ -575,7 +575,7 @@ namespace Elympics
             try
             {
                 var result = await _webSocketSession.Value.ExecuteOperation(new ShowAuth());
-                if (result.Success is false)
+                if (!result.Success)
                 {
                     loggerContext.Error("Couldn't fetch ElympicsPlayer data.");
                     return;

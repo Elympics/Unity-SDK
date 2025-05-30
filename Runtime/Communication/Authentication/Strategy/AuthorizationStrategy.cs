@@ -20,7 +20,7 @@ namespace Elympics
 
         protected async UniTask<Result<AuthData, string>> AuthenticateWithCachedData(CachedAuthData? data)
         {
-            if (data.HasValue is false)
+            if (!data.HasValue)
                 throw new ArgumentException($"{nameof(data)} cannot be null.");
 
             var cachedData = data.Value.CachedData;
@@ -30,7 +30,7 @@ namespace Elympics
             {
                 var isJwtTokenExpired = JwtTokenUtil.IsJwtExpired(cachedData.JwtToken);
 
-                if (isJwtTokenExpired is false)
+                if (!isJwtTokenExpired)
                     return Result<AuthData, string>.Success(cachedData);
                 if (data.Value.AutoRetryIfExpired)
                     return await AuthenticateWithAsync(cachedData.AuthType);

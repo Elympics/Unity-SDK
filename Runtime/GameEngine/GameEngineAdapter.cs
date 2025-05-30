@@ -108,7 +108,7 @@ namespace Elympics
 
             var added = buffer.TryAddData(input);
 
-            if (added is false && latestInput)
+            if (!added && latestInput)
                 ElympicsLogger.LogWarning($"Input for Tick {input.Tick} from player {player} was not added to input buffer because it was not in range [{buffer.MinTick}, {buffer.MaxTick}].");
         }
 

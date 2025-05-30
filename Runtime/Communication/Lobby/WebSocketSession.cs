@@ -116,7 +116,7 @@ namespace Elympics.Lobby
 
         private void SetDisconnectedState(DisconnectionReason reason)
         {
-            if (IsConnected is false)
+            if (!IsConnected)
                 return;
             IsConnected = false;
             _dispatcher.Enqueue(() => PropagateDisconnection(reason).Forget());
@@ -126,7 +126,7 @@ namespace Elympics.Lobby
         {
             var data = new DisconnectionData(reason);
             await _controller.ReconnectIfPossible(data);
-            if (IsConnected is false)
+            if (!IsConnected)
                 Disconnected?.Invoke(data);
         }
 
@@ -273,7 +273,7 @@ namespace Elympics.Lobby
                     if (!(_timer.Elapsed.TotalSeconds > _automaticDisconnectThreshold.TotalSeconds))
                         continue;
 
-                    if (IsConnected is false)
+                    if (!IsConnected)
                         return;
 
                     var logger = _logger.WithMethodName();

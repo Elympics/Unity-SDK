@@ -42,7 +42,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 var isDisconnected = false;
                 lock (_isConnectedLock)
                 {
-                    if (_isConnected != value && value == false)
+                    if (_isConnected != value && !value)
                         isDisconnected = true;
                     _isConnected = value;
                 }

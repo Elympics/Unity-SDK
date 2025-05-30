@@ -239,11 +239,9 @@ namespace Elympics
             RoomBetDetailsSlim? betSlim = null;
             if (betDetails.HasValue)
             {
-                var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(betDetails.Value.CoinId);
-                if (coinDecimal == null)
-                    throw new ArgumentException($"Couldn't create bet with CoinId: {betDetails.Value.CoinId}");
-
-                betSlim = new RoomBetDetailsSlim(WeiConverter.ToWei(betDetails.Value.BetValue, coinDecimal.Value), betDetails.Value.CoinId);
+                var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(betDetails.Value.CoinId)
+                    ?? throw new ArgumentException($"Couldn't create bet with CoinId: {betDetails.Value.CoinId}");
+                betSlim = new RoomBetDetailsSlim(WeiConverter.ToWei(betDetails.Value.BetValue, coinDecimal), betDetails.Value.CoinId);
             }
             return betSlim;
         }

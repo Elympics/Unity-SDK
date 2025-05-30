@@ -37,9 +37,7 @@ namespace Elympics.Editor.Replay
             _pauseToggle.SetEnabled(EditorApplication.isPlaying);
             _ = _pauseToggle.RegisterValueChangedCallback(valueChangedEvent =>
             {
-                if (_replayClient != null)
-                    _replayClient.SetIsPlaying(!valueChangedEvent.newValue);
-
+                _replayClient?.SetIsPlaying(!valueChangedEvent.newValue);
                 AdjustApplyStateButtonClickability();
             });
 

@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
@@ -21,7 +23,12 @@ namespace MatchTcpClients
         private CancellationTokenSource _stateCancellationTokenSource;
         private CancellationTokenSource _linkedCts;
 
-        public WebGameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, IGameServerWebSignalingClient signalingClient, ElympicsLoggerContext logger, Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
+        public WebGameServerClient(
+            IGameServerSerializer serializer,
+            GameServerClientConfig config,
+            IGameServerWebSignalingClient signalingClient,
+            ElympicsLoggerContext logger,
+            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
@@ -30,7 +37,8 @@ namespace MatchTcpClients
 
         public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
         {
-            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}") : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
+            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}")
+                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
 
             if (string.IsNullOrEmpty(regionName))
                 return signalingEndpoint;
@@ -170,25 +178,32 @@ namespace MatchTcpClients
             return response;
         }
 
-        private async Task<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
+        private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
         {
-            string offer = null;
-            var offerSet = false;
-            var cts = new CancellationTokenSource();
-
-            void OnOfferCreated(string s)
+            try
             {
-                _webRtcClient.OfferCreated -= OnOfferCreated;
-                offer = s;
-                offerSet = true;
-                cts.Cancel();
-            }
+                string offer = null;
+                var offerSet = false;
+                var cts = new CancellationTokenSource();
 
-            _webRtcClient.OfferCreated += OnOfferCreated;
-            _webRtcClient.CreateOffer(restart);
-            await TaskUtil.Delay(Config.OfferTimeout, cts.Token).CatchOperationCanceledException();
-            _webRtcClient.OfferCreated -= OnOfferCreated;
-            return (offer, offerSet);
+                void OnOfferCreated(string s)
+                {
+                    _webRtcClient.OfferCreated -= OnOfferCreated;
+                    offer = s;
+                    offerSet = true;
+                    cts.Cancel();
+                }
+
+                _webRtcClient.OfferCreated += OnOfferCreated;
+                _webRtcClient.CreateOffer(restart);
+                await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token);
+                _webRtcClient.OfferCreated -= OnOfferCreated;
+                return (offer, offerSet);
+            }
+            catch (Exception e)
+            {
+                throw ElympicsLogger.LogException(e);
+            }
         }
 
         protected override void InitializeNetworkClients()

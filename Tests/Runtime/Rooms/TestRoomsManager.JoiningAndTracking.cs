@@ -26,13 +26,6 @@ namespace Elympics.Tests.Rooms
             new(RoomId, InitialPublicState),
         });
 
-        [InitializeOnLoadMethod]
-        public static void DecodeMessagePack()
-        {
-            Debug.Log(MessagePackSerializer.Deserialize<IFromLobby>(Convert.FromBase64String(
-                "kgOa2SQyNzQ1ZGVmMy1jOWI5LTRlMDAtOTE0Mi01M2I0NzFlOGU1MDfX/9dKvwBoGyVsq3F1aWNrLW1hdGNopDE2MjnDmdf/10q/AGgbJWwArHB2cC10cmFpbmluZwEBgJTZJGNhYzkzZjVlLTgyNGQtNDA5OS04Yzg4LWJkYzM1YTE5YWYzMwTA2UFPcGVyYXRpb24gdGltZW91dCBXYWl0aW5nIGZvciBpbml0aWFsaXphdGlvbiBkZWFkbGluZSBoYXMgZWxhcHNlZMDAkZXZJDYzMmNhN2UyLWI4MzYtNDdiNi1hMmViLTk2ZTIyMWU1MTFlNADCrUhhcHB5IE9jdG9wdXPZUWh0dHBzOi8vaG9zdGluZy1tZXRhLmVseW1waWNzLmFpL2F2YXRhcnMvRkVEQUJFQTQtRkIyQy00OEE0LTk3REItM0RCQ0U5ODkyQTFELnBuZ8PDgA==")));
-        }
-
         [Test]
         public void RoomShouldBeSetAsJoinedAfterStateTrackingMessageIsReceived()
         {

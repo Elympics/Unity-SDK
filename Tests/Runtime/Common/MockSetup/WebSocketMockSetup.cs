@@ -35,7 +35,7 @@ namespace Elympics
             Ws.ClearSubstitute();
             Ws.When(x => x.Connect()).Do(async _ =>
             {
-                await UniTask.Delay(TimeSpan.FromSeconds(0.5));
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5), DelayType.Realtime);
                 ElympicsLogger.Log("[MOCK] Connect called");
                 Ws.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
             });
@@ -322,7 +322,7 @@ namespace Elympics
             while (!ct.IsCancellationRequested)
             {
                 SendResponse(ws, new Ping());
-                await UniTask.Delay(TimeSpan.FromSeconds(delay));
+                await UniTask.Delay(TimeSpan.FromSeconds(delay), DelayType.Realtime);
             }
         }
 
@@ -380,7 +380,7 @@ namespace Elympics
 
         private static async void SimulateCancelling(IWebSocket ws, RoomStateChanged room)
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
             SetMatchmakingState(ref room, MatchmakingState.Unlocked);
             UpdateTime(ref room);
             SendResponse(ws, room);

@@ -27,7 +27,7 @@ namespace Elympics
         private static async UniTask ExitPlaymode()
         {
             while (!isInPlayMode)
-                await UniTask.Delay(TimeSpan.FromMilliseconds(500), true);
+                await UniTask.Delay(TimeSpan.FromMilliseconds(500), DelayType.Realtime);
             EditorApplication.ExitPlaymode();
         }
     }

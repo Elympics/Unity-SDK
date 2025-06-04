@@ -349,7 +349,7 @@ namespace Elympics.Tests
 
             var disconnectedCalled = false;
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
-            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec * 2));
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec * 2), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
             Assert.IsFalse(disconnectedCalled);
@@ -368,7 +368,7 @@ namespace Elympics.Tests
             var disconnectedCalled = false;
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
-            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
@@ -431,7 +431,7 @@ namespace Elympics.Tests
             _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
 
             LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
-            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
@@ -473,7 +473,7 @@ namespace Elympics.Tests
                 }
             });
             LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
-            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2));
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(authenticationCalled);

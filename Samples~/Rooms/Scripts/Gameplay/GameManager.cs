@@ -84,7 +84,7 @@ public class GameManager : ElympicsMonoBehaviour, IClientHandlerGuid, IUpdatable
     {
         try
         {
-            await UniTask.Delay(ShoutdownDeley, cancellationToken: cancellationToken);
+            await UniTask.Delay(ShoutdownDeley, DelayType.Realtime, cancellationToken: cancellationToken);
             Elympics.EndGame();
         }
         catch (OperationCanceledException)

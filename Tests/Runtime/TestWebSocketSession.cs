@@ -295,7 +295,6 @@ namespace Elympics.Tests
             {
                 WsMock.ConnectCalled -= HandleConnectCalled;
                 WsMock.SendCalled += HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1)).ContinueWith(() => WsMock.InvokeOnOpen()).Forget();
             }
 
             void HandleMessageSent(byte[] data)
@@ -326,7 +325,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(5)).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(5), DelayType.Realtime).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 
@@ -468,7 +467,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1), cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(0.1), DelayType.Realtime, cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 

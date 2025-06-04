@@ -298,7 +298,7 @@ namespace Elympics
         private async UniTask WaitForState(Func<bool> predicate, CancellationToken ct = default, [CallerMemberName] string callerName = "")
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfterSlim(ConfirmationTimeout);
+            using var _ = cts.CancelAfterSlim(ConfirmationTimeout);
             var timedOut = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
             if (timedOut)
                 throw new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");

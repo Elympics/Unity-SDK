@@ -13,7 +13,7 @@ namespace Communication.Lobby.Models.ToLobby
         ) : LobbyOperation
     {
         [SerializationConstructor]
-        public RequestRollings(Guid operationId, Guid GameId, string VersionId,List<RollingRequestDto> Rollings) : this(GameId, VersionId, Rollings) => OperationId = operationId;
+        public RequestRollings(Guid operationId, Guid GameId, string VersionId, List<RollingRequestDto> Rollings) : this(GameId, VersionId, Rollings) => OperationId = operationId;
     }
 
     [MessagePackObject]

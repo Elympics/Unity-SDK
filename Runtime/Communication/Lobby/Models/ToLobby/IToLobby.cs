@@ -1,3 +1,4 @@
+using Communication.Lobby.Models.ToLobby;
 using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Rooms.Models;
 using MessagePack;
@@ -22,6 +23,7 @@ namespace Elympics.Lobby.Models
     [Union(13, typeof(SetRoomParameters))]
     [Union(14, typeof(WatchRooms))]
     [Union(15, typeof(UnwatchRooms))]
+    [Union(16, typeof(RequestRollings))]
     public interface IToLobby
     { }
 }

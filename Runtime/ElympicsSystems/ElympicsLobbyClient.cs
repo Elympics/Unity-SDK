@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
@@ -566,6 +567,64 @@ namespace Elympics
             var connectionDetails = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, data.Region);
             await lobbyConnection.Connect(connectionDetails);
             currentRegion = connectionDetails.RegionName;
+        }
+
+        [PublicAPI]
+        public async UniTask<TournamentFeeInfo?> GetRollTournamentsFee(TournamentFeeRequestInfo[] requestData, CancellationToken ct = default)
+        {
+            if (requestData.Length == 0)
+                return null;
+
+            var config = _config.GetCurrentGameConfig();
+            var request = new RequestRollings(
+                GameId: Guid.Parse(config.GameId),
+                VersionId: config.GameVersion,
+                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, x.Prize.ToString(CultureInfo.InvariantCulture), (uint)x.PlayersCount)).ToList());
+
+            var tcs = new UniTaskCompletionSource<RollingsResponse>();
+
+            _webSocketSession.Value.MessageReceived += OnMessage;
+
+            RollingsResponse? response;
+            try
+            {
+                var result = await _webSocketSession.Value.ExecuteOperation(request, ct);
+
+                if (result.Success is false)
+                {
+                    loggerContext.WithMethodName().Error($"Couldn't fetch rolls fees: {result.GetDescritpion()}");
+                    return null;
+                }
+
+                response = await tcs.Task;
+            }
+            finally
+            {
+                _webSocketSession.Value.MessageReceived -= OnMessage;
+            }
+
+            var fees = new FeeInfo[response.Rollings.Count];
+
+            for (var i = 0; i < fees.Length; i++)
+            {
+                var fee = response.Rollings[i];
+                var coinId = requestData[i].CoinInfo.Id;
+                fees[i] = new FeeInfo
+                {
+                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    Error = fee.Error,
+                    EntryFeeRaw = fee.EntryFee,
+                    RollingTournamentId = fee.RollingId
+                };
+            }
+
+            return new TournamentFeeInfo { Fees = fees };
+
+            void OnMessage(IFromLobby message)
+            {
+                if (message is RollingsResponse rollingsResponse)
+                    _ = tcs.TrySetResult(rollingsResponse);
+            }
         }
 
         internal async UniTask GetElympicsUserData()

@@ -20,7 +20,7 @@ namespace Elympics
             var uri = new Uri(url);
             var request = new UnityWebRequest(uri, method)
             {
-                downloadHandler = new DownloadHandlerBuffer()
+                downloadHandler = new DownloadHandlerBuffer(),
             };
 
             var bodyString = string.Empty;

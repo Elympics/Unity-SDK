@@ -207,28 +207,15 @@ namespace Elympics
             IncreaseSpacingManually(height + spacingBetweenElements);
         }
 
-        private string GetEndpointIndicator(EditorEndpointChecker endpointChecker)
+        private static string GetEndpointIndicator(EditorEndpointChecker endpointChecker)
         {
             if (!endpointChecker.IsUriCorrect)
-            {
-                //yellow
-                return "<color=#ECC70C>Wrong uri</color>";
-            }
-            else if (!endpointChecker.IsRequestDone)
-            {
-                //blue
-                return "<color=#0061E1>Connecting...</color>";
-            }
-            else if (!endpointChecker.IsRequestSuccessful)
-            {
-                //red
-                return "<color=#E1001E>Didn't connect</color>";
-            }
-            else
-            {
-                //green
-                return "<color=#63DE4B>Connected!</color>";
-            }
+                return "<color=#ECC70C>Wrong uri</color>";  // yellow
+            if (!endpointChecker.IsRequestDone)
+                return "<color=#0061E1>Connecting...</color>";  // blue
+            return endpointChecker.IsRequestSuccessful
+                ? "<color=#63DE4B>Connected!</color>"  // green
+                : "<color=#E1001E>Didn't connect</color>";  // red
         }
 
         private Vector2 scrollPos;

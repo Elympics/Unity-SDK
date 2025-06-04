@@ -80,6 +80,7 @@ namespace Elympics
             void RunCallback(UnityWebRequest request)
             {
                 completed?.Invoke(request);
+                request.Dispose();
             }
 
             if (asyncOperation.isDone)

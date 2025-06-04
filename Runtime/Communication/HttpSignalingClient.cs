@@ -16,10 +16,8 @@ namespace Elympics
 
         public event Action<WebSignalingClientResponse> ReceivedResponse;
 
-        public HttpSignalingClient(Uri uri)
-        {
+        public HttpSignalingClient(Uri uri) =>
             _uri = uri;
-        }
 
         public void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
         {
@@ -29,24 +27,30 @@ namespace Elympics
             {
                 timeout = timeoutSeconds,
                 uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
-                downloadHandler = new DownloadHandlerBuffer()
+                downloadHandler = new DownloadHandlerBuffer(),
             };
             request.SetTestCertificateHandlerIfNeeded();
 
             _requestAsyncOperation = request.SendWebRequest();
             _requestAsyncOperation.completed += HandleCompleted;
-            _ctr = ct.Register(Reset);
+            _ctr = ct.Register(ClearRequestData);
         }
 
         private void Reset()
+        {
+            _ctr?.Dispose();
+            ClearRequestData();
+        }
+
+        private void ClearRequestData()
         {
             if (_requestAsyncOperation != null)
             {
                 _requestAsyncOperation.completed -= HandleCompleted;
                 _requestAsyncOperation.webRequest?.Abort();
+                _requestAsyncOperation.webRequest?.Dispose();
             }
             _requestAsyncOperation = null;
-            _ctr?.Dispose();
         }
 
         private void HandleCompleted(AsyncOperation asyncOp)
@@ -59,10 +63,11 @@ namespace Elympics
             var text = request.IsConnectionError()
                 ? request.error
                 : request.downloadHandler.text;
+            Reset();
             ReceivedResponse?.Invoke(new WebSignalingClientResponse
             {
                 IsError = isError,
-                Text = text
+                Text = text,
             });
         }
     }

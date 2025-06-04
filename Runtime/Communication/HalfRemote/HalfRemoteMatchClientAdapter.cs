@@ -145,7 +145,7 @@ namespace Elympics
             if (lost)
                 return;
             if (lagMs != 0)
-                await UniTask.Delay(lagMs);
+                await UniTask.Delay(lagMs, DelayType.Realtime);
 
             action.Invoke();
         }

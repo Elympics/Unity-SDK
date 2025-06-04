@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -180,30 +179,23 @@ namespace MatchTcpClients
 
         private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
         {
-            try
+            string offer = null;
+            var offerSet = false;
+            var cts = new CancellationTokenSource();
+
+            void OnOfferCreated(string s)
             {
-                string offer = null;
-                var offerSet = false;
-                var cts = new CancellationTokenSource();
-
-                void OnOfferCreated(string s)
-                {
-                    _webRtcClient.OfferCreated -= OnOfferCreated;
-                    offer = s;
-                    offerSet = true;
-                    cts.Cancel();
-                }
-
-                _webRtcClient.OfferCreated += OnOfferCreated;
-                _webRtcClient.CreateOffer(restart);
-                await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token);
                 _webRtcClient.OfferCreated -= OnOfferCreated;
-                return (offer, offerSet);
+                offer = s;
+                offerSet = true;
+                cts.Cancel();
             }
-            catch (Exception e)
-            {
-                throw ElympicsLogger.LogException(e);
-            }
+
+            _webRtcClient.OfferCreated += OnOfferCreated;
+            _webRtcClient.CreateOffer(restart);
+            _ = await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
+            _webRtcClient.OfferCreated -= OnOfferCreated;
+            return (offer, offerSet);
         }
 
         protected override void InitializeNetworkClients()
@@ -212,9 +204,6 @@ namespace MatchTcpClients
             base.InitializeNetworkClients();
         }
 
-        private void InitWebRtcClient()
-        {
-            _ = ClientDisconnectedCts.Token.Register(_webRtcClient.Dispose);
-        }
+        private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(_webRtcClient.Dispose);
     }
 }

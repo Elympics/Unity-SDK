@@ -325,6 +325,8 @@ namespace Elympics
             if (CurrentRoom?.RoomId == args.RoomId)
                 CurrentRoom = null;
             _ = _logger.SetNoRoom();
+            if (args.Reason == LeavingReason.RoomClosed && _rooms.Remove(args.RoomId, out var removedRoom))
+                removedRoom.Dispose();
             LeftRoom?.Invoke(args);
         }
 
@@ -417,19 +419,22 @@ namespace Elympics
             customMatchmakingData ??= new Dictionary<string, string>();
             ct.ThrowIfCancellationRequested();
 
+            bool isCancelled;
             var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, tournamentDetails);
-            _ = logger.SetRoomId(roomId.ToString());
-            var room = _rooms[roomId];
-            bool isCanceled;
-            var mmCts = new CancellationTokenSource();
+            using var roomLeftCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
+            _ = logger.SetRoomId(roomId.ToString());
+            _ = logger.SetQueue(queueName);
+            var room = _rooms[roomId];
             try
             {
-                _ = logger.SetQueue(queueName);
                 await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room, ct);
-                _client.LeftRoom += OnQuickRoomLeft;
-                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, mmCts.Token);
-                isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: cancellationTokenSource.Token).SuppressCancellationThrow();
+                var matchmakingCancelledCt = UniTask.WaitUntil(() => room.IsDisposed || room.State.MatchmakingData?.MatchmakingState is MatchmakingState.CancellingMatchmaking or MatchmakingState.Unlocked, cancellationToken: roomLeftCts.Token)
+                    .ToCancellationToken();
+                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, roomLeftCts.Token, matchmakingCancelledCt);
+                isCancelled = await UniTask.WaitUntil(() => !room.IsDisposed && room.State.MatchmakingData?.MatchData is not null, cancellationToken: cancellationTokenSource.Token).SuppressCancellationThrow();
+                _client.LeftRoom -= OnQuickRoomLeft;
+                roomLeftCts.Cancel();
             }
             catch (Exception e)
             {
@@ -437,7 +442,7 @@ namespace Elympics
                 throw logger.CaptureAndThrow(e);
             }
 
-            if (!isCanceled)
+            if (isCancelled is false)
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
                 if (string.IsNullOrEmpty(error))
@@ -449,7 +454,7 @@ namespace Elympics
             // the process has been cancelled
             try
             {
-                await room.CancelMatchmaking(mmCts.Token);
+                await room.CancelMatchmaking(roomLeftCts.Token);
             }
             catch (Exception)
             {
@@ -465,7 +470,7 @@ namespace Elympics
 
             void OnQuickRoomLeft(LeftRoomArgs args)
             {
-                if (room.IsDisposed)
+                if (!_rooms.TryGetValue(roomId, out var qmRoom) || qmRoom.IsDisposed)
                 {
                     _client.LeftRoom -= OnQuickRoomLeft;
                     return;
@@ -474,9 +479,7 @@ namespace Elympics
                 if (args.RoomId != roomId)
                     return;
                 _client.LeftRoom -= OnQuickRoomLeft;
-                if (_rooms.Remove(room.RoomId, out var removedRoom))
-                    removedRoom.Dispose();
-                mmCts.Cancel();
+                roomLeftCts.Cancel();
             }
 
             async UniTask LeaveAndCleanUp()

@@ -59,22 +59,20 @@ namespace Elympics.Tests.Rooms
         });
 
         [UnityTest]
-        public IEnumerator QuickMatch_CancellationToken_CancelsAndCurrentRoomIsNull() => UniTask.ToCoroutine(async () =>
+        public IEnumerator CurrentRoomShouldBeNullAfterQuickMatchIsCancelled_CancellationToken() => UniTask.ToCoroutine(async () =>
         {
             // Arrange
-            var userId = InitialRoomState.Users.First().UserId;
-            var connectionDetails = Defaults.CreateConnectionDetails(userId);
-            _ = RoomsClientMock.SessionConnectionDetails.Returns(connectionDetails);
+            _ = RoomsClientMock.SessionConnectionDetails.Returns(Defaults.CreateConnectionDetails(HostId));
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
 
             var teamChangedState = InitialRoomState
-                .WithUserTeamSwitched(userId, 0);
+                .WithUserTeamSwitched(HostId, 0);
 
             var readyState = teamChangedState
-                .WithUserReadinessChanged(userId, true);
+                .WithUserReadinessChanged(HostId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
 
             SetRoomAsTrackedWhenItGetsJoined();
 
@@ -84,21 +82,107 @@ namespace Elympics.Tests.Rooms
                 .Do(_ => EmitRoomUpdate(teamChangedState));
             MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
                 .Do(_ => EmitRoomUpdate(matchmakingState));
+            RoomsClientMock.When(x => x.LeaveRoom(Arg.Any<Guid>()))
+                .Do(args => RoomsClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(args.ArgAt<Guid>(0), LeavingReason.UserLeft)));
 
             using var cts = new CancellationTokenSource();
 
-            // Act
-            var quickMatchTask = RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);
-
             // Simulate cancellation after matchmaking starts but before it completes
-            await UniTask.DelayFrame(2); // Let the flow start
+            var quickMatchTask = RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);
+            await UniTask.DelayFrame(2, cancellationToken: CancellationToken.None);
+
+            // Act
             cts.Cancel();
 
             // Assert
-            await quickMatchTask;
-            Assert.IsNull(RoomsManager.CurrentRoom, "CurrentRoom should be null after cancellation.");
+            _ = await AssertThrowsAsync<OperationCanceledException>(quickMatchTask);
+            Assert.That(RoomsManager.CurrentRoom, Is.Null, $"{nameof(RoomsManager.CurrentRoom)} should be null after cancellation");
         });
 
+        [UnityTest]
+        public IEnumerator CurrentRoomShouldBeNullAfterQuickMatchIsCancelled_CancelMatchmaking() => UniTask.ToCoroutine(async () =>
+        {
+            // Arrange
+            _ = RoomsClientMock.SessionConnectionDetails.Returns(Defaults.CreateConnectionDetails(HostId));
+            RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
+
+            var teamChangedState = InitialRoomState
+                .WithUserTeamSwitched(HostId, 0);
+
+            var readyState = teamChangedState
+                .WithUserReadinessChanged(HostId, true);
+
+            var matchmakingState = readyState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+
+            SetRoomAsTrackedWhenItGetsJoined();
+
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(readyState));
+            RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(teamChangedState));
+            MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
+                .Do(_ => EmitRoomUpdate(matchmakingState));
+            MatchLauncherMock.When(x => x.CancelMatchmaking(Arg.Any<IRoom>(), Arg.Any<CancellationToken>()))
+                .Do(args => RoomsClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(args.ArgAt<IRoom>(0).RoomId, LeavingReason.RoomClosed)));
+            RoomsClientMock.When(x => x.LeaveRoom(Arg.Any<Guid>()))
+                .Do(args => RoomsClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(args.ArgAt<Guid>(0), LeavingReason.UserLeft)));
+
+            // Simulate cancellation after matchmaking starts but before it completes
+            var quickMatchTask = RoomsManager.StartQuickMatch("");
+            await UniTask.WaitUntil(() => RoomsManager.CurrentRoom != null && RoomsManager.CurrentRoom.State.MatchmakingData?.MatchmakingState != MatchmakingState.Unlocked);
+
+            // Act
+            RoomsManager.CurrentRoom?.CancelMatchmaking().Forget();
+
+            // Assert
+            _ = await AssertThrowsAsync<OperationCanceledException>(quickMatchTask);
+            Assert.That(RoomsManager.CurrentRoom, Is.Null, $"{nameof(RoomsManager.CurrentRoom)} should be null after cancellation");
+        });
+
+        [UnityTest]
+        public IEnumerator LeaveShouldBeSkippedIfRoomCeasesToExistAfterQuickMatchIsCancelled() => UniTask.ToCoroutine(async () =>
+        {
+            // Arrange
+            _ = RoomsClientMock.SessionConnectionDetails.Returns(Defaults.CreateConnectionDetails(HostId));
+            RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
+
+            var teamChangedState = InitialRoomState
+                .WithUserTeamSwitched(HostId, 0);
+
+            var readyState = teamChangedState
+                .WithUserReadinessChanged(HostId, true);
+
+            var matchmakingState = readyState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+
+            SetRoomAsTrackedWhenItGetsJoined();
+
+            var leaveCalled = false;
+            using var cts = new CancellationTokenSource();
+
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(readyState));
+            RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(teamChangedState));
+            MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
+                .Do(_ =>
+                {
+                    EmitRoomUpdate(matchmakingState);
+                    cts.Cancel();
+                });
+            MatchLauncherMock.When(x => x.CancelMatchmaking(Arg.Any<IRoom>(), Arg.Any<CancellationToken>()))
+                .Do(_ => RoomsManager.CurrentRoom?.Dispose());
+            RoomsClientMock.When(x => x.LeaveRoom(Arg.Any<Guid>()))
+                .Do(_ => leaveCalled = true);
+
+            // Act
+            var exception = await AssertThrowsAsync<OperationCanceledException>(RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token));
+
+            // Assert
+            Assert.That(exception.CancellationToken, Is.EqualTo(cts.Token));
+            Assert.That(leaveCalled, Is.False);
+        });
 
         [UnityTest]
         public IEnumerator QuickMatchLobbyOperationException() => UniTask.ToCoroutine(async () =>

@@ -1,12 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
 using NSubstitute;
 using NUnit.Framework;
+using UnityEngine.TestTools;
 using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
@@ -676,5 +679,33 @@ namespace Elympics.Tests.Rooms
 
             Assert.That(playMatchArgs, Is.Null);
         }
+
+        [UnityTest]
+        public IEnumerator StartMatchmakingTaskShouldBeResolvedOnlyAfterLocalMatchmakingStateIsUpdated() => UniTask.ToCoroutine(async () =>
+        {
+            var startMatchmakingCalled = false;
+
+            var readyState = InitialRoomState
+                .WithUserTeamSwitched(HostId, 0)
+                .WithUserReadinessChanged(HostId, true);
+            var matchmakingState = readyState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+
+            EmitRoomUpdate(readyState);
+
+            MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
+                .Do(_ => startMatchmakingCalled = true);
+            RoomsClientMock.When(x => x.LeaveRoom(Arg.Any<Guid>()))
+                .Do(args => RoomsClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(args.ArgAt<Guid>(0), LeavingReason.UserLeft)));
+
+            var matchmakingTask = RoomsManager.CurrentRoom!.StartMatchmaking();
+
+            await UniTask.WaitUntil(() => startMatchmakingCalled);
+            Assert.That(RoomsManager.CurrentRoom!.State.MatchmakingData!.MatchmakingState, Is.EqualTo(MatchmakingState.Unlocked));
+
+            EmitRoomUpdate(matchmakingState);
+            await matchmakingTask;
+            Assert.That(RoomsManager.CurrentRoom!.State.MatchmakingData!.MatchmakingState, Is.Not.EqualTo(MatchmakingState.Unlocked));
+        });
     }
 }

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
@@ -34,6 +35,7 @@ namespace Elympics.ElympicsSystems.Internal
             {
                 _matchmakingCancelRequested = true;
                 await room.CancelMatchmakingInternal(ct);
+
             }
             finally
             {

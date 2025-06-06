@@ -146,7 +146,7 @@ namespace Elympics
                 throw new RoomRequirementsException("Not all players are ready.");
 
             await _matchLauncher.StartMatchmaking(this);
-            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked);
+            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null);
         }
 
         UniTask IRoom.StartMatchmakingInternal() => _client.StartMatchmaking(_roomId, _state.Host.UserId);

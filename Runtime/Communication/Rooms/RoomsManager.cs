@@ -454,7 +454,6 @@ namespace Elympics
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
                 await LeaveAndCleanUp();
-                //_matchLauncher.MatchmakingCompleted();
                 throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
             }
 

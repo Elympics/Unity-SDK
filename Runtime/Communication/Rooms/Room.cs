@@ -149,7 +149,11 @@ namespace Elympics
             await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null);
         }
 
-        UniTask IRoom.StartMatchmakingInternal() => _client.StartMatchmaking(_roomId, _state.Host.UserId);
+        UniTask IRoom.StartMatchmakingInternal()
+        {
+            _state.ResetMatchData();
+            return _client.StartMatchmaking(_roomId, _state.Host.UserId);
+        }
 
         public async UniTask CancelMatchmaking(CancellationToken ct = default)
         {

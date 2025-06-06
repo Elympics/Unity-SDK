@@ -115,8 +115,7 @@ namespace Elympics
             static bool IsMatchAvailable(MatchData? matchData) =>
                 matchData is { State: MatchState.Running, MatchDetails: not null };
 
-            static bool IsMatchmakingFailed(MatchData? matchData) =>
-                matchData is { State: MatchState.InitializingFailed };
+            static bool IsMatchmakingFailed(MatchData? matchData) => matchData is { State: MatchState.InitializingFailed };
         }
 
 
@@ -161,6 +160,8 @@ namespace Elympics
             _users.AddRange(stateUpdate.Users);
             _lastUpdate = stateUpdate.LastUpdate;
         }
+
+        internal void ResetMatchData() => MatchmakingData = MatchmakingData != null ? MatchmakingData with { MatchData = null } : null;
 
         internal void Update(PublicRoomState stateUpdate)
         {

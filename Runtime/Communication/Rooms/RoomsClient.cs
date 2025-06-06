@@ -75,7 +75,7 @@ namespace Elympics
             CancellationToken ct = default)
         {
             var betSlim = GetRoomBetDetailsSlim(betDetails);
-            var rollingTournamentId = Guid.Empty;
+            Guid? rollingTournamentId = null;
 
             if (tournamentDetails != null)
             {

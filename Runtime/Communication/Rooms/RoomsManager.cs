@@ -464,7 +464,7 @@ namespace Elympics
             // the process has been cancelled
             try
             {
-                await room.CancelMatchmaking(roomLeftCts.Token);
+                await room.CancelMatchmaking(CancellationToken.None);
             }
             catch (Exception)
             {

@@ -42,7 +42,7 @@ namespace Elympics
             var requestModel = new ClientSecretAuthRequest { clientSecret = clientSecret };
             ElympicsWebClient.SendPutRequest<AuthenticationDataResponse>(_clientSecretAuthUrl, requestModel, null, result => putTcs.TrySetResult(result), ct: ct);
             var putTcsResult = await putTcs.Task.SuppressCancellationThrow();
-            if (putTcsResult.IsCanceled is false)
+            if (!putTcsResult.IsCanceled)
                 return putTcsResult.Result.IsSuccess ? Result<AuthData, string>.Success(new AuthData(putTcsResult.Result.Value, AuthType.ClientSecret)) : Result<AuthData, string>.Failure(putTcsResult.Result.Error.Message);
 
             return Result<AuthData, string>.Failure(ct.IsCancellationRequested ? "Request cancelled." : "Timeout.");
@@ -108,7 +108,7 @@ namespace Elympics
 
             ElympicsWebClient.SendPostRequest<AuthenticationDataResponse>(_ethAddressAuthUrl, authRequest, null, OnPostFinish, ct: ct);
             var (isCanceled, results) = await postTcs.Task.SuppressCancellationThrow();
-            if (isCanceled is false)
+            if (!isCanceled)
                 return results.IsSuccess ? Result<AuthData, string>.Success(new AuthData(results.Value, AuthType.EthAddress)) : Result<AuthData, string>.Failure(results.Error.Message);
 
             return Result<AuthData, string>.Failure(ct.IsCancellationRequested ? "Request cancelled." : "Timeout.");

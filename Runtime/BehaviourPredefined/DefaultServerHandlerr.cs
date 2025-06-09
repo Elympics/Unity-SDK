@@ -95,6 +95,8 @@ namespace Elympics
                     ElympicsLogger.LogWarning($"Forcing game server to quit because {autoTerminationOnLeft} players left.");
                     CloseMatch();
                     break;
+                case TerminationOption.Any:
+                case TerminationOption.All:
                 case TerminationOption.None:
                     break;
                 default:

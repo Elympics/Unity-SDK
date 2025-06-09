@@ -133,8 +133,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private void OnGUI()
     {
-        if (BuildPipeline.isBuildingPlayer
-            || GetManageGamesInElympicsWindowData() == false)
+        if (BuildPipeline.isBuildingPlayer || !GetManageGamesInElympicsWindowData())
             return;
 
         elympicsWebEndpointChecker.Update();

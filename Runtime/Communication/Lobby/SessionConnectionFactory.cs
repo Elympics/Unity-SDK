@@ -14,7 +14,7 @@ namespace Elympics
             var gameId = new Guid(gameConfig.GameId);
             var gameVersion = gameConfig.gameVersion;
 
-            if (regionData.HasValue is false)
+            if (!regionData.HasValue)
                 return new SessionConnectionDetails(url, authData, gameId, gameVersion, string.Empty);
 
             if (_regionValidator.IsRegionValid(regionData.Value))

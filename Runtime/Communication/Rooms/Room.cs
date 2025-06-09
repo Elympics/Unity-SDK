@@ -130,7 +130,7 @@ namespace Elympics
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().IsReady is false, _webApiTimeoutFallback));
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !GetLocalUser().IsReady, _webApiTimeoutFallback));
         }
 
         public UniTask StartMatchmaking()
@@ -232,7 +232,7 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
             var matchmakingData = State.MatchmakingData!;
-            if (this.IsEligibleToPlayMatch() is false)
+            if (!this.IsEligibleToPlayMatch())
                 throw new InvalidOperationException($"Can't play match outside {MatchmakingState.Playing} matchmaking state. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             var matchData = matchmakingData.MatchData ?? throw new InvalidOperationException("No match data available. " + $"Current matchmaking state: {matchmakingData.MatchmakingState}.");
             if (matchData.State is not MatchState.Running)

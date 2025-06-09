@@ -60,7 +60,7 @@ namespace Elympics
         {
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
                 return;
-            if (ElympicsBase.Config.Prediction is false)
+            if (!ElympicsBase.Config.Prediction)
                 return;
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
                 return;

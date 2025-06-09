@@ -27,7 +27,7 @@ namespace Elympics
                     //Even if creation of this behaviour was not predicted by this client it should have been created by the factory synchronization process by now,
                     //so the only case where it doesn't exist is if it was destroyed locally, in which case we should skip it, since it was either already initialized
                     //or didn't exist long enough to be initialized (spawned during a match and destroyed before the first snapshot containing it was received).
-                    if (_manager.TryGetBehaviour(networkId, out var newBehaviour) is false)
+                    if (!_manager.TryGetBehaviour(networkId, out var newBehaviour))
                         continue;
 
                     //Check if we received this behaviour's state in any previous snapshot while keeping in mind that network IDs can be reused
@@ -49,10 +49,8 @@ namespace Elympics
                 try
                 {
                     foreach (var behaviour in _newBehaviours.OrderBy(x => x.networkId))
-                    {
-                        if (behaviour != null)
+                        if (behaviour)
                             behaviour.InitializedByServer();
-                    }
                 }
                 finally
                 {

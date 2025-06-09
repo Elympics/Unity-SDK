@@ -411,7 +411,7 @@ namespace Elympics
                 throw logger.CaptureAndThrow(e);
             }
 
-            if (isCanceled is false)
+            if (!isCanceled)
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
                 if (string.IsNullOrEmpty(error))

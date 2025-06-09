@@ -1,6 +1,6 @@
 variables:
   NODE_VERSION: "18.13.0"
-  DOTNET_VERSION: "6.0"
+  DOTNET_VERSION: "8.0"
   MESSAGEPACK_VERSION: "2.5.124"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
@@ -78,6 +78,9 @@ workflow:
 
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
+
+.dotnet_image:
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
 
 .node_image:
   image: node:$NODE_VERSION
@@ -179,13 +182,14 @@ create-testing-project:
       artifacts: true
   before_script:
     - *unity_default_before_script
-    - apt-get update && apt-get install -y --no-install-recommends xsltproc
+    - apt-get update && apt-get install -y --no-install-recommends jq xsltproc
   script:
     - ./.scripts/ci/test.sh
   artifacts:
     when: always
     paths:
       - "$TEST_PLATFORM-results.xml"
+      - coverage/
     expire_in: 2 weeks
     reports:
       junit: "$TEST_PLATFORM-results.xml"
@@ -203,6 +207,35 @@ test:editmode:
     TEST_PLATFORM: editmode
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
+
+create-coverage-report:
+  extends:
+    - .dotnet_image
+  needs:
+    - job: test:playmode
+      artifacts: true
+    - job: test:editmode
+      artifacts: true
+    - job: create-testing-project
+      artifacts: true
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - dotnet tool install -g dotnet-reportgenerator-globaltool
+  script:
+    - mkdir ./converted_coverage
+    - '"${HOME}/.dotnet/tools/reportgenerator" "-reports:./coverage/*/*/*.xml" "-targetdir:./converted_coverage" "-reporttypes:Cobertura;TextSummary;Html" "-verbosity:Verbose"'
+    - sed -i 's@'"$PACKAGE_DIR"'/Samples@Samples~@' ./converted_coverage/Cobertura.xml
+    - sed -i 's@'"$PACKAGE_DIR"'/@@' ./converted_coverage/Cobertura.xml
+    - cat ./converted_coverage/Summary.txt
+  artifacts:
+    paths:
+      - converted_coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: ./converted_coverage/Cobertura.xml
+  coverage: "/Line coverage: (\\d+.\\d+)/"
 
 verify-formatting:
   extends:

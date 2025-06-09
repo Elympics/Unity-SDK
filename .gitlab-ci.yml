@@ -142,7 +142,8 @@ get-activation-file:
 check-commits:
   extends:
     - .alpine_image
-  stage: prepare-project
+  stage: check
+  needs: []
   variables:
     GIT_DEPTH: 0
   before_script:
@@ -210,10 +211,6 @@ verify-formatting:
     - .cond.license
   stage: check
   needs:
-    - job: test:playmode
-      artifacts: false
-    - job: test:editmode
-      artifacts: false
     - job: create-testing-project
       artifacts: true
   variables:
@@ -239,10 +236,6 @@ verify-messagepack-generated:
     - .cond.license
   stage: check
   needs:
-    - job: test:playmode
-      artifacts: false
-    - job: test:editmode
-      artifacts: false
     - job: create-testing-project
       artifacts: true
   variables:

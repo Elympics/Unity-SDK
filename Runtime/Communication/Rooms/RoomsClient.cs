@@ -70,28 +70,30 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            RoomBetAmount? betDetails = null,
-            TournamentDetails? tournamentDetails = null,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
-            var betSlim = GetRoomBetDetailsSlim(betDetails);
+            RoomBetDetailsSlim? betSlim = null;
             Guid? rollingTournamentId = null;
 
-            if (tournamentDetails != null)
+            if (competitivenessConfig != null)
             {
-                switch (tournamentDetails.TournamentType)
+                switch (competitivenessConfig.CompetitivenessType)
                 {
-                    case TournamentType.Regular:
+                    case CompetitivenessType.Tournament:
                         customMatchmakingData = new Dictionary<string, string>(customMatchmakingData)
                         {
-                            [TournamentConst.TournamentIdKey] = tournamentDetails.TournamentId
+                            [TournamentConst.TournamentIdKey] = competitivenessConfig.ID
                         };
                         break;
-                    case TournamentType.Rolling:
-                        rollingTournamentId = Guid.Parse(tournamentDetails.TournamentId);
+                    case CompetitivenessType.RollingTournament:
+                        rollingTournamentId = Guid.Parse(competitivenessConfig.ID);
+                        break;
+                    case CompetitivenessType.Bet:
+                        betSlim = GetRoomBetDetailsSlim(new RoomBetAmount { BetValue = competitivenessConfig.Value, CoinId = Guid.Parse(competitivenessConfig.ID) });
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(tournamentDetails), tournamentDetails, "Unexpected tournament type.");
+                        throw new ArgumentOutOfRangeException(nameof(competitivenessConfig), competitivenessConfig, "Unexpected tournament type.");
                 }
             }
 

@@ -31,8 +31,7 @@ internal class RoomClientMock : IRoomsClient
         bool isSingleTeam,
         IReadOnlyDictionary<string, string> customRoomData,
         IReadOnlyDictionary<string, string> customMatchmakingData,
-        RoomBetAmount? betDetailsSlim = null,
-        TournamentDetails? tournamentDetails = null,
+        CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default)
     {
         CreateRoomInvokedArgs = (roomName, queueName, isSingleTeam, isPrivate, isEphemeral, customRoomData, customMatchmakingData, ct);

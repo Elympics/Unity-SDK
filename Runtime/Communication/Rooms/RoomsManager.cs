@@ -362,8 +362,7 @@ namespace Elympics
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
-            RoomBetAmount? betDetails = null,
-            TournamentDetails? tournamentDetails = null)
+            CompetitivenessConfig? tournamentDetails = null)
         {
             if (roomName == null)
                 throw new ArgumentNullException(nameof(roomName));
@@ -379,7 +378,6 @@ namespace Elympics
                 isEphemeral: false,
                 customRoomData,
                 customMatchmakingData,
-                betDetails,
                 tournamentDetails).ContinueWith(id => _rooms[id]);
         }
 
@@ -396,8 +394,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
-            RoomBetAmount? betDetails = null,
-            TournamentDetails? tournamentDetails = null,
+            CompetitivenessConfig? tournamentDetails = null,
             CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
@@ -409,7 +406,7 @@ namespace Elympics
             customMatchmakingData ??= new Dictionary<string, string>();
             ct.ThrowIfCancellationRequested();
 
-            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, betDetails, tournamentDetails);
+            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, tournamentDetails);
             _ = logger.SetRoomId(roomId.ToString());
             var room = _rooms[roomId];
             bool isCanceled;

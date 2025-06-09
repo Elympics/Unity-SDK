@@ -27,6 +27,8 @@ namespace Elympics.ElympicsSystems.Internal
                 await Client.GetElympicsUserData();
                 if (Client.RoomsManager.CurrentRoom?.State.MatchmakingData?.MatchmakingState is Rooms.Models.MatchmakingState.Matchmaking or Rooms.Models.MatchmakingState.RequestingMatchmaking)
                     Client.SwitchState(ElympicsState.Matchmaking);
+                else if (Client.GameplaySceneMonitor.IsCurrentlyInMatch)
+                    Client.SwitchState(ElympicsState.PlayingMatch);
                 else
                     Client.SwitchState(ElympicsState.Connected);
                 Client.OnSuccessfullyConnectedToElympics(false);
@@ -42,6 +44,7 @@ namespace Elympics.ElympicsSystems.Internal
             }
         }
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
+        public override UniTask Disconnect() => UniTask.CompletedTask;
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
         public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));

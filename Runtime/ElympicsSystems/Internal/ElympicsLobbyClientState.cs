@@ -19,6 +19,8 @@ namespace Elympics.ElympicsSystems.Internal
         public abstract UniTask Connect(ConnectionData data);
         public abstract UniTask ReConnect(ConnectionData reconnectionData);
         public abstract UniTask SignOut();
+
+        public abstract UniTask Disconnect();
         public abstract UniTask StartMatchmaking(IRoom room);
         public abstract UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default);
         public abstract UniTask PlayMatch(MatchmakingFinishedData matchData);

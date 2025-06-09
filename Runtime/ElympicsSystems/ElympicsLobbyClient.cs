@@ -191,12 +191,12 @@ namespace Elympics
             _gameConfig = _config.GetCurrentGameConfig()
                 ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
             loggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
-            {
-                Context = nameof(ElympicsLobbyClient),
-            }
-            .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
-            .SetGameMode(NoGameModeName)
-            .WithApp(ElympicsLoggerContext.ElympicsContextApp);
+                {
+                    Context = nameof(ElympicsLobbyClient),
+                }
+                .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
+                .SetGameMode(NoGameModeName)
+                .WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
             var awakeLogger = loggerContext.WithMethodName();
@@ -436,6 +436,7 @@ namespace Elympics
             RoomsManager.Reset();
             if (reason.Reason != DisconnectionReason.Timeout)
             {
+                await CurrentState.SignOut();
                 ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
                 {
                     DisconnectionData = reason
@@ -537,11 +538,16 @@ namespace Elympics
         internal void SignOutInternal()
         {
             var logger = loggerContext.WithMethodName();
-            AuthData = null;
-            ElympicsUser = null;
+            ClearAuthData();
             DisconnectFromLobby();
             logger.Log("User sign out.");
             _ = logger.SetNoUser().SetNoConnection().SetNoRoom();
+        }
+
+        internal void ClearAuthData()
+        {
+            AuthData = null;
+            ElympicsUser = null;
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)

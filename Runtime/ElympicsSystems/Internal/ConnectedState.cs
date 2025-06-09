@@ -21,6 +21,12 @@ namespace Elympics.ElympicsSystems.Internal
             Client.SwitchState(ElympicsState.Disconnected);
             await UniTask.CompletedTask;
         }
+        public override async UniTask Disconnect()
+        {
+            Client.ClearAuthData();
+            Client.SwitchState(ElympicsState.Disconnected);
+            await UniTask.CompletedTask;
+        }
         public override async UniTask StartMatchmaking(IRoom room)
         {
             try

@@ -86,6 +86,7 @@ namespace Elympics.ElympicsSystems.Internal
             }
         }
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
+        public override UniTask Disconnect() => UniTask.CompletedTask;
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {

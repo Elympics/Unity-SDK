@@ -21,6 +21,7 @@ namespace Elympics.ElympicsSystems.Internal
             Debug.LogWarning(GenerateWarningMessage(nameof(SignOut)));
             await UniTask.CompletedTask;
         }
+        public override UniTask Disconnect() => UniTask.CompletedTask;
         public override async UniTask StartMatchmaking(IRoom room)
         {
             ElympicsLogger.LogError(GenerateErrorMessage(nameof(StartMatchmaking)));

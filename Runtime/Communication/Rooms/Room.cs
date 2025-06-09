@@ -124,7 +124,7 @@ namespace Elympics
             if (IsDisposed)
                 return;
             IsDisposed = true;
-            _roomStateChangeMonitorCts.Cancel();
+            _roomStateChangeMonitorCts?.Cancel();
         }
 
         public UniTask ChangeTeam(uint? teamIndex)
@@ -139,7 +139,7 @@ namespace Elympics
             return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() =>
                     !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex,
                 _webApiTimeoutFallback,
-                _roomStateChangeMonitorCts.Token));
+                _roomStateChangeMonitorCts!.Token));
         }
 
         public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
@@ -152,7 +152,7 @@ namespace Elympics
             //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
             return _client.SetReady(_roomId, gameEngineData, matchmakerData).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
                 _webApiTimeoutFallback,
-                _roomStateChangeMonitorCts.Token));
+                _roomStateChangeMonitorCts!.Token));
         }
 
         private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
@@ -168,7 +168,7 @@ namespace Elympics
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady is false, _webApiTimeoutFallback, _roomStateChangeMonitorCts.Token));
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady is false, _webApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
         }
 
         public async UniTask StartMatchmaking()
@@ -181,7 +181,7 @@ namespace Elympics
                 throw new RoomRequirementsException("Not all players are ready.");
 
             await _matchLauncher.StartMatchmaking(this);
-            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null, _roomStateChangeMonitorCts.Token);
+            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null, _roomStateChangeMonitorCts!.Token);
         }
 
         UniTask IRoom.StartMatchmakingInternal()
@@ -212,7 +212,7 @@ namespace Elympics
                 {
                     ct.ThrowIfCancellationRequested();
                     await _client.CancelMatchmaking(_roomId, ct);
-                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
+                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts!.Token);
                     await WaitForState(() => IsDisposed || _state.MatchmakingData!.MatchmakingState == MatchmakingState.Unlocked, linked.Token);
                     return;
                 }

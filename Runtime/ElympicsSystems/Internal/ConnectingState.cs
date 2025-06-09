@@ -25,7 +25,10 @@ namespace Elympics.ElympicsSystems.Internal
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();
                 await Client.GetElympicsUserData();
-                Client.SwitchState(ElympicsState.Connected);
+                if (Client.RoomsManager.CurrentRoom?.State.MatchmakingData?.MatchmakingState is Rooms.Models.MatchmakingState.Matchmaking or Rooms.Models.MatchmakingState.RequestingMatchmaking)
+                    Client.SwitchState(ElympicsState.Matchmaking);
+                else
+                    Client.SwitchState(ElympicsState.Connected);
                 Client.OnSuccessfullyConnectedToElympics(false);
             }
             catch (Exception)

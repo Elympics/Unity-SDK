@@ -22,7 +22,8 @@ namespace Elympics.Rooms.Models
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return MatchedPlayersId.SequenceEqual(other.MatchedPlayersId)
+            return MatchedPlayersId != null
+                && MatchedPlayersId.SequenceEqual(other.MatchedPlayersId)
                 && TcpUdpServerAddress == other.TcpUdpServerAddress
                 && WebServerAddress == other.WebServerAddress
                 && UserSecret == other.UserSecret

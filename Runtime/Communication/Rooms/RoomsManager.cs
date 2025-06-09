@@ -252,8 +252,8 @@ namespace Elympics
             if (state is null && publicState is null)
                 throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
             return state is not null
-                ? new Room(_matchLauncher, _client, id, state) { ConfirmationTimeout = ConfirmationTimeout }
-                : new Room(_matchLauncher, _client, id, publicState!) { ConfirmationTimeout = ConfirmationTimeout };
+                ? new Room(_matchLauncher, _client, id, state, false, _logger) { ConfirmationTimeout = ConfirmationTimeout }
+                : new Room(_matchLauncher, _client, id, publicState!, _logger) { ConfirmationTimeout = ConfirmationTimeout };
         }
 
         private void AddRoomToDictionary(IRoom room)

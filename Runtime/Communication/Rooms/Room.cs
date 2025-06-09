@@ -5,9 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -27,7 +29,13 @@ namespace Elympics
         bool IRoom.IsJoined
         {
             get => IsJoined;
-            set => _isJoined = value;
+            set
+            {
+                if (_isJoined is false && value)
+                    _roomStateChangeMonitorCts = new CancellationTokenSource();
+
+                _isJoined = value;
+            }
         }
 
         private bool _isJoined;
@@ -59,27 +67,41 @@ namespace Elympics
         private readonly IMatchLauncher _matchLauncher;
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
+        private readonly ElympicsLoggerContext? _logger;
         private readonly RoomState _state;
-        private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
-        private readonly TimeSpan _webApiTimeoutFallback = TimeSpan.FromSeconds(5);
 
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, RoomStateChanged initialState, bool isJoined = false)
+        private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _webApiTimeoutFallback = TimeSpan.FromSeconds(5);
+        private CancellationTokenSource? _roomStateChangeMonitorCts;
+
+        public Room(
+            IMatchLauncher matchLauncher,
+            IRoomsClient client,
+            Guid roomId,
+            RoomStateChanged initialState,
+            bool isJoined = false,
+            ElympicsLoggerContext? logger = null)
         {
             _matchLauncher = matchLauncher;
             _client = client;
             _roomId = roomId;
+            _logger = logger?.WithContext($"{nameof(Room)}");
             _state = new RoomState(initialState);
             _isJoined = isJoined;
+            if (_isJoined)
+                _roomStateChangeMonitorCts = new CancellationTokenSource();
             _isEphemeral = initialState.IsEphemeral;
         }
 
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState)
+        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerContext? logger = null)
         {
             _matchLauncher = matchLauncher;
             _client = client;
             _roomId = roomId;
+            _logger = logger?.WithContext($"{nameof(Room)}");
+            ;
             _state = new RoomState(initialState);
         }
 
@@ -102,6 +124,7 @@ namespace Elympics
             if (IsDisposed)
                 return;
             IsDisposed = true;
+            _roomStateChangeMonitorCts.Cancel();
         }
 
         public UniTask ChangeTeam(uint? teamIndex)
@@ -112,7 +135,11 @@ namespace Elympics
             if (teamIndex.HasValue
                 && teamIndex.Value >= _state.MatchmakingData!.TeamCount)
                 throw new ArgumentOutOfRangeException(nameof(teamIndex), teamIndex, $"Chosen team index must be lesser than {_state.MatchmakingData.TeamCount} or null");
-            return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().TeamIndex == teamIndex, _webApiTimeoutFallback));
+
+            return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() =>
+                    !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex,
+                _webApiTimeoutFallback,
+                _roomStateChangeMonitorCts.Token));
         }
 
         public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
@@ -123,17 +150,25 @@ namespace Elympics
             gameEngineData ??= Array.Empty<byte>();
             matchmakerData ??= Array.Empty<float>();
             //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
-            return _client.SetReady(_roomId, gameEngineData, matchmakerData).ContinueWith(() => ResultUtils.WaitUntil(() => GetLocalUser().IsReady, _webApiTimeoutFallback));
+            return _client.SetReady(_roomId, gameEngineData, matchmakerData).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
+                _webApiTimeoutFallback,
+                _roomStateChangeMonitorCts.Token));
         }
 
         private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
+
+        private bool TryGetLocalUser(out UserInfo? localUser)
+        {
+            localUser = _state.Users.FirstOrDefault(x => x.UserId == LocalUserId);
+            return localUser != null;
+        }
 
         public UniTask MarkYourselfUnready()
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !GetLocalUser().IsReady, _webApiTimeoutFallback));
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady is false, _webApiTimeoutFallback, _roomStateChangeMonitorCts.Token));
         }
 
         public async UniTask StartMatchmaking()
@@ -146,7 +181,7 @@ namespace Elympics
                 throw new RoomRequirementsException("Not all players are ready.");
 
             await _matchLauncher.StartMatchmaking(this);
-            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null);
+            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null, _roomStateChangeMonitorCts.Token);
         }
 
         UniTask IRoom.StartMatchmakingInternal()
@@ -177,7 +212,8 @@ namespace Elympics
                 {
                     ct.ThrowIfCancellationRequested();
                     await _client.CancelMatchmaking(_roomId, ct);
-                    await WaitForState(() => IsDisposed || _state.MatchmakingData!.MatchmakingState == MatchmakingState.Unlocked, ct);
+                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
+                    await WaitForState(() => IsDisposed || _state.MatchmakingData!.MatchmakingState == MatchmakingState.Unlocked, linked.Token);
                     return;
                 }
                 catch (LobbyOperationException e)
@@ -267,6 +303,8 @@ namespace Elympics
                 throw new InvalidOperationException($"Can't leave room during {_state.MatchmakingData!.MatchmakingState} state.");
             await _client.LeaveRoom(_roomId);
             await WaitForState(() => IsDisposed || !_isJoined);
+            _roomStateChangeMonitorCts.Cancel();
+
         }
 
         private T ThrowIfDisposedOrReturn<T>(T val, [CallerMemberName] string methodName = "")
@@ -302,10 +340,15 @@ namespace Elympics
         private async UniTask WaitForState(Func<bool> predicate, CancellationToken ct = default, [CallerMemberName] string callerName = "")
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            using var _ = cts.CancelAfterSlim(ConfirmationTimeout);
-            var timedOut = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
-            if (timedOut)
-                throw new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
+            using var _ = cts.CancelAfterSlim(ConfirmationTimeout, DelayType.Realtime);
+            var isCancelled = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
+
+            if (isCancelled && ct.IsCancellationRequested is false)
+            {
+                var logger = _logger?.WithMethodName();
+                var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
+                throw logger?.CaptureAndThrow(exception) ?? exception;
+            }
         }
     }
 }

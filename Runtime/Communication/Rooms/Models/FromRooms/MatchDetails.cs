@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MessagePack;
@@ -22,13 +23,12 @@ namespace Elympics.Rooms.Models
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return MatchedPlayersId != null
-                && MatchedPlayersId.SequenceEqual(other.MatchedPlayersId)
+            return CompareIEnumerable(MatchedPlayersId, other.MatchedPlayersId)
                 && TcpUdpServerAddress == other.TcpUdpServerAddress
                 && WebServerAddress == other.WebServerAddress
                 && UserSecret == other.UserSecret
-                && GameEngineData.SequenceEqual(other.GameEngineData)
-                && MatchmakerData.SequenceEqual(other.MatchmakerData);
+                && CompareIEnumerable(GameEngineData, other.GameEngineData)
+                && CompareIEnumerable(MatchmakerData, other.MatchmakerData);
         }
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -48,6 +48,15 @@ namespace Elympics.Rooms.Models
             hashCode.Add(GameEngineData.Length);
             hashCode.Add(MatchmakerData.Length);
             return hashCode.ToHashCode();
+        }
+
+        private static bool CompareIEnumerable<TSource>(IEnumerable<TSource>? first, IEnumerable<TSource>? second)
+        {
+            if (first == null && second == null)
+                return true;
+            if (first == null || second == null)
+                return false;
+            return first.SequenceEqual(second);
         }
     }
 }

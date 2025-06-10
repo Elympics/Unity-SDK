@@ -271,11 +271,7 @@ namespace Elympics
             var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(coinId) ?? throw new ArgumentException($"Couldn't create bet with coinId: {coinId}");
             return new RoomBetDetailsSlim(WeiConverter.ToWei(betValue, coinDecimal), coinId);
         }
-
-        void IRoomsClient.Reset()
-        {
-            Session = null;
-            _roomWatchingState = RoomWatchingState.NotWatching;
-        }
+        void IRoomsClient.ResetState() => _roomWatchingState = RoomWatchingState.NotWatching;
+        void IRoomsClient.ClearSession() => Session = null;
     }
 }

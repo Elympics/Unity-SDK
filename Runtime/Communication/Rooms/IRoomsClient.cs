@@ -50,6 +50,8 @@ namespace Elympics
         UniTask UnwatchRooms(CancellationToken ct = default);
         bool IsWatchingRooms { get; }
 
-        internal void Reset();
+        internal void ResetState();
+
+        internal void ClearSession();
     }
 }

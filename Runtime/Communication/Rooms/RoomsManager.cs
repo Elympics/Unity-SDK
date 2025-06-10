@@ -162,6 +162,7 @@ namespace Elympics
             foreach (var (_, room) in clearedRooms)
                 room.Dispose();
             _roomJoiner.Reset();
+            _client.ResetState();
 
             _cts = new CancellationTokenSource();
             _initialized = false;

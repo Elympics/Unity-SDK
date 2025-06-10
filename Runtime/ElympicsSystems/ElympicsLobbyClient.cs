@@ -356,6 +356,7 @@ namespace Elympics
 
             ElympicsLogger.Log($"Closing current websocket.");
             _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
+            _roomsManager.Value.Reset();
         }
         private async UniTask UpdateGameConfig()
         {

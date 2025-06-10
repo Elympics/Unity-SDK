@@ -126,7 +126,7 @@ internal class RoomClientMock : IRoomsClient
 
     public void SetSessionConnectionDetails(SessionConnectionDetails? details) => _sessionConnectionDetails = details;
 
-    void IRoomsClient.Reset()
+    void IRoomsClient.ResetState()
     {
         RoomIdReturnTask = null;
         CreateRoomInvokedArgs = null;
@@ -139,4 +139,6 @@ internal class RoomClientMock : IRoomsClient
         _throwTimeOutException = false;
         SetTeamChangedInvoked = null;
     }
+
+    void IRoomsClient.ClearSession() => throw new NotImplementedException();
 }

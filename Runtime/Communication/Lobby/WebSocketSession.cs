@@ -226,7 +226,11 @@ namespace Elympics.Lobby
 #endif
                 if (message is Ping)
                 {
-                    DispatchWithCancellation(() => _timer?.Reset());
+                    DispatchWithCancellation(() =>
+                    {   
+                        _timer?.Reset();
+                        _timer?.Start();
+                    });
                     SendMessage(new Pong());
                     return;
                 }

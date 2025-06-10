@@ -140,5 +140,6 @@ internal class RoomClientMock : IRoomsClient
         SetTeamChangedInvoked = null;
     }
 
-    void IRoomsClient.ClearSession() => throw new NotImplementedException();
+    void IRoomsClient.ClearSession()
+    { }
 }

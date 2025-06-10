@@ -14,7 +14,7 @@ namespace Elympics.ElympicsSystems.Internal
 
         public override UniTask Disconnect()
         {
-            Client.ClearAuthData();
+            //Client.ClearAuthData();
             Client.SwitchState(ElympicsState.Disconnected);
             return UniTask.CompletedTask;
         }

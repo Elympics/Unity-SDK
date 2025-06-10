@@ -365,14 +365,17 @@ namespace Elympics.Tests
                 AuthType = AuthType.ClientSecret
             });
             LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
-            var disconnectedCalled = false;
-            _sut.WebSocketSession.Disconnected += (_) => disconnectedCalled = true;
+            var webSocketDisconnectCalled = false;
+            var elympcisConnectionLostCalled = false;
+            _sut.WebSocketSession.Disconnected += (_) => webSocketDisconnectCalled = true;
+            _sut.ElympicsConnectionLost += (_) => elympcisConnectionLostCalled = true;
 
             await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
-            Assert.IsTrue(disconnectedCalled);
-            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
+            Assert.IsTrue(webSocketDisconnectCalled);
+            Assert.IsTrue(elympcisConnectionLostCalled);
         });
 
         [UnityTest]
@@ -435,7 +438,7 @@ namespace Elympics.Tests
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(disconnectedCalled);
-            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
 
             var connectedCalled = false;
             var authCalled = false;
@@ -473,13 +476,13 @@ namespace Elympics.Tests
                 }
             });
             LogAssert.Expect(LogType.Error, new Regex(@"\[ElympicsSdk\]"));
-            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 2), DelayType.Realtime);
+            await UniTask.Delay(TimeSpan.FromSeconds(PingTimeoutTestSec + 5), DelayType.Realtime);
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsFalse(_sut.WebSocketSession.IsConnected);
             Assert.IsTrue(authenticationCalled);
             Assert.IsTrue(connectedCalled);
             Assert.IsTrue(disconnectedCalled);
-            Assert.AreEqual((int)ElympicsState.Connected, (int)_sut.CurrentState.State);
+            Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
 
             authenticationCalled = false;
             connectedCalled = false;

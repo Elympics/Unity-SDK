@@ -120,6 +120,8 @@ namespace Elympics.Tests
                 room
             });
 
+            _ = roomManagerMock.CurrentRoom.Returns((IRoom?)null);
+
             var lazy = new Lazy<IRoomsManager>(roomManagerMock);
             lazyRoomsManager.SetValue(sut, lazy);
             return sut;

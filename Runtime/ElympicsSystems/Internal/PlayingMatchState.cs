@@ -15,7 +15,7 @@ namespace Elympics.ElympicsSystems.Internal
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
         public override UniTask Disconnect()
         {
-            Client.ClearAuthData();
+            //Client.ClearAuthData();
             Client.SwitchState(ElympicsState.Disconnected);
             return UniTask.CompletedTask;
         }

@@ -35,12 +35,12 @@ namespace SCS
 
         public bool HasMatchmakingEnabled => _room.HasMatchmakingEnabled;
         public bool IsMatchAvailable => _room.IsMatchAvailable;
-        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetAmount? betDetailsSlim = null)
+        public UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, CompetitivenessConfig? competitivenessConfig = null)
         {
             if (_scsService.CurrentChain is not null && customMatchmakingData is not null && !customMatchmakingData.ContainsKey(SmartContractServiceMatchMakingCustomData.BetAmountKey))
                 throw new SmartContractServiceException($"New customData has to contains BetAmount key <color=red>{SmartContractServiceMatchMakingCustomData.BetAmountKey}</color>");
 
-            return _room.UpdateRoomParams(roomName, isPrivate, roomCustomData, customMatchmakingData, betDetailsSlim);
+            return _room.UpdateRoomParams(roomName, isPrivate, roomCustomData, customMatchmakingData, competitivenessConfig);
         }
 
         public UniTask ChangeTeam(uint? teamIndex) => _room.ChangeTeam(teamIndex);

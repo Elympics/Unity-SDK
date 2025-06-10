@@ -90,7 +90,7 @@ namespace Elympics
                         rollingTournamentId = Guid.Parse(competitivenessConfig.ID);
                         break;
                     case CompetitivenessType.Bet:
-                        betSlim = GetRoomBetDetailsSlim(new RoomBetAmount { BetValue = competitivenessConfig.Value, CoinId = Guid.Parse(competitivenessConfig.ID) });
+                        betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(competitivenessConfig), competitivenessConfig, "Unexpected tournament type.");
@@ -148,11 +148,20 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
-            RoomBetAmount? betDetails = null,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
-            var betSlim = GetRoomBetDetailsSlim(betDetails);
-            return ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betSlim), ct);
+            RoomBetDetailsSlim? betDetails = null;
+
+            if (competitivenessConfig != null)
+            {
+                if (competitivenessConfig.CompetitivenessType != CompetitivenessType.Bet)
+                    throw new ArgumentException($"Can't update competitiveness configuration for competitiveness type {competitivenessConfig.CompetitivenessType}.", nameof(competitivenessConfig));
+
+                betDetails = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));
+            }
+
+            return ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetails), ct);
         }
 
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
@@ -256,16 +265,10 @@ namespace Elympics
             return Session.ExecuteOperation(message, ct);
         }
 
-        private static RoomBetDetailsSlim? GetRoomBetDetailsSlim(RoomBetAmount? betDetails)
+        private static RoomBetDetailsSlim GetRoomBetDetailsSlim(decimal betValue, Guid coinId)
         {
-            RoomBetDetailsSlim? betSlim = null;
-            if (betDetails.HasValue)
-            {
-                var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(betDetails.Value.CoinId)
-                    ?? throw new ArgumentException($"Couldn't create bet with CoinId: {betDetails.Value.CoinId}");
-                betSlim = new RoomBetDetailsSlim(WeiConverter.ToWei(betDetails.Value.BetValue, coinDecimal), betDetails.Value.CoinId);
-            }
-            return betSlim;
+            var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(coinId) ?? throw new ArgumentException($"Couldn't create bet with coinId: {coinId}");
+            return new RoomBetDetailsSlim(WeiConverter.ToWei(betValue, coinDecimal), coinId);
         }
 
         void IRoomsClient.Reset()

@@ -90,7 +90,7 @@ internal class RoomClientMock : IRoomsClient
         bool? isPrivate,
         IReadOnlyDictionary<string, string>? customRoomData,
         IReadOnlyDictionary<string, string>? customMatchmakingData,
-        RoomBetAmount? betDetailsSlim = null,
+        CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default) => UniTask.CompletedTask;
 
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)

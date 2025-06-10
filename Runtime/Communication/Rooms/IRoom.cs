@@ -26,7 +26,7 @@ namespace Elympics
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
 
-        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, RoomBetAmount? betDetailsSlim = null);
+        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, CompetitivenessConfig? competitivenessConfig = null);
         UniTask ChangeTeam(uint? teamIndex);
         public sealed UniTask BecomeSpectator() => ChangeTeam(null);
 

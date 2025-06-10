@@ -395,11 +395,17 @@ namespace Elympics
                 tournamentDetails).ContinueWith(id => _rooms[id]);
         }
 
-        public UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
+        public async UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
         {
             if (roomId == null && joinCode == null)
                 throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
-            return _roomJoiner.JoinRoom(roomId, joinCode, teamIndex).ContinueWith(id => _rooms[id]);
+
+            var id = await _roomJoiner.JoinRoom(roomId, joinCode, teamIndex);
+
+            if (!_rooms.TryGetValue(id, out var room))
+                throw new InvalidOperationException("Room no longer exists.");
+
+            return room;
         }
 
         public async UniTask<IRoom> StartQuickMatch(

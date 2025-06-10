@@ -436,7 +436,7 @@ namespace Elympics
             RoomsManager.Reset();
             if (reason.Reason != DisconnectionReason.Timeout)
             {
-                await CurrentState.SignOut();
+                await CurrentState.Disconnect();
                 ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
                 {
                     DisconnectionData = reason

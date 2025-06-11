@@ -191,12 +191,12 @@ namespace Elympics
             _gameConfig = _config.GetCurrentGameConfig()
                 ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
             loggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
-                {
-                    Context = nameof(ElympicsLobbyClient),
-                }
-                .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
-                .SetGameMode(NoGameModeName)
-                .WithApp(ElympicsLoggerContext.ElympicsContextApp);
+            {
+                Context = nameof(ElympicsLobbyClient),
+            }
+            .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
+            .SetGameMode(NoGameModeName)
+            .WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
             var awakeLogger = loggerContext.WithMethodName();

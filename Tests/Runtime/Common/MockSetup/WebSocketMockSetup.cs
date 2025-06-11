@@ -11,7 +11,7 @@ using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
 using NSubstitute;
-using NSubstitute.ClearExtensions;
+
 namespace Elympics
 {
     internal static class WebSocketMockSetup
@@ -22,7 +22,7 @@ namespace Elympics
         private static CancellationTokenSource? cts;
         private static CancellationTokenSource? pingCts;
         private static bool isInRoom;
-        private static IWebSocket Ws;
+        private static IWebSocket ws;
 
         // source https://github.com/Thundernerd/Unity3D-NSubstitute/blob/main/Editor/NSubstitute.dll
         static WebSocketMockSetup() => WebSocketMockBackendSession = new WebSocketMockBackendSession();
@@ -271,7 +271,7 @@ namespace Elympics
                     // finish
                 }
             });
-            Ws = ws;
+            WebSocketMockSetup.ws = ws;
             return ws;
         }
 
@@ -367,7 +367,7 @@ namespace Elympics
                     // finish
                 }
             });
-            Ws = ws;
+            WebSocketMockSetup.ws = ws;
             return ws;
         }
 
@@ -408,7 +408,7 @@ namespace Elympics
                     IsReady = true
                 } : u));
             UpdateTime(ref room);
-            SendResponse(Ws, room);
+            SendResponse(ws, room);
         }
 
         public static void SimulateRoomParametersChange(Guid roomId, string? roomName, bool? isPrivate, Dictionary<string, string>? customRoomData, Dictionary<string, string>? customMatchmakingData)
@@ -427,8 +427,8 @@ namespace Elympics
 
             UpdateTime(ref room);
             if (WebSocketMockBackendSession.PlayerCurrentRoom == roomId)
-                SendResponse(Ws, room);
-            UpdateRoomOnList(Ws, room);
+                SendResponse(ws, room);
+            UpdateRoomOnList(ws, room);
         }
 
         public static void CancelPingToken() => pingCts?.Cancel();

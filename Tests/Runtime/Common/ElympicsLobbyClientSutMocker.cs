@@ -1,13 +1,9 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
-using Elympics.Rooms.Models;
 using HybridWebSocket;
-using NSubstitute;
 using NUnit.Framework;
 
 namespace Elympics.Tests
@@ -57,7 +53,7 @@ namespace Elympics.Tests
             return sut;
         }
 
-        public static ElympicsLobbyClient InjectIRoomManager(this ElympicsLobbyClient sut, IRoomsManager roomsManagerMock, IRoomsClient roomsClientMock)
+        public static ElympicsLobbyClient InjectIRoomManager(this ElympicsLobbyClient sut, IRoomsManager roomsManagerMock)
         {
             var lazyRoomsManager = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == RoomsManager);
             Assert.NotNull(lazyRoomsManager);

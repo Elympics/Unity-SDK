@@ -183,7 +183,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_OneRoomIsJoined([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
             _webSocketMock.ClearSubstitute();
-            _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = type
@@ -353,7 +353,7 @@ namespace Elympics.Tests
         {
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
             _webSocketMock.ClearSubstitute();
-            _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
                 .SetPingDelayMessage(PingTimeoutTestSec - 0.1d);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
@@ -395,7 +395,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_And_Then_Get_Disconnected_Because_Lobby_Scales_Down() => UniTask.ToCoroutine(async () =>
         {
             _webSocketMock.ClearSubstitute();
-            _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
 
             List<(ElympicsState, ElympicsState)> statesCalled = new();
             _sut.StateChanged += (oldState, newState) => statesCalled.Add((oldState, newState));

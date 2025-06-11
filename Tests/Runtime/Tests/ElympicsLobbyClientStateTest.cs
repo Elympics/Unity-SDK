@@ -39,7 +39,7 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance!;
             Assert.NotNull(_sut);
-            _ = _sut.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketSessionMock).InjectIRoomManager(_roomsManagerMock, _roomsClientMock)
+            _ = _sut.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketSessionMock).InjectIRoomManager(_roomsManagerMock)
                 .InjectRegionIAvailableRegionRetriever(_availableRegionRetrieverMock);
             _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
             _ = _webSocketSessionMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl);

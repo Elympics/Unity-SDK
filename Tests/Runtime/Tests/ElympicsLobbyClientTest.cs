@@ -54,10 +54,9 @@ namespace Elympics.Tests
             Assert.NotNull(_sut);
             _ = _sut!.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketMock).InjectRegionIAvailableRegionRetriever(_regionRetrieverMock);
             _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
-            _ = _webSocketMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl);
-            ;
             _ = _regionRetrieverMock.GetAvailableRegions()
                 .Returns(UniTask.FromResult(new List<string> { ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas }));
+            _webSocketMock.ClearSubstitute();
         }
 
         private static AuthType[] connectTestValue = { AuthType.ClientSecret, AuthType.EthAddress };
@@ -65,6 +64,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = type
@@ -77,6 +77,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_NoConnectionDataProvided_ThrowException() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = null,
@@ -90,6 +91,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_NoRoomsJoined([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = type
@@ -104,6 +106,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_And_Repeat_SameValues() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             const AuthType authType = AuthType.ClientSecret;
             var region = new RegionData(ElympicsRegions.Warsaw);
 
@@ -135,6 +138,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_And_Repeat_SameValues_With_SignOut() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             const AuthType authType = AuthType.ClientSecret;
             var region = new RegionData(ElympicsRegions.Warsaw);
 
@@ -169,6 +173,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_WIth_Selected_Not_Valid_Region() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,
@@ -182,8 +187,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_OneRoomIsJoined([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
-            _webSocketMock.ClearSubstitute();
-            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(true, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = type
@@ -199,7 +203,7 @@ namespace Elympics.Tests
         {
             var authenticationCalled = false;
             var connectedCalled = false;
-
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,
@@ -225,7 +229,7 @@ namespace Elympics.Tests
         {
             var authenticationCalled = false;
             var connectedCalled = false;
-
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,
@@ -249,6 +253,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_UseCachedData_AutoRetry_Succeed() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,
@@ -279,6 +284,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_UseCachedData_Expired() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthFromCacheData = new CachedAuthData()
@@ -296,6 +302,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_UseCachedData_Succeed() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
@@ -325,6 +332,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_UseSameDataToAuthenticate() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
@@ -352,9 +360,9 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_And_Receive_Ping_Messages() => UniTask.ToCoroutine(async () =>
         {
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
-            _webSocketMock.ClearSubstitute();
-            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl)
                 .SetPingDelayMessage(PingTimeoutTestSec - 0.1d);
+
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
@@ -373,6 +381,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_And_Then_Get_Disconnected_When_Ping_Message_Did_Not_Arrived() => UniTask.ToCoroutine(async () =>
         {
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
@@ -395,7 +404,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_And_Then_Get_Disconnected_Because_Lobby_Scales_Down() => UniTask.ToCoroutine(async () =>
         {
             _webSocketMock.ClearSubstitute();
-            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupJoinLobby(true, UserId, Nickname, AvatarUrl);
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(true, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
 
             List<(ElympicsState, ElympicsState)> statesCalled = new();
             _sut.StateChanged += (oldState, newState) => statesCalled.Add((oldState, newState));
@@ -433,6 +442,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator DisconnectWebSocket_ConnectAgain() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
@@ -472,6 +482,7 @@ namespace Elympics.Tests
             var connectedCalled = false;
             var disconnectedCalled = false;
 
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             _ = _sut!.SetPingThresholdTimeout(TimeSpan.FromSeconds(PingTimeoutTestSec));
             _sut!.WebSocketSession.Connected += () => connectedCalled = true;
             _sut.AuthenticationSucceeded += (_) => authenticationCalled = true;
@@ -514,6 +525,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_No_Auth_Data_Only_Region() => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             var authenticationCalled = false;
             var connectedCalled = false;
 
@@ -535,6 +547,7 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_With_Selected_Valid_Region([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = type,
@@ -553,8 +566,6 @@ namespace Elympics.Tests
             if (_sut!.IsAuthenticated)
                 _sut.SignOut();
             _webSocketMock.ClearSubstitute();
-            _ = _webSocketMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl);
-            ;
             _ = _sut.SetPingThresholdTimeout(TimeSpan.FromSeconds(DefaultPingTimeoutSec));
             WebSocketMockSetup.CancelPingToken();
         }

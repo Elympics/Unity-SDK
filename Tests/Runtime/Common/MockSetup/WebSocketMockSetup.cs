@@ -254,21 +254,32 @@ namespace Elympics
                             SendResponseInternal(ws, new ShowAuthResponse(Guid.Empty, "some-auth-type", "some-eth-address", "some-nickname", "some-avatar-url"));
                             break;
                         }
-                        case Ping ping:
-                            break;
-                        case JoinLobby joinLobby:
-                            break;
-                        case Pong pong:
-                        {
-                            break;
-                        }
-                        default:
-                            throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
                     }
                 }
                 catch (MessageHandledException)
                 {
                     // finish
+                }
+            });
+            WebSocketMockSetup.ws = ws;
+            return ws;
+        }
+
+        public static IWebSocket SetShowAuthMessage(this IWebSocket ws, Guid userId, string nickname, string? avatarUrl)
+        {
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            {
+                var data = (byte[])x[0];
+                var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+                switch (msg)
+                {
+                    case ShowAuth showAuth:
+                    {
+                        ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                        SendSuccessResponse(ws, showAuth);
+                        SendResponseInternal(ws, new ShowAuthResponse(userId, string.Empty, string.Empty, nickname, avatarUrl));
+                        break;
+                    }
                 }
             });
             WebSocketMockSetup.ws = ws;
@@ -283,6 +294,48 @@ namespace Elympics
             return ws;
         }
 
+        public static IWebSocket SetupMessageVerificator(this IWebSocket ws)
+        {
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            {
+                var data = (byte[])x[0];
+                var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+                ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                try
+                {
+                    switch (msg)
+                    {
+                        case JoinLobby:
+                        case ShowAuth:
+                        case CancelMatchmaking:
+                        case ChangeTeam:
+                        case CreateRoom:
+                        case JoinWithJoinCode:
+                        case JoinWithRoomId:
+                        case LeaveRoom:
+                        case SetReady:
+                        case SetRoomParameters:
+                        case SetUnready:
+                        case StartMatchmaking:
+                        case UnwatchRooms:
+                        case WatchRooms:
+                        case LobbyOperation:
+                        case Ping:
+                        case Pong:
+                            break;
+                        default:
+                            throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
+                    }
+                }
+                catch (MessageHandledException)
+                {
+                    // finish
+                }
+            });
+            WebSocketMockSetup.ws = ws;
+            return ws;
+        }
+
         public static IWebSocket SetupJoinLobby(
             this IWebSocket ws,
             bool createInitialRoom,
@@ -294,13 +347,13 @@ namespace Elympics
             {
                 var data = (byte[])x[0];
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
-                ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                 try
                 {
                     switch (msg)
                     {
                         case JoinLobby joinLobby:
                         {
+                            ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                             SendSuccessResponse(ws, joinLobby);
                             var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty);
                             SendResponse(ws, gameResponse);
@@ -326,40 +379,6 @@ namespace Elympics
                             }
                             break;
                         }
-                        case ShowAuth showAuth:
-                            break;
-                        case CancelMatchmaking cancelMatchmaking:
-                            break;
-                        case ChangeTeam changeTeam:
-                            break;
-                        case CreateRoom createRoom:
-                            break;
-                        case JoinWithJoinCode joinWithJoinCode:
-                            break;
-                        case JoinWithRoomId joinWithRoomId:
-                            break;
-                        case LeaveRoom leaveRoom:
-                            break;
-                        case SetReady setReady:
-                            break;
-                        case SetRoomParameters setRoomParameters:
-                            break;
-                        case SetUnready setUnready:
-                            break;
-                        case StartMatchmaking startMatchmaking:
-                            break;
-                        case UnwatchRooms unwatchRooms:
-                            break;
-                        case WatchRooms watchRooms:
-                            break;
-                        case LobbyOperation lobbyOperation:
-                            break;
-                        case Ping ping:
-                            break;
-                        case Pong pong:
-                            break;
-                        default:
-                            throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
                     }
                 }
                 catch (MessageHandledException)

@@ -90,8 +90,6 @@ namespace Elympics
             _logger = logger?.WithContext($"{nameof(Room)}");
             _state = new RoomState(initialState);
             _isJoined = isJoined;
-            if (_isJoined)
-                _roomStateChangeMonitorCts = new CancellationTokenSource();
             _isEphemeral = initialState.IsEphemeral;
         }
 
@@ -101,7 +99,6 @@ namespace Elympics
             _client = client;
             _roomId = roomId;
             _logger = logger?.WithContext($"{nameof(Room)}");
-            ;
             _state = new RoomState(initialState);
         }
 
@@ -303,7 +300,7 @@ namespace Elympics
                 throw new InvalidOperationException($"Can't leave room during {_state.MatchmakingData!.MatchmakingState} state.");
             await _client.LeaveRoom(_roomId);
             await WaitForState(() => IsDisposed || !_isJoined);
-            _roomStateChangeMonitorCts.Cancel();
+            _roomStateChangeMonitorCts?.Cancel();
 
         }
 

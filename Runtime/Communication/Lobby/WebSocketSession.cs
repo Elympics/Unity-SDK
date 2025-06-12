@@ -295,6 +295,9 @@ namespace Elympics.Lobby
                         return;
 
                     var logger = _logger.WithMethodName();
+                    if (cancellationToken.IsCancellationRequested)
+                        return;
+
                     logger.Error("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
                     DisconnectInternal(DisconnectionReason.Closed);
                     return;

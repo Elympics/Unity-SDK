@@ -4,15 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
 using Elympics.Tests.Common.RoomMocks;
+using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Elympics.Tests.Common.AsyncAsserts;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -82,10 +87,14 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestRoomWithoutPrivilegedHost() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomId, InitialRoomState with
-            {
-                HasPrivilegedHost = false,
-            }, true);
+            var room = new Room(null!,
+                null!,
+                RoomId,
+                InitialRoomState with
+                {
+                    HasPrivilegedHost = false,
+                },
+                true);
 
             _ = await AssertThrowsAsync<RoomPrivilegeException>(async () => await room.UpdateRoomParams());
         });
@@ -93,10 +102,14 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator TestRoomWithoutMatchmakingFunctionality() => UniTask.ToCoroutine(async () =>
         {
-            var room = new Room(null!, null!, RoomId, InitialRoomState with
-            {
-                MatchmakingData = null,
-            }, true);
+            var room = new Room(null!,
+                null!,
+                RoomId,
+                InitialRoomState with
+                {
+                    MatchmakingData = null,
+                },
+                true);
 
             _ = Assert.Throws<MatchmakingException>(() => _ = room.IsMatchAvailable);
             _ = await AssertThrowsAsync<MatchmakingException>(async () => await room.ChangeTeam(default));
@@ -185,12 +198,16 @@ namespace Elympics.Tests.Rooms
             {
                 { "testKey", "testValue" },
             };
-            var room = new Room(null!, null!, RoomId, InitialRoomState with
-            {
-                RoomName = roomName,
-                IsPrivate = isPrivate,
-                CustomData = roomCustomData,
-            }, true);
+            var room = new Room(null!,
+                null!,
+                RoomId,
+                InitialRoomState with
+                {
+                    RoomName = roomName,
+                    IsPrivate = isPrivate,
+                    CustomData = roomCustomData,
+                },
+                true);
 
             await room.UpdateRoomParams(roomName, isPrivate, roomCustomData);
             LogAssert.Expect(LogType.Warning, new Regex("No change compared to current room parameters."));
@@ -205,15 +222,19 @@ namespace Elympics.Tests.Rooms
             {
                 { "testKey", "testValue" },
             };
-            var room = new Room(null!, null!, RoomId, InitialRoomState with
-            {
-                RoomName = roomName,
-                IsPrivate = isPrivate,
-                MatchmakingData = InitialRoomState.MatchmakingData! with
+            var room = new Room(null!,
+                null!,
+                RoomId,
+                InitialRoomState with
                 {
-                    CustomData = customMatchmakingData,
+                    RoomName = roomName,
+                    IsPrivate = isPrivate,
+                    MatchmakingData = InitialRoomState.MatchmakingData! with
+                    {
+                        CustomData = customMatchmakingData,
+                    },
                 },
-            }, true);
+                true);
             await room.UpdateRoomParams(roomName, isPrivate, null, customMatchmakingData);
             LogAssert.Expect(LogType.Warning, new Regex("No change compared to current room parameters."));
         });
@@ -358,5 +379,71 @@ namespace Elympics.Tests.Rooms
             Assert.That(testDelegate, Throws.Exception.TypeOf<MatchmakingException>().With.Message.Contain("non-matchmaking"));
             Assert.That(matchLauncher.PlayMatchCalledArgs, Is.Null);
         }
+
+        [UnityTest]
+        public IEnumerator TestUserLeftRoomAwaitsUntilLeftRoomEventArrived() => UniTask.ToCoroutine(async () =>
+        {
+            var roomClientMock = Substitute.For<IRoomsClient>();
+            roomClientMock.When(x => x.LeaveRoom(RoomId)).Do(x =>
+            {
+                UniTask.RunOnThreadPool(async () =>
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(0.5));
+                    roomClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(RoomId, LeavingReason.UserLeft));
+                }).Forget();
+            });
+            roomClientMock.CreateRoom(Arg.Any<string>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<string>(),
+                Arg.Any<bool>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
+                Arg.Any<CompetitivenessConfig?>(),
+                Arg.Any<CancellationToken>()).Returns(info =>
+            {
+                UniTask.RunOnThreadPool(async () =>
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(0.5));
+                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(Defaults.CreateRoomState(RoomId, HostId));
+                }).Forget();
+                return UniTask.FromResult(RoomId);
+            });
+            var roomsManager = new RoomsManager(null!, roomClientMock, new ElympicsLoggerContext(Guid.Empty), null);
+            var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
+            await room.Leave();
+            Assert.IsFalse(room.IsJoined);
+        });
+
+        [UnityTest]
+        public IEnumerator TestUserLeftRoomAwaitsUntilLeftRoomEventArrivedAndRoomWasClosed() => UniTask.ToCoroutine(async () =>
+        {
+            var roomClientMock = Substitute.For<IRoomsClient>();
+            roomClientMock.When(x => x.LeaveRoom(RoomId)).Do(x =>
+            {
+                roomClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(RoomId, LeavingReason.RoomClosed));
+            });
+            roomClientMock.CreateRoom(Arg.Any<string>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<string>(),
+                Arg.Any<bool>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
+                Arg.Any<CompetitivenessConfig?>(),
+                Arg.Any<CancellationToken>()).Returns(info =>
+            {
+                UniTask.RunOnThreadPool(async () =>
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(0.5));
+                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(Defaults.CreateRoomState(RoomId, HostId));
+                });
+                return UniTask.FromResult(RoomId);
+            });
+            var roomsManager = new RoomsManager(null!, roomClientMock, new ElympicsLoggerContext(Guid.Empty), null);
+            var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
+            await room.Leave();
+            Assert.IsTrue(room.IsDisposed);
+        });
     }
 }

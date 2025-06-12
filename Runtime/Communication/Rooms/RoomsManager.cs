@@ -325,6 +325,7 @@ namespace Elympics
         {
             if (CurrentRoom?.RoomId == args.RoomId)
                 CurrentRoom = null;
+
             _ = _logger.SetNoRoom();
             if (args.Reason == LeavingReason.RoomClosed && _rooms.Remove(args.RoomId, out var removedRoom))
                 removedRoom.Dispose();

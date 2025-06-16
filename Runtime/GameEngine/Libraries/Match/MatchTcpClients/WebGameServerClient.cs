@@ -86,6 +86,7 @@ namespace MatchTcpClients
                         return false;
                     }
 
+                    logger.Log($"Send offer:{Environment.NewLine}{offer}");
                     var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
                     if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
                     {
@@ -94,7 +95,7 @@ namespace MatchTcpClients
                         return false;
                     }
                     _answer = response.Text;
-
+                    logger.Log($"Answer:{Environment.NewLine}{_answer}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;

@@ -8,7 +8,7 @@ namespace Elympics.Rooms.Models
         RequestingMatchmaking = 1,
         Matchmaking = 2,
         CancellingMatchmaking = 3,
-        [Obsolete("No longer used")] Matched = 4,
+        Matched = 4,
         Playing = 5,
     }
 }

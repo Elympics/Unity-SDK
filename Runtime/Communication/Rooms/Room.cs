@@ -193,13 +193,9 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
 
-            if (!IsInValidStateToCancel())
+            if (_state.MatchmakingData!.MatchmakingState.IsMatchMakingStateValidToCancel() is false)
                 throw new MatchmakingException($"Can't cancel matchmaking during {_state.MatchmakingData!.MatchmakingState} state.");
             await _matchLauncher.CancelMatchmaking(this, ct);
-            return;
-
-            bool IsInValidStateToCancel() =>
-                _state.MatchmakingData!.MatchmakingState is MatchmakingState.RequestingMatchmaking or MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking;
         }
 
         async UniTask IRoom.CancelMatchmakingInternal(CancellationToken ct)

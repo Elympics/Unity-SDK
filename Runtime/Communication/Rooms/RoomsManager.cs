@@ -443,10 +443,13 @@ namespace Elympics
                 .WaitUntil(() => room.IsDisposed is false && room.State.MatchmakingData is { MatchData: { FailReason: not null } },
                     cancellationToken: roomLeftCts.Token)
                 .ToCancellationToken();
+            var userCancelRequested = UniTask.WaitUntil(() =>
+                    room.CanMatchmakingBeCancelled() && ct.IsCancellationRequested,
+                cancellationToken: roomLeftCts.Token).ToCancellationToken();
             try
             {
                 await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room, ct);
-                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, roomLeftCts.Token, matchmakingCancelledCt, matchmakingFailedCt);
+                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(userCancelRequested, roomLeftCts.Token, matchmakingCancelledCt, matchmakingFailedCt);
                 isCancelled = await UniTask.WaitUntil(() => !room.IsDisposed && room.State.MatchmakingData?.MatchData?.MatchDetails is not null,
                     cancellationToken: cancellationTokenSource.Token).SuppressCancellationThrow();
                 _client.LeftRoom -= OnQuickRoomLeft;
@@ -472,7 +475,7 @@ namespace Elympics
             // the process has been cancelled
             try
             {
-                if (matchmakingCancelledCt.IsCancellationRequested is false)
+                if (userCancelRequested.IsCancellationRequested && matchmakingCancelledCt.IsCancellationRequested is false)
                     await room.CancelMatchmaking(CancellationToken.None);
             }
             catch (Exception)

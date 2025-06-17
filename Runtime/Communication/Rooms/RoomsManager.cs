@@ -230,8 +230,8 @@ namespace Elympics
             }
             catch (Exception exception)
             {
-                ElympicsLogger.LogException(exception);
-                _tcs?.TrySetException(exception);
+                _ = ElympicsLogger.LogException(exception);
+                _ = _tcs?.TrySetException(exception);
             }
 
             try
@@ -241,7 +241,7 @@ namespace Elympics
             }
             catch (Exception exception)
             {
-                ElympicsLogger.LogException(exception);
+                _ = ElympicsLogger.LogException(exception);
             }
         }
 

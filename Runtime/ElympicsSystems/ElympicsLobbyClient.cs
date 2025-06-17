@@ -589,7 +589,7 @@ namespace Elympics
             {
                 var result = await _webSocketSession.Value.ExecuteOperation(request, ct);
 
-                if (result.Success is false)
+                if (!result.Success)
                 {
                     loggerContext.WithMethodName().Error($"Couldn't fetch rolls fees: {result.GetDescritpion()}");
                     return null;

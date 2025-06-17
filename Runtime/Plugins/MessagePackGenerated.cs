@@ -4559,11 +4559,12 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(4);
+            writer.WriteArrayHeader(5);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
             writer.Write(value.GameEngineData);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<float[]>(formatterResolver).Serialize(ref writer, value.MatchmakerData, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.LastRoomUpdate, options);
         }
 
         public global::Elympics.Rooms.Models.SetReady Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4579,6 +4580,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             var __RoomId__ = default(global::System.Guid);
             var __GameEngineData__ = default(byte[]);
             var __MatchmakerData__ = default(float[]);
+            var __LastRoomUpdate__ = default(global::System.DateTime);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -4597,13 +4599,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                     case 3:
                         __MatchmakerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<float[]>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 4:
+                        __LastRoomUpdate__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.SetReady(__OperationId__, __RoomId__, __GameEngineData__, __MatchmakerData__);
+            var ____result = new global::Elympics.Rooms.Models.SetReady(__OperationId__, __RoomId__, __GameEngineData__, __MatchmakerData__, __LastRoomUpdate__);
             reader.Depth--;
             return ____result;
         }

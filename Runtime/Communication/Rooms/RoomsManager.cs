@@ -7,7 +7,6 @@ using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
-using UnityEngine;
 using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
@@ -441,11 +440,10 @@ namespace Elympics
                     cancellationToken: roomLeftCts.Token)
                 .ToCancellationToken();
             var matchmakingFailedCt = UniTask
-                .WaitUntil(() => room.IsDisposed is false && room.State.MatchmakingData is { MatchData: { FailReason: not null } },
+                .WaitUntil(() => !room.IsDisposed && room.State.MatchmakingData is { MatchData: { FailReason: not null } },
                     cancellationToken: roomLeftCts.Token)
                 .ToCancellationToken();
-            var userCancelRequested = UniTask.WaitUntil(() =>
-                    room.CanMatchmakingBeCancelled() && ct.IsCancellationRequested,
+            var userCancelRequested = UniTask.WaitUntil(() => !room.IsDisposed && room.CanMatchmakingBeCancelled() && ct.IsCancellationRequested,
                 cancellationToken: roomLeftCts.Token).ToCancellationToken();
             try
             {
@@ -470,20 +468,27 @@ namespace Elympics
             }
 
             // happy path
-            if (isCancelled is false)
+            if (!isCancelled)
                 return room;
 
             // the process has been cancelled
             try
             {
-                if (userCancelRequested.IsCancellationRequested && matchmakingCancelledCt.IsCancellationRequested is false)
+                if (userCancelRequested.IsCancellationRequested && !matchmakingCancelledCt.IsCancellationRequested)
                     await room.CancelMatchmaking(CancellationToken.None);
             }
-            catch (Exception e)
+            catch (LobbyOperationException e)
             {
                 logger.Warning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
-                if (!room.IsDisposed && room.IsEligibleToPlayMatch())
-                    return room;
+                if (e.Kind == ErrorKind.RoomAlreadyInMatchedState)
+                {
+                    //todo do the conituation logic for waiting for match data.
+                }
+                else
+                {
+                    if (!room.IsDisposed && room.IsEligibleToPlayMatch())
+                        return room;
+                }
             }
 
             await LeaveAndCleanUp();

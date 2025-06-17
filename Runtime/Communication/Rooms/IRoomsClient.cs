@@ -32,7 +32,7 @@ namespace Elympics
         UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);
         UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default);
-        UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default);
+        UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default);
         UniTask SetUnready(Guid roomId, CancellationToken ct = default);
         UniTask LeaveRoom(Guid roomId, CancellationToken ct = default);
         UniTask UpdateRoomParams(

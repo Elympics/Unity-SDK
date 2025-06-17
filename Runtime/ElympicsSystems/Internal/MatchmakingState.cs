@@ -42,14 +42,19 @@ namespace Elympics.ElympicsSystems.Internal
             {
                 _matchmakingCancelRequested = true;
                 await room.CancelMatchmakingInternal(ct);
-
-            }
-            finally
-            {
-                _matchmakingCancelRequested = false;
                 Client.SwitchState(ElympicsState.Connected);
-            }
+                _matchmakingCancelRequested = false;
 
+            }
+            catch (LobbyOperationException e)
+            {
+                if (e.Kind != ErrorKind.RoomAlreadyInMatchedState)
+                {
+                    Client.SwitchState(ElympicsState.Connected);
+                    throw;
+                }
+                _matchmakingCancelRequested = false;
+            }
         }
     }
 }

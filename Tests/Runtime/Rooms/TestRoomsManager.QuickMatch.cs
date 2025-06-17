@@ -40,7 +40,7 @@ namespace Elympics.Tests.Rooms
                 .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Playing, matchedUsers));
 
             SetRoomAsTrackedWhenItGetsJoined();
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -76,7 +76,7 @@ namespace Elympics.Tests.Rooms
 
             SetRoomAsTrackedWhenItGetsJoined();
 
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -117,7 +117,7 @@ namespace Elympics.Tests.Rooms
 
             SetRoomAsTrackedWhenItGetsJoined();
 
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -161,7 +161,7 @@ namespace Elympics.Tests.Rooms
             var leaveCalled = false;
             using var cts = new CancellationTokenSource();
 
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -205,7 +205,7 @@ namespace Elympics.Tests.Rooms
                 .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking, matchedUsers));
 
             SetRoomAsTrackedWhenItGetsJoined();
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -247,7 +247,7 @@ namespace Elympics.Tests.Rooms
                 .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.Unlocked).WithMatchData(matchData));
 
             SetRoomAsTrackedWhenItGetsJoined();
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -289,7 +289,7 @@ namespace Elympics.Tests.Rooms
 
             SetRoomAsTrackedWhenItGetsJoined();
 
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(readyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(teamChangedState));
@@ -332,7 +332,7 @@ namespace Elympics.Tests.Rooms
                 .Do(_ => MatchmakingFlow().Forget());
             RoomsClientMock.ClearSubstitute(ClearOptions.CallActions);
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(newGuid));
-            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<CancellationToken>()))
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(newReadyState));
             RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
                 .Do(_ => EmitRoomUpdate(newTeamChangedState));

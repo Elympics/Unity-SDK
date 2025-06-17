@@ -1,5 +1,3 @@
-using System;
-
 namespace Elympics.Rooms.Models
 {
     public enum MatchmakingState

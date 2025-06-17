@@ -43,6 +43,7 @@ namespace Elympics
                 ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                 try
                 {
+#pragma warning disable IDE0010
                     switch (msg)
                     {
                         case CreateRoom createRoom:
@@ -255,6 +256,7 @@ namespace Elympics
                             break;
                         }
                     }
+#pragma warning restore IDE0010
                 }
                 catch (MessageHandledException)
                 {
@@ -271,6 +273,7 @@ namespace Elympics
             {
                 var data = (byte[])x[0];
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+#pragma warning disable IDE0010
                 switch (msg)
                 {
                     case ShowAuth showAuth:
@@ -281,6 +284,7 @@ namespace Elympics
                         break;
                     }
                 }
+#pragma warning restore IDE0010
             });
             WebSocketMockSetup.ws = ws;
             return ws;
@@ -349,6 +353,7 @@ namespace Elympics
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
                 try
                 {
+#pragma warning disable IDE0010
                     switch (msg)
                     {
                         case JoinLobby joinLobby:
@@ -380,6 +385,7 @@ namespace Elympics
                             break;
                         }
                     }
+#pragma warning restore IDE0010
                 }
                 catch (MessageHandledException)
                 {

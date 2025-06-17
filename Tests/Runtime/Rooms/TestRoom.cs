@@ -392,7 +392,7 @@ namespace Elympics.Tests.Rooms
                     roomClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(RoomId, LeavingReason.UserLeft));
                 }).Forget();
             });
-            roomClientMock.CreateRoom(Arg.Any<string>(),
+            _ = roomClientMock.CreateRoom(Arg.Any<string>(),
                 Arg.Any<bool>(),
                 Arg.Any<bool>(),
                 Arg.Any<string>(),
@@ -419,11 +419,8 @@ namespace Elympics.Tests.Rooms
         public IEnumerator TestUserLeftRoomAwaitsUntilLeftRoomEventArrivedAndRoomWasClosed() => UniTask.ToCoroutine(async () =>
         {
             var roomClientMock = Substitute.For<IRoomsClient>();
-            roomClientMock.When(x => x.LeaveRoom(RoomId)).Do(x =>
-            {
-                roomClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(RoomId, LeavingReason.RoomClosed));
-            });
-            roomClientMock.CreateRoom(Arg.Any<string>(),
+            roomClientMock.When(x => x.LeaveRoom(RoomId)).Do(x => roomClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(new LeftRoomArgs(RoomId, LeavingReason.RoomClosed)));
+            _ = roomClientMock.CreateRoom(Arg.Any<string>(),
                 Arg.Any<bool>(),
                 Arg.Any<bool>(),
                 Arg.Any<string>(),
@@ -437,7 +434,7 @@ namespace Elympics.Tests.Rooms
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(0.5));
                     roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(Defaults.CreateRoomState(RoomId, HostId));
-                });
+                }).Forget();
                 return UniTask.FromResult(RoomId);
             });
             var roomsManager = new RoomsManager(null!, roomClientMock, new ElympicsLoggerContext(Guid.Empty), null);

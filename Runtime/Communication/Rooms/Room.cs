@@ -31,7 +31,7 @@ namespace Elympics
             get => IsJoined;
             set
             {
-                if (_isJoined is false && value)
+                if (!_isJoined && value)
                     _roomStateChangeMonitorCts = new CancellationTokenSource();
 
                 _isJoined = value;
@@ -147,7 +147,7 @@ namespace Elympics
             gameEngineData ??= Array.Empty<byte>();
             matchmakerData ??= Array.Empty<float>();
             //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
-            return _client.SetReady(_roomId, gameEngineData, matchmakerData).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
+            return _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
                 _webApiTimeoutFallback,
                 _roomStateChangeMonitorCts!.Token));
         }
@@ -165,7 +165,7 @@ namespace Elympics
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady is false, _webApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, _webApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
         }
 
         public async UniTask StartMatchmaking()
@@ -193,7 +193,7 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
 
-            if (_state.MatchmakingData!.MatchmakingState.IsMatchMakingStateValidToCancel() is false)
+            if (!_state.MatchmakingData!.MatchmakingState.IsMatchMakingStateValidToCancel())
                 throw new MatchmakingException($"Can't cancel matchmaking during {_state.MatchmakingData!.MatchmakingState} state.");
             await _matchLauncher.CancelMatchmaking(this, ct);
         }
@@ -336,7 +336,7 @@ namespace Elympics
             using var _ = cts.CancelAfterSlim(ConfirmationTimeout, DelayType.Realtime);
             var isCancelled = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
 
-            if (isCancelled && ct.IsCancellationRequested is false)
+            if (isCancelled && !ct.IsCancellationRequested)
             {
                 var logger = _logger?.WithMethodName();
                 var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");

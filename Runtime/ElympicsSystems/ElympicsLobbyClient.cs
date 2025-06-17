@@ -12,7 +12,6 @@ using Elympics.Communication.Authentication.Models;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Communication.Mappers;
-using Elympics.Communication.PublicApi;
 using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
@@ -155,7 +154,7 @@ namespace Elympics
         public IReadOnlyCollection<string>? AvailableRegions { get; private set; }
 
         [PublicAPI]
-        public IReadOnlyCollection<RoomCoinInfo>? AvailableCoins { get; private set; }
+        public IReadOnlyCollection<CoinInfo>? AvailableCoins { get; private set; }
 
         private IAvailableRegionRetriever _regionRetriever = null!;
 
@@ -724,9 +723,14 @@ namespace Elympics
 
         #endregion
 
-        internal void AssignRoomCoins(List<RoomCoin> objCoinData)
+        internal async UniTask AssignRoomCoins(List<RoomCoin> objCoinData)
         {
-            AvailableCoins = objCoinData.Select(x => x.ToRoomCoinInfo()).ToList();
+            var coins = new List<CoinInfo>(objCoinData.Count);
+
+            foreach (var coin in objCoinData)
+                coins.Add(await coin.ToCoinInfo(loggerContext));
+
+            AvailableCoins = coins;
         }
 
         internal int? FetchDecimalForCoin(Guid coinId)
@@ -735,7 +739,7 @@ namespace Elympics
                 return null;
 
             foreach (var coinInfo in AvailableCoins)
-                if (coinInfo.CoinId == coinId)
+                if (coinInfo.Id == coinId)
                     return coinInfo.Currency.Decimals;
 
             return null;

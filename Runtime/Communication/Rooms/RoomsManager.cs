@@ -220,13 +220,29 @@ namespace Elympics
             }
         }
 
-        private void HandleGameDataResponse(GameDataResponse obj)
+        private async void HandleGameDataResponse(GameDataResponse obj)
         {
-            ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
-            _ = _logger.SetGameVersionId(obj.GameVersionId).SetFleetName(obj.FleetName);
-            ElympicsLobbyClient.Instance!.AssignRoomCoins(obj.CoinData);
-            _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
-            _ = _tcs.TrySetResult(obj);
+            try
+            {
+                ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
+                _ = _logger.SetGameVersionId(obj.GameVersionId).SetFleetName(obj.FleetName);
+                await ElympicsLobbyClient.Instance!.AssignRoomCoins(obj.CoinData);
+            }
+            catch (Exception exception)
+            {
+                ElympicsLogger.LogException(exception);
+                _tcs?.TrySetException(exception);
+            }
+
+            try
+            {
+                _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
+                _ = _tcs.TrySetResult(obj);
+            }
+            catch (Exception exception)
+            {
+                ElympicsLogger.LogException(exception);
+            }
         }
 
         private void AddRoomToDictionary(IRoom room)

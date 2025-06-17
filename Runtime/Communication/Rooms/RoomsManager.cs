@@ -7,6 +7,7 @@ using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+using UnityEngine;
 using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
@@ -478,8 +479,9 @@ namespace Elympics
                 if (userCancelRequested.IsCancellationRequested && matchmakingCancelledCt.IsCancellationRequested is false)
                     await room.CancelMatchmaking(CancellationToken.None);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                logger.Warning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
                 if (!room.IsDisposed && room.IsEligibleToPlayMatch())
                     return room;
             }

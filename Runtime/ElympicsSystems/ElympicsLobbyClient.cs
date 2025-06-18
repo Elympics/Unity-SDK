@@ -586,12 +586,16 @@ namespace Elympics
             {
                 var fee = response.Rollings[i];
                 var coinId = requestData[i].CoinInfo.Id;
+                var prize = requestData[i].Prize;
+                var numberOfPlayers = requestData[i].PlayersCount;
                 fees[i] = new FeeInfo
                 {
                     EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
                     Error = fee.Error,
                     EntryFeeRaw = fee.EntryFee
                 };
+
+                RollingTournamentBetConfigIDs.AddOrUpdate(coinId, prize, numberOfPlayers, fee.RollingTournamentBetConfigId);
             }
 
             return new TournamentFeeInfo { Fees = fees };

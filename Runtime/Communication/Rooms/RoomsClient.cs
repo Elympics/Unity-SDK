@@ -88,7 +88,7 @@ namespace Elympics
                         };
                         break;
                     case CompetitivenessType.RollingTournament:
-                        rollingTournamentBetConfigId = await RollingTournamentBetConfigIDs.GetConfigId(competitivenessConfig);
+                        rollingTournamentBetConfigId = await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(competitivenessConfig.ID), competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, ct);
                         break;
                     case CompetitivenessType.Bet:
                         betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));

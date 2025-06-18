@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.Communication.Rooms.PublicModels;
 
 namespace Elympics.Communication.Mappers
 {
@@ -13,10 +12,9 @@ namespace Elympics.Communication.Mappers
     {
         private static readonly Dictionary<BetConfig, Guid> BetConfigToId = new();
 
-        public static async UniTask<Guid> GetConfigId(CompetitivenessConfig config, CancellationToken ct = default)
+        internal static async UniTask<Guid> GetConfigId(Guid coinId, decimal prize, int numberOfPlayers, CancellationToken ct = default)
         {
-            var coinId = Guid.Parse(config.ID);
-            var betConfig = new BetConfig(coinId, config.Value, config.NumberOfPlayers);
+            var betConfig = new BetConfig(coinId, prize, numberOfPlayers);
 
             if (BetConfigToId.TryGetValue(betConfig, out var id))
                 return id;
@@ -25,9 +23,9 @@ namespace Elympics.Communication.Mappers
             var coinInfo = lobbyClient.AvailableCoins?.FirstOrDefault(coin => coin.Id == coinId);
 
             if (!coinInfo.HasValue || coinInfo.Value.Id == Guid.Empty)
-                throw new ArgumentException($"Coin info for coin with ID {betConfig.CoinId} not found.", nameof(config));
+                throw new ArgumentException($"Coin info for coin with ID {coinId} not found.", nameof(coinId));
 
-            var response = await lobbyClient.GetRollTournamentsFeeInternal(new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value , Prize = betConfig.Prize, PlayersCount = betConfig.NumberOfPlayers } }, ct);
+            var response = await lobbyClient.GetRollTournamentsFeeInternal(new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value , Prize = prize, PlayersCount = numberOfPlayers } }, ct);
 
             if (response == null)
                 throw new ElympicsException("Failed to get rolling tournament bet config ID.");
@@ -38,17 +36,19 @@ namespace Elympics.Communication.Mappers
             return rollingTournamentBetConfigId;
         }
 
+        internal static void AddOrUpdate(Guid coinId, decimal prize, int numberOfPlayers, Guid rollingTournamentBetConfigId) => BetConfigToId[new BetConfig(coinId, prize, numberOfPlayers)] = rollingTournamentBetConfigId;
+
         private readonly struct BetConfig : IEquatable<BetConfig>
         {
-            public readonly int NumberOfPlayers;
-            public readonly decimal Prize;
-            public readonly Guid CoinId;
+            private readonly int _numberOfPlayers;
+            private readonly decimal _prize;
+            private readonly Guid _coinId;
 
-            public bool Equals(BetConfig other) => CoinId.Equals(other.CoinId) && Prize == other.Prize && NumberOfPlayers == other.NumberOfPlayers;
+            public bool Equals(BetConfig other) => _coinId.Equals(other._coinId) && _prize == other._prize && _numberOfPlayers == other._numberOfPlayers;
 
             public override bool Equals(object? obj) => obj is BetConfig other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(CoinId, Prize, NumberOfPlayers);
+            public override int GetHashCode() => HashCode.Combine(_coinId, _prize, _numberOfPlayers);
 
             public static bool operator ==(BetConfig left, BetConfig right) => left.Equals(right);
 
@@ -56,9 +56,9 @@ namespace Elympics.Communication.Mappers
 
             public BetConfig(Guid coinId, decimal prize, int numberOfPlayers)
             {
-                CoinId = coinId;
-                Prize = prize;
-                NumberOfPlayers = numberOfPlayers;
+                _coinId = coinId;
+                _prize = prize;
+                _numberOfPlayers = numberOfPlayers;
             }
         }
     }

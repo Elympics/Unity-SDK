@@ -47,7 +47,7 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(98)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(101)
             {
                 { typeof((string, global::System.Collections.Generic.List<(string, string)>)), 0 },
                 { typeof((string, string)), 1 },
@@ -68,85 +68,88 @@ namespace MessagePack.Resolvers
                 { typeof(global::System.Collections.Generic.KeyValuePair<int, byte[]>), 16 },
                 { typeof(global::System.Collections.Generic.List<(string, global::System.Collections.Generic.List<(string, string)>)>), 17 },
                 { typeof(global::System.Collections.Generic.List<(string, string)>), 18 },
-                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>), 19 },
-                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>), 20 },
-                { typeof(global::System.Collections.Generic.List<global::Elympics.Rooms.Models.RoomCoin>), 21 },
-                { typeof(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>), 22 },
-                { typeof(global::System.Guid[]), 23 },
-                { typeof(object[]), 24 },
-                { typeof(global::Elympics.ErrorBlame), 25 },
-                { typeof(global::Elympics.ErrorKind), 26 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.ErrorBlame), 27 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodes), 28 },
-                { typeof(global::Elympics.Rooms.Models.ChainType), 29 },
-                { typeof(global::Elympics.Rooms.Models.LeavingReason), 30 },
-                { typeof(global::Elympics.Rooms.Models.MatchmakingState), 31 },
-                { typeof(global::Elympics.Rooms.Models.MatchState), 32 },
-                { typeof(global::Elympics.ElympicsDataWithTick), 33 },
-                { typeof(global::Elympics.IFromServer), 34 },
-                { typeof(global::Elympics.IToServer), 35 },
-                { typeof(global::Elympics.Lobby.Models.IFromLobby), 36 },
-                { typeof(global::Elympics.Lobby.Models.IToLobby), 37 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IFromMatchmaker), 38 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IToMatchmaker), 39 },
-                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse), 40 },
-                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth), 41 },
-                { typeof(global::Elympics.ElympicsBehaviourMetadata), 42 },
-                { typeof(global::Elympics.ElympicsInput), 43 },
-                { typeof(global::Elympics.ElympicsInputList), 44 },
-                { typeof(global::Elympics.ElympicsPlayer), 45 },
-                { typeof(global::Elympics.ElympicsRpcMessage), 46 },
-                { typeof(global::Elympics.ElympicsRpcMessageList), 47 },
-                { typeof(global::Elympics.ElympicsSnapshot), 48 },
-                { typeof(global::Elympics.ElympicsSnapshotPlayerInput), 49 },
-                { typeof(global::Elympics.ElympicsSnapshotWithMetadata), 50 },
-                { typeof(global::Elympics.FactoryState), 51 },
-                { typeof(global::Elympics.InitialMatchPlayerDataGuid), 52 },
-                { typeof(global::Elympics.Lobby.Models.JoinLobby), 53 },
-                { typeof(global::Elympics.Lobby.Models.OperationResult), 54 },
-                { typeof(global::Elympics.Lobby.Models.Ping), 55 },
-                { typeof(global::Elympics.Lobby.Models.Pong), 56 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.GameData), 57 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker), 58 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchData), 59 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchFound), 60 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError), 61 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Ping), 62 },
-                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Pong), 63 },
-                { typeof(global::Elympics.Rooms.Models.CancelMatchmaking), 64 },
-                { typeof(global::Elympics.Rooms.Models.ChangeTeam), 65 },
-                { typeof(global::Elympics.Rooms.Models.CreateRoom), 66 },
-                { typeof(global::Elympics.Rooms.Models.GameDataResponse), 67 },
-                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCode), 68 },
-                { typeof(global::Elympics.Rooms.Models.JoinWithRoomId), 69 },
-                { typeof(global::Elympics.Rooms.Models.LeaveRoom), 70 },
-                { typeof(global::Elympics.Rooms.Models.ListedRoomChange), 71 },
-                { typeof(global::Elympics.Rooms.Models.MatchData), 72 },
-                { typeof(global::Elympics.Rooms.Models.MatchDetails), 73 },
-                { typeof(global::Elympics.Rooms.Models.MatchmakingData), 74 },
-                { typeof(global::Elympics.Rooms.Models.PublicMatchmakingData), 75 },
-                { typeof(global::Elympics.Rooms.Models.PublicRoomState), 76 },
-                { typeof(global::Elympics.Rooms.Models.RoomBetDetails), 77 },
-                { typeof(global::Elympics.Rooms.Models.RoomBetDetailsSlim), 78 },
-                { typeof(global::Elympics.Rooms.Models.RoomChain), 79 },
-                { typeof(global::Elympics.Rooms.Models.RoomCoin), 80 },
-                { typeof(global::Elympics.Rooms.Models.RoomCurrency), 81 },
-                { typeof(global::Elympics.Rooms.Models.RoomIdOperationResult), 82 },
-                { typeof(global::Elympics.Rooms.Models.RoomListChanged), 83 },
-                { typeof(global::Elympics.Rooms.Models.RoomStateChanged), 84 },
-                { typeof(global::Elympics.Rooms.Models.RoomTournamentDetails), 85 },
-                { typeof(global::Elympics.Rooms.Models.RoomWasLeft), 86 },
-                { typeof(global::Elympics.Rooms.Models.SetReady), 87 },
-                { typeof(global::Elympics.Rooms.Models.SetRoomParameters), 88 },
-                { typeof(global::Elympics.Rooms.Models.SetUnready), 89 },
-                { typeof(global::Elympics.Rooms.Models.StartMatchmaking), 90 },
-                { typeof(global::Elympics.Rooms.Models.UnwatchRooms), 91 },
-                { typeof(global::Elympics.Rooms.Models.WatchRooms), 92 },
-                { typeof(global::Elympics.SnapshotAnalysis.CollectorMatchData), 93 },
-                { typeof(global::Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackage), 94 },
-                { typeof(global::Elympics.SnapshotAnalysis.SnapshotSaverInitData), 95 },
-                { typeof(global::Elympics.TickToPlayerInput), 96 },
-                { typeof(global::Elympics.UserInfo), 97 },
+                { typeof(global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>), 19 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>), 20 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>), 21 },
+                { typeof(global::System.Collections.Generic.List<global::Elympics.Rooms.Models.RoomCoin>), 22 },
+                { typeof(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>), 23 },
+                { typeof(global::System.Guid[]), 24 },
+                { typeof(object[]), 25 },
+                { typeof(global::Elympics.ErrorBlame), 26 },
+                { typeof(global::Elympics.ErrorKind), 27 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.ErrorBlame), 28 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodes), 29 },
+                { typeof(global::Elympics.Rooms.Models.ChainType), 30 },
+                { typeof(global::Elympics.Rooms.Models.LeavingReason), 31 },
+                { typeof(global::Elympics.Rooms.Models.MatchmakingState), 32 },
+                { typeof(global::Elympics.Rooms.Models.MatchState), 33 },
+                { typeof(global::Elympics.ElympicsDataWithTick), 34 },
+                { typeof(global::Elympics.IFromServer), 35 },
+                { typeof(global::Elympics.IToServer), 36 },
+                { typeof(global::Elympics.Lobby.Models.IFromLobby), 37 },
+                { typeof(global::Elympics.Lobby.Models.IToLobby), 38 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IFromMatchmaker), 39 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.IToMatchmaker), 40 },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RollingResponseDto), 41 },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponse), 42 },
+                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse), 43 },
+                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth), 44 },
+                { typeof(global::Elympics.ElympicsBehaviourMetadata), 45 },
+                { typeof(global::Elympics.ElympicsInput), 46 },
+                { typeof(global::Elympics.ElympicsInputList), 47 },
+                { typeof(global::Elympics.ElympicsPlayer), 48 },
+                { typeof(global::Elympics.ElympicsRpcMessage), 49 },
+                { typeof(global::Elympics.ElympicsRpcMessageList), 50 },
+                { typeof(global::Elympics.ElympicsSnapshot), 51 },
+                { typeof(global::Elympics.ElympicsSnapshotPlayerInput), 52 },
+                { typeof(global::Elympics.ElympicsSnapshotWithMetadata), 53 },
+                { typeof(global::Elympics.FactoryState), 54 },
+                { typeof(global::Elympics.InitialMatchPlayerDataGuid), 55 },
+                { typeof(global::Elympics.Lobby.Models.JoinLobby), 56 },
+                { typeof(global::Elympics.Lobby.Models.OperationResult), 57 },
+                { typeof(global::Elympics.Lobby.Models.Ping), 58 },
+                { typeof(global::Elympics.Lobby.Models.Pong), 59 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.GameData), 60 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker), 61 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchData), 62 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchFound), 63 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError), 64 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Ping), 65 },
+                { typeof(global::Elympics.Models.Matchmaking.WebSocket.Pong), 66 },
+                { typeof(global::Elympics.Rooms.Models.CancelMatchmaking), 67 },
+                { typeof(global::Elympics.Rooms.Models.ChangeTeam), 68 },
+                { typeof(global::Elympics.Rooms.Models.CreateRoom), 69 },
+                { typeof(global::Elympics.Rooms.Models.GameDataResponse), 70 },
+                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCode), 71 },
+                { typeof(global::Elympics.Rooms.Models.JoinWithRoomId), 72 },
+                { typeof(global::Elympics.Rooms.Models.LeaveRoom), 73 },
+                { typeof(global::Elympics.Rooms.Models.ListedRoomChange), 74 },
+                { typeof(global::Elympics.Rooms.Models.MatchData), 75 },
+                { typeof(global::Elympics.Rooms.Models.MatchDetails), 76 },
+                { typeof(global::Elympics.Rooms.Models.MatchmakingData), 77 },
+                { typeof(global::Elympics.Rooms.Models.PublicMatchmakingData), 78 },
+                { typeof(global::Elympics.Rooms.Models.PublicRoomState), 79 },
+                { typeof(global::Elympics.Rooms.Models.RoomBetDetails), 80 },
+                { typeof(global::Elympics.Rooms.Models.RoomBetDetailsSlim), 81 },
+                { typeof(global::Elympics.Rooms.Models.RoomChain), 82 },
+                { typeof(global::Elympics.Rooms.Models.RoomCoin), 83 },
+                { typeof(global::Elympics.Rooms.Models.RoomCurrency), 84 },
+                { typeof(global::Elympics.Rooms.Models.RoomIdOperationResult), 85 },
+                { typeof(global::Elympics.Rooms.Models.RoomListChanged), 86 },
+                { typeof(global::Elympics.Rooms.Models.RoomStateChanged), 87 },
+                { typeof(global::Elympics.Rooms.Models.RoomTournamentDetails), 88 },
+                { typeof(global::Elympics.Rooms.Models.RoomWasLeft), 89 },
+                { typeof(global::Elympics.Rooms.Models.SetReady), 90 },
+                { typeof(global::Elympics.Rooms.Models.SetRoomParameters), 91 },
+                { typeof(global::Elympics.Rooms.Models.SetUnready), 92 },
+                { typeof(global::Elympics.Rooms.Models.StartMatchmaking), 93 },
+                { typeof(global::Elympics.Rooms.Models.UnwatchRooms), 94 },
+                { typeof(global::Elympics.Rooms.Models.WatchRooms), 95 },
+                { typeof(global::Elympics.SnapshotAnalysis.CollectorMatchData), 96 },
+                { typeof(global::Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackage), 97 },
+                { typeof(global::Elympics.SnapshotAnalysis.SnapshotSaverInitData), 98 },
+                { typeof(global::Elympics.TickToPlayerInput), 99 },
+                { typeof(global::Elympics.UserInfo), 100 },
             };
         }
 
@@ -179,85 +182,88 @@ namespace MessagePack.Resolvers
                 case 16: return new global::MessagePack.Formatters.KeyValuePairFormatter<int, byte[]>();
                 case 17: return new global::MessagePack.Formatters.ListFormatter<(string, global::System.Collections.Generic.List<(string, string)>)>();
                 case 18: return new global::MessagePack.Formatters.ListFormatter<(string, string)>();
-                case 19: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsBehaviourMetadata>();
-                case 20: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsRpcMessage>();
-                case 21: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.Rooms.Models.RoomCoin>();
-                case 22: return new global::MessagePack.Formatters.ListFormatter<global::System.Collections.Generic.KeyValuePair<int, byte[]>>();
-                case 23: return new global::MessagePack.Formatters.ArrayFormatter<global::System.Guid>();
-                case 24: return new global::MessagePack.Formatters.ArrayFormatter<object>();
-                case 25: return new MessagePack.Formatters.Elympics.ErrorBlameFormatter();
-                case 26: return new MessagePack.Formatters.Elympics.ErrorKindFormatter();
-                case 27: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.ErrorBlameFormatter();
-                case 28: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodesFormatter();
-                case 29: return new MessagePack.Formatters.Elympics.Rooms.Models.ChainTypeFormatter();
-                case 30: return new MessagePack.Formatters.Elympics.Rooms.Models.LeavingReasonFormatter();
-                case 31: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchmakingStateFormatter();
-                case 32: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchStateFormatter();
-                case 33: return new MessagePack.Formatters.Elympics.ElympicsDataWithTickFormatter();
-                case 34: return new MessagePack.Formatters.Elympics.IFromServerFormatter();
-                case 35: return new MessagePack.Formatters.Elympics.IToServerFormatter();
-                case 36: return new MessagePack.Formatters.Elympics.Lobby.Models.IFromLobbyFormatter();
-                case 37: return new MessagePack.Formatters.Elympics.Lobby.Models.IToLobbyFormatter();
-                case 38: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IFromMatchmakerFormatter();
-                case 39: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IToMatchmakerFormatter();
-                case 40: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseFormatter();
-                case 41: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby.ShowAuthFormatter();
-                case 42: return new MessagePack.Formatters.Elympics.ElympicsBehaviourMetadataFormatter();
-                case 43: return new MessagePack.Formatters.Elympics.ElympicsInputFormatter();
-                case 44: return new MessagePack.Formatters.Elympics.ElympicsInputListFormatter();
-                case 45: return new MessagePack.Formatters.Elympics.ElympicsPlayerFormatter();
-                case 46: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageFormatter();
-                case 47: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageListFormatter();
-                case 48: return new MessagePack.Formatters.Elympics.ElympicsSnapshotFormatter();
-                case 49: return new MessagePack.Formatters.Elympics.ElympicsSnapshotPlayerInputFormatter();
-                case 50: return new MessagePack.Formatters.Elympics.ElympicsSnapshotWithMetadataFormatter();
-                case 51: return new MessagePack.Formatters.Elympics.FactoryStateFormatter();
-                case 52: return new MessagePack.Formatters.Elympics.InitialMatchPlayerDataGuidFormatter();
-                case 53: return new MessagePack.Formatters.Elympics.Lobby.Models.JoinLobbyFormatter();
-                case 54: return new MessagePack.Formatters.Elympics.Lobby.Models.OperationResultFormatter();
-                case 55: return new MessagePack.Formatters.Elympics.Lobby.Models.PingFormatter();
-                case 56: return new MessagePack.Formatters.Elympics.Lobby.Models.PongFormatter();
-                case 57: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.GameDataFormatter();
-                case 58: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.JoinMatchmakerFormatter();
-                case 59: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchDataFormatter();
-                case 60: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchFoundFormatter();
-                case 61: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakingErrorFormatter();
-                case 62: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PingFormatter();
-                case 63: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PongFormatter();
-                case 64: return new MessagePack.Formatters.Elympics.Rooms.Models.CancelMatchmakingFormatter();
-                case 65: return new MessagePack.Formatters.Elympics.Rooms.Models.ChangeTeamFormatter();
-                case 66: return new MessagePack.Formatters.Elympics.Rooms.Models.CreateRoomFormatter();
-                case 67: return new MessagePack.Formatters.Elympics.Rooms.Models.GameDataResponseFormatter();
-                case 68: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithJoinCodeFormatter();
-                case 69: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithRoomIdFormatter();
-                case 70: return new MessagePack.Formatters.Elympics.Rooms.Models.LeaveRoomFormatter();
-                case 71: return new MessagePack.Formatters.Elympics.Rooms.Models.ListedRoomChangeFormatter();
-                case 72: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDataFormatter();
-                case 73: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDetailsFormatter();
-                case 74: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchmakingDataFormatter();
-                case 75: return new MessagePack.Formatters.Elympics.Rooms.Models.PublicMatchmakingDataFormatter();
-                case 76: return new MessagePack.Formatters.Elympics.Rooms.Models.PublicRoomStateFormatter();
-                case 77: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomBetDetailsFormatter();
-                case 78: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomBetDetailsSlimFormatter();
-                case 79: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomChainFormatter();
-                case 80: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCoinFormatter();
-                case 81: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCurrencyFormatter();
-                case 82: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomIdOperationResultFormatter();
-                case 83: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomListChangedFormatter();
-                case 84: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomStateChangedFormatter();
-                case 85: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomTournamentDetailsFormatter();
-                case 86: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomWasLeftFormatter();
-                case 87: return new MessagePack.Formatters.Elympics.Rooms.Models.SetReadyFormatter();
-                case 88: return new MessagePack.Formatters.Elympics.Rooms.Models.SetRoomParametersFormatter();
-                case 89: return new MessagePack.Formatters.Elympics.Rooms.Models.SetUnreadyFormatter();
-                case 90: return new MessagePack.Formatters.Elympics.Rooms.Models.StartMatchmakingFormatter();
-                case 91: return new MessagePack.Formatters.Elympics.Rooms.Models.UnwatchRoomsFormatter();
-                case 92: return new MessagePack.Formatters.Elympics.Rooms.Models.WatchRoomsFormatter();
-                case 93: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.CollectorMatchDataFormatter();
-                case 94: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackageFormatter();
-                case 95: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.SnapshotSaverInitDataFormatter();
-                case 96: return new MessagePack.Formatters.Elympics.TickToPlayerInputFormatter();
-                case 97: return new MessagePack.Formatters.Elympics.UserInfoFormatter();
+                case 19: return new global::MessagePack.Formatters.ListFormatter<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>();
+                case 20: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsBehaviourMetadata>();
+                case 21: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.ElympicsRpcMessage>();
+                case 22: return new global::MessagePack.Formatters.ListFormatter<global::Elympics.Rooms.Models.RoomCoin>();
+                case 23: return new global::MessagePack.Formatters.ListFormatter<global::System.Collections.Generic.KeyValuePair<int, byte[]>>();
+                case 24: return new global::MessagePack.Formatters.ArrayFormatter<global::System.Guid>();
+                case 25: return new global::MessagePack.Formatters.ArrayFormatter<object>();
+                case 26: return new MessagePack.Formatters.Elympics.ErrorBlameFormatter();
+                case 27: return new MessagePack.Formatters.Elympics.ErrorKindFormatter();
+                case 28: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.ErrorBlameFormatter();
+                case 29: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakerStatusCodesFormatter();
+                case 30: return new MessagePack.Formatters.Elympics.Rooms.Models.ChainTypeFormatter();
+                case 31: return new MessagePack.Formatters.Elympics.Rooms.Models.LeavingReasonFormatter();
+                case 32: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchmakingStateFormatter();
+                case 33: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchStateFormatter();
+                case 34: return new MessagePack.Formatters.Elympics.ElympicsDataWithTickFormatter();
+                case 35: return new MessagePack.Formatters.Elympics.IFromServerFormatter();
+                case 36: return new MessagePack.Formatters.Elympics.IToServerFormatter();
+                case 37: return new MessagePack.Formatters.Elympics.Lobby.Models.IFromLobbyFormatter();
+                case 38: return new MessagePack.Formatters.Elympics.Lobby.Models.IToLobbyFormatter();
+                case 39: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IFromMatchmakerFormatter();
+                case 40: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IToMatchmakerFormatter();
+                case 41: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingResponseDtoFormatter();
+                case 42: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingsResponseFormatter();
+                case 43: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseFormatter();
+                case 44: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby.ShowAuthFormatter();
+                case 45: return new MessagePack.Formatters.Elympics.ElympicsBehaviourMetadataFormatter();
+                case 46: return new MessagePack.Formatters.Elympics.ElympicsInputFormatter();
+                case 47: return new MessagePack.Formatters.Elympics.ElympicsInputListFormatter();
+                case 48: return new MessagePack.Formatters.Elympics.ElympicsPlayerFormatter();
+                case 49: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageFormatter();
+                case 50: return new MessagePack.Formatters.Elympics.ElympicsRpcMessageListFormatter();
+                case 51: return new MessagePack.Formatters.Elympics.ElympicsSnapshotFormatter();
+                case 52: return new MessagePack.Formatters.Elympics.ElympicsSnapshotPlayerInputFormatter();
+                case 53: return new MessagePack.Formatters.Elympics.ElympicsSnapshotWithMetadataFormatter();
+                case 54: return new MessagePack.Formatters.Elympics.FactoryStateFormatter();
+                case 55: return new MessagePack.Formatters.Elympics.InitialMatchPlayerDataGuidFormatter();
+                case 56: return new MessagePack.Formatters.Elympics.Lobby.Models.JoinLobbyFormatter();
+                case 57: return new MessagePack.Formatters.Elympics.Lobby.Models.OperationResultFormatter();
+                case 58: return new MessagePack.Formatters.Elympics.Lobby.Models.PingFormatter();
+                case 59: return new MessagePack.Formatters.Elympics.Lobby.Models.PongFormatter();
+                case 60: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.GameDataFormatter();
+                case 61: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.JoinMatchmakerFormatter();
+                case 62: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchDataFormatter();
+                case 63: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchFoundFormatter();
+                case 64: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakingErrorFormatter();
+                case 65: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PingFormatter();
+                case 66: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PongFormatter();
+                case 67: return new MessagePack.Formatters.Elympics.Rooms.Models.CancelMatchmakingFormatter();
+                case 68: return new MessagePack.Formatters.Elympics.Rooms.Models.ChangeTeamFormatter();
+                case 69: return new MessagePack.Formatters.Elympics.Rooms.Models.CreateRoomFormatter();
+                case 70: return new MessagePack.Formatters.Elympics.Rooms.Models.GameDataResponseFormatter();
+                case 71: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithJoinCodeFormatter();
+                case 72: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithRoomIdFormatter();
+                case 73: return new MessagePack.Formatters.Elympics.Rooms.Models.LeaveRoomFormatter();
+                case 74: return new MessagePack.Formatters.Elympics.Rooms.Models.ListedRoomChangeFormatter();
+                case 75: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDataFormatter();
+                case 76: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDetailsFormatter();
+                case 77: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchmakingDataFormatter();
+                case 78: return new MessagePack.Formatters.Elympics.Rooms.Models.PublicMatchmakingDataFormatter();
+                case 79: return new MessagePack.Formatters.Elympics.Rooms.Models.PublicRoomStateFormatter();
+                case 80: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomBetDetailsFormatter();
+                case 81: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomBetDetailsSlimFormatter();
+                case 82: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomChainFormatter();
+                case 83: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCoinFormatter();
+                case 84: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCurrencyFormatter();
+                case 85: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomIdOperationResultFormatter();
+                case 86: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomListChangedFormatter();
+                case 87: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomStateChangedFormatter();
+                case 88: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomTournamentDetailsFormatter();
+                case 89: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomWasLeftFormatter();
+                case 90: return new MessagePack.Formatters.Elympics.Rooms.Models.SetReadyFormatter();
+                case 91: return new MessagePack.Formatters.Elympics.Rooms.Models.SetRoomParametersFormatter();
+                case 92: return new MessagePack.Formatters.Elympics.Rooms.Models.SetUnreadyFormatter();
+                case 93: return new MessagePack.Formatters.Elympics.Rooms.Models.StartMatchmakingFormatter();
+                case 94: return new MessagePack.Formatters.Elympics.Rooms.Models.UnwatchRoomsFormatter();
+                case 95: return new MessagePack.Formatters.Elympics.Rooms.Models.WatchRoomsFormatter();
+                case 96: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.CollectorMatchDataFormatter();
+                case 97: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackageFormatter();
+                case 98: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.SnapshotSaverInitDataFormatter();
+                case 99: return new MessagePack.Formatters.Elympics.TickToPlayerInputFormatter();
+                case 100: return new MessagePack.Formatters.Elympics.UserInfoFormatter();
                 default: return null;
             }
         }
@@ -758,7 +764,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
 
         public IFromLobbyFormatter()
         {
-            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(9, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(10, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
                 { typeof(global::Elympics.Lobby.Models.Ping).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
                 { typeof(global::Elympics.Lobby.Models.Pong).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
@@ -769,8 +775,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 { typeof(global::Elympics.Rooms.Models.RoomIdOperationResult).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
                 { typeof(global::Elympics.Rooms.Models.RoomListChanged).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
                 { typeof(global::Elympics.Rooms.Models.GameDataResponse).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(8, 8) },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponse).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(9, 9) },
             };
-            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(9)
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(10)
             {
                 { 0, 0 },
                 { 1, 1 },
@@ -781,6 +788,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 { 6, 6 },
                 { 7, 7 },
                 { 8, 8 },
+                { 9, 9 },
             };
         }
 
@@ -819,6 +827,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                         break;
                     case 8:
                         global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponse>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.GameDataResponse)value, options);
+                        break;
+                    case 9:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponse>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RollingsResponse)value, options);
                         break;
                     default:
                         break;
@@ -880,6 +891,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 case 8:
                     result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponse>(options.Resolver).Deserialize(ref reader, options);
                     break;
+                case 9:
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponse>(options.Resolver).Deserialize(ref reader, options);
+                    break;
                 default:
                     reader.Skip();
                     break;
@@ -897,7 +911,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
 
         public IToLobbyFormatter()
         {
-            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(16, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(17, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
                 { typeof(global::Elympics.Lobby.Models.Ping).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
                 { typeof(global::Elympics.Lobby.Models.Pong).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
@@ -915,8 +929,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 { typeof(global::Elympics.Rooms.Models.SetRoomParameters).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(13, 13) },
                 { typeof(global::Elympics.Rooms.Models.WatchRooms).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(14, 14) },
                 { typeof(global::Elympics.Rooms.Models.UnwatchRooms).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(15, 15) },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RequestRollings).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(16, 16) },
             };
-            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(16)
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(17)
             {
                 { 0, 0 },
                 { 1, 1 },
@@ -934,6 +949,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 { 13, 13 },
                 { 14, 14 },
                 { 15, 15 },
+                { 16, 16 },
             };
         }
 
@@ -993,6 +1009,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                         break;
                     case 15:
                         global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRooms>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.UnwatchRooms)value, options);
+                        break;
+                    case 16:
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollings>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RequestRollings)value, options);
                         break;
                     default:
                         break;
@@ -1074,6 +1093,9 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                     break;
                 case 15:
                     result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRooms>(options.Resolver).Deserialize(ref reader, options);
+                    break;
+                case 16:
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollings>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -1328,6 +1350,140 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 #pragma warning restore SA1403 // File may only contain a single namespace
 #pragma warning restore SA1649 // File name should match first type name
 
+
+// <auto-generated>
+// THIS (.cs) FILE IS GENERATED BY MPC(MessagePack-CSharp). DO NOT CHANGE IT.
+// </auto-generated>
+
+#pragma warning disable 618
+#pragma warning disable 612
+#pragma warning disable 414
+#pragma warning disable 168
+#pragma warning disable CS1591 // document public APIs
+
+#pragma warning disable SA1129 // Do not use default value type constructor
+#pragma warning disable SA1309 // Field names should not begin with underscore
+#pragma warning disable SA1312 // Variable names should begin with lower-case letter
+#pragma warning disable SA1403 // File may only contain a single namespace
+#pragma warning disable SA1649 // File name should match first type name
+
+namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
+{
+    public sealed class RollingResponseDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RollingResponseDto value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(6);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingId, options);
+            writer.WriteNil();
+            writer.WriteNil();
+            writer.WriteNil();
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.EntryFee, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Error, options);
+        }
+
+        public global::Communication.Lobby.Models.ToLobby.RollingResponseDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingResponseDto();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.RollingId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 4:
+                        ____result.EntryFee = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 5:
+                        ____result.Error = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class RollingsResponseFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RollingsResponse>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RollingsResponse value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>>(formatterResolver).Serialize(ref writer, value.Rollings, options);
+        }
+
+        public global::Communication.Lobby.Models.ToLobby.RollingsResponse Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingsResponse();
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        ____result.Rollings = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+}
+
+#pragma warning restore 168
+#pragma warning restore 414
+#pragma warning restore 618
+#pragma warning restore 612
+
+#pragma warning restore SA1129 // Do not use default value type constructor
+#pragma warning restore SA1309 // Field names should not begin with underscore
+#pragma warning restore SA1312 // Variable names should begin with lower-case letter
+#pragma warning restore SA1403 // File may only contain a single namespace
+#pragma warning restore SA1649 // File name should match first type name
 
 // <auto-generated>
 // THIS (.cs) FILE IS GENERATED BY MPC(MessagePack-CSharp). DO NOT CHANGE IT.

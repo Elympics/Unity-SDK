@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
@@ -11,7 +12,6 @@ using Elympics.Communication.Authentication.Models;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Communication.Mappers;
-using Elympics.Communication.PublicApi;
 using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
@@ -154,7 +154,7 @@ namespace Elympics
         public IReadOnlyCollection<string>? AvailableRegions { get; private set; }
 
         [PublicAPI]
-        public IReadOnlyCollection<RoomCoinInfo>? AvailableCoins { get; private set; }
+        public IReadOnlyCollection<CoinInfo>? AvailableCoins { get; private set; }
 
         private IAvailableRegionRetriever _regionRetriever = null!;
 
@@ -568,6 +568,64 @@ namespace Elympics
             currentRegion = connectionDetails.RegionName;
         }
 
+        [PublicAPI]
+        public async UniTask<TournamentFeeInfo?> GetRollTournamentsFee(TournamentFeeRequestInfo[] requestData, CancellationToken ct = default)
+        {
+            if (requestData.Length == 0)
+                return null;
+
+            var config = _config.GetCurrentGameConfig();
+            var request = new RequestRollings(
+                GameId: Guid.Parse(config.GameId),
+                VersionId: config.GameVersion,
+                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, x.Prize.ToString(CultureInfo.InvariantCulture), (uint)x.PlayersCount)).ToList());
+
+            var tcs = new UniTaskCompletionSource<RollingsResponse>();
+
+            _webSocketSession.Value.MessageReceived += OnMessage;
+
+            RollingsResponse? response;
+            try
+            {
+                var result = await _webSocketSession.Value.ExecuteOperation(request, ct);
+
+                if (!result.Success)
+                {
+                    loggerContext.WithMethodName().Error($"Couldn't fetch rolls fees: {result.GetDescritpion()}");
+                    return null;
+                }
+
+                response = await tcs.Task;
+            }
+            finally
+            {
+                _webSocketSession.Value.MessageReceived -= OnMessage;
+            }
+
+            var fees = new FeeInfo[response.Rollings.Count];
+
+            for (var i = 0; i < fees.Length; i++)
+            {
+                var fee = response.Rollings[i];
+                var coinId = requestData[i].CoinInfo.Id;
+                fees[i] = new FeeInfo
+                {
+                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    Error = fee.Error,
+                    EntryFeeRaw = fee.EntryFee,
+                    RollingTournamentId = fee.RollingId
+                };
+            }
+
+            return new TournamentFeeInfo { Fees = fees };
+
+            void OnMessage(IFromLobby message)
+            {
+                if (message is RollingsResponse rollingsResponse)
+                    _ = tcs.TrySetResult(rollingsResponse);
+            }
+        }
+
         internal async UniTask GetElympicsUserData()
         {
             loggerContext.Log("Start fetching user data...");
@@ -665,9 +723,14 @@ namespace Elympics
 
         #endregion
 
-        internal void AssignRoomCoins(List<RoomCoin> objCoinData)
+        internal async UniTask AssignRoomCoins(List<RoomCoin> objCoinData)
         {
-            AvailableCoins = objCoinData.Select(x => x.ToRoomCoinInfo()).ToList();
+            var coins = new List<CoinInfo>(objCoinData.Count);
+
+            foreach (var coin in objCoinData)
+                coins.Add(await coin.ToCoinInfo(loggerContext));
+
+            AvailableCoins = coins;
         }
 
         internal int? FetchDecimalForCoin(Guid coinId)
@@ -676,7 +739,7 @@ namespace Elympics
                 return null;
 
             foreach (var coinInfo in AvailableCoins)
-                if (coinInfo.CoinId == coinId)
+                if (coinInfo.Id == coinId)
                     return coinInfo.Currency.Decimals;
 
             return null;

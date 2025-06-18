@@ -18,5 +18,7 @@ namespace Elympics.Lobby.Models
 
         internal OperationResult(Guid operationId, ErrorBlame blame, ErrorKind kind, string? details) : this(operationId, false, blame, kind, details)
         { }
+
+        public string GetDescritpion() => $"{nameof(OperationId)}: {OperationId} {nameof(Success)}: {Success} {nameof(Blame)}: {Blame} {nameof(Kind)}: {Kind} {nameof(Details)}: {Details}";
     }
 }

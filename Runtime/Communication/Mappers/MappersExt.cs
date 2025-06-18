@@ -1,30 +1,33 @@
-using Elympics.Communication.PublicApi;
+#nullable enable
+
+using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Rooms.Models;
 
 namespace Elympics.Communication.Mappers
 {
-    public static class Mappers
+    internal static class Mappers
     {
-        public static RoomCoinInfo ToRoomCoinInfo(this RoomCoin coin)
+        internal static async UniTask<CoinInfo> ToCoinInfo(this RoomCoin coin, ElympicsLoggerContext logger)
         {
-            var chainInfo = new RoomChainInfo
+            var chainInfo = new ChainInfo
             {
                 ExternalId = coin.Chain.ExternalId,
-                Type = (ChainTypeInfo)(int)coin.Chain.Type,
+                Type = coin.Chain.Type.ToString(),
                 Name = coin.Chain.Name
             };
 
-            var currencyInfo = new RoomCurrencyInfo
+            var currencyInfo = new CurrencyInfo
             {
                 Ticker = coin.Currency.Ticker,
                 Address = coin.Currency.Address,
                 Decimals = coin.Currency.Decimals,
-                IconUrl = coin.Currency.IconUrl
+                Icon = await CoinIcons.GetIconOrNull(coin.CoinId, coin.Currency.IconUrl, logger)
             };
 
-            var coinInfo = new RoomCoinInfo
+            var coinInfo = new CoinInfo
             {
-                CoinId = coin.CoinId,
+                Id = coin.CoinId,
                 Chain = chainInfo,
                 Currency = currencyInfo
             };

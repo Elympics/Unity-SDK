@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
@@ -574,6 +575,30 @@ namespace Elympics
             if (requestData.Length == 0)
                 return null;
 
+            var response = await GetRollTournamentsFeeInternal(requestData, ct);
+
+            if (response == null)
+                return null;
+
+            var fees = new FeeInfo[response.Rollings.Count];
+
+            for (var i = 0; i < fees.Length; i++)
+            {
+                var fee = response.Rollings[i];
+                var coinId = requestData[i].CoinInfo.Id;
+                fees[i] = new FeeInfo
+                {
+                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    Error = fee.Error,
+                    EntryFeeRaw = fee.EntryFee
+                };
+            }
+
+            return new TournamentFeeInfo { Fees = fees };
+        }
+
+        internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
+        {
             var config = _config.GetCurrentGameConfig();
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
@@ -602,22 +627,7 @@ namespace Elympics
                 _webSocketSession.Value.MessageReceived -= OnMessage;
             }
 
-            var fees = new FeeInfo[response.Rollings.Count];
-
-            for (var i = 0; i < fees.Length; i++)
-            {
-                var fee = response.Rollings[i];
-                var coinId = requestData[i].CoinInfo.Id;
-                fees[i] = new FeeInfo
-                {
-                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
-                    Error = fee.Error,
-                    EntryFeeRaw = fee.EntryFee,
-                    RollingTournamentId = fee.RollingId
-                };
-            }
-
-            return new TournamentFeeInfo { Fees = fees };
+            return response;
 
             void OnMessage(IFromLobby message)
             {

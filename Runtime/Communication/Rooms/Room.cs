@@ -222,7 +222,7 @@ namespace Elympics
             bool IsCompetitivenessConfigTheSame(CompetitivenessConfig config) =>
                 config.CompetitivenessType switch
                 {
-                    CompetitivenessType.Tournament => _state.MatchmakingData != null
+                    CompetitivenessType.GlobalTournament => _state.MatchmakingData != null
                                                       && _state.MatchmakingData.CustomData.TryGetValue(TournamentConst.TournamentIdKey, out var tournamentId)
                                                       && tournamentId == competitivenessConfig.ID,
                     CompetitivenessType.RollingTournament => false, //TO DO: Check this properly once information about rolling tournaments is included in room ~kdudziak 10.06.2025

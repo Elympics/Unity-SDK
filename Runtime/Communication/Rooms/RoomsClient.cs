@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Mappers;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
@@ -62,7 +63,7 @@ namespace Elympics
             }
         }
 
-        public UniTask<Guid> CreateRoom(
+        public async UniTask<Guid> CreateRoom(
             string roomName,
             bool isPrivate,
             bool isEphemeral,
@@ -74,20 +75,20 @@ namespace Elympics
             CancellationToken ct = default)
         {
             RoomBetDetailsSlim? betSlim = null;
-            Guid? rollingTournamentId = null;
+            Guid? rollingTournamentBetConfigId = null;
 
             if (competitivenessConfig != null)
             {
                 switch (competitivenessConfig.CompetitivenessType)
                 {
-                    case CompetitivenessType.Tournament:
+                    case CompetitivenessType.GlobalTournament:
                         customMatchmakingData = new Dictionary<string, string>(customMatchmakingData)
                         {
                             [TournamentConst.TournamentIdKey] = competitivenessConfig.ID
                         };
                         break;
                     case CompetitivenessType.RollingTournament:
-                        rollingTournamentId = Guid.Parse(competitivenessConfig.ID);
+                        rollingTournamentBetConfigId = await RollingTournamentBetConfigIDs.GetConfigId(competitivenessConfig);
                         break;
                     case CompetitivenessType.Bet:
                         betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));
@@ -98,7 +99,7 @@ namespace Elympics
             }
 
             _logger.WithMethodName().Log($"Create room {roomName}");
-            return ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentId),
+            return await ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId),
                     ct)
                 .ContinueWith(result => result.RoomId);
         }

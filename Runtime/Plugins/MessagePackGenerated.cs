@@ -1382,7 +1382,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(6);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingTournamentBetConfigId, options);
             writer.WriteNil();
             writer.WriteNil();
             writer.WriteNil();
@@ -1407,7 +1407,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                 switch (i)
                 {
                     case 0:
-                        ____result.RollingId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.RollingTournamentBetConfigId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 4:
                         ____result.EntryFee = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);

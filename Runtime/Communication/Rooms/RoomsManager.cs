@@ -472,23 +472,30 @@ namespace Elympics
                 return room;
 
             // the process has been cancelled
+            var timeoutCts = new CancellationTokenSource();
+            using var timeoutDisposable = timeoutCts.CancelAfterSlim(ConfirmationTimeout);
             try
             {
                 if (userCancelRequested.IsCancellationRequested && !matchmakingCancelledCt.IsCancellationRequested)
-                    await room.CancelMatchmaking(CancellationToken.None);
+                    await room.CancelMatchmaking(timeoutCts.Token);
             }
             catch (LobbyOperationException e)
             {
                 logger.Warning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
                 if (e.Kind == ErrorKind.RoomAlreadyInMatchedState)
                 {
-                    //todo do the conituation logic for waiting for match data.
+                    var timedOut = await UniTask.WaitUntil(() => !room.IsDisposed && room.IsEligibleToPlayMatch(), cancellationToken: timeoutCts.Token).SuppressCancellationThrow();
+                    if (timedOut)
+                        throw new ConfirmationTimeoutException(ConfirmationTimeout);
+                    return room;
                 }
-                else
-                {
-                    if (!room.IsDisposed && room.IsEligibleToPlayMatch())
-                        return room;
-                }
+
+                if (!room.IsDisposed && room.IsEligibleToPlayMatch())
+                    return room;
+            }
+            catch (OperationCanceledException)
+            {
+                throw new ConfirmationTimeoutException(ConfirmationTimeout);
             }
 
             await LeaveAndCleanUp();

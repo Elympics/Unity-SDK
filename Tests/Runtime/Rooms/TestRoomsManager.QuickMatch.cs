@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
@@ -345,6 +346,69 @@ namespace Elympics.Tests.Rooms
                 EmitRoomUpdate(newMatchmakingState);
                 await GetResponseDelay();
                 EmitRoomUpdate(newMatchDataState);
+            }
+        });
+
+        [UnityTest]
+        public IEnumerator CancellingMatchmakingShouldBeIgnoredCorrectlyIfMatchmakingStateChangesFromMatchmakingToMatchedInTheMeantime() => UniTask.ToCoroutine(async () =>
+        {
+            _ = RoomsClientMock.SessionConnectionDetails.Returns(Defaults.CreateConnectionDetails(HostId));
+            RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
+
+            var teamChangedState = InitialRoomState
+                .WithUserTeamSwitched(HostId, 0);
+
+            var readyState = teamChangedState
+                .WithUserReadinessChanged(HostId, true);
+
+            var matchedUsers = new List<Guid> { HostId, Guid.NewGuid() };
+
+            var requestingMatchmakingState = readyState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking, matchedUsers));
+
+            var matchmakingState = requestingMatchmakingState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking, matchedUsers));
+
+            var matchedState = matchmakingState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matched, matchedUsers));
+
+            var matchDataState = matchedState
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Playing, matchedUsers));
+
+            using var cts = new CancellationTokenSource();
+
+            SetRoomAsTrackedWhenItGetsJoined();
+            RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(readyState));
+            RoomsClientMock.When(x => x.ChangeTeam(Arg.Any<Guid>(), Arg.Any<uint?>(), Arg.Any<CancellationToken>()))
+                .Do(_ => EmitRoomUpdate(teamChangedState));
+            MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
+                .Do(_ => MatchmakingFlow().Forget());
+            MatchLauncherMock.When(x => x.CancelMatchmaking(Arg.Any<IRoom>(), Arg.Any<CancellationToken>()))
+                .Do(_ => throw new LobbyOperationException(new OperationResult(Guid.Empty, ErrorBlame.UserError, ErrorKind.RoomAlreadyInMatchedState, "")));
+
+            // Act
+            var result = await RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);
+
+            Assert.That(result, Is.Not.Null);
+
+            async UniTask MatchmakingFlow()
+            {
+                EmitRoomUpdate(requestingMatchmakingState);
+                await GetResponseDelay();
+                EmitRoomUpdate(matchmakingState);
+                cts.Cancel();
+                await GetResponseDelay();
+                EmitRoomUpdate(matchedState);
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                await GetResponseDelay();
+                EmitRoomUpdate(matchDataState);
             }
         });
     }

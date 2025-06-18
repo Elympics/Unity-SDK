@@ -25,10 +25,8 @@ namespace Elympics.Communication.Mappers
             if (!coinInfo.HasValue || coinInfo.Value.Id == Guid.Empty)
                 throw new ArgumentException($"Coin info for coin with ID {coinId} not found.", nameof(coinId));
 
-            var response = await lobbyClient.GetRollTournamentsFeeInternal(new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value , Prize = prize, PlayersCount = numberOfPlayers } }, ct);
-
-            if (response == null)
-                throw new ElympicsException("Failed to get rolling tournament bet config ID.");
+            var payload = new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value , Prize = prize, PlayersCount = numberOfPlayers } };
+            var response = await lobbyClient.GetRollTournamentsFeeInternal(payload, ct) ?? throw new ElympicsException("Failed to get rolling tournament bet config ID.");
 
             var rollingTournamentBetConfigId = response.Rollings[0].RollingTournamentBetConfigId;
             BetConfigToId[betConfig] = rollingTournamentBetConfigId;

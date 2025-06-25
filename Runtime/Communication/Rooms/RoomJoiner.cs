@@ -59,12 +59,11 @@ namespace Elympics
             bool isEphemeral,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            RoomBetAmount? betDetails = null,
-            TournamentDetails? tournamentDetails = null)
+            CompetitivenessConfig? competitivenessConfig = null)
         {
             ThrowIfAnyRoomJoined();
             JoiningState = new RoomJoiningState.Creating(roomName);
-            var ackTask = _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, betDetails, tournamentDetails);
+            var ackTask = _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, competitivenessConfig);
             return SetupRoomTracking(ackTask);
         }
 

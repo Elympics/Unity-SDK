@@ -1382,7 +1382,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(6);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RollingTournamentBetConfigId, options);
             writer.WriteNil();
             writer.WriteNil();
             writer.WriteNil();
@@ -1407,7 +1407,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                 switch (i)
                 {
                     case 0:
-                        ____result.RollingId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.RollingTournamentBetConfigId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 4:
                         ____result.EntryFee = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
@@ -3103,7 +3103,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomMatchmakingData, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomTournamentDetails>(formatterResolver).Serialize(ref writer, value.TournamentDetails, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomBetDetailsSlim>(formatterResolver).Serialize(ref writer, value.BetDetailsSlim, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Serialize(ref writer, value.RollingTournamentId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Serialize(ref writer, value.RollingTournamentBetConfigId, options);
         }
 
         public global::Elympics.Rooms.Models.CreateRoom Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -3125,7 +3125,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             var __CustomMatchmakingData__ = default(global::System.Collections.Generic.IReadOnlyDictionary<string, string>);
             var __TournamentDetails__ = default(global::Elympics.Rooms.Models.RoomTournamentDetails);
             var __BetDetailsSlim__ = default(global::Elympics.Rooms.Models.RoomBetDetailsSlim);
-            var __RollingTournamentId__ = default(global::System.Guid?);
+            var __RollingTournamentBetConfigId__ = default(global::System.Guid?);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -3163,7 +3163,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                         __BetDetailsSlim__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomBetDetailsSlim>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 10:
-                        __RollingTournamentId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Deserialize(ref reader, options);
+                        __RollingTournamentBetConfigId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -3171,7 +3171,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.CreateRoom(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentId__);
+            var ____result = new global::Elympics.Rooms.Models.CreateRoom(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentBetConfigId__);
             reader.Depth--;
             return ____result;
         }

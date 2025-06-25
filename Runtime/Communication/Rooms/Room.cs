@@ -186,7 +186,7 @@ namespace Elympics
             bool? isPrivate = null,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
-            RoomBetAmount? betDetailsSlim = null)
+            CompetitivenessConfig? competitivenessConfig = null)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -196,8 +196,8 @@ namespace Elympics
             var isPrivateIsTheSame = isPrivate == null || isPrivate == _state.IsPrivate;
             var customRoomDataIsTheSame = customRoomData == null || customRoomData.IsTheSame(_state.CustomData);
             var customMatchmakingDataIsTheSame = customMatchmakingData == null || customMatchmakingData.IsTheSame(_state.MatchmakingData?.CustomData);
-            var betAmountIsTheSame = betDetailsSlim == null || IsTheSameBetAmount(betDetailsSlim);
-            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame && betAmountIsTheSame;
+            var isCompetitivenessConfigTheSame = competitivenessConfig == null || IsCompetitivenessConfigTheSame(competitivenessConfig);
+            var isSameAsCurrentState = roomNameIsTheSame && isPrivateIsTheSame && customRoomDataIsTheSame && customMatchmakingDataIsTheSame && isCompetitivenessConfigTheSame;
 
             if (isSameAsCurrentState)
             {
@@ -216,13 +216,21 @@ namespace Elympics
             var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
-            var betSlimToSend = betAmountIsTheSame ? null : betDetailsSlim;
+            var betSlimToSend = isCompetitivenessConfigTheSame ? null : competitivenessConfig;
             return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betSlimToSend);
 
-            bool IsTheSameBetAmount(RoomBetAmount? betDetails)
-            {
-                return betDetails?.CoinId == _state.MatchmakingData?.BetDetails?.Coin.CoinId && betDetails?.BetValue == _state.MatchmakingData?.BetDetails?.BetValue;
-            }
+            bool IsCompetitivenessConfigTheSame(CompetitivenessConfig config) =>
+                config.CompetitivenessType switch
+                {
+                    CompetitivenessType.GlobalTournament => _state.MatchmakingData != null
+                                                      && _state.MatchmakingData.CustomData.TryGetValue(TournamentConst.TournamentIdKey, out var tournamentId)
+                                                      && tournamentId == competitivenessConfig.ID,
+                    CompetitivenessType.RollingTournament => false, //TO DO: Check this properly once information about rolling tournaments is included in room ~kdudziak 10.06.2025
+                    CompetitivenessType.Bet => _state.MatchmakingData?.BetDetails is { } roomBetDetails
+                                               && roomBetDetails.BetValue == config.Value
+                                               && roomBetDetails.Coin.CoinId.ToString() == config.ID,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
         }
 
 

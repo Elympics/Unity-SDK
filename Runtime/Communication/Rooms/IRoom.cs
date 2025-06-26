@@ -19,8 +19,6 @@ namespace Elympics
         public string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
-
-        [Obsolete("Only one room can be joined at once. See " + nameof(IRoomsManager) + "." + nameof(IRoomsManager.CurrentRoom))]
         bool IsJoined { get; internal set; }
 
         bool HasMatchmakingEnabled { get; }

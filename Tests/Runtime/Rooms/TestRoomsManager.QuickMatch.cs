@@ -96,7 +96,8 @@ namespace Elympics.Tests.Rooms
             cts.Cancel();
 
             // Assert
-            _ = await AssertThrowsAsync<OperationCanceledException>(quickMatchTask);
+            var exception = await AssertThrowsAsync<ElympicsException>(quickMatchTask);
+            Assert.That(exception.InnerException, Is.InstanceOf<OperationCanceledException>());
             Assert.That(RoomsManager.CurrentRoom, Is.Null, $"{nameof(RoomsManager.CurrentRoom)} should be null after cancellation");
         });
 
@@ -137,7 +138,8 @@ namespace Elympics.Tests.Rooms
             RoomsManager.CurrentRoom?.CancelMatchmaking().Forget();
 
             // Assert
-            _ = await AssertThrowsAsync<OperationCanceledException>(quickMatchTask);
+            var exception = await AssertThrowsAsync<ElympicsException>(quickMatchTask);
+            Assert.That(exception.InnerException, Is.InstanceOf<OperationCanceledException>());
             Assert.That(RoomsManager.CurrentRoom, Is.Null, $"{nameof(RoomsManager.CurrentRoom)} should be null after cancellation");
         });
 

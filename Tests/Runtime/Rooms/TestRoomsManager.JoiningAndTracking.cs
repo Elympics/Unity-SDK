@@ -542,6 +542,27 @@ namespace Elympics.Tests.Rooms
             Assert.AreEqual(true, RoomsManager.ListJoinedRooms()[0].State.IsPrivate);
         }
 
+        private class DummyException : Exception
+        {
+            public DummyException(string message)
+                : base(message)
+            { }
+        }
+
+        [UnityTest]
+        public IEnumerator ExceptionThrownByRoomsClientShouldBeForwarded() => UniTask.ToCoroutine(async () =>
+        {
+            var expected = new DummyException("My test exception");
+
+            _ = RoomsClientMock.JoinRoom("", null)
+                .ReturnsForAnyArgs(UniTask.FromException<Guid>(expected));
+
+            // Act
+            var exception = await AssertThrowsAsync<DummyException>(async () => await RoomsManager.JoinRoom(null, ""));
+
+            Assert.That(exception.Message, Is.EqualTo(expected.Message));
+        });
+
         private UniTask EnsureRoomIsBeingJoined(Guid? roomId = null, string? joinCode = null)
         {
             SetRoomAsTrackedWhenItGetsJoined();

@@ -33,12 +33,13 @@ namespace Elympics
             get => IsJoined;
             set
             {
-                if (!_isJoined && value)
+                if (_isJoined ^ value)
                 {
-                    _roomStateChangeMonitorCts?.Cancel();
-                    _roomStateChangeMonitorCts = new CancellationTokenSource();
+                    if (value)
+                        _roomStateChangeMonitorCts = new CancellationTokenSource();
+                    else
+                        _roomStateChangeMonitorCts.Cancel();
                 }
-
                 _isJoined = value;
             }
         }
@@ -77,7 +78,7 @@ namespace Elympics
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
 
-        private CancellationTokenSource? _roomStateChangeMonitorCts;
+        private CancellationTokenSource _roomStateChangeMonitorCts;
 
         public Room(
             IMatchLauncher matchLauncher,
@@ -85,24 +86,31 @@ namespace Elympics
             Guid roomId,
             RoomStateChanged initialState,
             bool isJoined = false,
+            ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
+        { }
+
+        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerContext? logger = null)
+            : this(matchLauncher, client, roomId, new RoomState(initialState), logger: logger)
+        { }
+
+        private Room(
+            IMatchLauncher matchLauncher,
+            IRoomsClient client,
+            Guid roomId,
+            RoomState state,
+            bool isJoined = false,
+            bool isEphemeral = false,
             ElympicsLoggerContext? logger = null)
         {
             _matchLauncher = matchLauncher;
             _client = client;
             _roomId = roomId;
-            _logger = logger?.WithContext($"{nameof(Room)}");
-            _state = new RoomState(initialState);
+            _state = state;
+            _roomStateChangeMonitorCts = new CancellationTokenSource();
+            _roomStateChangeMonitorCts.Cancel();
             _isJoined = isJoined;
-            _isEphemeral = initialState.IsEphemeral;
-        }
-
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerContext? logger = null)
-        {
-            _matchLauncher = matchLauncher;
-            _client = client;
-            _roomId = roomId;
+            _isEphemeral = isEphemeral;
             _logger = logger?.WithContext($"{nameof(Room)}");
-            _state = new RoomState(initialState);
         }
 
         void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
@@ -124,10 +132,10 @@ namespace Elympics
             if (IsDisposed)
                 return;
             IsDisposed = true;
-            _roomStateChangeMonitorCts?.Cancel();
+            _roomStateChangeMonitorCts.Cancel();
         }
 
-        public UniTask ChangeTeam(uint? teamIndex)
+        public async UniTask ChangeTeam(uint? teamIndex)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
@@ -136,23 +144,21 @@ namespace Elympics
                 && teamIndex.Value >= _state.MatchmakingData!.TeamCount)
                 throw new ArgumentOutOfRangeException(nameof(teamIndex), teamIndex, $"Chosen team index must be lesser than {_state.MatchmakingData.TeamCount} or null");
 
-            return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() =>
-                    !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex,
-                WebApiTimeoutFallback,
-                _roomStateChangeMonitorCts!.Token));
+            await _client.ChangeTeam(_roomId, teamIndex, _roomStateChangeMonitorCts.Token);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex, WebApiTimeoutFallback, _roomStateChangeMonitorCts.Token);
         }
 
-        public UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
+        public async UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
             gameEngineData ??= Array.Empty<byte>();
             matchmakerData ??= Array.Empty<float>();
-            //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
-            return _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
-                WebApiTimeoutFallback,
-                _roomStateChangeMonitorCts!.Token));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
+            // TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
+            await _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate, ct);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady, WebApiTimeoutFallback, linkedCts.Token);
         }
 
         private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
@@ -163,12 +169,13 @@ namespace Elympics
             return localUser != null;
         }
 
-        public UniTask MarkYourselfUnready()
+        public async UniTask MarkYourselfUnready()
         {
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, WebApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
+            await _client.SetUnready(_roomId, _roomStateChangeMonitorCts.Token);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, WebApiTimeoutFallback, _roomStateChangeMonitorCts.Token);
         }
 
         public async UniTask StartMatchmaking()
@@ -181,7 +188,7 @@ namespace Elympics
                 throw new RoomRequirementsException("Not all players are ready.");
 
             await _matchLauncher.StartMatchmaking(this);
-            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null, _roomStateChangeMonitorCts!.Token);
+            await WaitForState(() => _state.MatchmakingData!.MatchmakingState != MatchmakingState.Unlocked || _state.MatchmakingData.MatchData?.FailReason is not null, _roomStateChangeMonitorCts.Token);
         }
 
         UniTask IRoom.StartMatchmakingInternal()
@@ -208,7 +215,7 @@ namespace Elympics
                 {
                     ct.ThrowIfCancellationRequested();
                     await _client.CancelMatchmaking(_roomId, ct);
-                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts!.Token);
+                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
                     await WaitForState(() => IsDisposed || _state.MatchmakingData!.MatchmakingState == MatchmakingState.Unlocked, linked.Token);
                     return;
                 }
@@ -266,7 +273,7 @@ namespace Elympics
                     CompetitivenessType.GlobalTournament => _state.MatchmakingData != null
                                                       && _state.MatchmakingData.CustomData.TryGetValue(TournamentConst.TournamentIdKey, out var tournamentId)
                                                       && tournamentId == competitivenessConfig.ID,
-                    CompetitivenessType.RollingTournament => false, //TO DO: Check this properly once information about rolling tournaments is included in room ~kdudziak 10.06.2025
+                    CompetitivenessType.RollingTournament => false, // TODO: Check this properly once information about rolling tournaments is included in room ~kdudziak 10.06.2025
                     CompetitivenessType.Bet => _state.MatchmakingData?.BetDetails is { } roomBetDetails
                                                && roomBetDetails.BetValue == config.Value
                                                && roomBetDetails.Coin.CoinId.ToString() == config.ID,
@@ -299,8 +306,6 @@ namespace Elympics
                 throw new InvalidOperationException($"Can't leave room during {_state.MatchmakingData!.MatchmakingState} state.");
             await _client.LeaveRoom(_roomId);
             await WaitForState(() => IsDisposed || !_isJoined);
-            _roomStateChangeMonitorCts?.Cancel();
-
         }
 
         private T ThrowIfDisposedOrReturn<T>(T val, [CallerMemberName] string methodName = "")
@@ -337,10 +342,9 @@ namespace Elympics
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             using var _ = cts.CancelAfterSlim(ConfirmationTimeout, DelayType.Realtime);
-            var isCancelled = await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
-
-            if (isCancelled && !ct.IsCancellationRequested)
+            if (await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow())
             {
+                ct.ThrowIfCancellationRequested();
                 var logger = _logger?.WithMethodName();
                 var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
                 throw logger?.CaptureAndThrow(exception) ?? exception;

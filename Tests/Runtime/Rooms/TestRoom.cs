@@ -442,5 +442,103 @@ namespace Elympics.Tests.Rooms
             await room.Leave();
             Assert.IsTrue(room.IsDisposed);
         });
+
+        private static List<(string Name, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState)> cancellingRoomOperationsTestCases = new()
+        {
+            (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), InitialRoomState with { Users = new[] { new UserInfo(HostId, 0, false, null, null) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking) }),
+            (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), InitialRoomState with { Users = new[] { new UserInfo(HostId, 0, false, null, null) } }),
+            (nameof(IRoom.MarkYourselfUnready), r => r.MarkYourselfUnready(), InitialRoomState with { Users = new[] { new UserInfo(HostId, 0, true, null, null) } }),
+            (nameof(IRoom.StartMatchmaking), r => r.StartMatchmaking(), InitialRoomState with { Users = new[] { new UserInfo(HostId, 0, true, null, null) } }),
+            (nameof(IRoom.CancelMatchmaking), r => r.CancelMatchmaking(), InitialRoomState with { Users = new[] { new UserInfo(HostId, 0, true, null, null) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking) }),
+        };
+
+        [UnityTest]
+        public IEnumerator SettingIsJoinedShouldCancelOperationsInProgress(
+            [ValueSource(nameof(cancellingRoomOperationsTestCases))]
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+        {
+            var roomClientMock = Substitute.For<IRoomsClient>();
+            _ = roomClientMock.ChangeTeam(default, null)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetReady(default, null!, null!, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetUnready(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.StartMatchmaking(default, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.CancelMatchmaking(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+
+            var matchLauncherMock = new MatchLauncherMock();
+
+            var room = new Room(matchLauncherMock, roomClientMock, RoomId, testCase.RoomState, true);
+            var operation = testCase.Operation(room);
+
+            // Act
+            ((IRoom)room).IsJoined = false;
+
+            // Assert
+            Assert.That(await operation.SuppressCancellationThrow(), Is.True);
+        });
+
+        [UnityTest]
+        public IEnumerator DisposingRoomShouldCancelOperationsInProgress(
+            [ValueSource(nameof(cancellingRoomOperationsTestCases))]
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+        {
+            var roomClientMock = Substitute.For<IRoomsClient>();
+            _ = roomClientMock.ChangeTeam(default, null)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetReady(default, null!, null!, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetUnready(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.StartMatchmaking(default, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.CancelMatchmaking(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+
+            var matchLauncherMock = new MatchLauncherMock();
+
+            var room = new Room(matchLauncherMock, roomClientMock, RoomId, testCase.RoomState, true);
+            var operation = testCase.Operation(room);
+
+            // Act
+            room.Dispose();
+
+            // Assert
+            Assert.That(await operation.SuppressCancellationThrow(), Is.True);
+        });
+
+        [UnityTest]
+        public IEnumerator LeavingRoomShouldCancelOperationsInProgress(
+            [ValueSource(nameof(cancellingRoomOperationsTestCases))]
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+        {
+            var roomClientMock = Substitute.For<IRoomsClient>();
+            _ = roomClientMock.ChangeTeam(default, null)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetReady(default, null!, null!, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.SetUnready(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.StartMatchmaking(default, default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+            _ = roomClientMock.CancelMatchmaking(default)
+                .ReturnsForAnyArgs(UniTask.CompletedTask);
+
+            var matchLauncherMock = new MatchLauncherMock();
+
+            var room = new Room(matchLauncherMock, roomClientMock, RoomId, testCase.RoomState, true);
+            roomClientMock.When(x => x.LeaveRoom(Arg.Any<Guid>(), Arg.Any<CancellationToken>()))
+                .Do(_ => ((IRoom)room).IsJoined = false);
+            var operation = testCase.Operation(room);
+
+            // Act
+            await room.Leave();
+
+            // Assert
+            Assert.That(await operation.SuppressCancellationThrow(), Is.True);
+        });
     }
 }

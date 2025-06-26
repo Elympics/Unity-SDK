@@ -6,7 +6,7 @@ using MessagePack;
 namespace Communication.Lobby.Models.ToLobby
 {
     [MessagePackObject]
-    internal record RequestRollings(
+    public record RequestRollings(
         [property: Key(1)] Guid GameId,
         [property: Key(2)] string VersionId,
         [property: Key(3)] List<RollingRequestDto> Rollings
@@ -17,7 +17,7 @@ namespace Communication.Lobby.Models.ToLobby
     }
 
     [MessagePackObject]
-    internal record RollingRequestDto(
+    public record RollingRequestDto(
         [property: Key(0)] Guid CoinId,
         [property: Key(1)] string Prize,
         [property: Key(2)] uint PlayersCount);

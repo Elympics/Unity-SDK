@@ -22,12 +22,12 @@ namespace Elympics.Rooms.Models
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return CompareIEnumerable(MatchedPlayersId, other.MatchedPlayersId)
+            return MatchedPlayersId.SequenceEqualNullable(other.MatchedPlayersId)
                 && TcpUdpServerAddress == other.TcpUdpServerAddress
                 && WebServerAddress == other.WebServerAddress
                 && UserSecret == other.UserSecret
-                && CompareIEnumerable(GameEngineData, other.GameEngineData)
-                && CompareIEnumerable(MatchmakerData, other.MatchmakerData);
+                && GameEngineData.SequenceEqualNullable(other.GameEngineData)
+                && MatchmakerData.SequenceEqualNullable(other.MatchmakerData);
         }
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -47,15 +47,6 @@ namespace Elympics.Rooms.Models
             hashCode.Add(GameEngineData.Length);
             hashCode.Add(MatchmakerData.Length);
             return hashCode.ToHashCode();
-        }
-
-        private static bool CompareIEnumerable<TSource>(IEnumerable<TSource>? first, IEnumerable<TSource>? second)
-        {
-            if (first == null && second == null)
-                return true;
-            if (first == null || second == null)
-                return false;
-            return first.SequenceEqual(second);
         }
     }
 }

@@ -227,9 +227,9 @@ namespace Elympics
 
             CurrentState = new DisconnectedState(this);
             if (AuthenticateOnAwakeWith != AuthType.None)
-                ConnectToElympicsAsync(new ConnectionData()
+                ConnectToElympicsAsync(new ConnectionData
                 {
-                    AuthType = authenticateOnAwakeWith
+                    AuthType = authenticateOnAwakeWith,
                 }).Forget();
         }
 
@@ -457,7 +457,7 @@ namespace Elympics
                     CachedData = AuthData,
                 }
             };
-            await CurrentState.ReConnect(reconnectionData);
+            await CurrentState.Reconnect(reconnectionData);
             if (CurrentState.State == ElympicsState.Disconnected)
                 ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
                 {

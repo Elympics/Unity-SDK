@@ -29,10 +29,10 @@ namespace Elympics.ElympicsSystems.Internal
             return UniTask.CompletedTask;
         }
         public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
-        public override async UniTask ReConnect(ConnectionData reconnectionData)
+        public override async UniTask Reconnect(ConnectionData reconnectionData)
         {
             Client.SwitchState(ElympicsState.Reconnecting);
-            await Client.CurrentState.ReConnect(reconnectionData);
+            await Client.CurrentState.Reconnect(reconnectionData);
         }
         public override async UniTask FinishMatch()
         {

@@ -25,9 +25,9 @@ namespace Elympics.Tests
     public class ElympicsLobbyClientTest : ElympicsMonoBaseTest
     {
         private ElympicsLobbyClient? _sut;
-        private IAuthClient _authClientMock = Substitute.For<IAuthClient>();
-        private IWebSocket _webSocketMock = Substitute.For<IWebSocket>();
-        private IAvailableRegionRetriever _regionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
+        private readonly IAuthClient _authClientMock = Substitute.For<IAuthClient>();
+        private readonly IWebSocket _webSocketMock = Substitute.For<IWebSocket>();
+        private readonly IAvailableRegionRetriever _regionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
 
 
         public override string SceneName => "ElympicsLobbyClientTestScene";

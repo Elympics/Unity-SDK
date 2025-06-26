@@ -1,7 +1,8 @@
-#nullable enable
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
+
+#nullable enable
 
 namespace Elympics.ElympicsSystems.Internal
 {
@@ -14,18 +15,19 @@ namespace Elympics.ElympicsSystems.Internal
 
         public override UniTask Disconnect()
         {
-            //Client.ClearAuthData();
             Client.SwitchState(ElympicsState.Disconnected);
             return UniTask.CompletedTask;
         }
+
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
         public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
-        public override async UniTask ReConnect(ConnectionData reconnectionData)
+
+        public override async UniTask Reconnect(ConnectionData reconnectionData)
         {
             _matchmakingCancelRequested = false;
             Client.SwitchState(ElympicsState.Reconnecting);
-            await Client.CurrentState.ReConnect(reconnectionData);
+            await Client.CurrentState.Reconnect(reconnectionData);
         }
 
         public override async UniTask FinishMatch()
@@ -33,7 +35,9 @@ namespace Elympics.ElympicsSystems.Internal
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));
             await UniTask.CompletedTask;
         }
+
         public override void MatchFound() => Client.SwitchState(ElympicsState.Connected);
+
         public override async UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {
             if (_matchmakingCancelRequested)
@@ -44,7 +48,6 @@ namespace Elympics.ElympicsSystems.Internal
                 await room.CancelMatchmakingInternal(ct);
                 Client.SwitchState(ElympicsState.Connected);
                 _matchmakingCancelRequested = false;
-
             }
             catch (LobbyOperationException e)
             {
@@ -53,6 +56,7 @@ namespace Elympics.ElympicsSystems.Internal
                     Client.SwitchState(ElympicsState.Connected);
                     throw;
                 }
+
                 _matchmakingCancelRequested = false;
             }
         }

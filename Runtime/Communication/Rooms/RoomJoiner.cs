@@ -91,13 +91,14 @@ namespace Elympics
 
         private async UniTask<Guid> SetupRoomTracking(UniTask<Guid> mainOperation, CancellationToken ct = default)
         {
+            var roomId = await mainOperation;
+            if (IsCurrentRoomId(roomId))
+                throw new RoomAlreadyJoinedException(roomId);
+            JoiningState = new RoomJoiningState.JoinedNoTracking(roomId);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
+
             try
             {
-                var roomId = await mainOperation;
-                if (IsCurrentRoomId(roomId))
-                    throw new RoomAlreadyJoinedException(roomId);
-                JoiningState = new RoomJoiningState.JoinedNoTracking(roomId);
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
                 await ResultUtils.WaitUntil(() => IsCurrentRoomId(roomId), OperationTimeout, linkedCts.Token);
                 return roomId;
             }

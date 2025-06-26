@@ -18,6 +18,8 @@ namespace Elympics
     internal class Room : IRoom
     {
         public TimeSpan ConfirmationTimeout { private get; set; } = TimeSpan.FromSeconds(5);
+        public TimeSpan ForceCancelTimeout { private get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan WebApiTimeoutFallback { private get; set; } = TimeSpan.FromSeconds(5);
 
         public Guid RoomId => ThrowIfDisposedOrReturn(_roomId);
         public RoomState State => ThrowIfDisposedOrReturn(_state);
@@ -32,7 +34,10 @@ namespace Elympics
             set
             {
                 if (!_isJoined && value)
+                {
+                    _roomStateChangeMonitorCts?.Cancel();
                     _roomStateChangeMonitorCts = new CancellationTokenSource();
+                }
 
                 _isJoined = value;
             }
@@ -72,8 +77,6 @@ namespace Elympics
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
 
-        private readonly TimeSpan _forceCancelTimeout = TimeSpan.FromSeconds(10);
-        private readonly TimeSpan _webApiTimeoutFallback = TimeSpan.FromSeconds(5);
         private CancellationTokenSource? _roomStateChangeMonitorCts;
 
         public Room(
@@ -135,7 +138,7 @@ namespace Elympics
 
             return _client.ChangeTeam(_roomId, teamIndex).ContinueWith(() => ResultUtils.WaitUntil(() =>
                     !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex,
-                _webApiTimeoutFallback,
+                WebApiTimeoutFallback,
                 _roomStateChangeMonitorCts!.Token));
         }
 
@@ -148,7 +151,7 @@ namespace Elympics
             matchmakerData ??= Array.Empty<float>();
             //TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
             return _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady,
-                _webApiTimeoutFallback,
+                WebApiTimeoutFallback,
                 _roomStateChangeMonitorCts!.Token));
         }
 
@@ -165,7 +168,7 @@ namespace Elympics
             ThrowIfDisposed();
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
-            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, _webApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
+            return _client.SetUnready(_roomId).ContinueWith(() => ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, WebApiTimeoutFallback, _roomStateChangeMonitorCts!.Token));
         }
 
         public async UniTask StartMatchmaking()
@@ -215,7 +218,7 @@ namespace Elympics
                         throw;
 
                     ct.ThrowIfCancellationRequested();
-                    await UniTask.Delay(_forceCancelTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
+                    await UniTask.Delay(ForceCancelTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 }
         }
 

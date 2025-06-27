@@ -5,6 +5,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
+using HybridWebSocket;
+using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,7 +21,12 @@ namespace Elympics.Tests
     {
         public override string SceneName => "ElympicsLobbyClientStateMachineTestScene";
         public override bool RequiresElympicsConfig => true;
-        private ElympicsLobbyClient _sut;
+        private ElympicsLobbyClient _sut = null!;
+        private readonly IAuthClient _authClientMock = Substitute.For<IAuthClient>();
+        private readonly IWebSocket _webSocketSessionMock = Substitute.For<IWebSocket>();
+        private readonly IRoomsManager _roomsManagerMock = Substitute.For<IRoomsManager>();
+        private readonly IAvailableRegionRetriever _availableRegionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
+        private readonly IRoomsClient _roomsClientMock = Substitute.For<IRoomsClient>();
 
         private static readonly Guid UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         private const string Nickname = "nickname";
@@ -30,15 +37,19 @@ namespace Elympics.Tests
         {
             SceneManager.LoadScene(SceneName);
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
-            _sut = ElympicsLobbyClient.Instance;
+            _sut = ElympicsLobbyClient.Instance!;
             Assert.NotNull(_sut);
-            _ = _sut!.MockSuccessIAuthClient(UserId, Nickname)
-                .MockIWebSocket(UserId, Nickname, AvatarUrl, false, null, out _)
-                .MockIAvailableRegionRetriever(ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas)
-                .MockIRoomManager();
+            _ = _sut.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketSessionMock).InjectIRoomManager(_roomsManagerMock)
+                .InjectRegionIAvailableRegionRetriever(_availableRegionRetrieverMock);
+            _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
+            _ = _webSocketSessionMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl);
+            _ = _availableRegionRetrieverMock.GetAvailableRegions()
+                .Returns(UniTask.FromResult(new List<string> { ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas }));
+            _ = _roomsClientMock.MockDefaultStartMatchMaking();
+            _ = _roomsManagerMock.SetCurrentDefaultRoom(_roomsClientMock, _sut);
         }
 
-        public List<(ElympicsState, ElympicsState)> _stateTransitions = new();
+        private readonly List<(ElympicsState, ElympicsState)> _stateTransitions = new();
 
         [SetUp]
         public void SetupSut()
@@ -50,7 +61,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics() => UniTask.ToCoroutine(async () =>
         {
-            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            await _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
             });
@@ -63,7 +74,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_Twice() => UniTask.ToCoroutine(async () =>
         {
-            _sut!.ConnectToElympicsAsync(new ConnectionData()
+            _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
             }).Forget();
@@ -85,7 +96,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_StartMatchmaking() => UniTask.ToCoroutine(async () =>
         {
-            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            await _sut.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret
             });
@@ -102,7 +113,7 @@ namespace Elympics.Tests
         public void CleanUp()
         {
             ElympicsLogger.Log($"{nameof(ElympicsLobbyClientTest)} Cleanup");
-            if (_sut!.IsAuthenticated)
+            if (_sut.IsAuthenticated)
             {
                 _sut.SwitchState(ElympicsState.Connected);
                 _sut.SignOut();

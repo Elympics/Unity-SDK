@@ -1,13 +1,9 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
-using Elympics.Rooms.Models;
 using HybridWebSocket;
-using NSubstitute;
 using NUnit.Framework;
 
 namespace Elympics.Tests
@@ -22,22 +18,7 @@ namespace Elympics.Tests
         private const string AvailableRegionRetriever = "_regionRetriever";
         private const string RoomsManager = "_roomsManager";
 
-        public static ElympicsLobbyClient MockIWebSocket(
-            this ElympicsLobbyClient sut,
-            Guid userId,
-            string nickname,
-            string? avatarUrl,
-            bool createInitialRoom,
-            double? pingDelay,
-            out IWebSocket createdMock)
-        {
-            var mock = WebSocketMockSetup.CreateMockWebSocket(userId, nickname, avatarUrl, createInitialRoom, pingDelay);
-            SetIWebSocketMock(sut, mock);
-            createdMock = mock;
-            return sut;
-        }
-
-        private static void SetIWebSocketMock(ElympicsLobbyClient sut, IWebSocket mock)
+        public static ElympicsLobbyClient InjectMockIWebSocket(this ElympicsLobbyClient sut, IWebSocket mock)
         {
             var webSocketSessionField = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == WebSocketSessionName);
             Assert.NotNull(webSocketSessionField);
@@ -53,74 +34,30 @@ namespace Elympics.Tests
 #pragma warning disable IDE0062
             //IWebSocket MockWebSocket(string s, string? s1) => () => mock;
 #pragma warning restore IDE0062
-        }
-
-        public static ElympicsLobbyClient MockSuccessIAuthClient(this ElympicsLobbyClient sut, Guid userId, string nickname)
-        {
-            var mockAuthClient = AuthClientMockSetup.CreateSuccessIAuthClient(userId, nickname);
-            var authField = sut!.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == AuthClientFieldName);
-            Assert.NotNull(authField);
-            authField.SetValue(sut, mockAuthClient);
             return sut;
         }
 
-        public static ElympicsLobbyClient MockFailureIAuthClient(this ElympicsLobbyClient sut)
+        public static ElympicsLobbyClient InjectMockIAuthClient(this ElympicsLobbyClient sut, IAuthClient mock)
         {
-            var mockAuthClient = AuthClientMockSetup.CreateFailureIAuthClient();
             var authField = sut!.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == AuthClientFieldName);
             Assert.NotNull(authField);
-            authField.SetValue(sut, mockAuthClient);
+            authField.SetValue(sut, mock);
             return sut;
         }
 
-        public static ElympicsLobbyClient MockIAvailableRegionRetriever(this ElympicsLobbyClient sut, params string[] regions)
+        public static ElympicsLobbyClient InjectRegionIAvailableRegionRetriever(this ElympicsLobbyClient sut, IAvailableRegionRetriever mock)
         {
             var availableRegionRetriever = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == AvailableRegionRetriever);
             Assert.NotNull(availableRegionRetriever);
-
-            var regionRetrieverMock = Substitute.For<IAvailableRegionRetriever>();
-            _ = regionRetrieverMock.GetAvailableRegions().Returns(UniTask.FromResult(new List<string>(regions)));
-            availableRegionRetriever.SetValue(sut, regionRetrieverMock);
+            availableRegionRetriever.SetValue(sut, mock);
             return sut;
         }
 
-        public static ElympicsLobbyClient MockIRoomManager(this ElympicsLobbyClient sut)
+        public static ElympicsLobbyClient InjectIRoomManager(this ElympicsLobbyClient sut, IRoomsManager roomsManagerMock)
         {
             var lazyRoomsManager = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == RoomsManager);
             Assert.NotNull(lazyRoomsManager);
-            var roomManagerMock = Substitute.For<IRoomsManager>();
-            var roomClient = Substitute.For<IRoomsClient>();
-            _ = roomClient.StartMatchmaking(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(UniTask.CompletedTask);
-#pragma warning disable IDE0017
-            IRoom room = new Room(sut,
-                roomClient,
-                Guid.Empty,
-                new RoomStateChanged(Guid.Empty,
-                    DateTime.Now,
-                    string.Empty,
-                    null,
-                    false,
-                    new MatchmakingData(DateTime.Now,
-                        MatchmakingState.Playing,
-                        "test",
-                        1,
-                        1,
-                        new Dictionary<string, string>(),
-                        new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null),
-                        null,
-                        null),
-                    new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty, string.Empty) },
-                    false,
-                    false,
-                    null));
-            room.IsJoined = true;
-#pragma warning restore IDE0017
-            _ = roomManagerMock.ListJoinedRooms().Returns(new List<IRoom>()
-            {
-                room
-            });
-
-            var lazy = new Lazy<IRoomsManager>(roomManagerMock);
+            var lazy = new Lazy<IRoomsManager>(roomsManagerMock);
             lazyRoomsManager.SetValue(sut, lazy);
             return sut;
         }

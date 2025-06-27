@@ -85,9 +85,7 @@ namespace Elympics.SnapshotAnalysis
             if (_index != ChunkLimit)
                 return;
             _currentBuffer = GetNewBufferNumber();
-            Debug.Log($"New Current buffer {_currentBuffer}");
             _index = 0;
-            Debug.Log("Limit reached");
             using (ElympicsMarkers.Elympics_SnapshotCollector_OnBufferLimit.Auto())
                 OnBufferLimit(buffer).Forget();
         }

@@ -15,12 +15,10 @@ namespace Elympics
     {
         Guid RoomId { get; }
         RoomState State { get; }
-        public sealed string RoomName => State.RoomName;
-        public sealed string? JoinCode => State.JoinCode;
+        public string RoomName => State.RoomName;
+        public string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
-
-        [Obsolete("Only one room can be joined at once. See " + nameof(IRoomsManager) + "." + nameof(IRoomsManager.CurrentRoom))]
         bool IsJoined { get; internal set; }
 
         bool HasMatchmakingEnabled { get; }
@@ -28,7 +26,7 @@ namespace Elympics
 
         UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, CompetitivenessConfig? competitivenessConfig = null);
         UniTask ChangeTeam(uint? teamIndex);
-        public sealed UniTask BecomeSpectator() => ChangeTeam(null);
+        public UniTask BecomeSpectator() => ChangeTeam(null);
 
         UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
         UniTask MarkYourselfUnready();

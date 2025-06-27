@@ -3,13 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
-using MessagePack;
 using NSubstitute;
 using NUnit.Framework;
-using UnityEditor;
-using UnityEngine;
 using UnityEngine.TestTools;
 using static Elympics.Tests.Common.AsyncAsserts;
 
@@ -25,13 +21,6 @@ namespace Elympics.Tests.Rooms
         {
             new(RoomId, InitialPublicState),
         });
-
-        [InitializeOnLoadMethod]
-        public static void DecodeMessagePack()
-        {
-            Debug.Log(MessagePackSerializer.Deserialize<IFromLobby>(Convert.FromBase64String(
-                "kgOa2SQyNzQ1ZGVmMy1jOWI5LTRlMDAtOTE0Mi01M2I0NzFlOGU1MDfX/9dKvwBoGyVsq3F1aWNrLW1hdGNopDE2MjnDmdf/10q/AGgbJWwArHB2cC10cmFpbmluZwEBgJTZJGNhYzkzZjVlLTgyNGQtNDA5OS04Yzg4LWJkYzM1YTE5YWYzMwTA2UFPcGVyYXRpb24gdGltZW91dCBXYWl0aW5nIGZvciBpbml0aWFsaXphdGlvbiBkZWFkbGluZSBoYXMgZWxhcHNlZMDAkZXZJDYzMmNhN2UyLWI4MzYtNDdiNi1hMmViLTk2ZTIyMWU1MTFlNADCrUhhcHB5IE9jdG9wdXPZUWh0dHBzOi8vaG9zdGluZy1tZXRhLmVseW1waWNzLmFpL2F2YXRhcnMvRkVEQUJFQTQtRkIyQy00OEE0LTk3REItM0RCQ0U5ODkyQTFELnBuZ8PDgA==")));
-        }
 
         [Test]
         public void RoomShouldBeSetAsJoinedAfterStateTrackingMessageIsReceived()
@@ -552,6 +541,27 @@ namespace Elympics.Tests.Rooms
             EventRegister.AssertIfInvoked();
             Assert.AreEqual(true, RoomsManager.ListJoinedRooms()[0].State.IsPrivate);
         }
+
+        private class DummyException : Exception
+        {
+            public DummyException(string message)
+                : base(message)
+            { }
+        }
+
+        [UnityTest]
+        public IEnumerator ExceptionThrownByRoomsClientShouldBeForwarded() => UniTask.ToCoroutine(async () =>
+        {
+            var expected = new DummyException("My test exception");
+
+            _ = RoomsClientMock.JoinRoom("", null)
+                .ReturnsForAnyArgs(UniTask.FromException<Guid>(expected));
+
+            // Act
+            var exception = await AssertThrowsAsync<DummyException>(async () => await RoomsManager.JoinRoom(null, ""));
+
+            Assert.That(exception.Message, Is.EqualTo(expected.Message));
+        });
 
         private UniTask EnsureRoomIsBeingJoined(Guid? roomId = null, string? joinCode = null)
         {

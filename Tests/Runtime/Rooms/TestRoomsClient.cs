@@ -34,7 +34,8 @@ namespace Elympics.Tests.Rooms
         [SetUp]
         public void ResetMocks()
         {
-            ((IRoomsClient)RoomsClient).Reset();
+            ((IRoomsClient)RoomsClient).ResetState();
+            ((IRoomsClient)RoomsClient).ClearSession();
             WsSessionMock.Reset();
             WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
             RoomsClient.Session = WsSessionMock;
@@ -218,10 +219,11 @@ namespace Elympics.Tests.Rooms
                     0.1f,
                     0.2f,
                     0.3f,
-                });
+                },
+                DateTime.UtcNow);
 
             // Act
-            await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData);
+            await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData, expectedMessage.LastRoomUpdate);
 
             Assert.That(WsSessionMock.ExecutedOperations, Has.Count.EqualTo(1));
             Assert.That(WsSessionMock.ExecutedOperations[0], Is.EqualTo(expectedMessage));
@@ -242,11 +244,13 @@ namespace Elympics.Tests.Rooms
                     0.1f,
                     0.2f,
                     0.3f,
-                });
+                },
+                DateTime.UtcNow);
             RoomsClient.Session = null;
 
             // Act
-            var result = await UniTask.Create(async () => await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData)).Catch();
+            var result = await UniTask.Create(async () =>
+                await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData, expectedMessage.LastRoomUpdate)).Catch();
 
             Assert.That(result, Is.InstanceOf<InvalidOperationException>());
             Assert.That(WsSessionMock.ExecutedOperations, Is.Empty);

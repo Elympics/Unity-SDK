@@ -7,6 +7,7 @@ using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -44,6 +45,7 @@ namespace Elympics
         #endregion Aggregated room events
 
         public TimeSpan OperationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
+        public TimeSpan ConfirmationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
 
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private CancellationTokenSource _cts = new();
@@ -144,7 +146,7 @@ namespace Elympics
                     }
                 }
                 else
-                    AddRoomToDictionary(new Room(_matchLauncher, _client, roomId, updatedState));
+                    AddRoomToDictionary(CreateRoom(roomId, publicState: updatedState));
             }
 
             RoomListUpdated?.Invoke(new RoomListUpdatedArgs(roomListChanged.Changes.Select(change => change.RoomId).ToList()));
@@ -160,6 +162,7 @@ namespace Elympics
             foreach (var (_, room) in clearedRooms)
                 room.Dispose();
             _roomJoiner.Reset();
+            _client.ResetState();
 
             _cts = new CancellationTokenSource();
             _initialized = false;
@@ -181,7 +184,7 @@ namespace Elympics
             }
             else
             {
-                IRoom newRoom = new Room(_matchLauncher, _client, roomId, roomState);
+                var newRoom = CreateRoom(roomId, state: roomState);
                 _ = logger.SetQueue(roomState.MatchmakingData?.QueueName)
                     .SetRoomId(roomState.RoomId.ToString());
                 CurrentRoom = newRoom;
@@ -190,7 +193,7 @@ namespace Elympics
             }
 
             var matchDataArgsAvailable = _stateDiff.MatchDataArgs != null;
-            var matchNotFound = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && !string.IsNullOrEmpty(_stateDiff.MatchDataArgs?.MatchData.FailReason);
+            var matchNotFound = _stateDiff.MatchDataArgs?.MatchData.MatchDetails == null && !string.IsNullOrEmpty(_stateDiff.MatchDataArgs?.MatchData.FailReason);
             var matchFoundSuccessfully = _stateDiff.MatchDataArgs?.MatchData.MatchDetails != null && string.IsNullOrEmpty(_stateDiff.MatchDataArgs.MatchData.FailReason);
             if (matchDataArgsAvailable)
                 _ = logger.SetMatchId(roomState.MatchmakingData?.MatchData?.MatchId.ToString());
@@ -243,6 +246,15 @@ namespace Elympics
             {
                 _ = ElympicsLogger.LogException(exception);
             }
+        }
+
+        private IRoom CreateRoom(Guid id, PublicRoomState? publicState = null, RoomStateChanged? state = null)
+        {
+            if (state is null && publicState is null)
+                throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
+            return state is not null
+                ? new Room(_matchLauncher, _client, id, state, false, _logger) { ConfirmationTimeout = ConfirmationTimeout }
+                : new Room(_matchLauncher, _client, id, publicState!, _logger) { ConfirmationTimeout = ConfirmationTimeout };
         }
 
         private void AddRoomToDictionary(IRoom room)
@@ -313,7 +325,10 @@ namespace Elympics
         {
             if (CurrentRoom?.RoomId == args.RoomId)
                 CurrentRoom = null;
+
             _ = _logger.SetNoRoom();
+            if (args.Reason == LeavingReason.RoomClosed && _rooms.Remove(args.RoomId, out var removedRoom))
+                removedRoom.Dispose();
             LeftRoom?.Invoke(args);
         }
 
@@ -381,11 +396,17 @@ namespace Elympics
                 tournamentDetails).ContinueWith(id => _rooms[id]);
         }
 
-        public UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
+        public async UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
         {
             if (roomId == null && joinCode == null)
                 throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
-            return _roomJoiner.JoinRoom(roomId, joinCode, teamIndex).ContinueWith(id => _rooms[id]);
+
+            var id = await _roomJoiner.JoinRoom(roomId, joinCode, teamIndex);
+
+            if (!_rooms.TryGetValue(id, out var room))
+                throw new InvalidOperationException("Room no longer exists.");
+
+            return room;
         }
 
         public async UniTask<IRoom> StartQuickMatch(
@@ -406,17 +427,32 @@ namespace Elympics
             customMatchmakingData ??= new Dictionary<string, string>();
             ct.ThrowIfCancellationRequested();
 
+            bool isCancelled;
             var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, tournamentDetails);
-            _ = logger.SetRoomId(roomId.ToString());
-            var room = _rooms[roomId];
-            bool isCanceled;
+            using var roomLeftCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
+            _ = logger.SetRoomId(roomId.ToString());
+            _ = logger.SetQueue(queueName);
+
+            var room = _rooms[roomId];
+            var matchmakingCancelledCt = UniTask
+                .WaitUntil(() => room.IsDisposed || room.State.MatchmakingData?.MatchmakingState is MatchmakingState.CancellingMatchmaking,
+                    cancellationToken: roomLeftCts.Token)
+                .ToCancellationToken();
+            var matchmakingFailedCt = UniTask
+                .WaitUntil(() => !room.IsDisposed && room.State.MatchmakingData is { MatchData: { FailReason: not null } },
+                    cancellationToken: roomLeftCts.Token)
+                .ToCancellationToken();
+            var userCancelRequested = UniTask.WaitUntil(() => !room.IsDisposed && room.CanMatchmakingBeCancelled() && ct.IsCancellationRequested,
+                cancellationToken: roomLeftCts.Token).ToCancellationToken();
             try
             {
-                _ = logger.SetQueue(queueName);
                 await SetupQuickRoomAndStartMatchmaking(gameEngineData, matchmakerData, room, ct);
-                _client.LeftRoom += OnQuickRoomLeft;
-                isCanceled = await UniTask.WaitUntil(() => _stateDiff.MatchDataArgs is not null, cancellationToken: ct).SuppressCancellationThrow();
+                using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(userCancelRequested, roomLeftCts.Token, matchmakingCancelledCt, matchmakingFailedCt);
+                isCancelled = await UniTask.WaitUntil(() => !room.IsDisposed && room.State.MatchmakingData?.MatchData?.MatchDetails is not null,
+                    cancellationToken: cancellationTokenSource.Token).SuppressCancellationThrow();
+                _client.LeftRoom -= OnQuickRoomLeft;
+                roomLeftCts.Cancel();
             }
             catch (Exception e)
             {
@@ -424,33 +460,51 @@ namespace Elympics
                 throw logger.CaptureAndThrow(e);
             }
 
-            if (!isCanceled)
+            if (matchmakingFailedCt.IsCancellationRequested)
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
-                if (string.IsNullOrEmpty(error))
-                    return room; // happy path
                 await LeaveAndCleanUp();
                 throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
             }
 
+            // happy path
+            if (!isCancelled)
+                return room;
+
             // the process has been cancelled
+            var timeoutCts = new CancellationTokenSource();
+            using var timeoutDisposable = timeoutCts.CancelAfterSlim(ConfirmationTimeout);
             try
             {
-                await room.CancelMatchmaking(ct);
+                if (userCancelRequested.IsCancellationRequested && !matchmakingCancelledCt.IsCancellationRequested)
+                    await room.CancelMatchmaking(timeoutCts.Token);
             }
-            catch (Exception)
+            catch (LobbyOperationException e)
             {
+                logger.Warning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
+                if (e.Kind == ErrorKind.RoomAlreadyInMatchedState)
+                {
+                    var timedOut = await UniTask.WaitUntil(() => !room.IsDisposed && room.IsEligibleToPlayMatch(), cancellationToken: timeoutCts.Token).SuppressCancellationThrow();
+                    if (timedOut)
+                        throw new ConfirmationTimeoutException(ConfirmationTimeout);
+                    return room;
+                }
+
                 if (!room.IsDisposed && room.IsEligibleToPlayMatch())
                     return room;
             }
+            catch (OperationCanceledException)
+            {
+                throw new ConfirmationTimeoutException(ConfirmationTimeout);
+            }
 
-            // the cancellation was successful
-            await room.Leave();
+            await LeaveAndCleanUp();
+
             throw new OperationCanceledException(ct);
 
             void OnQuickRoomLeft(LeftRoomArgs args)
             {
-                if (room.IsDisposed)
+                if (!_rooms.TryGetValue(roomId, out var qmRoom) || qmRoom.IsDisposed)
                 {
                     _client.LeftRoom -= OnQuickRoomLeft;
                     return;
@@ -459,8 +513,7 @@ namespace Elympics
                 if (args.RoomId != roomId)
                     return;
                 _client.LeftRoom -= OnQuickRoomLeft;
-                if (_rooms.Remove(room.RoomId, out var removedRoom))
-                    removedRoom.Dispose();
+                roomLeftCts.Cancel();
             }
 
             async UniTask LeaveAndCleanUp()

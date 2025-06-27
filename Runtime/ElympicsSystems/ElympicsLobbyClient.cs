@@ -227,9 +227,9 @@ namespace Elympics
 
             CurrentState = new DisconnectedState(this);
             if (AuthenticateOnAwakeWith != AuthType.None)
-                ConnectToElympicsAsync(new ConnectionData()
+                ConnectToElympicsAsync(new ConnectionData
                 {
-                    AuthType = authenticateOnAwakeWith
+                    AuthType = authenticateOnAwakeWith,
                 }).Forget();
         }
 
@@ -356,6 +356,7 @@ namespace Elympics
 
             ElympicsLogger.Log($"Closing current websocket.");
             _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
+            _roomsManager.Value.Reset();
         }
         private async UniTask UpdateGameConfig()
         {
@@ -436,6 +437,7 @@ namespace Elympics
             RoomsManager.Reset();
             if (reason.Reason != DisconnectionReason.Timeout)
             {
+                await CurrentState.Disconnect();
                 ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
                 {
                     DisconnectionData = reason
@@ -455,7 +457,7 @@ namespace Elympics
                     CachedData = AuthData,
                 }
             };
-            await CurrentState.ReConnect(reconnectionData);
+            await CurrentState.Reconnect(reconnectionData);
             if (CurrentState.State == ElympicsState.Disconnected)
                 ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
                 {
@@ -537,11 +539,16 @@ namespace Elympics
         internal void SignOutInternal()
         {
             var logger = loggerContext.WithMethodName();
-            AuthData = null;
-            ElympicsUser = null;
+            ClearAuthData();
             DisconnectFromLobby();
             logger.Log("User sign out.");
             _ = logger.SetNoUser().SetNoConnection().SetNoRoom();
+        }
+
+        internal void ClearAuthData()
+        {
+            AuthData = null;
+            ElympicsUser = null;
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)

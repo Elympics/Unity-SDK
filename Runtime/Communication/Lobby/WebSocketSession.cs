@@ -72,7 +72,7 @@ namespace Elympics.Lobby
             _ws.OnError += HandleError;
             _ws.OnClose += HandleClose;
             _ws.OnMessage += HandleMessage;
-            using var ctr = ct.RegisterWithoutCaptureExecutionContext(() => Disconnect(DisconnectionReason.Unknown));
+            using var ctr = ct.RegisterWithoutCaptureExecutionContext(() => DisconnectInternal(DisconnectionReason.Unknown));
             try
             {
                 await OpenWebSocket(_ws);
@@ -93,6 +93,21 @@ namespace Elympics.Lobby
         }
         public void Disconnect(DisconnectionReason reason)
         {
+            CleanupSession();
+            SetDisconnectedState();
+            var data = new DisconnectionData(DisconnectionReason.ClientRequest);
+            Disconnected?.Invoke(data);
+        }
+
+        private void DisconnectInternal(DisconnectionReason reason)
+        {
+            CleanupSession();
+            SetDisconnectedState();
+            _dispatcher.Enqueue(() => PropagateDisconnection(reason).Forget());
+        }
+
+        private void CleanupSession()
+        {
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
             if (_cts is null)
@@ -103,8 +118,8 @@ namespace Elympics.Lobby
             _cts = null;
             _operationResultHandlers.Clear();
             ResetWebSocket();
-            SetDisconnectedState(reason);
         }
+
         private void SetConnectedState()
         {
             if (IsConnected)
@@ -114,12 +129,11 @@ namespace Elympics.Lobby
             _dispatcher.Enqueue(() => Connected?.Invoke());
         }
 
-        private void SetDisconnectedState(DisconnectionReason reason)
+        private void SetDisconnectedState()
         {
             if (!IsConnected)
                 return;
             IsConnected = false;
-            _dispatcher.Enqueue(() => PropagateDisconnection(reason).Forget());
         }
 
         private async UniTask PropagateDisconnection(DisconnectionReason reason)
@@ -134,7 +148,7 @@ namespace Elympics.Lobby
         {
             if (_isDisposed)
                 return;
-            Disconnect(DisconnectionReason.ApplicationShutdown);
+            DisconnectInternal(DisconnectionReason.ApplicationShutdown);
             Connected = null;
             Disconnected = null;
             MessageReceived = null;
@@ -226,7 +240,11 @@ namespace Elympics.Lobby
 #endif
                 if (message is Ping)
                 {
-                    DispatchWithCancellation(() => _timer?.Reset());
+                    DispatchWithCancellation(() =>
+                    {
+                        _timer?.Reset();
+                        _timer?.Start();
+                    });
                     SendMessage(new Pong());
                     return;
                 }
@@ -247,7 +265,7 @@ namespace Elympics.Lobby
         }
         private void HandleError(string message)
         {
-            Disconnect(DisconnectionReason.Error);
+            DisconnectInternal(DisconnectionReason.Error);
             _dispatcher.Enqueue(() => ElympicsLogger.LogError(message));
         }
 
@@ -257,7 +275,7 @@ namespace Elympics.Lobby
             _dispatcher.Enqueue(code != WebSocketCloseCode.Normal ? () => logger.Error($"Connection closed abnormally [{code}] {reason}")
                 : () => logger.Log($"Connection closed gracefully [{code}] {reason}"));
 
-            Disconnect(IsConnected && code == WebSocketCloseCode.Away ? DisconnectionReason.Timeout : DisconnectionReason.Closed);
+            DisconnectInternal(IsConnected && code == WebSocketCloseCode.Away ? DisconnectionReason.Timeout : DisconnectionReason.Closed);
         }
 
         private async UniTaskVoid AutoDisconnectOnTimeout(CancellationToken cancellationToken) => await UniTask.RunOnThreadPool(() =>
@@ -277,8 +295,11 @@ namespace Elympics.Lobby
                         return;
 
                     var logger = _logger.WithMethodName();
+                    if (cancellationToken.IsCancellationRequested)
+                        return;
+
                     logger.Error("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
-                    Disconnect(DisconnectionReason.Closed);
+                    DisconnectInternal(DisconnectionReason.Closed);
                     return;
                 }
             },

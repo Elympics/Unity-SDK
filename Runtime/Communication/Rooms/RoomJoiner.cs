@@ -18,6 +18,7 @@ namespace Elympics
         private readonly IRoomsClient _client;
 
         private RoomJoiningState _joiningState = new RoomJoiningState.NotJoined();
+
         private RoomJoiningState JoiningState
         {
             get => _joiningState;
@@ -27,6 +28,7 @@ namespace Elympics
                 JoiningStateChanged?.Invoke(value);
             }
         }
+
         public event Action<RoomJoiningState>? JoiningStateChanged;
 
         public Guid? CurrentRoomId
@@ -94,6 +96,7 @@ namespace Elympics
                 throw new RoomAlreadyJoinedException(roomId);
             JoiningState = new RoomJoiningState.JoinedNoTracking(roomId);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
+
             try
             {
                 await ResultUtils.WaitUntil(() => IsCurrentRoomId(roomId), OperationTimeout, linkedCts.Token);

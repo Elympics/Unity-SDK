@@ -23,18 +23,17 @@ namespace Elympics
         private readonly Dictionary<string, string> _customData = new();
         public IReadOnlyDictionary<string, string> CustomData => _customData;
 
-        private DateTime _lastUpdate = DateTime.MinValue;
-
+        internal DateTime LastRoomUpdate { get; private set; }
         internal RoomState(RoomStateChanged state) => Update(state);
         internal RoomState(PublicRoomState state) => Update(state);
 
         internal void Update(RoomStateChanged stateUpdate, in RoomStateDiff stateDiff)
         {
             stateDiff.Reset();
-            if (stateUpdate.LastUpdate <= _lastUpdate)
+            if (stateUpdate.LastUpdate <= LastRoomUpdate)
             {
                 ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}"
-                    + $"Local Last Update {_lastUpdate:HH:mm:ss.ffff}"
+                    + $"Local Last Update {LastRoomUpdate:HH:mm:ss.ffff}"
                     + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
                 return;
             }
@@ -115,8 +114,7 @@ namespace Elympics
             static bool IsMatchAvailable(MatchData? matchData) =>
                 matchData is { State: MatchState.Running, MatchDetails: not null };
 
-            static bool IsMatchmakingFailed(MatchData? matchData) =>
-                matchData is { State: MatchState.InitializingFailed };
+            static bool IsMatchmakingFailed(MatchData? matchData) => matchData is { State: MatchState.InitializingFailed };
         }
 
 
@@ -159,8 +157,10 @@ namespace Elympics
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
             _users.AddRange(stateUpdate.Users);
-            _lastUpdate = stateUpdate.LastUpdate;
+            LastRoomUpdate = stateUpdate.LastUpdate;
         }
+
+        internal void ResetMatchData() => MatchmakingData = MatchmakingData != null ? MatchmakingData with { MatchData = null } : null;
 
         internal void Update(PublicRoomState stateUpdate)
         {
@@ -172,7 +172,7 @@ namespace Elympics
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
             _users.AddRange(stateUpdate.Users);
-            _lastUpdate = stateUpdate.LastUpdate;
+            LastRoomUpdate = stateUpdate.LastUpdate;
         }
     }
 }

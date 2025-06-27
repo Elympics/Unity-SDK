@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
+using UnityEngine;
 
 #nullable enable
 
@@ -18,6 +19,7 @@ namespace Elympics.Tests.Common
             }
             catch (Exception exception)
             {
+                Debug.Log(exception.ToString());
                 caughtException = exception;
             }
             Assert.IsInstanceOf<T>(caughtException);

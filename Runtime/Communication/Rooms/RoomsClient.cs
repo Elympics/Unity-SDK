@@ -99,7 +99,8 @@ namespace Elympics
             }
 
             _logger.WithMethodName().Log($"Create room {roomName}");
-            return await ExecuteOperation<RoomIdOperationResult>(new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId),
+            return await ExecuteOperation<RoomIdOperationResult>(
+                    new CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId),
                     ct)
                 .ContinueWith(result => result.RoomId);
         }
@@ -124,10 +125,10 @@ namespace Elympics
             return ExecuteOperation(new ChangeTeam(roomId, teamIndex), ct);
         }
 
-        public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default)
+        public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default)
         {
             _logger.WithMethodName().Log("Set ready.");
-            return ExecuteOperation(new SetReady(roomId, gameEngineData, matchmakerData), ct);
+            return ExecuteOperation(new SetReady(roomId, gameEngineData, matchmakerData, lastRoomUpdate), ct);
         }
 
         public UniTask SetUnready(Guid roomId, CancellationToken ct = default)
@@ -168,7 +169,7 @@ namespace Elympics
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {
             _logger.WithMethodName().Log("Start matchmaking.");
-            return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId), default);
+            return ExecuteOperationHostOnly(hostId, new StartMatchmaking(roomId));
         }
 
         public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default)
@@ -253,7 +254,7 @@ namespace Elympics
             throw new UnexpectedRoomResultException(typeof(T), result.GetType());
         }
 
-        private UniTask ExecuteOperationHostOnly(Guid? roomHostId, LobbyOperation message, CancellationToken ct, [CallerMemberName] string methodName = "")
+        private UniTask ExecuteOperationHostOnly(Guid? roomHostId, LobbyOperation message, CancellationToken ct = default, [CallerMemberName] string methodName = "")
         {
             if (Session == null)
                 throw new InvalidOperationException("Missing WebSocket session object.");
@@ -271,11 +272,7 @@ namespace Elympics
             var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(coinId) ?? throw new ArgumentException($"Couldn't create bet with coinId: {coinId}");
             return new RoomBetDetailsSlim(WeiConverter.ToWei(betValue, coinDecimal), coinId);
         }
-
-        void IRoomsClient.Reset()
-        {
-            Session = null;
-            _roomWatchingState = RoomWatchingState.NotWatching;
-        }
+        void IRoomsClient.ResetState() => _roomWatchingState = RoomWatchingState.NotWatching;
+        void IRoomsClient.ClearSession() => Session = null;
     }
 }

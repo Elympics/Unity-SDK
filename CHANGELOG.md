@@ -1,3 +1,34 @@
+## [0.16.0](https://github.com/Elympics/Unity-SDK/compare/v0.15.4...v0.16.0) (2025-06-27)
+
+
+### Bug Fixes 🪲
+
+* matchmaking cancellation and reconnections ([597dd91](https://github.com/Elympics/Unity-SDK/commit/597dd911fc3d3e8106b1b89a9149f5ccbffd5f69))
+* room tracking, joining and leaving ([88ca228](https://github.com/Elympics/Unity-SDK/commit/88ca228938728f23235649ff5fcf38e5af23d59
+* deadlock when recording snapshots in editor ([86de6d8](https://github.com/Elympics/Unity-SDK/commit/86de6d83d843529c16b02e230dd688616d5568be))
+* dispose of handled UnityWebRequests ([c5f5a32](https://github.com/Elympics/Unity-SDK/commit/c5f5a3231d39ae904a88458e07f3abea0bd8aceb))
+* game management window initialization ([83be7c3](https://github.com/Elympics/Unity-SDK/commit/83be7c35deb7a98bcdee701739caa0ecacd1edf9))
+* race condition when weaving Elympics.dll ([ac44bfc](https://github.com/Elympics/Unity-SDK/commit/ac44bfc59f0646cca0a2cb3579230a715cfa14bd))
+* rooms classes allow only one room to be active at once ([5dc1c6a](https://github.com/Elympics/Unity-SDK/commit/5dc1c6a655bb796821597936ae54172de7e11994))
+* remove unnecessary dependencies ([3c0a03a](https://github.com/Elympics/Unity-SDK/commit/3c0a03a3d89ab01134e906b2753fcc6c74c801c2))
+
+
+### Features
+
+* add ElympicsRandom ([497c97f](https://github.com/Elympics/Unity-SDK/commit/497c97f05bb4f249a038457726b0b8cc09e69bb6))
+* add elympicsuser info ([58df1f9](https://github.com/Elympics/Unity-SDK/commit/58df1f90acf4374173d6afd3cd14a6f9b9e29efa))
+* add IInitializable.InitializedByServer ([4a622ee](https://github.com/Elympics/Unity-SDK/commit/4a622ee2dc0e49a4bb90da3ec646e21c0a19eea1))
+* add latestRoomUpdate date in setready ([19fa6ec](https://github.com/Elympics/Unity-SDK/commit/19fa6ecbb459a1e46e7f4b3ad26842f99b57b823))
+* add RoomsManager RoomBetAmountChanged public event ([d630158](https://github.com/Elympics/Unity-SDK/commit/d6301589291dde84a426f54d3c49894d3f91bb1d))
+* Add RoomsManager.IsTrackingAvailableRooms property for checking if the room list updates are received ([ae8b08d](https://github.com/Elympics/Unity-SDK/commit/ae8b08d0bbdfa4dbb2e70b21408689d579bffc8d))
+* add singleplayer mode ([880a615](https://github.com/Elympics/Unity-SDK/commit/880a6158aa05f6b6080718c3f89f10aa564fd93b))
+* add snapshot replay ([a8f7937](https://github.com/Elympics/Unity-SDK/commit/a8f7937312c460a9e7555154e39d26a13da58c0c))
+* reafctor of roomBet ([34e2557](https://github.com/Elympics/Unity-SDK/commit/34e255717dd8bd1c5c8121e0e1bc94ecc1ac3ad8))
+* send full snapshots to new clients ([e12ebad](https://github.com/Elympics/Unity-SDK/commit/e12ebad9387759c0a61241269382a47314f0427f))
+* send last snapshot and RPCs after EndGame ([947d0a3](https://github.com/Elympics/Unity-SDK/commit/947d0a3de459c4a4d5e4ca23a7e7501301352d30))
+
+
+
 ## [0.15.4](https://github.com/Elympics/Unity-SDK/compare/v0.15.3...v0.15.4) (2025-04-09)
 
 

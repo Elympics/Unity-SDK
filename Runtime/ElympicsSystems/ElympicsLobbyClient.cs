@@ -1,28 +1,52 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
+using Elympics.AssemblyCommunicator;
+using Elympics.AssemblyCommunicator.Events;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.ToLobby;
+using Elympics.Communication.Mappers;
+using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
+using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
+using Elympics.Rooms.Models;
+using Elympics.SnapshotAnalysis.Retrievers;
 using JetBrains.Annotations;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
-#nullable enable
-
+using MatchmakingState = Elympics.ElympicsSystems.Internal.MatchmakingState;
 #pragma warning disable CS0618
 
 namespace Elympics
 {
     [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsLobbyClient)]
     [RequireComponent(typeof(AsyncEventsDispatcher))]
-    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager
+    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, ILobby, IWebSocketSessionController
     {
+        private const string NoGameModeName = "None";
+
+        private static readonly MatchmakingFinishedData SinglePlayerMatchmakingFinishedData = new(Guid.Empty,
+            new MatchDetails(
+                new[] { Guid.Empty },
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                Array.Empty<byte>(),
+                Array.Empty<float>()),
+            string.Empty,
+            string.Empty);
+
         public static ElympicsLobbyClient? Instance { get; private set; }
         internal ElympicsLobbyClientState CurrentState { get; private set; } = null!;
 
@@ -50,11 +74,21 @@ namespace Elympics
         [SerializeField, HideInInspector] private bool authenticateOnAwake = true;
         [SerializeField, HideInInspector] private bool migratedAuthSettings;
 
+        [Obsolete("Use instead" + nameof(ElympicsConnectionEstablished))]
         public event Action<AuthData>? AuthenticationSucceeded;
+
+        [Obsolete]
         public event Action<string>? AuthenticationFailed;
+
+        public event Action<ElympicsConnectionData>? ElympicsConnectionEstablished;
+        public event Action<ElympicsConnectionLostData>? ElympicsConnectionLost;
 
         private IAuthClient _auth = null!;
         public AuthData? AuthData { get; internal set; }
+
+        [PublicAPI]
+        public ElympicsUser? ElympicsUser { get; internal set; }
+
         public Guid? UserGuid => AuthData?.UserId;
         public bool IsAuthenticated => AuthData != null;
         private string? _clientSecret;
@@ -120,12 +154,20 @@ namespace Elympics
         [PublicAPI]
         public IReadOnlyCollection<string>? AvailableRegions { get; private set; }
 
+        [PublicAPI]
+        public IReadOnlyCollection<CoinInfo>? AvailableCoins { get; private set; }
+
         private IAvailableRegionRetriever _regionRetriever = null!;
 
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _gameConfig = null!;
 
-        internal static ElympicsLoggerContext LoggerContext;
+        private static ElympicsLoggerContext loggerContext;
+        SnapshotAnalysisRetriever? ILobby.SnapshotAnalysisRetriever => _snapshotAnalysisRetriever;
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        private DefaultSnapshotAnalysisRetriever? _snapshotAnalysisRetriever;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private void Awake()
         {
             if (Instance != null)
@@ -140,20 +182,24 @@ namespace Elympics
                 ExitUtility.ExitGame();
 
             if (asyncEventsDispatcher == null)
-                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null."));
+                throw loggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized field {nameof(asyncEventsDispatcher)} cannot be null."));
 
-            _config = ElympicsConfig.Load() ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
+            LobbyRegister.ElympicsLobby = this;
+            _config = ElympicsConfig.Load() ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsConfig)} instance found."));
 
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig()
-                ?? throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
-            LoggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
+                ?? throw loggerContext.CaptureAndThrow(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
+            loggerContext = new ElympicsLoggerContext(ElympicsLogger.SessionId)
             {
                 Context = nameof(ElympicsLobbyClient),
-            }.SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId).WithApp(ElympicsLoggerContext.ElympicsContextApp);
+            }
+            .SetElympicsContext(ElympicsConfig.SdkVersion, _gameConfig.gameId)
+            .SetGameMode(NoGameModeName)
+            .WithApp(ElympicsLoggerContext.ElympicsContextApp);
             _regionRetriever = new DefaultRegionRetriever();
 
-            var awakeLogger = LoggerContext.WithMethodName();
+            var awakeLogger = loggerContext.WithMethodName();
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
@@ -181,9 +227,9 @@ namespace Elympics
 
             CurrentState = new DisconnectedState(this);
             if (AuthenticateOnAwakeWith != AuthType.None)
-                ConnectToElympicsAsync(new ConnectionData()
+                ConnectToElympicsAsync(new ConnectionData
                 {
-                    AuthType = authenticateOnAwakeWith
+                    AuthType = authenticateOnAwakeWith,
                 }).Forget();
         }
 
@@ -194,14 +240,21 @@ namespace Elympics
         {
             try
             {
-                var logger = LoggerContext.WithMethodName();
                 await CurrentState.Connect(data);
             }
             catch (Exception e)
             {
                 AuthData = null;
-                throw LoggerContext.CaptureAndThrow(e);
+                throw loggerContext.CaptureAndThrow(e);
             }
+        }
+
+        [PublicAPI]
+        internal async UniTask WatchReplay(string matchId)
+        {
+            _snapshotAnalysisRetriever = new DefaultSnapshotAnalysisRetriever(_config.ElympicsReplaySource, this);
+            await _snapshotAnalysisRetriever.RetrieveSnapshotReplay(matchId);
+            WatchReplay();
         }
 
         [PublicAPI]
@@ -217,6 +270,13 @@ namespace Elympics
 
             SetUpMatch(JoinedMatchMode.Local);
             LoadGameplayScene();
+        }
+
+        [PublicAPI]
+        public void PlaySinglePlayer()
+        {
+            LogSettingUpGame("Single Player");
+            PlayMatch(SinglePlayerMatchmakingFinishedData);
         }
 
         [PublicAPI]
@@ -238,11 +298,17 @@ namespace Elympics
             LoadGameplayScene();
         }
 
+        #endregion
+
+        #region IMatchLauncher
+
         public void PlayMatch(MatchmakingFinishedData matchData)
         {
-            LoggerContext.Log($"Play match.");
+            loggerContext.Log($"Play match.");
             CurrentState.PlayMatch(matchData).Forget();
         }
+
+        internal void WatchReplay() => CurrentState.WatchReplay();
 
         #endregion
 
@@ -250,7 +316,7 @@ namespace Elympics
 
         private void OnAuthenticatedWith(Result<AuthData, string> result)
         {
-            var logger = LoggerContext.WithMethodName();
+            var logger = loggerContext.WithMethodName();
             string? eventName = null;
             try
             {
@@ -259,7 +325,7 @@ namespace Elympics
                     if (result.Value != null)
                     {
                         AuthData = result.Value;
-                        logger.SetUserId(result.Value.UserId.ToString()).SetNickname(result.Value.Nickname).SetAuthType(result.Value.AuthType).Log("Authentication completed.");
+                        logger.SetUserId(result.Value.UserId.ToString()).SetAuthType(result.Value.AuthType).Log("Authentication completed.");
                         eventName = nameof(AuthenticationSucceeded);
                         AuthenticationSucceeded?.Invoke(AuthData);
                     }
@@ -290,6 +356,7 @@ namespace Elympics
 
             ElympicsLogger.Log($"Closing current websocket.");
             _webSocketSession.Value.Disconnect(DisconnectionReason.ClientRequest);
+            _roomsManager.Value.Reset();
         }
         private async UniTask UpdateGameConfig()
         {
@@ -313,7 +380,7 @@ namespace Elympics
             }
         }
         private void LogSettingUpGame(string gameModeName) =>
-            LoggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
+            loggerContext.Log($"Setting up {gameModeName} mode for {_gameConfig.GameName} (ID: {_gameConfig.GameId}), version {_gameConfig.GameVersion}");
 
         private AuthorizationStrategy GetAuthStrategy(bool isAuthorized) => isAuthorized switch
         {
@@ -323,9 +390,9 @@ namespace Elympics
 
         private ConnectionStrategy GetConnectionStrategy(bool isAuthenticated, bool isConnected) => (isAuthenticated, isConnected) switch
         {
-            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value, LoggerContext),
-            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value, LoggerContext),
-            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value, LoggerContext),
+            (true, true) => new AuthorizedConnectedSocketConnectionStrategy(_webSocketSession.Value, _webSocketSession.Value.ConnectionDetails!.Value, loggerContext),
+            (true, false) => new AuthorizedNotConnectedStrategy(_webSocketSession.Value, loggerContext),
+            (false, _) => new UnauthorizedSocketConnectionStrategy(_webSocketSession.Value, loggerContext),
         };
 
 
@@ -343,33 +410,66 @@ namespace Elympics
         private void OnDestroy()
         {
             if (_webSocketSession.IsValueCreated)
-            {
-                _webSocketSession.Value.Disconnected -= OnWebSocketDisconnected;
                 _webSocketSession.Value.Dispose();
-            }
             GameplaySceneMonitor?.Dispose();
         }
 
         private WebSocketSession CreateWebSocketSession()
         {
             if (asyncEventsDispatcher == null)
-                throw LoggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
-            return new WebSocketSession(asyncEventsDispatcher, LoggerContext);
+                throw loggerContext.CaptureAndThrow(new InvalidOperationException($"Serialized reference cannot be null: {nameof(asyncEventsDispatcher)}"));
+            return new WebSocketSession(this, asyncEventsDispatcher, loggerContext);
         }
 
-        private RoomsClient CreateRoomsClient() => new(LoggerContext)
+        private RoomsClient CreateRoomsClient() => new(loggerContext)
         {
             Session = _webSocketSession.Value
         };
 
         private RoomsManager CreateRoomsManager()
         {
-            var webSocketSession = _webSocketSession.Value;
-            var roomsManager = new RoomsManager(this, _roomsClient.Value, LoggerContext);
-            webSocketSession.Disconnected += OnWebSocketDisconnected;
+            var roomsManager = new RoomsManager(this, _roomsClient.Value, loggerContext);
             return roomsManager;
         }
-        private void OnWebSocketDisconnected(DisconnectionData _) => RoomsManager.Reset();
+
+        public async UniTask ReconnectIfPossible(DisconnectionData reason)
+        {
+            RoomsManager.Reset();
+            if (reason.Reason != DisconnectionReason.Timeout)
+            {
+                await CurrentState.Disconnect();
+                ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
+                {
+                    DisconnectionData = reason
+                });
+                return;
+            }
+
+            var reconnectionData = new ConnectionData
+            {
+                AuthType = null,
+                Region = new RegionData
+                {
+                    Name = CurrentRegion,
+                },
+                AuthFromCacheData = new CachedAuthData()
+                {
+                    CachedData = AuthData,
+                }
+            };
+            await CurrentState.Reconnect(reconnectionData);
+            if (CurrentState.State == ElympicsState.Disconnected)
+                ElympicsConnectionLost?.Invoke(new ElympicsConnectionLostData
+                {
+                    DisconnectionData = reason.Reason == DisconnectionReason.Reconnection ? new DisconnectionData(DisconnectionReason.Timeout) : reason,
+                });
+            else
+                ElympicsConnectionEstablished?.Invoke(new ElympicsConnectionData
+                {
+                    AuthData = AuthData,
+                    AutoReconnected = true,
+                });
+        }
 
         private ElympicsLobbyClientState FetchState(ElympicsState state)
         {
@@ -388,12 +488,26 @@ namespace Elympics
             ElympicsState.Connected => new ConnectedState(this),
             ElympicsState.Matchmaking => new MatchmakingState(this),
             ElympicsState.PlayingMatch => new PlayingMatchState(this),
+            ElympicsState.WatchReplay => new WatchReplayState(this),
+            ElympicsState.Reconnecting => new ReconnectingState(this, loggerContext),
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
         };
-        private void OnGameplayFinished() => CurrentState.FinishMatch().Forget();
+        private void OnGameplayFinished()
+        {
+            CurrentState.FinishMatch().ContinueWith(UpdateLoggerContext).Forget(HandleException);
+
+            void UpdateLoggerContext() => loggerContext.SetGameMode(NoGameModeName);
+
+            void HandleException(Exception e)
+            {
+                loggerContext.Exception(e);
+                UpdateLoggerContext();
+            }
+        }
+
         UniTask IMatchLauncher.StartMatchmaking(IRoom room) => CurrentState.StartMatchmaking(room);
         UniTask IMatchLauncher.CancelMatchmaking(IRoom room, CancellationToken ct) => CurrentState.CancelMatchmaking(room, ct);
-        public void MatchFound() => CurrentState.MatchFound();
+        public void MatchmakingCompleted() => CurrentState.MatchFound();
 
         #endregion
 
@@ -424,20 +538,33 @@ namespace Elympics
 
         internal void SignOutInternal()
         {
-            var logger = LoggerContext.WithMethodName();
-
-            if (!IsAuthenticated)
-                throw new ElympicsException("User is not authenticated");
-
-            AuthData = null;
-
+            var logger = loggerContext.WithMethodName();
+            ClearAuthData();
             DisconnectFromLobby();
-            logger.SetNoUser().SetNoConnection().SetNoRoom().Log("Signed out on user request.");
+            logger.Log("User sign out.");
+            _ = logger.SetNoUser().SetNoConnection().SetNoRoom();
+        }
+
+        internal void ClearAuthData()
+        {
+            AuthData = null;
+            ElympicsUser = null;
         }
 
         internal void PlayMatchInternal(MatchmakingFinishedData matchData)
         {
             MatchDataGuid = matchData;
+
+            var isSinglePlayer = string.IsNullOrEmpty(matchData.WebServerAddress) && string.IsNullOrEmpty(matchData.TcpUdpServerAddress);
+
+            SetUpMatch(isSinglePlayer ? JoinedMatchMode.SinglePlayer : JoinedMatchMode.Online);
+            LoadGameplayScene();
+        }
+        internal void FinishMatchInternal() => _snapshotAnalysisRetriever = null;
+
+        internal void WatchReplayInternal()
+        {
+            SetUpMatch(JoinedMatchMode.SnapshotReplay);
             LoadGameplayScene();
         }
 
@@ -449,11 +576,126 @@ namespace Elympics
             currentRegion = connectionDetails.RegionName;
         }
 
+        [PublicAPI]
+        public async UniTask<TournamentFeeInfo?> GetRollTournamentsFee(TournamentFeeRequestInfo[] requestData, CancellationToken ct = default)
+        {
+            if (requestData.Length == 0)
+                return null;
+
+            var response = await GetRollTournamentsFeeInternal(requestData, ct);
+
+            if (response == null)
+                return null;
+
+            var fees = new FeeInfo[response.Rollings.Count];
+
+            for (var i = 0; i < fees.Length; i++)
+            {
+                var fee = response.Rollings[i];
+                var coinId = requestData[i].CoinInfo.Id;
+                var prize = requestData[i].Prize;
+                var numberOfPlayers = requestData[i].PlayersCount;
+                fees[i] = new FeeInfo
+                {
+                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    Error = fee.Error,
+                    EntryFeeRaw = fee.EntryFee
+                };
+
+                RollingTournamentBetConfigIDs.AddOrUpdate(coinId, prize, numberOfPlayers, fee.RollingTournamentBetConfigId);
+            }
+
+            return new TournamentFeeInfo { Fees = fees };
+        }
+
+        internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
+        {
+            var config = _config.GetCurrentGameConfig();
+            var request = new RequestRollings(
+                GameId: Guid.Parse(config.GameId),
+                VersionId: config.GameVersion,
+                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, x.Prize.ToString(CultureInfo.InvariantCulture), (uint)x.PlayersCount)).ToList());
+
+            var tcs = new UniTaskCompletionSource<RollingsResponse>();
+
+            _webSocketSession.Value.MessageReceived += OnMessage;
+
+            RollingsResponse? response;
+            try
+            {
+                var result = await _webSocketSession.Value.ExecuteOperation(request, ct);
+
+                if (!result.Success)
+                {
+                    loggerContext.WithMethodName().Error($"Couldn't fetch rolls fees: {result.GetDescritpion()}");
+                    return null;
+                }
+
+                response = await tcs.Task;
+            }
+            finally
+            {
+                _webSocketSession.Value.MessageReceived -= OnMessage;
+            }
+
+            return response;
+
+            void OnMessage(IFromLobby message)
+            {
+                if (message is RollingsResponse rollingsResponse)
+                    _ = tcs.TrySetResult(rollingsResponse);
+            }
+        }
+
+        internal async UniTask GetElympicsUserData()
+        {
+            loggerContext.Log("Start fetching user data...");
+            _webSocketSession.Value.MessageReceived += OnMessage;
+            try
+            {
+                var result = await _webSocketSession.Value.ExecuteOperation(new ShowAuth());
+                if (!result.Success)
+                {
+                    loggerContext.Error("Couldn't fetch ElympicsPlayer data.");
+                    return;
+                }
+                await UniTask.WaitUntil(() => ElympicsUser is not null);
+            }
+            finally
+            {
+                _webSocketSession.Value.MessageReceived -= OnMessage;
+            }
+            return;
+
+            void OnMessage(IFromLobby message)
+            {
+                switch (message)
+                {
+                    case ShowAuthResponse response:
+                        ElympicsUser = new ElympicsUser
+                        {
+                            UserId = response.UserId,
+                            Nickname = response.Nickname,
+                            AvatarUrl = response.AvatarUrl,
+                        };
+                        loggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
+                        return;
+                    default:
+                        return;
+                }
+            }
+        }
+
         internal void SwitchState(ElympicsState newState)
         {
             _previousState = CurrentState;
             CurrentState = FetchState(newState);
             StateChanged?.Invoke(_previousState.State, CurrentState.State);
+            CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsStateChanged
+            {
+                PreviousState = _previousState.State,
+                NewState = CurrentState.State
+            });
             ElympicsLogger.Log($"Switch state from {_previousState.State} to {CurrentState.State}");
         }
 
@@ -494,10 +736,39 @@ namespace Elympics
         {
             Online,
             Local,
+            SinglePlayer,
             HalfRemoteClient,
             HalfRemoteServer,
+            SnapshotReplay,
         }
 
         #endregion
+
+        internal async UniTask AssignRoomCoins(List<RoomCoin> objCoinData)
+        {
+            var coins = new List<CoinInfo>(objCoinData.Count);
+
+            foreach (var coin in objCoinData)
+                coins.Add(await coin.ToCoinInfo(loggerContext));
+
+            AvailableCoins = coins;
+        }
+
+        internal int? FetchDecimalForCoin(Guid coinId)
+        {
+            if (AvailableCoins == null)
+                return null;
+
+            foreach (var coinInfo in AvailableCoins)
+                if (coinInfo.Id == coinId)
+                    return coinInfo.Currency.Decimals;
+
+            return null;
+        }
+        internal void OnSuccessfullyConnectedToElympics(bool reconnected) => ElympicsConnectionEstablished?.Invoke(new ElympicsConnectionData()
+        {
+            AuthData = AuthData,
+            AutoReconnected = reconnected,
+        });
     }
 }

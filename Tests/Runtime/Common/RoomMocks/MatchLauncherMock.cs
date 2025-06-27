@@ -15,6 +15,7 @@ namespace Elympics.Tests.Common.RoomMocks
         public MatchmakingFinishedData? MatchDataGuid { get; set; }
 
         public void PlayMatch(MatchmakingFinishedData matchData) => PlayMatchCalledArgs = matchData;
+        public void WatchReplay() => throw new System.NotImplementedException();
         public UniTask StartMatchmaking(IRoom room)
         {
             Debug.Log($"[{nameof(MatchLauncherMock)}] Start matchmaking");
@@ -25,7 +26,7 @@ namespace Elympics.Tests.Common.RoomMocks
             Debug.Log($"[{nameof(MatchLauncherMock)}] Matchmaking canceled");
             return room.CancelMatchmakingInternal(ct);
         }
-        public void MatchFound() => Debug.Log($"[{nameof(MatchLauncherMock)}] Match found");
+        public void MatchmakingCompleted() => Debug.Log($"[{nameof(MatchLauncherMock)}] Match found");
 
         public MatchmakingFinishedData? PlayMatchCalledArgs;
 

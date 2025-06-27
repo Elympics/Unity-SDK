@@ -25,8 +25,16 @@ namespace Elympics
         FailedToUnlockAfterSuccessfulRemove = 20,
         FailedToCancelMatchmakingWithTimeout = 21,
         RoomPrivate = 22,
+        OnPlayerReadyRejected = 23,
+        OnStartMatchmakingRejected = 24,
+        MatchNotFound = 25,
+        CoinDoesNotExist = 26,
+        ConfigurationNotValid = 27,
+        AcceptedRoomIsOutdated = 28,
+        RoomAlreadyInMatchedState = 29,
 
         Throttle = 10000,
         InvalidMessage = 10001,
+        ValidationError = 10002,
     }
 }

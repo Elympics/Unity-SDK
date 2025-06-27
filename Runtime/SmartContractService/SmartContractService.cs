@@ -175,7 +175,7 @@ namespace SCS
         }
         private void ThrowIfNotInitilized()
         {
-            if (Initilized is false)
+            if (!Initilized)
                 throw new SmartContractServiceException(
                     "Smart contract service not initilized.\n " +
                     $"Please use the {nameof(Initialize)} method or ensure that the game ID is paired with the ChainConfig.");

@@ -34,8 +34,7 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>());
-            _elympicsBase.elympicsBehavioursManager = behavioursManager;
+            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
             behavioursManager.InitializeInternal(_elympicsBase);
@@ -45,7 +44,7 @@ namespace Elympics.Tests
         public void ResetSut()
         {
             _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, false, false));
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.None;
+            _elympicsBase.SetPermanentCallContext(ElympicsBase.CallContext.None);
             _elympicsBase.ClearRpcQueues();
             _elympicsBehaviour.OnPostReconcile();
             _rpcHolder.Reset();
@@ -111,7 +110,7 @@ namespace Elympics.Tests
             };
             TestDelegate schedulingAction = () => _rpcHolder.ServerToPlayersMethod();
 
-            _elympicsBase.CurrentCallContext = context;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(context);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneServer);
 
             if (allowedContexts.Contains(context))
@@ -140,7 +139,7 @@ namespace Elympics.Tests
         [Test]
         public void SchedulingRpcShouldThrowIfCalledWithInvalidDirection([ValueSource(nameof(DirectionTestCases))] DirectionTestCase testCase)
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(testCase.Status);
             TestDelegate methodToCall = testCase.Direction switch
             {
@@ -158,7 +157,7 @@ namespace Elympics.Tests
         [Test]
         public void PlayerToServerRpcScheduledOnServerWithBotsShouldBeInvokedWithoutAddingToQueues()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.ServerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
@@ -171,7 +170,7 @@ namespace Elympics.Tests
         [Test]
         public void PlayerToServerRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
@@ -184,7 +183,7 @@ namespace Elympics.Tests
         [Test]
         public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.ServerToPlayersMethod();
@@ -208,7 +207,7 @@ namespace Elympics.Tests
         [Test]
         public void ScheduledRpcShouldBeCorrectlyQueuedToBeSentWithoutBeingInvoked([ValueSource(nameof(SendingQueueTestCases))] SendingQueueTestCase testCase)
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(testCase.Status);
             var methodInfo = testCase.Direction switch
             {
@@ -234,7 +233,7 @@ namespace Elympics.Tests
         [Test]
         public void PlayerToServerRpcShouldNotBeScheduledDuringReconciliation()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
 
             _elympicsBehaviour.OnPreReconcile();
@@ -254,7 +253,7 @@ namespace Elympics.Tests
         [Test]
         public void PlayerToServerRpcShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
 
             _rpcHolder.PlayerToServerMethod();
@@ -279,7 +278,7 @@ namespace Elympics.Tests
         [Test]
         public void ServerToPlayersRpcShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneServer);
 
             _rpcHolder.ServerToPlayersMethod();
@@ -303,7 +302,7 @@ namespace Elympics.Tests
         [Test]
         public void PlayerToServerRpcWithArgsShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
@@ -335,7 +334,7 @@ namespace Elympics.Tests
         [Test]
         public void PrivateMethodRpcShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
 
             _rpcHolder.CallPlayerToServerMethodPrivate();
@@ -360,7 +359,7 @@ namespace Elympics.Tests
         [Test]
         public void ServerToPlayersRpcWithArgsShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneServer);
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");
@@ -391,7 +390,7 @@ namespace Elympics.Tests
         [Test]
         public void RpcOfOppositeDirectionShouldBeScheduledCorrectlyInsideCurrentlyInvokedServerToPlayersRpc()
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.RpcInvoking;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
             var calledMethodInfo = typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers));
             var calledRpcMethod = new RpcMethod(calledMethodInfo, _rpcHolder);
@@ -422,7 +421,7 @@ namespace Elympics.Tests
         [Test]
         public void RpcOfOppositeDirectionShouldBeScheduledCorrectlyInsideCurrentlyInvokedPlayerToServerRpc([ValueSource(nameof(ServerTypes))] ElympicsStatus serverType)
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.RpcInvoking;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(serverType);
             var calledMethodInfo = typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer));
             var calledRpcMethod = new RpcMethod(calledMethodInfo, _rpcHolder);
@@ -459,7 +458,7 @@ namespace Elympics.Tests
         [Test]
         public void RpcOfOppositeDirectionShouldBeInvokedInstantlyInsideCurrentlyInvokedRpcInLocalMode([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
         {
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.RpcInvoking;
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
             var calledMethodInfo = typeof(RpcHolderComplex).GetMethod(testCase.MethodName);
             var calledRpcMethod = new RpcMethod(calledMethodInfo, _rpcHolder);

@@ -18,6 +18,7 @@ namespace Elympics.ElympicsSystems.Internal
         public PlayPadContext PlayPadContext;
         public string Context;
         public string MethodName;
+        public string GameMode;
 
         public ElympicsLoggerContext(Guid sessionId)
         {
@@ -27,6 +28,8 @@ namespace Elympics.ElympicsSystems.Internal
             {
                 SdkVersion = null,
                 GameId = null,
+                FleetName = null,
+                GameVersionId = null,
             };
             UserContext = new UserContext
             {
@@ -51,6 +54,7 @@ namespace Elympics.ElympicsSystems.Internal
             };
             Context = null;
             MethodName = null;
+            GameMode = null;
             if (ElympicsLogger.CurrentContext.HasValue)
                 return;
 
@@ -80,14 +84,18 @@ namespace Elympics.ElympicsSystems.Internal
     {
         public string SdkVersion;
         public string GameId;
+        public string FleetName;
+        public string GameVersionId;
 
         public void Clear()
         {
             SdkVersion = string.Empty;
             GameId = string.Empty;
+            FleetName = string.Empty;
+            GameVersionId = string.Empty;
         }
 
-        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | " + $"{nameof(GameId)}: {GameId} | ";
+        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | " + $"{nameof(GameId)}: {GameId} | " + $"{nameof(FleetName)}: {FleetName} | " + $"{nameof(GameVersionId)}: {GameVersionId} | ";
     }
 
     internal class UserContext

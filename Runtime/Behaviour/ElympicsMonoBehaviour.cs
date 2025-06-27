@@ -83,7 +83,7 @@ namespace Elympics
         {
             if (player == ElympicsPlayer.World && !Elympics.IsServer)
                 throw new ElympicsException($"You cannot use {caller} with {player} option as a client or bot");
-            if (player != ElympicsPlayer.All && Elympics.IsClient && Elympics.Player != player)
+            if (player != ElympicsPlayer.All && !Elympics.IsServer && Elympics.Player != player)
                 throw new ElympicsException($"You cannot use {caller} with {player} option as a client {Elympics.Player}");
             ThrowIfCalledInWrongContext(caller);
         }

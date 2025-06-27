@@ -28,6 +28,8 @@ namespace Elympics.Rooms.Models
         public readonly Dictionary<string, string?> NewCustomMatchmakingData = new();
         public bool? NewIsPrivate;
         public string? NewRoomName;
+        public bool UpdatedBetAmount;
+        public (Guid CoinId, decimal BetAmount)? NewBetAmount;
 
         public MatchDataReceivedArgs? MatchDataArgs;
 
@@ -61,6 +63,8 @@ namespace Elympics.Rooms.Models
             NewCustomMatchmakingData.Clear();
             NewIsPrivate = null;
             NewRoomName = null;
+            UpdatedBetAmount = false;
+            NewBetAmount = null;
 
             UpdatedMatchmakingData = false;
             MatchmakingStarted = false;

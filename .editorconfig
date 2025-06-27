@@ -113,6 +113,8 @@ csharp_wrap_arguments_style = chop_if_long
 max_line_length = 200
 csharp_keep_user_linebreaks = true
 csharp_space_between_method_call_name_and_opening_parenthesis = false
+
+### Add missing cases to switch expression
 dotnet_diagnostic.IDE0072.severity = suggestion
 
 ### Make struct fields writable

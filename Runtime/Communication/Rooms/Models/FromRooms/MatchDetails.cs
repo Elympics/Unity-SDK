@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using MessagePack;
 
 #nullable enable
@@ -22,21 +21,20 @@ namespace Elympics.Rooms.Models
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return MatchedPlayersId.SequenceEqual(other.MatchedPlayersId)
+            return MatchedPlayersId.SequenceEqualNullable(other.MatchedPlayersId)
                 && TcpUdpServerAddress == other.TcpUdpServerAddress
                 && WebServerAddress == other.WebServerAddress
                 && UserSecret == other.UserSecret
-                && GameEngineData.SequenceEqual(other.GameEngineData)
-                && MatchmakerData.SequenceEqual(other.MatchmakerData);
+                && GameEngineData.SequenceEqualNullable(other.GameEngineData)
+                && MatchmakerData.SequenceEqualNullable(other.MatchmakerData);
         }
 
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         public override string ToString() => $"{nameof(MatchedPlayersId)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", MatchedPlayersId ?? new List<Guid>())}{Environment.NewLine}"
             + $"{nameof(TcpUdpServerAddress)}:{TcpUdpServerAddress}{Environment.NewLine}"
             + $"{nameof(WebServerAddress)}:{WebServerAddress}{Environment.NewLine}"
-            + $"{nameof(UserSecret)}:{UserSecret}{Environment.NewLine}"
-            + $"{nameof(GameEngineData)}:{GameEngineData.Length}{Environment.NewLine}"
-            + $"{nameof(MatchmakerData)}:{MatchmakerData.Length}{Environment.NewLine}";
+            + $"{nameof(GameEngineData)}:{GameEngineData?.Length}{Environment.NewLine}"
+            + $"{nameof(MatchmakerData)}:{MatchmakerData?.Length}{Environment.NewLine}";
 
         public override int GetHashCode()
         {

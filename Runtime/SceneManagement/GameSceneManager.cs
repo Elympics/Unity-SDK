@@ -6,9 +6,11 @@ namespace Elympics
     [DefaultExecutionOrder(ElympicsExecutionOrder.GameSceneManager)]
     public class GameSceneManager : MonoBehaviour
     {
+        [SerializeField] private ElympicsBehavioursManager elympicsBehavioursManager;
         [SerializeField] private ElympicsClient elympicsClient;
         [SerializeField] private ElympicsBot elympicsBot;
         [SerializeField] private ElympicsServer elympicsServer;
+        [SerializeField] private ElympicsSinglePlayer elympicsSinglePlayer;
 
         private GameSceneInitializer _gameSceneInitializer;
 
@@ -24,7 +26,7 @@ namespace Elympics
                     + $"(ID: {elympicsGameConfig.GameId}), version {elympicsGameConfig.GameVersion}");
                 _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);
                 ElympicsLogger.Log($"Created game scene initializer of type {_gameSceneInitializer.GetType().Name}");
-                _gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsGameConfig);
+                _gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsSinglePlayer, elympicsGameConfig, elympicsBehavioursManager);
                 ElympicsLogger.Log("Elympics game scene initialized successfully.");
             }
             catch (Exception e)
@@ -33,9 +35,6 @@ namespace Elympics
             }
         }
 
-        private void OnDisable()
-        {
-            _gameSceneInitializer?.Dispose();
-        }
+        private void OnDisable() => _gameSceneInitializer?.Dispose();
     }
 }

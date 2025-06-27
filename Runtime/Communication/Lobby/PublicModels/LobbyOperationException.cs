@@ -1,3 +1,4 @@
+using System;
 using Elympics.Lobby.Models;
 
 #nullable enable
@@ -17,5 +18,14 @@ namespace Elympics
 
         internal LobbyOperationException(string message) : base(message)
         { }
+    }
+
+    public class ConfirmationTimeoutException : LobbyOperationException
+    {
+        public readonly TimeSpan? ExpectedTimeSpan;
+
+        internal ConfirmationTimeoutException(TimeSpan? expectedTimeSpan = null)
+            : base("Confirmation from lobby has not been received in the expected time span") =>
+            ExpectedTimeSpan = expectedTimeSpan;
     }
 }

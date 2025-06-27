@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
@@ -14,19 +15,18 @@ namespace Elympics
     {
         Guid RoomId { get; }
         RoomState State { get; }
-        public sealed string RoomName => State.RoomName;
-        public sealed string? JoinCode => State.JoinCode;
+        public string RoomName => State.RoomName;
+        public string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
-
-        bool IsJoined { get; }
+        bool IsJoined { get; internal set; }
 
         bool HasMatchmakingEnabled { get; }
         bool IsMatchAvailable { get; }
 
-        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null);
+        UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, CompetitivenessConfig? competitivenessConfig = null);
         UniTask ChangeTeam(uint? teamIndex);
-        public sealed UniTask BecomeSpectator() => ChangeTeam(null);
+        public UniTask BecomeSpectator() => ChangeTeam(null);
 
         UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
         UniTask MarkYourselfUnready();
@@ -40,20 +40,11 @@ namespace Elympics
 
         UniTask Leave();
 
-        internal void ToggleJoinStatus(bool isJoined)
-        {
-
-        }
-
         internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
-        {
-
-        }
+        { }
 
         internal void UpdateState(PublicRoomState roomState)
-        {
-
-        }
+        { }
 
         internal bool IsQuickMatch => false;
 

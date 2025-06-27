@@ -11,6 +11,7 @@ using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;
 using Elympics.Tests.Common;
 using HybridWebSocket;
+using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -58,7 +59,7 @@ namespace Elympics.Tests
 
         private static WebSocketSession CreateWebSocketSession(LobbySerializerMock.Methods? serializerMethods = null)
         {
-            var session = new WebSocketSession(Dispatcher, new ElympicsLoggerContext(new Guid()), (_, _) => WsMock, SerializerMock);
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(new Guid()), (_, _) => WsMock, SerializerMock);
             if (serializerMethods.HasValue)
                 _ = SerializerMock.UpdateMethods(serializerMethods.Value);
             return session;
@@ -294,7 +295,6 @@ namespace Elympics.Tests
             {
                 WsMock.ConnectCalled -= HandleConnectCalled;
                 WsMock.SendCalled += HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1)).ContinueWith(() => WsMock.InvokeOnOpen()).Forget();
             }
 
             void HandleMessageSent(byte[] data)
@@ -325,7 +325,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(5)).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(5), DelayType.Realtime).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 
@@ -467,7 +467,7 @@ namespace Elympics.Tests
             void HandleMessageSent(byte[] data)
             {
                 WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1), cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
+                UniTask.Delay(TimeSpan.FromSeconds(0.1), DelayType.Realtime, cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
             }
         });
 

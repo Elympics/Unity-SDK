@@ -2,6 +2,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
 
+#nullable enable
+
 namespace Elympics.ElympicsSystems.Internal
 {
     internal abstract class ElympicsLobbyClientState
@@ -15,11 +17,14 @@ namespace Elympics.ElympicsSystems.Internal
         protected ElympicsLobbyClientState(ElympicsLobbyClient client) => Client = client;
 
         public abstract UniTask Connect(ConnectionData data);
+        public abstract UniTask Reconnect(ConnectionData reconnectionData);
         public abstract UniTask SignOut();
+
+        public abstract UniTask Disconnect();
         public abstract UniTask StartMatchmaking(IRoom room);
         public abstract UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default);
         public abstract UniTask PlayMatch(MatchmakingFinishedData matchData);
-
+        public abstract UniTask WatchReplay();
         public abstract UniTask FinishMatch();
         public abstract void MatchFound();
 

@@ -17,7 +17,7 @@ using UnityEngine.TestTools;
 namespace Elympics.Tests.Rooms
 {
     [Category("Rooms")]
-    internal class TestRoomsClient
+    internal partial class TestRoomsClient
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
@@ -34,6 +34,8 @@ namespace Elympics.Tests.Rooms
         [SetUp]
         public void ResetMocks()
         {
+            ((IRoomsClient)RoomsClient).ResetState();
+            ((IRoomsClient)RoomsClient).ClearSession();
             WsSessionMock.Reset();
             WsSessionMock.ConnectionDetails = new SessionConnectionDetails("url", new AuthData(TestHostGuid, TestHostNickname, null), Guid.Empty, "", "");
             RoomsClient.Session = WsSessionMock;
@@ -42,7 +44,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
             WsSessionMock.ResultToReturn = new RoomIdOperationResult(Guid.Empty, TestRoomGuid);
 
             // Act
@@ -61,7 +63,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
             RoomsClient.Session = null;
 
             // Act
@@ -80,7 +82,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfIncompatibleResultIsReturned() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>());
+            var expectedMessage = new CreateRoom("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
             WsSessionMock.ResultToReturn = new OperationResult(Guid.Empty);
 
             // Act
@@ -217,10 +219,11 @@ namespace Elympics.Tests.Rooms
                     0.1f,
                     0.2f,
                     0.3f,
-                });
+                },
+                DateTime.UtcNow);
 
             // Act
-            await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData);
+            await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData, expectedMessage.LastRoomUpdate);
 
             Assert.That(WsSessionMock.ExecutedOperations, Has.Count.EqualTo(1));
             Assert.That(WsSessionMock.ExecutedOperations[0], Is.EqualTo(expectedMessage));
@@ -241,11 +244,13 @@ namespace Elympics.Tests.Rooms
                     0.1f,
                     0.2f,
                     0.3f,
-                });
+                },
+                DateTime.UtcNow);
             RoomsClient.Session = null;
 
             // Act
-            var result = await UniTask.Create(async () => await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData)).Catch();
+            var result = await UniTask.Create(async () =>
+                await RoomsClient.SetReady(expectedMessage.RoomId, expectedMessage.GameEngineData, expectedMessage.MatchmakerData, expectedMessage.LastRoomUpdate)).Catch();
 
             Assert.That(result, Is.InstanceOf<InvalidOperationException>());
             Assert.That(WsSessionMock.ExecutedOperations, Is.Empty);

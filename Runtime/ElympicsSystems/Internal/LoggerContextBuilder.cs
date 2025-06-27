@@ -113,9 +113,26 @@ namespace Elympics.ElympicsSystems.Internal
             return current;
         }
 
+        public static ElympicsLoggerContext SetFleetName(this ElympicsLoggerContext current, string fleetName)
+        {
+            current.ElympicsContext.FleetName = fleetName;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetGameVersionId(this ElympicsLoggerContext current, string gameVersionId)
+        {
+            current.ElympicsContext.GameVersionId = gameVersionId;
+            return current;
+        }
+
         public static ElympicsLoggerContext SetNoRoom(this ElympicsLoggerContext current)
         {
             current.RoomContext.Clear();
+            return current;
+        }
+        public static ElympicsLoggerContext SetGameMode(this ElympicsLoggerContext current, string gameMode)
+        {
+            current.GameMode = gameMode;
             return current;
         }
 

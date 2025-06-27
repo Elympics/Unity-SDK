@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
@@ -7,10 +8,9 @@ namespace Elympics.ElympicsSystems.Internal
     internal class ConnectingState : ElympicsLobbyClientState
     {
         private bool _performingConnection;
-        public ConnectingState(ElympicsLobbyClient client) : base(client)
-        {
-            State = ElympicsState.Connecting;
-        }
+
+        public ConnectingState(ElympicsLobbyClient client) : base(client) => State = ElympicsState.Connecting;
+
         public override async UniTask Connect(ConnectionData data)
         {
             if (_performingConnection)
@@ -19,13 +19,20 @@ namespace Elympics.ElympicsSystems.Internal
             try
             {
                 Client.CheckConnectionDataOrThrow(data);
-                await Client.FetchAvailableRegions();
                 await Client.Authorize(data);
+                await Client.FetchAvailableRegions();
                 await Client.ConnectToLobby(data);
                 await Client.RoomsManager.CheckJoinedRoomStatus();
-                Client.SwitchState(ElympicsState.Connected);
+                await Client.GetElympicsUserData();
+                if (Client.RoomsManager.CurrentRoom?.State.MatchmakingData?.MatchmakingState is Rooms.Models.MatchmakingState.Matchmaking or Rooms.Models.MatchmakingState.RequestingMatchmaking)
+                    Client.SwitchState(ElympicsState.Matchmaking);
+                else if (Client.GameplaySceneMonitor.IsCurrentlyInMatch)
+                    Client.SwitchState(ElympicsState.PlayingMatch);
+                else
+                    Client.SwitchState(ElympicsState.Connected);
+                Client.OnSuccessfullyConnectedToElympics(false);
             }
-            catch
+            catch (Exception)
             {
                 Client.SwitchState(ElympicsState.Disconnected);
                 throw;
@@ -35,16 +42,23 @@ namespace Elympics.ElympicsSystems.Internal
                 _performingConnection = false;
             }
         }
+
         public override UniTask SignOut() => throw new ElympicsException(GenerateErrorMessage(nameof(SignOut)));
+        public override UniTask Disconnect() => UniTask.CompletedTask;
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData) => throw new ElympicsException(GenerateErrorMessage(nameof(PlayMatch)));
+        public override UniTask WatchReplay() => throw new ElympicsException(GenerateErrorMessage(nameof(WatchReplay)));
+        public override UniTask Reconnect(ConnectionData connection) => throw new ElympicsException(GenerateErrorMessage(nameof(Reconnect)));
+
         public override async UniTask FinishMatch()
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(FinishMatch)));
             await UniTask.CompletedTask;
         }
+
         public override void MatchFound()
         { }
+
         public override async UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default)
         {
             ElympicsLogger.LogWarning(GenerateWarningMessage(nameof(CancelMatchmaking)));

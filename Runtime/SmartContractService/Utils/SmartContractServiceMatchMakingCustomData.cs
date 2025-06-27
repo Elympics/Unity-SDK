@@ -4,5 +4,4 @@ namespace SCS
     {
         public const string BetAmountKey = ":pub:scs:bet";
     }
-
 }

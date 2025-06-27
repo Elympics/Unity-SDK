@@ -7,8 +7,6 @@ namespace Elympics
     {
         public static GameSceneInitializer Create(ElympicsGameConfig elympicsGameConfig)
         {
-            #region Build run
-
             if (ApplicationParameters.ShouldLoadElympicsOnlineBot)
                 return new OnlineGameBotInitializer();
             if (ApplicationParameters.ShouldLoadElympicsOnlineServer)
@@ -19,30 +17,29 @@ namespace Elympics
             if (ScriptingSymbols.IsUnityServer && !Application.isEditor)
                 return new HalfRemoteGameServerInitializer();
 
-            #endregion
 
             return elympicsGameConfig.GameplaySceneDebugMode switch
             {
-                ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => InitializeLocalPlayerAndBots(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => new LocalGameServerInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote => InitializeHalfRemotePlayers(elympicsGameConfig),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer => InitializeDebugOnlinePlayer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay => new EditorSnapshotReplayInitializer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer => new SinglePlayerGameInitializer(),
                 _ => throw new ArgumentOutOfRangeException(nameof(elympicsGameConfig.GameplaySceneDebugMode)),
             };
         }
 
-        private static GameSceneInitializer LoadFromLobbyClient()
+        private static GameSceneInitializer LoadFromLobbyClient() => ElympicsLobbyClient.Instance!.MatchMode switch
         {
-            return ElympicsLobbyClient.Instance.MatchMode switch
-            {
-                ElympicsLobbyClient.JoinedMatchMode.Online => new OnlineGameClientInitializer(),
-                ElympicsLobbyClient.JoinedMatchMode.HalfRemoteClient => new HalfRemoteGameClientInitializer(),
-                ElympicsLobbyClient.JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
-                ElympicsLobbyClient.JoinedMatchMode.Local => InitializeLocalPlayerAndBots(),
-                _ => throw new ArgumentOutOfRangeException(nameof(ElympicsLobbyClient.Instance.MatchMode)),
-            };
-        }
+            ElympicsLobbyClient.JoinedMatchMode.Online => new OnlineGameClientInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.HalfRemoteClient => new HalfRemoteGameClientInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.Local => new LocalGameServerInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.SinglePlayer => new SinglePlayerGameInitializer(),
+            ElympicsLobbyClient.JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
+            _ => throw new ArgumentOutOfRangeException(nameof(ElympicsLobbyClient.Instance.MatchMode)),
+        };
 
-        private static GameSceneInitializer InitializeLocalPlayerAndBots() => new LocalGameServerInitializer();
         private static DebugOnlineClientInitializer InitializeDebugOnlinePlayer() => new();
 
         private static GameSceneInitializer InitializeHalfRemotePlayers(ElympicsGameConfig elympicsGameConfig)

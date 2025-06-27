@@ -55,8 +55,13 @@ namespace Elympics
         internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
             .GetAbsoluteOrRelativeString();
 
+        internal Uri ElympicsReplaySource => ApplicationParameters.Parameters.ReplaySource.GetValue(GetV2Endpoint("replay"));
+
         internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Lobby.Models.Routes.Base).ToString();
-        internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.BaseRouteUnityFormat).ToString();
+
+        internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.AllRegionsRouteUnityFormat).ToString();
+        internal string GameAvailableRegionsUrl(string gameId) =>
+            ElympicsApiEndpoint.AppendPathSegments(string.Format(ElympicsApiModels.ApiModels.Regions.Routes.RegionForGameIdRoute, gameId)).ToString();
 
         [PublicAPI]
         public Uri GetV2Endpoint(string serviceName) =>

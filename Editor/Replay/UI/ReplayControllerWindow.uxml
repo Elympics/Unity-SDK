@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Elympics/Editor/Tools/NetworkedSimulationAnalyzer/UI/ReplayControllerWindowStyles.uss?fileID=7433441132597879392&amp;guid=2c62452bbadaedb4bb91ccb0e9ad1e73&amp;type=3#ReplayControllerWindowStyles" />
+    <ui:VisualElement name="controls" style="justify-content: center; border-bottom-color: rgb(34, 34, 34); border-bottom-width: 1px; padding-top: 3px; padding-bottom: 3px; flex-direction: row;">
+        <uie:ToolbarToggle focusable="false" name="pause-control" tooltip="Pause network synchronized gameplay to make saving, loading and applying tick states possible. Note that the game must by running." class="control-base control-spacing toolbar-toggle" style="width: 32px; padding-top: 4px;">
+            <ui:VisualElement name="pause-image" class="control-image" style="background-image: url(&apos;project://database/Assets/Plugins/Elympics/Editor/Tools/NetworkedSimulationAnalyzer/UI/Graphics/pauseIcon.png?fileID=2800000&amp;guid=f1c0f542121ecf943aaeb38c936cbc0f&amp;type=3#pauseIcon&apos;);" />
+        </uie:ToolbarToggle>
+        <ui:Toggle name="auto-select-control" text=" Auto-select current tick" tooltip="Automatically select current tick when replaying." style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;" />
+    </ui:VisualElement>
+    <ui:VisualElement name="history-view" style="flex-grow: 1; flex-direction: row;">
+        <ui:ListView focusable="true" name="tick-list" virtualization-method="FixedHeight" fixed-item-height="18" style="width: 148px;" />
+        <ui:VisualElement name="tick-state" style="flex-grow: 1; min-width: 380px; border-left-color: rgb(34, 34, 34); border-left-width: 1px;">
+            <ui:VisualElement name="title-tick-bar" style="flex-direction: row; visibility: hidden; justify-content: space-between; padding-left: 10px; padding-right: 10px; padding-top: 15px; padding-bottom: 16px; border-bottom-left-radius: 1px; border-bottom-color: rgb(34, 34, 34); border-bottom-width: 1px;">
+                <ui:VisualElement name="title" style="flex-direction: row; align-items: center;">
+                    <ui:Label text="Tick #" display-tooltip-when-elided="true" name="title-label" style="font-size: 16px; padding-right: 0;" />
+                    <ui:Label display-tooltip-when-elided="true" name="title-tick-nr" text="000012" style="font-size: 16px;" />
+                </ui:VisualElement>
+                <ui:VisualElement name="apply-state-controls" style="flex-direction: row; align-items: center;">
+                    <ui:Button text="Apply State" display-tooltip-when-elided="true" name="apply-state-button" tooltip="Apply the state of the selected tick to the game scene." class="control-base" style="margin-left: 0; margin-right: 8px; margin-top: 0; margin-bottom: 0; padding-left: 47px; padding-right: 47px;" />
+                    <ui:Toggle name="auto-apply-control" text=" Auto-apply on tick selection" tooltip="Automatically apply the state of the selected tick to the game scene on tick selection." style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" name="tick-data-view" mode="Vertical" style="flex-grow: 1; padding-left: 8px; padding-top: 8px; border-top-width: 1px; border-top-color: rgb(45, 45, 45); visibility: hidden;">
+                <ui:VisualElement name="tick-data-content">
+                    <ui:VisualElement name="execution-time" style="flex-direction: row;">
+                        <ui:Label text="Execution time: " display-tooltip-when-elided="true" name="execution-time-label" />
+                        <ui:Label display-tooltip-when-elided="true" name="execution-time-value" text="?" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="expected-time" style="flex-direction: row;">
+                        <ui:Label text="Max expected execution time: " display-tooltip-when-elided="true" name="expected-time-label" style="flex-direction: row;" />
+                        <ui:Label display-tooltip-when-elided="true" name="expected-time-value" text="?" style="flex-direction: row;" />
+                    </ui:VisualElement>
+                    <ui:Foldout text="Processed inputs" name="inputs-foldout" value="true" />
+                    <ui:Foldout text="Synchronized state" name="state-foldout" value="true" style="flex-wrap: wrap;">
+                        <ui:VisualElement name="behaviours-data" style="margin-left: 10px;" />
+                    </ui:Foldout>
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -11,7 +11,7 @@ const LibraryWebRtc = {
 		onUnreliableEnded: null,
 		onOffer: null,
 		onIceConnectionStateChanged: null,
-		onConnectionStateChanged: null,
+		onConnectionStateChanged: null
 	},
 
 	// biome-ignore lint/complexity/useArrowFunction: <explanation>
@@ -30,7 +30,7 @@ const LibraryWebRtc = {
 			unreliableEnded,
 			iceConnectionStateChanged,
 			connectionStateChanged,
-			offerCallback,
+			offerCallback
 		) {
 			this.pc = new RTCPeerConnection();
 
@@ -60,7 +60,7 @@ const LibraryWebRtc = {
 
 			this.unreliableDc = this.pc.createDataChannel("unreliable", {
 				maxRetransmits: 0,
-				ordered: false,
+				ordered: false
 			});
 			this.unreliableReceived = unreliableReceived;
 			this.unreliableError = unreliableError;
@@ -90,20 +90,24 @@ const LibraryWebRtc = {
 					.createOffer({ iceRestart: iceRestart })
 					.then(
 						function (offer) {
-							return this.pc.setLocalDescription(offer).then(() => offer);
-						}.bind(this),
+							try {
+								return this.pc.setLocalDescription(offer).then(() => offer);
+							} catch (error) {
+								console.error(error);
+							}
+						}.bind(this)
 					)
 					.then((offer) => {
 						const offerJson = JSON.stringify(offer);
 						console.log(
-							`[WebRTC] Offer created\n${offerJson} as restart: ${iceRestart}`,
+							`[WebRTC] Offer created\n${offerJson} as restart: ${iceRestart}`
 						);
 						offerCallback(offerJson);
 					});
 			}.bind(this);
 			this.onAnswer = function (answerJson) {
 				console.log(
-					`[${new Date().toISOString()}][WebRTC] Answer received\n${answerJson}`,
+					`[${new Date().toISOString()}][WebRTC] Answer received\n${answerJson}`
 				);
 				const answer = JSON.parse(answerJson);
 				this.pc.setRemoteDescription(answer);
@@ -128,7 +132,7 @@ const LibraryWebRtc = {
 			this.pc.onicecandidate = (ev) => {
 				if (ev.candidate !== null) {
 					console.log(
-						`[${new Date().toISOString()}][WebRTC] Candidate received\n${ev.candidate}`,
+						`[${new Date().toISOString()}][WebRTC] Candidate received\n${ev.candidate}`
 					);
 				}
 			};
@@ -138,14 +142,14 @@ const LibraryWebRtc = {
 
 			this.pc.oniceconnectionstatechange = (ev) => {
 				console.log(
-					`[${new Date().toISOString()}][WebRTC] Ice connection state changed \n${this.pc.iceConnectionState}`,
+					`[${new Date().toISOString()}][WebRTC] Ice connection state changed \n${this.pc.iceConnectionState}`
 				);
 				this.onIceConnectionStateChanged(this.pc.iceConnectionState);
 			};
 
 			this.pc.onconnectionstatechange = (ev) => {
 				console.log(
-					`[${new Date().toISOString()}][WebRTC] Connection state changed \n${this.pc.connectionState}`,
+					`[${new Date().toISOString()}][WebRTC] Connection state changed \n${this.pc.connectionState}`
 				);
 				this.onConnectionStateChanged(this.pc.connectionState);
 			};
@@ -153,7 +157,7 @@ const LibraryWebRtc = {
 			this.pc.onicegatheringstatechange = (ev) => {
 				const connection = ev.target;
 				console.log(
-					`[${new Date().toISOString()}][WebRTC] Ice gathering state changed \n${connection.iceGatheringState}`,
+					`[${new Date().toISOString()}][WebRTC] Ice gathering state changed \n${connection.iceGatheringState}`
 				);
 				if (connection.iceConnectionState === "failed") {
 					console.log(`[${new Date().toISOString()}][WebRTC] RestartIce.`);
@@ -162,7 +166,7 @@ const LibraryWebRtc = {
 
 			this.pc.onsignalingstatechange = (ev) => {
 				console.log(
-					`[${new Date().toISOString()}][WebRTC] Signaling state changed \n${this.pc.signalingState}`,
+					`[${new Date().toISOString()}][WebRTC] Signaling state changed \n${this.pc.signalingState}`
 				);
 			};
 		}
@@ -178,7 +182,7 @@ const LibraryWebRtc = {
 					webRtcState.onReliableReceived,
 					id,
 					buffer,
-					msg.length,
+					msg.length
 				);
 			} finally {
 				_free(buffer);
@@ -216,7 +220,7 @@ const LibraryWebRtc = {
 					webRtcState.onUnreliableReceived,
 					id,
 					buffer,
-					msg.length,
+					msg.length
 				);
 			} finally {
 				_free(buffer);
@@ -262,7 +266,11 @@ const LibraryWebRtc = {
 			const msgBuffer = _malloc(msgBytes);
 			stringToUTF8(state, msgBuffer, msgBytes);
 			try {
-				Module.dynCall_vii(webRtcState.onIceConnectionStateChanged, id, msgBuffer);
+				Module.dynCall_vii(
+					webRtcState.onIceConnectionStateChanged,
+					id,
+					msgBuffer
+				);
 			} finally {
 				_free(msgBuffer);
 			}
@@ -290,7 +298,7 @@ const LibraryWebRtc = {
 			WebRtcUnreliableEnded,
 			IceConnectionStateChanged,
 			ConnectionStateChanged,
-			WebRtcOfferCallback,
+			WebRtcOfferCallback
 		);
 
 		console.log("[WebRTC] Client allocated");
@@ -357,7 +365,10 @@ const LibraryWebRtc = {
 		console.log(`[WebRTC] Creating offer Restart: ${iceRestart}`);
 
 		const instance = webRtcState.instances[id];
-		if (!instance) return;
+		if (!instance){
+      console.log("[WebRTC] Instance not found for id: " + id);
+      return;
+    } 
 
 		instance.createOffer(iceRestart);
 	},
@@ -395,7 +406,7 @@ const LibraryWebRtc = {
 		if (!instance) return;
 
 		instance.close();
-	},
+	}
 };
 
 autoAddDeps(LibraryWebRtc, "$webRtcState");

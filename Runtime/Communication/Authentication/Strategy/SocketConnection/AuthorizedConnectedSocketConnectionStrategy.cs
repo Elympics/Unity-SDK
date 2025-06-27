@@ -20,6 +20,6 @@ namespace Elympics
             else
                 ElympicsLogger.LogWarning("No change in connection data.");
         }
-        private bool ConnectionDetailsChanged(SessionConnectionDetails connectionDetails) => _currentSession.Equals(connectionDetails) is false;
+        private bool ConnectionDetailsChanged(SessionConnectionDetails connectionDetails) => !_currentSession.Equals(connectionDetails);
     }
 }

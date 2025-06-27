@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
 
@@ -26,11 +27,12 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);
         UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default);
-        UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, CancellationToken ct = default);
+        UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default);
         UniTask SetUnready(Guid roomId, CancellationToken ct = default);
         UniTask LeaveRoom(Guid roomId, CancellationToken ct = default);
         UniTask UpdateRoomParams(
@@ -40,10 +42,16 @@ namespace Elympics
             bool? isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData,
             IReadOnlyDictionary<string, string>? customMatchmakingData,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         UniTask StartMatchmaking(Guid roomId, Guid hostId);
         UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default);
         UniTask WatchRooms(CancellationToken ct = default);
         UniTask UnwatchRooms(CancellationToken ct = default);
+        bool IsWatchingRooms { get; }
+
+        internal void ResetState();
+
+        internal void ClearSession();
     }
 }

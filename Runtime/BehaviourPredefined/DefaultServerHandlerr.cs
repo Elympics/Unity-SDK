@@ -33,6 +33,9 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
+            if (ElympicsBase.IsReplay)
+                return;
+
             PlayersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
             ElympicsLogger.Log(
@@ -92,6 +95,8 @@ namespace Elympics
                     ElympicsLogger.LogWarning($"Forcing game server to quit because {autoTerminationOnLeft} players left.");
                     CloseMatch();
                     break;
+                case TerminationOption.Any:
+                case TerminationOption.All:
                 case TerminationOption.None:
                     break;
                 default:

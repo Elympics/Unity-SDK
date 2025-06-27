@@ -20,11 +20,12 @@ namespace Elympics.Tests.RpcMocks
         public override bool IsClient => _isClient;
         public override bool IsServer => _isServer;
         public override bool IsBot => _isBot;
+        public override long Tick => 0;
 
-        protected override void ElympicsFixedUpdate()
+        internal override void ElympicsFixedUpdate()
         { }
 
-        protected override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList)
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList)
         {
             var newElympicsRpcMessageList = new ElympicsRpcMessageList
             {

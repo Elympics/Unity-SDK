@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
@@ -21,7 +22,12 @@ namespace MatchTcpClients
         private CancellationTokenSource _stateCancellationTokenSource;
         private CancellationTokenSource _linkedCts;
 
-        public WebGameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, IGameServerWebSignalingClient signalingClient, ElympicsLoggerContext logger, Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
+        public WebGameServerClient(
+            IGameServerSerializer serializer,
+            GameServerClientConfig config,
+            IGameServerWebSignalingClient signalingClient,
+            ElympicsLoggerContext logger,
+            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
@@ -30,7 +36,8 @@ namespace MatchTcpClients
 
         public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
         {
-            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}") : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
+            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}")
+                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
 
             if (string.IsNullOrEmpty(regionName))
                 return signalingEndpoint;
@@ -79,6 +86,7 @@ namespace MatchTcpClients
                         return false;
                     }
 
+                    logger.Log($"Send offer:{Environment.NewLine}{offer}");
                     var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
                     if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
                     {
@@ -87,7 +95,7 @@ namespace MatchTcpClients
                         return false;
                     }
                     _answer = response.Text;
-
+                    logger.Log($"Answer:{Environment.NewLine}{_answer}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
@@ -170,7 +178,7 @@ namespace MatchTcpClients
             return response;
         }
 
-        private async Task<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
+        private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
         {
             string offer = null;
             var offerSet = false;
@@ -186,7 +194,7 @@ namespace MatchTcpClients
 
             _webRtcClient.OfferCreated += OnOfferCreated;
             _webRtcClient.CreateOffer(restart);
-            await TaskUtil.Delay(Config.OfferTimeout, cts.Token).CatchOperationCanceledException();
+            _ = await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
             _webRtcClient.OfferCreated -= OnOfferCreated;
             return (offer, offerSet);
         }
@@ -197,9 +205,6 @@ namespace MatchTcpClients
             base.InitializeNetworkClients();
         }
 
-        private void InitWebRtcClient()
-        {
-            _ = ClientDisconnectedCts.Token.Register(_webRtcClient.Dispose);
-        }
+        private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(_webRtcClient.Dispose);
     }
 }

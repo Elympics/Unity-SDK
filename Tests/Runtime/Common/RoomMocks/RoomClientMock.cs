@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
 
@@ -30,6 +31,7 @@ internal class RoomClientMock : IRoomsClient
         bool isSingleTeam,
         IReadOnlyDictionary<string, string> customRoomData,
         IReadOnlyDictionary<string, string> customMatchmakingData,
+        CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default)
     {
         CreateRoomInvokedArgs = (roomName, queueName, isSingleTeam, isPrivate, isEphemeral, customRoomData, customMatchmakingData, ct);
@@ -54,7 +56,7 @@ internal class RoomClientMock : IRoomsClient
         return UniTask.CompletedTask;
     }
 
-    public UniTask SetReady(Guid roomId, byte[]? gameEngineData, float[]? matchmakerData, CancellationToken ct = default)
+    public UniTask SetReady(Guid roomId, byte[]? gameEngineData, float[]? matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default)
     {
         SetReadyInvoked?.Invoke((roomId, gameEngineData, matchmakerData, ct));
         return UniTask.CompletedTask;
@@ -88,6 +90,7 @@ internal class RoomClientMock : IRoomsClient
         bool? isPrivate,
         IReadOnlyDictionary<string, string>? customRoomData,
         IReadOnlyDictionary<string, string>? customMatchmakingData,
+        CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default) => UniTask.CompletedTask;
 
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)
@@ -97,19 +100,16 @@ internal class RoomClientMock : IRoomsClient
             InvokeRoomStateChanged(_matchMakingDataOnTimeOutException);
             throw new LobbyOperationException("Time out.");
         }
-        else
-        {
-            StartMatchmakingInvoked?.Invoke((roomId, hostId));
-        }
+
+        StartMatchmakingInvoked?.Invoke((roomId, hostId));
         return UniTask.CompletedTask;
     }
 
     public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct) => throw new NotImplementedException();
     public UniTask WatchRooms(CancellationToken ct = default) => throw new NotImplementedException();
     public UniTask UnwatchRooms(CancellationToken ct = default) => throw new NotImplementedException();
-
+    public bool IsWatchingRooms => false;
     public UniTask<Guid>? RoomIdReturnTask { get; set; }
-
     public (string RoomName, string QueueName, bool IsSingleTeam, bool IsPrivate, bool IsEphemeral, IReadOnlyDictionary<string, string> customRoomData, IReadOnlyDictionary<string, string> customMatchmakingData, CancellationToken Ct)? CreateRoomInvokedArgs { get; private set; }
     public (Guid RoomId, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithRoomIdInvokedArgs { get; private set; }
     public (string JoinCode, uint? TeamIndex, CancellationToken Ct)? JoinRoomWithJoinCodeInvokedArgs { get; private set; }
@@ -124,7 +124,7 @@ internal class RoomClientMock : IRoomsClient
 
     public void SetSessionConnectionDetails(SessionConnectionDetails? details) => _sessionConnectionDetails = details;
 
-    public void Reset()
+    void IRoomsClient.ResetState()
     {
         RoomIdReturnTask = null;
         CreateRoomInvokedArgs = null;
@@ -137,4 +137,7 @@ internal class RoomClientMock : IRoomsClient
         _throwTimeOutException = false;
         SetTeamChangedInvoked = null;
     }
+
+    void IRoomsClient.ClearSession()
+    { }
 }

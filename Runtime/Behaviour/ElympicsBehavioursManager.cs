@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Behaviour;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -19,7 +20,6 @@ namespace Elympics
         private BinaryInputWriter _inputWriter;
 
         internal const int NetworkIdRange = 10000000;
-
         internal void InitializeInternal(ElympicsBase elympicsBase)
         {
             _inputWriter = new BinaryInputWriter();
@@ -33,17 +33,19 @@ namespace Elympics
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
                 var networkId = elympicsBehaviour.NetworkId;
-                if (networkId < 0)  // there is no upper limit
+                if (networkId < 0) // there is no upper limit
                 {
                     ElympicsLogger.LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
-                        + "Network ID must not be negative.", elympicsBehaviour);
+                        + "Network ID must not be negative.",
+                        elympicsBehaviour);
                     return;
                 }
 
                 if (_elympicsBehaviours.Contains(networkId))
                 {
                     ElympicsLogger.LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
-                        + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object", elympicsBehaviour);
+                        + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object",
+                        elympicsBehaviour);
                     return;
                 }
 
@@ -130,7 +132,8 @@ namespace Elympics
             var snapshot = new ElympicsSnapshot
             {
                 Factory = factory.GetState(),
-                Data = new List<KeyValuePair<int, byte[]>>(),
+                Data = new List<KeyValuePair<int, byte[]>>(_elympicsBehaviours.Behaviours.Count),
+                TickStartUtc = _elympics.TickStartUtc
             };
 
             //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
@@ -145,16 +148,15 @@ namespace Elympics
             return snapshot;
         }
 
-        internal ElympicsSnapshotWithMetadata GetLocalSnapshotWithMetadata()
+        public ElympicsSnapshotWithMetadata AddMetadataToSnapshot(ElympicsSnapshot snapshot)
         {
-            var snapshot = new ElympicsSnapshotWithMetadata(GetLocalSnapshot());
+            var snapshotWithMetadata = new ElympicsSnapshotWithMetadata(snapshot, _elympics.TickEndUtc);
 
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+            foreach (var (id, _) in snapshot.Data)
             {
-                if (!elympicsBehaviour.HasAnyState)
-                    continue;
+                var elympicsBehaviour = _elympicsBehaviours.Behaviours[id];
 
-                snapshot.Metadata.Add(new ElympicsBehaviourMetadata
+                snapshotWithMetadata.Metadata.Add(new ElympicsBehaviourMetadata
                 {
                     Name = elympicsBehaviour.name,
                     NetworkId = elympicsBehaviour.NetworkId,
@@ -164,43 +166,42 @@ namespace Elympics
                 });
             }
 
-            return snapshot;
+            return snapshotWithMetadata;
         }
 
-        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(Dictionary<int, TickToPlayerInput> playerInputs, params ElympicsPlayer[] players)
+        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(ElympicsSnapshot fullSnapshot, params PlayerData[] playerDatas)
         {
-            var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
-            var factoryState = factory.GetState();
+            var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>(playerDatas.Length);
 
-            foreach (var player in players)
+            foreach (var playerData in playerDatas)
             {
                 var snapshot = new ElympicsSnapshot
                 {
-                    Factory = factoryState,
-                    Data = new List<KeyValuePair<int, byte[]>>(),
-                    TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(playerInputs),
+                    Factory = fullSnapshot.Factory,
+                    Data = new List<KeyValuePair<int, byte[]>>(fullSnapshot.Data.Count),
+                    TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(fullSnapshot.TickToPlayersInputData),
+                    Tick = fullSnapshot.Tick,
+                    TickStartUtc = fullSnapshot.TickStartUtc
                 };
-                _ = snapshot.TickToPlayersInputData.Remove((int)player);
-                snapshots[player] = snapshot;
+                _ = snapshot.TickToPlayersInputData.Remove((int)playerData.Player);
+                snapshots[playerData.Player] = snapshot;
             }
 
             //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
-            foreach (var (networkId, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+            foreach (var stateData in fullSnapshot.Data)
             {
-                if (!elympicsBehaviour.HasAnyState)
-                    continue;
+                var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value);
 
-                var state = elympicsBehaviour.GetState();
-
-                if (!elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(state))
+                foreach (var playerData in playerDatas)
                 {
-                    var stateData = new KeyValuePair<int, byte[]>(networkId, state);
+                    //If player didn't receive any snapshots, don't skip any visible behaviours
+                    if (playerData.LastReceivedSnapshot >= 0 && canBeSkipped)
+                        continue;
+                    if (!elympicsBehaviour.IsVisibleTo(playerData.Player))
+                        continue;
 
-                    foreach (var player in players)
-                    {
-                        if (elympicsBehaviour.IsVisibleTo(player))
-                            snapshots[player].Data.Add(stateData);
-                    }
+                    snapshots[playerData.Player].Data.Add(stateData);
                 }
             }
 
@@ -257,48 +258,22 @@ namespace Elympics
             }
 
             var chosenElympicsBehaviours = _elympicsBehaviours.BehavioursPredictable;
-
+            var finder = new NetworkBehaviourFinder(historySnapshot, receivedSnapshot);
             // Todo optimize to not check whole snapshot, only predictable behaviours
-            var historyIndex = 0;
-            var receivedIndex = 0;
-            while (historyIndex < historySnapshot.Data.Count && receivedIndex < receivedSnapshot.Data.Count)
+
+            foreach (var behaviourPair in finder)
             {
-                var (historyNetworkId, historyState) = historySnapshot.Data[historyIndex];
-                var (receivedNetworkId, receivedState) = receivedSnapshot.Data[receivedIndex];
-
-                // Difference created by unpredictable factory
-                if (historyNetworkId != receivedNetworkId)
-                {
-                    if (historyNetworkId > receivedNetworkId)
-                    {
-                        receivedIndex++;
-                        continue;
-                    }
-
-                    if (historyNetworkId < receivedNetworkId)
-                    {
-                        historyIndex++;
-                        continue;
-                    }
-                }
-
-                historyIndex++;
-                receivedIndex++;
-
-                var networkId = historyNetworkId; // == receivedNetworkId
-
                 // Behaviour should always exist - if there is difference in history and received snapshot then it will be omitted
                 // It won't be found only if it's unpredictable
-                if (!chosenElympicsBehaviours.TryGetValue(networkId, out var elympicsBehaviour))
+                if (!chosenElympicsBehaviours.TryGetValue(behaviourPair.NetworkId, out var elympicsBehaviour))
                     continue;
 
-                if (elympicsBehaviour.AreStatesEqual(historyState, receivedState))
+                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond))
                     continue;
 
-                ElympicsLogger.LogWarning($"States not equal for network ID {networkId}.");
+                ElympicsLogger.LogWarning($"States not equal for network ID {behaviourPair.NetworkId}.");
                 return false;
             }
-
             return true;
         }
 
@@ -315,6 +290,12 @@ namespace Elympics
             _bufferForIteration.AddRange(_elympicsBehaviours.Behaviours.Values);
             foreach (var elympicsBehaviour in _bufferForIteration)
                 elympicsBehaviour.ElympicsUpdate();
+        }
+
+        internal void Render(in RenderData renderData)
+        {
+            foreach (var elympicsBehaviour in _elympicsBehaviours.Behaviours.Values)
+                elympicsBehaviour.OnRender(renderData);
         }
 
         internal void OnPreReconcile()

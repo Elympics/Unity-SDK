@@ -60,7 +60,7 @@ namespace Elympics
         {
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
                 return;
-            if (ElympicsBase.Config.Prediction is false)
+            if (!ElympicsBase.Config.Prediction)
                 return;
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
                 return;
@@ -126,12 +126,16 @@ namespace Elympics
         internal void OnRpcInvoked(ushort methodId, params object[] arguments)
         {
             var rpcMethod = RpcMethods[methodId];
-            var previousCallContext = ElympicsBase.CurrentCallContext;
-            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.RpcInvoking;
             _isInvokingRpc = true;
-            rpcMethod.Call(arguments);
-            _isInvokingRpc = false;
-            ElympicsBase.CurrentCallContext = previousCallContext;
+            try
+            {
+                using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking))
+                    rpcMethod.Call(arguments);
+            }
+            finally
+            {
+                _isInvokingRpc = false;
+            }
         }
 
         public string PrefabName { get; internal set; }
@@ -177,7 +181,7 @@ namespace Elympics
         public bool TryGetInput(ElympicsPlayer player, out IInputReader inputReader, int absenceTick = DefaultAbsenceTickParameter)
         {
             if (ElympicsBase.CurrentCallContext != ElympicsBase.CallContext.ElympicsUpdate)
-                throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.elympicsBehavioursManager.ElympicsUpdate)}");
+                throw new ElympicsException($"You cannot use {nameof(TryGetInput)} outside of {nameof(ElympicsBase.ElympicsBehavioursManager.ElympicsUpdate)}");
             if (!HasAnyInput)
                 throw new ElympicsException($"{nameof(TryGetInput)} can be called only in classes implementing {nameof(IInputHandler)} interface");
             if (!_inputReader.AllBytesRead())
@@ -247,11 +251,9 @@ namespace Elympics
             foreach (var observable in _componentsContainer.Observables)
                 RpcMethods.CollectFrom(observable);
 
-            var previousCallContext = ElympicsBase.CurrentCallContext;
-            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
-            foreach (var initializable in _componentsContainer.Initializables)
-                initializable.Initialize();
-            ElympicsBase.CurrentCallContext = previousCallContext;
+            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.Initialize))
+                foreach (var initializable in _componentsContainer.Initializables)
+                    initializable.Initialize();
 
             var elympicsVarType = typeof(ElympicsVar);
             _backingFields = new List<ElympicsVar>();
@@ -266,9 +268,8 @@ namespace Elympics
                     {
                         if (field.GetValue(observable) is ElympicsVar value)
                         {
-                            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.Initialize;
-                            value.Initialize(elympicsBase);
-                            ElympicsBase.CurrentCallContext = previousCallContext;
+                            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.Initialize))
+                                value.Initialize(elympicsBase);
 
                             if (value.EnabledSynchronization)
                             {
@@ -379,11 +380,9 @@ namespace Elympics
 
         internal void CommitVars()
         {
-            var previousCallContext = ElympicsBase.CurrentCallContext;
-            ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ValueChanged;
-            foreach (var backingField in _backingFields)
-                backingField.Commit();
-            ElympicsBase.CurrentCallContext = previousCallContext;
+            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ValueChanged))
+                foreach (var backingField in _backingFields)
+                    backingField.Commit();
         }
 
         internal void ElympicsUpdate()
@@ -392,21 +391,22 @@ namespace Elympics
                 && !IsPredictableTo(ElympicsBase.Player))
                 return;
 
-            var previousCallContext = ElympicsBase.CurrentCallContext;
-            foreach (var updatable in _componentsContainer.Updatables)
-                try
-                {
-                    ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
-                    updatable.ElympicsUpdate();
-                }
-                catch (Exception e) when (e is EndOfStreamException or ReadNotEnoughException)
-                {
-                    _ = ElympicsLogger.LogException("An exception occured when applying inputs", e);
-                }
-                finally
-                {
-                    ElympicsBase.CurrentCallContext = previousCallContext;
-                }
+            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate))
+                foreach (var updatable in _componentsContainer.Updatables)
+                    try
+                    {
+                        updatable.ElympicsUpdate();
+                    }
+                    catch (Exception e) when (e is EndOfStreamException or ReadNotEnoughException)
+                    {
+                        _ = ElympicsLogger.LogException("An exception occured when applying inputs", e);
+                    }
+        }
+
+        internal void OnRender(in RenderData data)
+        {
+            foreach (var render in _componentsContainer.Renderers)
+                render.Render(data);
         }
 
         internal void OnPreReconcile()
@@ -424,6 +424,13 @@ namespace Elympics
         }
 
         #region ClientCallbacks
+
+        internal void InitializedByServer()
+        {
+            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.Initialize))
+                foreach (var initializable in _componentsContainer.Initializables)
+                    initializable.InitializedByServer();
+        }
 
         internal void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
         {

@@ -1,13 +1,13 @@
 variables:
   NODE_VERSION: "18.13.0"
-  DOTNET_VERSION: "6.0"
+  DOTNET_VERSION: "8.0"
   MESSAGEPACK_VERSION: "2.5.124"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
   UNITY_ARCH: linux-il2cpp-1.0.1
-  PACKAGE_DIR: $CI_PROJECT_DIR
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
+  PACKAGE_DIR: ${UNITY_DIR}/Packages/com.daftmobile.elympics
   FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
 
 stages:
@@ -73,8 +73,14 @@ workflow:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
 
+.alpine_image:
+  image: alpine:latest
+
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
+
+.dotnet_image:
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
 
 .node_image:
   image: node:$NODE_VERSION
@@ -136,6 +142,18 @@ get-activation-file:
       - $UNITY_ACTIVATION_FILE
     expire_in: 10 min
 
+check-commits:
+  extends:
+    - .alpine_image
+  stage: check
+  needs: []
+  variables:
+    GIT_DEPTH: 0
+  before_script:
+   - apk add git
+  script:
+    - ./.scripts/ci/check_for_tmp_commits.sh
+
 create-testing-project:
   extends:
     - .unity_image
@@ -165,13 +183,14 @@ create-testing-project:
       artifacts: true
   before_script:
     - *unity_default_before_script
-    - apt-get update && apt-get install -y --no-install-recommends xsltproc
+    - apt-get update && apt-get install -y --no-install-recommends jq xsltproc
   script:
     - ./.scripts/ci/test.sh
   artifacts:
     when: always
     paths:
       - "$TEST_PLATFORM-results.xml"
+      - coverage/
     expire_in: 2 weeks
     reports:
       junit: "$TEST_PLATFORM-results.xml"
@@ -190,16 +209,41 @@ test:editmode:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
 
+create-coverage-report:
+  extends:
+    - .dotnet_image
+  needs:
+    - job: test:playmode
+      artifacts: true
+    - job: test:editmode
+      artifacts: true
+    - job: create-testing-project
+      artifacts: true
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - dotnet tool install -g dotnet-reportgenerator-globaltool
+  script:
+    - mkdir ./converted_coverage
+    - '"${HOME}/.dotnet/tools/reportgenerator" "-reports:./coverage/*/*/*.xml" "-targetdir:./converted_coverage" "-reporttypes:Cobertura;TextSummary;Html" "-verbosity:Verbose"'
+    - sed -i 's@'"$PACKAGE_DIR"'/Samples@Samples~@' ./converted_coverage/Cobertura.xml
+    - sed -i 's@'"$PACKAGE_DIR"'/@@' ./converted_coverage/Cobertura.xml
+    - cat ./converted_coverage/Summary.txt
+  artifacts:
+    paths:
+      - converted_coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: ./converted_coverage/Cobertura.xml
+  coverage: "/Line coverage: (\\d+.\\d+)/"
+
 verify-formatting:
   extends:
     - .unity_image
     - .cond.license
   stage: check
   needs:
-    - job: test:playmode
-      artifacts: false
-    - job: test:editmode
-      artifacts: false
     - job: create-testing-project
       artifacts: true
   variables:
@@ -217,21 +261,19 @@ verify-formatting:
     reports:
       codequality: format-report.codequality.json
 
+
+
 verify-messagepack-generated:
   extends:
     - .unity_image
     - .cond.license
   stage: check
   needs:
-    - job: test:playmode
-      artifacts: false
-    - job: test:editmode
-      artifacts: false
     - job: create-testing-project
       artifacts: true
   variables:
     GIT_DEPTH: 1
-    ORIGINAL_GENERATED_PATH: "${UNITY_DIR}/Assets/ElympicsSDK/Runtime/Plugins/MessagePackGenerated.cs"
+    ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
     - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
@@ -298,6 +340,7 @@ create-changelog:
     - ./.scripts/ci/commit_changelog_and_version.sh
   allow_failure:
     exit_codes: 137
+  when: manual
 
 get-changelog-for-release:
   extends:

@@ -15,7 +15,10 @@ namespace Elympics.Rooms.Models
         [property: Key(4)] string QueueName,
         [property: Key(5)] bool IsSingleTeam,
         [property: Key(6)] IReadOnlyDictionary<string, string> CustomRoomData,
-        [property: Key(7)] IReadOnlyDictionary<string, string> CustomMatchmakingData) : LobbyOperation
+        [property: Key(7)] IReadOnlyDictionary<string, string> CustomMatchmakingData,
+        [property: Key(8)] RoomTournamentDetails? TournamentDetails, //TO DO: Start using this in SDK and on backend instead of CustomMatchmakingData
+        [property: Key(9)] RoomBetDetailsSlim? BetDetailsSlim,
+        [property: Key(10)] Guid? RollingTournamentBetConfigId) : LobbyOperation
     {
         [SerializationConstructor]
         public CreateRoom(
@@ -26,7 +29,10 @@ namespace Elympics.Rooms.Models
             string queueName,
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
-            IReadOnlyDictionary<string, string> customMatchmakingData) : this(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData) =>
+            IReadOnlyDictionary<string, string> customMatchmakingData,
+            RoomTournamentDetails? tournamentDetails,
+            RoomBetDetailsSlim? betDetailsSlim,
+            Guid? rollingTournamentBetConfigId) : this(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, tournamentDetails, betDetailsSlim, rollingTournamentBetConfigId) =>
             OperationId = operationId;
 
         public virtual bool Equals(CreateRoom? other)

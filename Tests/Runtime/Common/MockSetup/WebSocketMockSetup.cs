@@ -1,16 +1,17 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.ToLobby;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
 using NSubstitute;
-using NSubstitute.ClearExtensions;
 
-#nullable enable
 namespace Elympics
 {
     internal static class WebSocketMockSetup
@@ -20,8 +21,8 @@ namespace Elympics
         private static readonly IAuthClient AuthClient;
         private static CancellationTokenSource? cts;
         private static CancellationTokenSource? pingCts;
-        private static readonly IWebSocket Ws = Substitute.For<IWebSocket>();
         private static bool isInRoom;
+        private static IWebSocket ws;
 
         // source https://github.com/Thundernerd/Unity3D-NSubstitute/blob/main/Editor/NSubstitute.dll
         static WebSocketMockSetup() => WebSocketMockBackendSession = new WebSocketMockBackendSession();
@@ -29,83 +30,33 @@ namespace Elympics
         private class MessageHandledException : Exception
         { }
 
-        public static IWebSocket CreateMockWebSocket(Guid userId, string nickname, string? avatarUrl, bool createInitialRoom, double? pingDelay)
+        public static IWebSocket SetupToLobbyOperations(
+            this IWebSocket ws,
+            Guid userId,
+            string nickname,
+            string? avatarUrl)
         {
-            Ws.ClearSubstitute();
-            Ws.When(x => x.Connect()).Do(async _ =>
-            {
-                await UniTask.Delay(TimeSpan.FromSeconds(0.5));
-                ElympicsLogger.Log("[MOCK] Connect called");
-                Ws.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
-            });
-
-            Ws.When(x => x.Close(Arg.Any<WebSocketCloseCode>(), Arg.Any<string>())).Do(info =>
-            {
-                var reason = (WebSocketCloseCode)info.Args()[0];
-                var details = (string)info.Args()[1];
-                ElympicsLogger.Log("[MOCK] Closed called");
-                Ws.OnClose += Raise.Event<WebSocketCloseEventHandler>(reason, details);
-                pingCts?.Cancel();
-            });
-
-            Ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
             {
                 var data = (byte[])x[0];
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
                 ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                 try
                 {
+#pragma warning disable IDE0010
                     switch (msg)
                     {
-                        case Pong pong:
-                        {
-                            break;
-                        }
-                        case JoinLobby joinLobby:
-                        {
-                            SendSuccessResponse(Ws, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0);
-                            SendResponse(Ws, gameResponse);
-                            if (createInitialRoom)
-                            {
-                                var room = new RoomStateChanged(Guid.NewGuid(),
-                                    DateTime.Now,
-                                    "RoomName",
-                                    "ZZZZZZZZ",
-                                    true,
-                                    new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null),
-                                    new List<UserInfo>
-                                    {
-                                        new(userId, 0, false, nickname, avatarUrl),
-                                    },
-                                    true,
-                                    false,
-                                    new Dictionary<string, string>());
-
-                                WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                                WebSocketMockBackendSession.Rooms[room.RoomId] = room;
-                                SendResponse(Ws, room);
-                            }
-
-                            if (pingDelay is not null)
-                            {
-                                pingCts = new CancellationTokenSource();
-                                SchedulePingMessage(Ws, pingDelay.Value, pingCts.Token).Forget();
-                            }
-
-                            break;
-                        }
                         case CreateRoom createRoom:
                         {
-                            ThrowIfAlreadyInRoom(Ws, createRoom);
-                            var (teamSize, teamCount) = GetQueueOrThrow(createRoom.QueueName, Ws, createRoom);
+                            ThrowIfAlreadyInRoom(ws, createRoom);
+                            var (teamSize, teamCount) = GetQueueOrThrow(createRoom.QueueName, ws, createRoom);
 
                             var room = new RoomStateChanged(Guid.NewGuid(),
                                 DateTime.Now,
                                 createRoom.RoomName,
                                 "ZZZZZZZZ",
                                 true,
-                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null),
+                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
                                 new List<UserInfo>
                                 {
                                     new(userId, 0, false, nickname, avatarUrl),
@@ -117,53 +68,53 @@ namespace Elympics
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
 
-                            SendSuccessResponse(Ws, createRoom, room.RoomId);
+                            SendSuccessResponse(ws, createRoom, room.RoomId);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
 
                             break;
                         }
                         case JoinWithRoomId joinWithRoomId:
                         {
-                            ThrowIfAlreadyInRoom(Ws, joinWithRoomId);
-                            var room = GetRoomOrThrow(joinWithRoomId.RoomId, Ws, joinWithRoomId);
-                            ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, Ws, joinWithRoomId);
+                            ThrowIfAlreadyInRoom(ws, joinWithRoomId);
+                            var room = GetRoomOrThrow(joinWithRoomId.RoomId, ws, joinWithRoomId);
+                            ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, ws, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
                             UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl)));
-                            SendSuccessResponse(Ws, joinWithRoomId, room.RoomId);
+                            SendSuccessResponse(ws, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             break;
                         }
                         case JoinWithJoinCode joinWithJoinCode:
                         {
-                            ThrowIfAlreadyInRoom(Ws, joinWithJoinCode);
-                            var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, Ws, joinWithJoinCode);
+                            ThrowIfAlreadyInRoom(ws, joinWithJoinCode);
+                            var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, ws, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
                             UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl)));
-                            SendSuccessResponse(Ws, joinWithJoinCode, room.RoomId);
+                            SendSuccessResponse(ws, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             break;
                         }
                         case LeaveRoom leaveRoom:
                         {
-                            ThrowIfNotInRoom(Ws, leaveRoom);
-                            var room = GetRoomOrThrow(leaveRoom.RoomId, Ws, leaveRoom);
+                            ThrowIfNotInRoom(ws, leaveRoom);
+                            var room = GetRoomOrThrow(leaveRoom.RoomId, ws, leaveRoom);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = null;
                             UpdateUsers(ref room, room.Users.Where(u => u.UserId != userId));
 
-                            SendSuccessResponse(Ws, leaveRoom);
+                            SendSuccessResponse(ws, leaveRoom);
                             UpdateTime(ref room);
-                            SendResponse(Ws, new RoomWasLeft(room.RoomId, LeavingReason.UserLeft));
-                            UpdateRoomOnList(Ws, room);
+                            SendResponse(ws, new RoomWasLeft(room.RoomId, LeavingReason.UserLeft));
+                            UpdateRoomOnList(ws, room);
                             break;
                         }
                         case SetRoomParameters setRoomParameters:
                         {
-                            ThrowIfNotInRoom(Ws, setRoomParameters);
+                            ThrowIfNotInRoom(ws, setRoomParameters);
                             var room = GetCurrentRoom();
 
                             room = room with
@@ -177,65 +128,65 @@ namespace Elympics
                                 },
                             };
 
-                            SendSuccessResponse(Ws, setRoomParameters);
+                            SendSuccessResponse(ws, setRoomParameters);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
-                            UpdateRoomOnList(Ws, room);
+                            SendResponse(ws, room);
+                            UpdateRoomOnList(ws, room);
                             break;
                         }
                         case ChangeTeam changeTeam:
                         {
-                            ThrowIfNotInRoom(Ws, changeTeam);
+                            ThrowIfNotInRoom(ws, changeTeam);
                             var room = GetCurrentRoom();
-                            ThrowIfTeamFull(changeTeam.TeamIndex, room, Ws, changeTeam);
+                            ThrowIfTeamFull(changeTeam.TeamIndex, room, ws, changeTeam);
 
                             UpdateUsers(ref room, room.Users.Select(u => u.UserId == userId ? u with { TeamIndex = changeTeam.TeamIndex } : u));
-                            SendSuccessResponse(Ws, changeTeam);
+                            SendSuccessResponse(ws, changeTeam);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             break;
                         }
                         case SetReady setReady:
                         {
-                            ThrowIfNotInRoom(Ws, setReady);
+                            ThrowIfNotInRoom(ws, setReady);
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == userId);
-                            ThrowIfAlreadyReady(user, Ws, setReady);
+                            ThrowIfAlreadyReady(user, ws, setReady);
                             UpdateUsers(ref room,
                                 room.Users.Select(u => u.UserId == userId ? u with
                                 {
                                     IsReady = true
                                 } : u));
-                            SendSuccessResponse(Ws, setReady);
+                            SendSuccessResponse(ws, setReady);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             break;
                         }
                         case SetUnready setUnready:
                         {
-                            ThrowIfNotInRoom(Ws, setUnready);
+                            ThrowIfNotInRoom(ws, setUnready);
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == userId);
-                            ThrowIfAlreadyUnReady(user, Ws, setUnready);
+                            ThrowIfAlreadyUnReady(user, ws, setUnready);
                             UpdateUsers(ref room,
                                 room.Users.Select(u => u.UserId == userId ? u with
                                 {
                                     IsReady = false
                                 } : u));
-                            SendSuccessResponse(Ws, setUnready);
+                            SendSuccessResponse(ws, setUnready);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             break;
                         }
                         case StartMatchmaking startMatchmaking:
                         {
-                            ThrowIfAlreadyInMatchmaking(Ws, startMatchmaking);
+                            ThrowIfAlreadyInMatchmaking(ws, startMatchmaking);
                             cts = new CancellationTokenSource();
-                            ThrowIfNotInRoom(Ws, startMatchmaking);
+                            ThrowIfNotInRoom(ws, startMatchmaking);
                             var room = GetCurrentRoom();
-                            ThrowIfNoMatchmakingInRoom(Ws, room, startMatchmaking);
-                            ThrowIfNotHost(Ws, userId, room, startMatchmaking);
-                            ThrowIfAllNotReady(Ws, room, startMatchmaking);
+                            ThrowIfNoMatchmakingInRoom(ws, room, startMatchmaking);
+                            ThrowIfNotHost(ws, userId, room, startMatchmaking);
+                            ThrowIfAllNotReady(ws, room, startMatchmaking);
                             room = room with
                             {
                                 MatchmakingData = room.MatchmakingData! with
@@ -244,12 +195,12 @@ namespace Elympics
                                 },
                             };
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
-                            SendSuccessResponse(Ws, startMatchmaking);
+                            SendSuccessResponse(ws, startMatchmaking);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
+                            SendResponse(ws, room);
                             try
                             {
-                                SimulateMatchmaking(Ws, room, cts.Token);
+                                SimulateMatchmaking(ws, room, cts.Token);
                             }
                             catch (OperationCanceledException)
                             {
@@ -260,12 +211,12 @@ namespace Elympics
                         }
                         case CancelMatchmaking cancelMatchmaking:
                         {
-                            ThrowIfNotInRoom(Ws, cancelMatchmaking);
+                            ThrowIfNotInRoom(ws, cancelMatchmaking);
                             var room = GetCurrentRoom();
-                            ThrowIfNoMatchmakingStarted(Ws, cancelMatchmaking);
-                            ThrowIfNoMatchmakingInRoom(Ws, room, cancelMatchmaking);
-                            ThrowIfCannotCancel(Ws, room, cancelMatchmaking);
-                            ThrowIfNotHost(Ws, userId, room, cancelMatchmaking);
+                            ThrowIfNoMatchmakingStarted(ws, cancelMatchmaking);
+                            ThrowIfNoMatchmakingInRoom(ws, room, cancelMatchmaking);
+                            ThrowIfCannotCancel(ws, room, cancelMatchmaking);
+                            ThrowIfNotHost(ws, userId, room, cancelMatchmaking);
                             cts?.Cancel();
                             cts = null;
                             room = room with
@@ -276,27 +227,106 @@ namespace Elympics
                                 },
                             };
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
-                            SendSuccessResponse(Ws, cancelMatchmaking);
+                            SendSuccessResponse(ws, cancelMatchmaking);
                             UpdateTime(ref room);
-                            SendResponse(Ws, room);
-                            SimulateCancelling(Ws, room);
+                            SendResponse(ws, room);
+                            SimulateCancelling(ws, room);
                             break;
                         }
                         case WatchRooms watchRooms:
                         {
-                            ThrowIfMatchingWatchListState(Ws, watchRooms);
+                            ThrowIfMatchingWatchListState(ws, watchRooms);
                             WebSocketMockBackendSession.TracksRoomList = true;
-                            SendSuccessResponse(Ws, watchRooms);
-                            SendResponse(Ws, new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
+                            SendSuccessResponse(ws, watchRooms);
+                            SendResponse(ws,
+                                new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
                             break;
                         }
                         case UnwatchRooms unwatchRooms:
                         {
-                            ThrowIfMatchingWatchListState(Ws, unwatchRooms);
+                            ThrowIfMatchingWatchListState(ws, unwatchRooms);
                             WebSocketMockBackendSession.TracksRoomList = false;
-                            SendSuccessResponse(Ws, unwatchRooms);
+                            SendSuccessResponse(ws, unwatchRooms);
                             break;
                         }
+                        case ShowAuth showAuth:
+                        {
+                            SendSuccessResponse(ws, showAuth);
+                            SendResponseInternal(ws, new ShowAuthResponse(Guid.Empty, "some-auth-type", "some-eth-address", "some-nickname", "some-avatar-url"));
+                            break;
+                        }
+                    }
+#pragma warning restore IDE0010
+                }
+                catch (MessageHandledException)
+                {
+                    // finish
+                }
+            });
+            WebSocketMockSetup.ws = ws;
+            return ws;
+        }
+
+        public static IWebSocket SetShowAuthMessage(this IWebSocket ws, Guid userId, string nickname, string? avatarUrl)
+        {
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            {
+                var data = (byte[])x[0];
+                var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+#pragma warning disable IDE0010
+                switch (msg)
+                {
+                    case ShowAuth showAuth:
+                    {
+                        ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                        SendSuccessResponse(ws, showAuth);
+                        SendResponseInternal(ws, new ShowAuthResponse(userId, string.Empty, string.Empty, nickname, avatarUrl));
+                        break;
+                    }
+                }
+#pragma warning restore IDE0010
+            });
+            WebSocketMockSetup.ws = ws;
+            return ws;
+        }
+
+
+        public static IWebSocket SetPingDelayMessage(this IWebSocket ws, double delay)
+        {
+            pingCts = new CancellationTokenSource();
+            SchedulePingMessage(ws, delay, pingCts.Token).Forget();
+            return ws;
+        }
+
+        public static IWebSocket SetupMessageVerificator(this IWebSocket ws)
+        {
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            {
+                var data = (byte[])x[0];
+                var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+                ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                try
+                {
+                    switch (msg)
+                    {
+                        case JoinLobby:
+                        case ShowAuth:
+                        case CancelMatchmaking:
+                        case ChangeTeam:
+                        case CreateRoom:
+                        case JoinWithJoinCode:
+                        case JoinWithRoomId:
+                        case LeaveRoom:
+                        case SetReady:
+                        case SetRoomParameters:
+                        case SetUnready:
+                        case StartMatchmaking:
+                        case UnwatchRooms:
+                        case WatchRooms:
+                        case LobbyOperation:
+                        case Ping:
+                        case Pong:
+                            break;
                         default:
                             throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
                     }
@@ -306,15 +336,91 @@ namespace Elympics
                     // finish
                 }
             });
-            return Ws;
+            WebSocketMockSetup.ws = ws;
+            return ws;
         }
 
+        public static IWebSocket SetupJoinLobby(
+            this IWebSocket ws,
+            bool createInitialRoom,
+            Guid userId,
+            string nickname,
+            string? avatarUrl)
+        {
+            ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
+            {
+                var data = (byte[])x[0];
+                var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
+                try
+                {
+#pragma warning disable IDE0010
+                    switch (msg)
+                    {
+                        case JoinLobby joinLobby:
+                        {
+                            ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                            SendSuccessResponse(ws, joinLobby);
+                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty);
+                            SendResponse(ws, gameResponse);
+                            if (createInitialRoom)
+                            {
+                                var room = new RoomStateChanged(Guid.NewGuid(),
+                                    DateTime.Now,
+                                    "RoomName",
+                                    "ZZZZZZZZ",
+                                    true,
+                                    new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
+                                    new List<UserInfo>
+                                    {
+                                        new(userId, 0, false, nickname, avatarUrl),
+                                    },
+                                    true,
+                                    false,
+                                    new Dictionary<string, string>());
+
+                                WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
+                                WebSocketMockBackendSession.Rooms[room.RoomId] = room;
+                                SendResponse(ws, room);
+                            }
+                            break;
+                        }
+                    }
+#pragma warning restore IDE0010
+                }
+                catch (MessageHandledException)
+                {
+                    // finish
+                }
+            });
+            WebSocketMockSetup.ws = ws;
+            return ws;
+        }
+
+        public static IWebSocket SetupOpenCloseDefaultBehaviour(this IWebSocket ws)
+        {
+            ws.When(x => x.Connect()).Do(async _ =>
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5), DelayType.Realtime);
+                ElympicsLogger.Log("[MOCK] Connect called");
+                ws.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
+            });
+
+            ws.When(x => x.Close(Arg.Any<WebSocketCloseCode>(), Arg.Any<string>())).Do(info =>
+            {
+                var reason = (WebSocketCloseCode)info.Args()[0];
+                var details = (string)info.Args()[1];
+                ElympicsLogger.Log("[MOCK] Closed called");
+                ws.OnClose += Raise.Event<WebSocketCloseEventHandler>(reason, details);
+                pingCts?.Cancel();
+            });
+            return ws;
+        }
         private static async UniTask SchedulePingMessage(IWebSocket ws, double delay, CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
             {
                 SendResponse(ws, new Ping());
-                await UniTask.Delay(TimeSpan.FromSeconds(delay));
+                await UniTask.Delay(TimeSpan.FromSeconds(delay), DelayType.Realtime);
             }
         }
 
@@ -327,7 +433,7 @@ namespace Elympics
                     IsReady = true
                 } : u));
             UpdateTime(ref room);
-            SendResponse(Ws, room);
+            SendResponse(ws, room);
         }
 
         public static void SimulateRoomParametersChange(Guid roomId, string? roomName, bool? isPrivate, Dictionary<string, string>? customRoomData, Dictionary<string, string>? customMatchmakingData)
@@ -346,8 +452,8 @@ namespace Elympics
 
             UpdateTime(ref room);
             if (WebSocketMockBackendSession.PlayerCurrentRoom == roomId)
-                SendResponse(Ws, room);
-            UpdateRoomOnList(Ws, room);
+                SendResponse(ws, room);
+            UpdateRoomOnList(ws, room);
         }
 
         public static void CancelPingToken() => pingCts?.Cancel();
@@ -372,7 +478,7 @@ namespace Elympics
 
         private static async void SimulateCancelling(IWebSocket ws, RoomStateChanged room)
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
             SetMatchmakingState(ref room, MatchmakingState.Unlocked);
             UpdateTime(ref room);
             SendResponse(ws, room);
@@ -396,10 +502,10 @@ namespace Elympics
                 UpdateTime(ref room);
                 SendResponse(ws, room);
 
-                await UniTask.Delay(TimeSpan.FromSeconds(5), DelayType.Realtime, PlayerLoopTiming.Update, ct);
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 if (ct.IsCancellationRequested)
                     return;
-                SetMatchmakingState(ref room, MatchmakingState.Matched);
+                SetMatchmakingState(ref room, MatchmakingState.Playing);
                 room = room with
                 {
                     MatchmakingData = room.MatchmakingData! with
@@ -407,13 +513,6 @@ namespace Elympics
                         MatchData = GetDummyMatchData(room.Users.Select(x => x.UserId).ToList()),
                     },
                 };
-                UpdateTime(ref room);
-                SendResponse(ws, room);
-
-                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime, PlayerLoopTiming.Update, ct);
-                if (ct.IsCancellationRequested)
-                    return;
-                SetMatchmakingState(ref room, MatchmakingState.Playing);
                 UpdateTime(ref room);
                 SendResponse(ws, room);
 
@@ -577,7 +676,7 @@ namespace Elympics
 
         private static void SendSuccessResponse(IWebSocket ws, LobbyOperation lobbyOperation, Guid? roomId = null)
         {
-            ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name}");
+            ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name} OperationId: {lobbyOperation.OperationId}");
             if (lobbyOperation is CreateRoom or JoinWithJoinCode or JoinWithRoomId)
                 SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, roomId!.Value));
             else
@@ -626,7 +725,8 @@ namespace Elympics
                 roomState.MatchmakingData.QueueName,
                 roomState.MatchmakingData.TeamCount,
                 roomState.MatchmakingData.TeamSize,
-                roomState.MatchmakingData.CustomData);
+                roomState.MatchmakingData.CustomData,
+                roomState.MatchmakingData.BetDetails);
 
             return new PublicRoomState(roomState.RoomId,
                 roomState.LastUpdate,

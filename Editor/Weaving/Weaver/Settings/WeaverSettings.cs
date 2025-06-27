@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -188,6 +189,7 @@ namespace Elympics.Weaver
         /// </summary>
         private void WeaveAssembly(string assemblyPath)
         {
+            using var lockScope = new LockReloadAssembliesScope();
             if (string.IsNullOrEmpty(assemblyPath))
                 return;
             var weavedAssembly = m_WeavedAssemblies
@@ -231,12 +233,6 @@ namespace Elympics.Weaver
                 m_Components.VisitModule(moduleDefinition, m_Log);
 
                 // Save
-                var writerParameters = new WriterParameters()
-                {
-                    WriteSymbols = true,
-                    SymbolWriterProvider = new NativePdbWriterProvider()
-                };
-
                 moduleDefinition.Write(GetWriterParameters());
             }
 
@@ -255,6 +251,12 @@ namespace Elympics.Weaver
         private void OnValidate()
         {
             m_RequiredScriptingSymbols.ValidateSymbols();
+        }
+
+        private class LockReloadAssembliesScope : IDisposable
+        {
+            public LockReloadAssembliesScope() => EditorApplication.LockReloadAssemblies();
+            public void Dispose() => EditorApplication.UnlockReloadAssemblies();
         }
     }
 }

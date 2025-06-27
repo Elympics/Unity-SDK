@@ -33,8 +33,7 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>());
-            _elympicsBase.elympicsBehavioursManager = behavioursManager;
+            _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
             behavioursManager.InitializeInternal(_elympicsBase);
@@ -44,7 +43,7 @@ namespace Elympics.Tests
         public void ResetSut()
         {
             _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, false, false));
-            _elympicsBase.CurrentCallContext = ElympicsBase.CallContext.None;
+            _elympicsBase.SetPermanentCallContext(ElympicsBase.CallContext.None);
             _elympicsBase.ClearRpcQueues();
             _elympicsBehaviour.OnPostReconcile();
             _rpcHolder.Reset();
@@ -84,7 +83,7 @@ namespace Elympics.Tests
         [Test]
         public void MultiplePlayerToServerRpcsShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _rpcHolder.ElympicsBehaviour.ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _rpcHolder.ElympicsBehaviour.ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
@@ -124,7 +123,7 @@ namespace Elympics.Tests
         [Test]
         public void MultipleServerToPlayersRpcsShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
         {
-            _rpcHolder.ElympicsBehaviour.ElympicsBase.CurrentCallContext = ElympicsBase.CallContext.ElympicsUpdate;
+            using var tmpContext = _rpcHolder.ElympicsBehaviour.ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneServer);
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");

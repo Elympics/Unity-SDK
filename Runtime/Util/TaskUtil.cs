@@ -17,7 +17,7 @@ namespace Elympics
         private static IEnumerator Delay(TimeSpan delay, TaskCompletionSource<bool> tcs, CancellationToken ct = default)
         {
             Exception exc = null;
-            yield return UniTask.Delay(delay, true, cancellationToken: ct).ToCoroutine(exception => exc = exception);
+            yield return UniTask.Delay(delay, DelayType.Realtime, cancellationToken: ct).ToCoroutine(exception => exc = exception);
             if (exc == null)
                 tcs.SetResult(true);
             else if (exc is OperationCanceledException)

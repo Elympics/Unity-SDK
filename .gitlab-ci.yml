@@ -340,6 +340,7 @@ create-changelog:
     - ./.scripts/ci/commit_changelog_and_version.sh
   allow_failure:
     exit_codes: 137
+  when: manual
 
 get-changelog-for-release:
   extends:

@@ -7,4 +7,4 @@ fi
 
 PACKAGE_PATH=$1
 
-jq -r '.version' "${PACKAGE_DIR:-.}/$PACKAGE_PATH"
+jq -r '.version' "${CI_PROJECT_DIR:-.}/$PACKAGE_PATH"

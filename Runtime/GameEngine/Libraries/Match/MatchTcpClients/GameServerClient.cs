@@ -106,11 +106,12 @@ namespace MatchTcpClients
 
         private protected async Task<bool> TryConnectSessionAsync(CancellationToken ct = default)
         {
+            var logger = _logger.WithMethodName();
             var sessionConnectedCompletionSource = new TaskCompletionSource<bool>();
 
             void OnSessionConnected(ConnectedMessage message)
             {
-                ElympicsLogger.Log("Connected using reliable channel.");
+                logger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
                 //_clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
                 sessionConnectedCompletionSource.SetResult(true);
@@ -125,6 +126,7 @@ namespace MatchTcpClients
 
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var sessionConnectedCompletionTask = sessionConnectedCompletionSource.Task;
+                logger.Log("Connecting to reliable channel...");
                 var timeoutTask = TaskUtil.Delay(Config.SessionConnectTimeout, cts.Token).CatchOperationCanceledException();
 
                 if (await Task.WhenAny(sessionConnectedCompletionTask, timeoutTask) != timeoutTask)

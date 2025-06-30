@@ -95,7 +95,10 @@ namespace Elympics.ElympicsSystems.Internal
             GameVersionId = string.Empty;
         }
 
-        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | " + $"{nameof(GameId)}: {GameId} | " + $"{nameof(FleetName)}: {FleetName} | " + $"{nameof(GameVersionId)}: {GameVersionId} | ";
+        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | "
+            + $"{nameof(GameId)}: {GameId} | "
+            + $"{nameof(FleetName)}: {FleetName} | "
+            + $"{nameof(GameVersionId)}: {GameVersionId} | ";
     }
 
     internal class UserContext

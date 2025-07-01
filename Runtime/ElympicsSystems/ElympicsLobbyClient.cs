@@ -614,7 +614,7 @@ namespace Elympics
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,
-                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, x.Prize.ToString(CultureInfo.InvariantCulture), (uint)x.PlayersCount)).ToList());
+                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, WeiConverter.ToWei(x.Prize, x.CoinInfo.Currency.Decimals), (uint)x.PlayersCount)).ToList());
 
             var tcs = new UniTaskCompletionSource<RollingsResponse>();
 

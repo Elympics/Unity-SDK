@@ -21,6 +21,7 @@ using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
 using Elympics.SnapshotAnalysis.Retrievers;
+using Elympics.Util;
 using JetBrains.Annotations;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
@@ -597,7 +598,7 @@ namespace Elympics
                 var numberOfPlayers = requestData[i].PlayersCount;
                 fees[i] = new FeeInfo
                 {
-                    EntryFee = WeiConverter.FromWei(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    EntryFee = RawCoinConverter.FromRaw(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
                     Error = fee.Error,
                     EntryFeeRaw = fee.EntryFee
                 };
@@ -614,7 +615,7 @@ namespace Elympics
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,
-                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, WeiConverter.ToWei(x.Prize, x.CoinInfo.Currency.Decimals), (uint)x.PlayersCount)).ToList());
+                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, RawCoinConverter.ToRaw(x.Prize, x.CoinInfo.Currency.Decimals), (uint)x.PlayersCount)).ToList());
 
             var tcs = new UniTaskCompletionSource<RollingsResponse>();
 

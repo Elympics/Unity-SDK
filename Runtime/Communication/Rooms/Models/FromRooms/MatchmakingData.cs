@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Util;
 using MessagePack;
 
 #nullable enable
@@ -60,7 +61,7 @@ namespace Elympics.Rooms.Models
     public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin)
     {
         [IgnoreMember]
-        public decimal BetValue => WeiConverter.FromWei(BetValueRaw, Coin.Currency.Decimals);
+        public decimal BetValue => RawCoinConverter.FromRaw(BetValueRaw, Coin.Currency.Decimals);
         public virtual bool Equals(RoomBetDetails? other) => other != null && BetValueRaw == other.BetValueRaw && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);

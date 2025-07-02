@@ -1,3 +1,12 @@
+## [0.16.1](https://github.com/Elympics/Unity-SDK/compare/v0.16.0...v0.16.1) (2025-07-02)
+
+
+### Bug Fixes 🪲
+
+* Correctly reset room joining state (to not joined) in case of errors ([f57f290](https://github.com/Elympics/Unity-SDK/commit/f57f290b08c04a470acb8b74369e055d69a7ea5d))
+
+
+
 ## [0.16.0](https://github.com/Elympics/Unity-SDK/compare/v0.15.4...v0.16.0) (2025-06-27)
 
 

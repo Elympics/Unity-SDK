@@ -1,35 +1,29 @@
-var parseChangelog = require('changelog-parser');
+const parseChangelog = require('changelog-parser');
 
-function usage() {
-    console.log("Usage: ./node parseChangelog.js path/to/CHANGELOG.md [version]");
-    console.log("[version] must be in format X.Y.Z");
-}
-
-function isCorrectVersion(string) {
-    return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(string);
-}
-
-async function main() {
-    args = process.argv.slice(2);
-    if (args.length != 2 || !isCorrectVersion(args[1])) {
-        usage();
-        process.exit(1);
+function processArgs() {
+    const args = process.argv.slice(2);
+    if (args.length !== 2 || !isCorrectVersion(args[1])) {
+        throw new Error('Invalid usage\nUsage: node .scripts/ci/parse_changelog.js CHANGELOG.md version\n\tversion must be in format X.Y.Z');
     }
+    return args;
+}
 
-    changelogPath = args[0];
-    version = args[1];
+const isCorrectVersion = (version) => /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version);
 
-    await parseChangelog({
+(async () => {
+    await (async () => { });  // makes error reporting consistent, hiding Node-internals-related stacktrace
+    const [changelogPath, version] = processArgs();
+
+    const parsedChangelog = await parseChangelog({
         filePath: changelogPath,
         removeMarkdown: false
-    })
-        .then(function (result) {
-            version = result.versions.filter(entry => entry.version == version)[0];
-            console.log(version.body);
-        });
-}
-
-main().catch((error) => {
+    });
+    const foundEntry = parsedChangelog.versions.filter(entry => entry.version === version)[0];
+    if (typeof (foundEntry) === 'undefined') {
+        throw new Error(`Could not find changelog entry for version: ${version}`);
+    }
+    console.log(foundEntry.body);
+})().catch((error) => {
     console.error(error);
     process.exitCode = 1;
 })

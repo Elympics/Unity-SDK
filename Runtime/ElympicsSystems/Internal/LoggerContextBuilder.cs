@@ -144,6 +144,7 @@ namespace Elympics.ElympicsSystems.Internal
         {
             var logger = new ElympicsLoggerContext
             {
+                SessionId = current.SessionId,
                 App = current.App,
                 Context = current.Context,
                 MethodName = methodName,
@@ -152,6 +153,7 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
+                GameMode = current.GameMode,
             };
             return logger;
         }
@@ -160,6 +162,7 @@ namespace Elympics.ElympicsSystems.Internal
         {
             var logger = new ElympicsLoggerContext
             {
+                SessionId = current.SessionId,
                 App = app,
                 Context = current.Context,
                 MethodName = current.MethodName,
@@ -168,6 +171,7 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
+                GameMode = current.GameMode,
             };
             return logger;
         }
@@ -176,6 +180,7 @@ namespace Elympics.ElympicsSystems.Internal
         {
             var logger = new ElympicsLoggerContext
             {
+                SessionId = current.SessionId,
                 App = current.App,
                 Context = context,
                 MethodName = current.MethodName,
@@ -184,6 +189,7 @@ namespace Elympics.ElympicsSystems.Internal
                 ConnectionContext = current.ConnectionContext,
                 PlayPadContext = current.PlayPadContext,
                 RoomContext = current.RoomContext,
+                GameMode = current.GameMode,
             };
             return logger;
         }

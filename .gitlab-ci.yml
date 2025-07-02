@@ -340,7 +340,6 @@ create-changelog:
     - ./.scripts/ci/commit_changelog_and_version.sh
   allow_failure:
     exit_codes: 137
-  when: manual
 
 get-changelog-for-release:
   extends:
@@ -357,9 +356,7 @@ get-changelog-for-release:
   variables:
     GIT_DEPTH: 1
   before_script:
-    - mv package.json package.json.bkp
-    - npm install changelog-parser
-    - mv package.json.bkp package.json
+    - npm install -g changelog-parser
   script:
     - echo $PACKAGE_VERSION
     - node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION

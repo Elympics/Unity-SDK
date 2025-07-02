@@ -134,10 +134,7 @@ namespace MatchTcpClients
         }
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
-            var logger = _logger.WithMethodName();
-            logger.Log("Setting up WebRTC client...");
             _webRtcClient.OnAnswer(_answer);
-            logger.Log("Client initialized successfully.");
             return Task.FromResult(true);
         }
 
@@ -151,6 +148,8 @@ namespace MatchTcpClients
                     break;
                 var cts = new CancellationTokenSource();
 
+                logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
+
                 void OnAnswerReceived(WebSignalingClientResponse r)
                 {
                     signalingClient.ReceivedResponse -= OnAnswerReceived;
@@ -160,8 +159,8 @@ namespace MatchTcpClients
 
                 var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
 
-                logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
                 signalingClient.ReceivedResponse += OnAnswerReceived;
+                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
                 signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
                 await TaskUtil.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();

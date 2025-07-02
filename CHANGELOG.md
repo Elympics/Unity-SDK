@@ -6,6 +6,11 @@
 * Correctly reset room joining state (to "not joined") in case of errors ([f57f290](https://github.com/Elympics/Unity-SDK/commit/f57f290b08c04a470acb8b74369e055d69a7ea5d))
 
 
+### Features
+
+* Add `JoinCodeMismatch` to recognized lobby error kinds ([a69100c](https://github.com/Elympics/Unity-SDK/commit/a69100c3f37b61ab119af9d388f3f6cd38f2e226))
+
+
 
 ## [0.16.0](https://github.com/Elympics/Unity-SDK/compare/v0.15.4...v0.16.0) (2025-06-27)
 

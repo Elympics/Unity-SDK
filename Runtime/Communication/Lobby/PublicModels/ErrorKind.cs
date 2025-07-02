@@ -32,6 +32,7 @@ namespace Elympics
         ConfigurationNotValid = 27,
         AcceptedRoomIsOutdated = 28,
         RoomAlreadyInMatchedState = 29,
+        JoinCodeMismatch = 30,
 
         Throttle = 10000,
         InvalidMessage = 10001,

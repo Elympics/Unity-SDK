@@ -17,7 +17,7 @@ namespace Elympics.Util
         public static decimal FromRaw(string rawAmount, int decimalPlacesToUnit)
         {
             if (!BigInteger.TryParse(rawAmount, out var bigIntWei))
-                throw new ArgumentException($"Invalid amount string: {rawAmount}",nameof(rawAmount));
+                throw new ArgumentException($"Invalid amount string: {rawAmount}", nameof(rawAmount));
 
             var divisor = BigInteger.Pow(10, decimalPlacesToUnit);
             var wholePart = BigInteger.DivRem(bigIntWei, divisor, out var remainder);

@@ -563,6 +563,37 @@ namespace Elympics.Tests.Rooms
             Assert.That(exception.Message, Is.EqualTo(expected.Message));
         });
 
+        [UnityTest]
+        public IEnumerator ExceptionFromJoiningOperationShouldResetRoomJoiningState() => UniTask.ToCoroutine(async () =>
+        {
+            var expected = new DummyException("My test exception");
+
+            _ = RoomsClientMock.JoinRoom("", null)
+                .ReturnsForAnyArgs(UniTask.FromException<Guid>(expected));
+
+            RoomJoiningState? lastRoomJoiningState = null;
+            RoomJoiner.JoiningStateChanged += UpdateLastJoiningState;
+
+            // Act
+            try
+            {
+                _ = await RoomJoiner.JoinRoom(null, "");
+            }
+            catch
+            { }
+            finally
+            {
+                RoomJoiner.JoiningStateChanged -= UpdateLastJoiningState;
+            }
+
+            Assert.That(lastRoomJoiningState, Is.InstanceOf<RoomJoiningState.NotJoined>());
+
+            void UpdateLastJoiningState(RoomJoiningState state)
+            {
+                lastRoomJoiningState = state;
+            }
+        });
+
         private UniTask EnsureRoomIsBeingJoined(Guid? roomId = null, string? joinCode = null)
         {
             SetRoomAsTrackedWhenItGetsJoined();

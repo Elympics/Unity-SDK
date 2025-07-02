@@ -33,7 +33,9 @@ namespace Elympics
 
         public Guid? CurrentRoomId
         {
-            get => JoiningState is RoomJoiningState.JoinedWithTracking joined ? joined.RoomId : null;
+            get => JoiningState is RoomJoiningState.JoinedWithTracking joined
+                ? joined.RoomId
+                : null;
             set
             {
                 if (value == CurrentRoomId)
@@ -48,10 +50,8 @@ namespace Elympics
         private bool IsCurrentRoomId(Guid roomId) =>
             JoiningState is RoomJoiningState.JoinedWithTracking joined && joined.RoomId == roomId;
 
-        public RoomJoiner(IRoomsClient roomsClient)
-        {
+        public RoomJoiner(IRoomsClient roomsClient) =>
             _client = roomsClient;
-        }
 
         public UniTask<Guid> CreateAndJoinRoom(
             string roomName,
@@ -61,44 +61,32 @@ namespace Elympics
             bool isEphemeral,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
-            CompetitivenessConfig? competitivenessConfig = null)
-        {
-            ThrowIfAnyRoomJoined();
-            JoiningState = new RoomJoiningState.Creating(roomName);
-            var ackTask = _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, competitivenessConfig);
-            return SetupRoomTracking(ackTask);
-        }
+            CompetitivenessConfig? competitivenessConfig = null) =>
+            SetupRoomTracking(new RoomJoiningState.Creating(roomName),
+                () => _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, competitivenessConfig));
 
-        public UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
-        {
-            ThrowIfAnyRoomJoined();
-            return joinCode != null
+        public UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null) =>
+            joinCode != null
                 ? JoinRoom(joinCode, teamIndex)
                 : JoinRoom(roomId!.Value, teamIndex);
-        }
 
-        private async UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex)
+        private async UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex) =>
+            await SetupRoomTracking(new RoomJoiningState.JoiningByJoinCode(joinCode),
+                () => _client.JoinRoom(joinCode, teamIndex));
+
+        private async UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex) =>
+            await SetupRoomTracking(new RoomJoiningState.JoiningByRoomId(roomId),
+                () => _client.JoinRoom(roomId, teamIndex));
+
+        private async UniTask<Guid> SetupRoomTracking(RoomJoiningState initialJoiningState, Func<UniTask<Guid>> mainOperationFactory, CancellationToken ct = default)
         {
-            JoiningState = new RoomJoiningState.JoiningByJoinCode(joinCode);
-            return await SetupRoomTracking(_client.JoinRoom(joinCode, teamIndex));
-        }
-
-        private async UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex)
-        {
-            JoiningState = new RoomJoiningState.JoiningByRoomId(roomId);
-            return await SetupRoomTracking(_client.JoinRoom(roomId, teamIndex));
-        }
-
-        private async UniTask<Guid> SetupRoomTracking(UniTask<Guid> mainOperation, CancellationToken ct = default)
-        {
-            var roomId = await mainOperation;
-            if (IsCurrentRoomId(roomId))
-                throw new RoomAlreadyJoinedException(roomId);
-            JoiningState = new RoomJoiningState.JoinedNoTracking(roomId);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
-
+            ThrowIfAnyRoomJoined();
+            JoiningState = initialJoiningState;
             try
             {
+                var roomId = await mainOperationFactory();
+                UpgradeJoiningToJoined(roomId);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
                 await ResultUtils.WaitUntil(() => IsCurrentRoomId(roomId), OperationTimeout, linkedCts.Token);
                 return roomId;
             }
@@ -109,6 +97,14 @@ namespace Elympics
             }
         }
 
+        private void UpgradeJoiningToJoined(Guid roomId) =>
+            _ = JoiningState switch
+            {
+                RoomJoiningState.Joined joined when joined.RoomId != roomId => throw new RoomAlreadyJoinedException(joined.RoomId),
+                RoomJoiningState.Joined joined when joined.RoomId == roomId => null,
+                _ => JoiningState = new RoomJoiningState.JoinedNoTracking(roomId),
+            };
+
         private void ThrowIfAnyRoomJoined() =>
             _ = JoiningState switch
             {
@@ -117,7 +113,7 @@ namespace Elympics
                 {
                     RoomJoiningState.JoiningByJoinCode byJoinCode => throw new RoomAlreadyJoinedException(joinCode: byJoinCode.JoinCode, inProgress: true),
                     RoomJoiningState.JoiningByRoomId byRoomId => throw new RoomAlreadyJoinedException(byRoomId.RoomId, inProgress: true),
-                    // TODO: include created room name in the exception
+                    RoomJoiningState.Creating creating => throw new RoomAlreadyJoinedException(roomName: creating.RoomName, inProgress: true),
                     _ => throw new RoomAlreadyJoinedException(inProgress: true),
                 },
                 _ => "",

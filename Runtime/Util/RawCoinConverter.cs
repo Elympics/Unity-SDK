@@ -13,7 +13,7 @@ namespace Elympics.Util
     /// </remarks>
     public static class RawCoinConverter
     {
-        /// <param name="decimalPlacesToUnit">Usually fetched from <see cref="Elympics.CurrencyInfo.Decimals"/>.</param>
+        /// <param name="decimalPlacesToUnit">Usually fetched from <see cref="CurrencyInfo.Decimals"/>.</param>
         public static decimal FromRaw(string rawAmount, int decimalPlacesToUnit)
         {
             if (!BigInteger.TryParse(rawAmount, out var bigIntWei))
@@ -26,7 +26,7 @@ namespace Elympics.Util
             return (decimal)wholePart + fractionalPart;
         }
 
-        /// <param name="decimalPlacesToUnit">Usually fetched from <see cref="Elympics.CurrencyInfo.Decimals"/>.</param>
+        /// <param name="decimalPlacesToUnit">Usually fetched from <see cref="CurrencyInfo.Decimals"/>.</param>
         public static string ToRaw(decimal amount, int decimalPlacesToUnit)
         {
             var mantissa = (BigInteger)amount;

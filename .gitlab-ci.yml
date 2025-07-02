@@ -356,7 +356,7 @@ get-changelog-for-release:
   variables:
     GIT_DEPTH: 1
   before_script:
-    - npm install --no-save changelog-parser
+    - npm install -g changelog-parser
   script:
     - echo $PACKAGE_VERSION
     - node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION

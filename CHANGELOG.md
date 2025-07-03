@@ -1,3 +1,17 @@
+## [0.17.0](https://github.com/Elympics/Unity-SDK/compare/v0.16.1...v0.17.0) (2025-07-03)
+
+
+### Bug Fixes 🪲
+
+* prize amount format in rolling tournaments fee request ([850aa10](https://github.com/Elympics/Unity-SDK/commit/850aa104920dd274b586f031a913cc6494541c50))
+
+
+### Features
+
+* Add JoinCodeMismatch to recognized lobby error kinds ([a0931bd](https://github.com/Elympics/Unity-SDK/commit/a0931bdaebb5946fc10a1f1f4409583b371c6fe0))
+
+
+
 ## [0.16.1](https://github.com/Elympics/Unity-SDK/compare/v0.16.0...v0.16.1) (2025-07-02)
 
 

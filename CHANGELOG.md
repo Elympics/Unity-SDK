@@ -8,7 +8,7 @@
 
 ### Features
 
-* Add JoinCodeMismatch to recognized lobby error kinds ([a0931bd](https://github.com/Elympics/Unity-SDK/commit/a0931bdaebb5946fc10a1f1f4409583b371c6fe0))
+* BREAKING CHANGE: rename `WeiConverter` to `Elympics.Util.RawCoinConverter` and update its members to use term "raw" instead of "Wei"
 
 
 
@@ -23,7 +23,6 @@
 ### Features
 
 * Add `JoinCodeMismatch` to recognized lobby error kinds ([a69100c](https://github.com/Elympics/Unity-SDK/commit/a69100c3f37b61ab119af9d388f3f6cd38f2e226))
-* BREAKING CHANGE: rename `WeiConverter` to `Elympics.Util.RawCoinConverter` and update its members to use term "raw" instead of "Wei"
 
 
 

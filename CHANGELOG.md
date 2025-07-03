@@ -1,3 +1,17 @@
+## [0.17.0](https://github.com/Elympics/Unity-SDK/compare/v0.16.1...v0.17.0) (2025-07-03)
+
+
+### Bug Fixes 🪲
+
+* prize amount format in rolling tournaments fee request ([850aa10](https://github.com/Elympics/Unity-SDK/commit/850aa104920dd274b586f031a913cc6494541c50))
+
+
+### Features
+
+* BREAKING CHANGE: rename `WeiConverter` to `Elympics.Util.RawCoinConverter` and update its members to use term "raw" instead of "Wei"
+
+
+
 ## [0.16.1](https://github.com/Elympics/Unity-SDK/compare/v0.16.0...v0.16.1) (2025-07-02)
 
 

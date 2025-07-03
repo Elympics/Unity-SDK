@@ -9,6 +9,7 @@ using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
+using Elympics.Util;
 
 #nullable enable
 
@@ -270,7 +271,7 @@ namespace Elympics
         private static RoomBetDetailsSlim GetRoomBetDetailsSlim(decimal betValue, Guid coinId)
         {
             var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(coinId) ?? throw new ArgumentException($"Couldn't create bet with coinId: {coinId}");
-            return new RoomBetDetailsSlim(WeiConverter.ToWei(betValue, coinDecimal), coinId);
+            return new RoomBetDetailsSlim(RawCoinConverter.ToRaw(betValue, coinDecimal), coinId);
         }
         void IRoomsClient.ResetState() => _roomWatchingState = RoomWatchingState.NotWatching;
         void IRoomsClient.ClearSession() => Session = null;

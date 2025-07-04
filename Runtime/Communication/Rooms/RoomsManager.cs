@@ -45,6 +45,10 @@ namespace Elympics
 
         #endregion Aggregated room events
 
+        /// <summary>Awaited before client sets itself as ready in a quick match room.</summary>
+        /// <remarks>Use this to inject any additional operations that need to be performed before setting ready in a quick match room.</remarks>
+        internal static Func<IRoom, CancellationToken, UniTask>? BeforeQuickMatchReady;
+
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private CancellationTokenSource _cts = new();
 
@@ -525,6 +529,10 @@ namespace Elympics
         private static async UniTask SetupQuickRoomAndStartMatchmaking(byte[] gameEngineData, float[] matchmakerData, IRoom room, CancellationToken ct = default)
         {
             await room.ChangeTeam(0);
+
+            if (BeforeQuickMatchReady != null)
+                await BeforeQuickMatchReady(room, ct);
+
             await room.MarkYourselfReady(gameEngineData, matchmakerData, ct);
             await room.StartMatchmaking();
         }

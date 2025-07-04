@@ -2,6 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Utils;
 using Elympics.Models.Authentication;
 using AuthRoutes = Elympics.Models.Authentication.Routes;
 
@@ -18,8 +19,6 @@ namespace Elympics
         private readonly string _ethAddressNonceUrl;
         private readonly string _ethAddressAuthUrl;
 
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
-
         public RemoteAuthClient(string authEndpoint)
         {
             var uriBuilder = new UriBuilder(authEndpoint);
@@ -35,7 +34,7 @@ namespace Elympics
         public async UniTask<Result<AuthData, string>> AuthenticateWithClientSecret(string clientSecret, CancellationToken ct = default)
         {
             using var delayCts = new CancellationTokenSource();
-            using var timer = delayCts.CancelAfterSlim(_timeout, DelayType.Realtime);
+            using var timer = delayCts.CancelAfterSlim(ElympicsTimeout.AuthenticationTimeout, DelayType.Realtime);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, delayCts.Token);
 
             var putTcs = new UniTaskCompletionSource<Result<AuthenticationDataResponse, Exception>>();
@@ -100,7 +99,7 @@ namespace Elympics
                 signature = signature,
             };
             using var delayCts = new CancellationTokenSource();
-            using var timer = delayCts.CancelAfterSlim(_timeout, DelayType.Realtime);
+            using var timer = delayCts.CancelAfterSlim(ElympicsTimeout.AuthenticationTimeout, DelayType.Realtime);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, delayCts.Token);
 
             var postTcs = new UniTaskCompletionSource<Result<AuthenticationDataResponse, Exception>>();

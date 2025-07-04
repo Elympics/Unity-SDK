@@ -529,10 +529,6 @@ namespace Elympics
         private static async UniTask SetupQuickRoomAndStartMatchmaking(byte[] gameEngineData, float[] matchmakerData, IRoom room, CancellationToken ct = default)
         {
             await room.ChangeTeam(0);
-
-            if (BeforeQuickMatchReady != null)
-                await BeforeQuickMatchReady(room, ct);
-
             await room.MarkYourselfReady(gameEngineData, matchmakerData, ct);
             await room.StartMatchmaking();
         }

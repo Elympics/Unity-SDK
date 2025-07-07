@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
+using Elympics.Rooms.Models;
 
 #nullable enable
 
@@ -16,6 +17,7 @@ namespace Elympics.Tests.Common.RoomMocks
             add => throw new NotImplementedException();
             remove => throw new NotImplementedException();
         }
+
         public event Action<DisconnectionData>? Disconnected
         {
             add => throw new NotImplementedException();
@@ -25,7 +27,7 @@ namespace Elympics.Tests.Common.RoomMocks
         public event Action<IFromLobby>? MessageReceived;
         public bool IsConnected => throw new NotImplementedException();
         public SessionConnectionDetails? ConnectionDetails { get; set; }
-        public UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
+        public UniTask<GameDataResponse> Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
             throw new NotImplementedException();
         public void Disconnect(DisconnectionReason reason) => throw new NotImplementedException();
 

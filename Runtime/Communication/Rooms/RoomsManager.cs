@@ -81,8 +81,6 @@ namespace Elympics
 
         private readonly RoomStateDiff _stateDiff = new();
 
-        private UniTaskCompletionSource<GameDataResponse>? _tcs;
-
         public event Func<IRoom, IRoom>? RoomSetUp
         {
             add
@@ -113,7 +111,6 @@ namespace Elympics
 
         private void SubscribeClient()
         {
-            _client.GameDataResponse += HandleGameDataResponse;
             _client.RoomListChanged += HandleRoomListChanged;
             _client.RoomStateChanged += HandleJoinedRoomUpdated;
             _client.LeftRoom += HandleLeftRoom;
@@ -222,31 +219,6 @@ namespace Elympics
                 _stateDiff.Reset();
                 _stateDiff.UpdatedState = true;
                 _stateDiff.InitializedState = true;
-            }
-        }
-
-        private async void HandleGameDataResponse(GameDataResponse obj)
-        {
-            try
-            {
-                ElympicsLogger.Log($"Handle Game Data Response {Environment.NewLine}{obj}");
-                _ = _logger.SetGameVersionId(obj.GameVersionId).SetFleetName(obj.FleetName);
-                await ElympicsLobbyClient.Instance!.AssignRoomCoins(obj.CoinData);
-            }
-            catch (Exception exception)
-            {
-                _ = ElympicsLogger.LogException(exception);
-                _ = _tcs?.TrySetException(exception);
-            }
-
-            try
-            {
-                _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
-                _ = _tcs.TrySetResult(obj);
-            }
-            catch (Exception exception)
-            {
-                _ = ElympicsLogger.LogException(exception);
             }
         }
 
@@ -533,7 +505,7 @@ namespace Elympics
             await room.StartMatchmaking();
         }
 
-        async UniTask IRoomsManager.CheckJoinedRoomStatus()
+        async UniTask IRoomsManager.CheckJoinedRoomStatus(GameDataResponse gameDataResponse)
         {
             if (_initialized)
                 return;
@@ -542,15 +514,8 @@ namespace Elympics
             try
             {
                 _client.RoomStateChanged += OnRoomStateChanged;
-                _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
-                var result = await _tcs.WithTimeout(ElympicsTimeout.FetchGameDataTimeout, _cts.Token);
-                if (result is null)
-                {
-                    _initialized = true;
-                    return;
-                }
 
-                var matchRoomsJoined = result.JoinedMatchRooms;
+                var matchRoomsJoined = gameDataResponse.JoinedMatchRooms;
                 if (matchRoomsJoined <= 0)
                 {
                     _initialized = true;
@@ -558,8 +523,15 @@ namespace Elympics
                 }
 
                 if (CurrentRoom?.IsMatchRoom() is true)
+                {
                     counter++;
-                var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, ElympicsTimeout.FetchGameDataTimeout, _cts.Token).SuppressCancellationThrow();
+                    if (counter >= matchRoomsJoined)
+                    {
+                        _initialized = true;
+                        return;
+                    }
+                }
+                var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, ElympicsTimeout.RoomStateChangeConfirmationTimeout, _cts.Token).SuppressCancellationThrow();
                 if (canceled)
                     ElympicsLogger.LogWarning("Waiting for init room state timeout.");
 
@@ -568,7 +540,6 @@ namespace Elympics
             finally
             {
                 _client.RoomStateChanged -= OnRoomStateChanged;
-                _tcs = null;
             }
 
             return;

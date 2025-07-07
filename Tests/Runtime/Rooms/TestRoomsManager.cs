@@ -47,7 +47,7 @@ namespace Elympics.Tests.Rooms
                 OperationTimeout = TimeSpan.FromSeconds(1),
             };
             RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, logger, RoomJoiner);
-            ElympicsTimeout.FetchGameDataTimeout = TimeSpan.FromSeconds(1);
+            ElympicsTimeout.RoomStateChangeConfirmationTimeout = TimeSpan.FromSeconds(1);
             EventRegister = new EventObserver<IRoomsManager>(RoomsManager);
 
             _roomsManagerInitialized = RoomsManager.GetType()

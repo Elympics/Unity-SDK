@@ -41,8 +41,10 @@ namespace Elympics.ElympicsSystems.Internal
                         logger.Log($"Try to reconnect. Attempt: #{counter + 1}");
                         Client.CheckConnectionDataOrThrow(reconnectionData);
                         await Client.Authorize(reconnectionData);
-                        await Client.ConnectToLobby(reconnectionData);
-                        await Client.RoomsManager.CheckJoinedRoomStatus();
+                        var gameData = await Client.ConnectToLobby(reconnectionData);
+                        if (gameData is not null)
+                            await Client.InitializeBasedOnGameData(gameData);
+                        await Client.GetElympicsUserData();
                         isSuccess = true;
                         break;
                     }

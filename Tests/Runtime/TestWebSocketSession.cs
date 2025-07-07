@@ -8,11 +8,13 @@ using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
+using Elympics.Lobby.Serializers;
 using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;
-using Elympics.Tests.Common;
 using HybridWebSocket;
+using MessagePack;
 using NSubstitute;
+using NSubstitute.ClearExtensions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -27,16 +29,11 @@ namespace Elympics.Tests
     public class TestWebSocketSession
     {
         private static readonly IAsyncEventsDispatcher Dispatcher = AsyncEventsDispatcherMockSetup.CreateMockAsyncEventsDispatcher();
-        private static readonly WebSocketMock WsMock = new();
-        private static readonly LobbySerializerMock SerializerMock = new();
         private static readonly AuthData AuthData = new(new Guid("10000000000000000000000000000001"), "Nickname_10000000000000000000000000000001", string.Empty);
         private static readonly SessionConnectionDetails ConnectionDetails = new("url", AuthData, default, string.Empty, string.Empty);
+        private static readonly IWebSocket WebSocketMock = Substitute.For<IWebSocket>();
+        private static readonly ILobbySerializer LobbySerializer = Substitute.For<ILobbySerializer>();
 
-        private static readonly LobbySerializerMock.Methods SerializerForConnection = new()
-        {
-            Serialize = data => data is LobbyOperation operation ? operation.OperationId.ToByteArray() : Array.Empty<byte>(),
-            Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
-        };
         private static readonly TimeSpan DefaultOpeningTimeout = ElympicsTimeout.WebSocketOpeningTimeout;
         private static readonly TimeSpan DefaultOperationTimeout = ElympicsTimeout.WebSocketOperationTimeout;
 
@@ -44,66 +41,50 @@ namespace Elympics.Tests
         private record UnknownMessage : IFromLobby, IToLobby;
         private record UnknownOperation : LobbyOperation;
 
-        [SetUp]
-        public void ResetMocks()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
-            cts = new();
-            WsMock.Reset();
-            SerializerMock.Reset();
+            _ = LobbySerializer.Serialize(Arg.Any<IToLobby>()).Returns(x =>
+            {
+                var toLobby = (IToLobby)x[0];
+                return MessagePackSerializer.Serialize(toLobby);
+            });
+
+            _ = LobbySerializer.Deserialize(Arg.Any<byte[]>()).Returns(x =>
+            {
+                var byteData = (byte[])x[0];
+                return MessagePackSerializer.Deserialize<IFromLobby>(byteData);
+            });
         }
+
+        [SetUp]
+        public void ResetMocks() => cts = new();
 
         [UnityTest]
         public IEnumerator HappyPathConnectionScenarioShouldSucceed() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession();
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
         });
 
-        private static WebSocketSession CreateWebSocketSession(LobbySerializerMock.Methods? serializerMethods = null)
+        private static WebSocketSession CreateDefaultWebSocketSession()
         {
-            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(new Guid()), (_, _) => WsMock, SerializerMock);
-            if (serializerMethods.HasValue)
-                _ = SerializerMock.UpdateMethods(serializerMethods.Value);
+            _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, AuthData.UserId, AuthData.Nickname, null);
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
             return session;
         }
 
         private static async UniTask ConnectWebSocketSessionAndAssert(WebSocketSession session)
         {
-            var oldSerializerMethods = SerializerMock.UpdateMethods(SerializerForConnection);
-            WsMock.ConnectCalled += HandleConnectCalled;
-
             var connectedCalled = false;
             session.Connected += SetConnected;
-            try
-            {
-                await session.Connect(ConnectionDetails);
-            }
-            finally
-            {
-                _ = SerializerMock.UpdateMethods(oldSerializerMethods);
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled -= HandleMessageSent;
-            }
+            _ = await session.Connect(ConnectionDetails);
             session.Connected -= SetConnected;
 
             Assert.True(connectedCalled);
             Assert.True(session.IsConnected);
-
             void SetConnected() => connectedCalled = true;
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-                WsMock.InvokeOnOpen();
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                WsMock.InvokeOnMessage(data);
-            }
         }
 
         private static void DisconnectWebSocketSessionAndAssert(WebSocketSession session)
@@ -123,7 +104,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator WebSocketSessionShouldAllowForReconnecting() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession();
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
             DisconnectWebSocketSessionAndAssert(session);
@@ -133,104 +114,61 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenTokenIsCanceledBeforeWsOpens() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(SerializerForConnection);
 
             using var cts = new CancellationTokenSource();
-            WsMock.ConnectCalled += HandleConnectCalled;
+            WebSocketMock.ClearSubstitute();
+            WebSocketMock.When(x => x.Connect()).Do(_ => cts.Cancel());
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
             var canceled = await session.Connect(ConnectionDetails, cts.Token).SuppressCancellationThrow();
 
-            Assert.True(canceled);
+            Assert.True(canceled.IsCanceled);
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                cts.Cancel();
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenTokenIsCanceledBeforeWsReceivesResponse() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(SerializerForConnection);
-
             using var cts = new CancellationTokenSource();
-            WsMock.ConnectCalled += HandleConnectCalled;
+            _ = WebSocketMock.SetupOpenCloseDefaultBehaviour();
+            WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(_ => cts.Cancel());
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
             _ = await AssertThrowsAsync<OperationCanceledException>(async () => await session.Connect(ConnectionDetails, cts.Token));
 
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-                WsMock.InvokeOnOpen();
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                cts.Cancel();
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenThereIsAnErrorBeforeWsOpens() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            _ = WebSocketMock.SetupErrorOnConnectBehaviour(errorMessage).SetupJoinLobby(false, AuthData.UserId, AuthData.Nickname, null);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
 
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
-
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
+            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
-
-            static void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.InvokeOnError(errorMessage);
-                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenThereIsAnErrorBeforeWsReceivesResponse() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupOnErrorJoinLobby(errorMessage);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
 
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
-
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
+            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-                WsMock.InvokeOnOpen();
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                WsMock.InvokeOnError(errorMessage);
-                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenThereIsAnErrorAfterConnecting() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession();
-
+            using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
 
-            WsMock.InvokeOnError(errorMessage);
+            WebSocketMock.OnError += Raise.Event<WebSocketErrorEventHandler>(errorMessage);
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
         });
@@ -239,152 +177,91 @@ namespace Elympics.Tests
         public IEnumerator ConnectionShouldBeAbortedWhenWsClosesBeforeItOpens() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession(SerializerForConnection);
-
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
-
+            _ = WebSocketMock.SetupCloseOnConnectBehaviour(errorMessage);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
+            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
-
-            static void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.InvokeOnClose(WebSocketCloseCode.Abnormal, errorMessage);
-                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenWsClosesBeforeItReceivesResponse() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupOnCloseJoinLobby(errorMessage);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
 
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails).SuppressCancellationThrow());
-
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
+            LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-                WsMock.InvokeOnOpen();
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                WsMock.InvokeOnClose(WebSocketCloseCode.Abnormal, errorMessage);
-                LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenOpeningWsTakesTooLong() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            using var session = CreateDefaultWebSocketSession();
             ElympicsTimeout.WebSocketOpeningTimeout = TimeSpan.Zero;
-
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails));
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                Assert.Fail("WebSocket has been opened.");
-            }
         });
 
         [UnityTest]
         public IEnumerator ConnectionShouldBeAbortedWhenReceivingResponseTakesTooLong() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            using var session = CreateDefaultWebSocketSession();
             ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
-            WsMock.ConnectCalled += HandleConnectCalled;
-
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails));
             Assert.False(session.IsConnected);
-
-            void HandleConnectCalled()
-            {
-                WsMock.ConnectCalled -= HandleConnectCalled;
-                WsMock.SendCalled += HandleMessageSent;
-                WsMock.InvokeOnOpen();
-            }
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(5), DelayType.Realtime).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
-            }
         });
 
         [UnityTest]
         public IEnumerator PingMessageShouldNotBePassed() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new Ping(),
-            });
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
 
             IFromLobby? passedMessage = null;
+            IFromLobby ping = new Ping();
+            var data = MessagePackSerializer.Serialize(ping);
             session.MessageReceived += ReceiveMessage;
-            WsMock.InvokeOnMessage(Array.Empty<byte>());
+            WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(data);
             Assert.IsNull(passedMessage);
-
             void ReceiveMessage(IFromLobby message) => passedMessage = message;
         });
 
         [UnityTest]
         public IEnumerator OperationResultMessageShouldNotBePassed() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(Guid.Empty),
-            });
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
 
             IFromLobby? passedMessage = null;
             session.MessageReceived += ReceiveMessage;
-            WsMock.InvokeOnMessage(Array.Empty<byte>());
+            IFromLobby pingData = new Ping();
+            var binaryPing = MessagePackSerializer.Serialize(pingData);
+            WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(binaryPing);
             Assert.IsNull(passedMessage);
 
             void ReceiveMessage(IFromLobby message) => passedMessage = message;
         });
 
         [UnityTest]
-        public IEnumerator OtherMessageTypesShouldBePassed() => UniTask.ToCoroutine(async () =>
+        public IEnumerator OtherMessageTypesShouldNotBePassed() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new UnknownMessage(),
-            });
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
 
             IFromLobby? passedMessage = null;
             session.MessageReceived += ReceiveMessage;
-            WsMock.InvokeOnMessage(Array.Empty<byte>());
-            Assert.IsInstanceOf<UnknownMessage>(passedMessage);
+            IFromLobby unknownMessage = new UnknownMessage();
+            var binary = MessagePackSerializer.Serialize(unknownMessage);
+            LogAssert.Expect(LogType.Exception, new Regex($".*Invalid message received.*"));
+            WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(binary);
+            Assert.IsNull(passedMessage);
 
             void ReceiveMessage(IFromLobby message) => passedMessage = message;
         });
@@ -392,170 +269,102 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator MessageShouldBeReceivedOnceAfterReconnecting() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new UnknownMessage(),
-            });
+            using var session = CreateDefaultWebSocketSession();
             var counter = 0;
             await ConnectWebSocketSessionAndAssert(session);
             DisconnectWebSocketSessionAndAssert(session);
             await ConnectWebSocketSessionAndAssert(session);
 
-
             session.MessageReceived += ReceiveMessage;
-            WsMock.InvokeOnMessage(Array.Empty<byte>());
+            IFromLobby passedMessage = new RoomWasLeft(Guid.Empty, LeavingReason.RoomClosed);
+            var data = MessagePackSerializer.Serialize(passedMessage);
+            WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(data);
 
             void ReceiveMessage(IFromLobby message) => counter++;
             Assert.AreEqual(1, counter);
         });
 
         [UnityTest]
-        public IEnumerator HappyPathOperationExecutionScenarioShouldSucceed() => UniTask.ToCoroutine(async () =>
-        {
-            var operation = new UnknownOperation();
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(operation.OperationId),
-            });
-
-            await ConnectWebSocketSessionAndAssert(session);
-
-            WsMock.SendCalled += HandleMessageSent;
-            _ = await session.ExecuteOperation(operation);
-
-            static void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                WsMock.InvokeOnMessage(Array.Empty<byte>());
-            }
-        });
-
-        [UnityTest]
         public IEnumerator OperationShouldNotBePossibleToExecuteBeforeConnecting() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-            });
+            using var session = CreateDefaultWebSocketSession();
             var operation = new UnknownOperation();
-            WsMock.SendCalled += HandleMessageSent;
-
+            WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(x => Assert.Fail("Operation has been sent."));
             _ = await AssertThrowsAsync<ElympicsException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
-
-            static void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                Assert.Fail("Operation has been sent.");
-            }
         });
 
         [UnityTest]
         public IEnumerator OperationShouldBeAbortedWhenReceivingResponseTakesTooLong() => UniTask.ToCoroutine(async () =>
         {
             var operation = new UnknownOperation();
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(operation.OperationId),
-            });
-            ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
-            WsMock.SendCalled += HandleMessageSent;
 
-            _ = await AssertThrowsAsync<LobbyOperationException>(session.ExecuteOperation(operation));
+            ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
+            _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.ExecuteOperation(operation));
 
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                UniTask.Delay(TimeSpan.FromSeconds(0.1), DelayType.Realtime, cancellationToken: cts.Token).ContinueWith(() => WsMock.InvokeOnMessage(data)).Forget();
-            }
         });
 
         [UnityTest]
         public IEnumerator OperationShouldBeCancellable() => UniTask.ToCoroutine(async () =>
         {
             var operation = new UnknownOperation();
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(operation.OperationId),
-            });
+            using var session = CreateDefaultWebSocketSession();
             using var cts = new CancellationTokenSource();
 
+            WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(x => cts.Cancel());
             await ConnectWebSocketSessionAndAssert(session);
-            WsMock.SendCalled += HandleMessageSent;
-
             Assert.True((await session.ExecuteOperation(operation, cts.Token).SuppressCancellationThrow()).IsCanceled);
-
-            void HandleMessageSent(byte[] data)
-            {
-                WsMock.SendCalled -= HandleMessageSent;
-                cts.Cancel();
-            }
         });
 
         [UnityTest]
         public IEnumerator WebSocketShouldBeClosedWhenSessionIsDisconnected() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession();
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
             var closed = false;
-            WsMock.CloseCalled += SetClosed;
-
+            WebSocketMock.When(x => x.Close(Arg.Any<WebSocketCloseCode>(), Arg.Any<string>())).Do(x => closed = true);
             DisconnectWebSocketSessionAndAssert(session);
-            WsMock.CloseCalled -= SetClosed;
-
             Assert.True(closed);
-
-            void SetClosed(WebSocketCloseCode closeCode, string? reason) => closed = true;
         });
 
         [UnityTest]
         public IEnumerator WebSocketShouldBeClosedWhenErrorOccurs() => UniTask.ToCoroutine(async () =>
         {
             const string errorMessage = "test error message";
-            using var session = CreateWebSocketSession();
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
             var closed = false;
-            WsMock.CloseCalled += SetClosed;
+            WebSocketMock.When(x => x.Close(Arg.Any<WebSocketCloseCode>())).Do(x => closed = true);
 
-            WsMock.InvokeOnError(errorMessage);
+            WebSocketMock.OnError += Raise.Event<WebSocketErrorEventHandler>(errorMessage);
+
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
-            WsMock.CloseCalled -= SetClosed;
 
             Assert.True(closed);
 
             session.Dispose();
-
-            void SetClosed(WebSocketCloseCode closeCode, string? reason) => closed = true;
         });
 
         [UnityTest]
         public IEnumerator WebSocketShouldBeClosedWhenSessionIsDisposed() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession();
+            using var session = CreateDefaultWebSocketSession();
 
             await ConnectWebSocketSessionAndAssert(session);
             var closed = false;
-            WsMock.CloseCalled += SetClosed;
-
+            WebSocketMock.When(x => x.Close(Arg.Any<WebSocketCloseCode>())).Do(x => closed = true);
             session.Dispose();
-            WsMock.CloseCalled -= SetClosed;
-
             Assert.True(closed);
-
-            void SetClosed(WebSocketCloseCode closeCode, string? reason) => closed = true;
         });
 
         [UnityTest]
         public IEnumerator DisposedObjectShouldBecameUnusable() => UniTask.ToCoroutine(async () =>
         {
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            using var session = CreateDefaultWebSocketSession();
 
             session.Dispose();
 
@@ -571,21 +380,11 @@ namespace Elympics.Tests
             var operationId = new Guid("10000000000000000000000000000001");
             var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
 
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(operationId),
-            });
+            using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
 
             await UniTask.SwitchToMainThread();
             var mainThreadId = Thread.CurrentThread.ManagedThreadId;
-
-            WsMock.SendCalled += _ => UniTask.Create(async () =>
-            {
-                await UniTask.SwitchToThreadPool();
-                WsMock.InvokeOnMessage(Array.Empty<byte>());
-            });
 
             try
             {
@@ -602,21 +401,11 @@ namespace Elympics.Tests
             var operationId = new Guid("10000000000000000000000000000001");
             var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
 
-            using var session = CreateWebSocketSession(new LobbySerializerMock.Methods
-            {
-                Serialize = _ => Array.Empty<byte>(),
-                Deserialize = _ => new OperationResult(operationId, ErrorBlame.UserError, ErrorKind.Unspecified, null),
-            });
+            using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
 
             await UniTask.SwitchToMainThread();
             var mainThreadId = Thread.CurrentThread.ManagedThreadId;
-
-            WsMock.SendCalled += _ => UniTask.Create(async () =>
-            {
-                await UniTask.SwitchToThreadPool();
-                WsMock.InvokeOnMessage(Array.Empty<byte>());
-            });
 
             try
             {
@@ -633,7 +422,7 @@ namespace Elympics.Tests
             var operationId = new Guid("10000000000000000000000000000001");
             var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
 
-            using var session = CreateWebSocketSession(SerializerForConnection);
+            using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
             ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
@@ -652,7 +441,7 @@ namespace Elympics.Tests
         public void CleanUp()
         {
             ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
-            WsMock.Reset();
+            WebSocketMock.ClearSubstitute();
             cts.Cancel();
             ElympicsTimeout.WebSocketOpeningTimeout = DefaultOpeningTimeout;
             ElympicsTimeout.WebSocketOperationTimeout = DefaultOperationTimeout;

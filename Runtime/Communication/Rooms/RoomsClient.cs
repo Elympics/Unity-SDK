@@ -18,7 +18,6 @@ namespace Elympics
     internal class RoomsClient : IRoomsClient
     {
         private readonly ElympicsLoggerContext _logger;
-        public event Action<GameDataResponse>? GameDataResponse;
         public event Action<RoomStateChanged>? RoomStateChanged;
         public event Action<LeftRoomArgs>? LeftRoom;
         public event Action<RoomListChanged>? RoomListChanged;
@@ -47,9 +46,6 @@ namespace Elympics
         {
             switch (message)
             {
-                case GameDataResponse response:
-                    GameDataResponse?.Invoke(response);
-                    return;
                 case RoomStateChanged stateChanged:
                     RoomStateChanged?.Invoke(stateChanged);
                     return;

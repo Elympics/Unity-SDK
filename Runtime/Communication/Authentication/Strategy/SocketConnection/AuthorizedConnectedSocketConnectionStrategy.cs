@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
+using Elympics.Rooms.Models;
 
 namespace Elympics
 {
@@ -8,17 +9,18 @@ namespace Elympics
     {
         private readonly SessionConnectionDetails _currentSession;
 
-        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerContext logger) : base(webSocketSession, logger) => _currentSession = currentSession;
+        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerContext logger) : base(webSocketSession, logger) =>
+            _currentSession = currentSession;
 
-        public override async UniTask Connect(SessionConnectionDetails newConnectionDetails)
+        public override async UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails)
         {
             if (ConnectionDetailsChanged(newConnectionDetails))
             {
                 DisconnectFromLobby(DisconnectionReason.Reconnection);
-                await ConnectToLobby(newConnectionDetails);
+                return await ConnectToLobby(newConnectionDetails);
             }
-            else
-                ElympicsLogger.LogWarning("No change in connection data.");
+            ElympicsLogger.LogWarning("No change in connection data.");
+            return null;
         }
         private bool ConnectionDetailsChanged(SessionConnectionDetails connectionDetails) => !_currentSession.Equals(connectionDetails);
     }

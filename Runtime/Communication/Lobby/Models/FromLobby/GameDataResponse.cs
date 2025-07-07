@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-using Elympics.Lobby.Models;
+using Communication.Lobby.Models.FromLobby;
 using MessagePack;
 
 #nullable enable
@@ -10,7 +11,8 @@ namespace Elympics.Rooms.Models
         [property: Key(0)] int JoinedMatchRooms,
         [property: Key(1)] List<RoomCoin> CoinData,
         [property: Key(2)] string GameVersionId,
-        [property: Key(3)] string FleetName) : IFromLobby
+        [property: Key(3)] string FleetName,
+        [property: Key(4)] Guid RequestId) : IDataFromLobby
     {
         public virtual bool Equals(GameDataResponse? other)
         {
@@ -23,6 +25,7 @@ namespace Elympics.Rooms.Models
 
         public override int GetHashCode() => JoinedMatchRooms.GetHashCode();
 
-        public override string ToString() => $"RoomsJoined: {JoinedMatchRooms} | {nameof(GameVersionId)}:{GameVersionId} | {nameof(FleetName)}:{FleetName} | Coins count: {(CoinData != null ? CoinData.Count : "No coins found.")}";
+        public override string ToString() =>
+            $"RoomsJoined: {JoinedMatchRooms} | {nameof(GameVersionId)}:{GameVersionId} | {nameof(FleetName)}:{FleetName} | Coins count: {(CoinData != null ? CoinData.Count : "No coins found.")}";
     }
 }

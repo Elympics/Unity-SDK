@@ -21,8 +21,11 @@ namespace Elympics.ElympicsSystems.Internal
                 Client.CheckConnectionDataOrThrow(data);
                 await Client.Authorize(data);
                 await Client.FetchAvailableRegions();
-                await Client.ConnectToLobby(data);
-                await Client.RoomsManager.CheckJoinedRoomStatus();
+                var gameData = await Client.ConnectToLobby(data);
+
+                if (gameData is not null)
+                    await Client.InitializeBasedOnGameData(gameData);
+
                 await Client.GetElympicsUserData();
                 if (Client.RoomsManager.CurrentRoom?.State.MatchmakingData?.MatchmakingState is Rooms.Models.MatchmakingState.Matchmaking or Rooms.Models.MatchmakingState.RequestingMatchmaking)
                     Client.SwitchState(ElympicsState.Matchmaking);

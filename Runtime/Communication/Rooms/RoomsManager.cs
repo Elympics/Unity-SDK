@@ -415,7 +415,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
-            CompetitivenessConfig? tournamentDetails = null,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
@@ -428,7 +428,7 @@ namespace Elympics
             ct.ThrowIfCancellationRequested();
 
             bool isCancelled;
-            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, tournamentDetails);
+            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, competitivenessConfig);
             using var roomLeftCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
             _ = logger.SetRoomId(roomId.ToString());

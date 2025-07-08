@@ -4026,9 +4026,10 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(2);
+            writer.WriteArrayHeader(3);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.BetValue, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.CoinId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int?>(formatterResolver).Serialize(ref writer, value.NumberOfPlayers, options);
         }
 
         public global::Elympics.Rooms.Models.RoomBetDetailsSlim Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4043,6 +4044,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             var length = reader.ReadArrayHeader();
             var __BetValue__ = default(string);
             var __CoinId__ = default(global::System.Guid);
+            var __NumberOfPlayers__ = default(int?);
 
             for (int i = 0; i < length; i++)
             {
@@ -4054,13 +4056,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                     case 1:
                         __CoinId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 2:
+                        __NumberOfPlayers__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int?>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomBetDetailsSlim(__BetValue__, __CoinId__);
+            var ____result = new global::Elympics.Rooms.Models.RoomBetDetailsSlim(__BetValue__, __CoinId__, __NumberOfPlayers__);
             reader.Depth--;
             return ____result;
         }

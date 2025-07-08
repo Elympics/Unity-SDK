@@ -89,10 +89,11 @@ namespace Elympics
                         };
                         break;
                     case CompetitivenessType.RollingTournament:
-                        rollingTournamentBetConfigId = await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(competitivenessConfig.ID), competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, ct);
+                        rollingTournamentBetConfigId =
+                            await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(competitivenessConfig.ID), competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, ct);
                         break;
                     case CompetitivenessType.Bet:
-                        betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));
+                        betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, null, Guid.Parse(competitivenessConfig.ID));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(competitivenessConfig), competitivenessConfig, "Unexpected tournament type.");
@@ -156,12 +157,13 @@ namespace Elympics
         {
             RoomBetDetailsSlim? betDetails = null;
 
+            // ReSharper disable once InvertIf
             if (competitivenessConfig != null)
             {
-                if (competitivenessConfig.CompetitivenessType != CompetitivenessType.Bet)
+                if (competitivenessConfig.CompetitivenessType == CompetitivenessType.GlobalTournament)
                     throw new ArgumentException($"Can't update competitiveness configuration for competitiveness type {competitivenessConfig.CompetitivenessType}.", nameof(competitivenessConfig));
 
-                betDetails = GetRoomBetDetailsSlim(competitivenessConfig.Value, Guid.Parse(competitivenessConfig.ID));
+                betDetails = GetRoomBetDetailsSlim(competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, Guid.Parse(competitivenessConfig.ID));
             }
 
             return ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetails), ct);
@@ -268,10 +270,10 @@ namespace Elympics
             return Session.ExecuteOperation(message, ct);
         }
 
-        private static RoomBetDetailsSlim GetRoomBetDetailsSlim(decimal betValue, Guid coinId)
+        private static RoomBetDetailsSlim GetRoomBetDetailsSlim(decimal betValue, int? numberOfPlayers, Guid coinId)
         {
             var coinDecimal = ElympicsLobbyClient.Instance!.FetchDecimalForCoin(coinId) ?? throw new ArgumentException($"Couldn't create bet with coinId: {coinId}");
-            return new RoomBetDetailsSlim(RawCoinConverter.ToRaw(betValue, coinDecimal), coinId);
+            return new RoomBetDetailsSlim(RawCoinConverter.ToRaw(betValue, coinDecimal), coinId, numberOfPlayers);
         }
         void IRoomsClient.ResetState() => _roomWatchingState = RoomWatchingState.NotWatching;
         void IRoomsClient.ClearSession() => Session = null;

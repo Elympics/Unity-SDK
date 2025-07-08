@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
@@ -43,9 +44,6 @@ namespace Elympics
         public event Action<CustomMatchmakingDataChangedArgs>? CustomMatchmakingDataChanged;
 
         #endregion Aggregated room events
-
-        public TimeSpan OperationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
-        public TimeSpan ConfirmationTimeout { private get; init; } = TimeSpan.FromSeconds(5);
 
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private CancellationTokenSource _cts = new();
@@ -253,8 +251,8 @@ namespace Elympics
             if (state is null && publicState is null)
                 throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
             return state is not null
-                ? new Room(_matchLauncher, _client, id, state, false, _logger) { ConfirmationTimeout = ConfirmationTimeout }
-                : new Room(_matchLauncher, _client, id, publicState!, _logger) { ConfirmationTimeout = ConfirmationTimeout };
+                ? new Room(_matchLauncher, _client, id, state, false, _logger)
+                : new Room(_matchLauncher, _client, id, publicState!, _logger);
         }
 
         private void AddRoomToDictionary(IRoom room)
@@ -473,7 +471,7 @@ namespace Elympics
 
             // the process has been cancelled
             var timeoutCts = new CancellationTokenSource();
-            using var timeoutDisposable = timeoutCts.CancelAfterSlim(ConfirmationTimeout);
+            using var timeoutDisposable = timeoutCts.CancelAfterSlim(ElympicsTimeout.RoomStateChangeConfirmationTimeout);
             try
             {
                 if (userCancelRequested.IsCancellationRequested && !matchmakingCancelledCt.IsCancellationRequested)
@@ -486,7 +484,7 @@ namespace Elympics
                 {
                     var timedOut = await UniTask.WaitUntil(() => !room.IsDisposed && room.IsEligibleToPlayMatch(), cancellationToken: timeoutCts.Token).SuppressCancellationThrow();
                     if (timedOut)
-                        throw new ConfirmationTimeoutException(ConfirmationTimeout);
+                        throw new ConfirmationTimeoutException(ElympicsTimeout.RoomStateChangeConfirmationTimeout);
                     return room;
                 }
 
@@ -495,7 +493,7 @@ namespace Elympics
             }
             catch (OperationCanceledException)
             {
-                throw new ConfirmationTimeoutException(ConfirmationTimeout);
+                throw new ConfirmationTimeoutException(ElympicsTimeout.RoomStateChangeConfirmationTimeout);
             }
 
             await LeaveAndCleanUp();
@@ -541,7 +539,7 @@ namespace Elympics
             {
                 _client.RoomStateChanged += OnRoomStateChanged;
                 _tcs ??= new UniTaskCompletionSource<GameDataResponse>();
-                var result = await _tcs.WithTimeout(OperationTimeout, _cts.Token);
+                var result = await _tcs.WithTimeout(ElympicsTimeout.FetchGameDataTimeout, _cts.Token);
                 if (result is null)
                 {
                     _initialized = true;
@@ -557,7 +555,7 @@ namespace Elympics
 
                 if (CurrentRoom?.IsMatchRoom() is true)
                     counter++;
-                var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, OperationTimeout, _cts.Token).SuppressCancellationThrow();
+                var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, ElympicsTimeout.FetchGameDataTimeout, _cts.Token).SuppressCancellationThrow();
                 if (canceled)
                     ElympicsLogger.LogWarning("Waiting for init room state timeout.");
 

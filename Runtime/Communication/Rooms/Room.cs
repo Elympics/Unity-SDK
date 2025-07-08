@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
@@ -17,10 +18,6 @@ namespace Elympics
 {
     internal class Room : IRoom
     {
-        public TimeSpan ConfirmationTimeout { private get; set; } = TimeSpan.FromSeconds(5);
-        public TimeSpan ForceCancelTimeout { private get; set; } = TimeSpan.FromSeconds(10);
-        public TimeSpan WebApiTimeoutFallback { private get; set; } = TimeSpan.FromSeconds(5);
-
         public Guid RoomId => ThrowIfDisposedOrReturn(_roomId);
         public RoomState State => ThrowIfDisposedOrReturn(_state);
 
@@ -145,7 +142,7 @@ namespace Elympics
                 throw new ArgumentOutOfRangeException(nameof(teamIndex), teamIndex, $"Chosen team index must be lesser than {_state.MatchmakingData.TeamCount} or null");
 
             await _client.ChangeTeam(_roomId, teamIndex, _roomStateChangeMonitorCts.Token);
-            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex, WebApiTimeoutFallback, _roomStateChangeMonitorCts.Token);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.TeamIndex == teamIndex, ElympicsTimeout.RoomStateChangeConfirmationTimeout, _roomStateChangeMonitorCts.Token);
         }
 
         public async UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default)
@@ -158,7 +155,7 @@ namespace Elympics
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
             // TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
             await _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate, ct);
-            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady, WebApiTimeoutFallback, linkedCts.Token);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady, ElympicsTimeout.RoomStateChangeConfirmationTimeout, linkedCts.Token);
         }
 
         private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
@@ -175,7 +172,7 @@ namespace Elympics
             ThrowIfNotJoined();
             ThrowIfNoMatchmaking();
             await _client.SetUnready(_roomId, _roomStateChangeMonitorCts.Token);
-            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, WebApiTimeoutFallback, _roomStateChangeMonitorCts.Token);
+            await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || !localUser!.IsReady, ElympicsTimeout.RoomStateChangeConfirmationTimeout, _roomStateChangeMonitorCts.Token);
         }
 
         public async UniTask StartMatchmaking()
@@ -225,7 +222,7 @@ namespace Elympics
                         throw;
 
                     ct.ThrowIfCancellationRequested();
-                    await UniTask.Delay(ForceCancelTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
+                    await UniTask.Delay(ElympicsTimeout.ForceMatchmakingCancellationTimeout, DelayType.Realtime, PlayerLoopTiming.Update, ct);
                 }
         }
 
@@ -341,7 +338,7 @@ namespace Elympics
         private async UniTask WaitForState(Func<bool> predicate, CancellationToken ct = default, [CallerMemberName] string callerName = "")
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            using var _ = cts.CancelAfterSlim(ConfirmationTimeout, DelayType.Realtime);
+            using var _ = cts.CancelAfterSlim(ElympicsTimeout.RoomStateChangeConfirmationTimeout, DelayType.Realtime);
             if (await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow())
             {
                 ct.ThrowIfCancellationRequested();

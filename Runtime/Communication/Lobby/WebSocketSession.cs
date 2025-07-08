@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
@@ -18,10 +19,6 @@ namespace Elympics.Lobby
         public event Action? Connected;
         public event Action<DisconnectionData>? Disconnected;
         public event Action<IFromLobby>? MessageReceived;
-
-        public TimeSpan OpeningTimeout = TimeSpan.FromSeconds(5);
-        public TimeSpan OperationTimeout = TimeSpan.FromSeconds(5);
-        private readonly TimeSpan _automaticDisconnectThreshold = TimeSpan.FromSeconds(30);
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
 
@@ -165,14 +162,14 @@ namespace Elympics.Lobby
                 throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
             }
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var task = WaitForOperationResult(message.OperationId, OperationTimeout, linkedCts.Token);
+            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
             SendMessage(message);
             return await task;
         }
 
         private async UniTask OpenWebSocket(IWebSocket ws)
         {
-            var openTask = ResultUtils.WaitForResult<ValueTuple, WebSocketOpenEventHandler>(OpeningTimeout,
+            var openTask = ResultUtils.WaitForResult<ValueTuple, WebSocketOpenEventHandler>(ElympicsTimeout.WebSocketOpeningTimeout,
                 tcs => () => tcs.TrySetResult(new ValueTuple()),
                 handler => ws.OnOpen += handler,
                 handler => ws.OnOpen -= handler,
@@ -184,7 +181,7 @@ namespace Elympics.Lobby
         private async UniTask EstablishSession(Guid gameId, string gameVersion, string regionName)
         {
             var request = new JoinLobby(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName);
-            var ackTask = WaitForOperationResult(request.OperationId, OperationTimeout, Token);
+            var ackTask = WaitForOperationResult(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
             SendMessage(request);
             _ = await ackTask;
         }
@@ -288,7 +285,7 @@ namespace Elympics.Lobby
                     if (_timer is null)
                         return;
 
-                    if (!(_timer.Elapsed.TotalSeconds > _automaticDisconnectThreshold.TotalSeconds))
+                    if (!(_timer.Elapsed.TotalSeconds > ElympicsTimeout.WebSocketHeartbeatTimeout.TotalSeconds))
                         continue;
 
                     if (!IsConnected)

@@ -1,0 +1,74 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Foldout text="&lt;b&gt;General settings&lt;/b&gt;" name="general-foldout" style="-unity-font-style: normal;">
+        <ui:TextField picking-mode="Ignore" label="Game name" binding-path="gameName" name="game-name" />
+        <ui:TextField picking-mode="Ignore" label="Game ID" binding-path="gameId" name="game-id" />
+        <ui:TextField picking-mode="Ignore" label="Game version" binding-path="gameVersion" name="game-version" />
+        <ui:GroupBox name="scene-group" style="padding-left: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; margin-top: 3px; margin-bottom: 3px;">
+            <uie:ObjectField label="Gameplay scene" name="scene-object" type="UnityEditor.SceneAsset, UnityEditor" binding-path="gameplaySceneAsset" allow-scene-objects="false" style="flex-grow: 1;" />
+            <ui:TextField picking-mode="Ignore" label="Gameplay scene path" name="scene-path" binding-path="gameplayScene" readonly="true" style="-unity-text-align: upper-left;" />
+            <ui:Button text="Open scene" display-tooltip-when-elided="true" name="open-scene-button" />
+        </ui:GroupBox>
+        <ui:Toggle label="Use HTTPS/WebRTC" binding-path="useWeb" name="webrtc-toggle" />
+    </ui:Foldout>
+    <ui:VisualElement class="separator" style="height: 9px; max-width: 100%;" />
+    <uie:PropertyField binding-path="connectionConfig" name="connection-config" label="&lt;b&gt;Connection config&lt;/b&gt;" />
+    <ui:VisualElement class="separator" style="height: 9px;" />
+    <ui:Foldout text="&lt;b&gt;Game loop settings&lt;/b&gt;" name="game-loop-foldout">
+        <ui:SliderInt picking-mode="Ignore" label="Ticks per second" high-value="120" name="ticks-per-second" binding-path="ticksPerSecond" show-input-field="true" low-value="1" />
+        <ui:Slider picking-mode="Ignore" label="Min client tick rate factor" high-value="1" name="min-client-tick-rate-factor" low-value="0.2" show-input-field="true" binding-path="minClientTickRateFactor" tooltip="How much client can decrease the tick rate to avoid getting too far ahead of the server" />
+        <ui:Slider picking-mode="Ignore" label="Max client tick rate factor" high-value="5" name="max-client-tick-rate-factor" low-value="1" show-input-field="true" binding-path="maxClientTickRateFactor" tooltip="How much client can increase the tick rate to keep up with the server" />
+        <ui:Label text="Client ticks per second: from XX to XX ticks" display-tooltip-when-elided="true" name="tick-rate-summary" tooltip="This applies only to client. The exact value will be determined each tick based on network conditions" />
+        <ui:SliderInt picking-mode="Ignore" label="Send snapshot every" high-value="120" low-value="1" show-input-field="true" name="snapshot-sending-interval" binding-path="snapshotSendingPeriodInTicks" />
+        <ui:SliderInt picking-mode="Ignore" label="Input lag" high-value="15" name="input-lag" low-value="1" show-input-field="true" binding-path="inputLagTicks" tooltip="The amount of time clients should stay ahead of the server" />
+        <ui:SliderInt picking-mode="Ignore" label="Input buffer size" high-value="100" name="input-buffer-size" low-value="1" show-input-field="true" binding-path="inputToSendBufferSize" tooltip="Number of ticks from which input shuld be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions" />
+        <ui:SliderInt picking-mode="Ignore" label="Max allowed lag" high-value="100" name="max-lag" show-input-field="true" binding-path="maxAllowedLagInTicks" />
+        <ui:SliderInt picking-mode="Ignore" label="Force jump threshold" high-value="100" name="force-jump-threshold" binding-path="forceJumpThresholdInTicks" show-input-field="true" tooltip="How far behind the desired tick client has to be to force a jump to that tick" />
+        <ui:Toggle label="Prediction" name="prediction-toggle" binding-path="prediction" />
+        <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="25" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
+        <ui:Label text="Total prediction limit: XX ms" display-tooltip-when-elided="true" name="total-prediction-limit" tooltip="With input lag and snapshot sending period included" />
+        <ui:IMGUIContainer name="client-connection-config" />
+    </ui:Foldout>
+    <ui:VisualElement class="separator" style="height: 9px;" />
+    <ui:Foldout text="&lt;b&gt;Debug options&lt;/b&gt;" name="debug-foldout">
+        <ui:Toggle label="Detailed network log" name="detailed-network-log" binding-path="detailedNetworkLog" tooltip="The log contains errors and warnings to differentiate between slight and serious throttle" />
+        <uie:EnumField label="Debug mode" binding-path="mode" name="debug-mode" type="Elympics.ElympicsGameConfig+GameplaySceneDebugModeEnum,Elympics" />
+        <ui:Label display-tooltip-when-elided="true" name="debug-mode-summary" style="-unity-font-style: italic; white-space: normal;" />
+        <ui:HelpBox display-tooltip-when-elided="true" message-type="Warning" name="debug-mode-warning" style="display: none;" />
+        <ui:GroupBox name="half-remote-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
+            <uie:EnumField label="Half remote mode" name="half-remote-mode" type="Elympics.ElympicsGameConfig+HalfRemoteModeEnum,Elympics" binding-path="halfRemoteMode" />
+            <ui:TextField picking-mode="Ignore" label="Server IP" name="half-remote-ip" tooltip="IP Address of server" binding-path="ipForHalfRemoteMode" />
+            <uie:IntegerField label="Server TCP port" name="half-remote-tcp-port" tooltip="Port TCP server listens on" binding-path="tcpPortForHalfRemoteMode" />
+            <uie:IntegerField label="Server Web port" name="half-remote-web-port" tooltip="Port Web server listens on" binding-path="webPortForHalfRemoteMode" />
+            <ui:GroupBox name="client-half-remote-options" style="margin-left: 3px; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
+                <ui:Label text="Lag config" display-tooltip-when-elided="true" />
+                <ui:GroupBox style="margin-left: 3px; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 10px; padding-right: 0; padding-top: 0; padding-bottom: 0;">
+                    <ui:Foldout text="&lt;i&gt;Load preset&lt;/i&gt;" value="true" style="flex-direction: column;">
+                        <ui:GroupBox style="flex-direction: row; flex-wrap: wrap; margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; min-width: auto; min-height: auto;">
+                            <ui:Button text="LAN" display-tooltip-when-elided="true" name="lag-preset-lan" />
+                            <ui:Button text="Broadband" display-tooltip-when-elided="true" name="lag-preset-broadband" />
+                            <ui:Button text="Slow broadband" display-tooltip-when-elided="true" name="lag-preset-slow-broadband" />
+                            <ui:Button text="LTE" display-tooltip-when-elided="true" name="lag-preset-lte" />
+                            <ui:Button text="3G" display-tooltip-when-elided="true" name="lag-preset-3g" />
+                            <ui:Button text="Total mess" display-tooltip-when-elided="true" name="lag-preset-total-mess" />
+                        </ui:GroupBox>
+                    </ui:Foldout>
+                    <uie:PropertyField binding-path="halfRemoteLagConfig" label="&lt;i&gt;Tweak values manually&lt;/i&gt;" />
+                </ui:GroupBox>
+                <uie:EnumField label="Reconcile" binding-path="reconciliationFrequency" style="margin-left: 0;" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox name="debug-online-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
+            <ui:HelpBox display-tooltip-when-elided="true" message-type="Info" name="debug-online-uploading-spinner" text="Checking if current game version is uploaded to the Elympics cloud..." style="display: flex;" />
+            <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="debug-online-not-uploaded" text="Current game version is not uploaded to the Elympics cloud! Upload your game first using &quot;Tools/Elympics/Manage games in Elympics&quot; window!" style="display: none;" />
+            <uie:PropertyField name="debug-online-match-data" binding-path="testMatchData" label="&lt;i&gt;Test match data&lt;/i&gt;" />
+        </ui:GroupBox>
+        <ui:GroupBox name="snapshot-replay-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
+            <ui:Toggle label="Record snapshots" name="half-remote-record-snapshot" tooltip="Save snapshots to a file to analyze and replay them later" binding-path="recordSnapshots" />
+            <ui:TextField label="Snapshot file path" name="snapshot-replay-path" tooltip="Path to a file or a folder where snapshots are stored." binding-path="snapshotFilePath" />
+            <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="snapshot-replay-error" style="display: none;" />
+        </ui:GroupBox>
+        <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout">
+            <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Reconcile" />
+        </ui:Foldout>
+    </ui:Foldout>
+</ui:UXML>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -21,7 +20,7 @@ namespace Elympics
         [SerializeField] internal string gameVersion = "1";
         [SerializeField] internal int players = 2;
         [SerializeField] internal string gameplayScene;
-        [SerializeField] internal Object gameplaySceneAsset;
+        [SerializeField] internal SceneAsset gameplaySceneAsset;
 
         [SerializeField] private bool botsInServer = true;
 
@@ -74,9 +73,13 @@ namespace Elympics
         public bool BotsInServer => botsInServer;
 
         public bool UseWeb =>
+#if UNITY_WEBGL
+            true;
+#else
             ApplicationParameters.Parameters.ShouldUseWebRtc.Priority >= ApplicationParameters.Parameters.ShouldUseTcpUdp.Priority
                 ? ApplicationParameters.Parameters.ShouldUseWebRtc.GetValue(useWeb)
                 : !ApplicationParameters.Parameters.ShouldUseTcpUdp.GetValue(!useWeb);
+#endif
         public bool Prediction => prediction;
         public bool ReconnectEnabled => enableReconnect;
         public ClientConnectionSettings ConnectionConfig => connectionConfig;
@@ -109,8 +112,23 @@ namespace Elympics
         public InitialMatchData TestMatchData => testMatchData;
         public List<InitialUserData> TestPlayers => testPlayers;
 
-        [field: NonSerialized] public HalfRemoteLagConfig HalfRemoteLagConfig { get; } = new HalfRemoteLagConfig();
-        [field: NonSerialized] public ReconciliationFrequencyEnum ReconciliationFrequency { get; set; } = ReconciliationFrequencyEnum.OnlyIfNeeded;
+        [SerializeField] private HalfRemoteLagConfig halfRemoteLagConfig = new();
+        [SerializeField] private ReconciliationFrequencyEnum reconciliationFrequency = ReconciliationFrequencyEnum.OnlyIfNeeded;
+        public HalfRemoteLagConfig HalfRemoteLagConfig
+        {
+            get => halfRemoteLagConfig;
+#if UNITY_EDITOR
+            set => halfRemoteLagConfig = value;
+#endif
+        }
+
+        public ReconciliationFrequencyEnum ReconciliationFrequency
+        {
+            get => reconciliationFrequency;
+#if UNITY_EDITOR
+            set => reconciliationFrequency = value;
+#endif
+        }
 
         internal void ProcessElympicsConfigDataChanged() => DataChanged?.Invoke();
 
@@ -151,21 +169,21 @@ namespace Elympics
             HalfRemote,
             DebugOnlinePlayer,
             SnapshotReplay,
-            SinglePlayer
+            SinglePlayer,
         }
 
         public enum HalfRemoteModeEnum
         {
             Server,
             Client,
-            Bot
+            Bot,
         }
 
         public enum ReconciliationFrequencyEnum
         {
             OnlyIfNeeded = 0,
             Never,
-            OnEverySnapshot
+            OnEverySnapshot,
         }
 
         [Serializable]

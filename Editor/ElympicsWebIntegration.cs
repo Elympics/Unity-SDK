@@ -198,14 +198,14 @@ namespace Elympics
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
-                if (gameVersionsWebRequest != null)
-                    if (!gameVersionsWebRequest.isDone)
-                        gameVersionsWebRequest.Abort();
+                if (gameVersionsWebRequest is { isDone: false })
+                    gameVersionsWebRequest.Abort();
                 gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
 
                 void OnCompleted(UnityWebRequest webRequest)
                 {
-                    if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions, silent))
+                    gameVersionsWebRequest = null;
+                    if (TryDeserializeResponse(webRequest, nameof(GetGameVersions), out GameVersionsResponseModel gameVersions, silent))
                         updateProperty?.Invoke(gameVersions);
                 }
             }
@@ -220,14 +220,14 @@ namespace Elympics
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
-                if (gameVersionsWebRequest != null)
-                    if (!gameVersionsWebRequest.isDone)
-                        gameVersionsWebRequest.Abort();
+                if (gameVersionsWebRequest is { isDone: false })
+                    gameVersionsWebRequest.Abort();
                 gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
 
                 void OnCompleted(UnityWebRequest webRequest)
                 {
-                    if (TryDeserializeResponse(webRequest, "GetGameVersions", out GameVersionsResponseModel gameVersions, silent))
+                    gameVersionsWebRequest = null;
+                    if (TryDeserializeResponse(webRequest, nameof(GetGameVersionsForGameId), out GameVersionsResponseModel gameVersions, silent))
                         updateProperty?.Invoke(gameVersions);
                 }
             }

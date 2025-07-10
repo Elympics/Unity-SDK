@@ -194,7 +194,11 @@ namespace Elympics
 
             void OnContinuation(bool success)
             {
+                if (!success)
+                    return;  // TODO: error handling ~dsygocki 2025-07-10
                 var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+                if (gameConfig == null)
+                    return;  // TODO: error handling ~dsygocki 2025-07-10
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
@@ -217,6 +221,9 @@ namespace Elympics
 
             void OnContinuation(bool success)
             {
+                if (!success)
+                    return;  // TODO: error handling ~dsygocki 2025-07-10
+
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);

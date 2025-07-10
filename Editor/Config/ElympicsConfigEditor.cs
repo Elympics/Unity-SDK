@@ -1,146 +1,101 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
-using Object = UnityEngine.Object;
+using UnityEngine.UIElements;
+
+#nullable enable
 
 namespace Elympics.Editor
 {
     [CustomEditor(typeof(ElympicsConfig))]
     public class ElympicsConfigEditor : UnityEditor.Editor
     {
-        private SerializedProperty _currentGameIndex;
-        private SerializedProperty _availableGames;
+        public VisualTreeAsset? inspectorUxml;
 
-        private Object _lastChosenGamePropertyObject;
-        private UnityEditor.Editor _lastChosenGameEditor;
-        private SerializedProperty _elympicsWebEndpoint;
-        private SerializedProperty _elympicsGameServersEndpoint;
+        private (Object Reference, VisualElement Inspector)? _currentGameConfig;
 
-        private void OnEnable()
+        public override VisualElement CreateInspectorGUI()
         {
-            _elympicsWebEndpoint = serializedObject.FindProperty("elympicsWebEndpoint");
-            _elympicsGameServersEndpoint = serializedObject.FindProperty("elympicsGameServersEndpoint");
-            _currentGameIndex = serializedObject.FindProperty("currentGame");
-            _availableGames = serializedObject.FindProperty("availableGames");
-            var chosenGameProperty = GetChosenGameProperty();
-            CreateChosenGameEditorIfChanged(chosenGameProperty);
-        }
-
-        private SerializedProperty GetChosenGameProperty()
-        {
-            var chosen = _currentGameIndex.intValue;
-            if (chosen < 0 || chosen >= _availableGames.arraySize)
-                return null;
-
-            return _availableGames.GetArrayElementAtIndex(chosen);
-        }
-
-        private void CreateChosenGameEditorIfChanged(SerializedProperty chosenGameProperty)
-        {
-            if (chosenGameProperty == null || chosenGameProperty.objectReferenceValue == _lastChosenGamePropertyObject)
-                return;
-
-            if (_lastChosenGameEditor != null)
-                DestroyImmediate(_lastChosenGameEditor);
-            _lastChosenGameEditor = CreateEditor(chosenGameProperty.objectReferenceValue);
-            _lastChosenGamePropertyObject = chosenGameProperty.objectReferenceValue;
+            var root = new VisualElement();
+            if (inspectorUxml != null)
+                root.Add(PrepareInspectorTree(inspectorUxml));
+            return root;
         }
 
         // TODO: make a user friendly version if there is no available game config (for example, during first time elympics setup)
         //       https://gitlab.app.daftmobile.com/elympics/unity-sdk/-/issues/112
 
-        public override void OnInspectorGUI()
+        private VisualElement PrepareInspectorTree(VisualTreeAsset sourceTree)
         {
-            EditorGUILayout.Space(5);
-            serializedObject.Update();
-            EditorStyles.label.wordWrap = true;
+            VisualElement inspectorTree = sourceTree.CloneTree();
 
-            DrawSdkVersion();
-            DrawEndpointsSection();
-            DrawButtonManageGamesInElympics();
+            var config = (ElympicsConfig)serializedObject.targetObject;
 
-            var chosenGameProperty = GetChosenGameProperty();
+            var sdkVersion = inspectorTree.Q<Label>("sdk-version");
+            var availableGames = inspectorTree.Q<ListView>("available-games");
+            var activeGame = inspectorTree.Q<ObjectField>("active-game");
+            var activeGameProperty = serializedObject.FindProperty(activeGame.bindingPath);
+            var chosenGameConfig = inspectorTree.Q<GroupBox>("chosen-game-config");
+            var gameTitle = inspectorTree.Q<Label>("game-title");
+            var gameConfigNestingRoot = inspectorTree.Q<GroupBox>("game-config-nesting-root");
+            var noGameConfigInfo = inspectorTree.Q<HelpBox>("no-game-config-info");
 
-            if (_availableGames.GetValue() == null)
-                _availableGames.SetValue(new List<ElympicsGameConfig>());
+            availableGames.Q<Foldout>().value = false;
+            availableGames.itemsAdded += _ => UpdateChosenGameConfig();
+            availableGames.itemsRemoved += _ => UpdateChosenGameConfig();
+            _ = activeGame.RegisterValueChangedCallback(_ => UpdateChosenGameConfig());
 
+            inspectorTree.Q<Button>("manage-games-button").clicked += () =>
+                ManageGamesInElympicsWindow.ShowWindow(serializedObject);
 
+            UpdateSdkVersion();
+            UpdateChosenGameConfig();
 
-            if (chosenGameProperty != null && chosenGameProperty.objectReferenceValue != null)
+            return inspectorTree;
+
+            void UpdateSdkVersion()
             {
-                EditorGUI.BeginDisabledGroup(true);
-                _ = EditorGUILayout.PropertyField(_availableGames, new GUIContent("Local games configurations"), true);
-
-                _ = EditorGUILayout.Popup(new GUIContent("Active game"),
-                    _currentGameIndex.intValue,
-                    ((List<ElympicsGameConfig>)_availableGames.GetValue()).Select(x => $"{(x != null ? x.GameName : string.Empty)} - {(x != null ? x.GameId : string.Empty)}")
-                    .ToArray());
-                EditorGUI.EndDisabledGroup();
-
-                DrawTitle(chosenGameProperty);
-                DrawGameEditor(chosenGameProperty);
-            }
-            else
-            {
-                DrawNoAvailableGamesLabel();
+                sdkVersion.text = $"Elympics SDK version: {ElympicsConfig.SdkVersion}";
             }
 
-            _ = serializedObject.ApplyModifiedProperties();
-        }
-
-        private static void DrawSdkVersion()
-        {
-            EditorGUILayout.LabelField($"Elympics SDK Version: {ElympicsConfig.SdkVersion}");
-        }
-
-        private void DrawNoAvailableGamesLabel()
-        {
-            GUILayout.Label(
-                "You don't have any available game config yet. Create one in Manage Games in Elympics window!",
-                EditorStyles.wordWrappedLabel);
-        }
-
-        private void DrawButtonManageGamesInElympics()
-        {
-            if (GUILayout.Button("Manage games in Elympics"))
-                _ = ManageGamesInElympicsWindow.ShowWindow(serializedObject,
-                    _currentGameIndex,
-                    _availableGames,
-                    _elympicsWebEndpoint,
-                    _elympicsGameServersEndpoint);
-
-            EditorGUILayout.Separator();
-        }
-
-        private void DrawEndpointsSection()
-        {
-            EditorEndpointCheckerEditor.DrawEndpointField(_elympicsWebEndpoint, "Web endpoint");
-            EditorEndpointCheckerEditor.DrawEndpointField(_elympicsGameServersEndpoint, "GameServers endpoint");
-            EditorGUILayout.Separator();
-        }
-
-        private static void DrawTitle(SerializedProperty chosenGameProperty)
-        {
-            var labelStyle = new GUIStyle(GUI.skin.label)
+            void UpdateChosenGameConfig()
             {
-                fontSize = 20,
-                alignment = TextAnchor.MiddleLeft
-            };
-            EditorGUILayout.Separator();
-            EditorGUILayout.Space();
-            var elympicsGameConfig = (ElympicsGameConfig)chosenGameProperty.GetValue();
-            EditorGUILayout.LabelField($"{elympicsGameConfig.GameName}", labelStyle);
-            EditorGUILayout.Space();
+                var showIfNoConfigs = config.AvailableGames.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                noGameConfigInfo.style.display = showIfNoConfigs;
+                chosenGameConfig.style.display = DisplayStyle.None;
+
+                if (config.activeGame == null)
+                    return;
+
+                chosenGameConfig.style.display = DisplayStyle.Flex;
+                var gameConfig = config.activeGame;
+                gameTitle.text = gameConfig.GameName;
+
+                if (!CreateChosenGameEditorIfChanged(activeGameProperty))
+                    return;
+                gameConfigNestingRoot.Clear();
+                if (_currentGameConfig.HasValue)
+                    gameConfigNestingRoot.Add(_currentGameConfig.Value.Inspector);
+            }
         }
 
-        private void DrawGameEditor(SerializedProperty chosenGameProperty)
+        private bool CreateChosenGameEditorIfChanged(SerializedProperty? activeGame)
         {
-            var gameStyle = new GUIStyle { margin = new RectOffset(10, 0, 0, 0) };
-            _ = EditorGUILayout.BeginVertical(gameStyle);
-            CreateChosenGameEditorIfChanged(chosenGameProperty);
-            _lastChosenGameEditor.OnInspectorGUI();
-            EditorGUILayout.EndVertical();
+            var reference = activeGame?.objectReferenceValue;
+            if (reference == null)
+            {
+                _currentGameConfig = null;
+                return true;
+            }
+
+            if (_currentGameConfig != null && _currentGameConfig.Value.Reference == reference)
+                return false;
+
+            var editor = CreateEditor(reference);
+            var element = editor.CreateInspectorGUI();
+            element.Bind(editor.serializedObject);
+            _currentGameConfig = (reference, element);
+            return true;
         }
     }
 }

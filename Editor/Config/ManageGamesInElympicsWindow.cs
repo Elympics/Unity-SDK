@@ -54,18 +54,13 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData;
 
-    public static ManageGamesInElympicsWindow ShowWindow(
-        SerializedObject elympicsConfigSerializedObject,
-        SerializedProperty currentGameIndex,
-        SerializedProperty availableGames,
-        SerializedProperty elympicsWebEndpoint,
-        SerializedProperty elympicsGameServersEndpoint)
+    public static ManageGamesInElympicsWindow ShowWindow(SerializedObject elympicsConfig)
     {
-        ManageGamesInElympicsWindow.elympicsConfigSerializedObject = elympicsConfigSerializedObject;
-        ManageGamesInElympicsWindow.currentGameIndex = currentGameIndex;
-        ManageGamesInElympicsWindow.availableGames = availableGames;
-        ManageGamesInElympicsWindow.elympicsWebEndpoint = elympicsWebEndpoint;
-        ManageGamesInElympicsWindow.elympicsGameServersEndpoint = elympicsGameServersEndpoint;
+        elympicsConfigSerializedObject = elympicsConfig;
+        currentGameIndex = elympicsConfig.FindProperty("currentGame");
+        availableGames = elympicsConfig.FindProperty("availableGames");
+        elympicsWebEndpoint = elympicsConfig.FindProperty("elympicsWebEndpoint");
+        elympicsGameServersEndpoint = elympicsConfig.FindProperty("elympicsGameServersEndpoint");
 
         elympicsWebEndpointChecker = new EditorEndpointChecker();
         elympicsWebEndpointChecker.UpdateUri(elympicsWebEndpoint.stringValue);

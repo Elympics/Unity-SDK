@@ -20,6 +20,8 @@ namespace Elympics
         [SerializeField] internal int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames;
 
+        [SerializeField] internal ElympicsGameConfig activeGame;
+
         private static string sdkVersion;
 
         internal static string SdkVersion
@@ -81,11 +83,7 @@ namespace Elympics
             throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
         }
 
-        public ElympicsGameConfig GetCurrentGameConfig()
-        {
-            ValidateGameIndex(currentGame);
-            return availableGames[currentGame];
-        }
+        public ElympicsGameConfig GetCurrentGameConfig() => activeGame;
 
         public void SwitchGame(int game)
         {

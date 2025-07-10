@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -76,7 +75,7 @@ namespace Elympics.Editor
                 isCurrentGameVersionUploaded = inProgress ? null : CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded;
             CurrentGameVersionUploadedToTheCloudStatus.Initialize(gameConfig);
 
-            sceneAsset.RegisterValueChangedCallback(evt =>
+            _ = sceneAsset.RegisterValueChangedCallback(evt =>
             {
                 var asset = (SceneAsset)evt.newValue;
                 scenePath.value = asset != null
@@ -85,18 +84,18 @@ namespace Elympics.Editor
                 UpdateSceneButton();
             });
 
-            ticksPerSecond.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
-            minClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
-            maxClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
+            _ = ticksPerSecond.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
+            _ = minClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
+            _ = maxClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
 
-            predictionEnabled.RegisterValueChangedCallback(_ => UpdatePredictionSection());
+            _ = predictionEnabled.RegisterValueChangedCallback(_ => UpdatePredictionSection());
 
-            snapshotSendingInterval.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
-            inputLag.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
-            predictionLimit.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
+            _ = snapshotSendingInterval.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
+            _ = inputLag.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
+            _ = predictionLimit.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
 
-            halfRemoteMode.RegisterValueChangedCallback(_ => UpdateHalfRemoteModeOptions());
-            debugMode.RegisterValueChangedCallback(evt =>
+            _ = halfRemoteMode.RegisterValueChangedCallback(_ => UpdateHalfRemoteModeOptions());
+            _ = debugMode.RegisterValueChangedCallback(evt =>
             {
                 UpdateDebugModeOptions();
                 if (!Application.runInBackground && (ElympicsGameConfig.GameplaySceneDebugModeEnum)evt.newValue == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
@@ -105,14 +104,14 @@ namespace Elympics.Editor
                         + "out-of-focus Editor windows. Please make sure that PlayerSettings \"Run In Background\" "
                         + "option is set to true.");
             });
-            halfRemoteRecordSnapshot.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
-            snapshotReplayPath.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
+            _ = halfRemoteRecordSnapshot.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
+            _ = snapshotReplayPath.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
 
             openScene.clicked += () =>
             {
                 var path = scenePath.value;
                 if (!string.IsNullOrWhiteSpace(path))
-                    EditorSceneManager.OpenScene(path);
+                    _ = EditorSceneManager.OpenScene(path);
             };
 
             UpdateSceneButton();

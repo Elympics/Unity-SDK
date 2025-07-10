@@ -17,10 +17,11 @@ namespace Elympics
         [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
 
-        [SerializeField] internal int currentGame = -1;
+        [SerializeField] private int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames;
 
         [SerializeField] internal ElympicsGameConfig activeGame;
+        [SerializeField] private bool migratedActiveGame;
 
         private static string sdkVersion;
 
@@ -38,6 +39,15 @@ namespace Elympics
         [InitializeOnLoadMethod]
 #endif
         private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
+
+#if UNITY_EDITOR
+        private void OnEnable()
+        {
+            if (currentGame >= 0 && currentGame < availableGames.Count)
+                activeGame = availableGames[currentGame];
+            migratedActiveGame = true;
+        }
+#endif
 
         internal string ElympicsApiEndpoint => ApplicationParameters.Parameters.ApiEndpoint.GetValue(GetV2Endpoint("api"))
             .GetAbsoluteOrRelativeString();
@@ -89,7 +99,7 @@ namespace Elympics
         {
             ValidateGameIndex(game);
 
-            currentGame = game;
+            activeGame = availableGames[game];
             CurrentGameSwitched?.Invoke();
         }
 

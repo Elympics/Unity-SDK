@@ -55,7 +55,7 @@ namespace Elympics.Tests
                     {
                         gameConfig
                     };
-                    config.currentGame = 0;
+                    config.activeGame = gameConfig;
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
                 }
@@ -65,9 +65,9 @@ namespace Elympics.Tests
                     var games = config.availableGames ?? new List<ElympicsGameConfig>();
                     games.Add(currentConfigs![0]);
                     config.availableGames = games;
-                    config.currentGame = 0;
+                    config.activeGame = games[0];
                 }
-                ElympicsLogger.Log($"Current test elympicsConfig has {config.availableGames.Count} games and current game index is {config.currentGame}");
+                ElympicsLogger.Log($"Current test elympicsConfig has {config.availableGames.Count} games and current game ID is {config.GetCurrentGameConfig().GameId}");
             }
 
             var currentScenes = EditorBuildSettings.scenes.ToList();

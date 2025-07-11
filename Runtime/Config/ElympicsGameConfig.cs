@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Net;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+
+#nullable enable
 
 namespace Elympics
 {
@@ -20,8 +21,8 @@ namespace Elympics
         [SerializeField] internal string gameId = "fe9b83a9-7d50-4299-859a-93fd313f420b";
         [SerializeField] internal string gameVersion = "1";
         [SerializeField] internal int players = 2;
-        [SerializeField] internal string gameplayScene;
-        [SerializeField] internal Object gameplaySceneAsset;
+        [SerializeField] internal string gameplayScene = "";
+        [SerializeField] internal SceneAsset? gameplaySceneAsset;
 
         [SerializeField] private bool botsInServer = true;
 
@@ -52,12 +53,12 @@ namespace Elympics
         [SerializeField] private ushort tcpPortForHalfRemoteMode = 9101;
         [SerializeField] private ushort webPortForHalfRemoteMode = 9102;
         [SerializeField] private bool recordSnapshots;
-        [SerializeField] private string snapshotFilePath;
+        [SerializeField] private string snapshotFilePath = "";
         [SerializeField] private int playerIndexForHalfRemoteMode = 1;
-        [SerializeField] private InitialMatchData testMatchData;
-        [SerializeField] private List<InitialUserData> testPlayers;
+        [SerializeField] private InitialMatchData testMatchData = new();
+        [SerializeField] private List<InitialUserData> testPlayers = new();
 
-        internal event Action DataChanged;
+        internal event Action? DataChanged;
 
         public string GameName => gameName;
         public string GameId => gameId;
@@ -74,9 +75,13 @@ namespace Elympics
         public bool BotsInServer => botsInServer;
 
         public bool UseWeb =>
+#if UNITY_WEBGL
+            true;
+#else
             ApplicationParameters.Parameters.ShouldUseWebRtc.Priority >= ApplicationParameters.Parameters.ShouldUseTcpUdp.Priority
                 ? ApplicationParameters.Parameters.ShouldUseWebRtc.GetValue(useWeb)
                 : !ApplicationParameters.Parameters.ShouldUseTcpUdp.GetValue(!useWeb);
+#endif
         public bool Prediction => prediction;
         public bool ReconnectEnabled => enableReconnect;
         public ClientConnectionSettings ConnectionConfig => connectionConfig;
@@ -109,8 +114,23 @@ namespace Elympics
         public InitialMatchData TestMatchData => testMatchData;
         public List<InitialUserData> TestPlayers => testPlayers;
 
-        [field: NonSerialized] public HalfRemoteLagConfig HalfRemoteLagConfig { get; } = new HalfRemoteLagConfig();
-        [field: NonSerialized] public ReconciliationFrequencyEnum ReconciliationFrequency { get; set; } = ReconciliationFrequencyEnum.OnlyIfNeeded;
+        [SerializeField] private HalfRemoteLagConfig halfRemoteLagConfig = new();
+        [SerializeField] private ReconciliationFrequencyEnum reconciliationFrequency = ReconciliationFrequencyEnum.OnlyIfNeeded;
+        public HalfRemoteLagConfig HalfRemoteLagConfig
+        {
+            get => halfRemoteLagConfig;
+#if UNITY_EDITOR
+            set => halfRemoteLagConfig = value;
+#endif
+        }
+
+        public ReconciliationFrequencyEnum ReconciliationFrequency
+        {
+            get => reconciliationFrequency;
+#if UNITY_EDITOR
+            set => reconciliationFrequency = value;
+#endif
+        }
 
         internal void ProcessElympicsConfigDataChanged() => DataChanged?.Invoke();
 
@@ -151,38 +171,38 @@ namespace Elympics
             HalfRemote,
             DebugOnlinePlayer,
             SnapshotReplay,
-            SinglePlayer
+            SinglePlayer,
         }
 
         public enum HalfRemoteModeEnum
         {
             Server,
             Client,
-            Bot
+            Bot,
         }
 
         public enum ReconciliationFrequencyEnum
         {
             OnlyIfNeeded = 0,
             Never,
-            OnEverySnapshot
+            OnEverySnapshot,
         }
 
         [Serializable]
         public class InitialUserData
         {
-            public string userId;
+            public string userId = "";
             public bool isBot;
             public double botDifficulty;
-            public byte[] gameEngineData;
-            public float[] matchmakerData;
+            public byte[] gameEngineData = Array.Empty<byte>();
+            public float[] matchmakerData = Array.Empty<float>();
         }
 
         [Serializable]
         public class InitialMatchData
         {
-            public string queueName;
-            public string regionName;
+            public string queueName = "";
+            public string regionName = "";
         }
     }
 }

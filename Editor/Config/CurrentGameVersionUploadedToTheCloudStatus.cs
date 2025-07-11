@@ -13,11 +13,11 @@ namespace Elympics
 
         public static event Action<bool> CheckingIfGameVersionIsUploadedChanged = null;
 
-        public static void Initialize(ElympicsGameConfig _config)
+        public static void Initialize(ElympicsGameConfig config)
         {
-            if (_config != activeGameConfig)
+            if (config != activeGameConfig)
             {
-                activeGameConfig = _config;
+                activeGameConfig = config;
 
                 activeGameConfig.DataChanged += RequestCheckIfCurrentGameVersionUploadedToCloud;
                 ElympicsWebIntegration.GameUploadedToTheCloud += RequestCheckIfCurrentGameVersionUploadedToCloud;
@@ -45,11 +45,9 @@ namespace Elympics
             ElympicsWebIntegration.GetGameVersions(gameVersions =>
             {
                 var gameVersionUploaded = gameVersions.Versions.Any(x => string.Equals(x.Version, activeGameConfig.gameVersion));
-
+                IsVersionUploaded = gameVersionUploaded;
                 isCheckingGameVersion = false;
                 CheckingIfGameVersionIsUploadedChanged?.Invoke(isCheckingGameVersion);
-
-                IsVersionUploaded = gameVersionUploaded;
             }, true);
         }
     }

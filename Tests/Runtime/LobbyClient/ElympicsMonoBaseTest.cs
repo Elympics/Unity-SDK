@@ -55,7 +55,6 @@ namespace Elympics.Tests
                     {
                         gameConfig
                     };
-                    config.activeGame = gameConfig;
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
                 }
@@ -65,7 +64,6 @@ namespace Elympics.Tests
                     var games = config.availableGames ?? new List<ElympicsGameConfig>();
                     games.Add(currentConfigs![0]);
                     config.availableGames = games;
-                    config.activeGame = games[0];
                 }
                 ElympicsLogger.Log($"Current test elympicsConfig has {config.availableGames.Count} games and current game ID is {config.GetCurrentGameConfig().GameId}");
             }

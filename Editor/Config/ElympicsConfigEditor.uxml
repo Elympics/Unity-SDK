@@ -4,8 +4,8 @@
     <ui:TextField label="Game servers endpoint" name="gs-endpoint" binding-path="elympicsGameServersEndpoint" readonly="true" />
     <ui:Button text="Manage games in Elympics" display-tooltip-when-elided="true" name="manage-games-button" />
     <ui:ListView focusable="true" name="available-games" binding-path="availableGames" header-title="Local game configurations" show-foldout-header="true" show-add-remove-footer="true" fixed-item-height="20" />
+    <ui:Label text="The current active game config is the first non-null position from the list above" display-tooltip-when-elided="true" style="flex-wrap: nowrap; -unity-font-style: italic; white-space: normal;" />
     <ui:HelpBox display-tooltip-when-elided="true" message-type="Info" name="no-game-config-info" text="You don&apos;t have any available game config yet. Create one in Manage Games in Elympics window!" style="display: none;" />
-    <uie:ObjectField label="Active game" name="active-game" type="Elympics.ElympicsGameConfig,Elympics" allow-scene-objects="false" binding-path="activeGame" />
     <ui:GroupBox name="chosen-game-config" style="display: none; margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
         <ui:Label text="Game" display-tooltip-when-elided="true" name="game-title" style="font-size: 20px;" />
         <ui:GroupBox name="game-config-nesting-root" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;" />

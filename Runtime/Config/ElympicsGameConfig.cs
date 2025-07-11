@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+#nullable enable
+
 namespace Elympics
 {
     [CreateAssetMenu(fileName = "ElympicsGameConfig", menuName = "Elympics/GameConfig")]
@@ -19,8 +21,8 @@ namespace Elympics
         [SerializeField] internal string gameId = "fe9b83a9-7d50-4299-859a-93fd313f420b";
         [SerializeField] internal string gameVersion = "1";
         [SerializeField] internal int players = 2;
-        [SerializeField] internal string gameplayScene;
-        [SerializeField] internal SceneAsset gameplaySceneAsset;
+        [SerializeField] internal string gameplayScene = "";
+        [SerializeField] internal SceneAsset? gameplaySceneAsset;
 
         [SerializeField] private bool botsInServer = true;
 
@@ -51,12 +53,12 @@ namespace Elympics
         [SerializeField] private ushort tcpPortForHalfRemoteMode = 9101;
         [SerializeField] private ushort webPortForHalfRemoteMode = 9102;
         [SerializeField] private bool recordSnapshots;
-        [SerializeField] private string snapshotFilePath;
+        [SerializeField] private string snapshotFilePath = "";
         [SerializeField] private int playerIndexForHalfRemoteMode = 1;
-        [SerializeField] private InitialMatchData testMatchData;
-        [SerializeField] private List<InitialUserData> testPlayers;
+        [SerializeField] private InitialMatchData testMatchData = new();
+        [SerializeField] private List<InitialUserData> testPlayers = new();
 
-        internal event Action DataChanged;
+        internal event Action? DataChanged;
 
         public string GameName => gameName;
         public string GameId => gameId;
@@ -189,18 +191,18 @@ namespace Elympics
         [Serializable]
         public class InitialUserData
         {
-            public string userId;
+            public string userId = "";
             public bool isBot;
             public double botDifficulty;
-            public byte[] gameEngineData;
-            public float[] matchmakerData;
+            public byte[] gameEngineData = Array.Empty<byte>();
+            public float[] matchmakerData = Array.Empty<float>();
         }
 
         [Serializable]
         public class InitialMatchData
         {
-            public string queueName;
-            public string regionName;
+            public string queueName = "";
+            public string regionName = "";
         }
     }
 }

@@ -33,17 +33,12 @@ namespace Elympics.Editor
 
             var sdkVersion = inspectorTree.Q<Label>("sdk-version");
             var availableGames = inspectorTree.Q<ListView>("available-games");
-            var activeGame = inspectorTree.Q<ObjectField>("active-game");
-            var activeGameProperty = serializedObject.FindProperty(activeGame.bindingPath);
             var chosenGameConfig = inspectorTree.Q<GroupBox>("chosen-game-config");
             var gameTitle = inspectorTree.Q<Label>("game-title");
             var gameConfigNestingRoot = inspectorTree.Q<GroupBox>("game-config-nesting-root");
             var noGameConfigInfo = inspectorTree.Q<HelpBox>("no-game-config-info");
 
-            availableGames.Q<Foldout>().value = false;
-            availableGames.itemsAdded += _ => UpdateChosenGameConfig();
-            availableGames.itemsRemoved += _ => UpdateChosenGameConfig();
-            _ = activeGame.RegisterValueChangedCallback(_ => UpdateChosenGameConfig());
+            availableGames.RegisterCallback<ChangeEvent<Object>>(_ => UpdateChosenGameConfig());
 
             inspectorTree.Q<Button>("manage-games-button").clicked += () =>
                 ManageGamesInElympicsWindow.ShowWindow(serializedObject);
@@ -60,18 +55,21 @@ namespace Elympics.Editor
 
             void UpdateChosenGameConfig()
             {
-                var showIfNoConfigs = config.AvailableGames.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
-                noGameConfigInfo.style.display = showIfNoConfigs;
                 chosenGameConfig.style.display = DisplayStyle.None;
+                noGameConfigInfo.style.display = DisplayStyle.None;
 
-                if (config.activeGame == null)
+                var gameConfig = config.GetCurrentGameConfig();
+                if (gameConfig == null)
+                {
+                    noGameConfigInfo.style.display = DisplayStyle.Flex;
+                    _ = CreateChosenGameEditorIfChanged(null);
                     return;
+                }
 
                 chosenGameConfig.style.display = DisplayStyle.Flex;
-                var gameConfig = config.activeGame;
                 gameTitle.text = gameConfig.GameName;
 
-                if (!CreateChosenGameEditorIfChanged(activeGameProperty))
+                if (!CreateChosenGameEditorIfChanged(gameConfig))
                     return;
                 gameConfigNestingRoot.Clear();
                 if (_currentGameConfig.HasValue)
@@ -79,22 +77,21 @@ namespace Elympics.Editor
             }
         }
 
-        private bool CreateChosenGameEditorIfChanged(SerializedProperty? activeGame)
+        private bool CreateChosenGameEditorIfChanged(ElympicsGameConfig? gameConfig)
         {
-            var reference = activeGame?.objectReferenceValue;
-            if (reference == null)
+            if (gameConfig == null)
             {
                 _currentGameConfig = null;
                 return true;
             }
 
-            if (_currentGameConfig != null && _currentGameConfig.Value.Reference == reference)
+            if (_currentGameConfig != null && _currentGameConfig.Value.Reference == gameConfig)
                 return false;
 
-            var editor = CreateEditor(reference);
+            var editor = CreateEditor(gameConfig);
             var element = editor.CreateInspectorGUI();
             element.Bind(editor.serializedObject);
-            _currentGameConfig = (reference, element);
+            _currentGameConfig = (gameConfig, element);
             return true;
         }
     }

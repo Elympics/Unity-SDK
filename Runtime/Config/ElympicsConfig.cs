@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+
+#nullable enable
 
 namespace Elympics
 {
@@ -18,9 +21,8 @@ namespace Elympics
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
 
         [SerializeField] private int currentGame = -1;
-        [SerializeField] internal List<ElympicsGameConfig> availableGames;
+        [SerializeField] internal List<ElympicsGameConfig> availableGames = new();
 
-        [SerializeField] internal ElympicsGameConfig activeGame;
         [SerializeField] private bool migratedActiveGame;
 
         private static string sdkVersion;
@@ -43,8 +45,12 @@ namespace Elympics
 #if UNITY_EDITOR
         private void OnEnable()
         {
-            if (currentGame >= 0 && currentGame < availableGames.Count)
-                activeGame = availableGames[currentGame];
+            if (currentGame > 0 && currentGame < availableGames.Count)
+            {
+                var activeGame = availableGames[currentGame];
+                availableGames.RemoveAt(currentGame);
+                availableGames.Insert(0, activeGame);
+            }
             migratedActiveGame = true;
         }
 #endif
@@ -81,11 +87,11 @@ namespace Elympics
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;
 
-        public event Action CurrentGameSwitched;
+        public event Action? CurrentGameSwitched;
 
-        [CanBeNull] public static ElympicsConfig Load() => Resources.Load<ElympicsConfig>(PathInResources);
+        public static ElympicsConfig? Load() => Resources.Load<ElympicsConfig>(PathInResources);
 
-        public static ElympicsGameConfig LoadCurrentElympicsGameConfig()
+        public static ElympicsGameConfig? LoadCurrentElympicsGameConfig()
         {
             var elympicsConfig = Resources.Load<ElympicsConfig>(PathInResources);
             if (elympicsConfig)
@@ -93,13 +99,15 @@ namespace Elympics
             throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
         }
 
-        public ElympicsGameConfig GetCurrentGameConfig() => activeGame;
+        public ElympicsGameConfig? GetCurrentGameConfig() => availableGames.FirstOrDefault(gameConfig => gameConfig != null);
 
         public void SwitchGame(int game)
         {
             ValidateGameIndex(game);
 
-            activeGame = availableGames[game];
+            var activeGame = availableGames[game];
+            availableGames.RemoveAt(game);
+            availableGames.Insert(0, activeGame);
             CurrentGameSwitched?.Invoke();
         }
 

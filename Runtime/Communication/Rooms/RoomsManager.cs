@@ -45,6 +45,10 @@ namespace Elympics
 
         #endregion Aggregated room events
 
+        /// <summary>Awaited before client sets itself as ready in a quick match room.</summary>
+        /// <remarks>Use this to inject any additional operations that need to be performed before setting ready in a quick match room.</remarks>
+        internal static Func<IRoom, CancellationToken, UniTask>? BeforeQuickMatchReady;
+
         private readonly Dictionary<Guid, IRoom> _rooms = new();
         private CancellationTokenSource _cts = new();
 

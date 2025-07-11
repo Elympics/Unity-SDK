@@ -25,6 +25,10 @@ namespace Elympics
 
         public bool IsJoined => ThrowIfDisposedOrReturn(_isJoined);
 
+        /// <summary>Awaited before operation is sent to backend by <see cref="MarkYourselfReady"/>.</summary>
+        /// <remarks>This can be used to perform additional operations required before client can be set as ready.</remarks>
+        public static Func<Room, CancellationToken, UniTask>? BeforeMarkYourselfReady;
+
         bool IRoom.IsJoined
         {
             get => IsJoined;
@@ -152,6 +156,10 @@ namespace Elympics
             ThrowIfNoMatchmaking();
             gameEngineData ??= Array.Empty<byte>();
             matchmakerData ??= Array.Empty<float>();
+
+            if (BeforeMarkYourselfReady != null)
+                await BeforeMarkYourselfReady(this, ct);
+
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _roomStateChangeMonitorCts.Token);
             // TODO: potential edge case. When setting isReady to true, we can get acknowledge however, backend can change our readiness after that thus we will never get isReady == true
             await _client.SetReady(_roomId, gameEngineData, matchmakerData, _state.LastRoomUpdate, ct);

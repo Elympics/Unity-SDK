@@ -1,6 +1,6 @@
 {
     "name": "Elympics.Tests",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "UnityEngine.TestRunner",
         "Elympics",

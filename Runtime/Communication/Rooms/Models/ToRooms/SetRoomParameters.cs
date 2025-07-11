@@ -46,5 +46,5 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public record RoomBetDetailsSlim([property: Key(0)] string BetValue, [property: Key(1)] Guid CoinId, [property: Key(2)] int? NumberOfPlayers);
+    public record RoomBetDetailsSlim([property: Key(0)] string BetValue, [property: Key(1)] Guid CoinId, [property: Key(2)] Guid? RollingBetId);
 }

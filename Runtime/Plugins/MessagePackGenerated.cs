@@ -4029,7 +4029,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             writer.WriteArrayHeader(3);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.BetValue, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.CoinId, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int?>(formatterResolver).Serialize(ref writer, value.NumberOfPlayers, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Serialize(ref writer, value.RollingBetId, options);
         }
 
         public global::Elympics.Rooms.Models.RoomBetDetailsSlim Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4044,7 +4044,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             var length = reader.ReadArrayHeader();
             var __BetValue__ = default(string);
             var __CoinId__ = default(global::System.Guid);
-            var __NumberOfPlayers__ = default(int?);
+            var __RollingBetId__ = default(global::System.Guid?);
 
             for (int i = 0; i < length; i++)
             {
@@ -4057,7 +4057,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                         __CoinId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        __NumberOfPlayers__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int?>(formatterResolver).Deserialize(ref reader, options);
+                        __RollingBetId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4065,7 +4065,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomBetDetailsSlim(__BetValue__, __CoinId__, __NumberOfPlayers__);
+            var ____result = new global::Elympics.Rooms.Models.RoomBetDetailsSlim(__BetValue__, __CoinId__, __RollingBetId__);
             reader.Depth--;
             return ____result;
         }

@@ -22,7 +22,9 @@ namespace Elympics
         [SerializeField] internal string gameVersion = "1";
         [SerializeField] internal int players = 2;
         [SerializeField] internal string gameplayScene = "";
+#if UNITY_EDITOR
         [SerializeField] internal SceneAsset? gameplaySceneAsset;
+#endif
 
         [SerializeField] private bool botsInServer = true;
 

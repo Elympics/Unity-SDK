@@ -1,6 +1,10 @@
+using System;
 using Elympics.Lobby.Models;
-namespace Communication.Lobby.Models.FromLobby
+
+namespace Elympics.Communication.Lobby.Models.FromLobby
 {
     public interface IDataFromLobby : IFromLobby
-    { }
+    {
+        Guid RequestId { get; init; }
+    }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
-using Communication.Lobby.Models.FromLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Utils;
@@ -24,7 +23,7 @@ namespace Elympics.Lobby
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
 
-        private readonly ConcurrentDictionary<Guid, Action<IFromLobby>> _dataResponses = new();
+        private readonly ConcurrentDictionary<Guid, Action<IDataFromLobby>> _dataResponses = new();
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
@@ -134,7 +133,7 @@ namespace Elympics.Lobby
             }
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
             var dataTask = WaitForLobbyData<TRequestData>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
-            _ = await ExecuteOperation(message, ct);
+            _ = await ExecuteOperation(message, linkedCts.Token);
             return await dataTask;
         }
 
@@ -200,7 +199,8 @@ namespace Elympics.Lobby
         {
             try
             {
-                var message = _serializer.Deserialize(data);
+                var message = _serializer.Deserialize(data)
+                    ?? throw new ElympicsException("Invalid message received");
 #if ELYMPICS_DEBUG
                 {
                     var typeName = message.GetType().FullName;
@@ -208,40 +208,29 @@ namespace Elympics.Lobby
                         ElympicsLogger.Log($"Received WebSocket message: {typeName} from: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
-                switch (message)
+                if (message is Ping)
                 {
-                    case null:
-                        throw new ElympicsException("Invalid message received");
-                    case Ping:
-                        DispatchWithCancellation(() =>
-                        {
-                            _timer?.Reset();
-                            _timer?.Start();
-                        });
-                        SendMessage(new Pong());
-                        return;
-                    case OperationResult result:
+                    DispatchWithCancellation(() =>
                     {
-                        if (_operationResultHandlers.TryRemove(result.OperationId, out var resultHandler))
-                            DispatchWithCancellation(() => resultHandler.Invoke(result));
-                        return;
-                    }
-                    case ShowAuthResponse showAuth:
-                    {
-                        if (_dataResponses.TryRemove(showAuth.RequestId, out var requestHandler))
-                            DispatchWithCancellation(() => requestHandler.Invoke(showAuth));
-                        return;
-                    }
-                    case GameDataResponse gameDataResponse:
-                    {
-                        if (_dataResponses.TryRemove(gameDataResponse.RequestId, out var requestHandler))
-                            DispatchWithCancellation(() => requestHandler.Invoke(gameDataResponse));
-                        return;
-                    }
-                    default:
-                        DispatchWithCancellation(() => MessageReceived?.Invoke(message));
-                        break;
+                        _timer?.Reset();
+                        _timer?.Start();
+                    });
+                    SendMessage(new Pong());
+                    return;
                 }
+                if (message is OperationResult result)
+                {
+                    if (_operationResultHandlers.TryRemove(result.OperationId, out var resultHandler))
+                        DispatchWithCancellation(() => resultHandler.Invoke(result));
+                    return;
+                }
+                if (message is IDataFromLobby dataFromLobby)
+                {
+                    if (_dataResponses.TryRemove(dataFromLobby.RequestId, out var requestHandler))
+                        DispatchWithCancellation(() => requestHandler.Invoke(dataFromLobby));
+                    return;
+                }
+                DispatchWithCancellation(() => MessageReceived?.Invoke(message));
             }
             catch (Exception e)
             {

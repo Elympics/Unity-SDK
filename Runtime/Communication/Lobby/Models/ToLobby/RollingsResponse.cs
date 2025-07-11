@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.FromLobby;
 using MessagePack;
 
 namespace Communication.Lobby.Models.ToLobby
 {
     [MessagePackObject]
-    public class RollingsResponse : IDataFromLobby
-    {
-        [Key(0)] public List<RollingResponseDto> Rollings { get; set; }
-        [Key(1)] public Guid RequestId { get; set; }
-    }
+    public record RollingsResponse(
+        [property: Key(0)] List<RollingResponseDto> Rollings,
+        [property: Key(1)] Guid RequestId) : IDataFromLobby;
 
     [MessagePackObject]
     public class RollingResponseDto

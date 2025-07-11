@@ -253,17 +253,14 @@ namespace Elympics
                         }
                         case RequestRollings requestRollings:
                         {
-
-                            var response = new RollingsResponse
-                            {
-                                Rollings = requestRollings.Rollings.Select(rollingRequestDto => new RollingResponseDto
+                            var response = new RollingsResponse(
+                                requestRollings.Rollings.Select(rollingRequestDto => new RollingResponseDto
                                 {
                                     RollingTournamentBetConfigId = Guid.NewGuid(),
                                     EntryFee = (float.Parse(rollingRequestDto.Prize) / rollingRequestDto.PlayersCount).ToString(CultureInfo.InvariantCulture),
-                                    Error = null
+                                    Error = null,
                                 }).ToList(),
-                                RequestId = requestRollings.OperationId
-                            };
+                                requestRollings.OperationId);
                             SendSuccessResponse(webSocket, requestRollings);
                             SendResponse(webSocket, response);
                             break;

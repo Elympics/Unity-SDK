@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.Models.FromLobby;
 using MessagePack;
 
 #nullable enable
+
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]

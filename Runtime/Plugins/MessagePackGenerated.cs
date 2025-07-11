@@ -1580,17 +1580,18 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingsResponse();
+            var __Rollings__ = default(global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>);
+            var __RequestId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.Rollings = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>>(formatterResolver).Deserialize(ref reader, options);
+                        __Rollings__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingResponseDto>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 1:
-                        ____result.RequestId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        __RequestId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -1598,6 +1599,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                 }
             }
 
+            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingsResponse(__Rollings__, __RequestId__);
             reader.Depth--;
             return ____result;
         }

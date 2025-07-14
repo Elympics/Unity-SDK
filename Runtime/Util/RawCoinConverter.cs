@@ -34,16 +34,13 @@ namespace Elympics.Util
         /// <returns>String containing numbers that represent the <paramref name="amount"/> in coin's atomic native units.</returns>
         public static string ToRaw(decimal amount, int decimals)
         {
-            var mantissa = (BigInteger)amount;
-            var exponent = 0;
-            for (var num = 1M; (decimal)mantissa != amount * num; mantissa = (BigInteger)(amount * num))
-            {
-                --exponent;
-                num *= 10M;
-            }
-            var multiplier = BigInteger.Pow(10, decimals + exponent);
-            var wei = BigInteger.Multiply(mantissa, multiplier);
-            return wei.ToString();
+            var wholePart = (BigInteger)amount;
+            var fraction = amount - (decimal)wholePart;
+            var multiplier = BigInteger.Pow(10, decimals);
+            var result = BigInteger.Multiply(wholePart, multiplier);
+            result += (BigInteger)(fraction * (decimal)multiplier);
+
+            return result.ToString();
         }
     }
 }

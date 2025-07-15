@@ -66,7 +66,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
-            CompetitivenessConfig? tournamentDetails = null,
+            CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;
         internal UniTask CheckJoinedRoomStatus();

@@ -11,7 +11,6 @@ namespace Elympics.Tests
     internal static class ElympicsLobbyClientSutMocker
     {
         private const string WebSocketSessionName = "_webSocketSession";
-        private const string PingTimeoutThresholdFieldName = "_automaticDisconnectThreshold";
         private const string AsyncEventDispatcherFieldName = "_dispatcher";
         private const string WebSocketFactory = "_wsFactory";
         private const string AuthClientFieldName = "_auth";
@@ -59,19 +58,6 @@ namespace Elympics.Tests
             Assert.NotNull(lazyRoomsManager);
             var lazy = new Lazy<IRoomsManager>(roomsManagerMock);
             lazyRoomsManager.SetValue(sut, lazy);
-            return sut;
-        }
-
-        public static ElympicsLobbyClient SetPingThresholdTimeout(this ElympicsLobbyClient sut, TimeSpan newTimeout)
-        {
-            var webSocketSessionField = sut.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(x => x.Name == WebSocketSessionName);
-            Assert.NotNull(webSocketSessionField);
-
-            var lazyWebSocketObject = (Lazy<WebSocketSession>)webSocketSessionField.GetValue(sut);
-            var webSocketSession = lazyWebSocketObject.Value;
-            var pingDisconnectTimeout = webSocketSession.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == PingTimeoutThresholdFieldName);
-
-            pingDisconnectTimeout!.SetValue(webSocketSession, newTimeout);
             return sut;
         }
     }

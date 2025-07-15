@@ -1,5 +1,8 @@
+using System;
+
 namespace Elympics
 {
+    [Serializable]
     public class HalfRemoteLagConfig
     {
         public int DelayMs = 0;

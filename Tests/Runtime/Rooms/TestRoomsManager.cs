@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading;
 using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Rooms.Models;
 using NSubstitute;
@@ -45,10 +46,8 @@ namespace Elympics.Tests.Rooms
             {
                 OperationTimeout = TimeSpan.FromSeconds(1),
             };
-            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, logger, RoomJoiner)
-            {
-                OperationTimeout = TimeSpan.FromSeconds(1),
-            };
+            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, logger, RoomJoiner);
+            ElympicsTimeout.FetchGameDataTimeout = TimeSpan.FromSeconds(1);
             EventRegister = new EventObserver<IRoomsManager>(RoomsManager);
 
             _roomsManagerInitialized = RoomsManager.GetType()

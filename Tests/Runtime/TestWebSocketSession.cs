@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
@@ -36,6 +37,8 @@ namespace Elympics.Tests
             Serialize = data => data is LobbyOperation operation ? operation.OperationId.ToByteArray() : Array.Empty<byte>(),
             Deserialize = data => data.Length == 16 ? new OperationResult(new Guid(data)) : new UnknownMessage(),
         };
+        private static readonly TimeSpan DefaultOpeningTimeout = ElympicsTimeout.WebSocketOpeningTimeout;
+        private static readonly TimeSpan DefaultOperationTimeout = ElympicsTimeout.WebSocketOperationTimeout;
 
         private static CancellationTokenSource cts = new();
         private record UnknownMessage : IFromLobby, IToLobby;
@@ -284,7 +287,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectionShouldBeAbortedWhenOpeningWsTakesTooLong() => UniTask.ToCoroutine(async () =>
         {
             using var session = CreateWebSocketSession(SerializerForConnection);
-            session.OpeningTimeout = TimeSpan.Zero;
+            ElympicsTimeout.WebSocketOpeningTimeout = TimeSpan.Zero;
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
@@ -308,7 +311,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectionShouldBeAbortedWhenReceivingResponseTakesTooLong() => UniTask.ToCoroutine(async () =>
         {
             using var session = CreateWebSocketSession(SerializerForConnection);
-            session.OperationTimeout = TimeSpan.Zero;
+            ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
             WsMock.ConnectCalled += HandleConnectCalled;
 
@@ -457,7 +460,7 @@ namespace Elympics.Tests
                 Serialize = _ => Array.Empty<byte>(),
                 Deserialize = _ => new OperationResult(operation.OperationId),
             });
-            session.OperationTimeout = TimeSpan.Zero;
+            ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
             await ConnectWebSocketSessionAndAssert(session);
             WsMock.SendCalled += HandleMessageSent;
@@ -632,7 +635,7 @@ namespace Elympics.Tests
 
             using var session = CreateWebSocketSession(SerializerForConnection);
             await ConnectWebSocketSessionAndAssert(session);
-            session.OperationTimeout = TimeSpan.Zero;
+            ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
             await UniTask.SwitchToMainThread();
             var mainThreadId = Thread.CurrentThread.ManagedThreadId;
@@ -651,6 +654,8 @@ namespace Elympics.Tests
             ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
             WsMock.Reset();
             cts.Cancel();
+            ElympicsTimeout.WebSocketOpeningTimeout = DefaultOpeningTimeout;
+            ElympicsTimeout.WebSocketOperationTimeout = DefaultOperationTimeout;
         }
     }
 }

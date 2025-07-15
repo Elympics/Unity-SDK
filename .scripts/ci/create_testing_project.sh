@@ -3,6 +3,7 @@ set -e
 
 echo "Creating Testing Project"
 PACKAGE_FOLDER=${PACKAGE_DIR}/
+ASSETS_FOLDER=${UNITY_DIR}/Assets/
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -createProject "$UNITY_DIR" \
@@ -28,6 +29,6 @@ cp -r Runtime{,.meta} "$PACKAGE_FOLDER"
 cp -r Tests{,.meta} "$PACKAGE_FOLDER"
 cp package.json{,.meta} "$PACKAGE_FOLDER"
 cp -r Samples~ "$PACKAGE_FOLDER"
-mv "${PACKAGE_FOLDER}Samples~" "${PACKAGE_FOLDER}Samples"
+mv "${PACKAGE_FOLDER}Samples~" "${ASSETS_FOLDER}Samples"
 
 echo "Elympics moved ✅"

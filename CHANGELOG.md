@@ -1,3 +1,21 @@
+## [0.18.0](https://github.com/Elympics/Unity-SDK/compare/v0.17.0...v0.18.0) (2025-07-15)
+
+
+### Bug Fixes 🪲
+
+* increase connection timeouts ([f2382af](https://github.com/Elympics/Unity-SDK/commit/f2382af3bc68dc36934acdd1c1468028bc28b3c7))
+* re-design ElympicsGameConfig inspector to prevent exceptions ([6cabd4f](https://github.com/Elympics/Unity-SDK/commit/6cabd4f16bcf71f32a17303c79a2ba2ec06d209e))
+
+### Features
+
+* BREAKING CHANGE: mark `ElympicsPlayPad.ExternalCommunicators.VirtualDeposit.IExternalBlockChainCurrencyCommunicator.EnsureVirtualDeposit` as obsolete and make PlayPad SDK handle ensuring deposit internally
+* BREAKING CHANGE: rename `tournamentDetails` parameter in `Elympics.IRoomsManager.CreateAndJoinRoom` method to `competitivenessConfig`
+* add automatic signing of proof of entry when player is joining a rolling tournament on EVM
+* allow setting active tournament using its ID by calling `ElympicsPlayPad.ExternalCommunicators.Tournament.IExternalTournamentCommunicator.SetActiveTournament`
+* expose number of new rolling tournament settlements with `ElympicsPlayPad.ExternalCommunicators.Tournament.IExternalTournamentCommunicator.GetTournamentSettlementStatus`
+
+
+
 ## [0.17.0](https://github.com/Elympics/Unity-SDK/compare/v0.16.1...v0.17.0) (2025-07-03)
 
 

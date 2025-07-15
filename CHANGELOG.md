@@ -1,3 +1,13 @@
+## [0.18.0](https://github.com/Elympics/Unity-SDK/compare/v0.17.0...v0.18.0) (2025-07-15)
+
+
+### Bug Fixes 🪲
+
+* increase connection timeouts ([f2382af](https://github.com/Elympics/Unity-SDK/commit/f2382af3bc68dc36934acdd1c1468028bc28b3c7))
+* Re-design ElympicsGameConfig inspector to prevent exceptions ([6cabd4f](https://github.com/Elympics/Unity-SDK/commit/6cabd4f16bcf71f32a17303c79a2ba2ec06d209e))
+
+
+
 ## [0.17.0](https://github.com/Elympics/Unity-SDK/compare/v0.16.1...v0.17.0) (2025-07-03)
 
 

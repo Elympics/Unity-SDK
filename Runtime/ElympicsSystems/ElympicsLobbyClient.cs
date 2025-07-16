@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -26,6 +25,9 @@ using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MatchmakingState = Elympics.ElympicsSystems.Internal.MatchmakingState;
+
+#nullable enable
+
 #pragma warning disable CS0618
 
 namespace Elympics
@@ -97,7 +99,7 @@ namespace Elympics
         #endregion Authentication
 
         [PublicAPI]
-        public IGameplaySceneMonitor GameplaySceneMonitor { get; private set; } = null!;
+        public IGameplaySceneMonitor? GameplaySceneMonitor { get; private set; }
 
         [PublicAPI]
         public IWebSocketSession WebSocketSession => _webSocketSession.IsValueCreated ? _webSocketSession.Value
@@ -427,7 +429,7 @@ namespace Elympics
 
         private RoomsClient CreateRoomsClient() => new(loggerContext)
         {
-            Session = _webSocketSession.Value
+            Session = _webSocketSession.Value,
         };
 
         private RoomsManager CreateRoomsManager()
@@ -572,6 +574,11 @@ namespace Elympics
             LoadGameplayScene();
         }
 
+        /// <summary>
+        /// Connects to lobby services, performing a handshake for exchanging client-side and server-side game details.
+        /// </summary>
+        /// <param name="data">Authentication type and region data.</param>
+        /// <returns>Server-side game details (only if <paramref name="data"/>, <see cref="AuthData"/>, <see cref="_config"/>, or <see cref="_gameConfig"/> changed since last call).</returns>
         internal async UniTask<GameDataResponse?> ConnectToLobby(ConnectionData data)
         {
             var lobbyConnection = GetConnectionStrategy(AuthData is not null, _webSocketSession.Value.IsConnected);
@@ -616,8 +623,8 @@ namespace Elympics
 
         internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
         {
-            //TODO change to Session.SendRequest from branch fix/websocket-restfull-request k.pieta 11.07.2025
-            var config = _config.GetCurrentGameConfig();
+            var config = _config.GetCurrentGameConfig()
+                ?? throw new InvalidOperationException("No game config available");
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,

@@ -72,7 +72,7 @@ namespace Elympics.ElympicsSystems.Internal
                 {
                     if (Client.RoomsManager.ListJoinedRooms()[0].IsDuringMatchmaking())
                         Client.SwitchState(ElympicsState.Matchmaking);
-                    else if (Client.GameplaySceneMonitor.IsCurrentlyInMatch)
+                    else if (Client.GameplaySceneMonitor!.IsCurrentlyInMatch)
                         Client.SwitchState(ElympicsState.PlayingMatch);
                     else
                         Client.SwitchState(ElympicsState.Connected);

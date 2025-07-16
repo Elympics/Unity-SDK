@@ -1,8 +1,9 @@
-#nullable enable
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
+
+#nullable enable
 
 namespace Elympics
 {
@@ -16,9 +17,15 @@ namespace Elympics
             Logger = logger;
         }
 
+        /// <summary>
+        /// Connects to lobby services, performing a handshake for exchanging client-side and server-side game details.
+        /// </summary>
+        /// <param name="newConnectionDetails">Client-side game details and authentication data.</param>
+        /// <returns>Server-side game details (only if <paramref name="newConnectionDetails"/> changed since last call).</returns>
         public abstract UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails);
 
-        protected async UniTask<GameDataResponse> ConnectToLobby(SessionConnectionDetails connectionDetails) => await _webSocketSession.Connect(connectionDetails);
+        protected async UniTask<GameDataResponse> ConnectToLobby(SessionConnectionDetails connectionDetails) =>
+            await _webSocketSession.Connect(connectionDetails);
 
         protected void DisconnectFromLobby(DisconnectionReason reason)
         {

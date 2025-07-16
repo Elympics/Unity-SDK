@@ -22,7 +22,7 @@ namespace Elympics.ElympicsSystems.Internal
         public override UniTask StartMatchmaking(IRoom room) => throw new ElympicsException(GenerateErrorMessage(nameof(StartMatchmaking)));
         public override UniTask PlayMatch(MatchmakingFinishedData matchData)
         {
-            if (Client.GameplaySceneMonitor.IsCurrentlyInMatch)
+            if (Client.GameplaySceneMonitor!.IsCurrentlyInMatch)
                 throw new InvalidOperationException("Game is already on the gameplay scene.");
 
             Client.PlayMatchInternal(matchData ?? throw new ArgumentNullException(nameof(matchData)));

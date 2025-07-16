@@ -29,7 +29,7 @@ namespace Elympics.ElympicsSystems.Internal
                 await Client.GetElympicsUserData();
                 if (Client.RoomsManager.CurrentRoom?.State.MatchmakingData?.MatchmakingState is Rooms.Models.MatchmakingState.Matchmaking or Rooms.Models.MatchmakingState.RequestingMatchmaking)
                     Client.SwitchState(ElympicsState.Matchmaking);
-                else if (Client.GameplaySceneMonitor.IsCurrentlyInMatch)
+                else if (Client.GameplaySceneMonitor!.IsCurrentlyInMatch)
                     Client.SwitchState(ElympicsState.PlayingMatch);
                 else
                     Client.SwitchState(ElympicsState.Connected);

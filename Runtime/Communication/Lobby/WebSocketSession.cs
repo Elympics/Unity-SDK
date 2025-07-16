@@ -121,8 +121,8 @@ namespace Elympics.Lobby
             return await task;
         }
 
-        public async UniTask<TRequestData> SendRequest<TRequestData>(LobbyOperation message, CancellationToken ct = default)
-            where TRequestData : IDataFromLobby
+        public async UniTask<TResponse> SendRequest<TResponse>(LobbyOperation message, CancellationToken ct = default)
+            where TResponse : IDataFromLobby
         {
             ThrowIfDisposed();
             ThrowIfNotConnected();
@@ -132,7 +132,7 @@ namespace Elympics.Lobby
                 throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
             }
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var dataTask = WaitForLobbyData<TRequestData>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
+            var dataTask = WaitForLobbyData<TResponse>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
             _ = await ExecuteOperation(message, linkedCts.Token);
             return await dataTask;
         }

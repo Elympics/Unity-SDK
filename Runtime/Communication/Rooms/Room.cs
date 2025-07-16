@@ -269,8 +269,8 @@ namespace Elympics
             var isPrivateToSend = isPrivate != _state.IsPrivate ? isPrivate : null;
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
-            var betSlimToSend = isCompetitivenessConfigTheSame ? null : competitivenessConfig;
-            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, betSlimToSend);
+            var competetivnessConfigToSend = isCompetitivenessConfigTheSame ? null : competitivenessConfig;
+            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, competetivnessConfigToSend);
 
             bool IsCompetitivenessConfigTheSame(CompetitivenessConfig config) =>
                 config.CompetitivenessType switch

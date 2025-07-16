@@ -611,6 +611,7 @@ namespace Elympics
 
         internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
         {
+            //TODO change to Session.SendRequest from branch fix/websocket-restfull-request k.pieta 11.07.2025
             var config = _config.GetCurrentGameConfig();
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),

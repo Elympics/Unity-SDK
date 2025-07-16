@@ -58,10 +58,11 @@ namespace Elympics.Rooms.Models
     }
 
     [MessagePackObject]
-    public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin)
+    public record RoomBetDetails([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoin Coin, [property: Key(2)] RollingBet? RollingBet)
     {
         [IgnoreMember]
         public decimal BetValue => RawCoinConverter.FromRaw(BetValueRaw, Coin.Currency.Decimals);
+
         public virtual bool Equals(RoomBetDetails? other) => other != null && BetValueRaw == other.BetValueRaw && Coin.Equals(other.Coin);
 
         public override int GetHashCode() => HashCode.Combine(BetValue, Coin);
@@ -120,5 +121,12 @@ namespace Elympics.Rooms.Models
         public static bool operator ==(RoomCurrency? left, RoomCurrency? right) => Equals(left, right);
 
         public static bool operator !=(RoomCurrency? left, RoomCurrency? right) => !Equals(left, right);
+    }
+
+    [MessagePackObject]
+    public record RollingBet([property: Key(0)] Guid RollingBetId, [property: Key(1)] int? NumberOfPlayers, [property: Key(2)] string EntryFee, [property: Key(3)] string Prize)
+    {
+        public virtual bool Equals(RollingBet? other) => RollingBetId == other?.RollingBetId;
+        public override int GetHashCode() => RollingBetId.GetHashCode();
     }
 }

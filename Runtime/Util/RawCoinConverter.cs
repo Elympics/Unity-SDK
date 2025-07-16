@@ -32,6 +32,7 @@ namespace Elympics.Util
         /// <param name="amount">User-friendly coin amount that can have up to <paramref name="decimals"/> decimal places of precision.</param>
         /// <param name="decimals">Number of decimal places allowed by the coin. Usually fetched from <see cref="CurrencyInfo.Decimals"/>.</param>
         /// <returns>String containing numbers that represent the <paramref name="amount"/> in coin's atomic native units.</returns>
+        /// <remarks>If <paramref name="amount"/> has more decimal places than <paramref name="decimals"/>, the extra decimal places will be discarded before conversion.</remarks>
         public static string ToRaw(decimal amount, int decimals)
         {
             var wholePart = (BigInteger)amount;

@@ -40,7 +40,7 @@ namespace Elympics.Tests
         }
 
 
-        class TestSnapshotAnalysisCollector : SnapshotAnalysisCollector
+        private class TestSnapshotAnalysisCollector : SnapshotAnalysisCollector
         {
             public override void CaptureSnapshot(ElympicsSnapshotWithMetadata? previousSnapshot, ElympicsSnapshotWithMetadata snapshot) =>
                 StoreToBuffer(previousSnapshot, snapshot);

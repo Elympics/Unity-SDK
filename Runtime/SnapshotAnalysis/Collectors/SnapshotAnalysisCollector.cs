@@ -113,7 +113,7 @@ namespace Elympics.SnapshotAnalysis
         protected abstract UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer);
         protected abstract void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots);
 
-        private ElympicsSnapshotWithMetadata[] GetBuffer => _currentBuffer switch
+        protected ElympicsSnapshotWithMetadata[] GetBuffer => _currentBuffer switch
         {
             1 => _buffer1,
             2 => _buffer2,

@@ -319,7 +319,7 @@ namespace Elympics
 
             if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
             {
-                _logger.WithMethodName().Warning($"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check. Prediction buffer size: {Config.PredictionBufferSize} Total prediction limit: {Config.TotalPredictionLimitInTicks}.");
+                _logger.WithMethodName().Warning($"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                 return;
             }
 

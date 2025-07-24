@@ -317,9 +317,11 @@ namespace Elympics
             ElympicsSnapshot historySnapshot = null;
             ElympicsSnapshot newSnapshot;
 
-            if (!forceSnapShot
-                && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
+            if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
+            {
+                _logger.WithMethodName().Warning($"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                 return;
+            }
 
             if (!forceSnapShot
                 && ElympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)

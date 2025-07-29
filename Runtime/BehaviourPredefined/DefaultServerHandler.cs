@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Elympics
 {
-    public class DefaultServerHandlerr : ElympicsMonoBehaviour, IServerHandlerGuid
+    public class DefaultServerHandler : ElympicsMonoBehaviour, IServerHandlerGuid
     {
         [Tooltip("Automatically kill Game Server if no player will join in " + nameof(startGameTimeoutSeconds) + " seconds")]
         [SerializeField] private bool autoTerminateServer = true;

@@ -12,7 +12,7 @@ namespace Elympics.Communication.Mappers
     {
         private static readonly Dictionary<BetConfig, Guid> BetConfigToId = new();
 
-        internal static async UniTask<Guid> GetConfigId(Guid coinId, decimal prize, int numberOfPlayers, CancellationToken ct = default)
+        internal static async UniTask<Guid> GetConfigId(Guid coinId, decimal prize, int numberOfPlayers, float[] prizeDistribution, CancellationToken ct = default)
         {
             var betConfig = new BetConfig(coinId, prize, numberOfPlayers);
 
@@ -25,7 +25,7 @@ namespace Elympics.Communication.Mappers
             if (!coinInfo.HasValue || coinInfo.Value.Id == Guid.Empty)
                 throw new ArgumentException($"Coin info for coin with ID {coinId} not found.", nameof(coinId));
 
-            var payload = new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value, Prize = prize, PlayersCount = numberOfPlayers } };
+            var payload = new[] { new TournamentFeeRequestInfo { CoinInfo = coinInfo.Value, Prize = prize, PlayersCount = numberOfPlayers, PrizeDistribution = prizeDistribution } };
             var response = await lobbyClient.GetRollTournamentsFeeInternal(payload, ct) ?? throw new ElympicsException("Failed to get rolling tournament bet config ID.");
 
             var rollingTournamentBetConfigId = response.Rollings[0].RollingTournamentBetConfigId;

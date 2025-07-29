@@ -623,12 +623,17 @@ namespace Elympics
 
         internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
         {
-            var config = _config.GetCurrentGameConfig()
-                ?? throw new InvalidOperationException("No game config available");
+            var config = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException("No game config available");
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,
-                Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, RawCoinConverter.ToRaw(x.Prize, x.CoinInfo.Currency.Decimals), (uint)x.PlayersCount)).ToList());
+                Rollings: requestData.Select(x => new RollingRequestDto(
+                        CoinId: x.CoinInfo.Id,
+                        Prize: RawCoinConverter.ToRaw(x.Prize,
+                        decimals: x.CoinInfo.Currency.Decimals),
+                        PlayersCount: (uint)x.PlayersCount,
+                        PrizeDistribution: x.PrizeDistribution))
+                    .ToList());
 
             return await _webSocketSession.Value.SendRequest<RollingsResponse>(request, ct);
         }

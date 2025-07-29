@@ -66,10 +66,10 @@ namespace Elympics
         public IElympics Elympics => ElympicsBase;
 
         /// <summary>
-        /// Synchronize a prefab instantiation and process all its ElympicsBehaviour components.
+        /// Synchronize a prefab instantiation and process all of its ElympicsBehaviour components.
         /// </summary>
-        /// <param name="pathInResources">Path to instantiated prefab which must reside in Resources.</param>
-        /// <param name="player">Instantiated object should be predictable for this player.</param>
+        /// <param name="pathInResources">Path to the instantiated prefab which must reside in Resources directory.</param>
+        /// <param name="player">Instantiated object will be predictable for this player.</param>
         /// <returns>Created game object.</returns>
         /// <remarks>For object destruction see <see cref="ElympicsDestroy"/>.</remarks>
         public GameObject ElympicsInstantiate(string pathInResources, ElympicsPlayer player)

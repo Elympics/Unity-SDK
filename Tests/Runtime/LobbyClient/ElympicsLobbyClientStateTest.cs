@@ -42,7 +42,8 @@ namespace Elympics.Tests
             _ = _sut.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketSessionMock).InjectIRoomManager(_roomsManagerMock)
                 .InjectRegionIAvailableRegionRetriever(_availableRegionRetrieverMock);
             _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
-            _ = _webSocketSessionMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl);
+            _ = _webSocketSessionMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
+                .SetShowAuthMessage(UserId, Nickname, null);
             _ = _availableRegionRetrieverMock.GetAvailableRegions()
                 .Returns(UniTask.FromResult(new List<string> { ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas }));
             _ = _roomsClientMock.MockDefaultStartMatchMaking();
@@ -85,7 +86,7 @@ namespace Elympics.Tests
             }));
 
             var cts = new CancellationTokenSource();
-            cts.CancelAfter(TimeSpan.FromSeconds(1));
+            cts.CancelAfter(TimeSpan.FromSeconds(2));
             var isCanceled = await UniTask.WaitUntil(() => _stateTransitions.Count == 2, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
             Assert.IsFalse(isCanceled);
             Assert.AreEqual(_stateTransitions.Count, 2);

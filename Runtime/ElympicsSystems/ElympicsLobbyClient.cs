@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,7 +15,6 @@ using Elympics.Communication.Mappers;
 using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
-using Elympics.Lobby.Models;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
@@ -27,6 +25,9 @@ using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MatchmakingState = Elympics.ElympicsSystems.Internal.MatchmakingState;
+
+#nullable enable
+
 #pragma warning disable CS0618
 
 namespace Elympics
@@ -98,7 +99,7 @@ namespace Elympics
         #endregion Authentication
 
         [PublicAPI]
-        public IGameplaySceneMonitor GameplaySceneMonitor { get; private set; } = null!;
+        public IGameplaySceneMonitor? GameplaySceneMonitor { get; private set; }
 
         [PublicAPI]
         public IWebSocketSession WebSocketSession => _webSocketSession.IsValueCreated ? _webSocketSession.Value
@@ -369,11 +370,15 @@ namespace Elympics
             try
             {
                 if (AuthData is not null)
-                {
-                    var connectionStrategy = GetConnectionStrategy(true, _webSocketSession.Value.IsConnected);
-                    var newSession = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, new RegionData(currentRegion));
-                    await connectionStrategy.Connect(newSession);
-                }
+                    await CurrentState.Reconnect(new ConnectionData()
+                    {
+                        Region = new RegionData(currentRegion),
+                        AuthFromCacheData = new CachedAuthData
+                        {
+                            CachedData = AuthData,
+                            AutoRetryIfExpired = false
+                        }
+                    });
             }
             catch (Exception ex)
             {
@@ -424,7 +429,7 @@ namespace Elympics
 
         private RoomsClient CreateRoomsClient() => new(loggerContext)
         {
-            Session = _webSocketSession.Value
+            Session = _webSocketSession.Value,
         };
 
         private RoomsManager CreateRoomsManager()
@@ -569,12 +574,18 @@ namespace Elympics
             LoadGameplayScene();
         }
 
-        internal async UniTask ConnectToLobby(ConnectionData data)
+        /// <summary>
+        /// Connects to lobby services, performing a handshake for exchanging client-side and server-side game details.
+        /// </summary>
+        /// <param name="data">Authentication type and region data.</param>
+        /// <returns>Server-side game details (only if <paramref name="data"/>, <see cref="AuthData"/>, <see cref="_config"/>, or <see cref="_gameConfig"/> changed since last call).</returns>
+        internal async UniTask<GameDataResponse?> ConnectToLobby(ConnectionData data)
         {
             var lobbyConnection = GetConnectionStrategy(AuthData is not null, _webSocketSession.Value.IsConnected);
             var connectionDetails = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, data.Region);
-            await lobbyConnection.Connect(connectionDetails);
+            var gameData = await lobbyConnection.Connect(connectionDetails);
             currentRegion = connectionDetails.RegionName;
+            return gameData;
         }
 
         [PublicAPI]
@@ -598,7 +609,8 @@ namespace Elympics
                 var numberOfPlayers = requestData[i].PlayersCount;
                 fees[i] = new FeeInfo
                 {
-                    EntryFee = RawCoinConverter.FromRaw(fee.EntryFee, FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
+                    EntryFee = RawCoinConverter.FromRaw(fee.EntryFee,
+                        FetchDecimalForCoin(coinId) ?? throw new Exception($"Coin with ID {coinId} was not found when processing rolling tournament fees.")),
                     Error = fee.Error,
                     EntryFeeRaw = fee.EntryFee
                 };
@@ -611,81 +623,38 @@ namespace Elympics
 
         internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
         {
-            //TODO change to Session.SendRequest from branch fix/websocket-restfull-request k.pieta 11.07.2025
-            var config = _config.GetCurrentGameConfig();
+            var config = _config.GetCurrentGameConfig()
+                ?? throw new InvalidOperationException("No game config available");
             var request = new RequestRollings(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,
                 Rollings: requestData.Select(x => new RollingRequestDto(x.CoinInfo.Id, RawCoinConverter.ToRaw(x.Prize, x.CoinInfo.Currency.Decimals), (uint)x.PlayersCount)).ToList());
 
-            var tcs = new UniTaskCompletionSource<RollingsResponse>();
+            return await _webSocketSession.Value.SendRequest<RollingsResponse>(request, ct);
+        }
 
-            _webSocketSession.Value.MessageReceived += OnMessage;
+        internal async UniTask InitializeBasedOnGameData(GameDataResponse gameDataResponse)
+        {
+            var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
-            RollingsResponse? response;
-            try
-            {
-                var result = await _webSocketSession.Value.ExecuteOperation(request, ct);
-
-                if (!result.Success)
-                {
-                    loggerContext.WithMethodName().Error($"Couldn't fetch rolls fees: {result.GetDescritpion()}");
-                    return null;
-                }
-
-                response = await tcs.Task;
-            }
-            finally
-            {
-                _webSocketSession.Value.MessageReceived -= OnMessage;
-            }
-
-            return response;
-
-            void OnMessage(IFromLobby message)
-            {
-                if (message is RollingsResponse rollingsResponse)
-                    _ = tcs.TrySetResult(rollingsResponse);
-            }
+            foreach (var coin in gameDataResponse.CoinData)
+                coins.Add(await coin.ToCoinInfo(loggerContext));
+            AvailableCoins = coins;
+            await _roomsManager.Value.CheckJoinedRoomStatus(gameDataResponse);
         }
 
         internal async UniTask GetElympicsUserData()
         {
             loggerContext.Log("Start fetching user data...");
-            _webSocketSession.Value.MessageReceived += OnMessage;
-            try
+            var response = await _webSocketSession.Value.SendRequest<ShowAuthResponse>(new ShowAuth());
+            ElympicsUser = new ElympicsUser
             {
-                var result = await _webSocketSession.Value.ExecuteOperation(new ShowAuth());
-                if (!result.Success)
-                {
-                    loggerContext.Error("Couldn't fetch ElympicsPlayer data.");
-                    return;
-                }
-                await UniTask.WaitUntil(() => ElympicsUser is not null);
-            }
-            finally
-            {
-                _webSocketSession.Value.MessageReceived -= OnMessage;
-            }
-            return;
+                UserId = response.UserId,
+                Nickname = response.Nickname,
+                AvatarUrl = response.AvatarUrl,
+            };
+            loggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
 
-            void OnMessage(IFromLobby message)
-            {
-                switch (message)
-                {
-                    case ShowAuthResponse response:
-                        ElympicsUser = new ElympicsUser
-                        {
-                            UserId = response.UserId,
-                            Nickname = response.Nickname,
-                            AvatarUrl = response.AvatarUrl,
-                        };
-                        loggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
-                        return;
-                    default:
-                        return;
-                }
-            }
         }
 
         internal void SwitchState(ElympicsState newState)
@@ -745,16 +714,6 @@ namespace Elympics
         }
 
         #endregion
-
-        internal async UniTask AssignRoomCoins(List<RoomCoin> objCoinData)
-        {
-            var coins = new List<CoinInfo>(objCoinData.Count);
-
-            foreach (var coin in objCoinData)
-                coins.Add(await coin.ToCoinInfo(loggerContext));
-
-            AvailableCoins = coins;
-        }
 
         internal int? FetchDecimalForCoin(Guid coinId)
         {

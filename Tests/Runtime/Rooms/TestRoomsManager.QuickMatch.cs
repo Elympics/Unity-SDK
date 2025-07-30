@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Utils;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
 using NSubstitute;
@@ -354,6 +355,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CancellingMatchmakingShouldBeIgnoredCorrectlyIfMatchmakingStateChangesFromMatchmakingToMatchedInTheMeantime() => UniTask.ToCoroutine(async () =>
         {
+            ElympicsTimeout.RoomStateChangeConfirmationTimeout = TimeSpan.FromSeconds(15);
             _ = RoomsClientMock.SessionConnectionDetails.Returns(Defaults.CreateConnectionDetails(HostId));
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
 

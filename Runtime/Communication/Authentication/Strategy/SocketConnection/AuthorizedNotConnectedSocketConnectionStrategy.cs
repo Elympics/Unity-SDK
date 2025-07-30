@@ -2,6 +2,9 @@ using System;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
+using Elympics.Rooms.Models;
+
+#nullable enable
 
 namespace Elympics
 {
@@ -9,15 +12,17 @@ namespace Elympics
     {
         public AuthorizedNotConnectedStrategy(WebSocketSession socketSession, ElympicsLoggerContext logger) : base(socketSession, logger)
         { }
-        public override async UniTask Connect(SessionConnectionDetails newConnectionDetails)
+
+        public override async UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails)
         {
             try
             {
-                await ConnectToLobby(newConnectionDetails);
+                return await ConnectToLobby(newConnectionDetails);
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                var logger = Logger.WithContext($"{nameof(AuthorizedNotConnectedStrategy)}").WithMethodName();
+                throw logger.CaptureAndThrow(e);
             }
         }
     }

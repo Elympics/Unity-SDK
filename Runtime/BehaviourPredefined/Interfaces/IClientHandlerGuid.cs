@@ -36,14 +36,14 @@ namespace Elympics
         void OnSynchronized(TimeSynchronizationData data)
         { }
 
-        /// <summary>Called when client successfully authenticates on game server.</summary>
+        /// <summary>Called when the client successfully authenticates on a game server.</summary>
         /// <param name="userId">User ID. Empty when joining as a spectator.</param>
         void OnAuthenticated(Guid userId)
         { }
         void OnAuthenticatedFailed(string errorMessage)
         { }
 
-        /// <summary>Called when client successfully joins a match on game server.</summary>
+        /// <summary>Called when the client successfully joins a match on a game server.</summary>
         /// <param name="matchId">Match ID. Can be empty (this will be fixed in the next release).</param>
         void OnMatchJoined(Guid matchId)
         { }

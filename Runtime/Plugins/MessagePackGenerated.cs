@@ -1455,7 +1455,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.CoinId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Prize, options);
             writer.Write(value.PlayersCount);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<float[]>(formatterResolver).Serialize(ref writer, value.PrizeDistribution, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<decimal[]>(formatterResolver).Serialize(ref writer, value.PrizeDistribution, options);
         }
 
         public global::Communication.Lobby.Models.ToLobby.RollingRequestDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -1471,7 +1471,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
             var __CoinId__ = default(global::System.Guid);
             var __Prize__ = default(string);
             var __PlayersCount__ = default(uint);
-            var __PrizeDistribution__ = default(float[]);
+            var __PrizeDistribution__ = default(decimal[]);
 
             for (int i = 0; i < length; i++)
             {
@@ -1487,7 +1487,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                         __PlayersCount__ = reader.ReadUInt32();
                         break;
                     case 3:
-                        __PrizeDistribution__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<float[]>(formatterResolver).Deserialize(ref reader, options);
+                        __PrizeDistribution__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<decimal[]>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();

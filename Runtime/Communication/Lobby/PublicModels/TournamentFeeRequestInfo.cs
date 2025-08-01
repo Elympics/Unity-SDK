@@ -7,6 +7,6 @@ namespace Elympics
         public CoinInfo CoinInfo { get; init; }
         public int PlayersCount { get; init; }
         public decimal Prize { get; init; }
-        public float[]? PrizeDistribution { get; init; }
+        public decimal[]? PrizeDistribution { get; init; }
     }
 }

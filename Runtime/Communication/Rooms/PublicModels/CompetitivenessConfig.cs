@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using Elympics.Core.Utils;
 using JetBrains.Annotations;
-using UnityEngine;
 
 namespace Elympics.Communication.Rooms.PublicModels
 {
@@ -19,10 +18,10 @@ namespace Elympics.Communication.Rooms.PublicModels
         /// <summary>Only used with <see cref="CompetitivenessType.RollingTournament"/>.</summary>
         internal readonly int NumberOfPlayers;
         /// <summary>Only used with <see cref="CompetitivenessType.RollingTournament"/>.</summary>
-        internal readonly float[] PrizeDistribution;
+        internal readonly decimal[] PrizeDistribution;
 
         [PublicAPI]
-        public static CompetitivenessConfig GlobalTournament(string id) => new(id, CompetitivenessType.GlobalTournament, 0, -1, Array.Empty<float>());
+        public static CompetitivenessConfig GlobalTournament(string id) => new(id, CompetitivenessType.GlobalTournament, 0, -1, Array.Empty<decimal>());
 
         /// <summary>Creates a configuration for a rolling tournament.</summary>
         /// <param name="numberOfPlayers">Number of players who must join the tournament and play a match in it in order for the tournament to be finished.</param>
@@ -37,22 +36,24 @@ namespace Elympics.Communication.Rooms.PublicModels
         /// If a null is passed, or the array is empty, the top scoring player will receive the full <paramref name="prize"/>.
         /// </param>
         [PublicAPI]
-        public static CompetitivenessConfig RollingTournament(int numberOfPlayers, decimal prize, Guid coinId, float[]? prizeDistribution = null)
+        public static CompetitivenessConfig RollingTournament(int numberOfPlayers, decimal prize, Guid coinId, decimal[]? prizeDistribution = null)
         {
+            const decimal tolerance = 0.01m;
+
             if (numberOfPlayers <= 1)
                 throw new ArgumentOutOfRangeException(nameof(numberOfPlayers), numberOfPlayers, "The number of players must be greater than one.");
             if (prizeDistribution != null && numberOfPlayers < prizeDistribution.Length)
                 throw new ArgumentException($"{nameof(prizeDistribution)} can't include more places on the leaderboard than there are players in the tournament. {nameof(numberOfPlayers)}: {numberOfPlayers} {nameof(prizeDistribution)}.{nameof(prizeDistribution.Length)}: {prizeDistribution.Length}.", nameof(prizeDistribution));
-            if (prizeDistribution != null && Mathf.Abs(prizeDistribution.Sum() - 1f) > 0.01f)
-                throw new ArgumentException($"{nameof(prizeDistribution)} values have to sum up to 1. Sum: {prizeDistribution.Sum()} Values: {prizeDistribution.CommaList()}.", nameof(prizeDistribution));
+            if (prizeDistribution != null && Math.Abs(prizeDistribution.Sum() - 1m) > tolerance)
+                throw new ArgumentException($"{nameof(prizeDistribution)} values have to sum up to 1 +/-{tolerance}. Sum: {prizeDistribution.Sum()} Values: {prizeDistribution.CommaList()}.", nameof(prizeDistribution));
 
-            return new CompetitivenessConfig(coinId.ToString(), CompetitivenessType.RollingTournament, prize, numberOfPlayers, prizeDistribution ?? Array.Empty<float>());
+            return new CompetitivenessConfig(coinId.ToString(), CompetitivenessType.RollingTournament, prize, numberOfPlayers, prizeDistribution ?? Array.Empty<decimal>());
         }
 
         [PublicAPI]
-        public static CompetitivenessConfig Bet(Guid coinId, decimal amount) => new(coinId.ToString(), CompetitivenessType.Bet, amount, -1, Array.Empty<float>());
+        public static CompetitivenessConfig Bet(Guid coinId, decimal amount) => new(coinId.ToString(), CompetitivenessType.Bet, amount, -1, Array.Empty<decimal>());
 
-        private CompetitivenessConfig(string tournamentId, CompetitivenessType competitivenessType, decimal value, int numberOfPlayers, float[] prizeDistribution)
+        private CompetitivenessConfig(string tournamentId, CompetitivenessType competitivenessType, decimal value, int numberOfPlayers, decimal[] prizeDistribution)
         {
             ID = tournamentId ?? throw new ArgumentNullException(nameof(tournamentId));
             CompetitivenessType = competitivenessType;

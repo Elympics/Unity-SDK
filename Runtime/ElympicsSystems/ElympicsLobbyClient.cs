@@ -632,7 +632,7 @@ namespace Elympics
                         Prize: RawCoinConverter.ToRaw(x.Prize,
                         decimals: x.CoinInfo.Currency.Decimals),
                         PlayersCount: (uint)x.PlayersCount,
-                        PrizeDistribution: x.PrizeDistribution))
+                        PrizeDistribution: x.PrizeDistribution ?? Array.Empty<decimal>()))
                     .ToList());
 
             return await _webSocketSession.Value.SendRequest<RollingsResponse>(request, ct);

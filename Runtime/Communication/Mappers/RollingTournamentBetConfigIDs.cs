@@ -12,7 +12,7 @@ namespace Elympics.Communication.Mappers
     {
         private static readonly Dictionary<BetConfig, Guid> BetConfigToId = new();
 
-        internal static async UniTask<Guid> GetConfigId(Guid coinId, decimal prize, int numberOfPlayers, float[] prizeDistribution, CancellationToken ct = default)
+        internal static async UniTask<Guid> GetConfigId(Guid coinId, decimal prize, int numberOfPlayers, decimal[] prizeDistribution, CancellationToken ct = default)
         {
             var betConfig = new BetConfig(coinId, prize, numberOfPlayers);
 

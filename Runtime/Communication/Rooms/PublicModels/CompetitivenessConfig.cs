@@ -25,18 +25,18 @@ namespace Elympics.Communication.Rooms.PublicModels
 
         /// <summary>Creates a configuration for a rolling tournament.</summary>
         /// <param name="numberOfPlayers">Number of players who must join the tournament and play a match in it in order for the tournament to be finished.</param>
-        /// <param name="prize">Prize distributed among the top players according to the values from <paramref name="prizeDistribution"/>.</param>
+        /// <param name="totalPrize">Prize distributed among the top players according to the values from <paramref name="prizeDistribution"/>.</param>
         /// <param name="coinId">ID of the coin to use.</param>
         /// <param name="prizeDistribution">
-        /// Determines how <paramref name="prize"/> will be distributed among the top players.
+        /// Determines how <paramref name="totalPrize"/> will be distributed among the top players.
         /// Numbers in this array should add up to ~1.
-        /// When the tournament ends, <paramref name="prize"/> will be multiplied by the value from this array for
+        /// When the tournament ends, <paramref name="totalPrize"/> will be multiplied by the value from this array for
         /// each place to calculate the reward for the player on that place on the final leaderboard.
         /// If <see cref="Array.Length"/> of this array is less than <paramref name="numberOfPlayers"/>, rewards for the remaining places will default to 0.
-        /// If a null is passed, or the array is empty, the top scoring player will receive the full <paramref name="prize"/>.
+        /// If a null is passed, or the array is empty, the top scoring player will receive the full <paramref name="totalPrize"/>.
         /// </param>
         [PublicAPI]
-        public static CompetitivenessConfig RollingTournament(int numberOfPlayers, decimal prize, Guid coinId, decimal[]? prizeDistribution = null)
+        public static CompetitivenessConfig RollingTournament(int numberOfPlayers, decimal totalPrize, Guid coinId, decimal[]? prizeDistribution = null)
         {
             const decimal tolerance = 0.01m;
 
@@ -47,7 +47,7 @@ namespace Elympics.Communication.Rooms.PublicModels
             if (prizeDistribution != null && Math.Abs(prizeDistribution.Sum() - 1m) > tolerance)
                 throw new ArgumentException($"{nameof(prizeDistribution)} values have to sum up to 1 +/-{tolerance}. Sum: {prizeDistribution.Sum()} Values: {prizeDistribution.CommaList()}.", nameof(prizeDistribution));
 
-            return new CompetitivenessConfig(coinId.ToString(), CompetitivenessType.RollingTournament, prize, numberOfPlayers, prizeDistribution ?? Array.Empty<decimal>());
+            return new CompetitivenessConfig(coinId.ToString(), CompetitivenessType.RollingTournament, totalPrize, numberOfPlayers, prizeDistribution ?? Array.Empty<decimal>());
         }
 
         [PublicAPI]

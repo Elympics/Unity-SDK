@@ -1,5 +1,7 @@
-#nullable enable
 using System;
+
+#nullable enable
+
 namespace Elympics.Behaviour
 {
     internal readonly ref struct NetworkBehaviourFinder
@@ -11,8 +13,8 @@ namespace Elympics.Behaviour
 
         public NetworkBehaviourFinder(ElympicsSnapshot first, ElympicsSnapshot second)
         {
-            _first = first;
-            _second = second;
+            _first = first ?? throw new ArgumentNullException(nameof(first));
+            _second = second ?? throw new ArgumentNullException(nameof(second));
         }
 
         public ref struct Enumerator
@@ -27,8 +29,8 @@ namespace Elympics.Behaviour
             {
                 _firstIndex = -1;
                 _secondIndex = -1;
-                _first = first ?? throw new ArgumentNullException(nameof(first));
-                _second = second ?? throw new ArgumentNullException(nameof(second));
+                _first = first;
+                _second = second;
             }
 
             public bool MoveNext()

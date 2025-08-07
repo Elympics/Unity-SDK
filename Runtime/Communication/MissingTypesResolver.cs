@@ -32,15 +32,6 @@ namespace Elympics.Resolvers
             { typeof(decimal[]), new ArrayFormatter<decimal>() },
         };
 
-        internal static object? GetFormatter(Type t)
-        {
-            if (FormatterMap.TryGetValue(t, out var formatter))
-                return formatter;
-
-            if (typeof(Type).IsAssignableFrom(t))
-                return typeof(TypeFormatter<>).MakeGenericType(t).GetField(nameof(TypeFormatter<Type>.Instance))!.GetValue(null);
-
-            return null;
-        }
+        internal static object? GetFormatter(Type t) => FormatterMap.GetValueOrDefault(t);
     }
 }

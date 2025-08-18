@@ -3,6 +3,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models;
 using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -47,8 +49,7 @@ namespace Elympics
 
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
-
-        private WebSignalingClientResponse _webResponse;
+        private string? _iceRoute;
 
         public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, Guid userId, bool useWeb)
         {
@@ -146,20 +147,30 @@ namespace Elympics
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
+                _iceRoute = null;
+
                 if (!Application.isPlaying)
                     yield break;
 
-                _webResponse = null;
-                _signalingClient.ReceivedResponse += r => _webResponse = r;
-                _signalingClient.PostOfferAsync(offer, 1, ct);
-                yield return WaitTimeToRetryConnect;
-
-                if (_webResponse?.IsError == false)
+                WebSignalingClientResponse result = null;
+                yield return _signalingClient.PostOfferAsync(offer, 1, ct).ToCoroutine(x => result = x);
+                if (result?.IsError == false)
                 {
-                    answer = _webResponse.Text;
-                    break;
+                    try
+                    {
+                        var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
+                        answer = signalingResponse.answer;
+                        _iceRoute = signalingResponse.iceCandidateRoute;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
+                    }
                 }
-                ElympicsLogger.LogError(_webResponse?.IsError == true ? _webResponse.Text : "Response not received from WebRTC client.");
+
+                yield return WaitTimeToRetryConnect;
+                ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))

@@ -1,29 +1,24 @@
+#nullable enable
 using System;
 using System.Text;
 using System.Threading;
+using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Elympics
 {
-    public class HttpSignalingClient : IGameServerWebSignalingClient
+    internal class HttpSignalingClient : IGameServerWebSignalingClient
     {
         private readonly Uri _uri;
+        public HttpSignalingClient(Uri uri) => _uri = uri;
 
-        private UnityWebRequestAsyncOperation _requestAsyncOperation;
-        private CancellationTokenRegistration? _ctr;
-
-        public event Action<WebSignalingClientResponse> ReceivedResponse;
-
-        public HttpSignalingClient(Uri uri) =>
-            _uri = uri;
-
-        public void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
+        public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
         {
-            Reset();
             var rawOffer = Encoding.UTF8.GetBytes(offer);
-            var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
+            using var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
             {
                 timeout = timeoutSeconds,
                 uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
@@ -31,44 +26,60 @@ namespace Elympics
             };
             request.SetTestCertificateHandlerIfNeeded();
 
-            _requestAsyncOperation = request.SendWebRequest();
-            _requestAsyncOperation.completed += HandleCompleted;
-            _ctr = ct.Register(ClearRequestData);
+            var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
+
+            if (isCanceled)
+                return new WebSignalingClientResponse
+                {
+                    IsError = true,
+                    Text = "Operation Cancelled."
+                };
+
+            return HandleCompleted(result);
         }
 
-        private void Reset()
+        public async UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, int timeoutSeconds, string iceCandidateRoute, CancellationToken ct = default)
         {
-            _ctr?.Dispose();
-            ClearRequestData();
-        }
-
-        private void ClearRequestData()
-        {
-            if (_requestAsyncOperation != null)
+            if (string.IsNullOrEmpty(iceCandidateRoute))
             {
-                _requestAsyncOperation.completed -= HandleCompleted;
-                _requestAsyncOperation.webRequest?.Abort();
-                _requestAsyncOperation.webRequest?.Dispose();
+                throw new ElympicsException("No ice candidate route.");
             }
-            _requestAsyncOperation = null;
+            var rawIceCandidate = Encoding.UTF8.GetBytes(iceCandidate);
+            var uriBuilder = new UriBuilder(_uri);
+            if (!uriBuilder.Path.EndsWith("/"))
+                uriBuilder.Path += "/";
+            uriBuilder.Path += iceCandidateRoute;
+
+            using var request = new UnityWebRequest(uriBuilder.Uri, UnityWebRequest.kHttpVerbPOST);
+            request.timeout = timeoutSeconds;
+            request.uploadHandler = new UploadHandlerRaw(rawIceCandidate) { contentType = "application/json" };
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetTestCertificateHandlerIfNeeded();
+
+            var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
+
+            if (isCanceled)
+                return new WebSignalingClientResponse()
+                {
+                    IsError = true,
+                    Text = "Operation Cancelled."
+                };
+
+            return HandleCompleted(result);
         }
 
-        private void HandleCompleted(AsyncOperation asyncOp)
+
+        private WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
-            asyncOp.completed -= HandleCompleted;
-            if (asyncOp is not UnityWebRequestAsyncOperation webAsyncOp || webAsyncOp.webRequest == null)
-                return;
-            var request = webAsyncOp.webRequest;
-            var isError = request.IsConnectionError() || request.IsProtocolError();
-            var text = request.IsConnectionError()
-                ? request.error
-                : request.downloadHandler.text;
-            Reset();
-            ReceivedResponse?.Invoke(new WebSignalingClientResponse
+            var isError = webRequest.IsConnectionError() || webRequest.IsProtocolError();
+            var text = webRequest.IsConnectionError()
+                ? webRequest.error
+                : webRequest.downloadHandler.text;
+            return new WebSignalingClientResponse
             {
                 IsError = isError,
                 Text = text,
-            });
+            };
         }
     }
 }

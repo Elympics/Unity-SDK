@@ -1,12 +1,15 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Models;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using Plugins.Elympics.Runtime.GameEngine.Libraries.Match.MatchTcpClients;
+using UnityEngine;
 using WebRtcWrapper;
 
 namespace MatchTcpClients
@@ -16,25 +19,26 @@ namespace MatchTcpClients
         private readonly IGameServerWebSignalingClient _signalingClient;
         private readonly Func<IWebRtcClient> _webRtcFactory;
 
-        private IWebRtcClient _webRtcClient;
-        private string _answer;
+        private IWebRtcClient _webRtcClient = null!;
+        private string _answer = null!;
         private ElympicsLoggerContext _logger;
-        private CancellationTokenSource _stateCancellationTokenSource;
-        private CancellationTokenSource _linkedCts;
+        private CancellationTokenSource _stateCancellationTokenSource = null!;
+        private CancellationTokenSource _linkedCts = null!;
+        private string? _iceCandidateRoute;
 
         public WebGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
             ElympicsLoggerContext logger,
-            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
+            Func<IWebRtcClient>? customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
             _logger = logger.WithContext(nameof(WebGameServerClient));
         }
 
-        public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
+        public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string? regionName)
         {
             var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}")
                 : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
@@ -94,10 +98,15 @@ namespace MatchTcpClients
                         Disconnect();
                         return false;
                     }
-                    _answer = response.Text;
+
+                    var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
+
+                    _answer = deserialized.answer;
+                    _iceCandidateRoute = deserialized.iceCandidateRoute;
                     logger.Log($"Answer:{Environment.NewLine}{_answer}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
+                    _iceCandidateRoute = null;
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
                     _stateCancellationTokenSource.Dispose();
@@ -132,54 +141,41 @@ namespace MatchTcpClients
             if (newState is RtcPeerIceConnectionStates.Failed or RtcPeerIceConnectionStates.Closed or RtcPeerIceConnectionStates.Disconnected)
                 _stateCancellationTokenSource?.Cancel();
         }
+
+        private void OnIceCandidateCreated(string newCandidate)
+        { }
+
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
             _webRtcClient.OnAnswer(_answer);
             return Task.FromResult(true);
         }
 
-        private async Task<WebSignalingClientResponse> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
+        private async Task<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
-            WebSignalingClientResponse response = null;
+
             for (var i = 0; i < Config.OfferMaxRetries; i++)
             {
                 if (ct.IsCancellationRequested)
                     break;
-                var cts = new CancellationTokenSource();
 
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
-
-                void OnAnswerReceived(WebSignalingClientResponse r)
-                {
-                    signalingClient.ReceivedResponse -= OnAnswerReceived;
-                    response = r;
-                    cts.Cancel();
-                }
-
-                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-
-                signalingClient.ReceivedResponse += OnAnswerReceived;
                 logger.Log($"Sending offer:{Environment.NewLine}{offer}");
-                signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
-                await TaskUtil.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();
-                signalingClient.ReceivedResponse -= OnAnswerReceived;
-                cts.Cancel();
+                var result = await signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), ct);
+                if (result?.IsError == false)
+                    return result;
 
-                if (response?.IsError == false)
-                    break;
-                logger.Warning($"WebRTC answer error: {response?.Text}");
-
-                await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
+                logger.Warning($"WebRTC answer error: {result?.Text}");
+                await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
             }
-
-            return response;
+            return null;
         }
 
         private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
         {
-            string offer = null;
+            string? offer = null;
             var offerSet = false;
             var cts = new CancellationTokenSource();
 

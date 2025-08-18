@@ -45,6 +45,7 @@ namespace Elympics.Libraries
             public event Action<string> ConnectionStateChanged;
 
             public event Action<string> OfferCreated;
+            public event Action<string> IceCandidateCreated;
 
 			public void Dispose()
 			{
@@ -86,6 +87,8 @@ namespace Elympics.Libraries
             public void OnConnectionStateChanged(string newState) => ConnectionStateChanged?.Invoke(newState);
 
 			public void OnOffer(string offerJson) => OfferCreated?.Invoke(offerJson);
+
+            public void OnIceCandidate(string candidateJson) => IceCandidateCreated?.Invoke(candidateJson);
 		}
 
 		private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new Dictionary<int, WebRtcClientAdapter>();
@@ -101,6 +104,8 @@ namespace Elympics.Libraries
         public delegate void OnConnectionStateChanged(int instanceId, IntPtr newState);
 
 		public delegate void OnOfferCallback(int instanceId, IntPtr offer);
+
+        public delegate void OnIceCandidateCallback(int instanceId, IntPtr iceCandidate);
 
 		[DllImport("__Internal")]
 		public static extern int WebRtcAllocate();
@@ -136,6 +141,9 @@ namespace Elympics.Libraries
 		[DllImport("__Internal")]
 		public static extern void WebRtcSetOnOffer(OnOfferCallback callback);
 
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnIceCandidate(OnIceCandidateCallback callback);
+
 		[DllImport("__Internal")]
 		public static extern void WebRtcCreateOffer(int instanceId, bool restart);
 
@@ -164,6 +172,7 @@ namespace Elympics.Libraries
             WebRtcSetOnIceConnectionStateChanged(DelegateOnIceConnectionStateChanged);
             WebRtcSetOnConnectionStateChanged(DelegateOnConnectionStateChanged);
 			WebRtcSetOnOffer(DelegateOnOffer);
+            WebRtcSetOnIceCandidate(DelegateOnIceCandidate);
 
 			_isInitialized = true;
 		}
@@ -265,6 +274,16 @@ namespace Elympics.Libraries
 			var offerJson = Marshal.PtrToStringAuto(offerPtr);
 			instanceRef.OnOffer(offerJson);
 		}
+
+        [MonoPInvokeCallback(typeof(OnIceCandidateCallback))]
+        public static void DelegateOnIceCandidate(int instanceId, IntPtr candidatePtr)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
+            instanceRef.OnIceCandidate(candidateJson);
+        }
 #endif
 
         public static IWebRtcClient CreateInstance()

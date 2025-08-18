@@ -13,14 +13,14 @@ namespace Elympics
         internal static CoinInfo CreateNullCoinInfo() => new()
         {
             Id = Guid.Empty,
-            Currency = new  CurrencyInfo
+            Currency = new CurrencyInfo
             {
                 Ticker = "NULL",
                 Address = null,
                 Decimals = 1,
                 Icon = null
             },
-            Chain = new   ChainInfo
+            Chain = new ChainInfo
             {
                 Type = "NULL",
                 Name = "NULL",

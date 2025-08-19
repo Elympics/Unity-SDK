@@ -134,6 +134,7 @@ const LibraryWebRtc = {
 						`[${new Date().toISOString()}][WebRTC] Candidate received\n${ev.candidate}`
 					);
 					const candidateJson = JSON.stringify(ev.candidate);
+          console.log(`[${new Date().toISOString()}][WebRTC] Candidate JSON: ${candidateJson}`);
 					iceCandidateCallback(candidateJson);
 				}
 			};
@@ -263,7 +264,10 @@ const LibraryWebRtc = {
 		};
 
 		const WebRtcIceCandidateCallback = (msg) => {
-			if (webRtcState.onIceCandidate === null) return;
+			if (webRtcState.onIceCandidate === null) {
+        console.log("[WebRTC] onIceCandidate callback is not set");
+        return;
+      }
 
 			const msgBytes = lengthBytesUTF8(msg) + 1;
 			const msgBuffer = _malloc(msgBytes);

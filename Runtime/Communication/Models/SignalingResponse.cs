@@ -5,6 +5,6 @@ namespace Elympics.Communication.Models
     internal struct SignalingResponse
     {
         public string answer;
-        public string iceCandidateRoute;
+        public string iceCandidatesRoute;
     }
 }

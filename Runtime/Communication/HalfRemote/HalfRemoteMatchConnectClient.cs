@@ -160,7 +160,7 @@ namespace Elympics
                     {
                         var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
                         answer = signalingResponse.answer;
-                        _iceRoute = signalingResponse.iceCandidateRoute;
+                        _iceRoute = signalingResponse.iceCandidatesRoute;
                         break;
                     }
                     catch (Exception ex)

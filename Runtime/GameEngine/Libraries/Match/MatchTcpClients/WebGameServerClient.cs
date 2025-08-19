@@ -26,6 +26,8 @@ namespace MatchTcpClients
         private CancellationTokenSource _stateCancellationTokenSource = null!;
         private CancellationTokenSource _linkedCts = null!;
         private string? _iceCandidateRoute;
+        private static readonly string RouteVersion = "v2";
+        private static readonly string BaseRoute = "doSignaling";
 
         public WebGameServerClient(
             IGameServerSerializer serializer,
@@ -41,8 +43,8 @@ namespace MatchTcpClients
 
         public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string? regionName)
         {
-            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}")
-                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
+            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"{RouteVersion}/{BaseRoute}/{matchId}")
+                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/{RouteVersion}/{BaseRoute}/{matchId}");
 
             if (string.IsNullOrEmpty(regionName))
                 return signalingEndpoint;
@@ -104,7 +106,7 @@ namespace MatchTcpClients
                     var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
 
                     _answer = deserialized.answer;
-                    _iceCandidateRoute = deserialized.iceCandidateRoute;
+                    _iceCandidateRoute = deserialized.iceCandidatesRoute;
                     logger.Log($"Answer:{Environment.NewLine}{_answer}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 

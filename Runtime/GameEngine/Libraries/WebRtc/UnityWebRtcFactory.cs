@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
+using UnityEngine;
 #endif
 using WebRtcWrapper;
 
@@ -278,10 +279,13 @@ namespace Elympics.Libraries
         [MonoPInvokeCallback(typeof(OnIceCandidateCallback))]
         public static void DelegateOnIceCandidate(int instanceId, IntPtr candidatePtr)
         {
+            Debug.Log("####Delegate on Ice Candidate.");
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
+            Debug.Log("#### Marshal");
             var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
+            Debug.Log($"#### Event {candidateJson}");
             instanceRef.OnIceCandidate(candidateJson);
         }
 #endif

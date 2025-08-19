@@ -15,12 +15,12 @@ namespace Elympics
         private readonly Uri _uri;
         public HttpSignalingClient(Uri uri) => _uri = uri;
 
-        public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
+        public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default)
         {
             var rawOffer = Encoding.UTF8.GetBytes(offer);
             using var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
             {
-                timeout = timeoutSeconds,
+                timeout = (int)timeout.TotalSeconds,
                 uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
                 downloadHandler = new DownloadHandlerBuffer(),
             };
@@ -38,7 +38,7 @@ namespace Elympics
             return HandleCompleted(result);
         }
 
-        public async UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, int timeoutSeconds, string iceCandidateRoute, CancellationToken ct = default)
+        public async UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string iceCandidateRoute, CancellationToken ct = default)
         {
             if (string.IsNullOrEmpty(iceCandidateRoute))
             {
@@ -51,7 +51,7 @@ namespace Elympics
             uriBuilder.Path += iceCandidateRoute;
 
             using var request = new UnityWebRequest(uriBuilder.Uri, UnityWebRequest.kHttpVerbPOST);
-            request.timeout = timeoutSeconds;
+            request.timeout = (int)timeout.TotalSeconds;
             request.uploadHandler = new UploadHandlerRaw(rawIceCandidate) { contentType = "application/json" };
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();

@@ -153,7 +153,7 @@ namespace Elympics
                     yield break;
 
                 WebSignalingClientResponse result = null;
-                yield return _signalingClient.PostOfferAsync(offer, 1, ct).ToCoroutine(x => result = x);
+                yield return _signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(1), ct).ToCoroutine(x => result = x);
                 if (result?.IsError == false)
                 {
                     try

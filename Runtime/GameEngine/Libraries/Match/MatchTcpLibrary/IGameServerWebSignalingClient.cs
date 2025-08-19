@@ -6,8 +6,8 @@ namespace MatchTcpLibrary
 {
     public interface IGameServerWebSignalingClient
     {
-        UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default);
-        UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, int timeoutSeconds, string iceCandidateRoute, CancellationToken ct = default);
+        UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default);
+        UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string iceCandidateRoute, CancellationToken ct = default);
     }
 
     public class WebSignalingClientResponse

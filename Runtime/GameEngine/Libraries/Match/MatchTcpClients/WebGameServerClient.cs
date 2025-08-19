@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
@@ -75,6 +76,7 @@ namespace MatchTcpClients
 
                     _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
+                    _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;
                     _stateCancellationTokenSource = new CancellationTokenSource();
                     _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
 
@@ -109,6 +111,7 @@ namespace MatchTcpClients
                     _iceCandidateRoute = null;
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
+                    _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
                     _stateCancellationTokenSource.Dispose();
                     _linkedCts.Dispose();
                     if (connected)
@@ -143,7 +146,27 @@ namespace MatchTcpClients
         }
 
         private void OnIceCandidateCreated(string newCandidate)
-        { }
+        {
+            Debug.Log($"### New IceCandidate created.{Environment.NewLine}{newCandidate}");
+            return;
+            SendIceCandidate(newCandidate).Forget();
+        }
+
+        private async UniTask SendIceCandidate(string newCandidate)
+        {
+            var logger = _logger.WithMethodName();
+            try
+            {
+                var result = await _signalingClient.OnIceCandidateCreated(newCandidate, ElympicsTimeout.IceCandidateTimeout, _iceCandidateRoute);
+                if (result.IsError)
+                    logger.Warning(result.Text);
+            }
+            catch (Exception e)
+            {
+                logger.Exception(e);
+            }
+
+        }
 
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
@@ -163,7 +186,7 @@ namespace MatchTcpClients
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
                 logger.Log($"Sending offer:{Environment.NewLine}{offer}");
 
-                var result = await signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), ct);
+                var result = await signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
                 if (result?.IsError == false)
                     return result;
 

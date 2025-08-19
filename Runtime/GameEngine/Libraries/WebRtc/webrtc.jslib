@@ -10,6 +10,7 @@ const LibraryWebRtc = {
 		onUnreliableError: null,
 		onUnreliableEnded: null,
 		onOffer: null,
+		onIceCandidate: null,
 		onIceConnectionStateChanged: null,
 		onConnectionStateChanged: null
 	},
@@ -30,6 +31,7 @@ const LibraryWebRtc = {
 			unreliableEnded,
 			iceConnectionStateChanged,
 			connectionStateChanged,
+			iceCandidateCallback,
 			offerCallback
 		) {
 			this.pc = new RTCPeerConnection();
@@ -99,9 +101,6 @@ const LibraryWebRtc = {
 					)
 					.then((offer) => {
 						const offerJson = JSON.stringify(offer);
-						console.log(
-							`[WebRTC] Offer created\n${offerJson} as restart: ${iceRestart}`
-						);
 						offerCallback(offerJson);
 					});
 			}.bind(this);
@@ -134,6 +133,8 @@ const LibraryWebRtc = {
 					console.log(
 						`[${new Date().toISOString()}][WebRTC] Candidate received\n${ev.candidate}`
 					);
+					const candidateJson = JSON.stringify(ev.candidate);
+					iceCandidateCallback(candidateJson);
 				}
 			};
 
@@ -261,6 +262,20 @@ const LibraryWebRtc = {
 			}
 		};
 
+		const WebRtcIceCandidateCallback = (msg) => {
+			if (webRtcState.onIceCandidate === null) return;
+
+			const msgBytes = lengthBytesUTF8(msg) + 1;
+			const msgBuffer = _malloc(msgBytes);
+			stringToUTF8(msg, msgBuffer, msgBytes);
+
+			try {
+				Module.dynCall_vii(webRtcState.onIceCandidate, id, msgBuffer);
+			} finally {
+				_free(msgBuffer);
+			}
+		};
+
 		const IceConnectionStateChanged = (state) => {
 			const msgBytes = lengthBytesUTF8(state) + 1;
 			const msgBuffer = _malloc(msgBytes);
@@ -298,6 +313,7 @@ const LibraryWebRtc = {
 			WebRtcUnreliableEnded,
 			IceConnectionStateChanged,
 			ConnectionStateChanged,
+			WebRtcIceCandidateCallback,
 			WebRtcOfferCallback
 		);
 
@@ -348,6 +364,11 @@ const LibraryWebRtc = {
 	// biome-ignore lint/complexity/useArrowFunction: <explanation>
 	WebRtcSetOnOffer: function (callback) {
 		webRtcState.onOffer = callback;
+	},
+
+	// biome-ignore lint/complexity/useArrowFunction: <explanation>
+	WebRtcSetOnIceCandidate: function (callback) {
+		webRtcState.onIceCandidate = callback;
 	},
 
 	// biome-ignore lint/complexity/useArrowFunction: <explanation>

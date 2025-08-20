@@ -49,7 +49,7 @@ namespace Elympics
 
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
-        private string? _iceRoute;
+        private string? _peerId;
 
         public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, Guid userId, bool useWeb)
         {
@@ -61,7 +61,7 @@ namespace Elympics
             if (useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
-                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"));
+                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"), Guid.Empty);
             }
         }
 
@@ -147,7 +147,7 @@ namespace Elympics
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
-                _iceRoute = null;
+                _peerId = null;
 
                 if (!Application.isPlaying)
                     yield break;
@@ -160,7 +160,7 @@ namespace Elympics
                     {
                         var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
                         answer = signalingResponse.answer;
-                        _iceRoute = signalingResponse.iceCandidatesRoute;
+                        _peerId = signalingResponse.peerId;
                         break;
                     }
                     catch (Exception ex)

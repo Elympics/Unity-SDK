@@ -1,29 +1,35 @@
-#nullable enable
 using System;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
-using UnityEngine;
 using UnityEngine.Networking;
+
+#nullable enable
 
 namespace Elympics
 {
     internal class HttpSignalingClient : IGameServerWebSignalingClient
     {
-        private readonly Uri _uri;
-        public HttpSignalingClient(Uri uri) => _uri = uri;
+        private const string SignalingRoute = "doSignaling";
+        private const string CandidateRoute = "addCandidate";
+
+        private readonly Uri _signalingUri;
+        private readonly Uri _baseCandidateUri;
+
+        public HttpSignalingClient(Uri baseUri, Guid matchId)
+        {
+            _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
+            _baseCandidateUri = baseUri.AppendPathSegments(CandidateRoute, matchId.ToString());
+        }
 
         public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default)
         {
             var rawOffer = Encoding.UTF8.GetBytes(offer);
-            using var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
-            {
-                timeout = (int)timeout.TotalSeconds,
-                uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
-                downloadHandler = new DownloadHandlerBuffer(),
-            };
+            using var request = new UnityWebRequest(_signalingUri, UnityWebRequest.kHttpVerbPOST);
+            request.timeout = (int)timeout.TotalSeconds;
+            request.uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" };
+            request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();
 
             var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
@@ -32,25 +38,20 @@ namespace Elympics
                 return new WebSignalingClientResponse
                 {
                     IsError = true,
-                    Text = "Operation Cancelled."
+                    Text = "Operation cancelled.",
                 };
 
             return HandleCompleted(result);
         }
 
-        public async UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string iceCandidateRoute, CancellationToken ct = default)
+        public async UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string peerId, CancellationToken ct = default)
         {
-            if (string.IsNullOrEmpty(iceCandidateRoute))
-            {
-                throw new ElympicsException("No ice candidate route.");
-            }
+            if (string.IsNullOrEmpty(peerId))
+                throw new ArgumentNullException(nameof(peerId));
             var rawIceCandidate = Encoding.UTF8.GetBytes(iceCandidate);
-            var uriBuilder = new UriBuilder(_uri);
-            if (!uriBuilder.Path.EndsWith("/"))
-                uriBuilder.Path += "/";
-            uriBuilder.Path += iceCandidateRoute;
+            var uri = _baseCandidateUri.AppendPathSegments(peerId);
 
-            using var request = new UnityWebRequest(uriBuilder.Uri, UnityWebRequest.kHttpVerbPOST);
+            using var request = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
             request.timeout = (int)timeout.TotalSeconds;
             request.uploadHandler = new UploadHandlerRaw(rawIceCandidate) { contentType = "application/json" };
             request.downloadHandler = new DownloadHandlerBuffer();
@@ -59,17 +60,17 @@ namespace Elympics
             var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
 
             if (isCanceled)
-                return new WebSignalingClientResponse()
+                return new WebSignalingClientResponse
                 {
                     IsError = true,
-                    Text = "Operation Cancelled."
+                    Text = "Operation cancelled.",
                 };
 
             return HandleCompleted(result);
         }
 
 
-        private WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
+        private static WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
             var isError = webRequest.IsConnectionError() || webRequest.IsProtocolError();
             var text = webRequest.IsConnectionError()

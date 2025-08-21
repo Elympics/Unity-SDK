@@ -1,3 +1,21 @@
+## [0.19.0](https://github.com/Elympics/Unity-SDK/compare/v0.18.0...v0.19.0) (2025-08-21)
+
+
+### Bug Fixes 🪲
+
+* Don't skip snapshot metadata when comparing two snapshots ([cbc28af](https://github.com/Elympics/Unity-SDK/commit/cbc28afc8c8e5958654f6456583684569de5d1af))
+
+
+### Features
+
+* add method to update rolls tournament ([ea0e82a](https://github.com/Elympics/Unity-SDK/commit/ea0e82ae1087343eee1e1848768b3fffcc5e7c9c))
+* improve tooltips in game config ([a939534](https://github.com/Elympics/Unity-SDK/commit/a939534eecd82b3991c253bd0f0c9303f1741d24))
+* log a warning when a tick from a received snapshot is not present in the prediction buffer ([94ae62d](https://github.com/Elympics/Unity-SDK/commit/94ae62d123fc33882a57577a3a87e1b640acbe6b))
+* refactor roombetslim ([9fda550](https://github.com/Elympics/Unity-SDK/commit/9fda550d9e68c3fb99e3fa96f61aa6f0a3a0fff4))
+* rollingBet in BetDetails ([7f8cfc7](https://github.com/Elympics/Unity-SDK/commit/7f8cfc7715816268d8fec91f910b25c539f2a1fc))
+
+
+
 ## [0.18.0](https://github.com/Elympics/Unity-SDK/compare/v0.17.0...v0.18.0) (2025-07-15)
 
 

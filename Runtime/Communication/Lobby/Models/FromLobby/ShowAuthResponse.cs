@@ -1,7 +1,7 @@
-#nullable enable
 using System;
-using Elympics.Lobby.Models;
 using MessagePack;
+
+#nullable enable
 
 namespace Elympics.Communication.Lobby.Models.FromLobby
 {
@@ -11,5 +11,6 @@ namespace Elympics.Communication.Lobby.Models.FromLobby
         [property: Key(1)] string AuthType,
         [property: Key(2)] string? EthAddress,
         [property: Key(3)] string? Nickname,
-        [property: Key(4)] string? AvatarUrl) : IFromLobby;
+        [property: Key(4)] string? AvatarUrl,
+        [property: Key(5)] Guid RequestId) : IDataFromLobby;
 }

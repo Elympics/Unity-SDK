@@ -1,6 +1,6 @@
 {
     "name": "Elympics.Editor.Tests",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",

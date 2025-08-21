@@ -1,6 +1,6 @@
 {
     "name": "Elympics.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "Elympics",
         "MessagePack",

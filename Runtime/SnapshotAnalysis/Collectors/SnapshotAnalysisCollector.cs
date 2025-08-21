@@ -55,13 +55,10 @@ namespace Elympics.SnapshotAnalysis
                 return;
 
             var buffer = GetBuffer;
-            ElympicsSnapshotWithMetadata snapshotToStore;
-            if (previousSnapshot is null)
-                snapshotToStore = currentSnapshot;
-            else
+            var snapshotToStore = currentSnapshot;
+            if (previousSnapshot is not null)
             {
-                snapshotToStore = currentSnapshot;
-                var createCopy = true;
+                var copyCreated = false;
                 using (ElympicsMarkers.Elympics_SnapshotCollector_BufferStore.Auto())
                 {
                     var finder = new NetworkBehaviourFinder(previousSnapshot, currentSnapshot);
@@ -70,11 +67,11 @@ namespace Elympics.SnapshotAnalysis
                         if (!behaviourPair.DataFromFirst.SequenceEqual(behaviourPair.DataFromSecond))
                             continue;
 
-                        if (createCopy)
+                        if (!copyCreated)
                         {
                             snapshotToStore = new ElympicsSnapshotWithMetadata(currentSnapshot, currentSnapshot.TickEndUtc);
                             snapshotToStore.Data = new List<KeyValuePair<int, byte[]>>(snapshotToStore.Data);
-                            createCopy = false;
+                            copyCreated = true;
                         }
                         snapshotToStore.Data[behaviourPair.IndexFromSecond] = new KeyValuePair<int, byte[]>(behaviourPair.NetworkId, null!);
                     }
@@ -113,7 +110,7 @@ namespace Elympics.SnapshotAnalysis
         protected abstract UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer);
         protected abstract void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots);
 
-        private ElympicsSnapshotWithMetadata[] GetBuffer => _currentBuffer switch
+        protected ElympicsSnapshotWithMetadata[] GetBuffer => _currentBuffer switch
         {
             1 => _buffer1,
             2 => _buffer2,

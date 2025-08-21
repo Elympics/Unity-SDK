@@ -3,12 +3,13 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
+using Elympics.Rooms.Models;
 using HybridWebSocket;
-using Ping = Elympics.Lobby.Models.Ping;
 
 #nullable enable
 
@@ -21,6 +22,8 @@ namespace Elympics.Lobby
         public event Action<IFromLobby>? MessageReceived;
 
         private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
+
+        private readonly ConcurrentDictionary<Guid, Action<IDataFromLobby>> _dataResponses = new();
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
@@ -55,7 +58,7 @@ namespace Elympics.Lobby
             _serializer = serializer ?? new MessagePackLobbySerializer();
         }
 
-        public async UniTask Connect(SessionConnectionDetails details, CancellationToken ct = default)
+        public async UniTask<GameDataResponse> Connect(SessionConnectionDetails details, CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
             var (wsUrl, authData, gameId, gameVersion, regionName) = details;
@@ -73,13 +76,14 @@ namespace Elympics.Lobby
             try
             {
                 await OpenWebSocket(_ws);
-                await EstablishSession(gameId, gameVersion, regionName);
+                var gameData = await EstablishSession(gameId, gameVersion, regionName);
                 ConnectionDetails = details;
                 logger.SetRegion(regionName).SetLobbyUrl(wsUrl).Log("Connection to lobby completed.");
                 SetConnectedState();
                 _timer = new Stopwatch();
                 _timer.Start();
                 AutoDisconnectOnTimeout(_cts.Token).Forget();
+                return gameData;
             }
             catch (OperationCanceledException)
             {
@@ -96,51 +100,6 @@ namespace Elympics.Lobby
             Disconnected?.Invoke(data);
         }
 
-        private void DisconnectInternal(DisconnectionReason reason)
-        {
-            CleanupSession();
-            SetDisconnectedState();
-            _dispatcher.Enqueue(() => PropagateDisconnection(reason).Forget());
-        }
-
-        private void CleanupSession()
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException(GetType().FullName);
-            if (_cts is null)
-                return;
-            _timer?.Stop();
-            _cts.Cancel();
-            _cts.Dispose();
-            _cts = null;
-            _operationResultHandlers.Clear();
-            ResetWebSocket();
-        }
-
-        private void SetConnectedState()
-        {
-            if (IsConnected)
-                return;
-
-            IsConnected = true;
-            _dispatcher.Enqueue(() => Connected?.Invoke());
-        }
-
-        private void SetDisconnectedState()
-        {
-            if (!IsConnected)
-                return;
-            IsConnected = false;
-        }
-
-        private async UniTask PropagateDisconnection(DisconnectionReason reason)
-        {
-            var data = new DisconnectionData(reason);
-            await _controller.ReconnectIfPossible(data);
-            if (!IsConnected)
-                Disconnected?.Invoke(data);
-        }
-
         public void Dispose()
         {
             if (_isDisposed)
@@ -154,18 +113,31 @@ namespace Elympics.Lobby
 
         public async UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException(GetType().FullName);
+            ThrowIfDisposed();
+            ThrowIfNotConnected();
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
+            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
+            SendMessage(message);
+            return await task;
+        }
+
+        public async UniTask<TResponse> SendRequest<TResponse>(LobbyOperation message, CancellationToken ct = default)
+            where TResponse : IDataFromLobby
+        {
+            ThrowIfDisposed();
+            ThrowIfNotConnected();
             if (!IsConnected)
             {
                 var logger = _logger.WithMethodName();
                 throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
             }
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
-            SendMessage(message);
-            return await task;
+            var dataTask = WaitForLobbyData<TResponse>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
+            _ = await ExecuteOperation(message, linkedCts.Token);
+            return await dataTask;
         }
+
+        #region private
 
         private async UniTask OpenWebSocket(IWebSocket ws)
         {
@@ -178,12 +150,12 @@ namespace Elympics.Lobby
             _ = await openTask;
         }
 
-        private async UniTask EstablishSession(Guid gameId, string gameVersion, string regionName)
+        private async UniTask<GameDataResponse> EstablishSession(Guid gameId, string gameVersion, string regionName)
         {
             var request = new JoinLobby(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName);
-            var ackTask = WaitForOperationResult(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
+            var waitForGameData = WaitForLobbyData<GameDataResponse>(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
             SendMessage(request);
-            _ = await ackTask;
+            return await waitForGameData;
         }
 
         private void ResetWebSocket()
@@ -227,7 +199,8 @@ namespace Elympics.Lobby
         {
             try
             {
-                var message = _serializer.Deserialize(data);
+                var message = _serializer.Deserialize(data)
+                    ?? throw new ElympicsException("Invalid message received");
 #if ELYMPICS_DEBUG
                 {
                     var typeName = message.GetType().FullName;
@@ -245,14 +218,18 @@ namespace Elympics.Lobby
                     SendMessage(new Pong());
                     return;
                 }
-
                 if (message is OperationResult result)
                 {
                     if (_operationResultHandlers.TryRemove(result.OperationId, out var resultHandler))
                         DispatchWithCancellation(() => resultHandler.Invoke(result));
                     return;
                 }
-
+                if (message is IDataFromLobby dataFromLobby)
+                {
+                    if (_dataResponses.TryRemove(dataFromLobby.RequestId, out var requestHandler))
+                        DispatchWithCancellation(() => requestHandler.Invoke(dataFromLobby));
+                    return;
+                }
                 DispatchWithCancellation(() => MessageReceived?.Invoke(message));
             }
             catch (Exception e)
@@ -302,6 +279,52 @@ namespace Elympics.Lobby
             },
             true,
             cancellationToken);
+
+        private void DisconnectInternal(DisconnectionReason reason)
+        {
+            CleanupSession();
+            SetDisconnectedState();
+            _dispatcher.Enqueue(() => PropagateDisconnection(reason).Forget());
+        }
+
+        private void CleanupSession()
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(GetType().FullName);
+            if (_cts is null)
+                return;
+            _timer?.Stop();
+            _cts.Cancel();
+            _cts.Dispose();
+            _cts = null;
+            _operationResultHandlers.Clear();
+            ResetWebSocket();
+        }
+
+        private void SetConnectedState()
+        {
+            if (IsConnected)
+                return;
+
+            IsConnected = true;
+            _dispatcher.Enqueue(() => Connected?.Invoke());
+        }
+
+        private void SetDisconnectedState()
+        {
+            if (!IsConnected)
+                return;
+            IsConnected = false;
+        }
+
+        private async UniTask PropagateDisconnection(DisconnectionReason reason)
+        {
+            var data = new DisconnectionData(reason);
+            await _controller.ReconnectIfPossible(data);
+            if (!IsConnected)
+                Disconnected?.Invoke(data);
+        }
+
         private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout,
                 tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)),
@@ -309,7 +332,34 @@ namespace Elympics.Lobby
                 _ => _operationResultHandlers.TryRemove(operationId, out var _),
                 ct);
 
+        private async UniTask<TData> WaitForLobbyData<TData>(Guid requestId, TimeSpan timeout, CancellationToken ct)
+            where TData : IDataFromLobby
+        {
+            var result = await ResultUtils.WaitForResult<IFromLobby, Action<IFromLobby>>(timeout,
+                tcs => result => _ = tcs.TrySetResult(result),
+                handler => _dataResponses.TryAdd(requestId, handler),
+                _ => _dataResponses.TryRemove(requestId, out var _),
+                ct);
+            return (TData)result;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        private void ThrowIfNotConnected()
+        {
+            if (IsConnected)
+                return;
+            var logger = _logger.WithMethodName();
+            throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
+        }
+
         private void DispatchWithCancellation(Action action) =>
             _dispatcher.Enqueue(action.WithCancellation(Token));
+
+        #endregion
     }
 }

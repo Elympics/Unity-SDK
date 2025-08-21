@@ -1,6 +1,6 @@
 {
     "name": "Elympics",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "ParrelSync",
         "UniTask",

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
+using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 
 #nullable enable
@@ -69,7 +70,7 @@ namespace Elympics
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;
-        internal UniTask CheckJoinedRoomStatus();
+        internal UniTask CheckJoinedRoomStatus(GameDataResponse gameDataResponse);
         internal void Reset();
     }
 }

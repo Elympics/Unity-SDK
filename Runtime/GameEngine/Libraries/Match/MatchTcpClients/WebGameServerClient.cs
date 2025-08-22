@@ -153,10 +153,10 @@ namespace MatchTcpClients
                 _stateCancellationTokenSource?.Cancel();
         }
 
-        private void OnIceCandidateCreated(string newCandidate)
+        private void OnIceCandidateCreated(string? newCandidate)
         {
-            Debug.Log($"### New IceCandidate created.{Environment.NewLine}{newCandidate}");
-            SendIceCandidate(newCandidate).Forget();
+            Debug.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
+            SendIceCandidate(newCandidate ?? "").Forget();
         }
 
         private async UniTaskVoid SendIceCandidate(string newCandidate)

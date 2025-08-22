@@ -1,10 +1,9 @@
-const logWebRtc = message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`);
-const logErrorWebRtc = error => console.error(error, `[${new Date().toISOString()}] [WebRTC]`);
-
 const LibraryWebRtc = {
     $webRtcState: {
         instances: {},
         lastId: 0,
+
+        log: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         onReliableReceived: null,
         onReliableError: null,
@@ -21,7 +20,7 @@ const LibraryWebRtc = {
     // biome-ignore lint/complexity/useArrowFunction: <explanation>
     WebRtcAllocate: function () {
         const id = webRtcState.lastId++;
-        logWebRtc(`Allocating client #${id}`);
+        webRtcState.log(`Allocating client #${id}`);
 
         // Test in UnityConnectors.WebRtcTestServer ~pprzestrzelski 07.02.2021
         function WebRtcClient(
@@ -48,25 +47,25 @@ const LibraryWebRtc = {
             this.reliableError = reliableError;
             this.reliableEnded = reliableEnded;
 
-            this.reliableDc.onopen = function () {
+            this.reliableDc.onopen = _ => {
                 const selectedPair = this.pc.sctp != null
                     ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
                     : "";
-                logWebRtc("Reliable data channel opened" + selectedPair);
-            }.bind(this);
-            this.reliableDc.onmessage = function (message) {
+                webRtcState.log("Reliable data channel opened" + selectedPair);
+            };
+            this.reliableDc.onmessage = message => {
                 this.reliableReceived(new Uint8Array(message.data));
-            }.bind(this);
-            this.reliableDc.onerror = function (error) {
+            };
+            this.reliableDc.onerror = error => {
                 this.reliableError(error.error.toString());
-            }.bind(this);
-            this.reliableDc.onclose = function () {
+            };
+            this.reliableDc.onclose = () => {
                 const selectedPair = this.pc.sctp != null
                     ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
                     : "";
-                logWebRtc("Reliable data channel closed" + selectedPair);
+                webRtcState.log("Reliable data channel closed" + selectedPair);
                 this.reliableEnded();
-            }.bind(this);
+            };
 
             this.unreliableDc = this.pc.createDataChannel("unreliable", {
                 maxRetransmits: 0,
@@ -76,102 +75,98 @@ const LibraryWebRtc = {
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;
 
-            this.unreliableDc.onopen = function () {
+            this.unreliableDc.onopen = () => {
                 const selectedPair = this.pc.sctp != null
                     ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
                     : "";
-                logWebRtc("Unreliable data channel opened" + selectedPair);
-            }.bind(this);
-            this.unreliableDc.onmessage = function (message) {
+                webRtcState.log("Unreliable data channel opened" + selectedPair);
+            };
+            this.unreliableDc.onmessage = message => {
                 this.unreliableReceived(new Uint8Array(message.data));
-            }.bind(this);
-            this.unreliableDc.onerror = function (error) {
+            };
+            this.unreliableDc.onerror = error => {
                 this.unreliableError(error.error.toString());
-            }.bind(this);
-            this.unreliableDc.onclose = function () {
+            };
+            this.unreliableDc.onclose = () => {
                 const selectedPair = this.pc.sctp != null
                     ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
                     : "";
-                logWebRtc("Unreliable data channel closed" + selectedPair);
+                webRtcState.log("Unreliable data channel closed" + selectedPair);
                 this.unreliableEnded();
-            }.bind(this);
+            };
 
-            this.createOffer = function (iceRestart) {
-                this.pc
-                    .createOffer({iceRestart: iceRestart})
-                    .then(
-                        function (offer) {
-                            try {
-                                return this.pc.setLocalDescription(offer).then(() => offer);
-                            } catch (error) {
-                                logErrorWebRtc(error);
-                            }
-                        }.bind(this)
-                    )
-                    .then((offer) => {
-                        const offerJson = JSON.stringify(offer);
-                        offerCallback(offerJson);
-                    });
-            }.bind(this);
-            this.onAnswer = function (answerJson) {
-                logWebRtc(`Answer received\n${answerJson}`);
+            this.createOffer = async iceRestart => {
+                const offer = await this.pc.createOffer({ iceRestart });
+                webRtcState.log(`Created offer\n${JSON.stringify(offer)}`);
+                await this.pc.setLocalDescription(offer);
+                const timeoutValue = new URLSearchParams(document.location.search).get("offer-delay");
+                await new Promise(r => setTimeout(r, timeoutValue ? parseInt(timeoutValue) : 3000));
+                const updatedOffer = this.pc.localDescription;
+                webRtcState.log(`Updated offer\n${JSON.stringify(updatedOffer)}`);
+                if (this.pc.sctp && this.pc.sctp.transport.iceTransport.getLocalCandidates) {
+                    webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
+                }
+                offerCallback(JSON.stringify(updatedOffer));
+            };
+            this.onAnswer = function(answerJson) {
+                webRtcState.log(`Answer received\n${answerJson}`);
                 const answer = JSON.parse(answerJson);
                 this.pc.setRemoteDescription(answer);
-            }.bind(this);
+            };
 
-            this.sendReliable = function (message) {
+            this.sendReliable = function(message) {
                 if (this.reliableDc.readyState !== "open") return;
                 this.reliableDc.send(message);
-            }.bind(this);
+            };
 
-            this.sendUnreliable = function (message) {
+            this.sendUnreliable = function(message) {
                 if (this.unreliableDc.readyState !== "open") return;
                 this.unreliableDc.send(message);
-            }.bind(this);
+            };
 
-            this.close = function () {
+            this.close = function() {
                 this.reliableDc.close();
                 this.unreliableDc.close();
                 this.pc.close();
-            }.bind(this);
+            };
 
-            this.pc.onicecandidate = (ev) => {
-                if (ev.candidate !== null) {
-                    const candidateJson = ev.candidate.toJSON();
-                    logWebRtc(`Candidate received\n${candidateJson}`);
+            this.pc.onicecandidate = ({ candidate }) => {
+                if (candidate !== null) {
+                    const candidateJson = JSON.stringify(candidate.toJSON());
+                    webRtcState.log(`Candidate received\n${candidateJson}`);
                     iceCandidateCallback(candidateJson);
                 } else {
-                    logWebRtc('End of candidates');
+                    webRtcState.log('End of candidates');
+                    iceCandidateCallback(candidate);
                 }
             };
 
             this.onIceConnectionStateChanged = iceConnectionStateChanged;
             this.onConnectionStateChanged = connectionStateChanged;
 
-            this.pc.oniceconnectionstatechange = (ev) => {
-                logWebRtc(`ICE connection state changed\n${this.pc.iceConnectionState}`);
+            this.pc.oniceconnectionstatechange = _ => {
+                webRtcState.log(`ICE connection state changed\n${this.pc.iceConnectionState}`);
                 this.onIceConnectionStateChanged(this.pc.iceConnectionState);
             };
 
-            this.pc.onconnectionstatechange = (ev) => {
-                logWebRtc(`Connection state changed\n${this.pc.connectionState}`);
+            this.pc.onconnectionstatechange = _ => {
+                webRtcState.log(`Connection state changed\n${this.pc.connectionState}`);
                 this.onConnectionStateChanged(this.pc.connectionState);
             };
 
-            this.pc.onicegatheringstatechange = (ev) => {
-                const connection = ev.target;
-                logWebRtc(`ICE gathering state changed\n${connection.iceGatheringState}`);
+            this.pc.onicegatheringstatechange = ({ target: connection }) => {
+                webRtcState.log(`ICE gathering state changed\n${connection.iceGatheringState}`);
                 if (connection.iceConnectionState === "failed") {
-                    logWebRtc(`ICE connection failed, restart`);
+                    webRtcState.log(`ICE connection failed, restart`);
                 }
             };
 
-            this.pc.onsignalingstatechange = (ev) => {
-                logWebRtc(`Signaling state changed \n${this.pc.signalingState}`);
+            this.pc.onsignalingstatechange = _ => {
+                webRtcState.log(`Signaling state changed \n${this.pc.signalingState}`);
             };
         }
 
-        const WebRtcReliableReceived = (msg) => {
+        const WebRtcReliableReceived = msg => {
             if (webRtcState.onReliableReceived === null) return;
 
             const buffer = _malloc(msg.length);
@@ -189,7 +184,7 @@ const LibraryWebRtc = {
             }
         };
 
-        const WebRtcReliableError = (msg) => {
+        const WebRtcReliableError = msg => {
             if (webRtcState.onReliableError === null) return;
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
@@ -209,7 +204,7 @@ const LibraryWebRtc = {
             Module.dynCall_vi(webRtcState.onReliableEnded, [id]);
         };
 
-        const WebRtcUnreliableReceived = (msg) => {
+        const WebRtcUnreliableReceived = msg => {
             if (webRtcState.onUnreliableReceived === null) return;
 
             const buffer = _malloc(msg.length);
@@ -227,7 +222,7 @@ const LibraryWebRtc = {
             }
         };
 
-        const WebRtcUnreliableError = (msg) => {
+        const WebRtcUnreliableError = msg => {
             if (webRtcState.onUnreliableError === null) return;
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
@@ -247,7 +242,7 @@ const LibraryWebRtc = {
             Module.dynCall_vi(webRtcState.onUnreliableEnded, [id]);
         };
 
-        const WebRtcOfferCallback = (msg) => {
+        const WebRtcOfferCallback = msg => {
             if (webRtcState.onOffer === null) return;
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
@@ -261,9 +256,13 @@ const LibraryWebRtc = {
             }
         };
 
-        const WebRtcIceCandidateCallback = (msg) => {
+        const WebRtcIceCandidateCallback = msg => {
             if (webRtcState.onIceCandidate === null) {
-                logWebRtc("onIceCandidate callback is not set");
+                webRtcState.log("onIceCandidate callback is not set");
+                return;
+            }
+            if (!msg) {
+                Module.dynCall_vii(webRtcState.onIceCandidate, id, null);
                 return;
             }
 
@@ -304,7 +303,7 @@ const LibraryWebRtc = {
             }
         };
 
-        logWebRtc("Receiving callbacks created");
+        webRtcState.log("Receiving callbacks created");
 
         webRtcState.instances[id] = new WebRtcClient(
             WebRtcReliableReceived,
@@ -319,7 +318,7 @@ const LibraryWebRtc = {
             WebRtcOfferCallback
         );
 
-        logWebRtc("Client allocated");
+        webRtcState.log("Client allocated");
 
         return id;
     },
@@ -385,11 +384,11 @@ const LibraryWebRtc = {
 
     // biome-ignore lint/complexity/useArrowFunction: <explanation>
     WebRtcCreateOffer: function (id, iceRestart) {
-        logWebRtc("Creating offer" + (iceRestart ? "with restart" : "without restart"));
+        webRtcState.log("Creating offer" + (iceRestart ? "with restart" : "without restart"));
 
         const instance = webRtcState.instances[id];
         if (!instance) {
-            logWebRtc(`Instance not found for ID: ${id}`);
+            webRtcState.log(`Instance not found for ID: ${id}`);
             return;
         }
 

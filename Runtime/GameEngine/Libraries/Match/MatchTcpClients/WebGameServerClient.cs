@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -27,6 +28,7 @@ namespace MatchTcpClients
         private CancellationTokenSource? _stateCancellationTokenSource;
         private CancellationTokenSource? _linkedCts;
         private string? _peerId;
+        private List<string> _candidates = new List<string>();
         private const string RouteVersion = "v2";
 
         public WebGameServerClient(
@@ -117,6 +119,7 @@ namespace MatchTcpClients
 
                     logger.Log("Clearing peerId.");
                     _peerId = null;
+                    _candidates.Clear();
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
                     _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
@@ -156,6 +159,8 @@ namespace MatchTcpClients
         private void OnIceCandidateCreated(string? newCandidate)
         {
             Debug.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
+            if (!string.IsNullOrEmpty(newCandidate))
+                _candidates.Add(newCandidate);
             SendIceCandidate(newCandidate ?? "").Forget();
         }
 
@@ -185,6 +190,13 @@ namespace MatchTcpClients
             return Task.FromResult(true);
         }
 
+        [Serializable]
+        private struct OfferWithCandidates
+        {
+            public string offer;
+            public string[] candidates;
+        }
+
         private async Task<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
@@ -197,7 +209,13 @@ namespace MatchTcpClients
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
                 logger.Log($"Sending offer:{Environment.NewLine}{offer}");
 
-                var result = await signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
+                var offerWithCandidates = new OfferWithCandidates
+                {
+                    offer = offer,
+                    candidates = _candidates.ToArray(),
+                };
+
+                var result = await signalingClient.PostOfferAsync(JsonUtility.ToJson(offerWithCandidates), TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
                 if (result?.IsError == false)
                     return result;
 

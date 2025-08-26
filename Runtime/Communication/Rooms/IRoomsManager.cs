@@ -16,7 +16,8 @@ namespace Elympics
         /// <summary>Raised when the list of available rooms changes or when any of the rooms included in that list changes state.</summary>
         /// <remarks>
         /// This event can be enabled by calling <see cref="StartTrackingAvailableRooms"/> and disabled by calling <see cref="StopTrackingAvailableRooms"/>.
-        /// All rooms that are not <see cref="CurrentRoom"/> and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.
+        /// All rooms that were created in the same region, on the same game version, are not <see cref="CurrentRoom"/>,
+        /// and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.
         /// </remarks>
         /// <seealso cref="ListAvailableRooms"/>
         event Action<RoomListUpdatedArgs>? RoomListUpdated;
@@ -68,11 +69,17 @@ namespace Elympics
         /// <param name="roomId"><see cref="IRoom.RoomId"/> of the available room to be found.</param>
         /// <param name="room">The available room with ID matching <paramref name="roomId"/> if found, otherwise null.</param>
         /// <returns>True if an available room with ID matching <paramref name="roomId"/> is found.</returns>
-        /// <remarks>All rooms that are not <see cref="CurrentRoom"/> and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.</remarks>
+        /// <remarks>
+        /// All rooms that were created in the same region, on the same game version, are not <see cref="CurrentRoom"/>,
+        /// and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.
+        /// </remarks>
         /// <seealso cref="ListAvailableRooms"/>
         bool TryGetAvailableRoom(Guid roomId, out IRoom? room);
         /// <summary>Returns all available rooms.</summary>
-        /// <remarks>All rooms that are not <see cref="CurrentRoom"/> and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.</remarks>
+        /// <remarks>
+        /// All rooms that were created in the same region, on the same game version, are not <see cref="CurrentRoom"/>,
+        /// and have <see cref="IRoom.IsQuickMatch"/> set to false are considered available.
+        /// </remarks>
         IReadOnlyList<IRoom> ListAvailableRooms();
 
         [Obsolete("Only one room can be joined at once. See " + nameof(CurrentRoom))]

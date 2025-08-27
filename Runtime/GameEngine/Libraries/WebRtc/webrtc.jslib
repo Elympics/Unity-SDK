@@ -5,6 +5,7 @@ const LibraryWebRtc = {
 
         log: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
+        offerAnnouncingDelay: 1000,
         onReliableReceived: null,
         onReliableError: null,
         onReliableEnded: null,
@@ -48,10 +49,11 @@ const LibraryWebRtc = {
             this.reliableEnded = reliableEnded;
 
             this.reliableDc.onopen = _ => {
-                const selectedPair = this.pc.sctp != null
-                    ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
+                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
+                const selectedPairJson = selectedPair
+                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                webRtcState.log("Reliable data channel opened" + selectedPair);
+                webRtcState.log("Reliable data channel opened" + selectedPairJson);
             };
             this.reliableDc.onmessage = message => {
                 this.reliableReceived(new Uint8Array(message.data));
@@ -60,10 +62,11 @@ const LibraryWebRtc = {
                 this.reliableError(error.error.toString());
             };
             this.reliableDc.onclose = () => {
-                const selectedPair = this.pc.sctp != null
-                    ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
+                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
+                const selectedPairJson = selectedPair
+                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                webRtcState.log("Reliable data channel closed" + selectedPair);
+                webRtcState.log("Reliable data channel closed" + selectedPairJson);
                 this.reliableEnded();
             };
 
@@ -76,10 +79,11 @@ const LibraryWebRtc = {
             this.unreliableEnded = unreliableEnded;
 
             this.unreliableDc.onopen = () => {
-                const selectedPair = this.pc.sctp != null
-                    ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
+                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
+                const selectedPairJson = selectedPair
+                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                webRtcState.log("Unreliable data channel opened" + selectedPair);
+                webRtcState.log("Unreliable data channel opened" + selectedPairJson);
             };
             this.unreliableDc.onmessage = message => {
                 this.unreliableReceived(new Uint8Array(message.data));
@@ -88,10 +92,11 @@ const LibraryWebRtc = {
                 this.unreliableError(error.error.toString());
             };
             this.unreliableDc.onclose = () => {
-                const selectedPair = this.pc.sctp != null
-                    ? `, selected candidate pair: ${this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()}`
+                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
+                const selectedPairJson = selectedPair
+                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                webRtcState.log("Unreliable data channel closed" + selectedPair);
+                webRtcState.log("Unreliable data channel closed" + selectedPairJson);
                 this.unreliableEnded();
             };
 
@@ -100,7 +105,7 @@ const LibraryWebRtc = {
                 webRtcState.log(`Created offer\n${JSON.stringify(offer)}`);
                 await this.pc.setLocalDescription(offer);
                 const timeoutValue = new URLSearchParams(document.location.search).get("offer-delay");
-                await new Promise(r => setTimeout(r, timeoutValue ? parseInt(timeoutValue) : 3000));
+                await new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay));
                 const updatedOffer = this.pc.localDescription;
                 webRtcState.log(`Updated offer\n${JSON.stringify(updatedOffer)}`);
                 if (this.pc.sctp && this.pc.sctp.transport.iceTransport.getLocalCandidates) {
@@ -330,6 +335,11 @@ const LibraryWebRtc = {
 
         delete webRtcState.instances[id];
         instance.close();
+    },
+
+    // biome-ignore lint/complexity/useArrowFunction: <explanation>
+    WebRtcSetOfferAnnouncingDelay: function (delayMs) {
+        webRtcState.offerAnnouncingDelay = delayMs;
     },
 
     // biome-ignore lint/complexity/useArrowFunction: <explanation>

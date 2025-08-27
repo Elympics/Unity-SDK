@@ -2,12 +2,11 @@
 // #undef UNITY_EDITOR
 // #define UNITY_WEBGL
 
-#if UNITY_WEBGL && !UNITY_EDITOR
 using System;
+#if UNITY_WEBGL && !UNITY_EDITOR
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
-using UnityEngine;
 #endif
 using WebRtcWrapper;
 
@@ -115,6 +114,9 @@ namespace Elympics.Libraries
 		public static extern void WebRtcFree(int instanceId);
 
 		[DllImport("__Internal")]
+		public static extern void WebRtcSetOfferAnnouncingDelay(int delayMs);
+
+		[DllImport("__Internal")]
 		public static extern void WebRtcSetOnReliableReceived(OnReceivedCallback callback);
 
 		[DllImport("__Internal")]
@@ -162,8 +164,9 @@ namespace Elympics.Libraries
 
 		private static bool _isInitialized;
 
-		private static void Initialize()
+		private static void Initialize(int offerAnnounceDelayMs)
 		{
+            WebRtcSetOfferAnnouncingDelay(offerAnnounceDelayMs);
 			WebRtcSetOnReliableReceived(DelegateOnReliableReceived);
 			WebRtcSetOnReliableError(DelegateOnReliableError);
 			WebRtcSetOnReliableEnded(DelegateOnReliableEnded);
@@ -279,22 +282,19 @@ namespace Elympics.Libraries
         [MonoPInvokeCallback(typeof(OnIceCandidateCallback))]
         public static void DelegateOnIceCandidate(int instanceId, IntPtr candidatePtr)
         {
-            Debug.Log("####Delegate on Ice Candidate.");
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            Debug.Log("#### Marshal");
             var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
-            Debug.Log($"#### Event {candidateJson}");
             instanceRef.OnIceCandidate(candidateJson);
         }
 #endif
 
-        public static IWebRtcClient CreateInstance()
+        public static IWebRtcClient CreateInstance(TimeSpan offerAnnounceDelay)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
 			if (!_isInitialized)
-				Initialize();
+				Initialize((int)offerAnnounceDelay.TotalMilliseconds);
 
 			var instanceId = WebRtcAllocate();
 			var wrapper = new WebRtcClientAdapter(instanceId);

@@ -15,15 +15,18 @@ namespace Elympics
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
 
             if (playersList.Count <= playerIndex)
-                throw ElympicsLogger.LogException("Half Remote client won't be initialized because " + $"no data for player ID: {playerIndex} was found in \"Test players\" list. " + $"The list has only {playersList.Count} entries. " + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(new Guid());
+                throw ElympicsLogger.LogException("Half Remote client won't be initialized because "
+                    + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
+                    + $"The list has only {playersList.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
             logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData;
             var gameEngineData = playersList[playerIndex].GameEngineData;
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.PortForHalfRemoteMode, userId, elympicsGameConfig.UseWeb);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId);
             client.InitializeInternal(elympicsGameConfig,
                 _halfRemoteMatchConnectClient,
                 _halfRemoteMatchClient,

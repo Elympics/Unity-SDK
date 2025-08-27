@@ -13,8 +13,6 @@ using UnityConnectors.HalfRemote;
 using UnityEngine;
 using WebRtcWrapper;
 
-#pragma warning disable CS0067
-
 namespace Elympics
 {
     internal class HalfRemoteMatchConnectClient : IMatchConnectClient
@@ -45,20 +43,21 @@ namespace Elympics
         private readonly int _port;
         private readonly Guid _userId;
         private readonly bool _useWeb;
+        private readonly ClientConnectionSettings _connectionConfig;
         private readonly HttpSignalingClient _signalingClient;
 
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
-        private string? _peerId;
 
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, Guid userId, bool useWeb)
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
-            _ip = ip;
-            _port = port;
+            _ip = gameConfig.IpForHalfRemoteMode;
+            _port = gameConfig.PortForHalfRemoteMode;
             _userId = userId;
-            _useWeb = useWeb;
-            if (useWeb)
+            _useWeb = gameConfig.UseWeb;
+            _connectionConfig = gameConfig.ConnectionConfig;
+            if (_useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
                 _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"), Guid.Empty);
@@ -116,7 +115,7 @@ namespace Elympics
 
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateInstance();
+            _webRtcClient = WebRtcFactory.CreateInstance(TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay));
             string offer = null;
             var offerSet = false;
             _webRtcClient.OfferCreated += s =>
@@ -147,27 +146,22 @@ namespace Elympics
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
-                _peerId = null;
-
                 if (!Application.isPlaying)
                     yield break;
 
                 WebSignalingClientResponse result = null;
                 yield return _signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(1), ct).ToCoroutine(x => result = x);
                 if (result?.IsError == false)
-                {
                     try
                     {
                         var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
                         answer = signalingResponse.answer;
-                        _peerId = signalingResponse.peerId;
                         break;
                     }
                     catch (Exception ex)
                     {
                         ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
                     }
-                }
 
                 yield return WaitTimeToRetryConnect;
                 ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");

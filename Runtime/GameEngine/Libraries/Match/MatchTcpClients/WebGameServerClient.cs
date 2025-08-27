@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
-using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
+using JetBrains.Annotations;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
-using Plugins.Elympics.Runtime.GameEngine.Libraries.Match.MatchTcpClients;
 using UnityEngine;
 using WebRtcWrapper;
 
@@ -20,7 +19,7 @@ namespace MatchTcpClients
     internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
-        private readonly Func<IWebRtcClient> _webRtcFactory;
+        private readonly Func<TimeSpan, IWebRtcClient> _webRtcFactory;
 
         private IWebRtcClient? _webRtcClient;
         private string? _answer;
@@ -28,7 +27,7 @@ namespace MatchTcpClients
         private CancellationTokenSource? _stateCancellationTokenSource;
         private CancellationTokenSource? _linkedCts;
         private string? _peerId;
-        private List<string> _candidates = new List<string>();
+        private readonly List<string> _candidates = new();
         private const string RouteVersion = "v2";
 
         public WebGameServerClient(
@@ -36,10 +35,10 @@ namespace MatchTcpClients
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
             ElympicsLoggerContext logger,
-            Func<IWebRtcClient>? customWebRtcFactory = null) : base(serializer, config, logger)
+            Func<TimeSpan, IWebRtcClient>? customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
+            _webRtcFactory = customWebRtcFactory ?? (_ => new WebRtcClient());
             _logger = logger.WithContext(nameof(WebGameServerClient));
         }
 
@@ -60,7 +59,7 @@ namespace MatchTcpClients
         protected override void CreateNetworkClients()
         {
             _webRtcClient?.Dispose();
-            _webRtcClient = _webRtcFactory();
+            _webRtcClient = _webRtcFactory(Config.OfferAnnounceDelay);
             ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
             UnreliableClient?.Dispose();
@@ -129,8 +128,8 @@ namespace MatchTcpClients
                         return true;
                     else
                         logger.Warning("Could not establish the connection.");
-
                 }
+
                 logger.Error("Failed to establish WebRtc connection.");
             }
             finally
@@ -146,38 +145,18 @@ namespace MatchTcpClients
 
         private void OnConnectionStateChanged(string newState)
         {
-            if (newState is RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed or RtcPeerConnectionStates.Disconnected)
+            if (newState is RtcPeerConnectionStates.Failed)
                 _stateCancellationTokenSource?.Cancel();
         }
 
         private void OnIceConnectionStateChanged(string newState)
-        {
-            if (newState is RtcPeerIceConnectionStates.Failed or RtcPeerIceConnectionStates.Closed or RtcPeerIceConnectionStates.Disconnected)
-                _stateCancellationTokenSource?.Cancel();
-        }
+        { }
 
         private void OnIceCandidateCreated(string? newCandidate)
         {
             Debug.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
             if (!string.IsNullOrEmpty(newCandidate))
                 _candidates.Add(newCandidate);
-            SendIceCandidate(newCandidate ?? "").Forget();
-        }
-
-        private async UniTaskVoid SendIceCandidate(string newCandidate)
-        {
-            var logger = _logger.WithMethodName();
-            try
-            {
-                logger.Log($"###Sending newIce to peer: {_peerId}");
-                var result = await _signalingClient.OnIceCandidateCreated(newCandidate, ElympicsTimeout.IceCandidateTimeout, _peerId);
-                if (result.IsError)
-                    logger.Warning(result.Text);
-            }
-            catch (Exception e)
-            {
-                logger.Exception(e);
-            }
         }
 
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
@@ -191,6 +170,7 @@ namespace MatchTcpClients
         }
 
         [Serializable]
+        [UsedImplicitly]
         private struct OfferWithCandidates
         {
             public string offer;
@@ -222,6 +202,7 @@ namespace MatchTcpClients
                 logger.Warning($"WebRTC answer error: {result?.Text}");
                 await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
             }
+
             return null;
         }
 

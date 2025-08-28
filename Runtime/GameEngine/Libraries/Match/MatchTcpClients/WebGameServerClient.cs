@@ -6,7 +6,6 @@ using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
 using Elympics.ElympicsSystems.Internal;
-using JetBrains.Annotations;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using UnityEngine;
@@ -26,7 +25,6 @@ namespace MatchTcpClients
         private readonly ElympicsLoggerContext _logger;
         private CancellationTokenSource? _stateCancellationTokenSource;
         private CancellationTokenSource? _linkedCts;
-        private string? _peerId;
         private readonly List<string> _candidates = new();
         private const string RouteVersion = "v2";
 
@@ -111,13 +109,9 @@ namespace MatchTcpClients
                     var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
 
                     _answer = deserialized.answer;
-                    _peerId = deserialized.peerId;
                     logger.Log($"Answer:{Environment.NewLine}{_answer}");
-                    logger.Log($"PeerId: {_peerId}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
-                    logger.Log("Clearing peerId.");
-                    _peerId = null;
                     _candidates.Clear();
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
@@ -167,14 +161,6 @@ namespace MatchTcpClients
                 throw new InvalidOperationException("WebRTC answer not set");
             _webRtcClient.OnAnswer(_answer);
             return Task.FromResult(true);
-        }
-
-        [Serializable]
-        [UsedImplicitly]
-        private struct OfferWithCandidates
-        {
-            public string offer;
-            public string[] candidates;
         }
 
         private async Task<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)

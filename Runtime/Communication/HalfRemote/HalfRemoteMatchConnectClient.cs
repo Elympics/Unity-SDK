@@ -60,7 +60,7 @@ namespace Elympics
             if (_useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
-                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"), Guid.Empty);
+                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
             }
         }
 

@@ -36,37 +36,27 @@ const LibraryWebRtc = {
             iceCandidateCallback,
             offerCallback
         ) {
-            const config = {
-                iceServers: [
-                    {urls: 'stun:stun.l.google.com:19302'},
-                ],
-            };
-            this.pc = new RTCPeerConnection(config);
+            this.pc = new RTCPeerConnection();
 
             this.reliableDc = this.pc.createDataChannel("reliable");
             this.reliableReceived = reliableReceived;
             this.reliableError = reliableError;
             this.reliableEnded = reliableEnded;
 
-            this.reliableDc.onopen = _ => {
+            const onChannel = (name, eventType) => {
                 const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
                 const selectedPairJson = selectedPair
                     ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                webRtcState.log("Reliable data channel opened" + selectedPairJson);
+                const message = (name[0].toUpperCase() + name.slice(1)) + " data channel " + eventType;
+                webRtcState.log(message + selectedPairJson);
             };
-            this.reliableDc.onmessage = message => {
-                this.reliableReceived(new Uint8Array(message.data));
-            };
-            this.reliableDc.onerror = error => {
-                this.reliableError(error.error.toString());
-            };
-            this.reliableDc.onclose = () => {
-                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
-                const selectedPairJson = selectedPair
-                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
-                    : "";
-                webRtcState.log("Reliable data channel closed" + selectedPairJson);
+
+            this.reliableDc.onopen = _ => onChannel("reliable", "opened");
+            this.reliableDc.onmessage = message => this.reliableReceived(new Uint8Array(message.data));
+            this.reliableDc.onerror = error => this.reliableError(error.error.toString());
+            this.reliableDc.onclose = _ => {
+                onChannel("reliable", "closed");
                 this.reliableEnded();
             };
 
@@ -78,25 +68,11 @@ const LibraryWebRtc = {
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;
 
-            this.unreliableDc.onopen = () => {
-                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
-                const selectedPairJson = selectedPair
-                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
-                    : "";
-                webRtcState.log("Unreliable data channel opened" + selectedPairJson);
-            };
-            this.unreliableDc.onmessage = message => {
-                this.unreliableReceived(new Uint8Array(message.data));
-            };
-            this.unreliableDc.onerror = error => {
-                this.unreliableError(error.error.toString());
-            };
-            this.unreliableDc.onclose = () => {
-                const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
-                const selectedPairJson = selectedPair
-                    ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
-                    : "";
-                webRtcState.log("Unreliable data channel closed" + selectedPairJson);
+            this.unreliableDc.onopen = _ => onChannel("unreliable", "opened");
+            this.unreliableDc.onmessage = message => this.unreliableReceived(new Uint8Array(message.data));
+            this.unreliableDc.onerror = error => this.unreliableError(error.error.toString());
+            this.unreliableDc.onclose = _ => {
+                onChannel("unreliable", "closed");
                 this.unreliableEnded();
             };
 
@@ -104,10 +80,9 @@ const LibraryWebRtc = {
                 const offer = await this.pc.createOffer({ iceRestart });
                 webRtcState.log(`Created offer\n${JSON.stringify(offer)}`);
                 await this.pc.setLocalDescription(offer);
-                const timeoutValue = new URLSearchParams(document.location.search).get("offer-delay");
                 await new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay));
                 const updatedOffer = this.pc.localDescription;
-                webRtcState.log(`Updated offer\n${JSON.stringify(updatedOffer)}`);
+                webRtcState.log(`Updated offer after ${webRtcState.offerAnnouncingDelay} ms\n${JSON.stringify(updatedOffer)}`);
                 if (this.pc.sctp && this.pc.sctp.transport.iceTransport.getLocalCandidates) {
                     webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
                 }
@@ -141,7 +116,7 @@ const LibraryWebRtc = {
                     webRtcState.log(`Candidate received\n${candidateJson}`);
                     iceCandidateCallback(candidateJson);
                 } else {
-                    webRtcState.log('End of candidates');
+                    webRtcState.log("End of candidates");
                     iceCandidateCallback(candidate);
                 }
             };

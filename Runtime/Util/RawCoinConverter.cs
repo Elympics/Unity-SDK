@@ -14,11 +14,14 @@ namespace Elympics.Util
     /// </remarks>
     public static class RawCoinConverter
     {
-        /// <param name="rawAmount">String containing numbers that represent amount of a coin in its atomic native units.</param>
+        /// <param name="rawAmount">String containing numbers that represent amount of a coin in its atomic native units. Null or an empty string will be treated as 0.</param>
         /// <param name="decimals">Number of decimal places allowed by the coin. Usually fetched from <see cref="CurrencyInfo.Decimals"/>.</param>
         /// <returns>User-friendly coin amount that can have up to <paramref name="decimals"/> decimal places of precision.</returns>
-        public static decimal FromRaw(string rawAmount, int decimals)
+        public static decimal FromRaw(string? rawAmount, int decimals)
         {
+            if (string.IsNullOrEmpty(rawAmount))
+                rawAmount = "0";
+
             if (!BigInteger.TryParse(rawAmount, out var bigIntWei))
                 throw new ArgumentException($"Invalid amount string: {rawAmount}", nameof(rawAmount));
 

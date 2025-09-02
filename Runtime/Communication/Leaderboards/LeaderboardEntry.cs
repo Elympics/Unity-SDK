@@ -12,6 +12,7 @@ namespace Elympics
         public string MatchId { get; }
         public Guid TournamentId { get; }
 
+        [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
         internal LeaderboardEntry(LeaderboardResponseEntry entry)
         {
             UserId = entry.userId;

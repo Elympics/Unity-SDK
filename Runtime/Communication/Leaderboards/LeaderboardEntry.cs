@@ -2,6 +2,7 @@ using System;
 
 namespace Elympics
 {
+    [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
     public class LeaderboardEntry
     {
         public string UserId { get; }
@@ -12,7 +13,6 @@ namespace Elympics
         public string MatchId { get; }
         public Guid TournamentId { get; }
 
-        [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
         internal LeaderboardEntry(LeaderboardResponseEntry entry)
         {
             UserId = entry.userId;

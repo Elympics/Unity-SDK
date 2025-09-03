@@ -1,16 +1,16 @@
 using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace MatchTcpLibrary
 {
-    public interface IGameServerWebSignalingClient
+    internal interface IGameServerWebSignalingClient
     {
-        event Action<WebSignalingClientResponse> ReceivedResponse;
-
-        void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default);
+        UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default);
+        UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string iceCandidateRoute, CancellationToken ct = default);
     }
 
-    public class WebSignalingClientResponse
+    internal class WebSignalingClientResponse
     {
         public bool IsError { get; set; }
         public string Text { get; set; }

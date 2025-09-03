@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using GameBotCore.V1._3;
 
 namespace Elympics
@@ -32,7 +33,7 @@ namespace Elympics
             };
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig.IpForHalfRemoteMode, elympicsGameConfig.TcpPortForHalfRemoteMode, userId, elympicsGameConfig.UseWeb);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId);
 
             _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
@@ -42,7 +43,7 @@ namespace Elympics
             gameBotAdapter.Init2(null);
             gameBotAdapter.Init3(botConfiguration);
 
-            _ = _halfRemoteMatchConnectClient.ConnectAndJoinAsPlayer(_ => { }, default);
+            _ = _halfRemoteMatchConnectClient.ConnectAndJoinAsPlayer(_ => { }, CancellationToken.None);
         }
 
         public override void Dispose() => _halfRemoteMatchConnectClient?.Dispose();

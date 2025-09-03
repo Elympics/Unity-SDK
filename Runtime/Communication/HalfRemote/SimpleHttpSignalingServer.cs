@@ -1,10 +1,13 @@
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Models;
 using UnityConnectors.HalfRemote.Server;
+using UnityEngine;
 
 namespace Plugins.Elympics.Runtime.Communication.HalfRemote
 {
@@ -47,14 +50,13 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                 var request = ctx.Request;
                 var response = ctx.Response;
 
+                Debug.Log($"Received {request.HttpMethod} request at path {request.Url.AbsolutePath}");
                 switch (request.HttpMethod)
                 {
                     case "POST":
                     {
-                        if (request.Url.AbsolutePath != "/doSignaling")
-                        {
+                        if (!request.Url.AbsolutePath.StartsWith("/v2/doSignaling/"))
                             response.StatusCode = (int)HttpStatusCode.NotFound;
-                        }
                         else
                         {
                             response.AddHeader("Access-Control-Allow-Origin", "*");
@@ -64,11 +66,16 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                                 offer = await readStream.ReadToEndAsync();
 
                             var answer = await _webClientInitializer.InitClientAndCreateAnswer(offer);
+                            var responseJson = JsonUtility.ToJson(new SignalingResponse
+                            {
+                                answer = answer,
+                                peerId = Guid.Empty.ToString(),
+                            });
 
                             response.StatusCode = (int)HttpStatusCode.OK;
                             response.AddHeader("Content-Type", "application/json");
                             using var writeStream = new StreamWriter(response.OutputStream, Encoding.ASCII);
-                            await writeStream.WriteAsync(answer);
+                            await writeStream.WriteAsync(responseJson);
                         }
 
                         break;

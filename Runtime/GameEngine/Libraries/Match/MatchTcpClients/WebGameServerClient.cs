@@ -1,48 +1,55 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Models;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
-using Plugins.Elympics.Runtime.GameEngine.Libraries.Match.MatchTcpClients;
+using UnityEngine;
 using WebRtcWrapper;
+
+#nullable enable
 
 namespace MatchTcpClients
 {
     internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
-        private readonly Func<IWebRtcClient> _webRtcFactory;
+        private readonly Func<TimeSpan, IWebRtcClient> _webRtcFactory;
 
-        private IWebRtcClient _webRtcClient;
-        private string _answer;
-        private ElympicsLoggerContext _logger;
-        private CancellationTokenSource _stateCancellationTokenSource;
-        private CancellationTokenSource _linkedCts;
+        private IWebRtcClient? _webRtcClient;
+        private string? _answer;
+        private readonly ElympicsLoggerContext _logger;
+        private CancellationTokenSource? _stateCancellationTokenSource;
+        private CancellationTokenSource? _linkedCts;
+        private readonly List<string> _candidates = new();
+        private const string RouteVersion = "v2";
 
         public WebGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
             ElympicsLoggerContext logger,
-            Func<IWebRtcClient> customWebRtcFactory = null) : base(serializer, config, logger)
+            Func<TimeSpan, IWebRtcClient>? customWebRtcFactory = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? (() => new WebRtcClient());
+            _webRtcFactory = customWebRtcFactory ?? (_ => new WebRtcClient());
             _logger = logger.WithContext(nameof(WebGameServerClient));
         }
 
-        public static Uri GetSignalingEndpoint(string gsEndpoint, string publicWebEndpoint, string matchId, string regionName)
+        public static Uri GetSignalingServerBaseAddress(string gsEndpoint, string publicWebEndpoint, string? regionName)
         {
-            var signalingEndpoint = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri) ? new Uri(baseUri, $"doSignaling/{matchId}")
-                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/doSignaling/{matchId}");
+            var baseAddress = Uri.TryCreate(publicWebEndpoint, UriKind.Absolute, out var baseUri)
+                ? new Uri(baseUri, $"{RouteVersion}/")
+                : new Uri(new Uri(gsEndpoint), $"{publicWebEndpoint}/{RouteVersion}/");
 
             if (string.IsNullOrEmpty(regionName))
-                return signalingEndpoint;
+                return baseAddress;
 
-            var uriBuilder = new UriBuilder(signalingEndpoint);
+            var uriBuilder = new UriBuilder(baseAddress);
             uriBuilder.Host = regionName + "-" + uriBuilder.Host;
             return uriBuilder.Uri;
         }
@@ -50,7 +57,7 @@ namespace MatchTcpClients
         protected override void CreateNetworkClients()
         {
             _webRtcClient?.Dispose();
-            _webRtcClient = _webRtcFactory();
+            _webRtcClient = _webRtcFactory(Config.OfferAnnounceDelay);
             ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
             UnreliableClient?.Dispose();
@@ -59,6 +66,9 @@ namespace MatchTcpClients
 
         protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
         {
+            if (_webRtcClient is null)
+                throw new InvalidOperationException("WebRTC client not initialized");
+
             var logger = _logger.WithMethodName();
             _webRtcClient.ReceiveWithThread();
             _answer = null;
@@ -71,6 +81,7 @@ namespace MatchTcpClients
 
                     _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
+                    _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;
                     _stateCancellationTokenSource = new CancellationTokenSource();
                     _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
 
@@ -94,28 +105,33 @@ namespace MatchTcpClients
                         Disconnect();
                         return false;
                     }
-                    _answer = response.Text;
+
+                    var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
+
+                    _answer = deserialized.answer;
                     logger.Log($"Answer:{Environment.NewLine}{_answer}");
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
+                    _candidates.Clear();
                     _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                     _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
+                    _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
                     _stateCancellationTokenSource.Dispose();
                     _linkedCts.Dispose();
                     if (connected)
                         return true;
                     else
                         logger.Warning("Could not establish the connection.");
-
                 }
+
                 logger.Error("Failed to establish WebRtc connection.");
             }
             finally
             {
                 _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
                 _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
-                _stateCancellationTokenSource.Dispose();
-                _linkedCts.Dispose();
+                _stateCancellationTokenSource?.Dispose();
+                _linkedCts?.Dispose();
             }
 
             return false;
@@ -123,63 +139,65 @@ namespace MatchTcpClients
 
         private void OnConnectionStateChanged(string newState)
         {
-            if (newState is RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed or RtcPeerConnectionStates.Disconnected)
+            if (newState is RtcPeerConnectionStates.Failed)
                 _stateCancellationTokenSource?.Cancel();
         }
 
         private void OnIceConnectionStateChanged(string newState)
+        { }
+
+        private void OnIceCandidateCreated(string? newCandidate)
         {
-            if (newState is RtcPeerIceConnectionStates.Failed or RtcPeerIceConnectionStates.Closed or RtcPeerIceConnectionStates.Disconnected)
-                _stateCancellationTokenSource?.Cancel();
+            Debug.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
+            if (!string.IsNullOrEmpty(newCandidate))
+                _candidates.Add(newCandidate);
         }
+
         protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
+            if (_webRtcClient is null)
+                throw new InvalidOperationException("WebRTC client not initialized");
+            if (_answer is null)
+                throw new InvalidOperationException("WebRTC answer not set");
             _webRtcClient.OnAnswer(_answer);
             return Task.FromResult(true);
         }
 
-        private async Task<WebSignalingClientResponse> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
+        private async Task<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
-            WebSignalingClientResponse response = null;
+
             for (var i = 0; i < Config.OfferMaxRetries; i++)
             {
                 if (ct.IsCancellationRequested)
                     break;
-                var cts = new CancellationTokenSource();
 
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
-
-                void OnAnswerReceived(WebSignalingClientResponse r)
-                {
-                    signalingClient.ReceivedResponse -= OnAnswerReceived;
-                    response = r;
-                    cts.Cancel();
-                }
-
-                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-
-                signalingClient.ReceivedResponse += OnAnswerReceived;
                 logger.Log($"Sending offer:{Environment.NewLine}{offer}");
-                signalingClient.PostOfferAsync(offer, (int)Math.Ceiling(Config.OfferTimeout.TotalSeconds), linkedCts.Token);
 
-                await TaskUtil.Delay(Config.OfferTimeout, linkedCts.Token).CatchOperationCanceledException();
-                signalingClient.ReceivedResponse -= OnAnswerReceived;
-                cts.Cancel();
+                var offerWithCandidates = new OfferWithCandidates
+                {
+                    offer = offer,
+                    candidates = _candidates.ToArray(),
+                };
 
-                if (response?.IsError == false)
-                    break;
-                logger.Warning($"WebRTC answer error: {response?.Text}");
+                var result = await signalingClient.PostOfferAsync(JsonUtility.ToJson(offerWithCandidates), TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
+                if (result?.IsError == false)
+                    return result;
 
-                await TaskUtil.Delay(Config.OfferRetryDelay, linkedCts.Token).CatchOperationCanceledException();
+                logger.Warning($"WebRTC answer error: {result?.Text}");
+                await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
             }
 
-            return response;
+            return null;
         }
 
         private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
         {
-            string offer = null;
+            if (_webRtcClient is null)
+                throw new InvalidOperationException("WebRTC client not initialized");
+
+            string? offer = null;
             var offerSet = false;
             var cts = new CancellationTokenSource();
 
@@ -195,7 +213,7 @@ namespace MatchTcpClients
             _webRtcClient.CreateOffer(restart);
             _ = await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
             _webRtcClient.OfferCreated -= OnOfferCreated;
-            return (offer, offerSet);
+            return (offer!, offerSet);
         }
 
         protected override void InitializeNetworkClients()
@@ -204,6 +222,6 @@ namespace MatchTcpClients
             base.InitializeNetworkClients();
         }
 
-        private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(_webRtcClient.Dispose);
+        private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(() => _webRtcClient?.Dispose());
     }
 }

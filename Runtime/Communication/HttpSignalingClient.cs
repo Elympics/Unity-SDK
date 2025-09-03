@@ -1,74 +1,58 @@
 using System;
 using System.Text;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using MatchTcpLibrary;
-using UnityEngine;
 using UnityEngine.Networking;
+
+#nullable enable
 
 namespace Elympics
 {
-    public class HttpSignalingClient : IGameServerWebSignalingClient
+    internal class HttpSignalingClient : IGameServerWebSignalingClient
     {
-        private readonly Uri _uri;
+        private const string SignalingRoute = "doSignaling";
 
-        private UnityWebRequestAsyncOperation _requestAsyncOperation;
-        private CancellationTokenRegistration? _ctr;
+        private readonly Uri _signalingUri;
 
-        public event Action<WebSignalingClientResponse> ReceivedResponse;
+        public HttpSignalingClient(Uri baseUri, Guid matchId) =>
+            _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
 
-        public HttpSignalingClient(Uri uri) =>
-            _uri = uri;
-
-        public void PostOfferAsync(string offer, int timeoutSeconds, CancellationToken ct = default)
+        public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default)
         {
-            Reset();
             var rawOffer = Encoding.UTF8.GetBytes(offer);
-            var request = new UnityWebRequest(_uri, UnityWebRequest.kHttpVerbPOST)
-            {
-                timeout = timeoutSeconds,
-                uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" },
-                downloadHandler = new DownloadHandlerBuffer(),
-            };
+            using var request = new UnityWebRequest(_signalingUri, UnityWebRequest.kHttpVerbPOST);
+            request.timeout = (int)timeout.TotalSeconds;
+            request.uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" };
+            request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();
 
-            _requestAsyncOperation = request.SendWebRequest();
-            _requestAsyncOperation.completed += HandleCompleted;
-            _ctr = ct.Register(ClearRequestData);
+            var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
+
+            if (isCanceled)
+                return new WebSignalingClientResponse
+                {
+                    IsError = true,
+                    Text = "Operation cancelled.",
+                };
+
+            return HandleCompleted(result);
         }
 
-        private void Reset()
-        {
-            _ctr?.Dispose();
-            ClearRequestData();
-        }
+        public UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string peerId, CancellationToken ct = default) =>
+            throw new NotImplementedException();
 
-        private void ClearRequestData()
+        private static WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
-            if (_requestAsyncOperation != null)
-            {
-                _requestAsyncOperation.completed -= HandleCompleted;
-                _requestAsyncOperation.webRequest?.Abort();
-                _requestAsyncOperation.webRequest?.Dispose();
-            }
-            _requestAsyncOperation = null;
-        }
-
-        private void HandleCompleted(AsyncOperation asyncOp)
-        {
-            asyncOp.completed -= HandleCompleted;
-            if (asyncOp is not UnityWebRequestAsyncOperation webAsyncOp || webAsyncOp.webRequest == null)
-                return;
-            var request = webAsyncOp.webRequest;
-            var isError = request.IsConnectionError() || request.IsProtocolError();
-            var text = request.IsConnectionError()
-                ? request.error
-                : request.downloadHandler.text;
-            Reset();
-            ReceivedResponse?.Invoke(new WebSignalingClientResponse
+            var isError = webRequest.IsConnectionError() || webRequest.IsProtocolError();
+            var text = webRequest.IsConnectionError()
+                ? webRequest.error
+                : webRequest.downloadHandler.text;
+            return new WebSignalingClientResponse
             {
                 IsError = isError,
                 Text = text,
-            });
+            };
         }
     }
 }

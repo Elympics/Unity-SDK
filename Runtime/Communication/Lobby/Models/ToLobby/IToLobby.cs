@@ -24,6 +24,7 @@ namespace Elympics.Lobby.Models
     [Union(14, typeof(WatchRooms))]
     [Union(15, typeof(UnwatchRooms))]
     [Union(16, typeof(RequestRollings))]
+    [Union(17, typeof(UpdateCustomPlayerData))]
     public interface IToLobby
     { }
 }

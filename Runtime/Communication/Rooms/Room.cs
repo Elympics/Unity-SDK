@@ -286,6 +286,12 @@ namespace Elympics
                 };
         }
 
+        public async UniTask UpdateCustomPlayerData(Dictionary<string, string>? customPlayerData)
+        {
+            ThrowIfDisposed();
+            ThrowIfNotJoined();
+            await _client.UpdateCustomPlayerData(RoomId, customPlayerData ?? new Dictionary<string, string>());
+        }
 
         public void PlayAvailableMatch()
         {

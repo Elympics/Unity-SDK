@@ -43,6 +43,8 @@ namespace SCS
             return _room.UpdateRoomParams(roomName, isPrivate, roomCustomData, customMatchmakingData, competitivenessConfig);
         }
 
+        public UniTask UpdateCustomPlayerData(Dictionary<string, string>? customPlayerData) => _room.UpdateCustomPlayerData(customPlayerData);
+
         public UniTask ChangeTeam(uint? teamIndex) => _room.ChangeTeam(teamIndex);
         public async UniTask MarkYourselfReady(byte[]? gameEngineData, float[]? matchmakerData, CancellationToken ct = default)
         {

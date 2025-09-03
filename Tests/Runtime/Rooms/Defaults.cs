@@ -15,7 +15,7 @@ namespace Elympics.Tests.Rooms
         {
             var userList = new List<UserInfo>
             {
-                new(hostId, 0, false, null, null),
+                new(hostId, 0, false, null, null, new Dictionary<string, string>()),
             };
 
             return new RoomStateChanged(roomId,
@@ -47,7 +47,7 @@ namespace Elympics.Tests.Rooms
             CreatePublicMatchmakingData(mmState),
             new List<UserInfo>
             {
-                new(hostId, 0, false, null, null),
+                new(hostId, 0, false, null, null, new Dictionary<string, string>()),
             },
             false,
             new Dictionary<string, string>());
@@ -76,6 +76,7 @@ namespace Elympics.Tests.Rooms
             0,
             false,
             string.Empty,
+            null,
             null);
 
         public static SessionConnectionDetails CreateConnectionDetails(Guid userId, string regionName = "warsaw") => new("url",

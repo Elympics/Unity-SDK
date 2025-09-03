@@ -61,7 +61,7 @@ namespace Elympics
                                 new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
                                 new List<UserInfo>
                                 {
-                                    new(userId, 0, false, nickname, avatarUrl),
+                                    new(userId, 0, false, nickname, avatarUrl, new Dictionary<string, string>()),
                                 },
                                 createRoom.IsPrivate,
                                 createRoom.IsEphemeral,
@@ -83,7 +83,7 @@ namespace Elympics
                             ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, webSocket, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
                             SendSuccessResponse(webSocket, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -94,7 +94,7 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(webSocket, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, webSocket, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl)));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
                             SendSuccessResponse(webSocket, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -383,7 +383,7 @@ namespace Elympics
                                     new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
                                     new List<UserInfo>
                                     {
-                                        new(userId, 0, false, nickname, avatarUrl),
+                                        new(userId, 0, false, nickname, avatarUrl, new Dictionary<string, string>()),
                                     },
                                     true,
                                     false,

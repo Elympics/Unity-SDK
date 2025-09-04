@@ -47,7 +47,7 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(114)
+            lookup = new global::System.Collections.Generic.Dictionary<global::System.Type, int>(113)
             {
                 { typeof(global::Elympics.Communication.Lobby.InternalModels.ErrorBlameDto?), 0 },
                 { typeof(global::Elympics.Communication.Lobby.InternalModels.ErrorKindDto?), 1 },
@@ -162,7 +162,6 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackage), 110 },
                 { typeof(global::Elympics.SnapshotAnalysis.SnapshotSaverInitData), 111 },
                 { typeof(global::Elympics.TickToPlayerInput), 112 },
-                { typeof(global::Elympics.UserInfo), 113 },
             };
         }
 
@@ -289,7 +288,6 @@ namespace MessagePack.Resolvers
                 case 110: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackageFormatter();
                 case 111: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.SnapshotSaverInitDataFormatter();
                 case 112: return new MessagePack.Formatters.Elympics.TickToPlayerInputFormatter();
-                case 113: return new MessagePack.Formatters.Elympics.UserInfoFormatter();
                 default: return null;
             }
         }
@@ -4917,78 +4915,6 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
-            reader.Depth--;
-            return ____result;
-        }
-    }
-
-    public sealed class UserInfoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.UserInfo>
-    {
-
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.UserInfo value, global::MessagePack.MessagePackSerializerOptions options)
-        {
-            if (value == null)
-            {
-                writer.WriteNil();
-                return;
-            }
-
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(6);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.UserId, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
-            writer.Write(value.IsReady);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Nickname, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.AvatarUrl, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
-        }
-
-        public global::Elympics.UserInfo Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
-        {
-            if (reader.TryReadNil())
-            {
-                return null;
-            }
-
-            options.Security.DepthStep(ref reader);
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            var length = reader.ReadArrayHeader();
-            var __UserId__ = default(global::System.Guid);
-            var __TeamIndex__ = default(uint?);
-            var __IsReady__ = default(bool);
-            var __Nickname__ = default(string);
-            var __AvatarUrl__ = default(string);
-            var __CustomPlayerData__ = default(global::System.Collections.Generic.Dictionary<string, string>);
-
-            for (int i = 0; i < length; i++)
-            {
-                switch (i)
-                {
-                    case 0:
-                        __UserId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 1:
-                        __TeamIndex__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 2:
-                        __IsReady__ = reader.ReadBoolean();
-                        break;
-                    case 3:
-                        __Nickname__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 4:
-                        __AvatarUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 5:
-                        __CustomPlayerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    default:
-                        reader.Skip();
-                        break;
-                }
-            }
-
-            var ____result = new global::Elympics.UserInfo(__UserId__, __TeamIndex__, __IsReady__, __Nickname__, __AvatarUrl__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }

@@ -52,10 +52,22 @@ namespace Elympics
             if (isRoomCustomDataChanged)
                 CaptureDifferencesBetween(stateDiff.NewCustomRoomData, _customData, stateUpdate.CustomData);
 
-            //TO DO: optimize this
-            foreach (var (oldUserInfo, newUserInfo) in oldUsers.Where(u => newUsers.Any(u2 => u2.UserId == u.UserId)).Select(u => (u, newUsers.First(u2 => u2.UserId == u.UserId))))
+            foreach (var oldUserInfo in oldUsers)
             {
                 var userId = oldUserInfo.UserId;
+                UserInfo? newUserInfo = null;
+                foreach (var userInfo in newUsers)
+                {
+                    if (userInfo.UserId == userId)
+                    {
+                        newUserInfo = userInfo;
+                        break;
+                    }
+                }
+
+                if (newUserInfo == null)
+                    continue;
+
                 if (!stateDiff.NewCustomPlayerData.TryGetValue(userId, out var newCustomPlayerData))
                 {
                     newCustomPlayerData = new Dictionary<string, string?>();

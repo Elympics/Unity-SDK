@@ -438,6 +438,30 @@ namespace Elympics.Tests.Rooms
         }
 
         [Test]
+        public void TestCustomPlayerDataChangedInvoked()
+        {
+            const string newKey = "newKey";
+            const string newValue = "newValue";
+
+            EmitRoomUpdate(InitialRoomState);
+
+            EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.CustomPlayerDataChanged));
+            var user = InitialRoomState.Users[0] with
+            {
+                CustomPlayerData = new Dictionary<string, string> { { newKey, newValue } }
+            };
+            var matchmakingRoomState = InitialRoomState with
+            {
+                LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
+                Users = InitialRoomState.Users.Skip(1).Prepend(user).ToList(),
+            };
+            EmitRoomUpdate(matchmakingRoomState);
+            EventRegister.AssertIfInvoked();
+            Assert.IsTrue(RoomsManager.CurrentRoom!.State.Users[0].CustomPlayerData.ContainsKey(newKey));
+            Assert.AreEqual(RoomsManager.CurrentRoom!.State.Users[0].CustomPlayerData[newKey], newValue);
+        }
+
+        [Test]
         public void TestUserReadinessChangedToUnreadyInvoked()
         {
             var readyUser = InitialRoomState.Users[0] with

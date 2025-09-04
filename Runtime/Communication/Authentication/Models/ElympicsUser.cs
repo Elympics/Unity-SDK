@@ -1,9 +1,11 @@
 #nullable enable
 
 using System;
+
 namespace Elympics.Communication.Authentication.Models
 {
-    public readonly struct ElympicsUser
+    /// <summary>Represents a user's public profile.</summary>
+    public readonly struct ElympicsUser : IEquatable<ElympicsUser>
     {
         /// <summary>Globally-unique user ID.</summary>
         public readonly Guid UserId;
@@ -21,6 +23,16 @@ namespace Elympics.Communication.Authentication.Models
             NicknameStatus = nicknameStatus;
             AvatarUrl = avatarUrl;
         }
+
+        public bool Equals(ElympicsUser other) => UserId.Equals(other.UserId) && Nickname == other.Nickname && NicknameStatus == other.NicknameStatus && AvatarUrl == other.AvatarUrl;
+
+        public override bool Equals(object? obj) => obj is ElympicsUser other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(UserId, Nickname, (int)NicknameStatus, AvatarUrl);
+
+        public static bool operator ==(ElympicsUser left, ElympicsUser right) => left.Equals(right);
+
+        public static bool operator !=(ElympicsUser left, ElympicsUser right) => !left.Equals(right);
     }
 
     public enum NicknameStatus

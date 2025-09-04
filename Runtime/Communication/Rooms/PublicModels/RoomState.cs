@@ -93,7 +93,7 @@ namespace Elympics
                 if (newUser == null)
                 {
                     stateDiff.UsersThatLeft.Add(oldUser);
-                    stateDiff.NewCustomPlayerData.Remove(oldUser.UserId); //Remove user who left to prevent that dictionary from growing endlessly
+                    _ = stateDiff.NewCustomPlayerData.Remove(oldUser.UserId); //Remove user who left to prevent that dictionary from growing endlessly
                     continue;
                 }
 

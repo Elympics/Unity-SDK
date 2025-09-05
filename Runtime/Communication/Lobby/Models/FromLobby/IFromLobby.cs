@@ -1,9 +1,9 @@
-#nullable enable
-
 using Communication.Lobby.Models.ToLobby;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Rooms.Models;
 using MessagePack;
+
+#nullable enable
 
 namespace Elympics.Lobby.Models
 {

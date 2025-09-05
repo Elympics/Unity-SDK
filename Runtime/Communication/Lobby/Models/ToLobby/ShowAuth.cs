@@ -2,6 +2,8 @@ using System;
 using Elympics.Lobby.Models;
 using MessagePack;
 
+#nullable enable
+
 namespace Elympics.Communication.Lobby.Models.ToLobby
 {
     [MessagePackObject]

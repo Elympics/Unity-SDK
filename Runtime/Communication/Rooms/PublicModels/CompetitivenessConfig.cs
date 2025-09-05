@@ -62,11 +62,4 @@ namespace Elympics.Communication.Rooms.PublicModels
             PrizeDistribution = prizeDistribution;
         }
     }
-
-    public enum CompetitivenessType
-    {
-        GlobalTournament,
-        RollingTournament,
-        Bet
-    }
 }

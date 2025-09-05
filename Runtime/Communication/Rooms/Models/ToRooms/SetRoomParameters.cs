@@ -44,7 +44,4 @@ namespace Elympics.Rooms.Models
 
         public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), RoomId, RoomName ?? "", IsPrivate, CustomRoomData?.Count ?? 0, CustomMatchmakingData?.Count ?? 0);
     }
-
-    [MessagePackObject]
-    public record RoomBetDetailsSlim([property: Key(0)] string BetValue, [property: Key(1)] Guid CoinId, [property: Key(2)] Guid? RollingBetId);
 }

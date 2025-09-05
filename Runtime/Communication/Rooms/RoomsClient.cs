@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Mappers;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
+using Elympics.Communication.Rooms.InternalModels.ToRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
-using Elympics.Lobby.Models;
-using Elympics.Rooms.Models;
 using Elympics.Util;
 
 #nullable enable

@@ -1,11 +1,9 @@
-using Communication.Lobby.Models.ToLobby;
-using Elympics.Communication.Lobby.Models.ToLobby;
-using Elympics.Rooms.Models;
+using Elympics.Communication.Rooms.InternalModels.ToRooms;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Lobby.Models
+namespace Elympics.Communication.Lobby.InternalModels.ToLobby
 {
     [Union(0, typeof(PingDto))]
     [Union(1, typeof(PongDto))]

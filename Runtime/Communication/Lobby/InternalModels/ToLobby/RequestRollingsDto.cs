@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Lobby.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Communication.Lobby.Models.ToLobby
+namespace Elympics.Communication.Lobby.InternalModels.ToLobby
 {
     [MessagePackObject]
     public record RequestRollingsDto(

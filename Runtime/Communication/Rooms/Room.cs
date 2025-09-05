@@ -4,6 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;

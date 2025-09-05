@@ -1,9 +1,8 @@
 using System;
-using Elympics.Lobby.Models;
 
 #nullable enable
 
-namespace Elympics.Communication.Lobby.Models.FromLobby
+namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {
     internal interface ILobbyResponse : IFromLobby
     {

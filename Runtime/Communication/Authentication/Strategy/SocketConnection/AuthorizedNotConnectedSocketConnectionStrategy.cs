@@ -1,8 +1,8 @@
 using System;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
-using Elympics.Rooms.Models;
 
 #nullable enable
 

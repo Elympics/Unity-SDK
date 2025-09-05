@@ -1,5 +1,6 @@
 using System;
-using Elympics.Communication.Rooms.Models;
+using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Rooms.Models;
 
 #nullable enable

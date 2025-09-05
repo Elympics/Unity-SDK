@@ -1,10 +1,9 @@
 using System;
-using Elympics.Lobby.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Communication.Lobby.Models.ToLobby
+namespace Elympics.Communication.Lobby.InternalModels.ToLobby
 {
     [MessagePackObject]
     public record ShowAuthDto() : LobbyOperation

@@ -3,7 +3,7 @@ using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Communication.Lobby.Models.FromLobby
+namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {
     [MessagePackObject]
     public record ShowAuthResponseDto(

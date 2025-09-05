@@ -1,11 +1,11 @@
 using System;
-using Elympics.Communication.Rooms.Models;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels.FromRooms
 {
     [MessagePackObject]
     public record RoomOperationResultDto(

@@ -1,4 +1,4 @@
-namespace Elympics.Communication.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels
 {
     public enum LeavingReasonDto
     {

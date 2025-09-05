@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Rooms.Models;
 
 #nullable enable

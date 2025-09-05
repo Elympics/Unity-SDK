@@ -4,7 +4,7 @@ using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Communication.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels
 {
     [MessagePackObject]
     public record RoomBetDetailsDto([property: Key(0)] string BetValueRaw, [property: Key(1)] RoomCoinDto Coin, [property: Key(2)] RollingBetDto? RollingBet)

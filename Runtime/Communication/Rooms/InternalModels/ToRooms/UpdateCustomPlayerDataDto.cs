@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using MessagePack;
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels.ToRooms
 {
     [MessagePackObject]
     public record UpdateCustomPlayerDataDto(

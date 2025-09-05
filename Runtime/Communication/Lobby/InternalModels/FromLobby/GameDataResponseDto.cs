@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Communication.Lobby.Models.FromLobby;
-using Elympics.Communication.Rooms.Models;
+using Elympics.Communication.Rooms.InternalModels;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {
     [MessagePackObject]
     public record GameDataResponseDto(

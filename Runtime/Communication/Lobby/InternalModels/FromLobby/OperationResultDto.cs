@@ -1,10 +1,9 @@
 using System;
-using Elympics.Communication.Rooms.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Lobby.Models
+namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {
     [MessagePackObject]
     public record OperationResultDto(

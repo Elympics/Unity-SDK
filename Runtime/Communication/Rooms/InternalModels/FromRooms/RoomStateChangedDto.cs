@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Communication.Rooms.Models;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Rooms.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels.FromRooms
 {
     [MessagePackObject]
     public record RoomStateChangedDto(

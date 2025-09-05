@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Communication.Rooms.Models;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
-using Elympics.Rooms.Models;
 
 #nullable enable
 

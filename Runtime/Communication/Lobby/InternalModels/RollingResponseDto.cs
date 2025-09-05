@@ -3,7 +3,7 @@ using MessagePack;
 
 #nullable enable
 
-namespace Communication.Lobby.Models.ToLobby
+namespace Elympics.Communication.Lobby.InternalModels
 {
     [MessagePackObject]
     public class RollingResponseDto

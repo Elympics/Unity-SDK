@@ -3,12 +3,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
-using Elympics.Lobby.Models;
 using Elympics.Lobby.Serializers;
-using Elympics.Rooms.Models;
 using HybridWebSocket;
 
 #nullable enable

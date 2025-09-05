@@ -4,8 +4,9 @@ using System.Numerics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
-using Elympics.Rooms.Models;
 
 #nullable enable
 

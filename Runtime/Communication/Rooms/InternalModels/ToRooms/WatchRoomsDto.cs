@@ -1,10 +1,10 @@
 using System;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels.ToRooms
 {
     [MessagePackObject]
     public record WatchRoomsDto() : LobbyOperation

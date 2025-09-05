@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Lobby;
-using Elympics.Lobby.Models;
-using Elympics.Rooms.Models;
 
 #nullable enable
 

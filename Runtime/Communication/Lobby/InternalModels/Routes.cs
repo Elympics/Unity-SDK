@@ -1,8 +1,8 @@
 #nullable enable
 
-namespace Elympics.Lobby.Models
+namespace Elympics.Communication.Lobby.InternalModels
 {
-    public static class Routes
+    internal static class Routes
     {
         public const string Base = "ws";
     }

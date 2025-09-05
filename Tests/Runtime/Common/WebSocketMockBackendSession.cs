@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Communication.Rooms.Models;
-using Elympics.Rooms.Models;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 
 namespace Elympics
 {

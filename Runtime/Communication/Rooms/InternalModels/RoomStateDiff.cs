@@ -4,7 +4,7 @@ using System.Linq;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels
 {
     internal class RoomStateDiff
     {

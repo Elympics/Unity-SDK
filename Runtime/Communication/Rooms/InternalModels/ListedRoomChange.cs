@@ -1,10 +1,9 @@
 using System;
-using Elympics.Lobby.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels
 {
     [MessagePackObject]
     public record ListedRoomChange(

@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Communication.Rooms.Models;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels
 {
     [MessagePackObject]
     public record PublicMatchmakingData(

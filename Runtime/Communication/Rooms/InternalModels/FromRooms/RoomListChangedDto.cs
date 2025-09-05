@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using MessagePack;
 
 #nullable enable
 
-namespace Elympics.Rooms.Models
+namespace Elympics.Communication.Rooms.InternalModels.FromRooms
 {
     [MessagePackObject]
     public record RoomListChangedDto([property: Key(0)] IReadOnlyList<ListedRoomChange> Changes) : IFromLobby

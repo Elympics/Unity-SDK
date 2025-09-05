@@ -1,8 +1,8 @@
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using MessagePack;
 
-#nullable enable
-
-namespace Elympics.Lobby.Models
+namespace Elympics.Communication.Lobby.InternalModels
 {
     [MessagePackObject]
     public record PingDto : IFromLobby, IToLobby;

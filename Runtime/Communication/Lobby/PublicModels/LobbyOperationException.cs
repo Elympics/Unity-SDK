@@ -1,5 +1,5 @@
 using System;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 
 #nullable enable
 

@@ -3384,13 +3384,14 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(6);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.UserId, options);
+            writer.WriteArrayHeader(7);
+            writer.WriteNil();
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
             writer.Write(value.IsReady);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Nickname, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.AvatarUrl, options);
+            writer.WriteNil();
+            writer.WriteNil();
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO>(formatterResolver).Serialize(ref writer, value.User, options);
         }
 
         public global::Elympics.Communication.Rooms.InternalModels.UserInfoDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -3403,34 +3404,23 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __UserId__ = default(global::System.Guid);
-            var __TeamIndex__ = default(uint?);
-            var __IsReady__ = default(bool);
-            var __Nickname__ = default(string);
-            var __AvatarUrl__ = default(string);
-            var __CustomPlayerData__ = default(global::System.Collections.Generic.Dictionary<string, string>);
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.UserInfoDto();
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
-                    case 0:
-                        __UserId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
-                        break;
                     case 1:
-                        __TeamIndex__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.TeamIndex = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        __IsReady__ = reader.ReadBoolean();
-                        break;
-                    case 3:
-                        __Nickname__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 4:
-                        __AvatarUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.IsReady = reader.ReadBoolean();
                         break;
                     case 5:
-                        __CustomPlayerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.CustomPlayerData = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 6:
+                        ____result.User = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -3438,7 +3428,6 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.UserInfoDto(__UserId__, __TeamIndex__, __IsReady__, __Nickname__, __AvatarUrl__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }

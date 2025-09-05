@@ -30,7 +30,7 @@ namespace Elympics.Tests
 
         private static readonly Guid UserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         private const string Nickname = "nickname";
-        private const string? AvatarUrl = null;
+        private const string AvatarUrl = "";
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -102,7 +102,7 @@ namespace Elympics.Tests
                 AuthType = AuthType.ClientSecret
             });
 
-            var room = _sut.RoomsManager.ListJoinedRooms()[0];
+            var room = _sut.RoomsManager.CurrentRoom!;
             await room.StartMatchmaking();
             Assert.AreEqual(_stateTransitions.Count, 3);
             AssertStateTransition(0, ElympicsState.Disconnected, ElympicsState.Connecting);

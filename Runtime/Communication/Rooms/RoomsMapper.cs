@@ -225,19 +225,9 @@ namespace Elympics
             dto.Prize);
 
         public static UserInfo Map(this UserInfoDto dto) => new(
-            dto.UserId,
             dto.TeamIndex,
             dto.IsReady,
-            dto.Nickname,
-            dto.AvatarUrl,
-            dto.CustomPlayerData);
-
-        public static UserInfoDto Map(this UserInfo entity) => new(
-            entity.UserId,
-            entity.TeamIndex,
-            entity.IsReady,
-            entity.Nickname,
-            entity.AvatarUrl,
-            entity.CustomPlayerData);
+            dto.CustomPlayerData,
+            dto.User.ToPublicModel());
     }
 }

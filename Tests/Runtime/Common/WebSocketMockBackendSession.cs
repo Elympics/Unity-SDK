@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 
@@ -47,7 +49,7 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>())
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameStatus.NotVerified, "testAvatarURL"))
                 },
                 false,
                 false,
@@ -73,8 +75,8 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>()),
-                    new(Guid.NewGuid(), 1, true, "NewGuid_1", null, new Dictionary<string, string>())
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameStatus.NotVerified, "testAvatarURL")),
+                    new(1, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_1", (int)NicknameStatus.NotVerified, "testAvatarURL"))
                 },
                 true,
                 false,
@@ -99,7 +101,7 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, true, "NewGuid_0", null, new Dictionary<string, string>())
+                    new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameStatus.NotVerified, "testAvatarURL"))
                 },
                 true,
                 false,

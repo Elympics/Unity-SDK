@@ -194,7 +194,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator QuickMatchLobbyOperationException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var userId = InitialRoomState.Users.First().UserId;
+            var userId = InitialRoomState.Users.First().User.ToPublicModel().UserId;
             var connectionDetails = Defaults.CreateConnectionDetails(userId, regionName);
             _ = RoomsClientMock.SessionConnectionDetails.Returns(connectionDetails);
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
@@ -233,7 +233,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator QuickMatchLobbyMatchmakingInitializingFailed() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var userId = InitialRoomState.Users.First().UserId;
+            var userId = InitialRoomState.Users.First().User.ToPublicModel().UserId;
             var connectionDetails = Defaults.CreateConnectionDetails(userId, regionName);
             _ = RoomsClientMock.SessionConnectionDetails.Returns(connectionDetails);
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
@@ -279,7 +279,7 @@ namespace Elympics.Tests.Rooms
         public IEnumerator CanQuickMatchAgainAfterTimeoutException() => UniTask.ToCoroutine(async () =>
         {
             const string regionName = "test-region";
-            var userId = InitialRoomState.Users.First().UserId;
+            var userId = InitialRoomState.Users.First().User.ToPublicModel().UserId;
             var connectionDetails = Defaults.CreateConnectionDetails(userId, regionName);
             _ = RoomsClientMock.SessionConnectionDetails.Returns(connectionDetails);
             RoomsClientMock.ReturnsForJoinOrCreate(() => UniTask.FromResult(RoomId));
@@ -325,7 +325,7 @@ namespace Elympics.Tests.Rooms
 
             var matchData = new MatchDataDto(Guid.Empty,
                 MatchStateDto.Running,
-                new MatchDetailsDto(newMatchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+                new MatchDetailsDto(newMatchmakingState.Users.Select(x => x.User.ToPublicModel().UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
                 string.Empty);
 
             var newMatchDataState = newMatchmakingState

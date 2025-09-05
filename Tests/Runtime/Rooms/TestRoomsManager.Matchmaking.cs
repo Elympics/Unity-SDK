@@ -582,7 +582,7 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
-            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
+            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.User.ToPublicModel().UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
             {
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
@@ -622,7 +622,7 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
-            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
+            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.User.ToPublicModel().UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
             {
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
@@ -657,7 +657,7 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
-            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
+            var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.User.ToPublicModel().UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
             {
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),

@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
+using Elympics.Rooms.Models;
 using NSubstitute;
 
 namespace Elympics
@@ -27,17 +30,12 @@ namespace Elympics
                         new MatchDataDto(Guid.Empty, MatchStateDto.Running, new MatchDetailsDto(new List<Guid>(), null, null, null, null, null), null),
                         null,
                         null),
-                    new List<UserInfoDto> { new(Guid.Empty, 0, true, string.Empty, string.Empty, new Dictionary<string, string>()) },
+                    new List<UserInfoDto> { new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.Empty.ToString(), "", (int)NicknameStatus.NotVerified, "")) },
                     false,
                     false,
                     null));
             room.IsJoined = true;
-            _ = roomsManager.ListJoinedRooms().Returns(new List<IRoom>()
-            {
-                room
-            });
-
-            _ = roomsManager.CurrentRoom.Returns((IRoom?)null);
+            _ = roomsManager.CurrentRoom.Returns(room);
             return roomsManager;
         }
     }

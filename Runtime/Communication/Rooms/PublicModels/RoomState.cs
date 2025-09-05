@@ -42,13 +42,13 @@ namespace Elympics
 
             stateDiff.UpdatedState = true;
             var oldUsers = _users;
-            var newUsers = stateUpdate.Users;
+            var newUsers = stateUpdate.Users.Select(x => x.ToPublicModel()).ToList();
 
             if (oldUsers.Count != newUsers.Count)
                 stateDiff.NewUserCount = (uint)newUsers.Count;
 
-            if (oldUsers[0].UserId != newUsers[0].UserId)
-                stateDiff.NewHost = newUsers[0].UserId;
+            if (oldUsers[0].User.UserId != newUsers[0].User.UserId)
+                stateDiff.NewHost = newUsers[0].User.UserId;
 
             var isRoomCustomDataChanged = !_customData.IsTheSame(stateUpdate.CustomData);
             if (isRoomCustomDataChanged)
@@ -62,7 +62,7 @@ namespace Elympics
                 {
                     if (userInfo.UserId == userId)
                     {
-                        newUserInfo = userInfo.Map();
+                        newUserInfo = userInfo;
                         break;
                     }
                 }
@@ -91,7 +91,7 @@ namespace Elympics
 
             foreach (var oldUser in oldUsers)
             {
-                var newUser = newUsers.FirstOrDefault(x => x.UserId == oldUser.UserId);
+                var newUser = newUsers.FirstOrDefault(x => x.User.UserId == oldUser.User.UserId);
                 if (newUser == null)
                 {
                     stateDiff.UsersThatLeft.Add(oldUser);
@@ -100,17 +100,17 @@ namespace Elympics
                 }
 
                 if (newUser.IsReady != oldUser.IsReady)
-                    stateDiff.UsersThatChangedReadiness.Add((newUser.UserId, newUser.IsReady));
+                    stateDiff.UsersThatChangedReadiness.Add((newUser.User.UserId, newUser.IsReady));
                 if (newUser.TeamIndex != oldUser.TeamIndex)
-                    stateDiff.UsersThatChangedTeams.Add((newUser.UserId, newUser.TeamIndex));
+                    stateDiff.UsersThatChangedTeams.Add((newUser.User.UserId, newUser.TeamIndex));
             }
 
             foreach (var newUser in newUsers)
             {
-                var oldUser = oldUsers.FirstOrDefault(x => x.UserId == newUser.UserId);
+                var oldUser = oldUsers.FirstOrDefault(x => x.User.UserId == newUser.User.UserId);
                 if (oldUser != null)
                     continue;
-                stateDiff.UsersThatJoined.Add(newUser.Map());
+                stateDiff.UsersThatJoined.Add(newUser);
             }
 
             stateDiff.UpdatedMatchmakingData = (MatchmakingData == null && stateUpdate.MatchmakingData != null) || (MatchmakingData != null && !MatchmakingData.Equals(stateUpdate.MatchmakingData));

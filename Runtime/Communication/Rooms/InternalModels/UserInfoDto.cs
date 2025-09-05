@@ -1,4 +1,4 @@
-using System;
+using Elympics.Communication.Authentication.Models.Internal;
 using System.Collections.Generic;
 using MessagePack;
 
@@ -7,11 +7,22 @@ using MessagePack;
 namespace Elympics.Communication.Rooms.InternalModels
 {
     [MessagePackObject]
-    public record UserInfoDto(
-        [property: Key(0)] Guid UserId,
-        [property: Key(1)] uint? TeamIndex,
-        [property: Key(2)] bool IsReady,
-        [property: Key(3)] string? Nickname,
-        [property: Key(4)] string? AvatarUrl,
-        [property: Key(5)] Dictionary<string, string> CustomPlayerData);
+    public record UserInfoDto
+    {
+        [Key(1)] public uint? TeamIndex;
+        [Key(2)] public bool IsReady;
+        [Key(5)] public Dictionary<string, string> CustomPlayerData;
+        [Key(6)] public ElympicsUserDTO User;
+
+        public UserInfoDto() { }
+        public UserInfoDto(uint? teamIndex, bool isReady, Dictionary<string, string> customPlayerData, ElympicsUserDTO user)
+        {
+            TeamIndex = teamIndex;
+            IsReady = isReady;
+            CustomPlayerData = customPlayerData;
+            User = user;
+        }
+
+        public UserInfo ToPublicModel() => new(TeamIndex, IsReady, CustomPlayerData, User.ToPublicModel());
+    }
 }

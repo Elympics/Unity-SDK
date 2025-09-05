@@ -9,6 +9,6 @@ namespace Elympics.Rooms.Models
     [MessagePackObject]
     public record ListedRoomChange(
         [property: Key(0)] Guid RoomId,
-        [property: Key(1)] PublicRoomState? PublicRoomState) : IFromLobby;
+        [property: Key(1)] PublicRoomState? PublicRoomState);
 
 }

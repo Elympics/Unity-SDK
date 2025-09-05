@@ -18,7 +18,7 @@ namespace Elympics.Rooms.Models
         [property: Key(4)] PublicMatchmakingData? MatchmakingData,
         [property: Key(5)] IReadOnlyList<UserInfoDto> Users,
         [property: Key(6)] bool IsPrivate,
-        [property: Key(7)] IReadOnlyDictionary<string, string> CustomData) : IFromLobby
+        [property: Key(7)] IReadOnlyDictionary<string, string> CustomData)
     {
         public virtual bool Equals(PublicRoomState? other)
         {

@@ -7,12 +7,12 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record StartMatchmaking([property: Key(1)] Guid RoomId) : LobbyOperation
+    public record LeaveRoomDto([property: Key(1)] Guid RoomId) : LobbyOperation
     {
         [SerializationConstructor]
-        public StartMatchmaking(Guid operationId, Guid roomId) : this(roomId) => OperationId = operationId;
+        public LeaveRoomDto(Guid operationId, Guid roomId) : this(roomId) => OperationId = operationId;
 
-        public virtual bool Equals(StartMatchmaking? other)
+        public virtual bool Equals(LeaveRoomDto? other)
         {
             if (other is null)
                 return false;

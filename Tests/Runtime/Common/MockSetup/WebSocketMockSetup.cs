@@ -49,12 +49,12 @@ namespace Elympics
 #pragma warning disable IDE0010
                     switch (msg)
                     {
-                        case CreateRoom createRoom:
+                        case CreateRoomDto createRoom:
                         {
                             ThrowIfAlreadyInRoom(webSocket, createRoom);
                             var (teamSize, teamCount) = GetQueueOrThrow(createRoom.QueueName, webSocket, createRoom);
 
-                            var room = new RoomStateChanged(Guid.NewGuid(),
+                            var room = new RoomStateChangedDto(Guid.NewGuid(),
                                 DateTime.Now,
                                 createRoom.RoomName,
                                 "ZZZZZZZZ",
@@ -77,7 +77,7 @@ namespace Elympics
 
                             break;
                         }
-                        case JoinWithRoomId joinWithRoomId:
+                        case JoinWithRoomIdDto joinWithRoomId:
                         {
                             ThrowIfAlreadyInRoom(webSocket, joinWithRoomId);
                             var room = GetRoomOrThrow(joinWithRoomId.RoomId, webSocket, joinWithRoomId);
@@ -90,7 +90,7 @@ namespace Elympics
                             SendResponse(webSocket, room);
                             break;
                         }
-                        case JoinWithJoinCode joinWithJoinCode:
+                        case JoinWithJoinCodeDto joinWithJoinCode:
                         {
                             ThrowIfAlreadyInRoom(webSocket, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, webSocket, joinWithJoinCode);
@@ -101,7 +101,7 @@ namespace Elympics
                             SendResponse(webSocket, room);
                             break;
                         }
-                        case LeaveRoom leaveRoom:
+                        case LeaveRoomDto leaveRoom:
                         {
                             ThrowIfNotInRoom(webSocket, leaveRoom);
                             var room = GetRoomOrThrow(leaveRoom.RoomId, webSocket, leaveRoom);
@@ -111,11 +111,11 @@ namespace Elympics
 
                             SendSuccessResponse(webSocket, leaveRoom);
                             UpdateTime(ref room);
-                            SendResponse(webSocket, new RoomWasLeft(room.RoomId, LeavingReasonDto.UserLeft));
+                            SendResponse(webSocket, new RoomWasLeftDto(room.RoomId, LeavingReasonDto.UserLeft));
                             UpdateRoomOnList(webSocket, room);
                             break;
                         }
-                        case SetRoomParameters setRoomParameters:
+                        case SetRoomParametersDto setRoomParameters:
                         {
                             ThrowIfNotInRoom(webSocket, setRoomParameters);
                             var room = GetCurrentRoom();
@@ -137,7 +137,7 @@ namespace Elympics
                             UpdateRoomOnList(webSocket, room);
                             break;
                         }
-                        case ChangeTeam changeTeam:
+                        case ChangeTeamDto changeTeam:
                         {
                             ThrowIfNotInRoom(webSocket, changeTeam);
                             var room = GetCurrentRoom();
@@ -149,7 +149,7 @@ namespace Elympics
                             SendResponse(webSocket, room);
                             break;
                         }
-                        case SetReady setReady:
+                        case SetReadyDto setReady:
                         {
                             ThrowIfNotInRoom(webSocket, setReady);
                             var room = GetCurrentRoom();
@@ -165,7 +165,7 @@ namespace Elympics
                             SendResponse(webSocket, room);
                             break;
                         }
-                        case SetUnready setUnready:
+                        case SetUnreadyDto setUnready:
                         {
                             ThrowIfNotInRoom(webSocket, setUnready);
                             var room = GetCurrentRoom();
@@ -181,7 +181,7 @@ namespace Elympics
                             SendResponse(webSocket, room);
                             break;
                         }
-                        case StartMatchmaking startMatchmaking:
+                        case StartMatchmakingDto startMatchmaking:
                         {
                             ThrowIfAlreadyInMatchmaking(webSocket, startMatchmaking);
                             cts = new CancellationTokenSource();
@@ -212,7 +212,7 @@ namespace Elympics
 
                             break;
                         }
-                        case CancelMatchmaking cancelMatchmaking:
+                        case CancelMatchmakingDto cancelMatchmaking:
                         {
                             ThrowIfNotInRoom(webSocket, cancelMatchmaking);
                             var room = GetCurrentRoom();
@@ -236,25 +236,25 @@ namespace Elympics
                             SimulateCancelling(webSocket, room);
                             break;
                         }
-                        case WatchRooms watchRooms:
+                        case WatchRoomsDto watchRooms:
                         {
                             ThrowIfMatchingWatchListState(webSocket, watchRooms);
                             WebSocketMockBackendSession.TracksRoomList = true;
                             SendSuccessResponse(webSocket, watchRooms);
                             SendResponse(webSocket,
-                                new RoomListChanged(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
+                                new RoomListChangedDto(new List<ListedRoomChange>(WebSocketMockBackendSession.Rooms.Select(r => new ListedRoomChange(r.Key, CreatePublicRoomState(r.Value))))));
                             break;
                         }
-                        case UnwatchRooms unwatchRooms:
+                        case UnwatchRoomsDto unwatchRooms:
                         {
                             ThrowIfMatchingWatchListState(webSocket, unwatchRooms);
                             WebSocketMockBackendSession.TracksRoomList = false;
                             SendSuccessResponse(webSocket, unwatchRooms);
                             break;
                         }
-                        case RequestRollings requestRollings:
+                        case RequestRollingsDto requestRollings:
                         {
-                            var response = new RollingsResponse(
+                            var response = new RollingsResponseDto(
                                 requestRollings.Rollings.Select(rollingRequestDto => new RollingResponseDto
                                 {
                                     RollingTournamentBetConfigId = Guid.NewGuid(),
@@ -287,11 +287,11 @@ namespace Elympics
 #pragma warning disable IDE0010
                 switch (msg)
                 {
-                    case ShowAuth showAuth:
+                    case ShowAuthDto showAuth:
                     {
                         ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                         SendSuccessResponse(ws, showAuth);
-                        SendResponseInternal(ws, new ShowAuthResponse(userId, string.Empty, string.Empty, nickname, avatarUrl, showAuth.OperationId));
+                        SendResponseInternal(ws, new ShowAuthResponseDto(userId, string.Empty, string.Empty, nickname, avatarUrl, showAuth.OperationId));
                         break;
                     }
                 }
@@ -320,23 +320,23 @@ namespace Elympics
                 {
                     switch (msg)
                     {
-                        case JoinLobby:
-                        case ShowAuth:
-                        case CancelMatchmaking:
-                        case ChangeTeam:
-                        case CreateRoom:
-                        case JoinWithJoinCode:
-                        case JoinWithRoomId:
-                        case LeaveRoom:
-                        case SetReady:
-                        case SetRoomParameters:
-                        case SetUnready:
-                        case StartMatchmaking:
-                        case UnwatchRooms:
-                        case WatchRooms:
-                        case Ping:
-                        case Pong:
-                        case RequestRollings:
+                        case JoinLobbyDto:
+                        case ShowAuthDto:
+                        case CancelMatchmakingDto:
+                        case ChangeTeamDto:
+                        case CreateRoomDto:
+                        case JoinWithJoinCodeDto:
+                        case JoinWithRoomIdDto:
+                        case LeaveRoomDto:
+                        case SetReadyDto:
+                        case SetRoomParametersDto:
+                        case SetUnreadyDto:
+                        case StartMatchmakingDto:
+                        case UnwatchRoomsDto:
+                        case WatchRoomsDto:
+                        case PingDto:
+                        case PongDto:
+                        case RequestRollingsDto:
                             break;
                         default:
                             throw new NotImplementedException($"[MOCK] No handler for message of type {msg.GetType().FullName}");
@@ -368,15 +368,15 @@ namespace Elympics
 #pragma warning disable IDE0010
                     switch (msg)
                     {
-                        case JoinLobby joinLobby:
+                        case JoinLobbyDto joinLobby:
                         {
                             ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                             SendSuccessResponse(webSocket, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoinDto>(), string.Empty, string.Empty, joinLobby.OperationId);
+                            var gameResponse = new GameDataResponseDto(createInitialRoom ? 1 : 0, new List<RoomCoinDto>(), string.Empty, string.Empty, joinLobby.OperationId);
                             SendResponse(webSocket, gameResponse);
                             if (createInitialRoom)
                             {
-                                var room = new RoomStateChanged(Guid.NewGuid(),
+                                var room = new RoomStateChangedDto(Guid.NewGuid(),
                                     DateTime.Now,
                                     "RoomName",
                                     "ZZZZZZZZ",
@@ -420,7 +420,7 @@ namespace Elympics
 #pragma warning disable IDE0010
                     switch (msg)
                     {
-                        case JoinLobby:
+                        case JoinLobbyDto:
                         {
                             webSocket.OnError += Raise.Event<WebSocketErrorEventHandler>(errorMessage);
                             break;
@@ -448,7 +448,7 @@ namespace Elympics
 #pragma warning disable IDE0010
                     switch (msg)
                     {
-                        case JoinLobby:
+                        case JoinLobbyDto:
                         {
                             webSocket.OnClose += Raise.Event<WebSocketCloseEventHandler>(WebSocketCloseCode.Abnormal, errorMessage);
                             break;
@@ -512,7 +512,7 @@ namespace Elympics
         {
             while (!ct.IsCancellationRequested)
             {
-                SendResponse(ws, new Ping());
+                SendResponse(ws, new PingDto());
                 await UniTask.Delay(TimeSpan.FromSeconds(delay), DelayType.Realtime);
             }
         }
@@ -551,7 +551,7 @@ namespace Elympics
 
         public static void CancelPingToken() => pingCts?.Cancel();
 
-        private static void UpdateUsers(ref RoomStateChanged roomStateChanged, IEnumerable<UserInfo> users)
+        private static void UpdateUsers(ref RoomStateChangedDto roomStateChanged, IEnumerable<UserInfo> users)
         {
             roomStateChanged = roomStateChanged with
             {
@@ -560,7 +560,7 @@ namespace Elympics
             WebSocketMockBackendSession.Rooms[roomStateChanged.RoomId] = roomStateChanged;
         }
 
-        private static void UpdateTime(ref RoomStateChanged roomStateChanged)
+        private static void UpdateTime(ref RoomStateChangedDto roomStateChanged)
         {
             roomStateChanged = roomStateChanged with
             {
@@ -569,7 +569,7 @@ namespace Elympics
             WebSocketMockBackendSession.Rooms[roomStateChanged.RoomId] = roomStateChanged;
         }
 
-        private static async void SimulateCancelling(IWebSocket ws, RoomStateChanged room)
+        private static async void SimulateCancelling(IWebSocket ws, RoomStateChangedDto room)
         {
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
             SetMatchmakingState(ref room, MatchmakingState.Unlocked);
@@ -577,7 +577,7 @@ namespace Elympics
             SendResponse(ws, room);
         }
 
-        private static async void SimulateMatchmaking(IWebSocket ws, RoomStateChanged room, CancellationToken ct)
+        private static async void SimulateMatchmaking(IWebSocket ws, RoomStateChangedDto room, CancellationToken ct)
         {
             try
             {
@@ -623,7 +623,7 @@ namespace Elympics
             }
         }
 
-        private static void SetMatchmakingState(ref RoomStateChanged room, MatchmakingState newState)
+        private static void SetMatchmakingState(ref RoomStateChangedDto room, MatchmakingState newState)
         {
             ElympicsLogger.Log($"[MOCK] Matchmaking state set to <color=green>{newState}</color>");
             room = room with
@@ -637,7 +637,7 @@ namespace Elympics
         }
 
 
-        private static void ThrowIfAlreadyInMatchmaking(IWebSocket ws, StartMatchmaking startMatchmaking, Guid? roomId = null)
+        private static void ThrowIfAlreadyInMatchmaking(IWebSocket ws, StartMatchmakingDto startMatchmaking, Guid? roomId = null)
         {
             if (cts == null)
                 return;
@@ -653,7 +653,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfCannotCancel(IWebSocket ws, RoomStateChanged room, LobbyOperation matchmakingOperation, Guid? roomId = null)
+        private static void ThrowIfCannotCancel(IWebSocket ws, RoomStateChangedDto room, LobbyOperation matchmakingOperation, Guid? roomId = null)
         {
             if (room.MatchmakingData!.State is MatchmakingStateDto.Matchmaking or MatchmakingStateDto.CancellingMatchmaking)
                 return;
@@ -666,14 +666,14 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfNoMatchmakingInRoom(IWebSocket ws, RoomStateChanged room, LobbyOperation matchmakingOperation, Guid? roomId = null)
+        private static void ThrowIfNoMatchmakingInRoom(IWebSocket ws, RoomStateChangedDto room, LobbyOperation matchmakingOperation, Guid? roomId = null)
         {
             if (room.MatchmakingData == null)
                 SendFailResponse(ws, matchmakingOperation, ErrorBlame.UserError, ErrorKind.RoomWithoutMatchmaking, roomId, "Cant's start matchmaking in non-matchmaking room.");
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfNotHost(IWebSocket ws, Guid hostId, RoomStateChanged room, LobbyOperation matchmakingOperation, Guid? roomId = null)
+        private static void ThrowIfNotHost(IWebSocket ws, Guid hostId, RoomStateChangedDto room, LobbyOperation matchmakingOperation, Guid? roomId = null)
         {
             if (room.Users[0].UserId == hostId)
                 return;
@@ -681,14 +681,14 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfAllNotReady(IWebSocket ws, RoomStateChanged room, StartMatchmaking startMatchmaking, Guid? roomId = null)
+        private static void ThrowIfAllNotReady(IWebSocket ws, RoomStateChangedDto room, StartMatchmakingDto startMatchmaking, Guid? roomId = null)
         {
             if (room.Users.Any(x => !x.IsReady))
                 SendFailResponse(ws, startMatchmaking, ErrorBlame.UserError, ErrorKind.NotEveryoneReady, roomId, "Not all users are ready");
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfAlreadyUnReady(UserInfo user, IWebSocket ws, SetUnready setUnready, Guid? roomId = null)
+        private static void ThrowIfAlreadyUnReady(UserInfo user, IWebSocket ws, SetUnreadyDto setUnready, Guid? roomId = null)
         {
             if (user.IsReady)
                 return;
@@ -696,7 +696,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfAlreadyReady(UserInfo user, IWebSocket ws, SetReady setReady, Guid? roomId = null)
+        private static void ThrowIfAlreadyReady(UserInfo user, IWebSocket ws, SetReadyDto setReady, Guid? roomId = null)
         {
             if (!user.IsReady)
                 return;
@@ -704,7 +704,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static RoomStateChanged GetCurrentRoom() => WebSocketMockBackendSession.Rooms[WebSocketMockBackendSession.PlayerCurrentRoom!.Value];
+        private static RoomStateChangedDto GetCurrentRoom() => WebSocketMockBackendSession.Rooms[WebSocketMockBackendSession.PlayerCurrentRoom!.Value];
 
         private static (uint TeamSize, uint TeamCount) GetQueueOrThrow(string queueName, IWebSocket ws, LobbyOperation createRoom, Guid? roomId = null)
         {
@@ -714,7 +714,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static void ThrowIfTeamFull(uint? teamIndex, RoomStateChanged room, IWebSocket ws, LobbyOperation joinWithRoomId)
+        private static void ThrowIfTeamFull(uint? teamIndex, RoomStateChangedDto room, IWebSocket ws, LobbyOperation joinWithRoomId)
         {
             if (teamIndex == null
                 || room.MatchmakingData == null
@@ -724,7 +724,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static RoomStateChanged GetRoomOrThrow(Guid roomId, IWebSocket ws, LobbyOperation joinWithRoomId)
+        private static RoomStateChangedDto GetRoomOrThrow(Guid roomId, IWebSocket ws, LobbyOperation joinWithRoomId)
         {
             if (WebSocketMockBackendSession.Rooms.TryGetValue(roomId, out var room))
                 return room;
@@ -732,7 +732,7 @@ namespace Elympics
             throw new MessageHandledException();
         }
 
-        private static RoomStateChanged GetRoomOrThrow(string joinCode, IWebSocket ws, LobbyOperation joinWithRoomId)
+        private static RoomStateChangedDto GetRoomOrThrow(string joinCode, IWebSocket ws, LobbyOperation joinWithRoomId)
         {
             foreach (var (_, state) in WebSocketMockBackendSession.Rooms)
                 if (state.JoinCode == joinCode)
@@ -760,8 +760,8 @@ namespace Elympics
 
         private static void ThrowIfMatchingWatchListState(IWebSocket ws, LobbyOperation trackingState)
         {
-            if ((trackingState is WatchRooms && !WebSocketMockBackendSession.TracksRoomList)
-                || (trackingState is UnwatchRooms && WebSocketMockBackendSession.TracksRoomList))
+            if ((trackingState is WatchRoomsDto && !WebSocketMockBackendSession.TracksRoomList)
+                || (trackingState is UnwatchRoomsDto && WebSocketMockBackendSession.TracksRoomList))
                 return;
             SendFailResponse(ws, trackingState, ErrorBlame.UserError, ErrorKind.Unspecified, null, $"Room list tracking already in state {trackingState}");
             throw new MessageHandledException();
@@ -770,10 +770,10 @@ namespace Elympics
         private static void SendSuccessResponse(IWebSocket ws, LobbyOperation lobbyOperation, Guid? roomId = null)
         {
             ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name} OperationId: {lobbyOperation.OperationId}");
-            if (lobbyOperation is CreateRoom or JoinWithJoinCode or JoinWithRoomId)
-                SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, roomId!.Value));
+            if (lobbyOperation is CreateRoomDto or JoinWithJoinCodeDto or JoinWithRoomIdDto)
+                SendResponseInternal(ws, new RoomOperationResultDto(lobbyOperation.OperationId, roomId!.Value));
             else
-                SendResponseInternal(ws, new OperationResult(lobbyOperation.OperationId));
+                SendResponseInternal(ws, new OperationResultDto(lobbyOperation.OperationId));
         }
 
         private static void SendFailResponse(
@@ -785,10 +785,10 @@ namespace Elympics
             string? details = null)
         {
             ElympicsLogger.Log($"[MOCK] Sending response fail on {lobbyOperation.GetType().Name} with {blame}, {kind}, {details}");
-            if (lobbyOperation is CreateRoom or JoinWithJoinCode or JoinWithRoomId)
-                SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, blame.Map(), kind.Map(), details, roomId!.Value));
+            if (lobbyOperation is CreateRoomDto or JoinWithJoinCodeDto or JoinWithRoomIdDto)
+                SendResponseInternal(ws, new RoomOperationResultDto(lobbyOperation.OperationId, blame.Map(), kind.Map(), details, roomId!.Value));
             else
-                SendResponseInternal(ws, new OperationResult(lobbyOperation.OperationId, blame.Map(), kind.Map(), details));
+                SendResponseInternal(ws, new OperationResultDto(lobbyOperation.OperationId, blame.Map(), kind.Map(), details));
         }
 
         private static void SendResponse(IWebSocket ws, IFromLobby fromLobby)
@@ -799,8 +799,8 @@ namespace Elympics
 
         private static void SendResponseInternal(IWebSocket ws, IFromLobby fromLobby) => ws.OnMessage += Raise.Event<WebSocketMessageEventHandler>(MessagePackSerializer.Serialize(fromLobby));
 
-        private static void UpdateRoomOnList(IWebSocket ws, RoomStateChanged room) => SendResponse(ws,
-            new RoomListChanged(new List<ListedRoomChange>
+        private static void UpdateRoomOnList(IWebSocket ws, RoomStateChangedDto room) => SendResponse(ws,
+            new RoomListChangedDto(new List<ListedRoomChange>
             {
                 new(room.RoomId, CreatePublicRoomState(room))
             }));
@@ -811,7 +811,7 @@ namespace Elympics
         private static MatchDetails GetDummyMatchDetails(IReadOnlyList<Guid> matchedPlayers) =>
             new(matchedPlayers, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>());
 
-        private static PublicRoomState CreatePublicRoomState(RoomStateChanged roomState)
+        private static PublicRoomState CreatePublicRoomState(RoomStateChangedDto roomState)
         {
             var matchmakingData = new PublicMatchmakingData(roomState.MatchmakingData!.LastStateUpdate,
                 roomState.MatchmakingData!.State,

@@ -85,7 +85,7 @@ namespace Elympics
             IMatchLauncher matchLauncher,
             IRoomsClient client,
             Guid roomId,
-            RoomStateChanged initialState,
+            RoomStateChangedDto initialState,
             bool isJoined = false,
             ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
         { }
@@ -114,7 +114,7 @@ namespace Elympics
             _logger = logger?.WithContext($"{nameof(Room)}");
         }
 
-        void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
             _state.Update(roomState, stateDiff);

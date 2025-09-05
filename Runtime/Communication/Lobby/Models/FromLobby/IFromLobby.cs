@@ -7,16 +7,16 @@ using MessagePack;
 
 namespace Elympics.Lobby.Models
 {
-    [Union(0, typeof(Ping))]
-    [Union(1, typeof(Pong))]
-    [Union(2, typeof(OperationResult))]
-    [Union(3, typeof(RoomStateChanged))]
-    [Union(4, typeof(RoomWasLeft))]
-    [Union(5, typeof(ShowAuthResponse))]
-    [Union(6, typeof(RoomIdOperationResult))]
-    [Union(7, typeof(RoomListChanged))]
-    [Union(8, typeof(GameDataResponse))]
-    [Union(9, typeof(RollingsResponse))]
+    [Union(0, typeof(PingDto))]
+    [Union(1, typeof(PongDto))]
+    [Union(2, typeof(OperationResultDto))]
+    [Union(3, typeof(RoomStateChangedDto))]
+    [Union(4, typeof(RoomWasLeftDto))]
+    [Union(5, typeof(ShowAuthResponseDto))]
+    [Union(6, typeof(RoomOperationResultDto))]
+    [Union(7, typeof(RoomListChangedDto))]
+    [Union(8, typeof(GameDataResponseDto))]
+    [Union(9, typeof(RollingsResponseDto))]
     public interface IFromLobby
     { }
 }

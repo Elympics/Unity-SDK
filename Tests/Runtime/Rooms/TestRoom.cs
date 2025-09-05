@@ -32,7 +32,7 @@ namespace Elympics.Tests.Rooms
         private static readonly Guid HostId = new("10100000000000000000000000bbbb01");
         private static readonly SessionConnectionDetails ConnectionDetails = Defaults.CreateConnectionDetails(HostId, RegionName);
 
-        private static RoomStateChanged CreateInitialRoomState() => Defaults.CreateRoomState(RoomId, HostId);
+        private static RoomStateChangedDto CreateInitialRoomState() => Defaults.CreateRoomState(RoomId, HostId);
 
         [Test]
         public void TestRoomStateUpdate()
@@ -406,7 +406,7 @@ namespace Elympics.Tests.Rooms
                 UniTask.RunOnThreadPool(async () =>
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(0.5));
-                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(Defaults.CreateRoomState(RoomId, HostId));
+                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(Defaults.CreateRoomState(RoomId, HostId));
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
@@ -434,7 +434,7 @@ namespace Elympics.Tests.Rooms
                 UniTask.RunOnThreadPool(async () =>
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(0.5));
-                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(Defaults.CreateRoomState(RoomId, HostId));
+                    roomClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(Defaults.CreateRoomState(RoomId, HostId));
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
@@ -444,7 +444,7 @@ namespace Elympics.Tests.Rooms
             Assert.IsTrue(room.IsDisposed);
         });
 
-        private static List<(string Name, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState)> cancellingRoomOperationsTestCases = new()
+        private static List<(string Name, Func<IRoom, UniTask> Operation, RoomStateChangedDto RoomState)> cancellingRoomOperationsTestCases = new()
         {
             (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, false, null, null, new Dictionary<string, string>()) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
             (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, false, null, null, new Dictionary<string, string>()) } }),
@@ -456,7 +456,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator SettingIsJoinedShouldCancelOperationsInProgress(
             [ValueSource(nameof(cancellingRoomOperationsTestCases))]
-            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChangedDto RoomState) testCase) => UniTask.ToCoroutine(async () =>
         {
             var roomClientMock = Substitute.For<IRoomsClient>();
             _ = roomClientMock.ChangeTeam(default, null)
@@ -485,7 +485,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator DisposingRoomShouldCancelOperationsInProgress(
             [ValueSource(nameof(cancellingRoomOperationsTestCases))]
-            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChangedDto RoomState) testCase) => UniTask.ToCoroutine(async () =>
         {
             var roomClientMock = Substitute.For<IRoomsClient>();
             _ = roomClientMock.ChangeTeam(default, null)
@@ -514,7 +514,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator LeavingRoomShouldCancelOperationsInProgress(
             [ValueSource(nameof(cancellingRoomOperationsTestCases))]
-            (string _, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState) testCase) => UniTask.ToCoroutine(async () =>
+            (string _, Func<IRoom, UniTask> Operation, RoomStateChangedDto RoomState) testCase) => UniTask.ToCoroutine(async () =>
         {
             var roomClientMock = Substitute.For<IRoomsClient>();
             _ = roomClientMock.ChangeTeam(default, null)

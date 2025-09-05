@@ -117,7 +117,7 @@ namespace Elympics
             _client.LeftRoom += HandleLeftRoom;
         }
 
-        private void HandleRoomListChanged(RoomListChanged roomListChanged)
+        private void HandleRoomListChanged(RoomListChangedDto roomListChanged)
         {
             foreach (var listedRoomChange in roomListChanged.Changes)
             {
@@ -168,7 +168,7 @@ namespace Elympics
             _initialized = false;
         }
 
-        private void HandleJoinedRoomUpdated(RoomStateChanged roomState)
+        private void HandleJoinedRoomUpdated(RoomStateChangedDto roomState)
         {
             var logger = _logger.WithMethodName();
             logger.Log($"Handle room update.{Environment.NewLine}{roomState}");
@@ -223,7 +223,7 @@ namespace Elympics
             }
         }
 
-        private IRoom CreateRoom(Guid id, PublicRoomState? publicState = null, RoomStateChanged? state = null)
+        private IRoom CreateRoom(Guid id, PublicRoomState? publicState = null, RoomStateChangedDto? state = null)
         {
             if (state is null && publicState is null)
                 throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
@@ -510,7 +510,7 @@ namespace Elympics
             await room.StartMatchmaking();
         }
 
-        async UniTask IRoomsManager.CheckJoinedRoomStatus(GameDataResponse gameDataResponse)
+        async UniTask IRoomsManager.CheckJoinedRoomStatus(GameDataResponseDto gameDataResponse)
         {
             if (_initialized)
                 return;
@@ -549,7 +549,7 @@ namespace Elympics
 
             return;
 
-            void OnRoomStateChanged(RoomStateChanged obj)
+            void OnRoomStateChanged(RoomStateChangedDto obj)
             {
                 if (_rooms[obj.RoomId].IsMatchRoom())
                     // ReSharper disable once AccessToModifiedClosure

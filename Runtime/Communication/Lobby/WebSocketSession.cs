@@ -21,9 +21,9 @@ namespace Elympics.Lobby
         public event Action<DisconnectionData>? Disconnected;
         public event Action<IFromLobby>? MessageReceived;
 
-        private readonly ConcurrentDictionary<Guid, Action<OperationResult>> _operationResultHandlers = new();
+        private readonly ConcurrentDictionary<Guid, Action<OperationResultDto>> _operationResultHandlers = new();
 
-        private readonly ConcurrentDictionary<Guid, Action<IDataFromLobby>> _dataResponses = new();
+        private readonly ConcurrentDictionary<Guid, Action<ILobbyResponse>> _dataResponses = new();
 
         private IWebSocket? _ws;
         private CancellationTokenSource? _cts;
@@ -58,7 +58,7 @@ namespace Elympics.Lobby
             _serializer = serializer ?? new MessagePackLobbySerializer();
         }
 
-        public async UniTask<GameDataResponse> Connect(SessionConnectionDetails details, CancellationToken ct = default)
+        public async UniTask<GameDataResponseDto> Connect(SessionConnectionDetails details, CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
             var (wsUrl, authData, gameId, gameVersion, regionName) = details;
@@ -111,7 +111,7 @@ namespace Elympics.Lobby
             _isDisposed = true;
         }
 
-        public async UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
+        public async UniTask<OperationResultDto> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ThrowIfNotConnected();
@@ -122,7 +122,7 @@ namespace Elympics.Lobby
         }
 
         public async UniTask<TResponse> SendRequest<TResponse>(LobbyOperation message, CancellationToken ct = default)
-            where TResponse : IDataFromLobby
+            where TResponse : ILobbyResponse
         {
             ThrowIfDisposed();
             ThrowIfNotConnected();
@@ -150,10 +150,10 @@ namespace Elympics.Lobby
             _ = await openTask;
         }
 
-        private async UniTask<GameDataResponse> EstablishSession(Guid gameId, string gameVersion, string regionName)
+        private async UniTask<GameDataResponseDto> EstablishSession(Guid gameId, string gameVersion, string regionName)
         {
-            var request = new JoinLobby(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName);
-            var waitForGameData = WaitForLobbyData<GameDataResponse>(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
+            var request = new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName);
+            var waitForGameData = WaitForLobbyData<GameDataResponseDto>(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
             SendMessage(request);
             return await waitForGameData;
         }
@@ -208,23 +208,23 @@ namespace Elympics.Lobby
                         ElympicsLogger.Log($"Received WebSocket message: {typeName} from: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
-                if (message is Ping)
+                if (message is PingDto)
                 {
                     DispatchWithCancellation(() =>
                     {
                         _timer?.Reset();
                         _timer?.Start();
                     });
-                    SendMessage(new Pong());
+                    SendMessage(new PongDto());
                     return;
                 }
-                if (message is OperationResult result)
+                if (message is OperationResultDto result)
                 {
                     if (_operationResultHandlers.TryRemove(result.OperationId, out var resultHandler))
                         DispatchWithCancellation(() => resultHandler.Invoke(result));
                     return;
                 }
-                if (message is IDataFromLobby dataFromLobby)
+                if (message is ILobbyResponse dataFromLobby)
                 {
                     if (_dataResponses.TryRemove(dataFromLobby.RequestId, out var requestHandler))
                         DispatchWithCancellation(() => requestHandler.Invoke(dataFromLobby));
@@ -325,15 +325,15 @@ namespace Elympics.Lobby
                 Disconnected?.Invoke(data);
         }
 
-        private UniTask<OperationResult> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
-            ResultUtils.WaitForResult<OperationResult, Action<OperationResult>>(timeout,
+        private UniTask<OperationResultDto> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
+            ResultUtils.WaitForResult<OperationResultDto, Action<OperationResultDto>>(timeout,
                 tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)),
                 handler => _operationResultHandlers.TryAdd(operationId, handler),
                 _ => _operationResultHandlers.TryRemove(operationId, out var _),
                 ct);
 
         private async UniTask<TData> WaitForLobbyData<TData>(Guid requestId, TimeSpan timeout, CancellationToken ct)
-            where TData : IDataFromLobby
+            where TData : ILobbyResponse
         {
             var result = await ResultUtils.WaitForResult<IFromLobby, Action<IFromLobby>>(timeout,
                 tcs => result => _ = tcs.TrySetResult(result),

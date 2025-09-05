@@ -8,9 +8,9 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record RoomListChanged([property: Key(0)] IReadOnlyList<ListedRoomChange> Changes) : IFromLobby
+    public record RoomListChangedDto([property: Key(0)] IReadOnlyList<ListedRoomChange> Changes) : IFromLobby
     {
-        public virtual bool Equals(RoomListChanged? other)
+        public virtual bool Equals(RoomListChangedDto? other)
         {
             if (other is null)
                 return false;

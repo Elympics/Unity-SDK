@@ -22,9 +22,9 @@ namespace Elympics
         /// </summary>
         /// <param name="newConnectionDetails">Client-side game details and authentication data.</param>
         /// <returns>Server-side game details (only if <paramref name="newConnectionDetails"/> changed since last call).</returns>
-        public abstract UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails);
+        public abstract UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails);
 
-        protected async UniTask<GameDataResponse> ConnectToLobby(SessionConnectionDetails connectionDetails) =>
+        protected async UniTask<GameDataResponseDto> ConnectToLobby(SessionConnectionDetails connectionDetails) =>
             await _webSocketSession.Connect(connectionDetails);
 
         protected void DisconnectFromLobby(DisconnectionReason reason)

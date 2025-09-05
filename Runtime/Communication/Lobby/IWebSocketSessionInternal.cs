@@ -14,8 +14,8 @@ namespace Elympics.Lobby
         event Action<IFromLobby>? MessageReceived;
 
         SessionConnectionDetails? ConnectionDetails { get; }
-        UniTask<GameDataResponse> Connect(SessionConnectionDetails details, CancellationToken ct = default);
+        UniTask<GameDataResponseDto> Connect(SessionConnectionDetails details, CancellationToken ct = default);
         void Disconnect(DisconnectionReason reason);
-        UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default);
+        UniTask<OperationResultDto> ExecuteOperation(LobbyOperation message, CancellationToken ct = default);
     }
 }

@@ -7,10 +7,10 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record WatchRooms() : LobbyOperation
+    public record WatchRoomsDto() : LobbyOperation
     {
         [SerializationConstructor]
-        public WatchRooms(Guid operationId) : this() =>
+        public WatchRoomsDto(Guid operationId) : this() =>
             OperationId = operationId;
     }
 }

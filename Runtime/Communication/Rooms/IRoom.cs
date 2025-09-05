@@ -41,7 +41,7 @@ namespace Elympics
 
         UniTask Leave();
 
-        internal void UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        internal void UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
         { }
 
         internal void UpdateState(PublicRoomState roomState)

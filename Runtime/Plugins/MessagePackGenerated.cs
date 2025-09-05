@@ -90,12 +90,12 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.Lobby.Models.IToLobby), 38 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.IFromMatchmaker), 39 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.IToMatchmaker), 40 },
-                { typeof(global::Communication.Lobby.Models.ToLobby.RequestRollings), 41 },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RequestRollingsDto), 41 },
                 { typeof(global::Communication.Lobby.Models.ToLobby.RollingRequestDto), 42 },
                 { typeof(global::Communication.Lobby.Models.ToLobby.RollingResponseDto), 43 },
-                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponse), 44 },
-                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse), 45 },
-                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth), 46 },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponseDto), 44 },
+                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto), 45 },
+                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto), 46 },
                 { typeof(global::Elympics.Communication.Rooms.Models.MatchDataDto), 47 },
                 { typeof(global::Elympics.Communication.Rooms.Models.MatchDetailsDto), 48 },
                 { typeof(global::Elympics.Communication.Rooms.Models.RollingBetDto), 49 },
@@ -115,10 +115,10 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.ElympicsSnapshotWithMetadata), 63 },
                 { typeof(global::Elympics.FactoryState), 64 },
                 { typeof(global::Elympics.InitialMatchPlayerDataGuid), 65 },
-                { typeof(global::Elympics.Lobby.Models.JoinLobby), 66 },
-                { typeof(global::Elympics.Lobby.Models.OperationResult), 67 },
-                { typeof(global::Elympics.Lobby.Models.Ping), 68 },
-                { typeof(global::Elympics.Lobby.Models.Pong), 69 },
+                { typeof(global::Elympics.Lobby.Models.JoinLobbyDto), 66 },
+                { typeof(global::Elympics.Lobby.Models.OperationResultDto), 67 },
+                { typeof(global::Elympics.Lobby.Models.PingDto), 68 },
+                { typeof(global::Elympics.Lobby.Models.PongDto), 69 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.GameData), 70 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.JoinMatchmaker), 71 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchData), 72 },
@@ -126,13 +126,13 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.MatchmakingError), 74 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.Ping), 75 },
                 { typeof(global::Elympics.Models.Matchmaking.WebSocket.Pong), 76 },
-                { typeof(global::Elympics.Rooms.Models.CancelMatchmaking), 77 },
-                { typeof(global::Elympics.Rooms.Models.ChangeTeam), 78 },
-                { typeof(global::Elympics.Rooms.Models.CreateRoom), 79 },
-                { typeof(global::Elympics.Rooms.Models.GameDataResponse), 80 },
-                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCode), 81 },
-                { typeof(global::Elympics.Rooms.Models.JoinWithRoomId), 82 },
-                { typeof(global::Elympics.Rooms.Models.LeaveRoom), 83 },
+                { typeof(global::Elympics.Rooms.Models.CancelMatchmakingDto), 77 },
+                { typeof(global::Elympics.Rooms.Models.ChangeTeamDto), 78 },
+                { typeof(global::Elympics.Rooms.Models.CreateRoomDto), 79 },
+                { typeof(global::Elympics.Rooms.Models.GameDataResponseDto), 80 },
+                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCodeDto), 81 },
+                { typeof(global::Elympics.Rooms.Models.JoinWithRoomIdDto), 82 },
+                { typeof(global::Elympics.Rooms.Models.LeaveRoomDto), 83 },
                 { typeof(global::Elympics.Rooms.Models.ListedRoomChange), 84 },
                 { typeof(global::Elympics.Rooms.Models.MatchData), 85 },
                 { typeof(global::Elympics.Rooms.Models.MatchDetails), 86 },
@@ -145,18 +145,18 @@ namespace MessagePack.Resolvers
                 { typeof(global::Elympics.Rooms.Models.RoomChain), 93 },
                 { typeof(global::Elympics.Rooms.Models.RoomCoin), 94 },
                 { typeof(global::Elympics.Rooms.Models.RoomCurrency), 95 },
-                { typeof(global::Elympics.Rooms.Models.RoomIdOperationResult), 96 },
-                { typeof(global::Elympics.Rooms.Models.RoomListChanged), 97 },
-                { typeof(global::Elympics.Rooms.Models.RoomStateChanged), 98 },
+                { typeof(global::Elympics.Rooms.Models.RoomListChangedDto), 96 },
+                { typeof(global::Elympics.Rooms.Models.RoomOperationResultDto), 97 },
+                { typeof(global::Elympics.Rooms.Models.RoomStateChangedDto), 98 },
                 { typeof(global::Elympics.Rooms.Models.RoomTournamentDetails), 99 },
-                { typeof(global::Elympics.Rooms.Models.RoomWasLeft), 100 },
-                { typeof(global::Elympics.Rooms.Models.SetReady), 101 },
-                { typeof(global::Elympics.Rooms.Models.SetRoomParameters), 102 },
-                { typeof(global::Elympics.Rooms.Models.SetUnready), 103 },
-                { typeof(global::Elympics.Rooms.Models.StartMatchmaking), 104 },
-                { typeof(global::Elympics.Rooms.Models.UnwatchRooms), 105 },
-                { typeof(global::Elympics.Rooms.Models.UpdateCustomPlayerData), 106 },
-                { typeof(global::Elympics.Rooms.Models.WatchRooms), 107 },
+                { typeof(global::Elympics.Rooms.Models.RoomWasLeftDto), 100 },
+                { typeof(global::Elympics.Rooms.Models.SetReadyDto), 101 },
+                { typeof(global::Elympics.Rooms.Models.SetRoomParametersDto), 102 },
+                { typeof(global::Elympics.Rooms.Models.SetUnreadyDto), 103 },
+                { typeof(global::Elympics.Rooms.Models.StartMatchmakingDto), 104 },
+                { typeof(global::Elympics.Rooms.Models.UnwatchRoomsDto), 105 },
+                { typeof(global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto), 106 },
+                { typeof(global::Elympics.Rooms.Models.WatchRoomsDto), 107 },
                 { typeof(global::Elympics.SnapshotAnalysis.CollectorMatchData), 108 },
                 { typeof(global::Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackage), 109 },
                 { typeof(global::Elympics.SnapshotAnalysis.SnapshotSaverInitData), 110 },
@@ -216,12 +216,12 @@ namespace MessagePack.Resolvers
                 case 38: return new MessagePack.Formatters.Elympics.Lobby.Models.IToLobbyFormatter();
                 case 39: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IFromMatchmakerFormatter();
                 case 40: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.IToMatchmakerFormatter();
-                case 41: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RequestRollingsFormatter();
+                case 41: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RequestRollingsDtoFormatter();
                 case 42: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingRequestDtoFormatter();
                 case 43: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingResponseDtoFormatter();
-                case 44: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingsResponseFormatter();
-                case 45: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseFormatter();
-                case 46: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby.ShowAuthFormatter();
+                case 44: return new MessagePack.Formatters.Communication.Lobby.Models.ToLobby.RollingsResponseDtoFormatter();
+                case 45: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDtoFormatter();
+                case 46: return new MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDtoFormatter();
                 case 47: return new MessagePack.Formatters.Elympics.Communication.Rooms.Models.MatchDataDtoFormatter();
                 case 48: return new MessagePack.Formatters.Elympics.Communication.Rooms.Models.MatchDetailsDtoFormatter();
                 case 49: return new MessagePack.Formatters.Elympics.Communication.Rooms.Models.RollingBetDtoFormatter();
@@ -241,10 +241,10 @@ namespace MessagePack.Resolvers
                 case 63: return new MessagePack.Formatters.Elympics.ElympicsSnapshotWithMetadataFormatter();
                 case 64: return new MessagePack.Formatters.Elympics.FactoryStateFormatter();
                 case 65: return new MessagePack.Formatters.Elympics.InitialMatchPlayerDataGuidFormatter();
-                case 66: return new MessagePack.Formatters.Elympics.Lobby.Models.JoinLobbyFormatter();
-                case 67: return new MessagePack.Formatters.Elympics.Lobby.Models.OperationResultFormatter();
-                case 68: return new MessagePack.Formatters.Elympics.Lobby.Models.PingFormatter();
-                case 69: return new MessagePack.Formatters.Elympics.Lobby.Models.PongFormatter();
+                case 66: return new MessagePack.Formatters.Elympics.Lobby.Models.JoinLobbyDtoFormatter();
+                case 67: return new MessagePack.Formatters.Elympics.Lobby.Models.OperationResultDtoFormatter();
+                case 68: return new MessagePack.Formatters.Elympics.Lobby.Models.PingDtoFormatter();
+                case 69: return new MessagePack.Formatters.Elympics.Lobby.Models.PongDtoFormatter();
                 case 70: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.GameDataFormatter();
                 case 71: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.JoinMatchmakerFormatter();
                 case 72: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchDataFormatter();
@@ -252,13 +252,13 @@ namespace MessagePack.Resolvers
                 case 74: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.MatchmakingErrorFormatter();
                 case 75: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PingFormatter();
                 case 76: return new MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket.PongFormatter();
-                case 77: return new MessagePack.Formatters.Elympics.Rooms.Models.CancelMatchmakingFormatter();
-                case 78: return new MessagePack.Formatters.Elympics.Rooms.Models.ChangeTeamFormatter();
-                case 79: return new MessagePack.Formatters.Elympics.Rooms.Models.CreateRoomFormatter();
-                case 80: return new MessagePack.Formatters.Elympics.Rooms.Models.GameDataResponseFormatter();
-                case 81: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithJoinCodeFormatter();
-                case 82: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithRoomIdFormatter();
-                case 83: return new MessagePack.Formatters.Elympics.Rooms.Models.LeaveRoomFormatter();
+                case 77: return new MessagePack.Formatters.Elympics.Rooms.Models.CancelMatchmakingDtoFormatter();
+                case 78: return new MessagePack.Formatters.Elympics.Rooms.Models.ChangeTeamDtoFormatter();
+                case 79: return new MessagePack.Formatters.Elympics.Rooms.Models.CreateRoomDtoFormatter();
+                case 80: return new MessagePack.Formatters.Elympics.Rooms.Models.GameDataResponseDtoFormatter();
+                case 81: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithJoinCodeDtoFormatter();
+                case 82: return new MessagePack.Formatters.Elympics.Rooms.Models.JoinWithRoomIdDtoFormatter();
+                case 83: return new MessagePack.Formatters.Elympics.Rooms.Models.LeaveRoomDtoFormatter();
                 case 84: return new MessagePack.Formatters.Elympics.Rooms.Models.ListedRoomChangeFormatter();
                 case 85: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDataFormatter();
                 case 86: return new MessagePack.Formatters.Elympics.Rooms.Models.MatchDetailsFormatter();
@@ -271,18 +271,18 @@ namespace MessagePack.Resolvers
                 case 93: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomChainFormatter();
                 case 94: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCoinFormatter();
                 case 95: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomCurrencyFormatter();
-                case 96: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomIdOperationResultFormatter();
-                case 97: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomListChangedFormatter();
-                case 98: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomStateChangedFormatter();
+                case 96: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomListChangedDtoFormatter();
+                case 97: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomOperationResultDtoFormatter();
+                case 98: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomStateChangedDtoFormatter();
                 case 99: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomTournamentDetailsFormatter();
-                case 100: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomWasLeftFormatter();
-                case 101: return new MessagePack.Formatters.Elympics.Rooms.Models.SetReadyFormatter();
-                case 102: return new MessagePack.Formatters.Elympics.Rooms.Models.SetRoomParametersFormatter();
-                case 103: return new MessagePack.Formatters.Elympics.Rooms.Models.SetUnreadyFormatter();
-                case 104: return new MessagePack.Formatters.Elympics.Rooms.Models.StartMatchmakingFormatter();
-                case 105: return new MessagePack.Formatters.Elympics.Rooms.Models.UnwatchRoomsFormatter();
-                case 106: return new MessagePack.Formatters.Elympics.Rooms.Models.UpdateCustomPlayerDataFormatter();
-                case 107: return new MessagePack.Formatters.Elympics.Rooms.Models.WatchRoomsFormatter();
+                case 100: return new MessagePack.Formatters.Elympics.Rooms.Models.RoomWasLeftDtoFormatter();
+                case 101: return new MessagePack.Formatters.Elympics.Rooms.Models.SetReadyDtoFormatter();
+                case 102: return new MessagePack.Formatters.Elympics.Rooms.Models.SetRoomParametersDtoFormatter();
+                case 103: return new MessagePack.Formatters.Elympics.Rooms.Models.SetUnreadyDtoFormatter();
+                case 104: return new MessagePack.Formatters.Elympics.Rooms.Models.StartMatchmakingDtoFormatter();
+                case 105: return new MessagePack.Formatters.Elympics.Rooms.Models.UnwatchRoomsDtoFormatter();
+                case 106: return new MessagePack.Formatters.Elympics.Rooms.Models.UpdateCustomPlayerDataDtoFormatter();
+                case 107: return new MessagePack.Formatters.Elympics.Rooms.Models.WatchRoomsDtoFormatter();
                 case 108: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.CollectorMatchDataFormatter();
                 case 109: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.Serialization.SnapshotSerializationPackageFormatter();
                 case 110: return new MessagePack.Formatters.Elympics.SnapshotAnalysis.SnapshotSaverInitDataFormatter();
@@ -816,16 +816,16 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
         {
             this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(10, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
-                { typeof(global::Elympics.Lobby.Models.Ping).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
-                { typeof(global::Elympics.Lobby.Models.Pong).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
-                { typeof(global::Elympics.Lobby.Models.OperationResult).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
-                { typeof(global::Elympics.Rooms.Models.RoomStateChanged).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(3, 3) },
-                { typeof(global::Elympics.Rooms.Models.RoomWasLeft).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
-                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
-                { typeof(global::Elympics.Rooms.Models.RoomIdOperationResult).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
-                { typeof(global::Elympics.Rooms.Models.RoomListChanged).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
-                { typeof(global::Elympics.Rooms.Models.GameDataResponse).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(8, 8) },
-                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponse).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(9, 9) },
+                { typeof(global::Elympics.Lobby.Models.PingDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
+                { typeof(global::Elympics.Lobby.Models.PongDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+                { typeof(global::Elympics.Lobby.Models.OperationResultDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
+                { typeof(global::Elympics.Rooms.Models.RoomStateChangedDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(3, 3) },
+                { typeof(global::Elympics.Rooms.Models.RoomWasLeftDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
+                { typeof(global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
+                { typeof(global::Elympics.Rooms.Models.RoomOperationResultDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
+                { typeof(global::Elympics.Rooms.Models.RoomListChangedDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
+                { typeof(global::Elympics.Rooms.Models.GameDataResponseDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(8, 8) },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RollingsResponseDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(9, 9) },
             };
             this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(10)
             {
@@ -852,34 +852,34 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 switch (keyValuePair.Value)
                 {
                     case 0:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Ping>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.Ping)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PingDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.PingDto)value, options);
                         break;
                     case 1:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Pong>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.Pong)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PongDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.PongDto)value, options);
                         break;
                     case 2:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.OperationResult>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.OperationResult)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.OperationResultDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.OperationResultDto)value, options);
                         break;
                     case 3:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomStateChanged>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomStateChanged)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomStateChangedDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomStateChangedDto)value, options);
                         break;
                     case 4:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomWasLeft>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomWasLeft)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomWasLeftDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomWasLeftDto)value, options);
                         break;
                     case 5:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse>(options.Resolver).Serialize(ref writer, (global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto)value, options);
                         break;
                     case 6:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomIdOperationResult>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomIdOperationResult)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomOperationResultDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomOperationResultDto)value, options);
                         break;
                     case 7:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomListChanged>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomListChanged)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomListChangedDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.RoomListChangedDto)value, options);
                         break;
                     case 8:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponse>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.GameDataResponse)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponseDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.GameDataResponseDto)value, options);
                         break;
                     case 9:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponse>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RollingsResponse)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponseDto>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RollingsResponseDto)value, options);
                         break;
                     default:
                         break;
@@ -915,34 +915,34 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             switch (key)
             {
                 case 0:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Ping>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PingDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 1:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Pong>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PongDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 2:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.OperationResult>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.OperationResultDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 3:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomStateChanged>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomStateChangedDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 4:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomWasLeft>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomWasLeftDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 5:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 6:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomIdOperationResult>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomOperationResultDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 7:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomListChanged>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomListChangedDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 8:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponse>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.GameDataResponseDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 9:
-                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponse>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IFromLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RollingsResponseDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -963,24 +963,24 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
         {
             this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(18, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
-                { typeof(global::Elympics.Lobby.Models.Ping).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
-                { typeof(global::Elympics.Lobby.Models.Pong).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
-                { typeof(global::Elympics.Lobby.Models.JoinLobby).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
-                { typeof(global::Elympics.Rooms.Models.CreateRoom).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(3, 3) },
-                { typeof(global::Elympics.Rooms.Models.JoinWithRoomId).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
-                { typeof(global::Elympics.Rooms.Models.LeaveRoom).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
-                { typeof(global::Elympics.Rooms.Models.ChangeTeam).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
-                { typeof(global::Elympics.Rooms.Models.SetReady).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
-                { typeof(global::Elympics.Rooms.Models.SetUnready).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(8, 8) },
-                { typeof(global::Elympics.Rooms.Models.StartMatchmaking).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(9, 9) },
-                { typeof(global::Elympics.Rooms.Models.CancelMatchmaking).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(10, 10) },
-                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(11, 11) },
-                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCode).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(12, 12) },
-                { typeof(global::Elympics.Rooms.Models.SetRoomParameters).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(13, 13) },
-                { typeof(global::Elympics.Rooms.Models.WatchRooms).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(14, 14) },
-                { typeof(global::Elympics.Rooms.Models.UnwatchRooms).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(15, 15) },
-                { typeof(global::Communication.Lobby.Models.ToLobby.RequestRollings).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(16, 16) },
-                { typeof(global::Elympics.Rooms.Models.UpdateCustomPlayerData).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(17, 17) },
+                { typeof(global::Elympics.Lobby.Models.PingDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
+                { typeof(global::Elympics.Lobby.Models.PongDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
+                { typeof(global::Elympics.Lobby.Models.JoinLobbyDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
+                { typeof(global::Elympics.Rooms.Models.CreateRoomDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(3, 3) },
+                { typeof(global::Elympics.Rooms.Models.JoinWithRoomIdDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(4, 4) },
+                { typeof(global::Elympics.Rooms.Models.LeaveRoomDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(5, 5) },
+                { typeof(global::Elympics.Rooms.Models.ChangeTeamDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(6, 6) },
+                { typeof(global::Elympics.Rooms.Models.SetReadyDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(7, 7) },
+                { typeof(global::Elympics.Rooms.Models.SetUnreadyDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(8, 8) },
+                { typeof(global::Elympics.Rooms.Models.StartMatchmakingDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(9, 9) },
+                { typeof(global::Elympics.Rooms.Models.CancelMatchmakingDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(10, 10) },
+                { typeof(global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(11, 11) },
+                { typeof(global::Elympics.Rooms.Models.JoinWithJoinCodeDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(12, 12) },
+                { typeof(global::Elympics.Rooms.Models.SetRoomParametersDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(13, 13) },
+                { typeof(global::Elympics.Rooms.Models.WatchRoomsDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(14, 14) },
+                { typeof(global::Elympics.Rooms.Models.UnwatchRoomsDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(15, 15) },
+                { typeof(global::Communication.Lobby.Models.ToLobby.RequestRollingsDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(16, 16) },
+                { typeof(global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(17, 17) },
             };
             this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(18)
             {
@@ -1015,58 +1015,58 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 switch (keyValuePair.Value)
                 {
                     case 0:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Ping>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.Ping)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PingDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.PingDto)value, options);
                         break;
                     case 1:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Pong>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.Pong)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PongDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.PongDto)value, options);
                         break;
                     case 2:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.JoinLobby>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.JoinLobby)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.JoinLobbyDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Lobby.Models.JoinLobbyDto)value, options);
                         break;
                     case 3:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CreateRoom>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.CreateRoom)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CreateRoomDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.CreateRoomDto)value, options);
                         break;
                     case 4:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithRoomId>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.JoinWithRoomId)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithRoomIdDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.JoinWithRoomIdDto)value, options);
                         break;
                     case 5:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.LeaveRoom>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.LeaveRoom)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.LeaveRoomDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.LeaveRoomDto)value, options);
                         break;
                     case 6:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.ChangeTeam>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.ChangeTeam)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.ChangeTeamDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.ChangeTeamDto)value, options);
                         break;
                     case 7:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetReady>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetReady)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetReadyDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetReadyDto)value, options);
                         break;
                     case 8:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetUnready>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetUnready)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetUnreadyDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetUnreadyDto)value, options);
                         break;
                     case 9:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.StartMatchmaking>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.StartMatchmaking)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.StartMatchmakingDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.StartMatchmakingDto)value, options);
                         break;
                     case 10:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CancelMatchmaking>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.CancelMatchmaking)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CancelMatchmakingDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.CancelMatchmakingDto)value, options);
                         break;
                     case 11:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth>(options.Resolver).Serialize(ref writer, (global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto)value, options);
                         break;
                     case 12:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithJoinCode>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.JoinWithJoinCode)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithJoinCodeDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.JoinWithJoinCodeDto)value, options);
                         break;
                     case 13:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetRoomParameters>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetRoomParameters)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetRoomParametersDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.SetRoomParametersDto)value, options);
                         break;
                     case 14:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.WatchRooms>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.WatchRooms)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.WatchRoomsDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.WatchRoomsDto)value, options);
                         break;
                     case 15:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRooms>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.UnwatchRooms)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRoomsDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.UnwatchRoomsDto)value, options);
                         break;
                     case 16:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollings>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RequestRollings)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollingsDto>(options.Resolver).Serialize(ref writer, (global::Communication.Lobby.Models.ToLobby.RequestRollingsDto)value, options);
                         break;
                     case 17:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UpdateCustomPlayerData>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.UpdateCustomPlayerData)value, options);
+                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto>(options.Resolver).Serialize(ref writer, (global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto)value, options);
                         break;
                     default:
                         break;
@@ -1102,58 +1102,58 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             switch (key)
             {
                 case 0:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Ping>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PingDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 1:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.Pong>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.PongDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 2:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.JoinLobby>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Lobby.Models.JoinLobbyDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 3:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CreateRoom>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CreateRoomDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 4:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithRoomId>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithRoomIdDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 5:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.LeaveRoom>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.LeaveRoomDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 6:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.ChangeTeam>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.ChangeTeamDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 7:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetReady>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetReadyDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 8:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetUnready>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetUnreadyDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 9:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.StartMatchmaking>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.StartMatchmakingDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 10:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CancelMatchmaking>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.CancelMatchmakingDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 11:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 12:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithJoinCode>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.JoinWithJoinCodeDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 13:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetRoomParameters>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.SetRoomParametersDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 14:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.WatchRooms>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.WatchRoomsDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 15:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRooms>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UnwatchRoomsDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 16:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollings>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Communication.Lobby.Models.ToLobby.RequestRollingsDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 case 17:
-                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UpdateCustomPlayerData>(options.Resolver).Deserialize(ref reader, options);
+                    result = (global::Elympics.Lobby.Models.IToLobby)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -1427,10 +1427,10 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 
 namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
 {
-    public sealed class RequestRollingsFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RequestRollings>
+    public sealed class RequestRollingsDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RequestRollingsDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RequestRollings value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RequestRollingsDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -1446,7 +1446,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Communication.Lobby.Models.ToLobby.RollingRequestDto>>(formatterResolver).Serialize(ref writer, value.Rollings, options);
         }
 
-        public global::Communication.Lobby.Models.ToLobby.RequestRollings Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Communication.Lobby.Models.ToLobby.RequestRollingsDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1483,7 +1483,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                 }
             }
 
-            var ____result = new global::Communication.Lobby.Models.ToLobby.RequestRollings(__OperationId__, __GameId__, __VersionId__, __Rollings__);
+            var ____result = new global::Communication.Lobby.Models.ToLobby.RequestRollingsDto(__OperationId__, __GameId__, __VersionId__, __Rollings__);
             reader.Depth--;
             return ____result;
         }
@@ -1608,10 +1608,10 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
         }
     }
 
-    public sealed class RollingsResponseFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RollingsResponse>
+    public sealed class RollingsResponseDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Communication.Lobby.Models.ToLobby.RollingsResponseDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RollingsResponse value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Communication.Lobby.Models.ToLobby.RollingsResponseDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -1625,7 +1625,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RequestId, options);
         }
 
-        public global::Communication.Lobby.Models.ToLobby.RollingsResponse Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Communication.Lobby.Models.ToLobby.RollingsResponseDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1654,7 +1654,7 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
                 }
             }
 
-            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingsResponse(__Rollings__, __RequestId__);
+            var ____result = new global::Communication.Lobby.Models.ToLobby.RollingsResponseDto(__Rollings__, __RequestId__);
             reader.Depth--;
             return ____result;
         }
@@ -1691,10 +1691,10 @@ namespace MessagePack.Formatters.Communication.Lobby.Models.ToLobby
 
 namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby
 {
-    public sealed class ShowAuthResponseFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse>
+    public sealed class ShowAuthResponseDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -1712,7 +1712,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RequestId, options);
         }
 
-        public global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1757,7 +1757,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponse(__UserId__, __AuthType__, __EthAddress__, __Nickname__, __AvatarUrl__, __RequestId__);
+            var ____result = new global::Elympics.Communication.Lobby.Models.FromLobby.ShowAuthResponseDto(__UserId__, __AuthType__, __EthAddress__, __Nickname__, __AvatarUrl__, __RequestId__);
             reader.Depth--;
             return ____result;
         }
@@ -1794,10 +1794,10 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.FromLobby
 
 namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby
 {
-    public sealed class ShowAuthFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth>
+    public sealed class ShowAuthDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -1810,7 +1810,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
         }
 
-        public global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1835,7 +1835,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.Models.ToLobby
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuth(__OperationId__);
+            var ____result = new global::Elympics.Communication.Lobby.Models.ToLobby.ShowAuthDto(__OperationId__);
             reader.Depth--;
             return ____result;
         }
@@ -3124,10 +3124,10 @@ namespace MessagePack.Formatters.Elympics
 
 namespace MessagePack.Formatters.Elympics.Lobby.Models
 {
-    public sealed class JoinLobbyFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.JoinLobby>
+    public sealed class JoinLobbyDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.JoinLobbyDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.JoinLobby value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.JoinLobbyDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3144,7 +3144,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.RegionName, options);
         }
 
-        public global::Elympics.Lobby.Models.JoinLobby Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Lobby.Models.JoinLobbyDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3185,16 +3185,16 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 }
             }
 
-            var ____result = new global::Elympics.Lobby.Models.JoinLobby(__OperationId__, __SdkVersion__, __GameId__, __GameVersion__, __RegionName__);
+            var ____result = new global::Elympics.Lobby.Models.JoinLobbyDto(__OperationId__, __SdkVersion__, __GameId__, __GameVersion__, __RegionName__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class OperationResultFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.OperationResult>
+    public sealed class OperationResultDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.OperationResultDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.OperationResult value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.OperationResultDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3211,7 +3211,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Details, options);
         }
 
-        public global::Elympics.Lobby.Models.OperationResult Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Lobby.Models.OperationResultDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3252,16 +3252,16 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
                 }
             }
 
-            var ____result = new global::Elympics.Lobby.Models.OperationResult(__OperationId__, __Success__, __Blame__, __Kind__, __Details__);
+            var ____result = new global::Elympics.Lobby.Models.OperationResultDto(__OperationId__, __Success__, __Blame__, __Kind__, __Details__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class PingFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.Ping>
+    public sealed class PingDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.PingDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.Ping value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.PingDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3272,7 +3272,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             writer.WriteArrayHeader(0);
         }
 
-        public global::Elympics.Lobby.Models.Ping Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Lobby.Models.PingDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3280,14 +3280,14 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             }
 
             reader.Skip();
-            return new global::Elympics.Lobby.Models.Ping();
+            return new global::Elympics.Lobby.Models.PingDto();
         }
     }
 
-    public sealed class PongFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.Pong>
+    public sealed class PongDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Lobby.Models.PongDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.Pong value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Lobby.Models.PongDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3298,7 +3298,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             writer.WriteArrayHeader(0);
         }
 
-        public global::Elympics.Lobby.Models.Pong Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Lobby.Models.PongDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3306,7 +3306,7 @@ namespace MessagePack.Formatters.Elympics.Lobby.Models
             }
 
             reader.Skip();
-            return new global::Elympics.Lobby.Models.Pong();
+            return new global::Elympics.Lobby.Models.PongDto();
         }
     }
 
@@ -3687,10 +3687,10 @@ namespace MessagePack.Formatters.Elympics.Models.Matchmaking.WebSocket
 
 namespace MessagePack.Formatters.Elympics.Rooms.Models
 {
-    public sealed class CancelMatchmakingFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.CancelMatchmaking>
+    public sealed class CancelMatchmakingDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.CancelMatchmakingDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.CancelMatchmaking value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.CancelMatchmakingDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3704,7 +3704,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
         }
 
-        public global::Elympics.Rooms.Models.CancelMatchmaking Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.CancelMatchmakingDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3733,16 +3733,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.CancelMatchmaking(__OperationId__, __RoomId__);
+            var ____result = new global::Elympics.Rooms.Models.CancelMatchmakingDto(__OperationId__, __RoomId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class ChangeTeamFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.ChangeTeam>
+    public sealed class ChangeTeamDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.ChangeTeamDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.ChangeTeam value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.ChangeTeamDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3757,7 +3757,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
         }
 
-        public global::Elympics.Rooms.Models.ChangeTeam Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.ChangeTeamDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3790,16 +3790,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.ChangeTeam(__OperationId__, __RoomId__, __TeamIndex__);
+            var ____result = new global::Elympics.Rooms.Models.ChangeTeamDto(__OperationId__, __RoomId__, __TeamIndex__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class CreateRoomFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.CreateRoom>
+    public sealed class CreateRoomDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.CreateRoomDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.CreateRoom value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.CreateRoomDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3822,7 +3822,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Serialize(ref writer, value.RollingTournamentBetConfigId, options);
         }
 
-        public global::Elympics.Rooms.Models.CreateRoom Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.CreateRoomDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3887,16 +3887,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.CreateRoom(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentBetConfigId__);
+            var ____result = new global::Elympics.Rooms.Models.CreateRoomDto(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentBetConfigId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class GameDataResponseFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.GameDataResponse>
+    public sealed class GameDataResponseDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.GameDataResponseDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.GameDataResponse value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.GameDataResponseDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3913,7 +3913,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RequestId, options);
         }
 
-        public global::Elympics.Rooms.Models.GameDataResponse Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.GameDataResponseDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -3954,16 +3954,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.GameDataResponse(__JoinedMatchRooms__, __CoinData__, __GameVersionId__, __FleetName__, __RequestId__);
+            var ____result = new global::Elympics.Rooms.Models.GameDataResponseDto(__JoinedMatchRooms__, __CoinData__, __GameVersionId__, __FleetName__, __RequestId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class JoinWithJoinCodeFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.JoinWithJoinCode>
+    public sealed class JoinWithJoinCodeDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.JoinWithJoinCodeDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.JoinWithJoinCode value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.JoinWithJoinCodeDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -3978,7 +3978,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
         }
 
-        public global::Elympics.Rooms.Models.JoinWithJoinCode Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.JoinWithJoinCodeDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -4011,16 +4011,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.JoinWithJoinCode(__OperationId__, __JoinCode__, __TeamIndex__);
+            var ____result = new global::Elympics.Rooms.Models.JoinWithJoinCodeDto(__OperationId__, __JoinCode__, __TeamIndex__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class JoinWithRoomIdFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.JoinWithRoomId>
+    public sealed class JoinWithRoomIdDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.JoinWithRoomIdDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.JoinWithRoomId value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.JoinWithRoomIdDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -4035,7 +4035,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
         }
 
-        public global::Elympics.Rooms.Models.JoinWithRoomId Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.JoinWithRoomIdDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -4068,16 +4068,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.JoinWithRoomId(__OperationId__, __RoomId__, __TeamIndex__);
+            var ____result = new global::Elympics.Rooms.Models.JoinWithRoomIdDto(__OperationId__, __RoomId__, __TeamIndex__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class LeaveRoomFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.LeaveRoom>
+    public sealed class LeaveRoomDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.LeaveRoomDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.LeaveRoom value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.LeaveRoomDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -4091,7 +4091,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
         }
 
-        public global::Elympics.Rooms.Models.LeaveRoom Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.LeaveRoomDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -4120,7 +4120,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.LeaveRoom(__OperationId__, __RoomId__);
+            var ____result = new global::Elympics.Rooms.Models.LeaveRoomDto(__OperationId__, __RoomId__);
             reader.Depth--;
             return ____result;
         }
@@ -4900,10 +4900,57 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
         }
     }
 
-    public sealed class RoomIdOperationResultFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomIdOperationResult>
+    public sealed class RoomListChangedDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomListChangedDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomIdOperationResult value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomListChangedDto value, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNil();
+                return;
+            }
+
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            writer.WriteArrayHeader(1);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>>(formatterResolver).Serialize(ref writer, value.Changes, options);
+        }
+
+        public global::Elympics.Rooms.Models.RoomListChangedDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        {
+            if (reader.TryReadNil())
+            {
+                return null;
+            }
+
+            options.Security.DepthStep(ref reader);
+            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
+            var length = reader.ReadArrayHeader();
+            var __Changes__ = default(global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>);
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        __Changes__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+
+            var ____result = new global::Elympics.Rooms.Models.RoomListChangedDto(__Changes__);
+            reader.Depth--;
+            return ____result;
+        }
+    }
+
+    public sealed class RoomOperationResultDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomOperationResultDto>
+    {
+
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomOperationResultDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -4921,7 +4968,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
         }
 
-        public global::Elympics.Rooms.Models.RoomIdOperationResult Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.RoomOperationResultDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -4966,63 +5013,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomIdOperationResult(__OperationId__, __Success__, __Blame__, __Kind__, __Details__, __RoomId__);
+            var ____result = new global::Elympics.Rooms.Models.RoomOperationResultDto(__OperationId__, __Success__, __Blame__, __Kind__, __Details__, __RoomId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class RoomListChangedFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomListChanged>
+    public sealed class RoomStateChangedDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomStateChangedDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomListChanged value, global::MessagePack.MessagePackSerializerOptions options)
-        {
-            if (value == null)
-            {
-                writer.WriteNil();
-                return;
-            }
-
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(1);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>>(formatterResolver).Serialize(ref writer, value.Changes, options);
-        }
-
-        public global::Elympics.Rooms.Models.RoomListChanged Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
-        {
-            if (reader.TryReadNil())
-            {
-                return null;
-            }
-
-            options.Security.DepthStep(ref reader);
-            global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            var length = reader.ReadArrayHeader();
-            var __Changes__ = default(global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>);
-
-            for (int i = 0; i < length; i++)
-            {
-                switch (i)
-                {
-                    case 0:
-                        __Changes__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyList<global::Elympics.Rooms.Models.ListedRoomChange>>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    default:
-                        reader.Skip();
-                        break;
-                }
-            }
-
-            var ____result = new global::Elympics.Rooms.Models.RoomListChanged(__Changes__);
-            reader.Depth--;
-            return ____result;
-        }
-    }
-
-    public sealed class RoomStateChangedFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomStateChanged>
-    {
-
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomStateChanged value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomStateChangedDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5044,7 +5044,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomData, options);
         }
 
-        public global::Elympics.Rooms.Models.RoomStateChanged Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.RoomStateChangedDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5105,7 +5105,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomStateChanged(__RoomId__, __LastUpdate__, __RoomName__, __JoinCode__, __HasPrivilegedHost__, __MatchmakingData__, __Users__, __IsPrivate__, __IsEphemeral__, __CustomData__);
+            var ____result = new global::Elympics.Rooms.Models.RoomStateChangedDto(__RoomId__, __LastUpdate__, __RoomName__, __JoinCode__, __HasPrivilegedHost__, __MatchmakingData__, __Users__, __IsPrivate__, __IsEphemeral__, __CustomData__);
             reader.Depth--;
             return ____result;
         }
@@ -5163,10 +5163,10 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
         }
     }
 
-    public sealed class RoomWasLeftFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomWasLeft>
+    public sealed class RoomWasLeftDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.RoomWasLeftDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomWasLeft value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.RoomWasLeftDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5180,7 +5180,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.Models.LeavingReasonDto>(formatterResolver).Serialize(ref writer, value.Reason, options);
         }
 
-        public global::Elympics.Rooms.Models.RoomWasLeft Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.RoomWasLeftDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5209,16 +5209,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.RoomWasLeft(__RoomId__, __Reason__);
+            var ____result = new global::Elympics.Rooms.Models.RoomWasLeftDto(__RoomId__, __Reason__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class SetReadyFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetReady>
+    public sealed class SetReadyDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetReadyDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetReady value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetReadyDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5235,7 +5235,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.LastRoomUpdate, options);
         }
 
-        public global::Elympics.Rooms.Models.SetReady Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.SetReadyDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5276,16 +5276,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.SetReady(__OperationId__, __RoomId__, __GameEngineData__, __MatchmakerData__, __LastRoomUpdate__);
+            var ____result = new global::Elympics.Rooms.Models.SetReadyDto(__OperationId__, __RoomId__, __GameEngineData__, __MatchmakerData__, __LastRoomUpdate__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class SetRoomParametersFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetRoomParameters>
+    public sealed class SetRoomParametersDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetRoomParametersDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetRoomParameters value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetRoomParametersDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5305,7 +5305,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Rooms.Models.RoomBetDetailsSlim>(formatterResolver).Serialize(ref writer, value.BetDetailsSlim, options);
         }
 
-        public global::Elympics.Rooms.Models.SetRoomParameters Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.SetRoomParametersDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5358,16 +5358,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.SetRoomParameters(__OperationId__, __RoomId__, __RoomName__, __IsPrivate__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__);
+            var ____result = new global::Elympics.Rooms.Models.SetRoomParametersDto(__OperationId__, __RoomId__, __RoomName__, __IsPrivate__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class SetUnreadyFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetUnready>
+    public sealed class SetUnreadyDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.SetUnreadyDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetUnready value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.SetUnreadyDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5381,7 +5381,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
         }
 
-        public global::Elympics.Rooms.Models.SetUnready Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.SetUnreadyDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5410,16 +5410,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.SetUnready(__OperationId__, __RoomId__);
+            var ____result = new global::Elympics.Rooms.Models.SetUnreadyDto(__OperationId__, __RoomId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class StartMatchmakingFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.StartMatchmaking>
+    public sealed class StartMatchmakingDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.StartMatchmakingDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.StartMatchmaking value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.StartMatchmakingDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5433,7 +5433,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
         }
 
-        public global::Elympics.Rooms.Models.StartMatchmaking Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.StartMatchmakingDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5462,16 +5462,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.StartMatchmaking(__OperationId__, __RoomId__);
+            var ____result = new global::Elympics.Rooms.Models.StartMatchmakingDto(__OperationId__, __RoomId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class UnwatchRoomsFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.UnwatchRooms>
+    public sealed class UnwatchRoomsDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.UnwatchRoomsDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.UnwatchRooms value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.UnwatchRoomsDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5484,7 +5484,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
         }
 
-        public global::Elympics.Rooms.Models.UnwatchRooms Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.UnwatchRoomsDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5509,16 +5509,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.UnwatchRooms(__OperationId__);
+            var ____result = new global::Elympics.Rooms.Models.UnwatchRoomsDto(__OperationId__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class UpdateCustomPlayerDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.UpdateCustomPlayerData>
+    public sealed class UpdateCustomPlayerDataDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.UpdateCustomPlayerData value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5533,7 +5533,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
         }
 
-        public global::Elympics.Rooms.Models.UpdateCustomPlayerData Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5566,16 +5566,16 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.UpdateCustomPlayerData(__OperationId__, __RoomId__, __CustomPlayerData__);
+            var ____result = new global::Elympics.Rooms.Models.UpdateCustomPlayerDataDto(__OperationId__, __RoomId__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }
     }
 
-    public sealed class WatchRoomsFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.WatchRooms>
+    public sealed class WatchRoomsDtoFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::Elympics.Rooms.Models.WatchRoomsDto>
     {
 
-        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.WatchRooms value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.Rooms.Models.WatchRoomsDto value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -5588,7 +5588,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
         }
 
-        public global::Elympics.Rooms.Models.WatchRooms Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::Elympics.Rooms.Models.WatchRoomsDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -5613,7 +5613,7 @@ namespace MessagePack.Formatters.Elympics.Rooms.Models
                 }
             }
 
-            var ____result = new global::Elympics.Rooms.Models.WatchRooms(__OperationId__);
+            var ____result = new global::Elympics.Rooms.Models.WatchRoomsDto(__OperationId__);
             reader.Depth--;
             return ____result;
         }

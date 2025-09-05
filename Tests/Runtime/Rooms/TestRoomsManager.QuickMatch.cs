@@ -390,7 +390,7 @@ namespace Elympics.Tests.Rooms
             MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
                 .Do(_ => MatchmakingFlow().Forget());
             MatchLauncherMock.When(x => x.CancelMatchmaking(Arg.Any<IRoom>(), Arg.Any<CancellationToken>()))
-                .Do(_ => throw new LobbyOperationException(new OperationResult(Guid.Empty, ErrorBlameDto.UserError, ErrorKindDto.RoomAlreadyInMatchedState, "")));
+                .Do(_ => throw new LobbyOperationException(new OperationResultDto(Guid.Empty, ErrorBlameDto.UserError, ErrorKindDto.RoomAlreadyInMatchedState, "")));
 
             // Act
             var result = await RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);

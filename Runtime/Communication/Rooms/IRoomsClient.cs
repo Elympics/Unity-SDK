@@ -12,8 +12,8 @@ namespace Elympics
 {
     internal interface IRoomsClient
     {
-        event Action<RoomListChanged>? RoomListChanged;
-        event Action<RoomStateChanged>? RoomStateChanged;
+        event Action<RoomListChangedDto>? RoomListChanged;
+        event Action<RoomStateChangedDto>? RoomStateChanged;
         event Action<LeftRoomArgs>? LeftRoom;
 
         SessionConnectionDetails SessionConnectionDetails { get; }

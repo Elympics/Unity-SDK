@@ -8,12 +8,12 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record UpdateCustomPlayerData(
+    public record UpdateCustomPlayerDataDto(
         [property: Key(1)] Guid RoomId,
         [property: Key(2)] Dictionary<string, string> CustomPlayerData) : LobbyOperation
     {
         [SerializationConstructor]
-        public UpdateCustomPlayerData(Guid operationId, Guid roomId, Dictionary<string, string> customPlayerData) : this(roomId, customPlayerData) =>
+        public UpdateCustomPlayerDataDto(Guid operationId, Guid roomId, Dictionary<string, string> customPlayerData) : this(roomId, customPlayerData) =>
             OperationId = operationId;
     }
 }

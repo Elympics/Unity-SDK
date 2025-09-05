@@ -10,7 +10,7 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record RoomStateChanged(
+    public record RoomStateChangedDto(
         [property: Key(0)] Guid RoomId,
         [property: Key(1)] DateTime LastUpdate,
         [property: Key(2)] string RoomName,
@@ -22,7 +22,7 @@ namespace Elympics.Rooms.Models
         [property: Key(8)] bool IsEphemeral,
         [property: Key(9)] IReadOnlyDictionary<string, string> CustomData) : IFromLobby
     {
-        public virtual bool Equals(RoomStateChanged? other)
+        public virtual bool Equals(RoomStateChangedDto? other)
         {
             if (other is null)
                 return false;

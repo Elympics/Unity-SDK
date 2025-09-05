@@ -18,7 +18,7 @@ namespace Elympics.Tests.Rooms
     internal class TestRoomsManager_JoiningAndTracking : TestRoomsManager
     {
         private static readonly PublicRoomState InitialPublicState = Defaults.CreatePublicRoomState(RoomId, HostId);
-        private static readonly RoomListChanged InitialRoomList = new(new List<ListedRoomChange>
+        private static readonly RoomListChangedDto InitialRoomList = new(new List<ListedRoomChange>
         {
             new(RoomId, InitialPublicState),
         });
@@ -94,7 +94,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void JoiningListedRoomShouldUpdateItsData_Users()
         {
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(InitialRoomList);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(InitialRoomList);
 
             var joiningPlayer = Defaults.CreateUserInfo(Guid.NewGuid());
             var joinedRoomState = InitialRoomState
@@ -120,7 +120,7 @@ namespace Elympics.Tests.Rooms
             EventRegister.ListenForEvents(nameof(IRoomsManager.RoomListUpdated));
 
             // Act
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(InitialRoomList);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(InitialRoomList);
 
             EventRegister.AssertIfInvoked();
         }
@@ -131,7 +131,7 @@ namespace Elympics.Tests.Rooms
             Assert.That(RoomsManager.ListAvailableRooms().Count, Is.EqualTo(0));
 
             // Act
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(InitialRoomList);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(InitialRoomList);
 
             Assert.That(RoomsManager.ListAvailableRooms().Count, Is.EqualTo(1));
             var availableRoom = RoomsManager.ListAvailableRooms()[0];
@@ -142,15 +142,15 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void AvailableRoomListShouldBeReducedCorrectlyWhenRoomListUpdateIsReceived()
         {
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(InitialRoomList);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(InitialRoomList);
             Assert.That(RoomsManager.ListAvailableRooms().Count, Is.EqualTo(1));
-            var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
+            var roomListChanged = new RoomListChangedDto(new List<ListedRoomChange>
             {
                 new(RoomId, null),
             });
 
             // Act
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(roomListChanged);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(roomListChanged);
 
             Assert.That(RoomsManager.ListAvailableRooms().Count, Is.EqualTo(0));
         }
@@ -170,10 +170,10 @@ namespace Elympics.Tests.Rooms
             [ValueSource(nameof(availableRoomListUpdateTestCases))]
             (PublicRoomState ModifiedState, string[] ExpectedEvents) testCase)
         {
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(InitialRoomList);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(InitialRoomList);
 
             var modifiedState = testCase.ModifiedState with { LastUpdate = Timer++ };
-            var roomListChanged = new RoomListChanged(new List<ListedRoomChange>
+            var roomListChanged = new RoomListChangedDto(new List<ListedRoomChange>
             {
                 new(RoomId, modifiedState),
             });
@@ -181,7 +181,7 @@ namespace Elympics.Tests.Rooms
             EventRegister.ListenForEvents(testCase.ExpectedEvents);
 
             // Act
-            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChanged>>(roomListChanged);
+            RoomsClientMock.RoomListChanged += Raise.Event<Action<RoomListChangedDto>>(roomListChanged);
 
             EventRegister.AssertIfInvoked();
             Assert.That(RoomsManager.ListAvailableRooms().Count, Is.EqualTo(1));
@@ -207,7 +207,7 @@ namespace Elympics.Tests.Rooms
             Assert.That(actualMatchmakingData.BetDetails, Is.EqualTo(modifiedState.MatchmakingData.BetDetails?.Map()));
         }
 
-        private static List<(RoomStateChanged ModifiedState, string[] ExpectedEvents)> roomUpdateTestCases = new()
+        private static List<(RoomStateChangedDto ModifiedState, string[] ExpectedEvents)> roomUpdateTestCases = new()
         {
             (
                 InitialRoomState.WithNameChanged("New Room Name"),
@@ -285,7 +285,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void AvailableRoomListShouldBeModifiedCorrectlyWhenRoomUpdateIsReceived(
             [ValueSource(nameof(roomUpdateTestCases))]
-            (RoomStateChanged ModifiedState, string[] ExpectedEvents) testCase)
+            (RoomStateChangedDto ModifiedState, string[] ExpectedEvents) testCase)
         {
             EmitRoomUpdate(InitialRoomState);
 

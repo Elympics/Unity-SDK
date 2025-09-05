@@ -141,7 +141,7 @@ namespace Elympics
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;
-        internal UniTask CheckJoinedRoomStatus(GameDataResponse gameDataResponse);
+        internal UniTask CheckJoinedRoomStatus(GameDataResponseDto gameDataResponse);
         internal void Reset();
     }
 }

@@ -99,7 +99,7 @@ namespace SCS
         public UniTask CancelMatchmaking(CancellationToken ct = default) => _room.CancelMatchmaking(ct);
         public void PlayAvailableMatch() => _room.PlayAvailableMatch();
         public UniTask Leave() => _room.Leave();
-        void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff) => _room.UpdateState(roomState, in stateDiff);
+        void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff) => _room.UpdateState(roomState, in stateDiff);
         void IRoom.UpdateState(PublicRoomState roomState) => _room.UpdateState(roomState);
         bool IRoom.IsQuickMatch => _room.IsQuickMatch;
         UniTask IRoom.StartMatchmakingInternal() => _room.StartMatchmakingInternal();

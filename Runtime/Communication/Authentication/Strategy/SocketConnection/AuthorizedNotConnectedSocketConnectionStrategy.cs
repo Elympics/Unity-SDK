@@ -13,7 +13,7 @@ namespace Elympics
         public AuthorizedNotConnectedStrategy(WebSocketSession socketSession, ElympicsLoggerContext logger) : base(socketSession, logger)
         { }
 
-        public override async UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails)
+        public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)
         {
             try
             {

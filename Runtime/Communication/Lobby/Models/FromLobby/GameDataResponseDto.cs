@@ -9,14 +9,14 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record GameDataResponse(
+    public record GameDataResponseDto(
         [property: Key(0)] int JoinedMatchRooms,
         [property: Key(1)] List<RoomCoinDto> CoinData,
         [property: Key(2)] string GameVersionId,
         [property: Key(3)] string FleetName,
-        [property: Key(4)] Guid RequestId) : IDataFromLobby
+        [property: Key(4)] Guid RequestId) : ILobbyResponse
     {
-        public virtual bool Equals(GameDataResponse? other)
+        public virtual bool Equals(GameDataResponseDto? other)
         {
             if (other is null)
                 return false;

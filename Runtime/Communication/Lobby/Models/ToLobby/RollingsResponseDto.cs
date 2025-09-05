@@ -8,7 +8,7 @@ using MessagePack;
 namespace Communication.Lobby.Models.ToLobby
 {
     [MessagePackObject]
-    public record RollingsResponse(
+    public record RollingsResponseDto(
         [property: Key(0)] List<RollingResponseDto> Rollings,
-        [property: Key(1)] Guid RequestId) : IDataFromLobby;
+        [property: Key(1)] Guid RequestId) : ILobbyResponse;
 }

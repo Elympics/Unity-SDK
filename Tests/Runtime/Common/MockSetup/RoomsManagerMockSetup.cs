@@ -13,7 +13,7 @@ namespace Elympics
             IRoom room = new Room(roomMatchClient,
                 roomClient,
                 Guid.Empty,
-                new RoomStateChanged(Guid.Empty,
+                new RoomStateChangedDto(Guid.Empty,
                     DateTime.Now,
                     string.Empty,
                     null,

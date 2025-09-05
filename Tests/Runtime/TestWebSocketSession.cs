@@ -20,7 +20,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Elympics.Tests.Common.AsyncAsserts;
-using Ping = Elympics.Lobby.Models.Ping;
 
 #nullable enable
 
@@ -224,7 +223,7 @@ namespace Elympics.Tests
             await ConnectWebSocketSessionAndAssert(session);
 
             IFromLobby? passedMessage = null;
-            IFromLobby ping = new Ping();
+            IFromLobby ping = new PingDto();
             var data = MessagePackSerializer.Serialize(ping);
             session.MessageReceived += ReceiveMessage;
             WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(data);
@@ -241,7 +240,7 @@ namespace Elympics.Tests
 
             IFromLobby? passedMessage = null;
             session.MessageReceived += ReceiveMessage;
-            IFromLobby pingData = new Ping();
+            IFromLobby pingData = new PingDto();
             var binaryPing = MessagePackSerializer.Serialize(pingData);
             WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(binaryPing);
             Assert.IsNull(passedMessage);
@@ -277,7 +276,7 @@ namespace Elympics.Tests
             await ConnectWebSocketSessionAndAssert(session);
 
             session.MessageReceived += ReceiveMessage;
-            IFromLobby passedMessage = new RoomWasLeft(Guid.Empty, LeavingReasonDto.RoomClosed);
+            IFromLobby passedMessage = new RoomWasLeftDto(Guid.Empty, LeavingReasonDto.RoomClosed);
             var data = MessagePackSerializer.Serialize(passedMessage);
             WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(data);
 
@@ -372,14 +371,14 @@ namespace Elympics.Tests
             Assert.False(session.IsConnected);
             _ = await AssertThrowsAsync<ElympicsException>(async () => await session.Connect(ConnectionDetails));
             _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
-            _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoom(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
+            _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoomDto(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });
 
         [UnityTest]
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesSuccessfully() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
@@ -400,7 +399,7 @@ namespace Elympics.Tests
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesWithError() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
@@ -421,7 +420,7 @@ namespace Elympics.Tests
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesWithTimeout() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomId(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);

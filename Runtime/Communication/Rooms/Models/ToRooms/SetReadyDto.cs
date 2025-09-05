@@ -8,17 +8,17 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record SetReady(
+    public record SetReadyDto(
         [property: Key(1)] Guid RoomId,
         [property: Key(2)] byte[] GameEngineData,
         [property: Key(3)] float[] MatchmakerData,
         [property: Key(4)] DateTime LastRoomUpdate) : LobbyOperation
     {
         [SerializationConstructor]
-        public SetReady(Guid operationId, Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate) : this(roomId, gameEngineData, matchmakerData, lastRoomUpdate) =>
+        public SetReadyDto(Guid operationId, Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate) : this(roomId, gameEngineData, matchmakerData, lastRoomUpdate) =>
             OperationId = operationId;
 
-        public virtual bool Equals(SetReady? other)
+        public virtual bool Equals(SetReadyDto? other)
         {
             if (other is null)
                 return false;

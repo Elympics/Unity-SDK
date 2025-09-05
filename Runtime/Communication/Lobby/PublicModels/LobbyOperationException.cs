@@ -10,7 +10,7 @@ namespace Elympics
         public readonly ErrorBlame? Blame;
         public readonly ErrorKind? Kind;
 
-        internal LobbyOperationException(OperationResult result) : base(result.Details ?? result.Kind.ToString())
+        internal LobbyOperationException(OperationResultDto result) : base(result.Details ?? result.Kind.ToString())
         {
             Blame = result.Blame?.Map();
             Kind = result.Kind?.Map();

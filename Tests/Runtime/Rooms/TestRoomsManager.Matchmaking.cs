@@ -44,7 +44,7 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = statesTuple.cachedState,
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -59,7 +59,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.MatchmakingStarted));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
         }
 
@@ -93,7 +93,7 @@ namespace Elympics.Tests.Rooms
                 MatchmakingData = cachedState,
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -106,7 +106,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.MatchmakingEnded));
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             EventRegister.AssertIfInvoked(false);
         }
@@ -121,7 +121,7 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             matchmakingRoomState = matchmakingRoomState with
             {
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
@@ -135,14 +135,14 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.MatchDataReceived));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
         }
 
         [Test]
         public void TestCustomMatchmakingDataChanged()
         {
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(InitialRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(InitialRoomState);
             const string newKey = "testKey";
             const string newValue = "testValue";
             var matchmakingRoomState = InitialRoomState with
@@ -162,7 +162,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey));
             Assert.AreSame(newValue, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey]);
@@ -171,7 +171,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void TestCustomMatchmakingDataChangedTwice()
         {
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(InitialRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(InitialRoomState);
             const string newKey1 = "testKey";
             const string newValue1 = "testValue";
 
@@ -199,7 +199,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
@@ -233,7 +233,7 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -249,7 +249,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
             Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
@@ -278,7 +278,7 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -301,7 +301,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
@@ -338,7 +338,7 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -362,7 +362,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.MatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged),
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
             Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
@@ -374,7 +374,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void TestCustomDataChangedInvoked()
         {
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(InitialRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(InitialRoomState);
 
             const string newDataKey = "testKey";
             const string testValue = "testValue";
@@ -389,7 +389,7 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newDataKey));
             Assert.AreSame(testValue, RoomsManager.ListJoinedRooms()[0].State.CustomData[newDataKey]);
@@ -398,7 +398,7 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void TestCustomDataChangedInvokedTwice()
         {
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(InitialRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(InitialRoomState);
 
             const string newKey1 = "testKey";
             const string newValue1 = "testValue";
@@ -422,7 +422,7 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
@@ -452,7 +452,7 @@ namespace Elympics.Tests.Rooms
                     },
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.ListenForEvents(
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.CustomRoomDataChanged),
@@ -462,7 +462,7 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 CustomData = new Dictionary<string, string>(),
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsFalse(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
             Assert.IsFalse(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
@@ -489,7 +489,7 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -506,7 +506,7 @@ namespace Elympics.Tests.Rooms
             };
 
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.CustomRoomDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
@@ -540,7 +540,7 @@ namespace Elympics.Tests.Rooms
                 },
             };
 
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             matchmakingRoomState = matchmakingRoomState with
             {
@@ -560,7 +560,7 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.JoinedRoomUpdated),
                 nameof(IRoomsManager.CustomRoomDataChanged),
                 nameof(IRoomsManager.CustomRoomDataChanged));
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
             Assert.False(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
@@ -579,7 +579,7 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
@@ -602,7 +602,7 @@ namespace Elympics.Tests.Rooms
                 .Do(x => playMatchArgs = x.ArgAt<MatchmakingFinishedData>(0));
 
             // Act
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             Assert.That(playMatchArgs, Is.Not.Null);
             Assert.That(playMatchArgs,
@@ -619,7 +619,7 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
@@ -639,7 +639,7 @@ namespace Elympics.Tests.Rooms
                 .Do(x => playMatchArgs = x.ArgAt<MatchmakingFinishedData>(0));
 
             // Act
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             Assert.That(playMatchArgs, Is.Null);
         }
@@ -654,7 +654,7 @@ namespace Elympics.Tests.Rooms
                     MatchData = null,
                 },
             };
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             var matchData = Defaults.CreateMatchData(matchmakingRoomState.Users.Select(x => x.UserId).ToList());
             matchmakingRoomState = matchmakingRoomState with
@@ -675,7 +675,7 @@ namespace Elympics.Tests.Rooms
                 .Do(x => playMatchArgs = x.ArgAt<MatchmakingFinishedData>(0));
 
             // Act
-            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChanged>>(matchmakingRoomState);
+            RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
 
             Assert.That(playMatchArgs, Is.Null);
         }

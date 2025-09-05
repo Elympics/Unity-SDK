@@ -24,10 +24,10 @@ namespace Elympics
         public IReadOnlyDictionary<string, string> CustomData => _customData;
 
         internal DateTime LastRoomUpdate { get; private set; }
-        internal RoomState(RoomStateChanged state) => Update(state);
+        internal RoomState(RoomStateChangedDto state) => Update(state);
         internal RoomState(PublicRoomState state) => Update(state);
 
-        internal void Update(RoomStateChanged stateUpdate, in RoomStateDiff stateDiff)
+        internal void Update(RoomStateChangedDto stateUpdate, in RoomStateDiff stateDiff)
         {
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= LastRoomUpdate)
@@ -175,7 +175,7 @@ namespace Elympics
             }
         }
 
-        private void Update(RoomStateChanged stateUpdate)
+        private void Update(RoomStateChangedDto stateUpdate)
         {
             RoomName = stateUpdate.RoomName;
             PrivilegedHost = stateUpdate.HasPrivilegedHost;

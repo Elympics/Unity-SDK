@@ -12,14 +12,14 @@ namespace Elympics.Tests.Rooms
 {
     internal static class Defaults
     {
-        public static RoomStateChanged CreateRoomState(Guid roomId, Guid hostId, MatchmakingStateDto mmState = MatchmakingStateDto.Unlocked)
+        public static RoomStateChangedDto CreateRoomState(Guid roomId, Guid hostId, MatchmakingStateDto mmState = MatchmakingStateDto.Unlocked)
         {
             var userList = new List<UserInfoDto>
             {
                 new(hostId, 0, false, null, null, new Dictionary<string, string>()),
             };
 
-            return new RoomStateChanged(roomId,
+            return new RoomStateChangedDto(roomId,
                 DateTime.UtcNow,
                 "Test Name",
                 "test-join-code",
@@ -86,32 +86,32 @@ namespace Elympics.Tests.Rooms
             string.Empty,
             regionName);
 
-        public static RoomStateChanged WithLastUpdate(this RoomStateChanged state, DateTime lastUpdate) => state with
+        public static RoomStateChangedDto WithLastUpdate(this RoomStateChangedDto state, DateTime lastUpdate) => state with
         {
             LastUpdate = lastUpdate,
         };
 
-        public static RoomStateChanged WithUserTeamSwitched(this RoomStateChanged state, Guid userId, uint? teamIndex) => state with
+        public static RoomStateChangedDto WithUserTeamSwitched(this RoomStateChangedDto state, Guid userId, uint? teamIndex) => state with
         {
             Users = state.Users.Select(user => user.UserId != userId ? user : user with { TeamIndex = teamIndex }).ToList(),
         };
 
-        public static RoomStateChanged WithUserAdded(this RoomStateChanged state, UserInfoDto user) => state with
+        public static RoomStateChangedDto WithUserAdded(this RoomStateChangedDto state, UserInfoDto user) => state with
         {
             Users = state.Users.Append(user).ToList(),
         };
 
-        public static RoomStateChanged WithUserRemoved(this RoomStateChanged state, Guid userId) => state with
+        public static RoomStateChangedDto WithUserRemoved(this RoomStateChangedDto state, Guid userId) => state with
         {
             Users = state.Users.Where(u => u.UserId != userId).ToList(),
         };
 
-        public static RoomStateChanged WithNameChanged(this RoomStateChanged state, string name) => state with
+        public static RoomStateChangedDto WithNameChanged(this RoomStateChangedDto state, string name) => state with
         {
             RoomName = name,
         };
 
-        public static RoomStateChanged WithCustomDataAdded(this RoomStateChanged state, string key, string value) => state with
+        public static RoomStateChangedDto WithCustomDataAdded(this RoomStateChangedDto state, string key, string value) => state with
         {
             CustomData = state.CustomData
                 .Where(p => p.Key != key)
@@ -119,34 +119,34 @@ namespace Elympics.Tests.Rooms
                 .ToDictionary(p => p.Key, p => p.Value),
         };
 
-        public static RoomStateChanged WithCustomDataRemoved(this RoomStateChanged state, string key) => state with
+        public static RoomStateChangedDto WithCustomDataRemoved(this RoomStateChangedDto state, string key) => state with
         {
             CustomData = state.CustomData
                 .Where(p => p.Key != key)
                 .ToDictionary(p => p.Key, p => p.Value),
         };
 
-        public static RoomStateChanged WithPublicnessChanged(this RoomStateChanged state, bool isPrivate) => state with
+        public static RoomStateChangedDto WithPublicnessChanged(this RoomStateChangedDto state, bool isPrivate) => state with
         {
             IsPrivate = isPrivate,
         };
 
-        public static RoomStateChanged WithUserReadinessChanged(this RoomStateChanged state, Guid userId, bool isReady) => state with
+        public static RoomStateChangedDto WithUserReadinessChanged(this RoomStateChangedDto state, Guid userId, bool isReady) => state with
         {
             Users = state.Users.Select(user => user.UserId != userId ? user : user with { IsReady = isReady }).ToList(),
         };
 
-        public static RoomStateChanged WithMatchmakingData(this RoomStateChanged state, MatchmakingData mmData) => state with
+        public static RoomStateChangedDto WithMatchmakingData(this RoomStateChangedDto state, MatchmakingData mmData) => state with
         {
             MatchmakingData = mmData,
         };
 
-        public static RoomStateChanged WithMatchmakingData(this RoomStateChanged state, Func<RoomStateChanged, MatchmakingData?> mutator) => state with
+        public static RoomStateChangedDto WithMatchmakingData(this RoomStateChangedDto state, Func<RoomStateChangedDto, MatchmakingData?> mutator) => state with
         {
             MatchmakingData = mutator(state),
         };
 
-        public static RoomStateChanged WithNoPrivilegedHost(this RoomStateChanged state) => state with
+        public static RoomStateChangedDto WithNoPrivilegedHost(this RoomStateChangedDto state) => state with
         {
             HasPrivilegedHost = false,
         };

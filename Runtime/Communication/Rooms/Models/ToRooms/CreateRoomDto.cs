@@ -8,7 +8,7 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record CreateRoom(
+    public record CreateRoomDto(
         [property: Key(1)] string RoomName,
         [property: Key(2)] bool IsPrivate,
         [property: Key(3)] bool IsEphemeral,
@@ -21,7 +21,7 @@ namespace Elympics.Rooms.Models
         [property: Key(10)] Guid? RollingTournamentBetConfigId) : LobbyOperation
     {
         [SerializationConstructor]
-        public CreateRoom(
+        public CreateRoomDto(
             Guid operationId,
             string roomName,
             bool isPrivate,
@@ -35,7 +35,7 @@ namespace Elympics.Rooms.Models
             Guid? rollingTournamentBetConfigId) : this(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, tournamentDetails, betDetailsSlim, rollingTournamentBetConfigId) =>
             OperationId = operationId;
 
-        public virtual bool Equals(CreateRoom? other)
+        public virtual bool Equals(CreateRoomDto? other)
         {
             if (other is null)
                 return false;

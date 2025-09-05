@@ -7,9 +7,9 @@ using MessagePack;
 namespace Elympics.Communication.Lobby.Models.ToLobby
 {
     [MessagePackObject]
-    public record ShowAuth() : LobbyOperation
+    public record ShowAuthDto() : LobbyOperation
     {
         [SerializationConstructor]
-        public ShowAuth(Guid operationId) : this() => OperationId = operationId;
+        public ShowAuthDto(Guid operationId) : this() => OperationId = operationId;
     }
 }

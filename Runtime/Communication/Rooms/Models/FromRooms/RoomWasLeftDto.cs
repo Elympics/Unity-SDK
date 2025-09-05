@@ -8,7 +8,7 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record RoomWasLeft(
+    public record RoomWasLeftDto(
         [property: Key(0)] Guid RoomId,
         [property: Key(1)] LeavingReasonDto Reason) : IFromLobby;
 }

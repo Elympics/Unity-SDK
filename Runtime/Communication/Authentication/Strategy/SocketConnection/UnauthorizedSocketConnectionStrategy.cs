@@ -12,7 +12,7 @@ namespace Elympics
         public UnauthorizedSocketConnectionStrategy(WebSocketSession socketSession, ElympicsLoggerContext logger) : base(socketSession, logger)
         { }
 
-        public override UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails) =>
+        public override UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails) =>
             throw new ElympicsException("Connecting canceled because user is not authenticated.");
     }
 }

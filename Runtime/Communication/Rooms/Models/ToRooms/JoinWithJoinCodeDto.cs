@@ -7,15 +7,15 @@ using MessagePack;
 namespace Elympics.Rooms.Models
 {
     [MessagePackObject]
-    public record JoinWithJoinCode(
+    public record JoinWithJoinCodeDto(
         [property: Key(1)] string JoinCode,
         [property: Key(2)] uint? TeamIndex) : LobbyOperation
     {
         [SerializationConstructor]
-        public JoinWithJoinCode(Guid operationId, string joinCode, uint? teamIndex) : this(joinCode, teamIndex) =>
+        public JoinWithJoinCodeDto(Guid operationId, string joinCode, uint? teamIndex) : this(joinCode, teamIndex) =>
             OperationId = operationId;
 
-        public virtual bool Equals(JoinWithJoinCode? other)
+        public virtual bool Equals(JoinWithJoinCodeDto? other)
         {
             if (other is null)
                 return false;

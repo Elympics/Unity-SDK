@@ -68,9 +68,9 @@ namespace Elympics.ElympicsSystems.Internal
 
             void OnSuccess()
             {
-                if (Client.RoomsManager.ListJoinedRooms().Count > 0)
+                if (Client.RoomsManager.CurrentRoom != null)
                 {
-                    if (Client.RoomsManager.ListJoinedRooms()[0].IsDuringMatchmaking())
+                    if (Client.RoomsManager.CurrentRoom.IsDuringMatchmaking())
                         Client.SwitchState(ElympicsState.Matchmaking);
                     else if (Client.GameplaySceneMonitor!.IsCurrentlyInMatch)
                         Client.SwitchState(ElympicsState.PlayingMatch);

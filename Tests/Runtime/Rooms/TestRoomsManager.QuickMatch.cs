@@ -226,7 +226,7 @@ namespace Elympics.Tests.Rooms
 
             // Act
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>()));
-            Assert.AreEqual(0, RoomsManager.ListJoinedRooms().Count);
+            Assert.Null(RoomsManager.CurrentRoom);
         });
 
         [UnityTest]
@@ -264,7 +264,7 @@ namespace Elympics.Tests.Rooms
 
             // Act
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>()));
-            Assert.AreEqual(0, RoomsManager.ListJoinedRooms().Count);
+            Assert.Null(RoomsManager.CurrentRoom);
             return;
 
             async UniTask MatchmakingFlow()

@@ -165,8 +165,8 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey));
-            Assert.AreSame(newValue, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey]);
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey));
+            Assert.AreSame(newValue, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey]);
         }
 
         [Test]
@@ -202,10 +202,10 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey1]);
-            Assert.AreSame(newValue2, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey2]);
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey1));
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey2));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey1]);
+            Assert.AreSame(newValue2, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey2]);
         }
 
         [Test]
@@ -252,8 +252,8 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
-            Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
+            Assert.False(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey1));
+            Assert.False(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey2));
         }
 
         [Test]
@@ -304,10 +304,10 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey1]);
-            Assert.AreSame(newValue2, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey2]);
+            Assert.True(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey1));
+            Assert.True(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey2));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey1]);
+            Assert.AreSame(newValue2, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey2]);
         }
 
         [Test]
@@ -365,11 +365,11 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomMatchmakingDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey1));
-            Assert.False(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey2));
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData.ContainsKey(newKey3));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey1]);
-            Assert.AreSame(newValue3, RoomsManager.ListJoinedRooms()[0].State.MatchmakingData!.CustomData[newKey3]);
+            Assert.True(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey1));
+            Assert.False(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey2));
+            Assert.True(RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData.ContainsKey(newKey3));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey1]);
+            Assert.AreSame(newValue3, RoomsManager.CurrentRoom.State.MatchmakingData!.CustomData[newKey3]);
         }
 
         [Test]
@@ -392,8 +392,8 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newDataKey));
-            Assert.AreSame(testValue, RoomsManager.ListJoinedRooms()[0].State.CustomData[newDataKey]);
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newDataKey));
+            Assert.AreSame(testValue, RoomsManager.CurrentRoom.State.CustomData[newDataKey]);
         }
 
         [Test]
@@ -425,10 +425,10 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey1]);
-            Assert.AreSame(newValue2, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey2]);
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey1));
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey2));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.CustomData[newKey1]);
+            Assert.AreSame(newValue2, RoomsManager.CurrentRoom.State.CustomData[newKey2]);
         }
 
         [Test]
@@ -465,8 +465,8 @@ namespace Elympics.Tests.Rooms
             };
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsFalse(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
-            Assert.IsFalse(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
+            Assert.IsFalse(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey1));
+            Assert.IsFalse(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey2));
         }
 
 
@@ -509,10 +509,10 @@ namespace Elympics.Tests.Rooms
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.CustomRoomDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey1]);
-            Assert.AreSame(newValue2, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey2]);
+            Assert.True(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey1));
+            Assert.True(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey2));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.CustomData[newKey1]);
+            Assert.AreSame(newValue2, RoomsManager.CurrentRoom.State.CustomData[newKey2]);
         }
 
         [Test]
@@ -563,11 +563,11 @@ namespace Elympics.Tests.Rooms
                 nameof(IRoomsManager.CustomRoomDataChanged));
             RoomsClientMock.RoomStateChanged += Raise.Event<Action<RoomStateChangedDto>>(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey1));
-            Assert.False(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey2));
-            Assert.True(RoomsManager.ListJoinedRooms()[0].State.CustomData.ContainsKey(newKey3));
-            Assert.AreSame(newValue1, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey1]);
-            Assert.AreSame(newValue3, RoomsManager.ListJoinedRooms()[0].State.CustomData[newKey3]);
+            Assert.True(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey1));
+            Assert.False(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey2));
+            Assert.True(RoomsManager.CurrentRoom.State.CustomData.ContainsKey(newKey3));
+            Assert.AreSame(newValue1, RoomsManager.CurrentRoom.State.CustomData[newKey1]);
+            Assert.AreSame(newValue3, RoomsManager.CurrentRoom.State.CustomData[newKey3]);
         }
 
         [Test]

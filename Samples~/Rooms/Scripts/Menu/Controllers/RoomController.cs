@@ -31,7 +31,6 @@ public class RoomController : BaseWindow
     private Dictionary<int, Guid[]> _teams = new();
 
     private bool IsActive => roomCanvasGroup.blocksRaycasts;
-    private IRoom FirstJoinedRoom => RoomsUtility.RoomsManager.ListJoinedRooms().FirstOrDefault();
 
     private int RoomCapacity => RoomsUtility.RoomCapacity(_currentRoom);
 

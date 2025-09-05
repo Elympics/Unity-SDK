@@ -99,7 +99,7 @@ namespace Elympics.Tests
             });
             Assert.IsTrue(_sut.IsAuthenticated);
             Assert.IsTrue(_sut.WebSocketSession.IsConnected);
-            Assert.AreEqual(0, _sut.RoomsManager.ListJoinedRooms().Count);
+            Assert.IsNull(_sut.RoomsManager.CurrentRoom);
             Assert.AreEqual(type, _sut.AuthData!.AuthType);
         });
 

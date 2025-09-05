@@ -51,7 +51,7 @@ public class MenuController : MonoBehaviour
     private void OnRoomJoined(JoinedRoomArgs obj)
     {
         Debug.Log("Joined room.");
-        var room = _roomsManager.ListJoinedRooms().Where(x => x.RoomId == obj.RoomId).ToList()[0];
+        var room = _roomsManager.CurrentRoom!;
         if (room.IsMatchAvailable)
         {
             room.PlayAvailableMatch();
@@ -89,11 +89,10 @@ public class MenuController : MonoBehaviour
 
     public void OnRejoinOnlineClicked()
     {
-        var rooms = _roomsManager.ListJoinedRooms();
-        if (rooms.Count > 0
-            && rooms[0].IsMatchAvailable)
+        var room = _roomsManager.CurrentRoom;
+        if (room != null && room.IsMatchAvailable)
         {
-            rooms[0].PlayAvailableMatch();
+            room.PlayAvailableMatch();
         }
     }
 

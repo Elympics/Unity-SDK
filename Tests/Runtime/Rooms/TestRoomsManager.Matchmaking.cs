@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -10,7 +11,6 @@ using Elympics.Rooms.Models;
 using NSubstitute;
 using NUnit.Framework;
 using UnityEngine.TestTools;
-using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -22,15 +22,15 @@ namespace Elympics.Tests.Rooms
 
         private static List<(MatchmakingData?, MatchmakingData)> matchmakingStartedTestCases = new()
         {
-            (Defaults.CreateMatchmakingData(MatchmakingState.Unlocked), Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Unlocked), Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Unlocked), Defaults.CreateMatchmakingData(MatchmakingState.CancellingMatchmaking)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Playing), Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Playing), Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Playing), Defaults.CreateMatchmakingData(MatchmakingState.CancellingMatchmaking)),
-            (null, Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking)),
-            (null, Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking)),
-            (null, Defaults.CreateMatchmakingData(MatchmakingState.CancellingMatchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked), Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked), Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked), Defaults.CreateMatchmakingData(MatchmakingStateDto.CancellingMatchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing), Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing), Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing), Defaults.CreateMatchmakingData(MatchmakingStateDto.CancellingMatchmaking)),
+            (null, Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking)),
+            (null, Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking)),
+            (null, Defaults.CreateMatchmakingData(MatchmakingStateDto.CancellingMatchmaking)),
         };
 
 
@@ -65,15 +65,15 @@ namespace Elympics.Tests.Rooms
 
         private static List<(MatchmakingData, MatchmakingData?)> matchmakingEndedTestCases = new()
         {
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Unlocked)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Playing)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), null),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Unlocked)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Playing)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking), null),
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Unlocked)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingState.Playing)),
-            (Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking), null),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), null),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking), null),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing)),
+            (Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking), null),
         };
 
         [Test]
@@ -587,7 +587,7 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 MatchmakingData = matchmakingRoomState.MatchmakingData! with
                 {
-                    State = MatchmakingState.Playing,
+                    State = MatchmakingStateDto.Playing,
                     MatchData = matchData,
                     LastStateUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 },
@@ -606,7 +606,7 @@ namespace Elympics.Tests.Rooms
 
             Assert.That(playMatchArgs, Is.Not.Null);
             Assert.That(playMatchArgs,
-                Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!, matchmakingRoomState.MatchmakingData.QueueName, regionName)));
+                Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!.Map(), matchmakingRoomState.MatchmakingData.QueueName, regionName)));
         }
 
         [Test]
@@ -627,7 +627,7 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 MatchmakingData = matchmakingRoomState.MatchmakingData! with
                 {
-                    State = MatchmakingState.Playing,
+                    State = MatchmakingStateDto.Playing,
                     MatchData = matchData,
                     LastStateUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 },
@@ -662,7 +662,7 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 MatchmakingData = matchmakingRoomState.MatchmakingData! with
                 {
-                    State = MatchmakingState.Playing,
+                    State = MatchmakingStateDto.Playing,
                     MatchData = matchData,
                     LastStateUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 },
@@ -689,7 +689,7 @@ namespace Elympics.Tests.Rooms
                 .WithUserTeamSwitched(HostId, 0)
                 .WithUserReadinessChanged(HostId, true);
             var matchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking));
 
             EmitRoomUpdate(readyState);
 

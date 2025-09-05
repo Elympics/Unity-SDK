@@ -8,6 +8,7 @@ using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.Models.FromLobby;
 using Elympics.Communication.Lobby.Models.ToLobby;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
@@ -58,8 +59,8 @@ namespace Elympics
                                 createRoom.RoomName,
                                 "ZZZZZZZZ",
                                 true,
-                                new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
-                                new List<UserInfo>
+                                new MatchmakingData(DateTime.Now, MatchmakingStateDto.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
+                                new List<UserInfoDto>
                                 {
                                     new(userId, 0, false, nickname, avatarUrl, new Dictionary<string, string>()),
                                 },
@@ -83,7 +84,7 @@ namespace Elympics
                             ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, webSocket, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
+                            UpdateUsers(ref room, room.Users.Select(RoomsMapper.Map).Append(new UserInfo(userId, joinWithRoomId.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
                             SendSuccessResponse(webSocket, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -94,7 +95,7 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(webSocket, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, webSocket, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
+                            UpdateUsers(ref room, room.Users.Select(RoomsMapper.Map).Append(new UserInfo(userId, joinWithJoinCode.TeamIndex, false, nickname, avatarUrl, new Dictionary<string, string>())));
                             SendSuccessResponse(webSocket, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -106,11 +107,11 @@ namespace Elympics
                             var room = GetRoomOrThrow(leaveRoom.RoomId, webSocket, leaveRoom);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = null;
-                            UpdateUsers(ref room, room.Users.Where(u => u.UserId != userId));
+                            UpdateUsers(ref room, room.Users.Select(RoomsMapper.Map).Where(u => u.UserId != userId));
 
                             SendSuccessResponse(webSocket, leaveRoom);
                             UpdateTime(ref room);
-                            SendResponse(webSocket, new RoomWasLeft(room.RoomId, LeavingReason.UserLeft));
+                            SendResponse(webSocket, new RoomWasLeft(room.RoomId, LeavingReasonDto.UserLeft));
                             UpdateRoomOnList(webSocket, room);
                             break;
                         }
@@ -142,7 +143,7 @@ namespace Elympics
                             var room = GetCurrentRoom();
                             ThrowIfTeamFull(changeTeam.TeamIndex, room, webSocket, changeTeam);
 
-                            UpdateUsers(ref room, room.Users.Select(u => u.UserId == userId ? u with { TeamIndex = changeTeam.TeamIndex } : u));
+                            UpdateUsers(ref room, room.Users.Select(RoomsMapper.Map).Select(u => u.UserId == userId ? u with { TeamIndex = changeTeam.TeamIndex } : u));
                             SendSuccessResponse(webSocket, changeTeam);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -153,9 +154,9 @@ namespace Elympics
                             ThrowIfNotInRoom(webSocket, setReady);
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == userId);
-                            ThrowIfAlreadyReady(user, webSocket, setReady);
+                            ThrowIfAlreadyReady(user.Map(), webSocket, setReady);
                             UpdateUsers(ref room,
-                                room.Users.Select(u => u.UserId == userId ? u with
+                                room.Users.Select(RoomsMapper.Map).Select(u => u.UserId == userId ? u with
                                 {
                                     IsReady = true
                                 } : u));
@@ -169,9 +170,9 @@ namespace Elympics
                             ThrowIfNotInRoom(webSocket, setUnready);
                             var room = GetCurrentRoom();
                             var user = room.Users.Single(u => u.UserId == userId);
-                            ThrowIfAlreadyUnReady(user, webSocket, setUnready);
+                            ThrowIfAlreadyUnReady(user.Map(), webSocket, setUnready);
                             UpdateUsers(ref room,
-                                room.Users.Select(u => u.UserId == userId ? u with
+                                room.Users.Select(RoomsMapper.Map).Select(u => u.UserId == userId ? u with
                                 {
                                     IsReady = false
                                 } : u));
@@ -193,7 +194,7 @@ namespace Elympics
                             {
                                 MatchmakingData = room.MatchmakingData! with
                                 {
-                                    State = MatchmakingState.RequestingMatchmaking,
+                                    State = MatchmakingStateDto.RequestingMatchmaking,
                                 },
                             };
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
@@ -225,7 +226,7 @@ namespace Elympics
                             {
                                 MatchmakingData = room.MatchmakingData! with
                                 {
-                                    State = MatchmakingState.CancellingMatchmaking,
+                                    State = MatchmakingStateDto.CancellingMatchmaking,
                                 },
                             };
                             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
@@ -371,7 +372,7 @@ namespace Elympics
                         {
                             ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                             SendSuccessResponse(webSocket, joinLobby);
-                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoin>(), string.Empty, string.Empty, joinLobby.OperationId);
+                            var gameResponse = new GameDataResponse(createInitialRoom ? 1 : 0, new List<RoomCoinDto>(), string.Empty, string.Empty, joinLobby.OperationId);
                             SendResponse(webSocket, gameResponse);
                             if (createInitialRoom)
                             {
@@ -380,8 +381,8 @@ namespace Elympics
                                     "RoomName",
                                     "ZZZZZZZZ",
                                     true,
-                                    new MatchmakingData(DateTime.Now, MatchmakingState.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
-                                    new List<UserInfo>
+                                    new MatchmakingData(DateTime.Now, MatchmakingStateDto.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
+                                    new List<UserInfoDto>
                                     {
                                         new(userId, 0, false, nickname, avatarUrl, new Dictionary<string, string>()),
                                     },
@@ -520,7 +521,7 @@ namespace Elympics
         {
             var room = WebSocketMockBackendSession.Rooms[roomId];
             UpdateUsers(ref room,
-                room.Users.Select(u => u.UserId != userId ? u with
+                room.Users.Select(RoomsMapper.Map).Select(u => u.UserId != userId ? u with
                 {
                     IsReady = true
                 } : u));
@@ -554,7 +555,7 @@ namespace Elympics
         {
             roomStateChanged = roomStateChanged with
             {
-                Users = users.ToList(),
+                Users = users.Select(RoomsMapper.Map).ToList(),
             };
             WebSocketMockBackendSession.Rooms[roomStateChanged.RoomId] = roomStateChanged;
         }
@@ -602,7 +603,7 @@ namespace Elympics
                 {
                     MatchmakingData = room.MatchmakingData! with
                     {
-                        MatchData = GetDummyMatchData(room.Users.Select(x => x.UserId).ToList()),
+                        MatchData = GetDummyMatchData(room.Users.Select(x => x.UserId).ToList()).Map(),
                     },
                 };
                 UpdateTime(ref room);
@@ -629,7 +630,7 @@ namespace Elympics
             {
                 MatchmakingData = room.MatchmakingData! with
                 {
-                    State = newState,
+                    State = newState.Map(),
                 },
             };
             WebSocketMockBackendSession.Rooms[room.RoomId] = room;
@@ -654,7 +655,7 @@ namespace Elympics
 
         private static void ThrowIfCannotCancel(IWebSocket ws, RoomStateChanged room, LobbyOperation matchmakingOperation, Guid? roomId = null)
         {
-            if (room.MatchmakingData!.State is MatchmakingState.Matchmaking or MatchmakingState.CancellingMatchmaking)
+            if (room.MatchmakingData!.State is MatchmakingStateDto.Matchmaking or MatchmakingStateDto.CancellingMatchmaking)
                 return;
             SendFailResponse(ws,
                 matchmakingOperation,
@@ -785,9 +786,9 @@ namespace Elympics
         {
             ElympicsLogger.Log($"[MOCK] Sending response fail on {lobbyOperation.GetType().Name} with {blame}, {kind}, {details}");
             if (lobbyOperation is CreateRoom or JoinWithJoinCode or JoinWithRoomId)
-                SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, blame, kind, details, roomId!.Value));
+                SendResponseInternal(ws, new RoomIdOperationResult(lobbyOperation.OperationId, blame.Map(), kind.Map(), details, roomId!.Value));
             else
-                SendResponseInternal(ws, new OperationResult(lobbyOperation.OperationId, blame, kind, details));
+                SendResponseInternal(ws, new OperationResult(lobbyOperation.OperationId, blame.Map(), kind.Map(), details));
         }
 
         private static void SendResponse(IWebSocket ws, IFromLobby fromLobby)

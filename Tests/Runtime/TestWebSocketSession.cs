@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
@@ -276,7 +277,7 @@ namespace Elympics.Tests
             await ConnectWebSocketSessionAndAssert(session);
 
             session.MessageReceived += ReceiveMessage;
-            IFromLobby passedMessage = new RoomWasLeft(Guid.Empty, LeavingReason.RoomClosed);
+            IFromLobby passedMessage = new RoomWasLeft(Guid.Empty, LeavingReasonDto.RoomClosed);
             var data = MessagePackSerializer.Serialize(passedMessage);
             WebSocketMock.OnMessage += Raise.Event<WebSocketMessageEventHandler>(data);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Rooms.Models;
 
 namespace Elympics
@@ -36,7 +37,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName1,
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
@@ -44,7 +45,7 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
                     new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>())
                 },
@@ -62,7 +63,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName2,
                     Queues[queueName2].TeamCount,
                     Queues[queueName2].TeamSize,
@@ -70,7 +71,7 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
                     new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>()),
                     new(Guid.NewGuid(), 1, true, "NewGuid_1", null, new Dictionary<string, string>())
@@ -88,7 +89,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName1,
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
@@ -96,7 +97,7 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
                     new(Guid.NewGuid(), 0, true, "NewGuid_0", null, new Dictionary<string, string>())
                 },

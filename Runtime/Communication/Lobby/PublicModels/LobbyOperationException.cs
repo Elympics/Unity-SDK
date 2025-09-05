@@ -12,8 +12,8 @@ namespace Elympics
 
         internal LobbyOperationException(OperationResult result) : base(result.Details ?? result.Kind.ToString())
         {
-            Blame = result.Blame;
-            Kind = result.Kind;
+            Blame = result.Blame?.Map();
+            Kind = result.Kind?.Map();
         }
 
         internal LobbyOperationException(string message) : base(message)

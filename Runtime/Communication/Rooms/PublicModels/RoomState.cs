@@ -9,7 +9,7 @@ namespace Elympics
 {
     public class RoomState
     {
-        public string RoomName { get; private set; }
+        public string RoomName { get; private set; } = "";
         public string? JoinCode { get; private set; }
         public bool PrivilegedHost { get; private set; }
         public bool IsPrivate { get; private set; }
@@ -60,7 +60,7 @@ namespace Elympics
                 {
                     if (userInfo.UserId == userId)
                     {
-                        newUserInfo = userInfo;
+                        newUserInfo = userInfo.Map();
                         break;
                     }
                 }
@@ -80,7 +80,7 @@ namespace Elympics
             stateDiff.NewRoomName = !RoomName.Equals(stateUpdate.RoomName) ? stateUpdate.RoomName : null;
             stateDiff.NewIsPrivate = IsPrivate != stateUpdate.IsPrivate ? stateUpdate.IsPrivate : null;
             var currentBet = MatchmakingData?.BetDetails;
-            var newBet = stateUpdate.MatchmakingData?.BetDetails;
+            var newBet = stateUpdate.MatchmakingData?.BetDetails?.Map();
             if (currentBet != newBet)
             {
                 stateDiff.UpdatedBetAmount = true;
@@ -108,7 +108,7 @@ namespace Elympics
                 var oldUser = oldUsers.FirstOrDefault(x => x.UserId == newUser.UserId);
                 if (oldUser != null)
                     continue;
-                stateDiff.UsersThatJoined.Add(newUser);
+                stateDiff.UsersThatJoined.Add(newUser.Map());
             }
 
             stateDiff.UpdatedMatchmakingData = (MatchmakingData == null && stateUpdate.MatchmakingData != null) || (MatchmakingData != null && !MatchmakingData.Equals(stateUpdate.MatchmakingData));
@@ -120,15 +120,18 @@ namespace Elympics
 
             if (stateDiff.UpdatedMatchmakingData)
             {
-                if ((IsMatchAvailable(stateUpdate.MatchmakingData?.MatchData) && !IsMatchAvailable(MatchmakingData?.MatchData))
-                    || (IsMatchmakingFailed(stateUpdate.MatchmakingData?.MatchData) && !IsMatchmakingFailed(MatchmakingData?.MatchData)))
+                var oldMatchData = MatchmakingData?.MatchData;
+                var newMatchData = stateUpdate.MatchmakingData?.MatchData?.Map();
+
+                if ((IsMatchAvailable(newMatchData) && !IsMatchAvailable(oldMatchData))
+                    || (IsMatchmakingFailed(newMatchData) && !IsMatchmakingFailed(oldMatchData)))
                     stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId,
                         stateUpdate.MatchmakingData!.MatchData!.MatchId,
                         stateUpdate.MatchmakingData.QueueName,
-                        stateUpdate.MatchmakingData.MatchData);
+                        newMatchData!);
 
                 var oldMmState = MatchmakingData?.MatchmakingState;
-                var newMmState = stateUpdate.MatchmakingData?.State;
+                var newMmState = stateUpdate.MatchmakingData?.State.Map();
 
                 stateDiff.MatchmakingStarted = !oldMmState.IsInsideMatchmaking() && newMmState.IsInsideMatchmaking();
                 stateDiff.MatchmakingEnded = oldMmState.IsInsideMatchmaking() && !newMmState.IsInsideMatchmaking();
@@ -182,7 +185,7 @@ namespace Elympics
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
-            _users.AddRange(stateUpdate.Users);
+            _users.AddRange(stateUpdate.Users.Select(RoomsMapper.Map));
             LastRoomUpdate = stateUpdate.LastUpdate;
         }
 
@@ -197,7 +200,7 @@ namespace Elympics
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
-            _users.AddRange(stateUpdate.Users);
+            _users.AddRange(stateUpdate.Users.Select(RoomsMapper.Map));
             LastRoomUpdate = stateUpdate.LastUpdate;
         }
     }

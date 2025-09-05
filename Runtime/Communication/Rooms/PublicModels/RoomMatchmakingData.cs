@@ -19,22 +19,22 @@ namespace Elympics
         {
             if (matchmakingData is null)
                 return false;
-            return MatchmakingState == matchmakingData.State
+            return MatchmakingState == matchmakingData.State.Map()
                 && QueueName == matchmakingData.QueueName
                 && TeamSize == matchmakingData.TeamSize
                 && TeamCount == matchmakingData.TeamCount
-                && Equals(MatchData, matchmakingData.MatchData)
+                && Equals(MatchData, matchmakingData.MatchData?.Map())
                 && CustomData.Count == matchmakingData.CustomData.Count
                 && CustomData.IsTheSame(matchmakingData.CustomData)
-                && BetDetails == matchmakingData.BetDetails;
+                && BetDetails == matchmakingData.BetDetails?.Map();
         }
 
-        public RoomMatchmakingData(MatchmakingData data)
-            : this(data.State, data.QueueName, data.TeamSize, data.TeamCount, data.MatchData, data.CustomData, data.BetDetails)
+        internal RoomMatchmakingData(MatchmakingData data)
+            : this(data.State.Map(), data.QueueName, data.TeamSize, data.TeamCount, data.MatchData?.Map(), data.CustomData, data.BetDetails?.Map())
         { }
 
         public RoomMatchmakingData(PublicMatchmakingData data)
-            : this(data.State, data.QueueName, data.TeamSize, data.TeamCount, null, data.CustomData, data.BetDetails)
+            : this(data.State.Map(), data.QueueName, data.TeamSize, data.TeamCount, null, data.CustomData, data.BetDetails?.Map())
         { }
     }
 }

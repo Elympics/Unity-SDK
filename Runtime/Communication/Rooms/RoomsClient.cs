@@ -50,7 +50,7 @@ namespace Elympics
                     RoomStateChanged?.Invoke(stateChanged);
                     return;
                 case RoomWasLeft roomLeft:
-                    LeftRoom?.Invoke(new LeftRoomArgs(roomLeft.RoomId, roomLeft.Reason));
+                    LeftRoom?.Invoke(new LeftRoomArgs(roomLeft.RoomId, roomLeft.Reason.Map()));
                     return;
                 case RoomListChanged roomListChanged:
                     RoomListChanged?.Invoke(roomListChanged);
@@ -75,7 +75,6 @@ namespace Elympics
             Guid? rollingTournamentBetConfigId = null;
 
             if (competitivenessConfig != null)
-            {
                 switch (competitivenessConfig.CompetitivenessType)
                 {
                     case CompetitivenessType.GlobalTournament:
@@ -99,7 +98,6 @@ namespace Elympics
                     default:
                         throw new ArgumentOutOfRangeException(nameof(competitivenessConfig.CompetitivenessType), competitivenessConfig.CompetitivenessType, "Unexpected competitiveness type.");
                 }
-            }
 
             _logger.WithMethodName().Log($"Create room {roomName}");
             return await ExecuteOperation<RoomIdOperationResult>(

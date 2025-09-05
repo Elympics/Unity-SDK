@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;
@@ -11,9 +12,9 @@ namespace Elympics.Tests.Rooms
 {
     internal static class Defaults
     {
-        public static RoomStateChanged CreateRoomState(Guid roomId, Guid hostId, MatchmakingState mmState = MatchmakingState.Unlocked)
+        public static RoomStateChanged CreateRoomState(Guid roomId, Guid hostId, MatchmakingStateDto mmState = MatchmakingStateDto.Unlocked)
         {
-            var userList = new List<UserInfo>
+            var userList = new List<UserInfoDto>
             {
                 new(hostId, 0, false, null, null, new Dictionary<string, string>()),
             };
@@ -30,29 +31,29 @@ namespace Elympics.Tests.Rooms
                 new Dictionary<string, string>());
         }
 
-        public static MatchmakingData CreateMatchmakingData(MatchmakingState state, IReadOnlyList<Guid>? matchedPlayers = null) => new(DateTime.UtcNow,
+        public static MatchmakingData CreateMatchmakingData(MatchmakingStateDto state, IReadOnlyList<Guid>? matchedPlayers = null) => new(DateTime.UtcNow,
             state,
             "test-queue",
             1,
             1,
             new Dictionary<string, string>(),
-            state == MatchmakingState.Playing ? CreateMatchData(matchedPlayers) : null,
+            state == MatchmakingStateDto.Playing ? CreateMatchData(matchedPlayers) : null,
             null,
             null);
 
-        public static PublicRoomState CreatePublicRoomState(Guid roomId, Guid hostId, MatchmakingState mmState = MatchmakingState.Unlocked) => new(roomId,
+        public static PublicRoomState CreatePublicRoomState(Guid roomId, Guid hostId, MatchmakingStateDto mmState = MatchmakingStateDto.Unlocked) => new(roomId,
             DateTime.UtcNow,
             "Test Name",
             true,
             CreatePublicMatchmakingData(mmState),
-            new List<UserInfo>
+            new List<UserInfoDto>
             {
                 new(hostId, 0, false, null, null, new Dictionary<string, string>()),
             },
             false,
             new Dictionary<string, string>());
 
-        public static PublicMatchmakingData CreatePublicMatchmakingData(MatchmakingState state) => new(DateTime.UtcNow,
+        public static PublicMatchmakingData CreatePublicMatchmakingData(MatchmakingStateDto state) => new(DateTime.UtcNow,
             state,
             "test-queue",
             1,
@@ -60,19 +61,19 @@ namespace Elympics.Tests.Rooms
             new Dictionary<string, string>(),
             null);
 
-        public static MatchData CreateMatchData(IReadOnlyList<Guid>? matchedPlayers = null) => new(Guid.NewGuid(),
-            MatchState.Running,
+        public static MatchDataDto CreateMatchData(IReadOnlyList<Guid>? matchedPlayers = null) => new(Guid.NewGuid(),
+            MatchStateDto.Running,
             CreateMatchDetails(matchedPlayers),
             null);
 
-        public static MatchDetails CreateMatchDetails(IReadOnlyList<Guid>? matchedPlayers = null) => new(matchedPlayers ?? Array.Empty<Guid>(),
+        public static MatchDetailsDto CreateMatchDetails(IReadOnlyList<Guid>? matchedPlayers = null) => new(matchedPlayers ?? Array.Empty<Guid>(),
             string.Empty,
             string.Empty,
             string.Empty,
             Array.Empty<byte>(),
             Array.Empty<float>());
 
-        public static UserInfo CreateUserInfo(Guid? userId = null) => new(userId ?? Guid.NewGuid(),
+        public static UserInfoDto CreateUserInfo(Guid? userId = null) => new(userId ?? Guid.NewGuid(),
             0,
             false,
             string.Empty,
@@ -95,7 +96,7 @@ namespace Elympics.Tests.Rooms
             Users = state.Users.Select(user => user.UserId != userId ? user : user with { TeamIndex = teamIndex }).ToList(),
         };
 
-        public static RoomStateChanged WithUserAdded(this RoomStateChanged state, UserInfo user) => state with
+        public static RoomStateChanged WithUserAdded(this RoomStateChanged state, UserInfoDto user) => state with
         {
             Users = state.Users.Append(user).ToList(),
         };
@@ -150,7 +151,7 @@ namespace Elympics.Tests.Rooms
             HasPrivilegedHost = false,
         };
 
-        public static MatchmakingData WithMatchData(this MatchmakingData mmData, MatchData? matchData) => mmData with
+        public static MatchmakingData WithMatchData(this MatchmakingData mmData, MatchDataDto? matchData) => mmData with
         {
             MatchData = matchData,
         };

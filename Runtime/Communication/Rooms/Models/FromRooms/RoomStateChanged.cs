@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Lobby.Models;
 using MessagePack;
 
@@ -16,7 +17,7 @@ namespace Elympics.Rooms.Models
         [property: Key(3)] string? JoinCode,
         [property: Key(4)] bool HasPrivilegedHost,
         [property: Key(5)] MatchmakingData? MatchmakingData,
-        [property: Key(6)] IReadOnlyList<UserInfo> Users,
+        [property: Key(6)] IReadOnlyList<UserInfoDto> Users,
         [property: Key(7)] bool IsPrivate,
         [property: Key(8)] bool IsEphemeral,
         [property: Key(9)] IReadOnlyDictionary<string, string> CustomData) : IFromLobby

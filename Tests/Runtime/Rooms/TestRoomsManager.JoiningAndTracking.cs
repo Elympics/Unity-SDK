@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Rooms.Models;
 using NSubstitute;
 using NUnit.Framework;
@@ -161,7 +162,7 @@ namespace Elympics.Tests.Rooms
             (InitialPublicState with { IsPrivate = true }, new[] { nameof(Elympics.RoomsManager.RoomListUpdated) }),
             (InitialPublicState with { CustomData = new Dictionary<string, string> { { "test key", "test value" } } }, new[] { nameof(Elympics.RoomsManager.RoomListUpdated) }),
             (InitialPublicState with { HasPrivilegedHost = false }, new[] { nameof(Elympics.RoomsManager.RoomListUpdated) }),
-            (InitialPublicState with { MatchmakingData = Defaults.CreatePublicMatchmakingData(MatchmakingState.Matchmaking) }, new[] { nameof(Elympics.RoomsManager.RoomListUpdated) }),
+            (InitialPublicState with { MatchmakingData = Defaults.CreatePublicMatchmakingData(MatchmakingStateDto.Matchmaking) }, new[] { nameof(Elympics.RoomsManager.RoomListUpdated) }),
         };
 
         [Test]
@@ -187,7 +188,7 @@ namespace Elympics.Tests.Rooms
             var actualData = RoomsManager.ListAvailableRooms()[0]!;
             Assert.That(actualData.RoomId, Is.EqualTo(RoomId));
             Assert.That(actualData.State.RoomName, Is.EqualTo(modifiedState.RoomName));
-            Assert.That(actualData.State.Users, Is.EqualTo(modifiedState.Users));
+            Assert.That(actualData.State.Users, Is.EqualTo(modifiedState.Users.Select(RoomsMapper.Map)));
             Assert.That(actualData.State.IsPrivate, Is.EqualTo(modifiedState.IsPrivate));
             Assert.That(actualData.State.CustomData, Is.EqualTo(modifiedState.CustomData));
             Assert.That(actualData.State.PrivilegedHost, Is.EqualTo(modifiedState.HasPrivilegedHost));
@@ -198,12 +199,12 @@ namespace Elympics.Tests.Rooms
             }
             Assert.That(actualData.State.MatchmakingData, Is.Not.Null);
             var actualMatchmakingData = actualData.State.MatchmakingData!;
-            Assert.That(actualMatchmakingData.MatchmakingState, Is.EqualTo(modifiedState.MatchmakingData.State));
+            Assert.That(actualMatchmakingData.MatchmakingState, Is.EqualTo(modifiedState.MatchmakingData.State.Map()));
             Assert.That(actualMatchmakingData.QueueName, Is.EqualTo(modifiedState.MatchmakingData.QueueName));
             Assert.That(actualMatchmakingData.TeamCount, Is.EqualTo(modifiedState.MatchmakingData.TeamCount));
             Assert.That(actualMatchmakingData.TeamSize, Is.EqualTo(modifiedState.MatchmakingData.TeamSize));
             Assert.That(actualMatchmakingData.CustomData, Is.EqualTo(modifiedState.MatchmakingData.CustomData));
-            Assert.That(actualMatchmakingData.BetDetails, Is.EqualTo(modifiedState.MatchmakingData.BetDetails));
+            Assert.That(actualMatchmakingData.BetDetails, Is.EqualTo(modifiedState.MatchmakingData.BetDetails?.Map()));
         }
 
         private static List<(RoomStateChanged ModifiedState, string[] ExpectedEvents)> roomUpdateTestCases = new()
@@ -255,7 +256,7 @@ namespace Elympics.Tests.Rooms
                 }
             ),
             (
-                InitialRoomState.WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking)),
+                InitialRoomState.WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking)),
                 new[]
                 {
                     nameof(Elympics.RoomsManager.JoinedRoomUpdated),
@@ -264,7 +265,7 @@ namespace Elympics.Tests.Rooms
                 }
             ),
             (
-                InitialRoomState.WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Playing)),
+                InitialRoomState.WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing)),
                 new[]
                 {
                     nameof(Elympics.RoomsManager.JoinedRoomUpdated),
@@ -303,7 +304,7 @@ namespace Elympics.Tests.Rooms
             Assert.That(actualData.RoomId, Is.EqualTo(RoomId));
             Assert.That(actualData.State.RoomName, Is.EqualTo(modifiedState.RoomName));
             Assert.That(actualData.State.JoinCode, Is.EqualTo(modifiedState.JoinCode));
-            Assert.That(actualData.State.Users, Is.EqualTo(modifiedState.Users));
+            Assert.That(actualData.State.Users, Is.EqualTo(modifiedState.Users.Select(RoomsMapper.Map)));
             Assert.That(actualData.State.IsPrivate, Is.EqualTo(modifiedState.IsPrivate));
             Assert.That(actualData.State.CustomData, Is.EqualTo(modifiedState.CustomData));
             Assert.That(actualData.State.PrivilegedHost, Is.EqualTo(modifiedState.HasPrivilegedHost));
@@ -314,13 +315,13 @@ namespace Elympics.Tests.Rooms
             }
             Assert.That(actualData.State.MatchmakingData, Is.Not.Null);
             var actualMmData = actualData.State.MatchmakingData!;
-            Assert.That(actualMmData.MatchmakingState, Is.EqualTo(modifiedState.MatchmakingData.State));
+            Assert.That(actualMmData.MatchmakingState, Is.EqualTo(modifiedState.MatchmakingData.State.Map()));
             Assert.That(actualMmData.QueueName, Is.EqualTo(modifiedState.MatchmakingData.QueueName));
             Assert.That(actualMmData.TeamSize, Is.EqualTo(modifiedState.MatchmakingData.TeamSize));
             Assert.That(actualMmData.TeamCount, Is.EqualTo(modifiedState.MatchmakingData.TeamCount));
-            Assert.That(actualMmData.MatchData, Is.EqualTo(modifiedState.MatchmakingData.MatchData));
+            Assert.That(actualMmData.MatchData, Is.EqualTo(modifiedState.MatchmakingData.MatchData?.Map()));
             Assert.That(actualMmData.CustomData, Is.EqualTo(modifiedState.MatchmakingData.CustomData));
-            Assert.That(actualMmData.BetDetails, Is.EqualTo(modifiedState.MatchmakingData.BetDetails));
+            Assert.That(actualMmData.BetDetails, Is.EqualTo(modifiedState.MatchmakingData.BetDetails?.Map()));
         }
 
         [Test]
@@ -372,7 +373,7 @@ namespace Elympics.Tests.Rooms
             var matchmakingRoomState = InitialRoomState with
             {
                 LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
@@ -383,7 +384,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
 
@@ -402,7 +403,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.HostChanged));
@@ -604,7 +605,9 @@ namespace Elympics.Tests.Rooms
                 _ = await RoomJoiner.JoinRoom(null, "");
             }
             catch
-            { }
+            {
+                // ignored
+            }
             finally
             {
                 RoomJoiner.JoiningStateChanged -= UpdateLastJoiningState;

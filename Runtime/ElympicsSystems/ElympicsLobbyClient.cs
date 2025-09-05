@@ -643,7 +643,7 @@ namespace Elympics
             var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
             foreach (var coin in gameDataResponse.CoinData)
-                coins.Add(await coin.ToCoinInfo(loggerContext));
+                coins.Add(await coin.Map().ToCoinInfo(loggerContext));
             AvailableCoins = coins;
             await _roomsManager.Value.CheckJoinedRoomStatus(gameDataResponse);
         }

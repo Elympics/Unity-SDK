@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elympics.Communication.Lobby.Models.FromLobby;
+using Elympics.Communication.Rooms.Models;
 using MessagePack;
 
 #nullable enable
@@ -10,7 +11,7 @@ namespace Elympics.Rooms.Models
     [MessagePackObject]
     public record GameDataResponse(
         [property: Key(0)] int JoinedMatchRooms,
-        [property: Key(1)] List<RoomCoin> CoinData,
+        [property: Key(1)] List<RoomCoinDto> CoinData,
         [property: Key(2)] string GameVersionId,
         [property: Key(3)] string FleetName,
         [property: Key(4)] Guid RequestId) : IDataFromLobby

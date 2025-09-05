@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Rooms.Models;
 using MessagePack;
 
 #nullable enable
@@ -10,14 +11,14 @@ namespace Elympics.Rooms.Models
     [MessagePackObject]
     public record MatchmakingData(
         [property: Key(0)] DateTime LastStateUpdate,
-        [property: Key(1)] MatchmakingState State,
+        [property: Key(1)] MatchmakingStateDto State,
         [property: Key(2)] string QueueName,
         [property: Key(3)] uint TeamCount,
         [property: Key(4)] uint TeamSize,
         [property: Key(5)] IReadOnlyDictionary<string, string> CustomData,
-        [property: Key(6)] MatchData? MatchData,
+        [property: Key(6)] MatchDataDto? MatchData,
         [property: Key(7)] RoomTournamentDetails? TournamentDetails,
-        [property: Key(8)] RoomBetDetails? BetDetails)
+        [property: Key(8)] RoomBetDetailsDto? BetDetails)
     {
         public virtual bool Equals(MatchmakingData? other)
         {

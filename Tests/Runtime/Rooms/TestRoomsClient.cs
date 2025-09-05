@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Models;
@@ -361,10 +362,10 @@ namespace Elympics.Tests.Rooms
         private static readonly List<ProperlyHandledMessageTestCase> ProperlyHandledMessageTestCases = new()
         {
             new ProperlyHandledMessageTestCase(
-                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>()),
+                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfoDto>(), false, false, new Dictionary<string, string>()),
                 nameof(IRoomsClient.RoomStateChanged),
-                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfo>(), false, false, new Dictionary<string, string>())),
-            new ProperlyHandledMessageTestCase(new RoomWasLeft(TestRoomGuid, LeavingReason.UserLeft), nameof(IRoomsClient.LeftRoom), new LeftRoomArgs(TestRoomGuid, LeavingReason.UserLeft)),
+                new RoomStateChanged(TestRoomGuid, DateTime.UnixEpoch, "test room name", null, true, null, new List<UserInfoDto>(), false, false, new Dictionary<string, string>())),
+            new ProperlyHandledMessageTestCase(new RoomWasLeft(TestRoomGuid, LeavingReasonDto.UserLeft), nameof(IRoomsClient.LeftRoom), new LeftRoomArgs(TestRoomGuid, LeavingReason.UserLeft)),
         };
 
         [Test]

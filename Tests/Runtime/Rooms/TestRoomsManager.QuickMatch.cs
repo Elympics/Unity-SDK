@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Communication.Utils;
 using Elympics.Lobby.Models;
 using Elympics.Rooms.Models;
@@ -36,10 +37,10 @@ namespace Elympics.Tests.Rooms
             var matchedUsers = new List<Guid> { HostId, Guid.NewGuid() };
 
             var matchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking, matchedUsers));
 
             var matchDataState = matchmakingState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Playing, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing, matchedUsers));
 
             SetRoomAsTrackedWhenItGetsJoined();
             RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
@@ -74,7 +75,7 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(HostId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking));
 
             SetRoomAsTrackedWhenItGetsJoined();
 
@@ -116,7 +117,7 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(HostId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking));
 
             SetRoomAsTrackedWhenItGetsJoined();
 
@@ -158,7 +159,7 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(HostId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking));
 
             SetRoomAsTrackedWhenItGetsJoined();
 
@@ -206,7 +207,7 @@ namespace Elympics.Tests.Rooms
             var matchedUsers = new List<Guid> { HostId, Guid.NewGuid() };
 
             var matchmakingState = readyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking, matchedUsers));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking, matchedUsers));
 
             SetRoomAsTrackedWhenItGetsJoined();
             RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
@@ -243,12 +244,12 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(userId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking));
 
-            var matchData = new MatchData(userId, MatchState.InitializingFailed, null, "Test Fail Reason");
+            var matchData = new MatchDataDto(userId, MatchStateDto.InitializingFailed, null, "Test Fail Reason");
 
             var matchDataState = readyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.Unlocked).WithMatchData(matchData));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.Unlocked).WithMatchData(matchData));
 
             SetRoomAsTrackedWhenItGetsJoined();
             RoomsClientMock.When(x => x.SetReady(Arg.Any<Guid>(), Arg.Any<byte[]>(), Arg.Any<float[]>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
@@ -289,7 +290,7 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(userId, true);
 
             var matchmakingState = readyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking).WithMatchData(null));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking).WithMatchData(null));
 
             SetRoomAsTrackedWhenItGetsJoined();
 
@@ -319,15 +320,15 @@ namespace Elympics.Tests.Rooms
                 .WithUserReadinessChanged(userId, true);
 
             var newMatchmakingState = newReadyState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking).WithMatchData(null));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking).WithMatchData(null));
 
-            var matchData = new MatchData(Guid.Empty,
-                MatchState.Running,
-                new MatchDetails(newMatchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
+            var matchData = new MatchDataDto(Guid.Empty,
+                MatchStateDto.Running,
+                new MatchDetailsDto(newMatchmakingState.Users.Select(x => x.UserId).ToList(), string.Empty, string.Empty, string.Empty, new byte[] { }, new float[] { }),
                 string.Empty);
 
             var newMatchDataState = newMatchmakingState
-                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking).WithMatchData(matchData));
+                .WithMatchmakingData(_ => Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking).WithMatchData(matchData));
 
             SetRoomAsTrackedWhenItGetsJoined(newMatchmakingRoomState);
 
@@ -368,16 +369,16 @@ namespace Elympics.Tests.Rooms
             var matchedUsers = new List<Guid> { HostId, Guid.NewGuid() };
 
             var requestingMatchmakingState = readyState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.RequestingMatchmaking, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.RequestingMatchmaking, matchedUsers));
 
             var matchmakingState = requestingMatchmakingState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking, matchedUsers));
 
             var matchedState = matchmakingState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Matched, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Matched, matchedUsers));
 
             var matchDataState = matchedState
-                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingState.Playing, matchedUsers));
+                .WithMatchmakingData(Defaults.CreateMatchmakingData(MatchmakingStateDto.Playing, matchedUsers));
 
             using var cts = new CancellationTokenSource();
 
@@ -389,7 +390,7 @@ namespace Elympics.Tests.Rooms
             MatchLauncherMock.When(x => x.StartMatchmaking(Arg.Any<IRoom>()))
                 .Do(_ => MatchmakingFlow().Forget());
             MatchLauncherMock.When(x => x.CancelMatchmaking(Arg.Any<IRoom>(), Arg.Any<CancellationToken>()))
-                .Do(_ => throw new LobbyOperationException(new OperationResult(Guid.Empty, ErrorBlame.UserError, ErrorKind.RoomAlreadyInMatchedState, "")));
+                .Do(_ => throw new LobbyOperationException(new OperationResult(Guid.Empty, ErrorBlameDto.UserError, ErrorKindDto.RoomAlreadyInMatchedState, "")));
 
             // Act
             var result = await RoomsManager.StartQuickMatch("", Array.Empty<byte>(), Array.Empty<float>(), ct: cts.Token);

@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
@@ -17,7 +18,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Elympics.Tests.Common.AsyncAsserts;
-using MatchmakingState = Elympics.Rooms.Models.MatchmakingState;
 
 #nullable enable
 
@@ -40,7 +40,7 @@ namespace Elympics.Tests.Rooms
             var initialRoomState = CreateInitialRoomState();
             var roomState = new RoomState(initialRoomState);
             Assert.AreEqual(roomState.Users.Count, initialRoomState.Users.Count);
-            Assert.AreEqual(roomState.Users[0], initialRoomState.Users[0]);
+            Assert.AreEqual(roomState.Users[0], initialRoomState.Users[0].Map());
         }
 
         [UnityTest]
@@ -247,7 +247,7 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingStateDto.Playing);
             var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
             var matchmakingData = roomState.MatchmakingData!;
             var matchData = matchmakingData.MatchData!;
@@ -256,7 +256,7 @@ namespace Elympics.Tests.Rooms
             room.PlayAvailableMatch();
 
             Assert.That(matchLauncher.PlayMatchCalledArgs, Is.Not.Null);
-            Assert.That(matchLauncher.PlayMatchCalledArgs, Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!, matchmakingData.QueueName, RegionName)));
+            Assert.That(matchLauncher.PlayMatchCalledArgs, Is.EqualTo(new MatchmakingFinishedData(matchData.MatchId, matchData.MatchDetails!.Map(), matchmakingData.QueueName, RegionName)));
         }
 
         [Test]
@@ -266,14 +266,14 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingStateDto.Playing);
             var roomStateWithoutMatchDetails = roomState with
             {
                 MatchmakingData = roomState.MatchmakingData! with
                 {
                     MatchData = roomState.MatchmakingData.MatchData! with
                     {
-                        State = MatchState.Initializing,
+                        State = MatchStateDto.Initializing,
                     },
                 },
             };
@@ -293,14 +293,14 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing);
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingStateDto.Playing);
             var roomStateWithoutMatchDetails = roomState with
             {
                 MatchmakingData = roomState.MatchmakingData! with
                 {
                     MatchData = roomState.MatchmakingData.MatchData! with
                     {
-                        State = MatchState.Running,
+                        State = MatchStateDto.Running,
                         MatchDetails = null,
                     },
                 },
@@ -321,11 +321,11 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing) with
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingStateDto.Playing) with
             {
                 MatchmakingData = CreateInitialRoomState().MatchmakingData! with
                 {
-                    State = MatchmakingState.Matchmaking,
+                    State = MatchmakingStateDto.Matchmaking,
                 },
             };
             var room = new Room(matchLauncher, roomsClient, RoomId, roomState, true);
@@ -344,11 +344,11 @@ namespace Elympics.Tests.Rooms
             var roomsClient = new RoomClientMock();
             roomsClient.SetSessionConnectionDetails(ConnectionDetails);
 
-            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingState.Playing) with
+            var roomState = Defaults.CreateRoomState(RoomId, HostId, mmState: MatchmakingStateDto.Playing) with
             {
                 MatchmakingData = CreateInitialRoomState().MatchmakingData! with
                 {
-                    State = MatchmakingState.Playing,
+                    State = MatchmakingStateDto.Playing,
                     MatchData = null,
                 },
             };
@@ -446,11 +446,11 @@ namespace Elympics.Tests.Rooms
 
         private static List<(string Name, Func<IRoom, UniTask> Operation, RoomStateChanged RoomState)> cancellingRoomOperationsTestCases = new()
         {
-            (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), CreateInitialRoomState() with { Users = new[] { new UserInfo(HostId, 0, false, null, null, new Dictionary<string, string>()) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking) }),
-            (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), CreateInitialRoomState() with { Users = new[] { new UserInfo(HostId, 0, false, null, null, new Dictionary<string, string>()) } }),
-            (nameof(IRoom.MarkYourselfUnready), r => r.MarkYourselfUnready(), CreateInitialRoomState() with { Users = new[] { new UserInfo(HostId, 0, true, null, null, new Dictionary<string, string>()) } }),
-            (nameof(IRoom.StartMatchmaking), r => r.StartMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfo(HostId, 0, true, null, null, new Dictionary<string, string>()) } }),
-            (nameof(IRoom.CancelMatchmaking), r => r.CancelMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfo(HostId, 0, true, null, null, new Dictionary<string, string>()) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingState.Matchmaking) }),
+            (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, false, null, null, new Dictionary<string, string>()) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
+            (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, false, null, null, new Dictionary<string, string>()) } }),
+            (nameof(IRoom.MarkYourselfUnready), r => r.MarkYourselfUnready(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, true, null, null, new Dictionary<string, string>()) } }),
+            (nameof(IRoom.StartMatchmaking), r => r.StartMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, true, null, null, new Dictionary<string, string>()) } }),
+            (nameof(IRoom.CancelMatchmaking), r => r.CancelMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(HostId, 0, true, null, null, new Dictionary<string, string>()) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
         };
 
         [UnityTest]

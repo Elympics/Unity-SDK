@@ -1,4 +1,5 @@
 using System;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Lobby.Models;
 using MessagePack;
 
@@ -9,5 +10,5 @@ namespace Elympics.Rooms.Models
     [MessagePackObject]
     public record RoomWasLeft(
         [property: Key(0)] Guid RoomId,
-        [property: Key(1)] LeavingReason Reason) : IFromLobby;
+        [property: Key(1)] LeavingReasonDto Reason) : IFromLobby;
 }

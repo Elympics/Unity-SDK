@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Communication.Rooms.Models;
 using Elympics.Rooms.Models;
 using NSubstitute;
 
@@ -18,15 +19,15 @@ namespace Elympics
                     null,
                     false,
                     new MatchmakingData(DateTime.Now,
-                        MatchmakingState.Playing,
+                        MatchmakingStateDto.Playing,
                         "test",
                         1,
                         1,
                         new Dictionary<string, string>(),
-                        new MatchData(Guid.Empty, MatchState.Running, new MatchDetails(new List<Guid>(), null, null, null, null, null), null),
+                        new MatchDataDto(Guid.Empty, MatchStateDto.Running, new MatchDetailsDto(new List<Guid>(), null, null, null, null, null), null),
                         null,
                         null),
-                    new List<UserInfo>() { new(Guid.Empty, 0, true, string.Empty, string.Empty, new Dictionary<string, string>()) },
+                    new List<UserInfoDto> { new(Guid.Empty, 0, true, string.Empty, string.Empty, new Dictionary<string, string>()) },
                     false,
                     false,
                     null));

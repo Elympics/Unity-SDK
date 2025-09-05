@@ -5,5 +5,5 @@ using System.Collections.Generic;
 
 namespace Elympics
 {
-    public record UserInfo(Guid UserId, uint? TeamIndex, bool IsReady,string? Nickname, string? AvatarUrl, Dictionary<string, string> CustomPlayerData);
+    public record UserInfo(Guid UserId, uint? TeamIndex, bool IsReady, string? Nickname, string? AvatarUrl, Dictionary<string, string> CustomPlayerData);
 }

@@ -31,8 +31,11 @@ namespace Elympics
 
         public bool Equals(UserInfo? other)
         {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+
             return TeamIndex == other.TeamIndex && IsReady == other.IsReady && StringIReadOnlyDictionaryEqualityComparer.Instance.Equals(CustomPlayerData, other.CustomPlayerData) && User.Equals(other.User);
         }
 

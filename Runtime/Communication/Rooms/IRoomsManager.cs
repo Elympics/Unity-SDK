@@ -48,11 +48,11 @@ namespace Elympics
         /// <summary>Raised when <see cref="UserInfo.CustomPlayerData"/> of a user in the <see cref="CurrentRoom"/> changes.</summary>
         event Action<CustomPlayerDataChangedArgs>? CustomPlayerDataChanged;
         /// <summary>Raised when <see cref="RoomState.IsPrivate"/> of <see cref="CurrentRoom"/> changes.</summary>
-        public event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
+        event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
         /// <summary>Raised when the <see cref="RoomState.RoomName"/> of <see cref="CurrentRoom"/> changes.</summary>
-        public event Action<RoomNameChangedArgs>? RoomNameChanged;
+        event Action<RoomNameChangedArgs>? RoomNameChanged;
         /// <summary>Raised when <see cref="RoomMatchmakingData.BetDetails"/> stored in <see cref="RoomState.MatchmakingData"/> of <see cref="CurrentRoom"/> changes.</summary>
-        public event Action<RoomBetAmountChangedArgs>? RoomBetAmountChanged;
+        event Action<RoomBetAmountChangedArgs>? RoomBetAmountChanged;
         /// <summary>Raised when <see cref="RoomState.MatchmakingData"/> of <see cref="CurrentRoom"/> changes.</summary>
         event Action<MatchmakingDataChangedArgs>? MatchmakingDataChanged;
 

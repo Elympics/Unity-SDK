@@ -14,7 +14,7 @@ namespace Elympics.Rooms.Models
         [property: Key(3)] bool? IsPrivate,
         [property: Key(4)] IReadOnlyDictionary<string, string>? CustomRoomData,
         [property: Key(5)] IReadOnlyDictionary<string, string>? CustomMatchmakingData,
-        [property: Key(6)] RoomTournamentDetails? TournamentDetails, //TO DO: Start using this in SDK and on backend instead of CustomMatchmakingData
+        [property: Key(6)] RoomTournamentDetails? TournamentDetails, // TODO: Start using this in SDK and on backend instead of CustomMatchmakingData ~kdudziak 2025-04-03
         [property: Key(7)] RoomBetDetailsSlim? BetDetailsSlim) : LobbyOperation
     {
         [SerializationConstructor]

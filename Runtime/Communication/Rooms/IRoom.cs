@@ -15,8 +15,8 @@ namespace Elympics
     {
         Guid RoomId { get; }
         RoomState State { get; }
-        public string RoomName => State.RoomName;
-        public string? JoinCode => State.JoinCode;
+        string RoomName => State.RoomName;
+        string? JoinCode => State.JoinCode;
 
         bool IsDisposed { get; }
         bool IsJoined { get; internal set; }
@@ -27,7 +27,7 @@ namespace Elympics
         UniTask UpdateRoomParams(string? roomName = null, bool? isPrivate = null, IReadOnlyDictionary<string, string>? roomCustomData = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null, CompetitivenessConfig? competitivenessConfig = null);
         UniTask UpdateCustomPlayerData(Dictionary<string, string>? customPlayerData);
         UniTask ChangeTeam(uint? teamIndex);
-        public UniTask BecomeSpectator() => ChangeTeam(null);
+        UniTask BecomeSpectator() => ChangeTeam(null);
 
         UniTask MarkYourselfReady(byte[]? gameEngineData = null, float[]? matchmakerData = null, CancellationToken ct = default);
         UniTask MarkYourselfUnready();

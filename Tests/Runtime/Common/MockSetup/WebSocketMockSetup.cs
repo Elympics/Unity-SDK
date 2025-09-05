@@ -5,12 +5,14 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Authentication.Models;
 using Elympics.Communication.Lobby.InternalModels;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
+using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
@@ -292,7 +294,7 @@ namespace Elympics
                     {
                         ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                         SendSuccessResponse(ws, showAuth);
-                        SendResponseInternal(ws, new ShowAuthResponseDto(userId, string.Empty, string.Empty, nickname, avatarUrl, showAuth.OperationId));
+                        SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, nickname)));
                         break;
                     }
                 }

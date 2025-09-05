@@ -1763,13 +1763,14 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.InternalModels.Fro
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(6);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.UserId, options);
+            writer.WriteArrayHeader(7);
+            writer.WriteNil();
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.AuthType, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.EthAddress, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.Nickname, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.AvatarUrl, options);
+            writer.WriteNil();
+            writer.WriteNil();
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RequestId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO>(formatterResolver).Serialize(ref writer, value.User, options);
         }
 
         public global::Elympics.Communication.Lobby.InternalModels.FromLobby.ShowAuthResponseDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -1782,34 +1783,23 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.InternalModels.Fro
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __UserId__ = default(global::System.Guid);
-            var __AuthType__ = default(string);
-            var __EthAddress__ = default(string);
-            var __Nickname__ = default(string);
-            var __AvatarUrl__ = default(string);
-            var __RequestId__ = default(global::System.Guid);
+            var ____result = new global::Elympics.Communication.Lobby.InternalModels.FromLobby.ShowAuthResponseDto();
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
-                    case 0:
-                        __UserId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
-                        break;
                     case 1:
-                        __AuthType__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.AuthType = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        __EthAddress__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 3:
-                        __Nickname__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
-                        break;
-                    case 4:
-                        __AvatarUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.EthAddress = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 5:
-                        __RequestId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.RequestId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 6:
+                        ____result.User = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -1817,7 +1807,6 @@ namespace MessagePack.Formatters.Elympics.Communication.Lobby.InternalModels.Fro
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Lobby.InternalModels.FromLobby.ShowAuthResponseDto(__UserId__, __AuthType__, __EthAddress__, __Nickname__, __AvatarUrl__, __RequestId__);
             reader.Depth--;
             return ____result;
         }

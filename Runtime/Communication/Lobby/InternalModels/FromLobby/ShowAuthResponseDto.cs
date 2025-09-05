@@ -1,4 +1,5 @@
 using System;
+using Elympics.Communication.Authentication.Models.Internal;
 using MessagePack;
 
 #nullable enable
@@ -6,11 +7,20 @@ using MessagePack;
 namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {
     [MessagePackObject]
-    public record ShowAuthResponseDto(
-        [property: Key(0)] Guid UserId,
-        [property: Key(1)] string AuthType,
-        [property: Key(2)] string? EthAddress,
-        [property: Key(3)] string? Nickname,
-        [property: Key(4)] string? AvatarUrl,
-        [property: Key(5)] Guid RequestId) : ILobbyResponse;
+    public class ShowAuthResponseDto : ILobbyResponse
+    {
+        [Key(1)] public string AuthType { get; set; }
+        [Key(2)] public string? EthAddress { get; set; }
+        [Key(5)] public Guid RequestId { get; set; }
+        [Key(6)] public ElympicsUserDTO User { get; set; }
+
+        public ShowAuthResponseDto() { }
+        public ShowAuthResponseDto(string authType, string? ethAddress, Guid requestId, ElympicsUserDTO user)
+        {
+            AuthType = authType;
+            EthAddress = ethAddress;
+            RequestId = requestId;
+            User = user;
+        }
+    }
 }

@@ -180,7 +180,6 @@ create-testing-project:
   stage: test
   needs:
     - job: create-testing-project
-      artifacts: true
   before_script:
     - *unity_default_before_script
     - apt-get update && apt-get install -y --no-install-recommends jq xsltproc
@@ -214,11 +213,8 @@ create-coverage-report:
     - .dotnet_image
   needs:
     - job: test:playmode
-      artifacts: true
     - job: test:editmode
-      artifacts: true
     - job: create-testing-project
-      artifacts: true
   variables:
     GIT_DEPTH: 1
   before_script:
@@ -245,7 +241,6 @@ verify-formatting:
   stage: check
   needs:
     - job: create-testing-project
-      artifacts: true
   variables:
     GIT_DEPTH: 1
   before_script:
@@ -270,7 +265,6 @@ verify-messagepack-generated:
   stage: check
   needs:
     - job: create-testing-project
-      artifacts: true
   variables:
     GIT_DEPTH: 1
     ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
@@ -326,9 +320,7 @@ create-changelog:
   stage: pre-release
   needs:
     - job: get-package-version
-      artifacts: true
     - job: get-branch-version
-      artifacts: true
   before_script:
     - npm install -g conventional-changelog-cli@2.2.2
     - git config user.email "bot@elympics.cc"
@@ -348,7 +340,6 @@ get-changelog-for-release:
   stage: pre-release
   needs:
     - job: get-package-version
-      artifacts: true
     - job: test:playmode
       artifacts: false
     - job: test:editmode
@@ -375,7 +366,6 @@ check-if-release-possible:
   stage: pre-release
   needs:
     - job: get-package-version
-      artifacts: true
     - job: test:playmode
       artifacts: false
     - job: test:editmode
@@ -396,9 +386,7 @@ release:gitlab:
     - .cond.release.manual
   needs:
     - job: get-changelog-for-release
-      artifacts: true
     - job: get-package-version
-      artifacts: true
     - job: check-if-release-possible
       artifacts: false
   script:
@@ -414,6 +402,5 @@ release:github:
     - .cond.release.post
   needs:
     - job: get-changelog-for-release
-      artifacts: true
   script:
     - gh release create "$CI_COMMIT_TAG" -t "$CI_COMMIT_TAG" -F ./release.description --repo "$GH_REPO" --verify-tag

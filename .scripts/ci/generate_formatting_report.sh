@@ -23,12 +23,12 @@ sed -i 's@/Samples/@/Samples~/@' ./format-report.codequality.json
 sed -i 's@'"$PACKAGE_FOLDER"'@@i' ./format-report.codequality.json
 
 # Output summary to console
-GREEN='\033[0;32m'
+GREEN='\033[0;92m'
 CLEAR='\033[0m'
-echo -e "${GREEN}Summarizing the formatting check...${CLEAR}"
-echo "===== BEGIN ====="
+SECTION='\e[0K'
+echo -e "${SECTION}section_start:`date +%s`:formatting_check_summary[collapsed=true]\r${SECTION}${GREEN}Formatting check summary${CLEAR}"
 jq -r '.[] | "[" + .severity  + "] " + .location.path + ":" + (.location.lines.begin | tostring) + ":" + (.location.lines.begin_char | tostring) + "; " + .description' ./format-report.codequality.json
-echo "=====  END  ====="
+echo -e "${SECTION}section_end:`date +%s`:formatting_check_summary\r${SECTION}"
 
 # Fail on any warning
 dotnet format --no-restore --verify-no-changes --verbosity diagnostic --severity warn "./${TESTING_PROJECT_NAME}/${TESTING_PROJECT_NAME}.sln" > /dev/null 2> /dev/null

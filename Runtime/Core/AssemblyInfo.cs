@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Elympics")]
 [assembly: InternalsVisibleTo("Elympics.Tests")]
-[assembly: InternalsVisibleTo("ElympicsPlayPad.Tests.PlayMode")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Tests.AssemblyCommunicator")]
 [assembly: InternalsVisibleTo("AssemblyCommunicator")]
 [assembly: InternalsVisibleTo("Elympics.Editor")]

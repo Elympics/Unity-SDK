@@ -162,11 +162,26 @@ namespace Elympics
                     NetworkId = elympicsBehaviour.NetworkId,
                     PredictableFor = elympicsBehaviour.PredictableFor,
                     PrefabName = elympicsBehaviour.PrefabName,
-                    StateMetadata = elympicsBehaviour.GetStateMetadata()
                 });
             }
 
             return snapshotWithMetadata;
+        }
+
+        public void AddStateMetaData(ElympicsSnapshotWithMetadata snapshotWithMetadata)
+        {
+            foreach (var (id, _) in snapshotWithMetadata.Data)
+            {
+                var elympicsBehaviour = _elympicsBehaviours.Behaviours[id];
+                var index = snapshotWithMetadata.Metadata.FindIndex(x => x.NetworkId == id);
+                if (index == -1)
+                    throw new Exception("No metadata found for id: " + id);
+
+                var oldMetadata = snapshotWithMetadata.Metadata[index];
+                var stateMetaData = elympicsBehaviour.GetStateMetadata();
+                var newMetaData = oldMetadata.WithStateMetadata(stateMetaData);
+                snapshotWithMetadata.Metadata[index] = newMetaData;
+            }
         }
 
         internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(ElympicsSnapshot fullSnapshot, params PlayerData[] playerDatas)

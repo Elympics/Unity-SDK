@@ -18,7 +18,8 @@ namespace Elympics.SnapshotAnalysis.Retrievers
             //If path ends with directory separator (ex. "C:\Users\Elympics\Snapshots\"), look for the newest file with matching extension
             if (path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar))
             {
-                var filePath = Directory.EnumerateFiles(path, "*" + EditorSnapshotAnalysisCollector.DefaultFileExtension).OrderByDescending(filePath => File.GetLastWriteTime(filePath)).FirstOrDefault();
+                var filePath = Directory.EnumerateFiles(path, "*" + EditorSnapshotAnalysisCollector.DefaultFileExtension).OrderByDescending(filePath => File.GetLastWriteTime(filePath))
+                    .FirstOrDefault();
 
                 if (string.IsNullOrEmpty(filePath))
                     throw new ArgumentException($"No files with extension \"{EditorSnapshotAnalysisCollector.DefaultFileExtension}\" found in directory \"{path}\".", nameof(path));
@@ -44,9 +45,19 @@ namespace Elympics.SnapshotAnalysis.Retrievers
                 throw new Exception($"Failed to deserialize snapshots from file \"{path}\".", e);
             }
         }
-
         public override SnapshotSaverInitData RetrieveInitData() => Replay.InitData;
 
         public override Dictionary<long, ElympicsSnapshotWithMetadata> RetrieveSnapshots() => Replay.Snapshots;
+        public void AddStateMetaData(ElympicsBehavioursManager behaviourManager)
+        {
+            long? firstTick = null;
+            foreach (var snapshotWithMeta in Replay.Snapshots)
+            {
+                firstTick ??= snapshotWithMeta.Key;
+                behaviourManager.ApplySnapshot(snapshotWithMeta.Value, ElympicsBehavioursManager.StatePredictability.Both, true);
+                behaviourManager.AddStateMetaData(snapshotWithMeta.Value);
+            }
+            behaviourManager.ApplySnapshot(Replay.Snapshots[firstTick!.Value]);
+        }
     }
 }

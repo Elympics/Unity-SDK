@@ -59,5 +59,7 @@ namespace Elympics.SnapshotAnalysis.Retrievers
             }
             behaviourManager.ApplySnapshot(Replay.Snapshots[firstTick!.Value]);
         }
+            behaviourManager.ApplySnapshot(Replay.Snapshots[firstTick!.Value]);
+        }
     }
 }

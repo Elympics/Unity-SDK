@@ -364,7 +364,7 @@ namespace Elympics
                     return;
                 }
 
-                if (!BuildTools.BuildElympicsServerLinux())
+                if (!BuildTools.BuildElympicsServerLinux(BuildOptions.None))
                     return;
 
                 var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -435,7 +435,7 @@ namespace Elympics
         }
 
         [UsedImplicitly]
-        public static void BuildAndUploadServerInBatchmode(string username, string password)
+        public static void BuildAndUploadServerInBatchmode(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             _ = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
@@ -453,7 +453,7 @@ namespace Elympics
             if (!ElympicsConfig.IsLogin)
                 throw new ElympicsException("Login operation failed. Check log for details");
 
-            if (!BuildTools.BuildElympicsServerLinux())
+            if (!BuildTools.BuildElympicsServerLinux(additionalOptions))
                 throw new ElympicsException("Build failed");
 
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();

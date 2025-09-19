@@ -106,9 +106,9 @@ namespace Elympics
         }
 
         [MenuItem(ElympicsEditorMenuPaths.BUILD_WINDOWS_SERVER, priority = 4)]
-        private static void BuildServerWindows() => BuildTools.BuildServerWindows();
+        private static void BuildServerWindows() => BuildTools.BuildServerWindows(BuildOptions.None);
 
         [MenuItem(ElympicsEditorMenuPaths.BUILD_LINUX_SERVER, priority = 5)]
-        private static void BuildServerLinux() => BuildTools.BuildServerLinux();
+        private static void BuildServerLinux() => BuildTools.BuildServerLinux(BuildOptions.None);
     }
 }

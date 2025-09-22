@@ -1487,7 +1487,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Authentication.Models.In
             writer.WriteArrayHeader(4);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.userId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.nickname, options);
-            writer.Write(value.nicknameStatus);
+            writer.Write(value.nicknameType);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.avatarUrl, options);
         }
 
@@ -1503,7 +1503,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Authentication.Models.In
             var length = reader.ReadArrayHeader();
             var __userId__ = default(string);
             var __nickname__ = default(string);
-            var __nicknameStatus__ = default(int);
+            var __nicknameType__ = default(int);
             var __avatarUrl__ = default(string);
 
             for (int i = 0; i < length; i++)
@@ -1517,7 +1517,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Authentication.Models.In
                         __nickname__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        __nicknameStatus__ = reader.ReadInt32();
+                        __nicknameType__ = reader.ReadInt32();
                         break;
                     case 3:
                         __avatarUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
@@ -1528,7 +1528,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Authentication.Models.In
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO(__userId__, __nickname__, __nicknameStatus__, __avatarUrl__);
+            var ____result = new global::Elympics.Communication.Authentication.Models.Internal.ElympicsUserDTO(__userId__, __nickname__, __nicknameType__, __avatarUrl__);
             reader.Depth--;
             return ____result;
         }

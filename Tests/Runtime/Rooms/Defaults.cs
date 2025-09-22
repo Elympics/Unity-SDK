@@ -18,7 +18,7 @@ namespace Elympics.Tests.Rooms
         {
             var userList = new List<UserInfoDto>
             {
-                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", (int)NicknameStatus.NotVerified, ""))
+                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", (int)NicknameType.Common, ""))
             };
 
             return new RoomStateChangedDto(roomId,
@@ -50,7 +50,7 @@ namespace Elympics.Tests.Rooms
             CreatePublicMatchmakingData(mmState),
             new List<UserInfoDto>
             {
-                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", (int)NicknameStatus.NotVerified, ""))
+                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", (int)NicknameType.Common, ""))
             },
             false,
             new Dictionary<string, string>());
@@ -75,7 +75,7 @@ namespace Elympics.Tests.Rooms
             Array.Empty<byte>(),
             Array.Empty<float>());
 
-        public static UserInfoDto CreateUserInfo(Guid? userId = null) => new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO((userId ?? Guid.NewGuid()).ToString(), "", (int)NicknameStatus.NotVerified, ""));
+        public static UserInfoDto CreateUserInfo(Guid? userId = null) => new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO((userId ?? Guid.NewGuid()).ToString(), "", (int)NicknameType.Common, ""));
 
         public static SessionConnectionDetails CreateConnectionDetails(Guid userId, string regionName = "warsaw") => new("url",
             new AuthData(userId, string.Empty, string.Empty),

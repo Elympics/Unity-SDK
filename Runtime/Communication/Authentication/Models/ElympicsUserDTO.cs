@@ -15,15 +15,15 @@ namespace Elympics.Communication.Authentication.Models.Internal
         /// <summary>User's current nickname.</summary>
         [Key(1)] public string nickname;
         /// <summary>Current status of user's <see cref="nickname"/>.</summary>
-        [Key(2)] public int nicknameStatus;
+        [Key(2)] public int nicknameType;
         /// <summary>URL from which user's avatar image can be fetched.</summary>
         [Key(3)] public string avatarUrl;
 
-        public ElympicsUserDTO(string userId, string nickname, int nicknameStatus, string avatarUrl)
+        public ElympicsUserDTO(string userId, string nickname, int nicknameType, string avatarUrl)
         {
             this.userId = userId;
             this.nickname = nickname;
-            this.nicknameStatus = nicknameStatus;
+            this.nicknameType = nicknameType;
             this.avatarUrl = avatarUrl;
         }
 
@@ -33,15 +33,15 @@ namespace Elympics.Communication.Authentication.Models.Internal
                 throw new ElympicsException($"{nameof(ElympicsUserDTO)}.{nameof(ToPublicModel)} failed, because provided {nameof(userId)} is not a valid GUID string: "
                                             + $"\"{userId}\". This exception is most likely caused by invalid data sent by PlayPad or Elympics backend.");
 
-            var nickStatus = nicknameStatus switch
+            var nickStatus = nicknameType switch
             {
-                1 => NicknameStatus.NotVerified,
-                2 => NicknameStatus.Verified,
-                _ => NicknameStatus.Unknown
+                1 => NicknameType.Common,
+                2 => NicknameType.Verified,
+                _ => NicknameType.Undefined
             };
 
-            if (nickStatus == NicknameStatus.Unknown)
-                ElympicsLogger.LogError($"Unexpected {nameof(nicknameStatus)} received: {nicknameStatus}.");
+            if (nickStatus == NicknameType.Undefined)
+                ElympicsLogger.LogError($"Unexpected {nameof(nicknameType)} received: {nicknameType}.");
 
             return new ElympicsUser(userGuid, nickname, nickStatus, avatarUrl);
         }

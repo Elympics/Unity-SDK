@@ -65,7 +65,7 @@ namespace Elympics
                                 new MatchmakingData(DateTime.Now, MatchmakingStateDto.Unlocked, createRoom.QueueName, teamCount, teamSize, createRoom.CustomMatchmakingData, null, null, null),
                                 new List<UserInfoDto>
                                 {
-                                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, avatarUrl))
+                                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, avatarUrl))
                                 },
                                 createRoom.IsPrivate,
                                 createRoom.IsEphemeral,
@@ -87,7 +87,7 @@ namespace Elympics
                             ThrowIfTeamFull(joinWithRoomId.TeamIndex, room, webSocket, joinWithRoomId);
 
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfoDto(joinWithRoomId.TeamIndex, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, avatarUrl))));
+                            UpdateUsers(ref room, room.Users.Append(new UserInfoDto(joinWithRoomId.TeamIndex, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, avatarUrl))));
                             SendSuccessResponse(webSocket, joinWithRoomId, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
@@ -98,7 +98,8 @@ namespace Elympics
                             ThrowIfAlreadyInRoom(webSocket, joinWithJoinCode);
                             var room = GetRoomOrThrow(joinWithJoinCode.JoinCode, webSocket, joinWithJoinCode);
                             WebSocketMockBackendSession.PlayerCurrentRoom = room.RoomId;
-                            UpdateUsers(ref room, room.Users.Append(new UserInfoDto(joinWithJoinCode.TeamIndex, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, avatarUrl))));                            SendSuccessResponse(webSocket, joinWithJoinCode, room.RoomId);
+                            UpdateUsers(ref room, room.Users.Append(new UserInfoDto(joinWithJoinCode.TeamIndex, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, avatarUrl))));
+                            SendSuccessResponse(webSocket, joinWithJoinCode, room.RoomId);
                             UpdateTime(ref room);
                             SendResponse(webSocket, room);
                             break;
@@ -293,7 +294,7 @@ namespace Elympics
                     {
                         ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                         SendSuccessResponse(ws, showAuth);
-                        SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, nickname)));
+                        SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, nickname)));
                         break;
                     }
                 }
@@ -386,7 +387,8 @@ namespace Elympics
                                     new MatchmakingData(DateTime.Now, MatchmakingStateDto.Unlocked, "QueueName", 1, 2, new Dictionary<string, string>(), null, null, null),
                                     new List<UserInfoDto>
                                     {
-                                        new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameStatus.NotVerified, avatarUrl))                                    },
+                                        new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, avatarUrl))
+                                    },
                                     true,
                                     false,
                                     new Dictionary<string, string>());

@@ -71,8 +71,8 @@ namespace Elympics.Tests.SnapshotAnalysis
                 TickEndUtc = DateTime.UtcNow,
                 Metadata = new()
                 {
-                    new() { Name = "test", NetworkId = 27, PredictableFor = ElympicsPlayer.All, PrefabName = "test", StateMetadata = new() { ("test", new() { ("test", "test") }) } },
-                    new() { Name = "test", NetworkId = 28, PredictableFor = ElympicsPlayer.All, PrefabName = "test", StateMetadata = new() { ("test", new() { ("test", "test") }) } }
+                    new() { Name = "test", NetworkId = 27, PredictableFor = ElympicsPlayer.All, PrefabName = "test"},
+                    new() { Name = "test", NetworkId = 28, PredictableFor = ElympicsPlayer.All, PrefabName = "test"}
                 }
             };
         }
@@ -89,33 +89,9 @@ namespace Elympics.Tests.SnapshotAnalysis
                 equal &= a.PredictableFor == b.PredictableFor;
                 equal &= a.PrefabName == b.PrefabName;
 
-                var aHasState = a.StateMetadata != null;
-                var bHasState = b.StateMetadata != null;
-
-                equal &= aHasState == bHasState;
-                equal &= a.StateMetadata.Count == b.StateMetadata.Count;
 
                 if (!equal)
                     return 1;
-
-                if (aHasState && bHasState)
-                {
-                    for (var i = 0; i < a.StateMetadata.Count; i++)
-                    {
-                        var aa = a.StateMetadata[i];
-                        var bb = b.StateMetadata[i];
-                        equal &= aa.Item1 == bb.Item1;
-                        equal &= aa.Item2.Count == bb.Item2.Count;
-
-                        if (!equal)
-                            return 1;
-
-                        for (var j = 0; j < aa.Item2.Count; j++)
-                        {
-                            equal &= aa.Item2[j] == bb.Item2[j];
-                        }
-                    }
-                }
 
                 return equal ? 0 : 1;
             }

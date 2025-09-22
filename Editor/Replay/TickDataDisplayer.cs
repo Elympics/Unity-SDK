@@ -78,9 +78,10 @@ namespace Elympics.Editor.Replay
 
                 _ = _stringBuilder.Clear();
 
-                foreach (var (componentName, vars) in state.StateMetadata)
+                var stateMetadata = state.StateMetadata;
+                foreach (var (componentName, vars) in stateMetadata)
                 {
-                    if (state.StateMetadata.Count > 1)
+                    if (stateMetadata.Count > 1)
                         _ = _stringBuilder.AppendLine($" {componentName}:");
 
                     foreach (var (elympicsVar, value) in vars)

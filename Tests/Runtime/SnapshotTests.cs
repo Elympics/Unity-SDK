@@ -72,14 +72,6 @@ namespace Elympics.Tests
                         NetworkId = 1,
                         PredictableFor = ElympicsPlayer.World,
                         PrefabName = string.Empty,
-                        StateMetadata = new List<(string, List<(string, string)>)>
-                        {
-                            ("Component #1", new List<(string, string)>
-                            {
-                                ("Variable #1", ""),
-                                ("Variable #2", ""),
-                            }),
-                        },
                     },
                 },
             }),
@@ -99,14 +91,6 @@ namespace Elympics.Tests
                         NetworkId = 1,
                         PredictableFor = ElympicsPlayer.World,
                         PrefabName = string.Empty,
-                        StateMetadata = new List<(string, List<(string, string)>)>
-                        {
-                            ("Component #1", new List<(string, string)>
-                            {
-                                ("Variable #1", ""),
-                                ("Variable #2", ""),
-                            }),
-                        },
                     },
                 },
             }, new ElympicsSnapshotWithMetadata
@@ -125,14 +109,6 @@ namespace Elympics.Tests
                         NetworkId = 1,
                         PredictableFor = ElympicsPlayer.World,
                         PrefabName = string.Empty,
-                        StateMetadata = new List<(string, List<(string, string)>)>
-                        {
-                            ("Component #1", new List<(string, string)>
-                            {
-                                ("Variable #1", ""),
-                                ("Variable #2", ""),
-                            }),
-                        },
                     },
                 },
             }),

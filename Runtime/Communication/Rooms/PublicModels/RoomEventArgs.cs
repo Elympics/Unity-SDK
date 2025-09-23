@@ -35,6 +35,10 @@ namespace Elympics
     /// <param name="Key">Custom room data key that was modified.</param>
     /// <param name="Value">New value associated with the <paramref name="Key"/> or null if the <paramref name="Key"/> was removed.</param>
     [PublicAPI] public record CustomRoomDataChangedArgs([property: Obsolete("Use IRoomsManager.CurrentRoom.RoomId instead.")] Guid RoomId, string Key, string? Value);
+    /// <param name="UserId">ID of the user who changed their custom data.</param>
+    /// <param name="Key">Custom player data key that was modified.</param>
+    /// <param name="Value">New value associated with the <paramref name="Key"/> or null if the <paramref name="Key"/> was removed.</param>
+    [PublicAPI] public record CustomPlayerDataChangedArgs(Guid UserId, string Key, string? Value);
 
     /// <param name="IsPrivate">The new value of <see cref="RoomState.IsPrivate"/>.</param>
     [PublicAPI] public record RoomPublicnessChangedArgs([property: Obsolete("Use IRoomsManager.CurrentRoom.RoomId instead.")] Guid RoomId, bool IsPrivate);

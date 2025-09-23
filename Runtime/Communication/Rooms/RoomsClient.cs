@@ -162,6 +162,8 @@ namespace Elympics
             await ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetails), ct);
         }
 
+        public UniTask UpdateCustomPlayerData(Guid roomId, Dictionary<string, string> customPlayerData, CancellationToken ct = default) => ExecuteOperation(new UpdateCustomPlayerData(roomId, customPlayerData), ct);
+
         private static async UniTask<RoomBetDetailsSlim?> FetchRoomBetDetailsSlim(CompetitivenessConfig? config, CancellationToken ct)
         {
             if (config == null)

@@ -43,6 +43,7 @@ namespace Elympics
             IReadOnlyDictionary<string, string>? customMatchmakingData,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
+        UniTask UpdateCustomPlayerData(Guid roomId, Dictionary<string, string> customPlayerData, CancellationToken ct = default);
         UniTask StartMatchmaking(Guid roomId, Guid hostId);
         UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default);
         UniTask WatchRooms(CancellationToken ct = default);

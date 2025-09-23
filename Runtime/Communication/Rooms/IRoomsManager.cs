@@ -45,6 +45,8 @@ namespace Elympics
         event Action<UserChangedTeamArgs>? UserChangedTeam;
         /// <summary>Raised when <see cref="RoomState.CustomData"/> of <see cref="CurrentRoom"/> changes.</summary>
         event Action<CustomRoomDataChangedArgs>? CustomRoomDataChanged;
+        /// <summary>Raised when <see cref="UserInfo.CustomPlayerData"/> of a user in the <see cref="CurrentRoom"/> changes.</summary>
+        event Action<CustomPlayerDataChangedArgs>? CustomPlayerDataChanged;
         /// <summary>Raised when <see cref="RoomState.IsPrivate"/> of <see cref="CurrentRoom"/> changes.</summary>
         public event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
         /// <summary>Raised when the <see cref="RoomState.RoomName"/> of <see cref="CurrentRoom"/> changes.</summary>

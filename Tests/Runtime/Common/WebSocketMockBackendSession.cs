@@ -46,7 +46,7 @@ namespace Elympics
                     null),
                 new List<UserInfo>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null)
+                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>())
                 },
                 false,
                 false,
@@ -72,8 +72,8 @@ namespace Elympics
                     null),
                 new List<UserInfo>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null),
-                    new(Guid.NewGuid(), 1, true, "NewGuid_1", null)
+                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>()),
+                    new(Guid.NewGuid(), 1, true, "NewGuid_1", null, new Dictionary<string, string>())
                 },
                 true,
                 false,
@@ -98,7 +98,7 @@ namespace Elympics
                     null),
                 new List<UserInfo>
                 {
-                    new(Guid.NewGuid(), 0, true, "NewGuid_0", null)
+                    new(Guid.NewGuid(), 0, true, "NewGuid_0", null, new Dictionary<string, string>())
                 },
                 true,
                 false,

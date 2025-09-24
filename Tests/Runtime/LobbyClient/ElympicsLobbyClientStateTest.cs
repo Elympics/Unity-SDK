@@ -43,7 +43,7 @@ namespace Elympics.Tests
                 .InjectRegionIAvailableRegionRetriever(_availableRegionRetrieverMock);
             _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
             _ = _webSocketSessionMock.SetupToLobbyOperations(UserId, Nickname, AvatarUrl).SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
-                .SetShowAuthMessage(UserId, Nickname, null);
+                .SetShowAuthMessage(UserId, Nickname, string.Empty);
             _ = _availableRegionRetrieverMock.GetAvailableRegions()
                 .Returns(UniTask.FromResult(new List<string> { ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas }));
             _ = _roomsClientMock.MockDefaultStartMatchMaking();

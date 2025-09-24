@@ -281,7 +281,7 @@ namespace Elympics
             return webSocket;
         }
 
-        public static IWebSocket SetShowAuthMessage(this IWebSocket ws, Guid userId, string nickname, string? avatarUrl)
+        public static IWebSocket SetShowAuthMessage(this IWebSocket ws, Guid userId, string nickname, string avatarUrl)
         {
             ws.When(x => x.Send(Arg.Any<byte[]>())).Do(x =>
             {
@@ -294,7 +294,7 @@ namespace Elympics
                     {
                         ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
                         SendSuccessResponse(ws, showAuth);
-                        SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, nickname)));
+                        SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, (int)NicknameType.Common, avatarUrl)));
                         break;
                     }
                 }

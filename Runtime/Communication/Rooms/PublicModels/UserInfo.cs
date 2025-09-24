@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Util;
 using Elympics.Communication.Authentication.Models;
+using Elympics.Util;
 
 #nullable enable
 

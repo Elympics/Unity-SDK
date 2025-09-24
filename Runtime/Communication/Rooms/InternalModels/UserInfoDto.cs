@@ -1,5 +1,5 @@
-using Elympics.Communication.Authentication.Models.Internal;
 using System.Collections.Generic;
+using Elympics.Communication.Authentication.Models.Internal;
 using MessagePack;
 
 #nullable enable

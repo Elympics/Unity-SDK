@@ -39,7 +39,7 @@ namespace Elympics
             return TeamIndex == other.TeamIndex && IsReady == other.IsReady && StringIReadOnlyDictionaryEqualityComparer.Instance.Equals(CustomPlayerData, other.CustomPlayerData) && User.Equals(other.User);
         }
 
-        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is UserInfo other && Equals(other);
+        public override bool Equals(object? obj) => ReferenceEquals(this, obj) || (obj is UserInfo other && Equals(other));
 
         public override int GetHashCode() => HashCode.Combine(TeamIndex, IsReady, User);
 

@@ -386,7 +386,8 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", (int)NicknameType.Common, ""))).ToList(),            };
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", (int)NicknameType.Common, ""))).ToList()
+            };
             EmitRoomUpdate(matchmakingRoomState);
 
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.UserLeft), nameof(IRoomsManager.UserCountChanged));

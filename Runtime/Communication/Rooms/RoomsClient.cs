@@ -86,13 +86,18 @@ namespace Elympics
                         break;
                     case CompetitivenessType.RollingTournament:
                         rollingTournamentBetConfigId =
-                            await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(competitivenessConfig.ID), competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, ct);
+                            await RollingTournamentBetConfigIDs.GetConfigId(
+                                Guid.Parse(competitivenessConfig.ID),
+                                competitivenessConfig.Value,
+                                competitivenessConfig.NumberOfPlayers,
+                                competitivenessConfig.PrizeDistribution,
+                                ct);
                         break;
                     case CompetitivenessType.Bet:
                         betSlim = GetRoomBetDetailsSlim(competitivenessConfig.Value, null, Guid.Parse(competitivenessConfig.ID));
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(competitivenessConfig), competitivenessConfig, "Unexpected tournament type.");
+                        throw new ArgumentOutOfRangeException(nameof(competitivenessConfig.CompetitivenessType), competitivenessConfig.CompetitivenessType, "Unexpected competitiveness type.");
                 }
             }
 
@@ -157,25 +162,26 @@ namespace Elympics
             await ExecuteOperationHostOnly(hostId, new SetRoomParameters(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetails), ct);
         }
 
-        private static async UniTask<RoomBetDetailsSlim?> FetchRoomBetDetailsSlim(CompetitivenessConfig? competitivenessConfig, CancellationToken ct)
+        public UniTask UpdateCustomPlayerData(Guid roomId, Dictionary<string, string> customPlayerData, CancellationToken ct = default) => ExecuteOperation(new UpdateCustomPlayerData(roomId, customPlayerData), ct);
+
+        private static async UniTask<RoomBetDetailsSlim?> FetchRoomBetDetailsSlim(CompetitivenessConfig? config, CancellationToken ct)
         {
-            if (competitivenessConfig == null)
+            if (config == null)
                 return null;
 
-            switch (competitivenessConfig.CompetitivenessType)
+            switch (config.CompetitivenessType)
             {
                 case CompetitivenessType.GlobalTournament:
-                    throw new ArgumentException($"Can't update competitiveness configuration for competitiveness type {competitivenessConfig.CompetitivenessType}.");
+                    throw new ArgumentException($"Can't update competitiveness configuration for competitiveness type {config.CompetitivenessType}.");
                 case CompetitivenessType.RollingTournament:
                 {
-                    var rollingTournamentBetConfigId =
-                        await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(competitivenessConfig.ID), competitivenessConfig.Value, competitivenessConfig.NumberOfPlayers, ct);
-                    return GetRoomBetDetailsSlim(competitivenessConfig.Value, rollingTournamentBetConfigId, Guid.Parse(competitivenessConfig.ID));
+                    var rollingTournamentBetConfigId = await RollingTournamentBetConfigIDs.GetConfigId(Guid.Parse(config.ID), config.Value, config.NumberOfPlayers, config.PrizeDistribution, ct);
+                    return GetRoomBetDetailsSlim(config.Value, rollingTournamentBetConfigId, Guid.Parse(config.ID));
                 }
                 case CompetitivenessType.Bet:
-                    return GetRoomBetDetailsSlim(competitivenessConfig.Value, null, Guid.Parse(competitivenessConfig.ID));
+                    return GetRoomBetDetailsSlim(config.Value, null, Guid.Parse(config.ID));
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(config.CompetitivenessType), config.CompetitivenessType, "Unexpected competitiveness type.");
             }
         }
 

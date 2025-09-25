@@ -3,6 +3,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models;
 using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -10,8 +12,6 @@ using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
 using WebRtcWrapper;
-
-#pragma warning disable CS0067
 
 namespace Elympics
 {
@@ -43,24 +43,24 @@ namespace Elympics
         private readonly int _port;
         private readonly Guid _userId;
         private readonly bool _useWeb;
+        private readonly ClientConnectionSettings _connectionConfig;
         private readonly HttpSignalingClient _signalingClient;
 
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
 
-        private WebSignalingClientResponse _webResponse;
-
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, string ip, int port, Guid userId, bool useWeb)
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
-            _ip = ip;
-            _port = port;
+            _ip = gameConfig.IpForHalfRemoteMode;
+            _port = gameConfig.PortForHalfRemoteMode;
             _userId = userId;
-            _useWeb = useWeb;
-            if (useWeb)
+            _useWeb = gameConfig.UseWeb;
+            _connectionConfig = gameConfig.ConnectionConfig;
+            if (_useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
-                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/doSignaling"));
+                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
             }
         }
 
@@ -115,7 +115,7 @@ namespace Elympics
 
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateInstance();
+            _webRtcClient = WebRtcFactory.CreateInstance(TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay));
             string offer = null;
             var offerSet = false;
             _webRtcClient.OfferCreated += s =>
@@ -149,17 +149,22 @@ namespace Elympics
                 if (!Application.isPlaying)
                     yield break;
 
-                _webResponse = null;
-                _signalingClient.ReceivedResponse += r => _webResponse = r;
-                _signalingClient.PostOfferAsync(offer, 1, ct);
-                yield return WaitTimeToRetryConnect;
+                WebSignalingClientResponse result = null;
+                yield return _signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(1), ct).ToCoroutine(x => result = x);
+                if (result?.IsError == false)
+                    try
+                    {
+                        var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
+                        answer = signalingResponse.answer;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
+                    }
 
-                if (_webResponse?.IsError == false)
-                {
-                    answer = _webResponse.Text;
-                    break;
-                }
-                ElympicsLogger.LogError(_webResponse?.IsError == true ? _webResponse.Text : "Response not received from WebRTC client.");
+                yield return WaitTimeToRetryConnect;
+                ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))

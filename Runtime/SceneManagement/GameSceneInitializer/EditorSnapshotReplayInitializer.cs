@@ -32,6 +32,7 @@ namespace Elympics
                 behavioursManager,
                 retriever,
                 (GetManipulator ?? throw new Exception($"{nameof(GetManipulator)} should always be set in editor, are you trying to use {nameof(EditorSnapshotReplayInitializer)} outside of editor?")).Invoke());
+            retriever.AddStateMetaData(behavioursManager);
         }
     }
 }

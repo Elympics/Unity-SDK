@@ -37,12 +37,11 @@ namespace Elympics
             var serializer = new GameServerJsonSerializer();
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
-            var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress,
-                matchData.MatchId.ToString(), matchData.RegionName);
+            var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
             var gameLogger = ElympicsLogger.CurrentContext!.Value.SetGameMode("online").WithApp(ElympicsLoggerContext.GameplayContextApp);
-            var gameServerClient = elympicsGameConfig.UseWeb
-                ? (GameServerClient)new WebGameServerClient(serializer, config,
-                    new HttpSignalingClient(webSignalingEndpoint),
+            GameServerClient gameServerClient = elympicsGameConfig.UseWeb
+                ? new WebGameServerClient(serializer, config,
+                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
                     gameLogger,
                     WebRtcFactory.CreateInstance)
                 : new TcpUdpGameServerClient(serializer, config,

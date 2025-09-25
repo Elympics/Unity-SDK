@@ -20,6 +20,8 @@ namespace Elympics.Rooms.Models
         public readonly List<(Guid UserId, uint? TeamIndex)> UsersThatChangedTeams = new();
         public readonly List<(Guid UserId, bool IsReady)> UsersThatChangedReadiness = new();
 
+        public readonly Dictionary<Guid, Dictionary<string, string?>> NewCustomPlayerData = new();
+
         public bool UpdatedMatchmakingData;
         public bool MatchmakingStarted;
         public bool MatchmakingEnded;
@@ -71,6 +73,11 @@ namespace Elympics.Rooms.Models
             MatchmakingEnded = false;
 
             MatchDataArgs = null;
+
+            foreach (var dictionary in NewCustomPlayerData.Values)
+            {
+                dictionary.Clear();
+            }
         }
     }
 }

@@ -46,9 +46,9 @@ namespace Elympics
             config.UpdateGameVersion(newGameVersion);
         }
 
-        internal static bool BuildServerWindows() => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64);
+        internal static bool BuildServerWindows(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions);
 
-        internal static bool BuildServerLinux() => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64);
+        internal static bool BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 
         private static bool? IsLinuxModuleInstalled()
         {
@@ -57,7 +57,7 @@ namespace Elympics
             return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
         }
 
-        internal static bool BuildElympicsServerLinux()
+        internal static bool BuildElympicsServerLinux(BuildOptions additionalOptions)
         {
             if (IsLinuxModuleInstalled() is false)
             {
@@ -65,14 +65,14 @@ namespace Elympics
                 return false;
             }
 
-            var isBuildSuccess = BuildServerLinux();
+            var isBuildSuccess = BuildServerLinux(additionalOptions);
             if (isBuildSuccess)
                 RemoveHalfRemoteServerFilesFromElympicsBuild();
 
             return isBuildSuccess;
         }
 
-        private static bool BuildServer(string appName, BuildTarget target)
+        private static bool BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
             try
             {
@@ -93,6 +93,7 @@ namespace Elympics
                     Directory.Delete(ServerBuildPath, true);
 
                 EditorUtility.DisplayProgressBar(title, "Building player", 0.45f);
+
                 var buildPlayerOptions = new BuildPlayerOptions
                 {
                     scenes = sceneToBuild,
@@ -100,7 +101,7 @@ namespace Elympics
                     targetGroup = buildTargetGroup,
                     target = target,
                     subtarget = (int)StandaloneBuildSubtarget.Server,
-                    options = BuildOptions.CompressWithLz4HC,
+                    options = BuildOptions.CompressWithLz4HC | additionalOptions
                 };
 
                 var report = BuildPipeline.BuildPlayer(buildPlayerOptions);

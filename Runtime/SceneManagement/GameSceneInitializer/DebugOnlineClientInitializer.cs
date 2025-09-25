@@ -103,10 +103,12 @@ namespace Elympics
             var serializer = new GameServerJsonSerializer();
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
-            var webSignalingEndpoint = WebGameServerClient.GetSignalingEndpoint(gsEndpoint, matchData.WebServerAddress, matchData.MatchId.ToString(), _elympicsGameConfig.TestMatchData.regionName);
-            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(new Guid());
+            var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
+            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
             logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
-            var gameServerClient = _elympicsGameConfig.UseWeb ? (GameServerClient)new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint), logger, WebRtcFactory.CreateInstance) : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
+            GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
+                ? new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId), logger, WebRtcFactory.CreateInstance)
+                : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, logger, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
             _elympicsGameConfig.players = matchData.MatchedPlayers.Length;

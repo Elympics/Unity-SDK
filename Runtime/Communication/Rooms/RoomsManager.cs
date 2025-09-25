@@ -33,6 +33,7 @@ namespace Elympics
         public event Action<UserReadinessChangedArgs>? UserReadinessChanged;
         public event Action<UserChangedTeamArgs>? UserChangedTeam;
         public event Action<CustomRoomDataChangedArgs>? CustomRoomDataChanged;
+        public event Action<CustomPlayerDataChangedArgs>? CustomPlayerDataChanged;
         public event Action<RoomPublicnessChangedArgs>? RoomPublicnessChanged;
         public event Action<RoomBetAmountChangedArgs>? RoomBetAmountChanged;
         public event Action<RoomNameChangedArgs>? RoomNameChanged;
@@ -264,6 +265,10 @@ namespace Elympics
             if (stateDiff.NewCustomRoomData.Count > 0)
                 foreach (var (newKey, newValue) in stateDiff.NewCustomRoomData)
                     CustomRoomDataChanged?.Invoke(new CustomRoomDataChangedArgs(roomId, newKey, newValue));
+            foreach (var (userId, newCustomPlayerData) in stateDiff.NewCustomPlayerData)
+                foreach (var (newKey, newValue) in newCustomPlayerData)
+                    CustomPlayerDataChanged?.Invoke(new CustomPlayerDataChangedArgs(userId, newKey, newValue));
+
             if (stateDiff.NewIsPrivate is not null)
                 RoomPublicnessChanged?.Invoke(new RoomPublicnessChangedArgs(roomId, stateDiff.NewIsPrivate.Value));
             if (stateDiff.UpdatedBetAmount)

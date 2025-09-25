@@ -93,6 +93,8 @@ internal class RoomClientMock : IRoomsClient
         CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default) => UniTask.CompletedTask;
 
+    public UniTask UpdateCustomPlayerData(Guid roomId, Dictionary<string, string> customPlayerData, CancellationToken ct = default) => UniTask.CompletedTask;
+
     public UniTask StartMatchmaking(Guid roomId, Guid hostId)
     {
         if (_throwTimeOutException)

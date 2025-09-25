@@ -1,3 +1,4 @@
+using Elympics.Resolvers;
 using MessagePack;
 using MessagePack.Resolvers;
 using UnityEngine;
@@ -16,7 +17,10 @@ namespace Elympics
 
             StaticCompositeResolver.Instance.Register(
                 GeneratedResolver.Instance,
-                StandardResolver.Instance
+                AttributeFormatterResolver.Instance,
+                BuiltinResolver.Instance,
+                PrimitiveObjectResolver.Instance,
+                MissingTypesResolver.Instance
             );
 
             var option = MessagePackSerializerOptions.Standard.WithResolver(StaticCompositeResolver.Instance);

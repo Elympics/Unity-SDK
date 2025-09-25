@@ -52,6 +52,31 @@ namespace Elympics
             if (isRoomCustomDataChanged)
                 CaptureDifferencesBetween(stateDiff.NewCustomRoomData, _customData, stateUpdate.CustomData);
 
+            foreach (var oldUserInfo in oldUsers)
+            {
+                var userId = oldUserInfo.UserId;
+                UserInfo? newUserInfo = null;
+                foreach (var userInfo in newUsers)
+                {
+                    if (userInfo.UserId == userId)
+                    {
+                        newUserInfo = userInfo;
+                        break;
+                    }
+                }
+
+                if (newUserInfo == null)
+                    continue;
+
+                if (!stateDiff.NewCustomPlayerData.TryGetValue(userId, out var newCustomPlayerData))
+                {
+                    newCustomPlayerData = new Dictionary<string, string?>();
+                    stateDiff.NewCustomPlayerData.Add(userId, newCustomPlayerData);
+                }
+
+                CaptureDifferencesBetween(newCustomPlayerData, oldUserInfo.CustomPlayerData, newUserInfo.CustomPlayerData);
+            }
+
             stateDiff.NewRoomName = !RoomName.Equals(stateUpdate.RoomName) ? stateUpdate.RoomName : null;
             stateDiff.NewIsPrivate = IsPrivate != stateUpdate.IsPrivate ? stateUpdate.IsPrivate : null;
             var currentBet = MatchmakingData?.BetDetails;
@@ -68,6 +93,7 @@ namespace Elympics
                 if (newUser == null)
                 {
                     stateDiff.UsersThatLeft.Add(oldUser);
+                    _ = stateDiff.NewCustomPlayerData.Remove(oldUser.UserId); //Remove user who left to prevent that dictionary from growing endlessly
                     continue;
                 }
 

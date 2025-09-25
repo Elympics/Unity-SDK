@@ -10,6 +10,18 @@ namespace Elympics
         [Key(1)] public int NetworkId;
         [Key(2)] public ElympicsPlayer PredictableFor;
         [Key(3)] public string PrefabName;
-        [Key(4)] public List<(string, List<(string, string)>)> StateMetadata;
+        [IgnoreMember] public List<(string, List<(string, string)>)> StateMetadata;
+
+        public ElympicsBehaviourMetadata WithStateMetadata(List<(string, List<(string, string)>)> stateMetadata)
+        {
+            return new ElympicsBehaviourMetadata
+            {
+                Name = Name,
+                NetworkId = NetworkId,
+                PredictableFor = PredictableFor,
+                PrefabName = PrefabName,
+                StateMetadata = stateMetadata
+            };
+        }
     }
 }

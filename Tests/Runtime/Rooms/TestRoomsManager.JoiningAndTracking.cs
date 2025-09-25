@@ -372,7 +372,7 @@ namespace Elympics.Tests.Rooms
             var matchmakingRoomState = InitialRoomState with
             {
                 LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
@@ -383,7 +383,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
 
@@ -402,7 +402,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null)).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfo(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.HostChanged));
@@ -435,6 +435,30 @@ namespace Elympics.Tests.Rooms
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
             Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.Users[0].IsReady);
+        }
+
+        [Test]
+        public void TestCustomPlayerDataChangedInvoked()
+        {
+            const string newKey = "newKey";
+            const string newValue = "newValue";
+
+            EmitRoomUpdate(InitialRoomState);
+
+            EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.CustomPlayerDataChanged));
+            var user = InitialRoomState.Users[0] with
+            {
+                CustomPlayerData = new Dictionary<string, string> { { newKey, newValue } }
+            };
+            var matchmakingRoomState = InitialRoomState with
+            {
+                LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
+                Users = InitialRoomState.Users.Skip(1).Prepend(user).ToList(),
+            };
+            EmitRoomUpdate(matchmakingRoomState);
+            EventRegister.AssertIfInvoked();
+            Assert.IsTrue(RoomsManager.CurrentRoom!.State.Users[0].CustomPlayerData.ContainsKey(newKey));
+            Assert.AreEqual(RoomsManager.CurrentRoom!.State.Users[0].CustomPlayerData[newKey], newValue);
         }
 
         [Test]

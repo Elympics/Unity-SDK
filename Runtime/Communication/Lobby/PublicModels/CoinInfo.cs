@@ -9,6 +9,24 @@ namespace Elympics
         public Guid Id { get; init; }
         public CurrencyInfo Currency { get; init; }
         public ChainInfo Chain { get; init; }
+
+        internal static CoinInfo CreateNullCoinInfo() => new()
+        {
+            Id = Guid.Empty,
+            Currency = new CurrencyInfo
+            {
+                Ticker = "NULL",
+                Address = null,
+                Decimals = 1,
+                Icon = null
+            },
+            Chain = new ChainInfo
+            {
+                Type = "NULL",
+                Name = "NULL",
+                ExternalId = 0
+            }
+        };
     }
 
     public readonly struct CurrencyInfo

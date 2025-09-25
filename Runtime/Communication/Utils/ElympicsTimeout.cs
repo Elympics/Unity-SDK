@@ -9,5 +9,7 @@ namespace Elympics.Communication.Utils
         public static TimeSpan WebSocketOpeningTimeout = TimeSpan.FromSeconds(10);
         public static TimeSpan WebSocketOperationTimeout = TimeSpan.FromSeconds(10);
         public static TimeSpan WebSocketHeartbeatTimeout = TimeSpan.FromSeconds(30);
+
+        public static TimeSpan IceCandidateTimeout = TimeSpan.FromSeconds(5);
     }
 }

@@ -1,3 +1,29 @@
+## [0.20.0](https://github.com/Elympics/Unity-SDK/compare/v0.19.0...v0.20.0) (2025-09-25)
+
+
+### Bug Fixes 🪲
+
+* Add a delay to createOffer to wait for ICE to gather candidates ([eb6b948](https://github.com/Elympics/Unity-SDK/commit/eb6b948251c65b6ff5a5953bf92be8665390766e))
+* Don't destroy connection on ICE/PC disconnected/failed/closed ([4f1b4fe](https://github.com/Elympics/Unity-SDK/commit/4f1b4feffc881f6f20937e6f99ca4d60d57d6bdd))
+* Make MessagePack resolver used consistent between AOT and Editor, introduce a custom formatter for missing types ([b921617](https://github.com/Elympics/Unity-SDK/commit/b9216175837f85205675715f9d7164780ceb8754))
+* missing messagepack AOT ([aab3aa8](https://github.com/Elympics/Unity-SDK/commit/aab3aa802e5413c8e0b3c865f59a82f4778644a3))
+* optimize replay data size ([7987c12](https://github.com/Elympics/Unity-SDK/commit/7987c129d0b9341879b5039e404d94dbfce57c5e))
+* optimize replay data size ([55bd5ce](https://github.com/Elympics/Unity-SDK/commit/55bd5ced9706002cfdf9a15f064dc3a9b92e62e4))
+* Send candidates alongside offer ([ca5d450](https://github.com/Elympics/Unity-SDK/commit/ca5d450ab7e73f01c20898fa76491edc2dbf6fe5))
+
+
+### Features
+
+* add additional BuildOptions for server build ([e8d0177](https://github.com/Elympics/Unity-SDK/commit/e8d0177a8d266baad594ce6bfe801ea771ddbdf6))
+* add custom player data that each player can set for themselves in a room (see UserInfo.CustomPlayerData and IRoom.UpdateCustomPlayerData) ([112233b](https://github.com/Elympics/Unity-SDK/commit/112233b69f2c1b67f2daa6107298d3b4e856292a))
+* add IceCandidateCreated ([586444c](https://github.com/Elympics/Unity-SDK/commit/586444ce1c38e81d68dfbdeb2496a47f42564d38))
+* add signaling versioned route ([64f953f](https://github.com/Elympics/Unity-SDK/commit/64f953fc3e051950165dd8a6035caa671c504b0b))
+* add XML comments to events and methods of IRoomsManager ([d74c77e](https://github.com/Elympics/Unity-SDK/commit/d74c77e725f71dabf51678572de1c2bb3e1da370))
+* allow configuring custom prize distribution in rolling tournaments ([bdfffb9](https://github.com/Elympics/Unity-SDK/commit/bdfffb930e9164cb938584fa4bb6c411826277f2))
+* onicecandidate dlls ([98f58a5](https://github.com/Elympics/Unity-SDK/commit/98f58a517015c54bc711e582f4e3044f4a0af09b))
+
+
+
 ## [0.19.0](https://github.com/Elympics/Unity-SDK/compare/v0.18.0...v0.19.0) (2025-08-21)
 
 

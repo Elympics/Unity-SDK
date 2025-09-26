@@ -158,8 +158,6 @@ namespace Elympics
             CancellationToken ct = default)
         {
             var betDetails = await FetchRoomBetDetailsSlim(competitivenessConfig, ct);
-
-            // ReSharper disable once InvertIf
             await ExecuteOperationHostOnly(hostId, new SetRoomParametersDto(roomId, roomName, isPrivate, customRoomData, customMatchmakingData, null, betDetails), ct);
         }
 

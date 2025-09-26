@@ -6,6 +6,8 @@ using Elympics.Weaving;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
+#nullable enable
+
 namespace Elympics.Editor.Weaving.Components.Elympics
 {
     internal class ElympicsRpcComponent : WeaverComponent
@@ -21,39 +23,47 @@ namespace Elympics.Editor.Weaving.Components.Elympics
         {
             var typeOwner = methodDefinition.DeclaringType;
             if (typeOwner == null || !typeOwner.IsSubclassOf<ElympicsMonoBehaviour>())
-                throw new InvalidRpcMethodDefinitionException($"Declaring type of RPC method {methodDefinition.FullName} has to be a subclass of {nameof(ElympicsMonoBehaviour)}");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, $"RPC method declaring type has to be a subclass of {nameof(ElympicsMonoBehaviour)}");
             if (methodDefinition.IsStatic)
-                throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} cannot be static");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be static");
             if (methodDefinition.IsVirtual || methodDefinition.IsAbstract)
-                throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} cannot be virtual or abstract");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be virtual or abstract");
             if (methodDefinition.ReturnType != TypeSystem.Void)
-                throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} must return void");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method must return void");
 
             if (typeOwner.Methods.Count(m => m.Name == methodDefinition.Name) > 1)
-                throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} cannot have an overload");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, $"RPC method cannot have an overload");
 
             var unacceptableParameters = methodDefinition.Parameters
                 .Select((p, i) => (Index: i, Parameter: p))
                 .Where(tuple => !tuple.Parameter.ParameterType.IsPrimitive)
                 .Where(tuple => tuple.Parameter.ParameterType != TypeSystem.String)
                 .ToList();
+            var exceptionList = new List<InvalidRpcMethodDefinitionException>();
+            ParameterDefinition? metadataParameter = null;
             for (var i = 0; i < unacceptableParameters.Count; i++)
             {
                 var parameter = unacceptableParameters[i].Parameter;
-                if (parameter.ParameterType.FullName == typeof(RpcMetadata).FullName
-                    && parameter.IsOptional
-                    && parameter.HasDefault)
+                if (parameter.ParameterType.FullName != typeof(RpcMetadata).FullName)
                 {
-                    unacceptableParameters.RemoveAt(i);
-                    break;
+                    exceptionList.Add(new UnsupportedParameterTypeException(methodDefinition.FullName, parameter));
+                    continue;
                 }
+                if (parameter is { IsOptional: false, HasDefault: false })
+                {
+                    exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromNonOptional(methodDefinition.FullName, parameter));
+                    continue;
+                }
+                if (metadataParameter is null)
+                {
+                    metadataParameter = parameter;
+                    continue;
+                }
+                exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromDuplicated(methodDefinition.FullName, metadataParameter, parameter));
             }
-            foreach (var (index, parameter) in unacceptableParameters)
-                throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} can only have "
-                    + "primitive types or strings as parameters. "
-                    + $"There can also be a single optional argument of type {nameof(RpcMetadata)} used for retrieving "
-                    + $"metadata regarding RPCs from Elympics. However parameter {parameter.Name} with index {index} is of type "
-                    + $"{parameter.ParameterType.FullName} and is {(parameter.IsOptional ? "optional" : "required")}");
+
+            if (exceptionList.Any())
+                throw new AggregateException(exceptionList);
         }
 
         public override void VisitMethod(MethodDefinition methodDefinition)

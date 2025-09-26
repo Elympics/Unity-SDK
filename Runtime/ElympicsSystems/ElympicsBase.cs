@@ -187,7 +187,7 @@ namespace Elympics
         }
 
         protected virtual void ElympicsLateFixedUpdate()
-        {}
+        { }
 
         protected virtual void ElympicsRenderUpdate(in RenderData renderData) { }
 

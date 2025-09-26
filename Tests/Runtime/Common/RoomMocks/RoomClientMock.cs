@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
@@ -11,10 +13,10 @@ using Elympics.Rooms.Models;
 
 internal class RoomClientMock : IRoomsClient
 {
-    public event Action<RoomStateChanged>? RoomStateChanged;
+    public event Action<RoomStateChangedDto>? RoomStateChanged;
     public event Action<LeftRoomArgs>? LeftRoom;
-    public event Action<GameDataResponse>? GameDataResponse;
-    public event Action<RoomListChanged>? RoomListChanged;
+    public event Action<GameDataResponseDto>? GameDataResponse;
+    public event Action<RoomListChangedDto>? RoomListChanged;
 
     public SessionConnectionDetails SessionConnectionDetails =>
         _sessionConnectionDetails ?? throw new InvalidOperationException();
@@ -22,7 +24,7 @@ internal class RoomClientMock : IRoomsClient
     private SessionConnectionDetails? _sessionConnectionDetails;
 
     private bool _throwTimeOutException;
-    private RoomStateChanged? _matchMakingDataOnTimeOutException;
+    private RoomStateChangedDto? _matchMakingDataOnTimeOutException;
     public UniTask<Guid> CreateRoom(
         string roomName,
         bool isPrivate,
@@ -71,7 +73,7 @@ internal class RoomClientMock : IRoomsClient
         return UniTask.CompletedTask;
     }
 
-    public void IncludeMatchmakingDataAndThrowLobbyOperationException(RoomStateChanged roomStateChanged)
+    public void IncludeMatchmakingDataAndThrowLobbyOperationException(RoomStateChangedDto roomStateChanged)
     {
         _throwTimeOutException = true;
         _matchMakingDataOnTimeOutException = roomStateChanged;
@@ -120,8 +122,8 @@ internal class RoomClientMock : IRoomsClient
     public event Action<(Guid RoomId, Guid HostId)>? StartMatchmakingInvoked;
     public (Guid RoomId, CancellationToken Ct)? LeaveRoomArgs { get; private set; }
 
-    public void InvokeRoomListChanged(RoomListChanged roomStatListChangedChanged) => RoomListChanged?.Invoke(roomStatListChangedChanged);
-    public void InvokeRoomStateChanged(RoomStateChanged roomStateChanged) => RoomStateChanged?.Invoke(roomStateChanged);
+    public void InvokeRoomListChanged(RoomListChangedDto roomStatListChangedChanged) => RoomListChanged?.Invoke(roomStatListChangedChanged);
+    public void InvokeRoomStateChanged(RoomStateChangedDto roomStateChanged) => RoomStateChanged?.Invoke(roomStateChanged);
     public void InvokeLeftRoom(LeftRoomArgs leftRoomArgs) => LeftRoom?.Invoke(leftRoomArgs);
 
     public void SetSessionConnectionDetails(SessionConnectionDetails? details) => _sessionConnectionDetails = details;

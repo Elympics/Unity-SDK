@@ -1,8 +1,8 @@
-#nullable enable
-
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Rooms.Models;
+
+#nullable enable
 
 namespace Elympics.Communication.Mappers
 {

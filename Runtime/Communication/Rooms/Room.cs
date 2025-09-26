@@ -4,6 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
@@ -85,7 +87,7 @@ namespace Elympics
             IMatchLauncher matchLauncher,
             IRoomsClient client,
             Guid roomId,
-            RoomStateChanged initialState,
+            RoomStateChangedDto initialState,
             bool isJoined = false,
             ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
         { }
@@ -114,7 +116,7 @@ namespace Elympics
             _logger = logger?.WithContext($"{nameof(Room)}");
         }
 
-        void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
             _state.Update(roomState, stateDiff);

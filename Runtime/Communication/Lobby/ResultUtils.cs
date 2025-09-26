@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 
 #nullable enable
 
@@ -70,7 +70,7 @@ namespace Elympics.Lobby
 
             void HandleOperationResult(IFromLobby message, IPromise<ValueTuple> tcs)
             {
-                if (message is not OperationResult result
+                if (message is not OperationResultDto result
                     || result.OperationId != operationId)
                     return;
                 _ = result.Success ? tcs.TrySetResult(new ValueTuple()) : tcs.TrySetException(new LobbyOperationException(result));

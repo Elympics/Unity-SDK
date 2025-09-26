@@ -4,13 +4,13 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Communication.Lobby.Models.ToLobby;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
 using Elympics.Communication.Authentication.Models;
-using Elympics.Communication.Lobby.Models.FromLobby;
-using Elympics.Communication.Lobby.Models.ToLobby;
+using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Mappers;
 using Elympics.ElympicsSystems;
 using Elympics.ElympicsSystems.Internal;
@@ -579,7 +579,7 @@ namespace Elympics
         /// </summary>
         /// <param name="data">Authentication type and region data.</param>
         /// <returns>Server-side game details (only if <paramref name="data"/>, <see cref="AuthData"/>, <see cref="_config"/>, or <see cref="_gameConfig"/> changed since last call).</returns>
-        internal async UniTask<GameDataResponse?> ConnectToLobby(ConnectionData data)
+        internal async UniTask<GameDataResponseDto?> ConnectToLobby(ConnectionData data)
         {
             var lobbyConnection = GetConnectionStrategy(AuthData is not null, _webSocketSession.Value.IsConnected);
             var connectionDetails = _sessionConnectionFactory.CreateSessionConnectionDetails(_config.ElympicsWebSocketUrl, AuthData, _gameConfig, data.Region);
@@ -621,10 +621,10 @@ namespace Elympics
             return new TournamentFeeInfo { Fees = fees };
         }
 
-        internal async Task<RollingsResponse?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
+        internal async Task<RollingsResponseDto?> GetRollTournamentsFeeInternal(TournamentFeeRequestInfo[] requestData, CancellationToken ct)
         {
             var config = _config.GetCurrentGameConfig() ?? throw new InvalidOperationException("No game config available");
-            var request = new RequestRollings(
+            var request = new RequestRollingsDto(
                 GameId: Guid.Parse(config.GameId),
                 VersionId: config.GameVersion,
                 Rollings: requestData.Select(x => new RollingRequestDto(
@@ -635,15 +635,15 @@ namespace Elympics
                         PrizeDistribution: x.PrizeDistribution ?? Array.Empty<decimal>()))
                     .ToList());
 
-            return await _webSocketSession.Value.SendRequest<RollingsResponse>(request, ct);
+            return await _webSocketSession.Value.SendRequest<RollingsResponseDto>(request, ct);
         }
 
-        internal async UniTask InitializeBasedOnGameData(GameDataResponse gameDataResponse)
+        internal async UniTask InitializeBasedOnGameData(GameDataResponseDto gameDataResponse)
         {
             var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
             foreach (var coin in gameDataResponse.CoinData)
-                coins.Add(await coin.ToCoinInfo(loggerContext));
+                coins.Add(await coin.Map().ToCoinInfo(loggerContext));
             AvailableCoins = coins;
             await _roomsManager.Value.CheckJoinedRoomStatus(gameDataResponse);
         }
@@ -651,7 +651,7 @@ namespace Elympics
         internal async UniTask GetElympicsUserData()
         {
             loggerContext.Log("Start fetching user data...");
-            var response = await _webSocketSession.Value.SendRequest<ShowAuthResponse>(new ShowAuth());
+            var response = await _webSocketSession.Value.SendRequest<ShowAuthResponseDto>(new ShowAuthDto());
             ElympicsUser = new ElympicsUser
             {
                 UserId = response.UserId,

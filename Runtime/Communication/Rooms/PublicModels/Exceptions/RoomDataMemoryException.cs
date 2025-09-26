@@ -1,5 +1,7 @@
 using Elympics.Rooms.Models;
 
+#nullable enable
+
 namespace Elympics
 {
     internal class RoomDataMemoryException : ElympicsException

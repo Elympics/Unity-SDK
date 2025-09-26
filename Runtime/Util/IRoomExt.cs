@@ -1,4 +1,7 @@
 using Elympics.Rooms.Models;
+
+#nullable enable
+
 namespace Elympics
 {
     internal static class IRoomExt

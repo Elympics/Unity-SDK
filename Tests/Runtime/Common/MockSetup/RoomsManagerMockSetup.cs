@@ -29,7 +29,7 @@ namespace Elympics
                         new MatchDataDto(Guid.Empty, MatchStateDto.Running, new MatchDetailsDto(new List<Guid>(), null, null, null, null, null), null),
                         null,
                         null),
-                    new List<UserInfoDto> { new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.Empty.ToString(), "", (int)NicknameType.Common, "")) },
+                    new List<UserInfoDto> { new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.Empty.ToString(), "", nameof(NicknameType.Common), "")) },
                     false,
                     false,
                     null));

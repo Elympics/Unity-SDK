@@ -375,7 +375,7 @@ namespace Elympics.Tests.Rooms
             var matchmakingRoomState = InitialRoomState with
             {
                 LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", (int)NicknameType.Common, ""))).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
@@ -386,7 +386,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", (int)NicknameType.Common, ""))).ToList()
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList()
             };
             EmitRoomUpdate(matchmakingRoomState);
 
@@ -405,7 +405,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", (int)NicknameType.Common, ""))).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList(),
 
             };
             EmitRoomUpdate(matchmakingRoomState);

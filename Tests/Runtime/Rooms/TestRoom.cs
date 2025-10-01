@@ -449,11 +449,11 @@ namespace Elympics.Tests.Rooms
 
         private static List<(string Name, Func<IRoom, UniTask> Operation, RoomStateChangedDto RoomState)> cancellingRoomOperationsTestCases = new()
         {
-            (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", (int)NicknameType.Common, "")) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
-            (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", (int)NicknameType.Common, "")) } }),
-            (nameof(IRoom.MarkYourselfUnready), r => r.MarkYourselfUnready(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", (int)NicknameType.Common, "")) } }),
-            (nameof(IRoom.StartMatchmaking), r => r.StartMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", (int)NicknameType.Common, "")) } }),
-            (nameof(IRoom.CancelMatchmaking), r => r.CancelMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", (int)NicknameType.Common, "")) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
+            (nameof(IRoom.ChangeTeam), r => r.ChangeTeam(null), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", nameof(NicknameType.Common), "")) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
+            (nameof(IRoom.MarkYourselfReady), r => r.MarkYourselfReady(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", nameof(NicknameType.Common), "")) } }),
+            (nameof(IRoom.MarkYourselfUnready), r => r.MarkYourselfUnready(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", nameof(NicknameType.Common), "")) } }),
+            (nameof(IRoom.StartMatchmaking), r => r.StartMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", nameof(NicknameType.Common), "")) } }),
+            (nameof(IRoom.CancelMatchmaking), r => r.CancelMatchmaking(), CreateInitialRoomState() with { Users = new[] { new UserInfoDto(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(HostId.ToString(), "", nameof(NicknameType.Common), "")) }, MatchmakingData = Defaults.CreateMatchmakingData(MatchmakingStateDto.Matchmaking) }),
         };
 
         [UnityTest]

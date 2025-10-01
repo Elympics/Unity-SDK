@@ -15,11 +15,11 @@ namespace Elympics.Communication.Authentication.Models.Internal
         /// <summary>User's current nickname.</summary>
         [Key(1)] public string nickname;
         /// <summary>Current status of user's <see cref="nickname"/>.</summary>
-        [Key(2)] public int nicknameType;
+        [Key(2)] public string nicknameType;
         /// <summary>URL from which user's avatar image can be fetched.</summary>
         [Key(3)] public string avatarUrl;
 
-        public ElympicsUserDTO(string userId, string nickname, int nicknameType, string avatarUrl)
+        public ElympicsUserDTO(string userId, string nickname, string nicknameType, string avatarUrl)
         {
             this.userId = userId;
             this.nickname = nickname;
@@ -35,8 +35,8 @@ namespace Elympics.Communication.Authentication.Models.Internal
 
             var nickStatus = nicknameType switch
             {
-                1 => NicknameType.Common,
-                2 => NicknameType.Verified,
+                nameof(NicknameType.Common) => NicknameType.Common,
+                nameof(NicknameType.Verified) => NicknameType.Verified,
                 _ => NicknameType.Undefined
             };
 

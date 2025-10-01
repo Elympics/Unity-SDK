@@ -49,7 +49,7 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameType.Common, "testAvatarURL"))
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 false,
                 false,
@@ -75,8 +75,8 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameType.Common, "testAvatarURL")),
-                    new(1, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_1", (int)NicknameType.Common, "testAvatarURL"))
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL")),
+                    new(1, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_1", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 true,
                 false,
@@ -101,7 +101,7 @@ namespace Elympics
                     null),
                 new List<UserInfoDto>
                 {
-                    new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", (int)NicknameType.Common, "testAvatarURL"))
+                    new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 true,
                 false,

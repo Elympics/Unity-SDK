@@ -49,31 +49,20 @@ namespace Elympics
 		private void Update()
 		{
 			while (_executionQueue.TryDequeue(out var action))
-                action.Invoke();
-		}
-
-		/// <summary>
-		/// Locks the queue and adds the IEnumerator to the queue
-		/// </summary>
-		/// <param name="action">IEnumerator function that will be executed from the main thread.</param>
-		public void Enqueue(IEnumerator action)
-		{
-			_executionQueue.Enqueue(() => StartCoroutine(action));
+                try
+                {
+                    action.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"AsyncDispatcher exception: {e.Message}{Environment.NewLine}{e.StackTrace}");
+                }
 		}
 
 		/// <summary>
 		/// Locks the queue and adds the Action to the queue
 		/// </summary>
 		/// <param name="action">function that will be executed from the main thread.</param>
-		public void Enqueue(Action action)
-		{
-			Enqueue(ActionWrapper(action));
-		}
-
-		private IEnumerator ActionWrapper(Action a)
-		{
-			a();
-			yield return null;
-		}
+		public void Enqueue(Action action) => _executionQueue.Enqueue(action);
 	}
 }

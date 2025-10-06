@@ -8,8 +8,11 @@ using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
+using UnityEngine;
 using UnityEngine.Networking;
 using AuthRoutes = ElympicsApiModels.ApiModels.Auth.Routes;
+using CompressionLevel = System.IO.Compression.CompressionLevel;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
 using Routes = ElympicsApiModels.ApiModels.Users.Routes;
 using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
@@ -31,10 +34,7 @@ namespace Elympics
 
         internal static event Action GameUploadedToTheCloud;
 
-        public static void Login()
-        {
-            _ = Login(ElympicsConfig.Username, ElympicsConfig.Password, LoginHandler);
-        }
+        public static void Login() => _ = Login(ElympicsConfig.Username, ElympicsConfig.Password, LoginHandler);
 
         public static void Logout()
         {
@@ -179,11 +179,9 @@ namespace Elympics
             var uri = string.IsNullOrEmpty(gameId) ? Config.ElympicsAvailableRegionsUrl : Config.GameAvailableRegionsUrl(gameId);
 
             _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
+            return;
 
-            void OnCompleted(UnityWebRequest webRequest)
-            {
-                GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
-            }
+            void OnCompleted(UnityWebRequest webRequest) => GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
         }
 
         private static UnityWebRequest gameVersionsWebRequest;
@@ -195,10 +193,10 @@ namespace Elympics
             void OnContinuation(bool success)
             {
                 if (!success)
-                    return;  // TODO: error handling ~dsygocki 2025-07-10
+                    return; // TODO: error handling ~dsygocki 2025-07-10
                 var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
                 if (gameConfig == null)
-                    return;  // TODO: error handling ~dsygocki 2025-07-10
+                    return; // TODO: error handling ~dsygocki 2025-07-10
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
 
                 var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
@@ -222,7 +220,7 @@ namespace Elympics
             void OnContinuation(bool success)
             {
                 if (!success)
-                    return;  // TODO: error handling ~dsygocki 2025-07-10
+                    return; // TODO: error handling ~dsygocki 2025-07-10
 
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute);
 
@@ -437,6 +435,21 @@ namespace Elympics
         [UsedImplicitly]
         public static void BuildAndUploadServerInBatchmode(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
+            var result = BuildAndUploadServerInBatchmodeWithBuildReport(username, password, additionalOptions);
+            if (result.summary.result == BuildResult.Failed)
+            {
+                foreach (var reportStep in result.steps)
+                    foreach (var error in reportStep.messages.Where(m => m.type is LogType.Error or LogType.Exception))
+                        Debug.Log($"Found an {error.type} in build step {reportStep.name}:\n {error.content}");
+
+                throw new ElympicsException("Build failed");
+            }
+        }
+
+
+        [PublicAPI]
+        public static BuildReport BuildAndUploadServerInBatchmodeWithBuildReport(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
+        {
             _ = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
                 throw new ArgumentNullException(nameof(username));
@@ -453,8 +466,9 @@ namespace Elympics
             if (!ElympicsConfig.IsLogin)
                 throw new ElympicsException("Login operation failed. Check log for details");
 
-            if (!BuildTools.BuildElympicsServerLinux(additionalOptions))
-                throw new ElympicsException("Build failed");
+            var buildReport = BuildTools.BuildElympicsServerLinux(additionalOptions);
+            if (buildReport.summary.result == BuildResult.Failed)
+                return buildReport;
 
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
             if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
@@ -470,6 +484,7 @@ namespace Elympics
                 ;
 
             HandleUploadResults(currentGameConfig, uploadOp.webRequest);
+            return buildReport;
         }
 
         private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)

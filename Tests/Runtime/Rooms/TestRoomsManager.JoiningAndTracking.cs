@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Rooms.Models;
@@ -27,16 +29,15 @@ namespace Elympics.Tests.Rooms
         [Test]
         public void RoomShouldBeSetAsJoinedAfterStateTrackingMessageIsReceived()
         {
-            Assert.AreEqual(0, RoomsManager.ListJoinedRooms().Count);
+            Assert.IsNull(RoomsManager.CurrentRoom);
 
             // Act
             EmitRoomUpdate(InitialRoomState);
 
             Assert.That(RoomsManager.CurrentRoom?.RoomId, Is.EqualTo(RoomId));
-            var joinedRooms = RoomsManager.ListJoinedRooms();
-            Assert.AreEqual(1, joinedRooms.Count);
-            Assert.That(joinedRooms.Count, Is.EqualTo(1));
-            Assert.That(joinedRooms[0].RoomId, Is.EqualTo(RoomId));
+            var joinedRoom = RoomsManager.CurrentRoom;
+            Assert.NotNull(joinedRoom);
+            Assert.That(joinedRoom!.RoomId, Is.EqualTo(RoomId));
         }
 
         [Test]
@@ -111,8 +112,8 @@ namespace Elympics.Tests.Rooms
             Assert.That(RoomsManager.CurrentRoom, Is.Not.Null);
             var joinedRoom = RoomsManager.CurrentRoom!;
             Assert.That(joinedRoom.State.Users.Count, Is.EqualTo(2));
-            Assert.That(joinedRoom.State.Users[0].UserId, Is.EqualTo(HostId));
-            Assert.That(joinedRoom.State.Users[1].UserId, Is.EqualTo(joiningPlayer.UserId));
+            Assert.That(joinedRoom.State.Users[0].User.UserId, Is.EqualTo(HostId));
+            Assert.That(joinedRoom.State.Users[1].User.UserId, Is.EqualTo(Guid.Parse(joiningPlayer.User.userId)));
         }
 
         [Test]
@@ -341,14 +342,14 @@ namespace Elympics.Tests.Rooms
         public void RoomUpdateShouldNotDuplicateRooms()
         {
             EmitRoomUpdate(InitialRoomState);
-            Assert.AreEqual(1, RoomsManager.ListJoinedRooms().Count);
-            Assert.AreEqual(RoomId, RoomsManager.ListJoinedRooms()[0].RoomId);
+            Assert.NotNull(RoomsManager.CurrentRoom);
+            Assert.AreEqual(RoomId, RoomsManager.CurrentRoom!.RoomId);
 
             // Act
             EmitRoomUpdate(InitialRoomState);
 
-            Assert.AreEqual(1, RoomsManager.ListJoinedRooms().Count);
-            Assert.AreEqual(RoomId, RoomsManager.ListJoinedRooms()[0].RoomId);
+            Assert.NotNull(RoomsManager.CurrentRoom);
+            Assert.AreEqual(RoomId, RoomsManager.CurrentRoom!.RoomId);
         }
 
         [Test]
@@ -374,7 +375,7 @@ namespace Elympics.Tests.Rooms
             var matchmakingRoomState = InitialRoomState with
             {
                 LastUpdate = InitialRoomState.LastUpdate + TimeSpan.FromSeconds(1),
-                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList(),
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
@@ -385,7 +386,7 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList()
             };
             EmitRoomUpdate(matchmakingRoomState);
 
@@ -404,7 +405,8 @@ namespace Elympics.Tests.Rooms
         {
             var matchmakingRoomState = InitialRoomState with
             {
-                Users = InitialRoomState.Users.Append(new UserInfoDto(Guid.NewGuid(), 0, false, string.Empty, null, new Dictionary<string, string>())).ToList(),
+                Users = InitialRoomState.Users.Append(new UserInfoDto(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "", nameof(NicknameType.Common), ""))).ToList(),
+
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.HostChanged));
@@ -413,10 +415,10 @@ namespace Elympics.Tests.Rooms
                 LastUpdate = matchmakingRoomState.LastUpdate + TimeSpan.FromSeconds(1),
                 Users = matchmakingRoomState.Users.Reverse().ToList(),
             };
-            var newHost = matchmakingRoomState.Users[0].UserId;
+            var newHost = Guid.Parse(matchmakingRoomState.Users[0].User.userId);
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.AreEqual(newHost, RoomsManager.ListJoinedRooms()[0].State.Host.UserId);
+            Assert.AreEqual(newHost, RoomsManager.CurrentRoom.State.Host.User.UserId);
         }
 
         [Test]
@@ -436,7 +438,7 @@ namespace Elympics.Tests.Rooms
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsTrue(RoomsManager.ListJoinedRooms()[0].State.Users[0].IsReady);
+            Assert.IsTrue(RoomsManager.CurrentRoom.State.Users[0].IsReady);
         }
 
         [Test]
@@ -488,7 +490,7 @@ namespace Elympics.Tests.Rooms
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.IsFalse(RoomsManager.ListJoinedRooms()[0].State.Users[0].IsReady);
+            Assert.IsFalse(RoomsManager.CurrentRoom.State.Users[0].IsReady);
         }
 
         [Test]
@@ -508,7 +510,7 @@ namespace Elympics.Tests.Rooms
             };
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.AreEqual(1, RoomsManager.ListJoinedRooms()[0].State.Users[0].TeamIndex);
+            Assert.AreEqual(1, RoomsManager.CurrentRoom.State.Users[0].TeamIndex);
         }
 
         [Test]
@@ -531,7 +533,7 @@ namespace Elympics.Tests.Rooms
             EmitRoomUpdate(InitialRoomState);
             var leaveRoomArgs = new LeftRoomArgs(InitialRoomState.RoomId, LeavingReason.RoomClosed);
             RoomsClientMock.LeftRoom += Raise.Event<Action<LeftRoomArgs>>(leaveRoomArgs);
-            Assert.AreEqual(0, RoomsManager.ListJoinedRooms().Count);
+            Assert.Null(RoomsManager.CurrentRoom);
         }
 
         [Test]
@@ -547,7 +549,7 @@ namespace Elympics.Tests.Rooms
             EventRegister.ListenForEvents(nameof(IRoomsManager.JoinedRoomUpdated), nameof(IRoomsManager.RoomNameChanged));
             EmitRoomUpdate(matchmakingRoomState);
             EventRegister.AssertIfInvoked();
-            Assert.AreSame(newRoomName, RoomsManager.ListJoinedRooms()[0].State.RoomName);
+            Assert.AreSame(newRoomName, RoomsManager.CurrentRoom.State.RoomName);
         }
 
         [Test]
@@ -565,7 +567,7 @@ namespace Elympics.Tests.Rooms
             EmitRoomUpdate(matchmakingRoomState);
 
             EventRegister.AssertIfInvoked();
-            Assert.AreEqual(true, RoomsManager.ListJoinedRooms()[0].State.IsPrivate);
+            Assert.AreEqual(true, RoomsManager.CurrentRoom.State.IsPrivate);
         }
 
         private class DummyException : Exception

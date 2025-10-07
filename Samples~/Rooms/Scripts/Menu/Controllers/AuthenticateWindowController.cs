@@ -33,10 +33,8 @@ public class AuthenticateWindowController : BaseWindow
         recconectButton.onClick.AddListener(() =>
         {
             _roomController = roomController;
-            var joinedGames = ElympicsLobbyClient.Instance.RoomsManager.ListJoinedRooms();
-            var joinedMatchId = joinedGames[0].RoomId;
-            var isJoined = ElympicsLobbyClient.Instance.RoomsManager.TryGetJoinedRoom(joinedMatchId, out var room);
-            _roomController.Recconect(room.RoomId);
+            var currentRoomId = ElympicsLobbyClient.Instance!.RoomsManager.CurrentRoom!.RoomId;
+            _roomController.Recconect(currentRoomId);
             recconectButton.gameObject.SetActive(false);
         });
         _onSignin += onSignin;
@@ -71,7 +69,7 @@ public class AuthenticateWindowController : BaseWindow
         changeRegionButton.gameObject.SetActive(active);
         startRoomButton.gameObject.SetActive(active);
 
-        var inGame = ElympicsLobbyClient.Instance.RoomsManager.ListJoinedRooms().Count != 0;
+        var inGame = ElympicsLobbyClient.Instance!.RoomsManager.CurrentRoom != null;
         recconectButton.gameObject.SetActive(active && inGame);
     }
     private void SetStartViewInteractable(bool interactable)

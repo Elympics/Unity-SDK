@@ -652,13 +652,8 @@ namespace Elympics
         {
             loggerContext.Log("Start fetching user data...");
             var response = await _webSocketSession.Value.SendRequest<ShowAuthResponseDto>(new ShowAuthDto());
-            ElympicsUser = new ElympicsUser
-            {
-                UserId = response.UserId,
-                Nickname = response.Nickname,
-                AvatarUrl = response.AvatarUrl,
-            };
-            loggerContext.SetNickname(response.Nickname).Log($"User data retrieved.");
+            ElympicsUser = response.User.ToPublicModel();
+            loggerContext.SetNickname(ElympicsUser.Value.Nickname).Log($"User data retrieved.");
 
         }
 

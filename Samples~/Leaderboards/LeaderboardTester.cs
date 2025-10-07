@@ -4,6 +4,7 @@ using Elympics.Models.Authentication;
 using JetBrains.Annotations;
 using UnityEngine;
 
+[Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
 public class LeaderboardTester : MonoBehaviour
 {
     [SerializeField] private int pageSize = 5;

@@ -7,6 +7,7 @@ namespace Elympics
     /// <summary>
     /// Create leaderboard client with desired parameters and use its fetch methods with custom callbacks
     /// </summary>
+    [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
     public class LeaderboardClient
     {
         private readonly string _leaderboardsUrl;

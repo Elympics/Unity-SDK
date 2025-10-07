@@ -2,6 +2,7 @@ using System;
 
 namespace Elympics
 {
+    [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
     public class LeaderboardEntry
     {
         public string UserId { get; }

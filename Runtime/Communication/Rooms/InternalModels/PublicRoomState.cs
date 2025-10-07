@@ -49,6 +49,6 @@ namespace Elympics.Communication.Rooms.InternalModels
             return hashCode.ToHashCode();
         }
 
-        public bool ContainsUser(Guid userId) => Users.Any(user => user.UserId == userId);
+        public bool ContainsUser(Guid userId) => Users.Any(user => Guid.Parse(user.User.userId) == userId);
     }
 }

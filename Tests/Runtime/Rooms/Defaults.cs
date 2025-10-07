@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Lobby;
@@ -16,7 +18,7 @@ namespace Elympics.Tests.Rooms
         {
             var userList = new List<UserInfoDto>
             {
-                new(hostId, 0, false, null, null, new Dictionary<string, string>()),
+                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", nameof(NicknameType.Common), ""))
             };
 
             return new RoomStateChangedDto(roomId,
@@ -24,7 +26,7 @@ namespace Elympics.Tests.Rooms
                 "Test Name",
                 "test-join-code",
                 true,
-                CreateMatchmakingData(mmState, userList.Select(u => u.UserId).ToList()),
+                CreateMatchmakingData(mmState, userList.Select(u => u.User.ToPublicModel().UserId).ToList()),
                 userList,
                 false,
                 false,
@@ -48,7 +50,7 @@ namespace Elympics.Tests.Rooms
             CreatePublicMatchmakingData(mmState),
             new List<UserInfoDto>
             {
-                new(hostId, 0, false, null, null, new Dictionary<string, string>()),
+                new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(hostId.ToString(), "", nameof(NicknameType.Common), ""))
             },
             false,
             new Dictionary<string, string>());
@@ -73,12 +75,7 @@ namespace Elympics.Tests.Rooms
             Array.Empty<byte>(),
             Array.Empty<float>());
 
-        public static UserInfoDto CreateUserInfo(Guid? userId = null) => new(userId ?? Guid.NewGuid(),
-            0,
-            false,
-            string.Empty,
-            null,
-            null);
+        public static UserInfoDto CreateUserInfo(Guid? userId = null) => new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO((userId ?? Guid.NewGuid()).ToString(), "", nameof(NicknameType.Common), ""));
 
         public static SessionConnectionDetails CreateConnectionDetails(Guid userId, string regionName = "warsaw") => new("url",
             new AuthData(userId, string.Empty, string.Empty),
@@ -93,7 +90,7 @@ namespace Elympics.Tests.Rooms
 
         public static RoomStateChangedDto WithUserTeamSwitched(this RoomStateChangedDto state, Guid userId, uint? teamIndex) => state with
         {
-            Users = state.Users.Select(user => user.UserId != userId ? user : user with { TeamIndex = teamIndex }).ToList(),
+            Users = state.Users.Select(user => user.ToPublicModel().User.UserId != userId ? user : user with { TeamIndex = teamIndex }).ToList(),
         };
 
         public static RoomStateChangedDto WithUserAdded(this RoomStateChangedDto state, UserInfoDto user) => state with
@@ -103,7 +100,7 @@ namespace Elympics.Tests.Rooms
 
         public static RoomStateChangedDto WithUserRemoved(this RoomStateChangedDto state, Guid userId) => state with
         {
-            Users = state.Users.Where(u => u.UserId != userId).ToList(),
+            Users = state.Users.Where(u => u.User.ToPublicModel().UserId != userId).ToList(),
         };
 
         public static RoomStateChangedDto WithNameChanged(this RoomStateChangedDto state, string name) => state with
@@ -133,7 +130,7 @@ namespace Elympics.Tests.Rooms
 
         public static RoomStateChangedDto WithUserReadinessChanged(this RoomStateChangedDto state, Guid userId, bool isReady) => state with
         {
-            Users = state.Users.Select(user => user.UserId != userId ? user : user with { IsReady = isReady }).ToList(),
+            Users = state.Users.Select(user => user.User.ToPublicModel().UserId != userId ? user : user with { IsReady = isReady }).ToList(),
         };
 
         public static RoomStateChangedDto WithMatchmakingData(this RoomStateChangedDto state, MatchmakingData mmData) => state with

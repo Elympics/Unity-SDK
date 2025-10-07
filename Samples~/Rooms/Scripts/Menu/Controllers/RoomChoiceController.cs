@@ -78,7 +78,7 @@ public class RoomChoiceController : BaseWindow
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
         foreach (var userInfo in room.State.Users)
         {
-            if (userInfo.UserId == ElympicsLobbyClient.Instance.UserGuid)
+            if (userInfo.User.UserId == ElympicsLobbyClient.Instance.UserGuid)
                 newRoomRecord.SetBackgroundColor(Color.green);
         }
         _roomRecordsLookup.Add(room.RoomId, newRoomRecord);

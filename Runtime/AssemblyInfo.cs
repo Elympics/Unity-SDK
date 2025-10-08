@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: AssemblyCompany("Elympics")]
 [assembly: AssemblyProduct("Elympics SDK")]
-[assembly: AssemblyVersion("0.20.0.0")]
+[assembly: AssemblyVersion("0.21.0.0")]
 [assembly: InternalsVisibleTo("Elympics.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]

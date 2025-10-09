@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Lobby;
-using Elympics.Lobby.Models;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;
@@ -27,12 +27,12 @@ namespace Elympics.Tests.Rooms
             var sessionMock = Substitute.For<IWebSocketSessionInternal>();
             RoomsClient.Session = sessionMock;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResult(Guid.Empty)));
+                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResultDto(Guid.Empty)));
             await RoomsClient.WatchRooms();
             sessionMock.ClearSubstitute(ClearOptions.ReturnValues);
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.Never<OperationResult>(CancellationToken.None))
+                .ReturnsForAnyArgs(UniTask.Never<OperationResultDto>(CancellationToken.None))
                 .AndDoes(_ => operationsExecuted++);
             RoomsClient.UnwatchRooms().Forget();
             await UniTask.WaitUntil(() => operationsExecuted > 0);
@@ -53,7 +53,7 @@ namespace Elympics.Tests.Rooms
             var shouldReturn = false;
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.WaitUntil(() => shouldReturn).ContinueWith(() => new OperationResult(Guid.Empty)))
+                .ReturnsForAnyArgs(UniTask.WaitUntil(() => shouldReturn).ContinueWith(() => new OperationResultDto(Guid.Empty)))
                 .AndDoes(_ => operationsExecuted++);
             RoomsClient.WatchRooms().Forget();
             await UniTask.WaitUntil(() => operationsExecuted > 0);
@@ -74,7 +74,7 @@ namespace Elympics.Tests.Rooms
             var sessionMock = Substitute.For<IWebSocketSessionInternal>();
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.Never<OperationResult>(CancellationToken.None))
+                .ReturnsForAnyArgs(UniTask.Never<OperationResultDto>(CancellationToken.None))
                 .AndDoes(_ => operationsExecuted++);
             RoomsClient.Session = sessionMock;
             RoomsClient.WatchRooms().Forget();
@@ -93,13 +93,13 @@ namespace Elympics.Tests.Rooms
             var sessionMock = Substitute.For<IWebSocketSessionInternal>();
             RoomsClient.Session = sessionMock;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResult(Guid.Empty)));
+                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResultDto(Guid.Empty)));
             await RoomsClient.WatchRooms();
             sessionMock.ClearSubstitute(ClearOptions.ReturnValues);
             var shouldReturn = false;
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.WaitUntil(() => shouldReturn).ContinueWith(() => new OperationResult(Guid.Empty)))
+                .ReturnsForAnyArgs(UniTask.WaitUntil(() => shouldReturn).ContinueWith(() => new OperationResultDto(Guid.Empty)))
                 .AndDoes(_ => operationsExecuted++);
             RoomsClient.UnwatchRooms().Forget();
             await UniTask.WaitUntil(() => operationsExecuted > 0);
@@ -121,7 +121,7 @@ namespace Elympics.Tests.Rooms
             RoomsClient.Session = sessionMock;
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResult(Guid.Empty)))
+                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResultDto(Guid.Empty)))
                 .AndDoes(_ => operationsExecuted++);
             RoomsClient.WatchRooms().Forget();
             await UniTask.WaitUntil(() => RoomsClient.IsWatchingRooms);
@@ -142,7 +142,7 @@ namespace Elympics.Tests.Rooms
             RoomsClient.Session = sessionMock;
             var operationsExecuted = 0;
             _ = sessionMock.ExecuteOperation(null!)
-                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResult(Guid.Empty)))
+                .ReturnsForAnyArgs(UniTask.FromResult(new OperationResultDto(Guid.Empty)))
                 .AndDoes(_ => operationsExecuted++);
 
             var awaitable = UniTask.Create(async () => await RoomsClient.UnwatchRooms());

@@ -1,5 +1,5 @@
 using System;
-using Elympics.Lobby.Models;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 
 #nullable enable
 
@@ -10,10 +10,10 @@ namespace Elympics
         public readonly ErrorBlame? Blame;
         public readonly ErrorKind? Kind;
 
-        internal LobbyOperationException(OperationResult result) : base(result.Details ?? result.Kind.ToString())
+        internal LobbyOperationException(OperationResultDto result) : base(result.Details ?? result.Kind.ToString())
         {
-            Blame = result.Blame;
-            Kind = result.Kind;
+            Blame = result.Blame?.Map();
+            Kind = result.Kind?.Map();
         }
 
         internal LobbyOperationException(string message) : base(message)

@@ -27,10 +27,10 @@ namespace SCS.Tests
         {
             try
             {
-                if (_roomsManager.ListJoinedRooms().Count > 0)
+                if (_roomsManager.CurrentRoom != null)
                 {
                     var gameData = string.Empty;
-                    var guid = _roomsManager.ListJoinedRooms()[0].RoomId;
+                    var guid = _roomsManager.CurrentRoom.RoomId;
                     var amount = BigInteger.Parse("1000000000000000000000000");
                     var result = await _scs.GetTicket(guid, amount, gameData);
                     Debug.Log($"[ScsClientTest] Got Ticket {result.TypedData}");

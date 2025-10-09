@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Lobby;
-using Elympics.Lobby.Models;
-using Elympics.Rooms.Models;
 
 #nullable enable
 
@@ -27,11 +27,11 @@ namespace Elympics.Tests.Common.RoomMocks
         public event Action<IFromLobby>? MessageReceived;
         public bool IsConnected => throw new NotImplementedException();
         public SessionConnectionDetails? ConnectionDetails { get; set; }
-        public UniTask<GameDataResponse> Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
+        public UniTask<GameDataResponseDto> Connect(SessionConnectionDetails details, CancellationToken ct = default) =>
             throw new NotImplementedException();
         public void Disconnect(DisconnectionReason reason) => throw new NotImplementedException();
 
-        public UniTask<OperationResult> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
+        public UniTask<OperationResultDto> ExecuteOperation(LobbyOperation message, CancellationToken ct = default)
         {
             ExecutedOperations.Add(message);
             return UniTask.FromResult(ResultToReturn);
@@ -39,14 +39,14 @@ namespace Elympics.Tests.Common.RoomMocks
 
         public readonly List<IToLobby> ExecutedOperations = new();
 
-        public OperationResult ResultToReturn = new(Guid.Empty);
+        public OperationResultDto ResultToReturn = new(Guid.Empty);
 
         public void InvokeMessageReceived(IFromLobby message) => MessageReceived?.Invoke(message);
 
         public void Reset()
         {
             ExecutedOperations.Clear();
-            ResultToReturn = new OperationResult(Guid.Empty);
+            ResultToReturn = new OperationResultDto(Guid.Empty);
             ConnectionDetails = null;
         }
     }

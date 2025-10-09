@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Rooms.Models;
 
 #nullable enable
@@ -9,7 +11,7 @@ namespace Elympics
 {
     public class RoomState
     {
-        public string RoomName { get; private set; }
+        public string RoomName { get; private set; } = "";
         public string? JoinCode { get; private set; }
         public bool PrivilegedHost { get; private set; }
         public bool IsPrivate { get; private set; }
@@ -24,10 +26,10 @@ namespace Elympics
         public IReadOnlyDictionary<string, string> CustomData => _customData;
 
         internal DateTime LastRoomUpdate { get; private set; }
-        internal RoomState(RoomStateChanged state) => Update(state);
+        internal RoomState(RoomStateChangedDto state) => Update(state);
         internal RoomState(PublicRoomState state) => Update(state);
 
-        internal void Update(RoomStateChanged stateUpdate, in RoomStateDiff stateDiff)
+        internal void Update(RoomStateChangedDto stateUpdate, in RoomStateDiff stateDiff)
         {
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= LastRoomUpdate)
@@ -40,13 +42,13 @@ namespace Elympics
 
             stateDiff.UpdatedState = true;
             var oldUsers = _users;
-            var newUsers = stateUpdate.Users;
+            var newUsers = stateUpdate.Users.Select(x => x.ToPublicModel()).ToList();
 
             if (oldUsers.Count != newUsers.Count)
                 stateDiff.NewUserCount = (uint)newUsers.Count;
 
-            if (oldUsers[0].UserId != newUsers[0].UserId)
-                stateDiff.NewHost = newUsers[0].UserId;
+            if (oldUsers[0].User.UserId != newUsers[0].User.UserId)
+                stateDiff.NewHost = newUsers[0].User.UserId;
 
             var isRoomCustomDataChanged = !_customData.IsTheSame(stateUpdate.CustomData);
             if (isRoomCustomDataChanged)
@@ -80,7 +82,7 @@ namespace Elympics
             stateDiff.NewRoomName = !RoomName.Equals(stateUpdate.RoomName) ? stateUpdate.RoomName : null;
             stateDiff.NewIsPrivate = IsPrivate != stateUpdate.IsPrivate ? stateUpdate.IsPrivate : null;
             var currentBet = MatchmakingData?.BetDetails;
-            var newBet = stateUpdate.MatchmakingData?.BetDetails;
+            var newBet = stateUpdate.MatchmakingData?.BetDetails?.Map();
             if (currentBet != newBet)
             {
                 stateDiff.UpdatedBetAmount = true;
@@ -89,7 +91,7 @@ namespace Elympics
 
             foreach (var oldUser in oldUsers)
             {
-                var newUser = newUsers.FirstOrDefault(x => x.UserId == oldUser.UserId);
+                var newUser = newUsers.FirstOrDefault(x => x.User.UserId == oldUser.User.UserId);
                 if (newUser == null)
                 {
                     stateDiff.UsersThatLeft.Add(oldUser);
@@ -98,14 +100,14 @@ namespace Elympics
                 }
 
                 if (newUser.IsReady != oldUser.IsReady)
-                    stateDiff.UsersThatChangedReadiness.Add((newUser.UserId, newUser.IsReady));
+                    stateDiff.UsersThatChangedReadiness.Add((newUser.User.UserId, newUser.IsReady));
                 if (newUser.TeamIndex != oldUser.TeamIndex)
-                    stateDiff.UsersThatChangedTeams.Add((newUser.UserId, newUser.TeamIndex));
+                    stateDiff.UsersThatChangedTeams.Add((newUser.User.UserId, newUser.TeamIndex));
             }
 
             foreach (var newUser in newUsers)
             {
-                var oldUser = oldUsers.FirstOrDefault(x => x.UserId == newUser.UserId);
+                var oldUser = oldUsers.FirstOrDefault(x => x.User.UserId == newUser.User.UserId);
                 if (oldUser != null)
                     continue;
                 stateDiff.UsersThatJoined.Add(newUser);
@@ -120,15 +122,18 @@ namespace Elympics
 
             if (stateDiff.UpdatedMatchmakingData)
             {
-                if ((IsMatchAvailable(stateUpdate.MatchmakingData?.MatchData) && !IsMatchAvailable(MatchmakingData?.MatchData))
-                    || (IsMatchmakingFailed(stateUpdate.MatchmakingData?.MatchData) && !IsMatchmakingFailed(MatchmakingData?.MatchData)))
+                var oldMatchData = MatchmakingData?.MatchData;
+                var newMatchData = stateUpdate.MatchmakingData?.MatchData?.Map();
+
+                if ((IsMatchAvailable(newMatchData) && !IsMatchAvailable(oldMatchData))
+                    || (IsMatchmakingFailed(newMatchData) && !IsMatchmakingFailed(oldMatchData)))
                     stateDiff.MatchDataArgs = new MatchDataReceivedArgs(stateUpdate.RoomId,
                         stateUpdate.MatchmakingData!.MatchData!.MatchId,
                         stateUpdate.MatchmakingData.QueueName,
-                        stateUpdate.MatchmakingData.MatchData);
+                        newMatchData!);
 
                 var oldMmState = MatchmakingData?.MatchmakingState;
-                var newMmState = stateUpdate.MatchmakingData?.State;
+                var newMmState = stateUpdate.MatchmakingData?.State.Map();
 
                 stateDiff.MatchmakingStarted = !oldMmState.IsInsideMatchmaking() && newMmState.IsInsideMatchmaking();
                 stateDiff.MatchmakingEnded = oldMmState.IsInsideMatchmaking() && !newMmState.IsInsideMatchmaking();
@@ -172,7 +177,7 @@ namespace Elympics
             }
         }
 
-        private void Update(RoomStateChanged stateUpdate)
+        private void Update(RoomStateChangedDto stateUpdate)
         {
             RoomName = stateUpdate.RoomName;
             PrivilegedHost = stateUpdate.HasPrivilegedHost;
@@ -182,7 +187,7 @@ namespace Elympics
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
-            _users.AddRange(stateUpdate.Users);
+            _users.AddRange(stateUpdate.Users.Select(RoomsMapper.Map));
             LastRoomUpdate = stateUpdate.LastUpdate;
         }
 
@@ -197,7 +202,7 @@ namespace Elympics
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
-            _users.AddRange(stateUpdate.Users);
+            _users.AddRange(stateUpdate.Users.Select(RoomsMapper.Map));
             LastRoomUpdate = stateUpdate.LastUpdate;
         }
     }

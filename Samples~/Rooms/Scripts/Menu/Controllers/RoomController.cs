@@ -31,14 +31,13 @@ public class RoomController : BaseWindow
     private Dictionary<int, Guid[]> _teams = new();
 
     private bool IsActive => roomCanvasGroup.blocksRaycasts;
-    private IRoom FirstJoinedRoom => RoomsUtility.RoomsManager.ListJoinedRooms().FirstOrDefault();
 
     private int RoomCapacity => RoomsUtility.RoomCapacity(_currentRoom);
 
     private readonly Dictionary<Guid, PlayerSeat> _seatLookup = new();
     private IRoom _currentRoom;
     private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
-    private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.UserId);
+    private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.User.UserId);
 
     [SerializeField] private Button recconectButton;
 
@@ -69,7 +68,7 @@ public class RoomController : BaseWindow
         CreateTeams();
         AssignJoinedPlayersToSeats();
         AssignJoinedPlayersToTeams();
-        _seatLookup[_currentRoom.State.Host.UserId].SetHostIndicator();
+        _seatLookup[_currentRoom.State.Host.User.UserId].SetHostIndicator();
         SetJoinCode();
         SetIdCode();
     }
@@ -263,7 +262,7 @@ public class RoomController : BaseWindow
                 {
                     if (team[i] == Guid.Empty)
                     {
-                        team[i] = user.UserId;
+                        team[i] = user.User.UserId;
                         break;
                     }
                 }
@@ -272,8 +271,8 @@ public class RoomController : BaseWindow
     }
     private void AssignPlayer(UserInfo player, PlayerSeat seat)
     {
-        _seatLookup.Add(player.UserId, seat);
-        seat.SetPlayer(player, MyUserId.Equals(player.UserId));
+        _seatLookup.Add(player.User.UserId, seat);
+        seat.SetPlayer(player, MyUserId.Equals(player.User.UserId));
     }
     public bool AssignPlayerToEmptyTeam(UserInfo player, out int emptyTeam)
     {
@@ -283,7 +282,7 @@ public class RoomController : BaseWindow
             {
                 if (team.Value[i] == Guid.Empty)
                 {
-                    team.Value[i] = player.UserId;
+                    team.Value[i] = player.User.UserId;
                     emptyTeam = team.Key;
                     return true;
                 }
@@ -312,7 +311,7 @@ public class RoomController : BaseWindow
             if (user.TeamIndex == null)
                 continue;
             var teamColor = new Color((float)user.TeamIndex / _teams.Count, (float)user.TeamIndex / _teams.Count, (float)user.TeamIndex / _teams.Count);
-            _seatLookup[user.UserId].SetTeamColor(teamColor);
+            _seatLookup[user.User.UserId].SetTeamColor(teamColor);
         }
     }
     #region Events integration
@@ -338,8 +337,8 @@ public class RoomController : BaseWindow
     }
     private void RemovePlayer(UserLeftArgs obj)
     {
-        _seatLookup[obj.User.UserId].SetEmpty();
-        _ = _seatLookup.Remove(obj.User.UserId);
+        _seatLookup[obj.User.User.UserId].SetEmpty();
+        _ = _seatLookup.Remove(obj.User.User.UserId);
     }
 
     private void ManageRoomFill(UserCountChangedArgs obj) => ManageRoomFill((int)obj.UserCount);
@@ -350,7 +349,7 @@ public class RoomController : BaseWindow
             return;
         var allSeatsFull = userCount == RoomsUtility.RoomCapacity(_currentRoom);
 
-        readyButton.gameObject.SetActive(allSeatsFull && !_currentRoom.State.Users.Single(x => x.UserId == MyUserId).IsReady);
+        readyButton.gameObject.SetActive(allSeatsFull && !_currentRoom.State.Users.Single(x => x.User.UserId == MyUserId).IsReady);
         statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
     }
     private void ManageHostIndicatorState(HostChangedArgs obj)
@@ -360,13 +359,13 @@ public class RoomController : BaseWindow
 
         if (_playerSeats[0] != null && !_playerSeats[0].IsOccupied)
         {
-            if (!_seatLookup.TryGetValue(newHost.UserId, out var _))
+            if (!_seatLookup.TryGetValue(newHost.User.UserId, out var _))
             {
                 AssignPlayer(newHost, _playerSeats[0]);
             }
             else
             {
-                _playerSeats[0].SetPlayer(newHost, MyUserId.Equals(newHost.UserId));
+                _playerSeats[0].SetPlayer(newHost, MyUserId.Equals(newHost.User.UserId));
             }
             oldSeat.SetEmpty();
 
@@ -514,7 +513,7 @@ public class RoomController : BaseWindow
     private UserInfo GetCurrentRoomUserInfo(Guid userId)
     {
         var users = _currentRoom.State.Users;
-        return users.Where(user => user.UserId == userId).DefaultIfEmpty(null).First();
+        return users.Where(user => user.User.UserId == userId).DefaultIfEmpty(null).First();
     }
     [UsedImplicitly]
     public void SaveDataChanged() => SaveDataChangeAsync().Forget();

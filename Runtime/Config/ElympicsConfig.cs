@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Lobby.InternalModels;
 using JetBrains.Annotations;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -75,7 +76,7 @@ namespace Elympics
 
         internal Uri ElympicsReplaySource => ApplicationParameters.Parameters.ReplaySource.GetValue(GetV2Endpoint("replay"));
 
-        internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Lobby.Models.Routes.Base).ToString();
+        internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Routes.Base).ToString();
 
         internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.AllRegionsRouteUnityFormat).ToString();
         internal string GameAvailableRegionsUrl(string gameId) =>

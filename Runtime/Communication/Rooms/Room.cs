@@ -4,6 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
@@ -85,7 +87,7 @@ namespace Elympics
             IMatchLauncher matchLauncher,
             IRoomsClient client,
             Guid roomId,
-            RoomStateChanged initialState,
+            RoomStateChangedDto initialState,
             bool isJoined = false,
             ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
         { }
@@ -114,7 +116,7 @@ namespace Elympics
             _logger = logger?.WithContext($"{nameof(Room)}");
         }
 
-        void IRoom.UpdateState(RoomStateChanged roomState, in RoomStateDiff stateDiff)
+        void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
         {
             ThrowIfDisposed();
             _state.Update(roomState, stateDiff);
@@ -166,11 +168,11 @@ namespace Elympics
             await ResultUtils.WaitUntil(() => !TryGetLocalUser(out var localUser) || localUser!.IsReady, ElympicsTimeout.RoomStateChangeConfirmationTimeout, linkedCts.Token);
         }
 
-        private UserInfo GetLocalUser() => _state.Users.First(x => x.UserId == LocalUserId);
+        private UserInfo GetLocalUser() => _state.Users.First(x => x.User.UserId == LocalUserId);
 
         private bool TryGetLocalUser(out UserInfo? localUser)
         {
-            localUser = _state.Users.FirstOrDefault(x => x.UserId == LocalUserId);
+            localUser = _state.Users.FirstOrDefault(x => x.User.UserId == LocalUserId);
             return localUser != null;
         }
 
@@ -199,7 +201,7 @@ namespace Elympics
         UniTask IRoom.StartMatchmakingInternal()
         {
             _state.ResetMatchData();
-            return _client.StartMatchmaking(_roomId, _state.Host.UserId);
+            return _client.StartMatchmaking(_roomId, _state.Host.User.UserId);
         }
 
         public async UniTask CancelMatchmaking(CancellationToken ct = default)
@@ -270,7 +272,7 @@ namespace Elympics
             var customRoomDataToSend = !customRoomDataIsTheSame ? customRoomData : null;
             var customMatchmakingDataToSend = !customMatchmakingDataIsTheSame ? customMatchmakingData : null;
             var competetivnessConfigToSend = isCompetitivenessConfigTheSame ? null : competitivenessConfig;
-            return _client.UpdateRoomParams(_roomId, _state.Host.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, competetivnessConfigToSend);
+            return _client.UpdateRoomParams(_roomId, _state.Host.User.UserId, roomNameToSend, isPrivateToSend, customRoomDataToSend, customMatchmakingDataToSend, competetivnessConfigToSend);
 
             bool IsCompetitivenessConfigTheSame(CompetitivenessConfig config) =>
                 config.CompetitivenessType switch

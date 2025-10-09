@@ -2,9 +2,10 @@ using System;
 
 namespace Elympics
 {
+    [Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
     internal class LeaderboardResponse : PaginatedResponseModel<LeaderboardResponseEntry> { }
 
-    [Serializable]
+    [Serializable, Obsolete("Use PlayPadCommunicator.LeaderboardCommunicator from PlayPad SDK instead.")]
     internal class LeaderboardResponseEntry
     {
         public string userId;

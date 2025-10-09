@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
-using Elympics.Rooms.Models;
 
 #nullable enable
 
@@ -14,7 +14,7 @@ namespace Elympics
         public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerContext logger) : base(webSocketSession, logger) =>
             _currentSession = currentSession;
 
-        public override async UniTask<GameDataResponse?> Connect(SessionConnectionDetails newConnectionDetails)
+        public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)
         {
             if (ConnectionDetailsChanged(newConnectionDetails))
             {

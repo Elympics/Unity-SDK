@@ -48,7 +48,7 @@ namespace Elympics
 
         internal static bool BuildServerWindows(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions);
 
-        internal static bool BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
+        internal static BuildReport BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 
         private static bool? IsLinuxModuleInstalled()
         {
@@ -57,22 +57,22 @@ namespace Elympics
             return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
         }
 
-        internal static bool BuildElympicsServerLinux(BuildOptions additionalOptions)
+        internal static BuildReport BuildElympicsServerLinux(BuildOptions additionalOptions)
         {
-            if (IsLinuxModuleInstalled() is false)
-            {
-                ElympicsLogger.LogError(MissingModuleErrorMessage);
-                return false;
-            }
+            // if (IsLinuxModuleInstalled() is false)
+            // {
+            //     ElympicsLogger.LogError(MissingModuleErrorMessage);
+            //     return false;
+            // }
 
-            var isBuildSuccess = BuildServerLinux(additionalOptions);
-            if (isBuildSuccess)
+            var buildReport = BuildServerLinux(additionalOptions);
+            if (buildReport.summary.result == BuildResult.Succeeded)
                 RemoveHalfRemoteServerFilesFromElympicsBuild();
 
-            return isBuildSuccess;
+            return buildReport;
         }
 
-        private static bool BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
+        private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
             try
             {
@@ -111,7 +111,7 @@ namespace Elympics
                 PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
 
                 if (report.summary.result != BuildResult.Succeeded)
-                    return false;
+                    return report;
 
                 // Copy and pack
 
@@ -126,7 +126,7 @@ namespace Elympics
 
                 EditorUtility.DisplayProgressBar(title, $"Build finished at {ServerBuildPath}", 1f);
 
-                return true;
+                return report;
             }
             finally
             {

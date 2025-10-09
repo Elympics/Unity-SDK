@@ -1,0 +1,12 @@
+namespace Elympics.Communication.Rooms.InternalModels
+{
+    public enum MatchmakingStateDto
+    {
+        Unlocked = 0,
+        RequestingMatchmaking = 1,
+        Matchmaking = 2,
+        CancellingMatchmaking = 3,
+        Matched = 4,
+        Playing = 5,
+    }
+}

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
-using Elympics.Rooms.Models;
 
 #nullable enable
 
@@ -12,8 +12,8 @@ namespace Elympics
 {
     internal interface IRoomsClient
     {
-        event Action<RoomListChanged>? RoomListChanged;
-        event Action<RoomStateChanged>? RoomStateChanged;
+        event Action<RoomListChangedDto>? RoomListChanged;
+        event Action<RoomStateChangedDto>? RoomStateChanged;
         event Action<LeftRoomArgs>? LeftRoom;
 
         SessionConnectionDetails SessionConnectionDetails { get; }

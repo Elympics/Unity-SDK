@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Elympics.Rooms.Models;
+using Elympics.Communication.Authentication.Models;
+using Elympics.Communication.Authentication.Models.Internal;
+using Elympics.Communication.Rooms.InternalModels;
+using Elympics.Communication.Rooms.InternalModels.FromRooms;
 
 namespace Elympics
 {
@@ -9,7 +12,7 @@ namespace Elympics
         public Guid? PlayerCurrentRoom = null;
         public bool TracksRoomList = false;
 
-        public readonly Dictionary<Guid, RoomStateChanged> Rooms = new();
+        public readonly Dictionary<Guid, RoomStateChangedDto> Rooms = new();
         public readonly Dictionary<string, (uint TeamSize, uint TeamCount)> Queues = new();
 
         public WebSocketMockBackendSession()
@@ -28,7 +31,7 @@ namespace Elympics
             var roomId2 = Guid.Parse("a5f30767-66f1-4cd0-80b5-924f6a0cafaa");
             var roomId3 = Guid.Parse("02c0fe92-ce91-475e-90bf-12c8cea23016");
 
-            Rooms.Add(roomId1, new RoomStateChanged(
+            Rooms.Add(roomId1, new RoomStateChangedDto(
                 roomId1,
                 DateTime.Now,
                 "Pair1v1Public",
@@ -36,7 +39,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName1,
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
@@ -44,9 +47,9 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>())
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 false,
                 false,
@@ -54,7 +57,7 @@ namespace Elympics
 
             ));
 
-            Rooms.Add(roomId2, new RoomStateChanged(
+            Rooms.Add(roomId2, new RoomStateChangedDto(
                 roomId2,
                 DateTime.Now,
                 "2v2Private",
@@ -62,7 +65,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName2,
                     Queues[queueName2].TeamCount,
                     Queues[queueName2].TeamSize,
@@ -70,17 +73,17 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, false, "NewGuid_0", null, new Dictionary<string, string>()),
-                    new(Guid.NewGuid(), 1, true, "NewGuid_1", null, new Dictionary<string, string>())
+                    new(0, false, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL")),
+                    new(1, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_1", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 true,
                 false,
                 new Dictionary<string, string>()
             ));
 
-            Rooms.Add(roomId3, new RoomStateChanged(
+            Rooms.Add(roomId3, new RoomStateChangedDto(
                 roomId3,
                 DateTime.Now,
                 "1v1Private",
@@ -88,7 +91,7 @@ namespace Elympics
                 false,
                 new MatchmakingData(
                     DateTime.Now,
-                    MatchmakingState.Unlocked,
+                    MatchmakingStateDto.Unlocked,
                     queueName1,
                     Queues[queueName1].TeamCount,
                     Queues[queueName1].TeamSize,
@@ -96,9 +99,9 @@ namespace Elympics
                     null,
                     null,
                     null),
-                new List<UserInfo>
+                new List<UserInfoDto>
                 {
-                    new(Guid.NewGuid(), 0, true, "NewGuid_0", null, new Dictionary<string, string>())
+                    new(0, true, new Dictionary<string, string>(), new ElympicsUserDTO(Guid.NewGuid().ToString(), "NewGuid_0", nameof(NicknameType.Common), "testAvatarURL"))
                 },
                 true,
                 false,

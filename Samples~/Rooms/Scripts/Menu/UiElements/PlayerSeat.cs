@@ -38,8 +38,8 @@ public class PlayerSeat : MonoBehaviour
     public void SetTeamColor(Color color) => teamMarker.color = color;
     public void SetSeatText(UserInfo player)
     {
-        playerIdText.text = $"Player Id: {player.UserId}";
-        playerNicknameText.text = $"Player Nickname: {player.Nickname}";
+        playerIdText.text = $"Player Id: {player.User.UserId}";
+        playerNicknameText.text = $"Player Nickname: {player.User.Nickname}";
         playerTeamIndex.text = $"Player Team Index: {player.TeamIndex}";
         playerIdText.color = new Color(playerIdText.color.r, playerIdText.color.g, playerIdText.color.b, 1);
     }

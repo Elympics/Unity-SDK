@@ -5,7 +5,7 @@
 
 * add verified nicknames ([d78ebe2](https://github.com/Elympics/Unity-SDK/commit/d78ebe203c9337f7b7ce030c1c0deac58e063266))
 * mark LeaderboardClient as obsolete because it was replaced by PlayPadCommunicator.LeaderboardCommunicator some time ago ([8d4f793](https://github.com/Elympics/Unity-SDK/commit/8d4f7934669cc72dafb64b3ffc12836e70996fca))
-* returning BuildReport from building server ([dd35ee8](https://github.com/Elympics/Unity-SDK/commit/dd35ee83b7f962d156d92ed16319b232f22d9f4b))
+* return BuildReport from building server ([dd35ee8](https://github.com/Elympics/Unity-SDK/commit/dd35ee83b7f962d156d92ed16319b232f22d9f4b))
 
 
 

@@ -131,7 +131,6 @@ namespace MatchTcpClients
                         return false;
                     }
 
-                    logger.Log($"Send offer:{Environment.NewLine}{offer}");
                     var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
                     if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
                     {
@@ -216,8 +215,8 @@ namespace MatchTcpClients
                     break;
 
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
-                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
 
+                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
                 var offerWithCandidates = new OfferWithCandidates
                 {
                     offer = offer,

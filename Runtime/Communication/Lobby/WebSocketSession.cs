@@ -153,7 +153,7 @@ namespace Elympics.Lobby
                 }
                 catch (Exception exception)
                 {
-                    ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
+                    _ = ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
                 }
 
                 throw; //Throw the exception that contains the result's error message

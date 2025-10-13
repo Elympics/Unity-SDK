@@ -139,7 +139,26 @@ namespace Elympics.Lobby
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
             var dataTask = WaitForLobbyData<TResponse>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
-            _ = await ExecuteOperationInternal(message, linkedCts.Token);
+            try
+            {
+                _ = await ExecuteOperationInternal(message, linkedCts.Token); //If the result was an error, this will throw an exception
+            }
+            catch
+            {
+                try
+                {
+                    //A response will never arrive if we got an error as the result, so cancel the operation and suppress the OperationCanceledException exception
+                    linkedCts.Cancel();
+                    _ = await dataTask.SuppressCancellationThrow();
+                }
+                catch (Exception exception)
+                {
+                    ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
+                }
+
+                throw; //Throw the exception that contains the result's error message
+            }
+
             return await dataTask;
         }
 

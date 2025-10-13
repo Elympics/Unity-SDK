@@ -9,7 +9,13 @@ namespace Elympics.Lobby
 {
     internal static class ResultUtils
     {
-        public static async UniTask<TResult> WaitForResult<TResult, TAction>(TimeSpan timeout, Func<UniTaskCompletionSource<TResult>, TAction> handlerFactory, Action<TAction>? onBeforeWait = null, Action<TAction>? onAfterWait = null, CancellationToken ct = default)
+        public static async UniTask<TResult> WaitForResult<TResult, TAction>(
+            TimeSpan timeout,
+            Func<UniTaskCompletionSource<TResult>, TAction> handlerFactory,
+            string operationName,
+            Action<TAction>? onBeforeWait = null,
+            Action<TAction>? onAfterWait = null,
+            CancellationToken ct = default)
             where TAction : Delegate
         {
             var tcs = new UniTaskCompletionSource<TResult>();
@@ -32,7 +38,7 @@ namespace Elympics.Lobby
             }
 
             ct.ThrowIfCancellationRequested();
-            throw new LobbyOperationException($"Operation {nameof(WaitForResult)} timed out");
+            throw new LobbyOperationException($"{nameof(WaitForResult)} timed out for operation: {operationName}.");
         }
 
         public static async UniTask<T> WithTimeout<T>(this UniTaskCompletionSource<T> tcs, TimeSpan timeout, CancellationToken ct = default)

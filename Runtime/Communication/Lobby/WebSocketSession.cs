@@ -121,7 +121,7 @@ namespace Elympics.Lobby
         private async UniTask<OperationResultDto> ExecuteOperationInternal(LobbyOperation message, CancellationToken ct)
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
+            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, $"{nameof(ExecuteOperationInternal)} {message.GetType().Name} with {nameof(message.OperationId)}: {message.OperationId}", linkedCts.Token);
             SendMessage(message);
             return await task;
         }
@@ -168,6 +168,7 @@ namespace Elympics.Lobby
         {
             var openTask = ResultUtils.WaitForResult<ValueTuple, WebSocketOpenEventHandler>(ElympicsTimeout.WebSocketOpeningTimeout,
                 tcs => () => tcs.TrySetResult(new ValueTuple()),
+                nameof(OpenWebSocket),
                 handler => ws.OnOpen += handler,
                 handler => ws.OnOpen -= handler,
                 Token);
@@ -342,9 +343,10 @@ namespace Elympics.Lobby
                 Disconnected?.Invoke(data);
         }
 
-        private UniTask<OperationResultDto> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
+        private UniTask<OperationResultDto> WaitForOperationResult(Guid operationId, TimeSpan timeout, string operationName, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResultDto, Action<OperationResultDto>>(timeout,
                 tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)),
+                operationName,
                 handler => _operationResultHandlers.TryAdd(operationId, handler),
                 _ => _operationResultHandlers.TryRemove(operationId, out var _),
                 ct);
@@ -354,6 +356,7 @@ namespace Elympics.Lobby
         {
             var result = await ResultUtils.WaitForResult<IFromLobby, Action<IFromLobby>>(timeout,
                 tcs => result => _ = tcs.TrySetResult(result),
+                $"{nameof(WaitForLobbyData)} {nameof(TData)} with {nameof(requestId)}: {requestId}",
                 handler => _dataResponses.TryAdd(requestId, handler),
                 _ => _dataResponses.TryRemove(requestId, out var _),
                 ct);

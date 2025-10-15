@@ -518,6 +518,7 @@ namespace Elympics
             if (_initialized)
                 return;
 
+            var logger = _logger.WithMethodName();
             var counter = 0;
             try
             {
@@ -526,6 +527,7 @@ namespace Elympics
                 var matchRoomsJoined = gameDataResponse.JoinedMatchRooms;
                 if (matchRoomsJoined <= 0)
                 {
+                    logger.Log("No initial room state to fetch.");
                     _initialized = true;
                     return;
                 }
@@ -539,14 +541,20 @@ namespace Elympics
                         return;
                     }
                 }
+                logger.Log($"Waiting for {matchRoomsJoined} Room Updates...");
                 var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, ElympicsTimeout.RoomStateChangeConfirmationTimeout, _cts.Token).SuppressCancellationThrow();
                 if (canceled)
-                    ElympicsLogger.LogWarning("Waiting for init room state timeout.");
-
-                _initialized = true;
+                    logger.Warning("Waiting for init room state timeout.");
+                else
+                    logger.Log("Initial room state fetch completed.");
+            }
+            catch (Exception e)
+            {
+                logger.Exception(e);
             }
             finally
             {
+                _initialized = true;
                 _client.RoomStateChanged -= OnRoomStateChanged;
             }
 

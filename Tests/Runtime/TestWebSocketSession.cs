@@ -214,6 +214,7 @@ namespace Elympics.Tests
             using var session = CreateDefaultWebSocketSession();
             ElympicsTimeout.WebSocketOperationTimeout = TimeSpan.Zero;
 
+            LogAssert.Expect(LogType.Exception, new Regex($"timed out*"));
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails));
             Assert.False(session.IsConnected);
         });

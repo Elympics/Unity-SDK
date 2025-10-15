@@ -33,7 +33,7 @@ namespace Elympics
             if (coroutineRunner == null)
                 coroutineRunner = Object.FindObjectOfType<AsyncEventsDispatcher>();
             var tcs = new TaskCompletionSource<bool>();
-            coroutineRunner.Enqueue(Delay(delay, tcs, cancellationToken));
+            coroutineRunner.StartCoroutine(Delay(delay, tcs, cancellationToken));
             await tcs.Task;
 #else
             await Task.Delay(delay, cancellationToken);

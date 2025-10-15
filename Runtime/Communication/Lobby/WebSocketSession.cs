@@ -76,7 +76,7 @@ namespace Elympics.Lobby
             try
             {
                 await OpenWebSocket(_ws);
-                var gameData = await EstablishSession(gameId, gameVersion, regionName);
+                var gameData = await SendRequestInternal<GameDataResponseDto>(new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName), Token);
                 ConnectionDetails = details;
                 logger.SetRegion(regionName).SetLobbyUrl(wsUrl).Log("Connection to lobby completed.");
                 SetConnectedState();
@@ -115,8 +115,13 @@ namespace Elympics.Lobby
         {
             ThrowIfDisposed();
             ThrowIfNotConnected();
+            return await ExecuteOperationInternal(message, ct);
+        }
+
+        private async UniTask<OperationResultDto> ExecuteOperationInternal(LobbyOperation message, CancellationToken ct)
+        {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
-            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
+            var task = WaitForOperationResult(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, $"{nameof(ExecuteOperationInternal)} {message.GetType().Name} with {nameof(message.OperationId)}: {message.OperationId}", linkedCts.Token);
             SendMessage(message);
             return await task;
         }
@@ -126,14 +131,34 @@ namespace Elympics.Lobby
         {
             ThrowIfDisposed();
             ThrowIfNotConnected();
-            if (!IsConnected)
-            {
-                var logger = _logger.WithMethodName();
-                throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
-            }
+            return await SendRequestInternal<TResponse>(message, ct);
+        }
+
+        private async UniTask<TResponse> SendRequestInternal<TResponse>(LobbyOperation message, CancellationToken ct)
+            where TResponse : ILobbyResponse
+        {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token, ct);
             var dataTask = WaitForLobbyData<TResponse>(message.OperationId, ElympicsTimeout.WebSocketOperationTimeout, linkedCts.Token);
-            _ = await ExecuteOperation(message, linkedCts.Token);
+            try
+            {
+                _ = await ExecuteOperationInternal(message, linkedCts.Token); //If the result was an error, this will throw an exception
+            }
+            catch
+            {
+                try
+                {
+                    //A response will never arrive if we got an error as the result, so cancel the operation and suppress the OperationCanceledException exception
+                    linkedCts.Cancel();
+                    _ = await dataTask.SuppressCancellationThrow();
+                }
+                catch (Exception exception)
+                {
+                    _ = ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
+                }
+
+                throw; //Throw the exception that contains the result's error message
+            }
+
             return await dataTask;
         }
 
@@ -143,19 +168,12 @@ namespace Elympics.Lobby
         {
             var openTask = ResultUtils.WaitForResult<ValueTuple, WebSocketOpenEventHandler>(ElympicsTimeout.WebSocketOpeningTimeout,
                 tcs => () => tcs.TrySetResult(new ValueTuple()),
+                nameof(OpenWebSocket),
                 handler => ws.OnOpen += handler,
                 handler => ws.OnOpen -= handler,
                 Token);
             ws.Connect();
             _ = await openTask;
-        }
-
-        private async UniTask<GameDataResponseDto> EstablishSession(Guid gameId, string gameVersion, string regionName)
-        {
-            var request = new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName);
-            var waitForGameData = WaitForLobbyData<GameDataResponseDto>(request.OperationId, ElympicsTimeout.WebSocketOperationTimeout, Token);
-            SendMessage(request);
-            return await waitForGameData;
         }
 
         private void ResetWebSocket()
@@ -325,9 +343,10 @@ namespace Elympics.Lobby
                 Disconnected?.Invoke(data);
         }
 
-        private UniTask<OperationResultDto> WaitForOperationResult(Guid operationId, TimeSpan timeout, CancellationToken ct) =>
+        private UniTask<OperationResultDto> WaitForOperationResult(Guid operationId, TimeSpan timeout, string operationName, CancellationToken ct) =>
             ResultUtils.WaitForResult<OperationResultDto, Action<OperationResultDto>>(timeout,
                 tcs => result => _ = result.Success ? tcs.TrySetResult(result) : tcs.TrySetException(new LobbyOperationException(result)),
+                operationName,
                 handler => _operationResultHandlers.TryAdd(operationId, handler),
                 _ => _operationResultHandlers.TryRemove(operationId, out var _),
                 ct);
@@ -337,6 +356,7 @@ namespace Elympics.Lobby
         {
             var result = await ResultUtils.WaitForResult<IFromLobby, Action<IFromLobby>>(timeout,
                 tcs => result => _ = tcs.TrySetResult(result),
+                $"{nameof(WaitForLobbyData)} {nameof(TData)} with {nameof(requestId)}: {requestId}",
                 handler => _dataResponses.TryAdd(requestId, handler),
                 _ => _dataResponses.TryRemove(requestId, out var _),
                 ct);

@@ -1,3 +1,18 @@
+## [0.21.1](https://github.com/Elympics/Unity-SDK/compare/v0.21.0...v0.21.1) (2025-10-15)
+
+
+### Bug Fixes 🪲
+
+* suppress the "Operation WaitForResult timed out" error log when the WebSocketSession.SendRequest method throws an exception ([1d38182](https://github.com/Elympics/Unity-SDK/commit/1d38182781859a605ecde0e30470823b2b791930))
+* throw an exception with a useful message instead of "Operation WaitForResult timed out" when the WebSocketSession.Connect method fails ([3e8712f](https://github.com/Elympics/Unity-SDK/commit/3e8712f5bb5908806f8382a98856f574c0e17c7f))
+
+
+### Features
+
+* add operation name and ID to error messages of timed out WebSocket opeartions ([9bcb53d](https://github.com/Elympics/Unity-SDK/commit/9bcb53dfcc17048d3fd851d30fae3fdc6543d518))
+
+
+
 ## [0.21.0](https://github.com/Elympics/Unity-SDK/compare/v0.20.0...v0.21.0) (2025-10-08)
 
 

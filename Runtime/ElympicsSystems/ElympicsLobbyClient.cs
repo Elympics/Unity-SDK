@@ -640,6 +640,7 @@ namespace Elympics
 
         internal async UniTask InitializeBasedOnGameData(GameDataResponseDto gameDataResponse)
         {
+            loggerContext = loggerContext.SetFleetName(gameDataResponse.FleetName).SetGameVersionId(gameDataResponse.GameVersionId);
             var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
             foreach (var coin in gameDataResponse.CoinData)

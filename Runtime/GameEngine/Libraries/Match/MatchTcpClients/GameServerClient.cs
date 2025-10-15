@@ -82,6 +82,7 @@ namespace MatchTcpClients
         {
             CreateNetworkClients();
 
+            ClientDisconnectedCts?.Cancel();
             ClientDisconnectedCts?.Dispose();
             ClientDisconnectedCts = new CancellationTokenSource();
 
@@ -183,12 +184,14 @@ namespace MatchTcpClients
             _clientSynchronizer.UnreliablePingGenerated += async command => await SendUnreliableCommand(command);
             _clientSynchronizer.AuthenticateUnreliableGenerated += async command => await SendUnreliableCommand(command);
             _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
-            _clientSynchronizer.TimedOut += () =>
-            {
-                var log = _logger.WithMethodName();
-                log.Error("Synchronize timed out, disconnecting...");
-                Disconnect();
-            };
+            _clientSynchronizer.TimedOut += OnTimeout;
+        }
+
+        private void OnTimeout()
+        {
+            var log = _logger.WithMethodName();
+            log.Error("Synchronize timed out, disconnecting...");
+            Disconnect();
         }
 
         public void Disconnect()
@@ -200,6 +203,8 @@ namespace MatchTcpClients
             ClientDisconnectedCts.Cancel();
             ClientDisconnectedCts.Dispose();
             ClientDisconnectedCts = null;
+            _clientSynchronizer.TimedOut -= OnTimeout;
+            SessionToken = null;
         }
 
         private async Task SendReliableCommand(Command command)

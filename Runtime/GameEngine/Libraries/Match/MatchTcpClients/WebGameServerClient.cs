@@ -56,12 +56,48 @@ namespace MatchTcpClients
 
         protected override void CreateNetworkClients()
         {
-            _webRtcClient?.Dispose();
+            if (_webRtcClient != null)
+            {
+                _webRtcClient.Dispose();
+                UnsubscribeFromWebConnectionStatus();
+            }
             _webRtcClient = _webRtcFactory(Config.OfferAnnounceDelay);
             ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
             UnreliableClient?.Dispose();
             UnreliableClient = new WebRtcUnreliableNetworkClient(_webRtcClient);
+        }
+        private void UnsubscribeFromWebConnectionStatus()
+        {
+            if (_webRtcClient == null)
+                return;
+            _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
+            _webRtcClient.ReliableReceivingError -= OnReliableChannelError;
+            _webRtcClient.UnreliableReceivingError -= OnUnReliableChannelError;
+            _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
+            _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
+        }
+
+        private void SubscribeToWebConnectionStatus()
+        {
+            if (_webRtcClient == null)
+                return;
+
+            _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;
+            _webRtcClient.ReliableReceivingError += OnReliableChannelError;
+            _webRtcClient.UnreliableReceivingError += OnUnReliableChannelError;
+            _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
+            _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
+        }
+        private void OnUnReliableChannelError(string error)
+        {
+            var logger = _logger.WithMethodName();
+            logger.Error($"UnReliable Channel error: {error}");
+        }
+        private void OnReliableChannelError(string error)
+        {
+            var logger = _logger.WithMethodName();
+            logger.Error($"Reliable Channel error: {error}");
         }
 
         protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
@@ -79,9 +115,7 @@ namespace MatchTcpClients
                     if (i > 0)
                         Initialize();
 
-                    _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
-                    _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
-                    _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;
+                    SubscribeToWebConnectionStatus();
                     _stateCancellationTokenSource = new CancellationTokenSource();
                     _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
 
@@ -97,7 +131,6 @@ namespace MatchTcpClients
                         return false;
                     }
 
-                    logger.Log($"Send offer:{Environment.NewLine}{offer}");
                     var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
                     if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
                     {
@@ -113,9 +146,6 @@ namespace MatchTcpClients
                     var connected = await TryConnectSessionAsync(_linkedCts.Token);
 
                     _candidates.Clear();
-                    _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
-                    _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
-                    _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
                     _stateCancellationTokenSource.Dispose();
                     _linkedCts.Dispose();
                     if (connected)
@@ -126,10 +156,14 @@ namespace MatchTcpClients
 
                 logger.Error("Failed to establish WebRtc connection.");
             }
+            catch
+            {
+                UnsubscribeFromWebConnectionStatus();
+                throw;
+            }
             finally
             {
-                _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
-                _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
+
                 _stateCancellationTokenSource?.Dispose();
                 _linkedCts?.Dispose();
             }
@@ -139,16 +173,24 @@ namespace MatchTcpClients
 
         private void OnConnectionStateChanged(string newState)
         {
-            if (newState is RtcPeerConnectionStates.Failed)
-                _stateCancellationTokenSource?.Cancel();
+            var logger = _logger.WithMethodName();
+            logger.Log($"New RtcPeer connection state: {newState}");
+            if (newState is not RtcPeerConnectionStates.Failed)
+                return;
+            _stateCancellationTokenSource?.Cancel();
+            _stateCancellationTokenSource?.Dispose();
         }
 
         private void OnIceConnectionStateChanged(string newState)
-        { }
+        {
+            var logger = _logger.WithMethodName();
+            logger.Log($"New Ice connection state: {newState}");
+        }
 
         private void OnIceCandidateCreated(string? newCandidate)
         {
-            Debug.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
+            var logger = _logger.WithMethodName();
+            logger.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
             if (!string.IsNullOrEmpty(newCandidate))
                 _candidates.Add(newCandidate);
         }
@@ -173,8 +215,8 @@ namespace MatchTcpClients
                     break;
 
                 logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
-                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
 
+                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
                 var offerWithCandidates = new OfferWithCandidates
                 {
                     offer = offer,

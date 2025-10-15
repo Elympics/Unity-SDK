@@ -179,7 +179,7 @@ namespace MatchTcpClients
 
         private void InitClientSynchronizer()
         {
-            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig, SessionToken);
+            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig, SessionToken, _logger);
             _clientSynchronizer.ReliablePingGenerated += async command => await SendReliableCommand(command);
             _clientSynchronizer.UnreliablePingGenerated += async command => await SendUnreliableCommand(command);
             _clientSynchronizer.AuthenticateUnreliableGenerated += async command => await SendUnreliableCommand(command);

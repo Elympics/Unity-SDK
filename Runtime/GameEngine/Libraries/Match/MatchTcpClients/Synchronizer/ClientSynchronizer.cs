@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
+using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary.Ntp;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
@@ -19,38 +20,41 @@ namespace MatchTcpClients.Synchronizer
 
         private readonly ClientSynchronizerConfig _config;
         private string _sessionToken;
+        private readonly ElympicsLoggerContext _logger;
         private DateTime? _lastReceivedPingDataTime;
         private NtpData _lastReceivedUnreliableNtpData;
         private bool _waitingForFirstUnreliablePing = true;
 
         private Action<PingClientResponseMessage> _pingResponseCallback;
 
-        public ClientSynchronizer(ClientSynchronizerConfig config, string sessionToken)
+        public ClientSynchronizer(ClientSynchronizerConfig config, string sessionToken, ElympicsLoggerContext logger)
         {
             _sessionToken = sessionToken;
+            _logger = logger.WithContext(nameof(ClientSynchronizer));
             _config = config;
         }
 
         public async Task StartContinuousSynchronizingAsync(CancellationToken ct)
         {
             _ = Task.Run(async () =>
-            {
-                await TaskUtil.Delay(_config.UnreliablePingTimeoutInMilliseconds, ct);
-                _waitingForFirstUnreliablePing = false;
-            }, ct);
-
+                {
+                    await TaskUtil.Delay(_config.UnreliablePingTimeoutInMilliseconds, ct);
+                    _waitingForFirstUnreliablePing = false;
+                },
+                ct);
+            var logger = _logger.WithMethodName();
+            logger.Log("Starting client synchronization...");
             var stopwatch = new Stopwatch();
             while (!ct.IsCancellationRequested)
             {
                 stopwatch.Start();
                 var synchronizationData = await SynchronizeOnce(ct);
                 stopwatch.Stop();
+                if (!ct.IsCancellationRequested)
+                    break;
 
                 if (synchronizationData == null)
-                {
-                    if (!ct.IsCancellationRequested)
-                        TimedOut?.Invoke();
-                }
+                    TimedOut?.Invoke();
                 else
                 {
                     Synchronized?.Invoke(synchronizationData);
@@ -62,6 +66,7 @@ namespace MatchTcpClients.Synchronizer
                         await TaskUtil.Delay(timeToWait, ct).CatchOperationCanceledException();
                 }
             }
+            logger.Log("Ending client synchronization.");
         }
 
         public async Task<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
@@ -81,10 +86,16 @@ namespace MatchTcpClients.Synchronizer
             _pingResponseCallback = null;
             pingCompletionSource = null;
 
+            if (ct.IsCancellationRequested)
+                return null;
+
             if (firstFinishedTask == timeoutTask)
                 return null;
 
             var pingResult = await pingCompletionTask;
+
+            if (ct.IsCancellationRequested)
+                return null;
             return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
         }
 

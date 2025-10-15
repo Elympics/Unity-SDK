@@ -56,7 +56,7 @@ namespace MatchTcpClients
 
         protected override void CreateNetworkClients()
         {
-            if (_webRtcClient !=null)
+            if (_webRtcClient != null)
             {
                 _webRtcClient.Dispose();
                 UnsubscribeFromWebConnectionStatus();
@@ -80,7 +80,7 @@ namespace MatchTcpClients
 
         private void SubscribeToWebConnectionStatus()
         {
-            if (_webRtcClient==null)
+            if (_webRtcClient == null)
                 return;
 
             _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;

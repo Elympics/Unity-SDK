@@ -34,6 +34,7 @@ namespace Elympics
                 {
                     IsError = true,
                     Text = "Operation cancelled.",
+                    Code = 499
                 };
 
             return HandleCompleted(result);
@@ -45,6 +46,7 @@ namespace Elympics
         private static WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
             var isError = webRequest.IsConnectionError() || webRequest.IsProtocolError();
+            var code = webRequest.responseCode;
             var text = webRequest.IsConnectionError()
                 ? webRequest.error
                 : webRequest.downloadHandler.text;
@@ -52,6 +54,7 @@ namespace Elympics
             {
                 IsError = isError,
                 Text = text,
+                Code = code
             };
         }
     }

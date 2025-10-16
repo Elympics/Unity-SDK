@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elympics.Communication.Authentication.Models.Internal;
 using MessagePack;
 
@@ -24,5 +26,10 @@ namespace Elympics.Communication.Rooms.InternalModels
         }
 
         public UserInfo ToPublicModel() => new(TeamIndex, IsReady, CustomPlayerData, User.ToPublicModel());
+
+        public override string ToString() => $"{nameof(User)}:{Environment.NewLine}\t{User}{Environment.NewLine}"
+            + $"{nameof(TeamIndex)}:{TeamIndex}{Environment.NewLine}"
+            + $"{nameof(IsReady)}:{IsReady}{Environment.NewLine}"
+            + $"{nameof(CustomPlayerData)}:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", CustomPlayerData?.Select(kv => $"Key = {kv.Key}, Value = {kv.Value}"))}{Environment.NewLine}";
     }
 }

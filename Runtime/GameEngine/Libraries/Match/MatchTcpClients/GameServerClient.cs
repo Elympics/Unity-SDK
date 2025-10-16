@@ -51,6 +51,7 @@ namespace MatchTcpClients
 
         public async Task<bool> ConnectAsync(CancellationToken ct = default)
         {
+            var logger = _logger.WithMethodName();
             Disconnect();
 
             Initialize();
@@ -69,6 +70,7 @@ namespace MatchTcpClients
             var synchronizationData = await TryInitialSynchronizeAsync(ct);
             if (synchronizationData == null)
             {
+                logger.Error("Failed to perform initial synchronization.");
                 Disconnect();
                 return false;
             }

@@ -65,6 +65,7 @@
     }
   ],
   "dependencies": {
-    "com.unity.mathematics": "1.2.6"
+    "com.unity.mathematics": "1.2.6",
+    "com.unity.nuget.newtonsoft-json": "3.0.2"
   }
 }

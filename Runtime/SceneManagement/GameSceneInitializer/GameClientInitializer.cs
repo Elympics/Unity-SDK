@@ -11,7 +11,6 @@ namespace Elympics
             ElympicsClient client,
             ElympicsBot bot,
             ElympicsServer server,
-            ElympicsSinglePlayer singlePlayer,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {

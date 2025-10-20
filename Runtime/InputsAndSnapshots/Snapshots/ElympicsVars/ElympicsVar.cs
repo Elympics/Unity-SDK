@@ -33,6 +33,14 @@ namespace Elympics
         public ElympicsVarEqualityComparer<T> Comparer { get; }
 
         public delegate void ValueChangedCallback(T lastValue, T newValue);
+
+        /// <summary>Raised when the variable's value changes on the client, taking accuracy tolerance into the account.</summary>
+        /// <remarks>
+        /// This event is raised at the start of a tick, after receiving inputs, before calling <see cref="IUpdatable.ElympicsUpdate"/>.
+        /// Since it depends on the client-side state of the game and snapshots received from the server, it may not be raised for every change on the server side.
+        /// For that reason this event should not be used for critical game logic, but rather for auxiliary effects (e.g. sound effects, visual effects).
+        /// All gameplay logic should be based on reading the variable's value in <see cref="IUpdatable.ElympicsUpdate"/>.
+        /// </remarks>
         public event ValueChangedCallback ValueChanged;
 
         protected ElympicsVar(T value = default, bool enabledSynchronization = true, ElympicsVarEqualityComparer<T> comparer = null)

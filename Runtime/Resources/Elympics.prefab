@@ -380,7 +380,6 @@ MonoBehaviour:
   elympicsClient: {fileID: 7529846739748366659}
   elympicsBot: {fileID: 5385409787458503955}
   elympicsServer: {fileID: 7529846741445686787}
-  elympicsSinglePlayer: {fileID: 0}
 --- !u!114 &7529846740173844772
 MonoBehaviour:
   m_ObjectHideFlags: 0

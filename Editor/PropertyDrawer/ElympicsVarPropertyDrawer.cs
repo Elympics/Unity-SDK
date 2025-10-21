@@ -6,6 +6,7 @@ namespace Elympics
     [CustomPropertyDrawer(typeof(ElympicsBool))]
     [CustomPropertyDrawer(typeof(ElympicsFloat))]
     [CustomPropertyDrawer(typeof(ElympicsInt))]
+    [CustomPropertyDrawer(typeof(ElympicsLong))]
     [CustomPropertyDrawer(typeof(ElympicsQuaternion))]
     [CustomPropertyDrawer(typeof(ElympicsString))]
     [CustomPropertyDrawer(typeof(ElympicsVector2))]

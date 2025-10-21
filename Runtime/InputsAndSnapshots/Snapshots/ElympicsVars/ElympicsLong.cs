@@ -6,11 +6,11 @@ namespace Elympics
     [Serializable]
     public sealed class ElympicsLong : ElympicsVar<long>
     {
-        public ElympicsLong(int value = default, bool enableSynchronization = true, ElympicsLongEqualityComparer comparer = null)
+        public ElympicsLong(long value = default, bool enableSynchronization = true, ElympicsLongEqualityComparer comparer = null)
             : base(value, enableSynchronization, comparer ?? new ElympicsLongEqualityComparer())
         { }
 
-        public ElympicsLong(int value, ElympicsVarConfig config)
+        public ElympicsLong(long value, ElympicsVarConfig config)
             : base(value, config.synchronizationEnabled, new ElympicsLongEqualityComparer(config.tolerance))
         { }
 

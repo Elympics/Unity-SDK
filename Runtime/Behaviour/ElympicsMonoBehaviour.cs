@@ -72,14 +72,22 @@ namespace Elympics
         /// <param name="player">The player for whom the instantiated object will be predictable.</param>
         /// <returns>Created game object.</returns>
         /// <remarks>For object destruction see <see cref="ElympicsDestroy"/>.</remarks>
-        public GameObject ElympicsInstantiate(string pathInResources, ElympicsPlayer player)
+        public GameObject ElympicsInstantiate(string pathInResources, ElympicsPlayer player) => InstantiateInternal(pathInResources, player, null);
+
+        /// <param name="position">Position in the world space where the prefab will be instantiated.</param>
+        /// <param name="rotation">Rotation applied to the instantiated prefab.</param>
+        /// <inheritdoc cref="ElympicsInstantiate(string,ElympicsPlayer)"/>/>
+        public GameObject ElympicsInstantiate(string pathInResources, ElympicsPlayer player, Vector3 position, Quaternion rotation) => InstantiateInternal(pathInResources, player, new(position, rotation));
+
+        private GameObject InstantiateInternal(string pathInResources, ElympicsPlayer player, InstantiatedTransformConfig? transformConfig)
         {
             if (!Elympics.IsServer && !_elympics.Config.Prediction)
                 throw new ElympicsException($"You cannot use {nameof(ElympicsInstantiate)} as a client or bot when prediction is disabled.");
 
             ThrowIfCalledInWrongContextWithPlayer(player);
-            return GetFactory().CreateInstance(pathInResources, player);
+            return GetFactory().CreateInstance(pathInResources, player, transformConfig);
         }
+
 
         [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")]
         private void ThrowIfCalledInWrongContextWithPlayer(ElympicsPlayer player, [CallerMemberName] string caller = "")

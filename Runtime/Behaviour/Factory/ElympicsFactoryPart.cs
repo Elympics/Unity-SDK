@@ -8,7 +8,7 @@ namespace Elympics
 {
     internal class ElympicsFactoryPart
     {
-        private readonly Func<ElympicsPlayer, GameObject, GameObject> _instantiate;
+        private readonly Func<ElympicsPlayer, GameObject, InstantiatedTransformConfig?, GameObject> _instantiate;
         private readonly Action<ElympicsPlayer, GameObject> _destroy;
         private readonly Action<ElympicsBehaviour> _addBehaviour;
         private readonly Action<int> _removeBehaviour;
@@ -21,7 +21,7 @@ namespace Elympics
         private readonly Dictionary<int, CreatedInstanceWrapper> _createdInstanceWrappersCache;
         private readonly Dictionary<GameObject, int> _createdGameObjectsIds;
 
-        internal ElympicsFactoryPart(ElympicsPlayer player, Func<ElympicsPlayer, GameObject, GameObject> instantiate, Action<ElympicsPlayer, GameObject> destroy, Action<ElympicsBehaviour> addBehaviour, Action<int> removeBehaviour)
+        internal ElympicsFactoryPart(ElympicsPlayer player, Func<ElympicsPlayer, GameObject, InstantiatedTransformConfig?, GameObject> instantiate, Action<ElympicsPlayer, GameObject> destroy, Action<ElympicsBehaviour> addBehaviour, Action<int> removeBehaviour)
         {
             _player = player;
 
@@ -70,7 +70,7 @@ namespace Elympics
                 foreach (var instanceData in instancesToAdd)
                 {
                     _currentNetworkId.MoveTo(instanceData.PrecedingNetworkIdEnumeratorValue);
-                    _ = CreateInstanceInternal(instanceData.ID, instanceData.InstanceType);
+                    _ = CreateInstanceInternal(instanceData.ID, instanceData.InstanceType, null);
                 }
 
                 _instancesData.ApplyIncomingInstances();
@@ -79,18 +79,18 @@ namespace Elympics
             _currentNetworkId.MoveTo(cachedNetworkIdEnumerator);
         }
 
-        internal GameObject CreateInstance(string pathInResources)
+        internal GameObject CreateInstance(string pathInResources, InstantiatedTransformConfig? transformConfig)
         {
             var instanceId = _instancesData.Add(_currentNetworkId.GetCurrent(), pathInResources);
-            var instanceWrapper = CreateInstanceInternal(instanceId, pathInResources);
+            var instanceWrapper = CreateInstanceInternal(instanceId, pathInResources, transformConfig);
             return instanceWrapper.GameObject;
         }
 
-        private CreatedInstanceWrapper CreateInstanceInternal(int instanceId, string pathInResources)
+        private CreatedInstanceWrapper CreateInstanceInternal(int instanceId, string pathInResources, InstantiatedTransformConfig? transformConfig)
         {
             var createdPrefab = Resources.Load<GameObject>(pathInResources)
                                 ?? throw new ArgumentException($"Prefab you want to instantiate ({pathInResources}) does not exist");
-            var createdGameObject = _instantiate(_player, createdPrefab);
+            var createdGameObject = _instantiate(_player, createdPrefab, transformConfig);
             var elympicsBehaviours = createdGameObject.GetComponentsInChildren<ElympicsBehaviour>(true);
             foreach (var behaviour in elympicsBehaviours)
             {

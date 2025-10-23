@@ -354,7 +354,7 @@ namespace Elympics
                 if (!backingField.Equals(_binaryReader1, _binaryReader2))
                 {
                     if (!ElympicsBase.IsServer)
-                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
+                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId})", this);
                     areEqual = false;
                 }
             }

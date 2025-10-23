@@ -286,7 +286,6 @@ namespace Elympics
                 if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond))
                     continue;
 
-                ElympicsLogger.LogWarning($"States not equal for network ID {behaviourPair.NetworkId}.");
                 return false;
             }
             return true;

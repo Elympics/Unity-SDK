@@ -268,7 +268,7 @@ namespace Elympics
         {
             if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory))
             {
-                ElympicsLogger.LogWarning("States not equal on factory.");
+                ElympicsLogger.LogWarning("States not equal on factory. Number of spawned and/or destroyed objects differs between client and server.");
                 return false;
             }
 

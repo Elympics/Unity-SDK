@@ -47,10 +47,10 @@ namespace Elympics
             _elympicsFactoryPartsToRemove = new List<ElympicsPlayer>();
         }
 
-        internal GameObject CreateInstance(string pathInResources, ElympicsPlayer player)
+        internal GameObject CreateInstance(string pathInResources, ElympicsPlayer player, InstantiatedTransformConfig? transformConfig)
         {
             var elympicsFactoryPart = GetOrCreateFactoryPart(player);
-            return elympicsFactoryPart.CreateInstance(pathInResources);
+            return elympicsFactoryPart.CreateInstance(pathInResources, transformConfig);
         }
 
         internal void DestroyInstance(GameObject go)
@@ -158,9 +158,9 @@ namespace Elympics
             _ = _elympicsFactoryParts.Remove(player);
         }
 
-        private GameObject Instantiate(ElympicsPlayer player, GameObject prefabGameObject)
+        private GameObject Instantiate(ElympicsPlayer player, GameObject prefabGameObject, InstantiatedTransformConfig? transformConfig)
         {
-            var instantiatedGameObject = Instantiate(prefabGameObject);
+            var instantiatedGameObject = transformConfig.HasValue ? Instantiate(prefabGameObject, transformConfig.Value.Position, transformConfig.Value.Rotation) : Instantiate(prefabGameObject);
             _playersObjects.Add(instantiatedGameObject, player);
             return instantiatedGameObject;
         }

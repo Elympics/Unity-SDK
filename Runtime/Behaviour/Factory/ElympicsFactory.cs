@@ -179,40 +179,43 @@ namespace Elympics
         private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player)
         {
             var playerIndex = (int)player;
-            var historyStateData = FindStateData(historyState, playerIndex);
-            var receivedStateData = FindStateData(receivedState, playerIndex);
-
-            var historyStateDataExists = historyStateData != null;
-            var receivedStateDataExists = receivedStateData != null;
+            var historyStateDataExists = TryFindStateData(historyState, playerIndex, out var historyStateData);
+            var receivedStateDataExists = TryFindStateData(receivedState, playerIndex, out var receivedStateData);
 
             if (receivedStateDataExists && !historyStateDataExists)
+            {
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} exists on server, but not on client. This means that client failed to predict that objects were spawned.");
                 return false;
+            }
             if (!receivedStateDataExists && historyStateDataExists)
+            {
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} exists on client, but not on server. This means that client incorrectly predicted that objects were spawned (they were not spawned on the server).");
                 return false;
+            }
             if (!receivedStateDataExists && !historyStateDataExists)
                 return true;
 
-            using var ms1 = new MemoryStream(historyStateData.Value.Value);
+            using var ms1 = new MemoryStream(historyStateData.Value);
             using var br1 = new BinaryReader(ms1);
-            using var ms2 = new MemoryStream(receivedStateData.Value.Value);
+            using var ms2 = new MemoryStream(receivedStateData.Value);
             using var br2 = new BinaryReader(ms2);
 
             return _checkEqualsEnumerator.Equals(br1, br2) && _checkEqualsData.Equals(br1, br2);
         }
 
-        private static KeyValuePair<int, byte[]>? FindStateData(FactoryState state, int playerIndex)
+        private static bool TryFindStateData(FactoryState state, int playerIndex, out KeyValuePair<int, byte[]> data)
         {
-            KeyValuePair<int, byte[]>? stateData = null;
             foreach (var partData in state.Parts)
             {
                 if (partData.Key != playerIndex)
                     continue;
 
-                stateData = partData;
-                break;
+                data = partData;
+                return true;
             }
 
-            return stateData;
+            data = default;
+            return false;
         }
     }
 }

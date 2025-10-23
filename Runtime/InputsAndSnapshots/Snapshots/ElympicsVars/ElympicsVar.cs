@@ -81,12 +81,11 @@ namespace Elympics
     [Serializable]
     public abstract class ElympicsVar
     {
-        protected ElympicsVar(bool enabledSynchronization)
-        {
-            EnabledSynchronization = enabledSynchronization;
-        }
+        [SerializeField] private bool _enabledSynchronization;
 
-        public bool EnabledSynchronization { get; private set; }
+        protected ElympicsVar(bool enabledSynchronization) => _enabledSynchronization = enabledSynchronization;
+
+        public bool EnabledSynchronization => _enabledSynchronization;
         protected IElympics Elympics { get; private set; }
 
         public abstract void Serialize(BinaryWriter bw);

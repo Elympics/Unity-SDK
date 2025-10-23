@@ -6,6 +6,11 @@ namespace Elympics
     [Serializable]
     public sealed class ElympicsFloat : ElympicsVar<float>
     {
+        //Parameterless constructor for Unity serialization
+        public ElympicsFloat() : this(0.0f, true)
+        {
+        }
+
         public ElympicsFloat(float value = 0.0f, bool enableSynchronization = true, ElympicsFloatEqualityComparer comparer = null)
             : base(value, enableSynchronization, comparer ?? new ElympicsFloatEqualityComparer())
         {

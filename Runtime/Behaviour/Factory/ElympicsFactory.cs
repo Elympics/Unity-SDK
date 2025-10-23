@@ -58,7 +58,7 @@ namespace Elympics
             if (!_playersObjects.TryGetValue(go, out var player))
             {
                 const string message = "Trying to destroy an object not instantiated by Elympics. "
-                    + "This may also be a result of using an incorrectly cached reference after reconciliation.";
+                    + "This may also be a result of using an incorrectly cached reference after reconciliation or trying to destroy the same object more than once.";
                 ElympicsLogger.LogError(message, go);
                 throw new ArgumentException(message, nameof(go));
             }

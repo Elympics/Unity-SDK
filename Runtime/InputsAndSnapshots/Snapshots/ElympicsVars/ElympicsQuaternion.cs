@@ -7,6 +7,11 @@ namespace Elympics
     [Serializable]
     public sealed class ElympicsQuaternion : ElympicsVar<Quaternion>
     {
+        //Parameterless constructor for Unity serialization
+        public ElympicsQuaternion() : this(default, true)
+        {
+        }
+
         public ElympicsQuaternion(Quaternion value = default, bool enableSynchronization = true, ElympicsQuaternionEqualityComparer comparer = null)
             : base(value, enableSynchronization, comparer ?? new ElympicsQuaternionEqualityComparer())
         {

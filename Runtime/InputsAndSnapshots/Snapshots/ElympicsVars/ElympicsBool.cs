@@ -8,6 +8,11 @@ namespace Elympics
     [DefaultValue(false)]
     public sealed class ElympicsBool : ElympicsVar<bool>
     {
+        //Parameterless constructor for Unity serialization
+        public ElympicsBool() : this(default, true)
+        {
+        }
+
         public ElympicsBool(bool value = default, bool enabledSynchronization = true) : base(value, enabledSynchronization)
         {
         }

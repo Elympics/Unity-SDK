@@ -6,6 +6,10 @@ namespace Elympics
     [Serializable]
     public sealed class ElympicsLong : ElympicsVar<long>
     {
+        //Parameterless constructor for Unity serialization
+        public ElympicsLong() : this(default, true)
+        { }
+
         public ElympicsLong(long value = default, bool enableSynchronization = true, ElympicsLongEqualityComparer comparer = null)
             : base(value, enableSynchronization, comparer ?? new ElympicsLongEqualityComparer())
         { }

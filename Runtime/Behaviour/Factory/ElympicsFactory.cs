@@ -200,10 +200,10 @@ namespace Elympics
             return _checkEqualsEnumerator.Equals(br1, br2) && _checkEqualsData.Equals(br1, br2);
         }
 
-        private static KeyValuePair<int, byte[]>? FindStateData(FactoryState receivedState, int playerIndex)
+        private static KeyValuePair<int, byte[]>? FindStateData(FactoryState state, int playerIndex)
         {
             KeyValuePair<int, byte[]>? stateData = null;
-            foreach (var partData in receivedState.Parts)
+            foreach (var partData in state.Parts)
             {
                 if (partData.Key != playerIndex)
                     continue;

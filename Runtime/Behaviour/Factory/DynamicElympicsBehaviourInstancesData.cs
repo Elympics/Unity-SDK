@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Elympics
 {
@@ -120,11 +121,19 @@ namespace Elympics
 
             if (!areInstancesTheSame)
             {
-                ElympicsLogger.LogWarning($"The dynamic object instances for player {player} in local snapshot history don't match those received from the game server. " +
-                    $"{_instancesToAddSerialized.Count} instances are missing in local history. " +
-                    $"Client either didn't predict that those instances should be spawned or incorrectly predicted that they should be destroyed. " +
-                    $"{_instancesToRemoveSerialized.Count} instances that don't exist in received state are present in local history. " +
-                    $"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
+                var sb = new StringBuilder();
+                _ = sb.Append("The dynamic object instances for player ").Append(player)
+                    .Append("in local snapshot history don't match those received from the game server. ");
+
+                if (_instancesToAddSerialized.Count > 0)
+                    _ = sb.Append($"{_instancesToAddSerialized.Count} instances are missing in local history. ")
+                        .Append($"Client either didn't predict that those instances should be spawned or incorrectly predicted that they should be destroyed. ");
+
+                if (_instancesToRemoveSerialized.Count > 0)
+                    _ = sb.Append($"{_instancesToRemoveSerialized.Count} instances that don't exist in received state are present in local history. ")
+                        .Append($"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
+
+                ElympicsLogger.LogWarning(sb.ToString());
             }
 
             return areInstancesTheSame;

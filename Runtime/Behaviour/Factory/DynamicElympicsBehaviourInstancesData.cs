@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Elympics
 {
-    internal class DynamicElympicsBehaviourInstancesData : ElympicsVar
+    internal class DynamicElympicsBehaviourInstancesData
     {
         private int _instancesCounter;
         private readonly Dictionary<int, byte[]> _instancesSerialized = new();
@@ -14,21 +14,18 @@ namespace Elympics
         private readonly List<(int, byte[])> _instancesToRemoveSerialized = new();
         private readonly List<(int, byte[])> _instancesToAddSerialized = new();
 
-        private readonly Dictionary<int, byte[]> _equalsInstancesSerialized1 = new();
-        private readonly Dictionary<int, byte[]> _equalsInstancesSerialized2 = new();
+        private readonly Dictionary<int, byte[]> _equalsInstancesSerializedhistory = new();
+        private readonly Dictionary<int, byte[]> _equalsInstancesSerializedreceived = new();
 
-        public DynamicElympicsBehaviourInstancesData(int instancesCounterStart) : base(true)
-        {
-            _instancesCounter = instancesCounterStart;
-        }
+        public DynamicElympicsBehaviourInstancesData(int instancesCounterStart) => _instancesCounter = instancesCounterStart;
 
-        public override void Serialize(BinaryWriter bw)
+        public void Serialize(BinaryWriter bw)
         {
             bw.Write(_instancesCounter);
             bw.Write(_instancesSerialized);
         }
 
-        public override void Deserialize(BinaryReader br, bool ignoreTolerance = false)
+        public void Deserialize(BinaryReader br)
         {
             _instancesCounter = DeserializeInternalInstancesCounter(br);
             DeserializeInternalIncomingInstances(br, _incomingInstancesSerialized);
@@ -102,23 +99,36 @@ namespace Elympics
 
         internal int Count => _instancesSerialized.Count;
 
-        public override bool Equals(BinaryReader br1, BinaryReader br2)
+        public bool Equals(BinaryReader historyStateReader, BinaryReader receivedStateReader, ElympicsPlayer player)
         {
-            var instancesCounter1 = DeserializeInternalInstancesCounter(br1);
-            var instancesCounter2 = DeserializeInternalInstancesCounter(br2);
+            var historyInstancesCount = DeserializeInternalInstancesCounter(historyStateReader);
+            var receivedInstancesCount = DeserializeInternalInstancesCounter(receivedStateReader);
 
-            DeserializeInternalIncomingInstances(br1, _equalsInstancesSerialized1);
-            DeserializeInternalIncomingInstances(br2, _equalsInstancesSerialized2);
+            DeserializeInternalIncomingInstances(historyStateReader, _equalsInstancesSerializedhistory);
+            DeserializeInternalIncomingInstances(receivedStateReader, _equalsInstancesSerializedreceived);
 
-            if (instancesCounter1 != instancesCounter2)
+            if (historyInstancesCount != receivedInstancesCount)
+            {
+                ElympicsLogger.LogWarning($"The number of dynamic object instances for player {player} in local snapshot history doesn't match that received from the game server. " +
+                    $"Local history: {historyInstancesCount} received: {receivedInstancesCount}. " +
+                    $"This means that the client incorrectly predicted spawning/destruction of objects.");
                 return false;
+            }
 
-            CalculateIncomingInstancesDiff(_equalsInstancesSerialized1, _equalsInstancesSerialized2);
-            return AreIncomingInstancesTheSame();
+            CalculateIncomingInstancesDiff(_equalsInstancesSerializedhistory, _equalsInstancesSerializedreceived);
+            var areInstancesTheSame = AreIncomingInstancesTheSame();
+
+            if (!areInstancesTheSame)
+            {
+                ElympicsLogger.LogWarning($"The dynamic object instances for player {player} in local snapshot history don't match those received from the game server. " +
+                    $"{_instancesToAddSerialized.Count} instances are missing in local history. " +
+                    $"Client either didn't predict that those instances should be spawned or incorrectly predicted that they should be destroyed. " +
+                    $"{_instancesToRemoveSerialized.Count} instances that don't exist in received state are present in local history. " +
+                    $"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
+            }
+
+            return areInstancesTheSame;
         }
-
-        internal override void Commit()
-        { }
 
         [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Global")]
         public struct InstanceData

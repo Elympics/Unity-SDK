@@ -195,12 +195,12 @@ namespace Elympics
             if (!receivedStateDataExists && !historyStateDataExists)
                 return true;
 
-            using var ms1 = new MemoryStream(historyStateData.Value);
-            using var br1 = new BinaryReader(ms1);
-            using var ms2 = new MemoryStream(receivedStateData.Value);
-            using var br2 = new BinaryReader(ms2);
+            using var historyStateStream = new MemoryStream(historyStateData.Value);
+            using var historyStateReader = new BinaryReader(historyStateStream);
+            using var receivedStateStream = new MemoryStream(receivedStateData.Value);
+            using var receivedStateReader = new BinaryReader(receivedStateStream);
 
-            return _checkEqualsEnumerator.Equals(br1, br2) && _checkEqualsData.Equals(br1, br2);
+            return _checkEqualsEnumerator.Equals(historyStateReader, receivedStateReader, player) && _checkEqualsData.Equals(historyStateReader, receivedStateReader, player);
         }
 
         private static bool TryFindStateData(FactoryState state, int playerIndex, out KeyValuePair<int, byte[]> data)

@@ -20,7 +20,17 @@ namespace Elympics
         public override void Serialize(BinaryWriter bw) => bw.Write(_random.state);
 
         public override void Deserialize(BinaryReader br, bool ignoreTolerance = false) => _random.state = br.ReadUInt32();
-        public override bool Equals(BinaryReader br1, BinaryReader br2) => br1.ReadUInt32() == br2.ReadUInt32();
+        public override bool Equals(BinaryReader br1, BinaryReader br2, out string difference1, out string difference2)
+        {
+            var value1 = br1.ReadUInt32();
+            var value2 = br2.ReadUInt32();
+            var areEqual = value1 == value2;
+
+            difference1 = areEqual ? string.Empty : $"rng with internal state {value1}";
+            difference2 = areEqual ? string.Empty : $"rng with internal state {value2}";
+
+            return areEqual;
+        }
 
         internal override void Commit() { }
 

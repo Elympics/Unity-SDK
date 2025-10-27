@@ -351,10 +351,10 @@ namespace Elympics
             var areEqual = true;
             foreach (var backingField in _backingFields)
             {
-                if (!backingField.Equals(_binaryReader1, _binaryReader2))
+                if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
                 {
                     if (!ElympicsBase.IsServer)
-                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId}) in history tick {tick}. Last simulated tick: {Elympics.Tick}.", this);
+                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId}) in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: {difference1} received state: {difference2}.", this);
                     areEqual = false;
                 }
             }

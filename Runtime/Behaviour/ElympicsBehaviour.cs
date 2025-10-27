@@ -349,13 +349,16 @@ namespace Elympics
             // bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
             // todo use in future for debug mode ~pprzestrzelski 06.06.2022
             var areEqual = true;
-            foreach (var backingField in _backingFields)
+            foreach ((var componentName, var backingFields) in _backingFieldsByComponents)
             {
-                if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
+                foreach (var backingField in backingFields)
                 {
-                    if (!ElympicsBase.IsServer)
-                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId}) in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: {difference1} received state: {difference2}.", this);
-                    areEqual = false;
+                    if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
+                    {
+                        if (!ElympicsBase.IsServer)
+                            ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} (network ID: {networkId}) in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: {difference1} received state: {difference2}.", this);
+                        areEqual = false;
+                    }
                 }
             }
             _ = _memoryStream1.Seek(0, SeekOrigin.Begin);

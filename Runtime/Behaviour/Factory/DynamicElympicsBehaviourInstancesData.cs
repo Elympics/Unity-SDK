@@ -128,11 +128,12 @@ namespace Elympics
                     .Append("Last simulated tick: ").Append(lastSimulatedTick).Append(". ");
 
                 if (_instancesToAddSerialized.Count > 0)
-                    _ = sb.Append($"{_instancesToAddSerialized.Count} instances are missing in local history. ")
+                    _ = sb.Append($"Number of instances missing in local history: ").Append(_instancesToAddSerialized.Count).Append(". ")
                         .Append($"Client either didn't predict that those instances should be spawned or incorrectly predicted that they should be destroyed. ");
 
                 if (_instancesToRemoveSerialized.Count > 0)
-                    _ = sb.Append($"{_instancesToRemoveSerialized.Count} instances that don't exist in received state are present in local history. ")
+                    _ = sb.Append($"Number of instances that don't exist in the received state, but are present in local history: ")
+                        .Append(_instancesToRemoveSerialized.Count).Append(". ")
                         .Append($"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
 
                 ElympicsLogger.LogWarning(sb.ToString());

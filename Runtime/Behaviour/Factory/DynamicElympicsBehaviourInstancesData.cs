@@ -124,7 +124,8 @@ namespace Elympics
             {
                 var sb = new StringBuilder();
                 _ = sb.Append("The dynamic object instances for player ").Append(player)
-                    .Append("in local snapshot history for tick ").Append(historyTick).Append(" don't match those received from the game server. ");
+                    .Append(" in local snapshot history for tick ").Append(historyTick).Append(" don't match those received from the game server. ")
+                    .Append("Last simulated tick: ").Append(lastSimulatedTick).Append(". ");
 
                 if (_instancesToAddSerialized.Count > 0)
                     _ = sb.Append($"{_instancesToAddSerialized.Count} instances are missing in local history. ")

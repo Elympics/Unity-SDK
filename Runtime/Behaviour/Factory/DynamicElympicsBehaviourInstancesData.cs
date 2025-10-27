@@ -100,7 +100,7 @@ namespace Elympics
 
         internal int Count => _instancesSerialized.Count;
 
-        public bool Equals(BinaryReader historyStateReader, BinaryReader receivedStateReader, ElympicsPlayer player)
+        public bool Equals(BinaryReader historyStateReader, BinaryReader receivedStateReader, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
             var historyInstancesCount = DeserializeInternalInstancesCounter(historyStateReader);
             var receivedInstancesCount = DeserializeInternalInstancesCounter(receivedStateReader);
@@ -110,8 +110,9 @@ namespace Elympics
 
             if (historyInstancesCount != receivedInstancesCount)
             {
-                ElympicsLogger.LogWarning($"The number of dynamic object instances for player {player} in local snapshot history doesn't match that received from the game server. " +
-                    $"Local history: {historyInstancesCount} received: {receivedInstancesCount}. " +
+                ElympicsLogger.LogWarning($"The number of dynamic object instances for player {player} in local snapshot history for tick {historyTick} doesn't match that received from the game server. " +
+                    $"Number in local history: {historyInstancesCount} received number: {receivedInstancesCount}. " +
+                    $"Last simulated tick: {lastSimulatedTick}." +
                     $"This means that the client incorrectly predicted spawning/destruction of objects.");
                 return false;
             }
@@ -123,7 +124,7 @@ namespace Elympics
             {
                 var sb = new StringBuilder();
                 _ = sb.Append("The dynamic object instances for player ").Append(player)
-                    .Append("in local snapshot history don't match those received from the game server. ");
+                    .Append("in local snapshot history for tick ").Append(historyTick).Append(" don't match those received from the game server. ");
 
                 if (_instancesToAddSerialized.Count > 0)
                     _ = sb.Append($"{_instancesToAddSerialized.Count} instances are missing in local history. ")

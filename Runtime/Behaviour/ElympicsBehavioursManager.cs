@@ -206,7 +206,7 @@ namespace Elympics
             foreach (var stateData in fullSnapshot.Data)
             {
                 var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
-                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value);
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value, fullSnapshot.Tick);
 
                 foreach (var playerData in playerDatas)
                 {
@@ -266,9 +266,12 @@ namespace Elympics
 
         internal bool AreSnapshotsEqualOnPredictableBehaviours(ElympicsSnapshot historySnapshot, ElympicsSnapshot receivedSnapshot)
         {
-            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory))
+            var historyTick = receivedSnapshot.Tick;
+            var lastSimulatedTick = _elympics.Tick;
+
+            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory, historyTick, lastSimulatedTick))
             {
-                ElympicsLogger.LogWarning("States not equal on factory. Number of spawned and/or destroyed objects differs between client and server.");
+                ElympicsLogger.LogWarning($"States not equal on factory. Number of spawned and/or destroyed objects in tick {historyTick} differs between client and server. Last simulated tick: {lastSimulatedTick}.");
                 return false;
             }
 
@@ -283,7 +286,7 @@ namespace Elympics
                 if (!chosenElympicsBehaviours.TryGetValue(behaviourPair.NetworkId, out var elympicsBehaviour))
                     continue;
 
-                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond))
+                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond, historyTick))
                     continue;
 
                 return false;

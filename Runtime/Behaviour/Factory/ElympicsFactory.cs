@@ -171,12 +171,12 @@ namespace Elympics
             Destroy(go);
         }
 
-        internal bool ArePredictableStatesEqual(FactoryState historyState, FactoryState receivedState)
+        internal bool ArePredictableStatesEqual(FactoryState historyState, FactoryState receivedState, long historyTick, long lastSimulatedTick)
         {
-            return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player) && ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All);
+            return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player, historyTick, lastSimulatedTick) && ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All, historyTick, lastSimulatedTick);
         }
 
-        private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player)
+        private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
             var playerIndex = (int)player;
             var historyStateDataExists = TryFindStateData(historyState, playerIndex, out var historyStateData);
@@ -184,12 +184,12 @@ namespace Elympics
 
             if (receivedStateDataExists && !historyStateDataExists)
             {
-                ElympicsLogger.LogWarning($"Predictable factory state for player {player} exists on server, but not on client. This means that client failed to predict that objects were spawned.");
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} in tick {historyTick} exists on server, but not on client. Last simulated tick: {lastSimulatedTick}. This means that client failed to predict that objects were spawned.");
                 return false;
             }
             if (!receivedStateDataExists && historyStateDataExists)
             {
-                ElympicsLogger.LogWarning($"Predictable factory state for player {player} exists on client, but not on server. This means that client incorrectly predicted that objects were spawned (they were not spawned on the server).");
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} in tick {historyTick} exists on client, but not on server. Last simulated tick: {lastSimulatedTick}. This means that client incorrectly predicted that objects were spawned (they were not spawned on the server).");
                 return false;
             }
             if (!receivedStateDataExists && !historyStateDataExists)
@@ -200,7 +200,7 @@ namespace Elympics
             using var receivedStateStream = new MemoryStream(receivedStateData.Value);
             using var receivedStateReader = new BinaryReader(receivedStateStream);
 
-            return _checkEqualsEnumerator.Equals(historyStateReader, receivedStateReader, player) && _checkEqualsData.Equals(historyStateReader, receivedStateReader, player);
+            return _checkEqualsEnumerator.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick) && _checkEqualsData.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick);
         }
 
         private static bool TryFindStateData(FactoryState state, int playerIndex, out KeyValuePair<int, byte[]> data)

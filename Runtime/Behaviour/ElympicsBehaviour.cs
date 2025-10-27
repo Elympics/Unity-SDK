@@ -322,9 +322,9 @@ namespace Elympics
             return metadata;
         }
 
-        internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState)
+        internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState, long tick)
         {
-            return _behaviourStateChangeFrequencyCalculator.UpdateNextStateAndCheckIfSendCanBeSkipped(currentState);
+            return _behaviourStateChangeFrequencyCalculator.UpdateNextStateAndCheckIfSendCanBeSkipped(currentState, tick);
         }
 
         internal void ApplyState(byte[] data, bool ignoreTolerance = false)
@@ -339,7 +339,7 @@ namespace Elympics
                 synchronizable.OnPostStateDeserialize();
         }
 
-        internal bool AreStatesEqual(byte[] data1, byte[] data2)
+        internal bool AreStatesEqual(byte[] data1, byte[] data2, long tick)
         {
             _memoryStream1.Write(data1, 0, data1.Length);
             _ = _memoryStream1.Seek(0, SeekOrigin.Begin);
@@ -354,7 +354,7 @@ namespace Elympics
                 if (!backingField.Equals(_binaryReader1, _binaryReader2))
                 {
                     if (!ElympicsBase.IsServer)
-                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId})", this);
+                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {gameObject.name} (network ID: {networkId}) in history tick {tick}. Last simulated tick: {Elympics.Tick}.", this);
                     areEqual = false;
                 }
             }

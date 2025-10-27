@@ -22,9 +22,9 @@ namespace Elympics
         private int currentSendingSnapshotCalls = 0;
         private byte[] previousState = null;
 
-        private Func<byte[], byte[], bool> areStatesEqualsFunc = null;
+        private Func<byte[], byte[], long, bool> areStatesEqualsFunc = null;
 
-        public ElympicsBehaviourStateChangeFrequencyCalculator(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStages, Func<byte[], byte[], bool> areStatesEqualsFunc, ElympicsGameConfig gameConfig)
+        public ElympicsBehaviourStateChangeFrequencyCalculator(ElympicsBehaviourStateChangeFrequencyStage[] stateUpdateFrequencyStages, Func<byte[], byte[], long, bool> areStatesEqualsFunc, ElympicsGameConfig gameConfig)
         {
             this.areStatesEqualsFunc = areStatesEqualsFunc;
 
@@ -65,11 +65,11 @@ namespace Elympics
             currentSendingSnapshotCalls = 0;
         }
 
-        internal bool UpdateNextStateAndCheckIfSendCanBeSkipped(byte[] currentState)
+        internal bool UpdateNextStateAndCheckIfSendCanBeSkipped(byte[] currentState, long tick)
         {
             IncreaseSendingSnapshotCalls();
 
-            var statesEqual = previousState != null && areStatesEqualsFunc(currentState, previousState);
+            var statesEqual = previousState != null && areStatesEqualsFunc(currentState, previousState, tick);
             var canSkipStateSynchronization = CanSkipStateSynchronizingInCurrentSnapshotCall();
 
             if (!statesEqual)

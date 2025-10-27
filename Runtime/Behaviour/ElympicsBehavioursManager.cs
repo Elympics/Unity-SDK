@@ -270,10 +270,7 @@ namespace Elympics
             var lastSimulatedTick = _elympics.Tick;
 
             if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory, historyTick, lastSimulatedTick))
-            {
-                ElympicsLogger.LogWarning($"States not equal on factory. Number of spawned and/or destroyed objects in tick {historyTick} differs between client and server. Last simulated tick: {lastSimulatedTick}.");
                 return false;
-            }
 
             var chosenElympicsBehaviours = _elympicsBehaviours.BehavioursPredictable;
             var finder = new NetworkBehaviourFinder(historySnapshot, receivedSnapshot);

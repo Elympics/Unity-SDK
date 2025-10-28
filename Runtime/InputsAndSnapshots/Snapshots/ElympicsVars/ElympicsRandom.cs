@@ -51,6 +51,8 @@ namespace Elympics
 
         public ElympicsRandom(bool enabledSynchronization = true) : base(enabledSynchronization) { }
 
+        public ElympicsRandom() : this(true) { }
+
         #region public RNG methods
 
         /// <inheritdoc cref="Random.NextBool()"/>

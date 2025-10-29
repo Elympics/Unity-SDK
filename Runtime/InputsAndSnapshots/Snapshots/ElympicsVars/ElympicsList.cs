@@ -22,7 +22,9 @@ namespace Elympics
         public T this[int index] => values[index];
 
         //Parameterless constructor for Unity serialization
-        public ElympicsList() : this(() => new T(), 0, true) { }
+        public ElympicsList() : this(0) { }
+
+        public ElympicsList(int elementsInListAtStart = 0) : this(() => new T(), elementsInListAtStart, true) { }
 
         public ElympicsList(Func<T> factory, int elementsInListAtStart = 0, bool enableSynchronization = true) : base(enableSynchronization)
         {

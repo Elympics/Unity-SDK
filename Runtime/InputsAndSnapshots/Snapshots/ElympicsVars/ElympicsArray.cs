@@ -13,7 +13,9 @@ namespace Elympics
         public IReadOnlyList<T> Values => values;
 
         //Parameterless constructor for Unity serialization
-        public ElympicsArray() : this(0, () => new T(), true) { }
+        public ElympicsArray() : this(0) { }
+
+        public ElympicsArray(int capacity) : this(capacity, () => new T(), true) { }
 
         public ElympicsArray(int capacity, Func<T> factory, bool enableSynchronization = true) : base(enableSynchronization) =>
             values = Populate(new T[capacity], factory);

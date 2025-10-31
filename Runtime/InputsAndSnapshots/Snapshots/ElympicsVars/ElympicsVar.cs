@@ -74,12 +74,19 @@ namespace Elympics
         protected abstract T DeserializeInternal(BinaryReader br);
         public override bool Equals(BinaryReader br1, BinaryReader br2, out string difference1, out string difference2)
         {
+            difference1 = string.Empty;
+            difference2 = string.Empty;
             var value1 = DeserializeInternal(br1);
             var value2 = DeserializeInternal(br2);
             var areEqual = Comparer.Equals(value1, value2);
 
-            difference1 = areEqual ? string.Empty : value1?.ToString() ?? "null";
-            difference2 = areEqual ? string.Empty : value2?.ToString() ?? "null";
+#if !ELYMPICS_PRODUCTION
+            if (!areEqual)
+            {
+                difference1 = value1?.ToString() ?? "null";
+                difference2 = value2?.ToString() ?? "null";
+            }
+#endif
 
             return areEqual;
         }
@@ -104,12 +111,12 @@ namespace Elympics
         /// <param name="difference1">
         /// Will contain a string describing the deserialized (or partially deserialized) value read from
         /// <paramref name="br1"/> if that value was different than the value from <paramref name="br2"/>.
-        /// In other cases it will contain an empty string.
+        /// In all other cases and when ELYMPICS_PRODUCTION symbol is defined it will contain an empty string.
         /// </param>
         /// <param name="difference2">
         /// Will contain a string describing the deserialized (or partially deserialized) value read from
         /// <paramref name="br2"/> if that value was different than the value from <paramref name="br1"/>.
-        /// In other cases it will contain an empty string.
+        /// In all other cases and when ELYMPICS_PRODUCTION symbol is defined it will contain an empty string.
         /// </param>
         /// <returns>True if the serialized values are considered the same, otherwise false.</returns>
         /// <remarks>
@@ -117,6 +124,8 @@ namespace Elympics
         /// Their values should represent the deserialized values in a human-readable form and contain the data necessary to understand how
         /// those two values differ. If differenece between the values is detected without fully deseializing them, string representation should
         /// describe the part of the state where the difference was found.
+        /// If ELYMPICS_PRODUCTION symbol is defined both <paramref name="difference1"/> and <paramref name="difference2"/> should be set to empty strings
+        /// to avoid unnecessary performance overhead.
         /// </remarks>
         public abstract bool Equals(BinaryReader br1, BinaryReader br2, out string difference1, out string difference2);
 

@@ -44,7 +44,7 @@ namespace Elympics
                 {
 #if !ELYMPICS_PRODUCTION
                     difference1 = $"array with value '{elementDifference1}' at index {i}";
-                    difference2 = $"array with value '{elementDifference2}' at index {i}"; 
+                    difference2 = $"array with value '{elementDifference2}' at index {i}";
 #endif
                     return false;
                 }

@@ -73,7 +73,7 @@ namespace Elympics
             {
 #if !ELYMPICS_PRODUCTION
                 difference1 = $"list with length of {list1Length}";
-                difference2 = $"list with length of {list2Length}"; 
+                difference2 = $"list with length of {list2Length}";
 #endif
                 return false;
             }
@@ -83,7 +83,7 @@ namespace Elympics
                 {
 #if !ELYMPICS_PRODUCTION
                     difference1 = $"list with length of {list1Length} and value '{elementDifference1}' at index {i}";
-                    difference2 = $"list with length of {list2Length} and value '{elementDifference2}' at index {i}"; 
+                    difference2 = $"list with length of {list2Length} and value '{elementDifference2}' at index {i}";
 #endif
                     return false;
                 }

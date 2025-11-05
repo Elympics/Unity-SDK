@@ -50,7 +50,7 @@ namespace MatchTcpClients.Synchronizer
                 stopwatch.Start();
                 var synchronizationData = await SynchronizeOnce(ct);
                 stopwatch.Stop();
-                if (!ct.IsCancellationRequested)
+                if (ct.IsCancellationRequested)
                     break;
 
                 if (synchronizationData == null)

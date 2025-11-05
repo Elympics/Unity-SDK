@@ -1,3 +1,7 @@
+## [0.22.0](https://github.com/Elympics/Unity-SDK/compare/v0.21.1...v0.22.0) (2025-11-05)
+
+
+
 ## [0.21.1](https://github.com/Elympics/Unity-SDK/compare/v0.21.0...v0.21.1) (2025-10-15)
 
 

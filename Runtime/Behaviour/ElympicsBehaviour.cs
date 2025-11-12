@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Elympics.Communication.Models.Public;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 #if UNITY_EDITOR
@@ -529,6 +530,12 @@ namespace Elympics
                 handler.OnMatchJoined(matchId);
             foreach (var handler in _componentsContainer.ClientHandlers)
                 handler.OnMatchJoined(matchId.ToString());
+        }
+
+        public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
+        {
+            foreach (var handler in _componentsContainer.ClientHandlersGuid)
+                handler.OnMatchJoined(matchInitData);
         }
 
         internal void OnMatchJoinedFailed(string errorMessage)

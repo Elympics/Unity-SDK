@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -198,7 +199,7 @@ namespace Elympics
         protected void OnConnectingFailed() => Enqueue(ElympicsBehavioursManager.OnConnectingFailed);
         protected void OnAuthenticated(Guid userId) => Enqueue(() => ElympicsBehavioursManager.OnAuthenticated(userId));
         protected void OnAuthenticatedFailed(string errorMessage) => Enqueue(() => ElympicsBehavioursManager.OnAuthenticatedFailed(errorMessage));
-        protected void OnMatchJoined(Guid matchId) => Enqueue(() => ElympicsBehavioursManager.OnMatchJoined(matchId));
+        protected void OnMatchJoinedWithInitData(MatchInitialData matchInitData) => Enqueue(() => ElympicsBehavioursManager.OnMatchJoinedWithInitData(matchInitData));
         protected void OnMatchEnded(Guid matchId) => Enqueue(() => ElympicsBehavioursManager.OnMatchEnded(matchId));
         protected void OnMatchJoinedFailed(string errorMessage) => Enqueue(() => ElympicsBehavioursManager.OnMatchJoinedFailed(errorMessage));
 

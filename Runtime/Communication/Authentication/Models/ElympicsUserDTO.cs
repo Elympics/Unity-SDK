@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Elympics.Mappers;
 using MessagePack;
 
 namespace Elympics.Communication.Authentication.Models.Internal
@@ -33,12 +34,7 @@ namespace Elympics.Communication.Authentication.Models.Internal
                 throw new ElympicsException($"{nameof(ElympicsUserDTO)}.{nameof(ToPublicModel)} failed, because provided {nameof(userId)} is not a valid GUID string: "
                                             + $"\"{userId}\". This exception is most likely caused by invalid data sent by PlayPad or Elympics backend.");
 
-            var nickStatus = nicknameType switch
-            {
-                nameof(NicknameType.Common) => NicknameType.Common,
-                nameof(NicknameType.Verified) => NicknameType.Verified,
-                _ => NicknameType.Undefined
-            };
+            var nickStatus = NicknameMapper.ConvertToNickNameType(nicknameType);
 
             if (nickStatus == NicknameType.Undefined)
                 ElympicsLogger.LogError($"Unexpected {nameof(nicknameType)} received: {nicknameType}.");

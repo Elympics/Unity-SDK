@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models.Public;
 using Elympics.ElympicsSystems.Internal;
+using Elympics.Mappers;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
@@ -22,6 +24,7 @@ namespace Elympics
 
         public event Action<string> MatchJoinedWithError;
         public event Action<Guid> MatchJoinedWithMatchId;
+        public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
 
         public event Action<Guid> MatchEndedWithMatchId;
 
@@ -240,8 +243,10 @@ namespace Elympics
                 return;
             }
 
+            var matchInitData = message.Map();
+
             logger.Log($"Match joined.");
-            MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
+            MatchJoinedWithMatchInitData?.Invoke(matchInitData);
             _matchJoinedCallback?.Invoke();
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Behaviour;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -367,12 +368,17 @@ namespace Elympics
                 elympicsBehaviour.OnMatchJoinedFailed(errorMessage);
         }
 
-        internal void OnMatchJoined(Guid matchId)
+        public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
         {
+            #region ObsoleteCalls
+            // Obsolete - to be removed in future versions. Leave for backward compatibility.
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchJoined(matchId);
-        }
+                elympicsBehaviour.OnMatchJoined(matchInitData.MatchId);
+            #endregion
 
+            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+                elympicsBehaviour.OnMatchJoinedWithInitData(matchInitData);
+        }
         internal void OnMatchEnded(Guid matchId)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)

@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
+using Elympics.Communication.Models.Public;
 using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -32,6 +34,7 @@ namespace Elympics
         public event Action<string> AuthenticatedAsSpectatorWithError;
         public event Action<string> MatchJoinedWithError;
         public event Action<Guid> MatchJoinedWithMatchId;
+        public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
         public event Action<Guid> MatchEndedWithMatchId;
         public event Action DisconnectedByServer;
         public event Action DisconnectedByClient;
@@ -42,6 +45,8 @@ namespace Elympics
         private readonly string _ip;
         private readonly int _port;
         private readonly Guid _userId;
+        private readonly MatchInitialData _halfRemoteMatchInitialData;
+        private readonly List<PlayerInitialData> _players;
         private readonly bool _useWeb;
         private readonly ClientConnectionSettings _connectionConfig;
         private readonly HttpSignalingClient _signalingClient;
@@ -49,12 +54,14 @@ namespace Elympics
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
 
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId)
+
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
             _ip = gameConfig.IpForHalfRemoteMode;
             _port = gameConfig.PortForHalfRemoteMode;
             _userId = userId;
+            _halfRemoteMatchInitialData = halfRemoteMatchInitialData;
             _useWeb = gameConfig.UseWeb;
             _connectionConfig = gameConfig.ConnectionConfig;
             if (_useWeb)
@@ -77,6 +84,7 @@ namespace Elympics
                 ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
                 AuthenticatedUserMatchWithUserId?.Invoke(_userId);
                 MatchJoinedWithMatchId?.Invoke(MatchId);
+                MatchJoinedWithMatchInitData?.Invoke(_halfRemoteMatchInitialData);
             }
         }
 

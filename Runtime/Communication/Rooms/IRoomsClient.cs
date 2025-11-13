@@ -26,10 +26,11 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
-        UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default);
-        UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default);
+        UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default);
+        UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default);
         UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default);
         UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default);
         UniTask SetUnready(Guid roomId, CancellationToken ct = default);

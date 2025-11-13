@@ -3585,7 +3585,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(11);
+            writer.WriteArrayHeader(12);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.RoomName, options);
             writer.Write(value.IsPrivate);
@@ -3597,6 +3597,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomTournamentDetails>(formatterResolver).Serialize(ref writer, value.TournamentDetails, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomBetDetailsSlim>(formatterResolver).Serialize(ref writer, value.BetDetailsSlim, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Serialize(ref writer, value.RollingTournamentBetConfigId, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
         }
 
         public global::Elympics.Communication.Rooms.InternalModels.ToRooms.CreateRoomDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -3619,6 +3620,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             var __TournamentDetails__ = default(global::Elympics.Communication.Rooms.InternalModels.RoomTournamentDetails);
             var __BetDetailsSlim__ = default(global::Elympics.Communication.Rooms.InternalModels.RoomBetDetailsSlim);
             var __RollingTournamentBetConfigId__ = default(global::System.Guid?);
+            var __CustomPlayerData__ = default(global::System.Collections.Generic.IReadOnlyDictionary<string, string>);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -3658,13 +3660,16 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
                     case 10:
                         __RollingTournamentBetConfigId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid?>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 11:
+                        __CustomPlayerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.CreateRoomDto(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentBetConfigId__);
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.CreateRoomDto(__OperationId__, __RoomName__, __IsPrivate__, __IsEphemeral__, __QueueName__, __IsSingleTeam__, __CustomRoomData__, __CustomMatchmakingData__, __TournamentDetails__, __BetDetailsSlim__, __RollingTournamentBetConfigId__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }
@@ -3682,10 +3687,11 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(3);
+            writer.WriteArrayHeader(4);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.JoinCode, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
         }
 
         public global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithJoinCodeDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -3700,6 +3706,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             var length = reader.ReadArrayHeader();
             var __JoinCode__ = default(string);
             var __TeamIndex__ = default(uint?);
+            var __CustomPlayerData__ = default(global::System.Collections.Generic.IReadOnlyDictionary<string, string>);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -3715,13 +3722,16 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
                     case 2:
                         __TeamIndex__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 3:
+                        __CustomPlayerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithJoinCodeDto(__OperationId__, __JoinCode__, __TeamIndex__);
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithJoinCodeDto(__OperationId__, __JoinCode__, __TeamIndex__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }
@@ -3739,10 +3749,11 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(3);
+            writer.WriteArrayHeader(4);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.OperationId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Serialize(ref writer, value.RoomId, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Serialize(ref writer, value.TeamIndex, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Serialize(ref writer, value.CustomPlayerData, options);
         }
 
         public global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithRoomIdDto Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -3757,6 +3768,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
             var length = reader.ReadArrayHeader();
             var __RoomId__ = default(global::System.Guid);
             var __TeamIndex__ = default(uint?);
+            var __CustomPlayerData__ = default(global::System.Collections.Generic.IReadOnlyDictionary<string, string>);
             var __OperationId__ = default(global::System.Guid);
 
             for (int i = 0; i < length; i++)
@@ -3772,13 +3784,16 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels.ToR
                     case 2:
                         __TeamIndex__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<uint?>(formatterResolver).Deserialize(ref reader, options);
                         break;
+                    case 3:
+                        __CustomPlayerData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.IReadOnlyDictionary<string, string>>(formatterResolver).Deserialize(ref reader, options);
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithRoomIdDto(__OperationId__, __RoomId__, __TeamIndex__);
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.ToRooms.JoinWithRoomIdDto(__OperationId__, __RoomId__, __TeamIndex__, __CustomPlayerData__);
             reader.Depth--;
             return ____result;
         }

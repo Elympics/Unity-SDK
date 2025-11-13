@@ -359,6 +359,7 @@ namespace Elympics
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? tournamentDetails = null)
         {
             if (roomName == null)
@@ -375,15 +376,16 @@ namespace Elympics
                 isEphemeral: false,
                 customRoomData,
                 customMatchmakingData,
+                customPlayerData,
                 tournamentDetails).ContinueWith(id => _rooms[id]);
         }
 
-        public async UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null)
+        public async UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null, IReadOnlyDictionary<string, string>? customPlayerData = null)
         {
             if (roomId == null && joinCode == null)
                 throw new ArgumentException($"{nameof(roomId)} and {nameof(joinCode)} cannot be null at the same time");
 
-            var id = await _roomJoiner.JoinRoom(roomId, joinCode, teamIndex);
+            var id = await _roomJoiner.JoinRoom(roomId, joinCode, teamIndex, customPlayerData);
 
             if (!_rooms.TryGetValue(id, out var room))
                 throw new InvalidOperationException("Room no longer exists.");
@@ -397,6 +399,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
+            Dictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
@@ -410,7 +413,7 @@ namespace Elympics
             ct.ThrowIfCancellationRequested();
 
             bool isCancelled;
-            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, competitivenessConfig);
+            var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, customPlayerData, competitivenessConfig);
             using var roomLeftCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
             _ = logger.SetRoomId(roomId.ToString());

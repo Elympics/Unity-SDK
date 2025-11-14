@@ -114,7 +114,7 @@ namespace Elympics
                 ElympicsLogger.LogWarning($"The number of dynamic object instances for player {player} in local snapshot history for tick {historyTick} doesn't match that received from the game server. " +
             $"Number in local history: {historyInstancesCount} received number: {receivedInstancesCount}. " +
             $"Last simulated tick: {lastSimulatedTick}." +
-            $"This means that the client incorrectly predicted spawning/destruction of objects."); 
+            $"This means that the client incorrectly predicted spawning/destruction of objects.");
 #endif
                 return false;
             }

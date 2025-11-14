@@ -71,6 +71,7 @@ namespace Elympics
             bool isSingleTeam,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
@@ -104,22 +105,22 @@ namespace Elympics
 
             _logger.WithMethodName().Log($"Create room {roomName}");
             return await ExecuteOperation<RoomOperationResultDto>(
-                    new CreateRoomDto(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId),
+                    new CreateRoomDto(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId, customPlayerData),
                     ct)
                 .ContinueWith(result => result.RoomId);
         }
 
-        public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default)
+        public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
         {
             _logger.WithMethodName().Log($"Join room {roomId}");
-            return ExecuteOperation<RoomOperationResultDto>(new JoinWithRoomIdDto(roomId, teamIndex), ct)
+            return ExecuteOperation<RoomOperationResultDto>(new JoinWithRoomIdDto(roomId, teamIndex, customPlayerData), ct)
                 .ContinueWith(result => result.RoomId);
         }
 
-        public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default)
+        public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
         {
             _logger.WithMethodName().Log("Join room using join code.");
-            return ExecuteOperation<RoomOperationResultDto>(new JoinWithJoinCodeDto(joinCode, teamIndex), ct)
+            return ExecuteOperation<RoomOperationResultDto>(new JoinWithJoinCodeDto(joinCode, teamIndex, customPlayerData), ct)
                 .ContinueWith(result => result.RoomId);
         }
 

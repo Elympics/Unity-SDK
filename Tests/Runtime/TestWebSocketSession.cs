@@ -382,7 +382,7 @@ namespace Elympics.Tests
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesSuccessfully() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
@@ -403,7 +403,7 @@ namespace Elympics.Tests
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesWithError() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);
@@ -424,7 +424,7 @@ namespace Elympics.Tests
         public IEnumerator ContinuationShouldRunOnTheMainThreadAfterExecuteOperationFinishesWithTimeout() => UniTask.ToCoroutine(async () =>
         {
             var operationId = new Guid("10000000000000000000000000000001");
-            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null);
+            var operation = new JoinWithRoomIdDto(operationId, Guid.Empty, null, null);
 
             using var session = CreateDefaultWebSocketSession();
             await ConnectWebSocketSessionAndAssert(session);

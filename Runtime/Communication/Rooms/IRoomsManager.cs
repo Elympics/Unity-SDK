@@ -116,13 +116,14 @@ namespace Elympics
             bool isPrivate,
             IReadOnlyDictionary<string, string>? customRoomData = null,
             IReadOnlyDictionary<string, string>? customMatchmakingData = null,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? tournamentDetails = null);
         /// <summary>Joins the room with matching <paramref name="roomId"/> or <paramref name="joinCode"/>.</summary>
         /// <param name="roomId">ID of the room to join. When using <paramref name="joinCode"/>, this argument is optional.</param>
         /// <param name="joinCode"><see cref="IRoom.JoinCode"/>, which is necessary to join a private room.</param>
         /// <param name="teamIndex">Index of the team to join after joining the room. Only applicable to rooms with more than one team.</param>
         /// <returns>An awaitable task which returns a reference to the newly joined room once it is joined by the local player.</returns>
-        UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null);
+        UniTask<IRoom> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null, IReadOnlyDictionary<string, string>? customPlayerData = null);
         /// <summary>Create and join a new room, which will immediately start matchmaking and will be destroyed after the match ends.</summary>
         /// <param name="queueName">Name of the matchmaking queue to be used.</param>
         /// <param name="gameEngineData"></param>
@@ -138,6 +139,7 @@ namespace Elympics
             float[]? matchmakerData = null,
             Dictionary<string, string>? customRoomData = null,
             Dictionary<string, string>? customMatchmakingData = null,
+            Dictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
         public event Func<IRoom, IRoom>? RoomSetUp;

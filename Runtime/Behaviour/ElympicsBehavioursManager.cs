@@ -206,7 +206,7 @@ namespace Elympics
             foreach (var stateData in fullSnapshot.Data)
             {
                 var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
-                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value);
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value, fullSnapshot.Tick);
 
                 foreach (var playerData in playerDatas)
                 {
@@ -266,11 +266,11 @@ namespace Elympics
 
         internal bool AreSnapshotsEqualOnPredictableBehaviours(ElympicsSnapshot historySnapshot, ElympicsSnapshot receivedSnapshot)
         {
-            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory))
-            {
-                ElympicsLogger.LogWarning("States not equal on factory.");
+            var historyTick = receivedSnapshot.Tick;
+            var lastSimulatedTick = _elympics.Tick;
+
+            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory, historyTick, lastSimulatedTick))
                 return false;
-            }
 
             var chosenElympicsBehaviours = _elympicsBehaviours.BehavioursPredictable;
             var finder = new NetworkBehaviourFinder(historySnapshot, receivedSnapshot);
@@ -283,10 +283,9 @@ namespace Elympics
                 if (!chosenElympicsBehaviours.TryGetValue(behaviourPair.NetworkId, out var elympicsBehaviour))
                     continue;
 
-                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond))
+                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond, historyTick))
                     continue;
 
-                ElympicsLogger.LogWarning($"States not equal for network ID {behaviourPair.NetworkId}.");
                 return false;
             }
             return true;

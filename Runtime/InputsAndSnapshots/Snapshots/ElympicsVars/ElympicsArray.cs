@@ -33,11 +33,23 @@ namespace Elympics
                 elympicsVar.Deserialize(br, ignoreTolerance);
         }
 
-        public override bool Equals(BinaryReader br1, BinaryReader br2)
+        public override bool Equals(BinaryReader br1, BinaryReader br2, out string difference1, out string difference2)
         {
-            foreach (var elympicsVar in values)
-                if (!elympicsVar.Equals(br1, br2))
+            difference1 = string.Empty;
+            difference2 = string.Empty;
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (!values[i].Equals(br1, br2, out var elementDifference1, out var elementDifference2))
+                {
+#if !ELYMPICS_PRODUCTION
+                    difference1 = $"array with value '{elementDifference1}' at index {i}";
+                    difference2 = $"array with value '{elementDifference2}' at index {i}";
+#endif
                     return false;
+                }
+            }
+
             return true;
         }
 

@@ -7,10 +7,15 @@ using UnityEngine;
 namespace Elympics
 {
     [Serializable]
-    public class ElympicsArray<T> : ElympicsVar where T : ElympicsVar
+    public class ElympicsArray<T> : ElympicsVar where T : ElympicsVar, new()
     {
         [SerializeField] private T[] values;
         public IReadOnlyList<T> Values => values;
+
+        //Parameterless constructor for Unity serialization
+        public ElympicsArray() : this(0) { }
+
+        public ElympicsArray(int capacity) : this(capacity, () => new T(), true) { }
 
         public ElympicsArray(int capacity, Func<T> factory, bool enableSynchronization = true) : base(enableSynchronization) =>
             values = Populate(new T[capacity], factory);

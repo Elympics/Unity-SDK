@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Elympics
 {
     [Serializable]
-    public class ElympicsList<T> : ElympicsVar, IEnumerable<T> where T : ElympicsVar
+    public class ElympicsList<T> : ElympicsVar, IEnumerable<T> where T : ElympicsVar, new()
     {
         private Func<T> _factoryFunc;
         [SerializeField] private List<T> values;
@@ -20,6 +20,11 @@ namespace Elympics
         public bool IsReadOnly => false;
 
         public T this[int index] => values[index];
+
+        //Parameterless constructor for Unity serialization
+        public ElympicsList() : this(0) { }
+
+        public ElympicsList(int elementsInListAtStart = 0) : this(() => new T(), elementsInListAtStart, true) { }
 
         public ElympicsList(Func<T> factory, int elementsInListAtStart = 0, bool enableSynchronization = true) : base(enableSynchronization)
         {

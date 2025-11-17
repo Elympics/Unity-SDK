@@ -44,7 +44,7 @@ namespace Elympics
         [SerializeField] private int maxAllowedLagInTicks = 15;
         [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private bool prediction = true;
-        [SerializeField] private int predictionLimitInTicks = 8;
+        [SerializeField] private int predictionLimitInTicks = 25;
 
         [SerializeField] private bool detailedNetworkLog;
 

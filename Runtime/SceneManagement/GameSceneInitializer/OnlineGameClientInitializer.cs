@@ -1,7 +1,6 @@
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Libraries;
 using MatchTcpClients;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -9,9 +8,6 @@ namespace Elympics
     {
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
-            Debug.Log($"[CRITICAL] PlayPadLobby null? {LobbyRegister.PlayPadLobby == null}, AuthData null? {LobbyRegister.PlayPadLobby?.AuthData == null}");
-            Debug.Log($"[CRITICAL] ElympicsLobby null? {LobbyRegister.ElympicsLobby == null}, AuthData null? {LobbyRegister.ElympicsLobby?.AuthData == null}");
-
             if (!LobbyRegister.IsAuthenticated())
             {
                 ElympicsLogger.LogError("User is not authenticated. Remember to set \"Authenticate On Awake With\" "

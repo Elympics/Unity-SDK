@@ -47,7 +47,7 @@ namespace Elympics
                     return (roomid: roomId, (IReadOnlyDictionary<string, string>)roomCustomData);
 
                 }).ToDictionary(pair => pair.roomid, pair => pair.Item2),
-                CustomMatchmakingData = customMatchmakingData.ToDictionary(x => x.key,x=> x.value),
+                CustomMatchmakingData = customMatchmakingData.ToDictionary(x => x.key, x => x.value),
                 ExternalGameData = new byte[] { },
                 PlayerInitialDatas = playersList.Select((x, index) => new PlayerInitialData
                 {

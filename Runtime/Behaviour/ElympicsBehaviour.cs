@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Elympics.Communication.Models.Public;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 #if UNITY_EDITOR
@@ -525,10 +526,18 @@ namespace Elympics
 
         internal void OnMatchJoined(Guid matchId)
         {
+#pragma warning disable CS0618 // Type or member is obsolete - call obsolete methods for backward compatibility
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnMatchJoined(matchId);
             foreach (var handler in _componentsContainer.ClientHandlers)
                 handler.OnMatchJoined(matchId.ToString());
+#pragma warning restore CS0618
+        }
+
+        public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
+        {
+            foreach (var handler in _componentsContainer.ClientHandlersGuid)
+                handler.OnMatchJoined(matchInitData);
         }
 
         internal void OnMatchJoinedFailed(string errorMessage)

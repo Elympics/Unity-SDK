@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elympics.Communication.Authentication.Models;
+using Elympics.Mappers;
 using GameEngineCore.V1._4;
 using MessagePack;
 
@@ -48,16 +49,9 @@ namespace Elympics
             TelegramId = userData.Telegramid;
             Address = userData.Address;
             Nickname = userData.Nickname;
-            NicknameType = ConvertToNickNameType(userData.NicknameType);
+            NicknameType = NicknameMapper.ConvertToNickNameType(userData.NicknameType);
             CustomData = userData.CustomData;
         }
-
-        public static NicknameType ConvertToNickNameType(string? type) => type switch
-        {
-            "Common" => NicknameType.Common,
-            "Verified" => NicknameType.Verified,
-            _ => NicknameType.Undefined
-        };
 
         public InitialMatchPlayerDataGuid(ElympicsPlayer player, byte[] gameEngineData, float[] matchmakerData)
         {

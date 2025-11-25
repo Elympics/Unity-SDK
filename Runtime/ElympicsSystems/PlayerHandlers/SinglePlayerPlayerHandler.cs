@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 
 namespace Elympics.ElympicsSystems
@@ -34,7 +35,25 @@ namespace Elympics.ElympicsSystems
             CallPlayerConnectedFromBotsOrClients(_players);
             _elympicsBehavioursManager.OnConnected(TimeSynchronizationData.Localhost);
             _elympicsBehavioursManager.OnAuthenticated(dataOfClients[0].UserId);
-            _elympicsBehavioursManager.OnMatchJoined(initialData.MatchId.GetValueOrDefault());
+            var matchInitialData = new MatchInitialData
+            {
+                MatchId = initialData.MatchId ?? System.Guid.Empty,
+                IsReplay = false,
+                PlayerInitialDatas = initialData.ToList().Select(x => new PlayerInitialData()
+                {
+                    Player = x.Player,
+                    UserId = x.UserId,
+                    IsBot = x.IsBot,
+                    BotDifficulty = x.BotDifficulty,
+                    GameEngineData = x.GameEngineData,
+                }).ToList(),
+                CustomMatchmakingData = initialData.CustomMatchmakingData ?? new Dictionary<string, string>(),
+                CustomRoomData = initialData.CustomRoomData ?? new Dictionary<System.Guid, IReadOnlyDictionary<string, string>>(),
+                ExternalGameData = initialData.ExternalGameData,
+                QueueName = initialData.QueueName ?? string.Empty,
+                RegionName = initialData.RegionName ?? string.Empty,
+            };
+            _elympicsBehavioursManager.OnMatchJoinedWithInitData(matchInitialData);
         }
 
 

@@ -31,12 +31,12 @@ namespace Elympics
 
         private bool _started;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
-        public IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
+        internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
         private IMatchClient _matchClient;
 
         // Prediction
-        internal IRoundTripTimeCalculator RoundTripTimeCalculator;
+        private IRoundTripTimeCalculator _roundTripTimeCalculator;
         private ClientTickCalculator _clientTickCalculator;
         private PredictionBuffer _predictionBuffer;
 
@@ -71,11 +71,11 @@ namespace Elympics
             _matchConnectClient = matchConnectClient;
             _matchClient = matchClient;
             elympicsBehavioursManager.InitializeInternal(this);
-            RoundTripTimeCalculator = new RoundTripTimeCalculator();
+            _roundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
 #endif
-            _clientTickCalculator = new ClientTickCalculator(RoundTripTimeCalculator, elympicsGameConfig);
+            _clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator, elympicsGameConfig);
             _predictionBuffer = new PredictionBuffer(elympicsGameConfig);
             _snapshotTracker = new ElympicsBehaviourFirstSnapshotTracker(elympicsBehavioursManager);
 
@@ -111,14 +111,14 @@ namespace Elympics
             _matchConnectClient.AuthenticatedUserMatchFailedWithError += OnAuthenticatedFailed;
             _matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(Guid.Empty);
             _matchConnectClient.AuthenticatedAsSpectatorWithError += OnAuthenticatedFailed;
-            _matchConnectClient.MatchJoinedWithMatchId += OnMatchJoined;
+            _matchConnectClient.MatchJoinedWithMatchInitData += OnMatchJoinedWithInitData;
             _matchConnectClient.MatchJoinedWithError += OnMatchJoinedFailed;
             _matchConnectClient.MatchEndedWithMatchId += OnMatchEnded;
         }
 
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
-            RoundTripTimeCalculator.OnSynchronized(data);
+            _roundTripTimeCalculator.OnSynchronized(data);
             RaiseRttReceived(data);
             OnConnected(data);
         }

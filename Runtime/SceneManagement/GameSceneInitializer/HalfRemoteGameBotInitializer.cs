@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Elympics.Communication.Models.Public;
+using Elympics.Mappers;
 using GameBotCore.V1._3;
 
 namespace Elympics
@@ -13,6 +17,10 @@ namespace Elympics
         {
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
+            var queueName = elympicsGameConfig.TestMatchData.queueName;
+            var regionName = elympicsGameConfig.TestMatchData.regionName;
+            var customRoomData = elympicsGameConfig.TestMatchData.roomCustomData;
+            var customMatchmakingData = elympicsGameConfig.TestMatchData.customMatchmakingData;
 
             if (playersList.Count > playerIndex)
                 throw ElympicsLogger.LogException("Half Remote bot won't be initialized because "
@@ -33,7 +41,38 @@ namespace Elympics
             };
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId);
+            var matchInitData = new MatchInitialData
+            {
+                MatchId = Guid.Empty,
+                IsReplay = false,
+                QueueName = queueName,
+                RegionName = regionName,
+                CustomRoomData = customRoomData.Select((x, index) =>
+                {
+                    var roomId = new Guid(index, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    var roomCustomData = x.roomCustomData.ToDictionary(customData => customData.key, customData => customData.value);
+                    return (roomid: roomId, (IReadOnlyDictionary<string, string>)roomCustomData);
+
+                }).ToDictionary(pair => pair.roomid, pair => pair.Item2),
+                CustomMatchmakingData = customMatchmakingData.ToDictionary(x => x.key, x => x.value),
+                ExternalGameData = new byte[]
+                    { },
+                PlayerInitialDatas = playersList.Select((x, index) => new PlayerInitialData
+                {
+                    Player = ElympicsPlayer.FromIndex(index),
+                    UserId = x.UserId,
+                    IsBot = x.IsBot,
+                    BotDifficulty = x.BotDifficulty,
+                    GameEngineData = x.GameEngineData,
+                    MatchmakerData = x.MatchmakerData,
+                    RoomId = x.RoomId,
+                    TeamIndex = x.TeamIndex,
+                    Nickname = x.Nickname,
+                    NicknameType = NicknameMapper.ConvertToNickNameType(x.NicknameType),
+                    CustomData = x.CustomData
+                }).ToList()
+            };
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData);
 
             _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);

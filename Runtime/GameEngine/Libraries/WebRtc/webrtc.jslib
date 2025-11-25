@@ -44,7 +44,9 @@ const LibraryWebRtc = {
       this.reliableEnded = reliableEnded;
 
       const onChannel = (name, eventType) => {
-        const selectedPair = this.pc.sctp ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair() : null;
+        const selectedPair = (this.pc.sctp && typeof this.pc.sctp.transport?.iceTransport?.getSelectedCandidatePair === 'function')
+          ? this.pc.sctp.transport?.iceTransport?.getSelectedCandidatePair()
+          : null;
         const selectedPairJson = selectedPair
           ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
           : "";
@@ -54,26 +56,48 @@ const LibraryWebRtc = {
 
       const buildErrorMessage = (err, details, baseMessage) => {
         let message = baseMessage;
+
+        // Add details if available
+        if (details !== undefined) {
+          message += ` | Error detail: ${details}`;
+        }
+
         switch (details) {
           case "sdp-syntax-error":
-            message += ` | SDP syntax error in line ${err.sdpLineNumber}`;
+            if (err.sdpLineNumber !== undefined) {
+              message += ` | SDP syntax error in line ${err.sdpLineNumber}`;
+            } else {
+              message += ` | SDP syntax error (line number not supported)`;
+            }
             break;
           case "idp-load-failure":
-            message += ` | Identity provider load failure: HTTP error ${err.httpRequestStatusCode}`;
+            if (err.httpRequestStatusCode !== undefined) {
+              message += ` | Identity provider load failure: HTTP error ${err.httpRequestStatusCode}`;
+            } else {
+              message += ` | Identity provider load failure (HTTP status code not supported)`;
+            }
             break;
           case "sctp-failure":
-            if (err.sctpCauseCode < sctpCauseCodes.length) {
-              message += ` | SCTP failure: ${err.sctpCauseCode}`;
+            if (err.sctpCauseCode !== undefined) {
+              if (typeof sctpCauseCodes !== 'undefined' && err.sctpCauseCode < sctpCauseCodes.length) {
+                message += ` | SCTP failure: ${sctpCauseCodes[err.sctpCauseCode]}`;
+              } else {
+                message += ` | SCTP failure: cause code ${err.sctpCauseCode}`;
+              }
             } else {
-              message += ` | Unknown SCTP error`;
+              message += ` | SCTP failure (cause code not supported)`;
             }
             break;
           case "dtls-failure":
-            if (err.receivedAlert) {
-              message += `| Received DTLS failure alert: ${err.receivedAlert}`;
+            if (err.receivedAlert !== undefined) {
+              message += ` | Received DTLS failure alert: ${err.receivedAlert}`;
+            } else {
+              message += ` | Received DTLS failure alert (not supported)`;
             }
-            if (err.sentAlert) {
-              message += `| Sent DTLS failure alert: ${err.receivedAlert}`;
+            if (err.sentAlert !== undefined) {
+              message += ` | Sent DTLS failure alert: ${err.sentAlert}`;
+            } else {
+              message += ` | Sent DTLS failure alert (not supported)`;
             }
             break;
           case "data-channel-failure":
@@ -86,9 +110,10 @@ const LibraryWebRtc = {
       this.reliableDc.onopen = _ => onChannel("reliable", "opened");
       this.reliableDc.onmessage = message => this.reliableReceived(new Uint8Array(message.data));
       this.reliableDc.addEventListener("error", (ev) => {
-        const err = ev.error;
-        webRtcState.log(`Reliable Error: \n${err.message}`);
-        const message = buildErrorMessage(err, err.errorDetail, err.message);
+        const err = ev.error || ev;
+        const errorMessage = err.message || err.toString() || 'Unknown error';
+        webRtcState.log(`Reliable Error: \n${errorMessage}`);
+        const message = buildErrorMessage(err, err.errorDetail, errorMessage);
         this.reliableError(message);
       });
       this.reliableDc.onclose = _ => {
@@ -107,9 +132,10 @@ const LibraryWebRtc = {
       this.unreliableDc.onopen = _ => onChannel("unreliable", "opened");
       this.unreliableDc.onmessage = message => this.unreliableReceived(new Uint8Array(message.data));
       this.unreliableDc.addEventListener("error", (ev) => {
-        const err = ev.error;
-        webRtcState.log(`UnReliable Error: \n${err.message}`);
-        const message = buildErrorMessage(err, err.errorDetail, err.message);
+        const err = ev.error || ev;
+        const errorMessage = err.message || err.toString() || 'Unknown error';
+        webRtcState.log(`UnReliable Error: \n${errorMessage}`);
+        const message = buildErrorMessage(err, err.errorDetail, errorMessage);
         this.unreliableError(message);
       });
 
@@ -125,8 +151,8 @@ const LibraryWebRtc = {
         await new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay));
         const updatedOffer = this.pc.localDescription;
         webRtcState.log(`Updated offer after ${webRtcState.offerAnnouncingDelay} ms\n${JSON.stringify(updatedOffer)}`);
-        if (this.pc.sctp && this.pc.sctp.transport.iceTransport.getLocalCandidates) {
-          webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
+        if (this.pc.sctp && typeof this.pc.sctp.transport?.iceTransport?.getLocalCandidates === 'function') {
+          webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport?.iceTransport?.getLocalCandidates())}`);
         }
         offerCallback(JSON.stringify(updatedOffer));
       };

@@ -15,8 +15,9 @@ namespace Elympics.Mappers
                 throw new FormatException($"Invalid MatchId GUID format: {matchJoinedMessage.MatchId}");
 
             if (matchJoinedMessage.CustomMatchmakingDataKeys.Length != matchJoinedMessage.CustomMatchmakingDataValues.Length)
-                throw new InvalidOperationException(
-                    $"{nameof(matchJoinedMessage.CustomMatchmakingDataKeys)} lenght: {matchJoinedMessage.CustomMatchmakingDataKeys} is different than {nameof(matchJoinedMessage.CustomMatchmakingDataValues)} lenght: {matchJoinedMessage.CustomMatchmakingDataValues.Length}");
+                throw new ArgumentException(
+                    $"The length of {nameof(matchJoinedMessage.CustomMatchmakingDataKeys)} ({matchJoinedMessage.CustomMatchmakingDataKeys}) is not the same as the length of {nameof(matchJoinedMessage.CustomMatchmakingDataValues)} ({matchJoinedMessage.CustomMatchmakingDataValues.Length}).",
+                    nameof(matchJoinedMessage));
 
             var pointer = 0;
             return new MatchInitialData

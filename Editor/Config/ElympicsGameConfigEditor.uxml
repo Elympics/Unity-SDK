@@ -24,7 +24,7 @@
         <ui:SliderInt picking-mode="Ignore" label="Max allowed lag" high-value="100" name="max-lag" show-input-field="true" binding-path="maxAllowedLagInTicks" tooltip="Limits the size of the prediction buffer" />
         <ui:SliderInt picking-mode="Ignore" label="Force jump threshold" high-value="100" name="force-jump-threshold" binding-path="forceJumpThresholdInTicks" show-input-field="true" tooltip="How far behind the desired tick client has to be to force a jump to that tick" />
         <ui:Toggle label="Prediction" name="prediction-toggle" binding-path="prediction" />
-        <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="25" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
+        <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="100" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
         <ui:Label text="Total prediction limit: XX ms" display-tooltip-when-elided="true" name="total-prediction-limit" tooltip="With input lag and snapshot sending period included" />
         <ui:IMGUIContainer name="client-connection-config" />
     </ui:Foldout>

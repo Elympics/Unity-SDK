@@ -44,8 +44,8 @@ const LibraryWebRtc = {
       this.reliableEnded = reliableEnded;
 
       const onChannel = (name, eventType) => {
-        const selectedPair = (this.pc.sctp && typeof this.pc.sctp.transport?.iceTransport?.getSelectedCandidatePair === 'function')
-          ? this.pc.sctp.transport?.iceTransport?.getSelectedCandidatePair()
+        const selectedPair = (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getSelectedCandidatePair === 'function')
+          ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()
           : null;
         const selectedPairJson = selectedPair
           ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
@@ -151,8 +151,8 @@ const LibraryWebRtc = {
         await new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay));
         const updatedOffer = this.pc.localDescription;
         webRtcState.log(`Updated offer after ${webRtcState.offerAnnouncingDelay} ms\n${JSON.stringify(updatedOffer)}`);
-        if (this.pc.sctp && typeof this.pc.sctp.transport?.iceTransport?.getLocalCandidates === 'function') {
-          webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport?.iceTransport?.getLocalCandidates())}`);
+        if (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
+          webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
         }
         offerCallback(JSON.stringify(updatedOffer));
       };

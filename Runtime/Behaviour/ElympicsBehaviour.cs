@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Elympics.Communication.Models.Public;
+using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 #if UNITY_EDITOR
@@ -427,6 +428,13 @@ namespace Elympics
             foreach (var reconciliationHandler in _componentsContainer.ReconciliationHandlers)
                 reconciliationHandler.OnPostReconcile();
             _isReconciling = false;
+        }
+
+        public void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        {
+            var networkCondition = results.MapToNetworkNetworkCondition();
+            foreach (var reconciliationHandler in _componentsContainer.Updatables)
+                reconciliationHandler.PredictionStatusChanged(isBlocked, networkCondition);
         }
 
         #region ClientCallbacks

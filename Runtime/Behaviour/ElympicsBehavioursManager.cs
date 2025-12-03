@@ -325,6 +325,12 @@ namespace Elympics
                 elympicsBehaviour.OnPostReconcile();
         }
 
+        internal void OnPredictionStatusChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        {
+            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+                elympicsBehaviour.OnPredictionStatsChanged(isBlocked, results);
+        }
+
         internal void RefreshElympicsBehavioursView()
         {
             elympicsBehavioursView.Clear();

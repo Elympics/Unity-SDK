@@ -132,9 +132,9 @@ namespace MatchTcpClients
                     }
 
                     var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
-                    if (response?.IsError == true || string.IsNullOrEmpty(response?.Text))
+                    if (response == null || response.IsError || string.IsNullOrEmpty(response.Text))
                     {
-                        logger.Error("No valid WebRTC answer has been received.");
+                        logger.Error($"No valid WebRTC answer has been received. Error: {response?.Text}");
                         Disconnect();
                         return false;
                     }
@@ -224,13 +224,15 @@ namespace MatchTcpClients
                 };
 
                 var result = await signalingClient.PostOfferAsync(JsonUtility.ToJson(offerWithCandidates), TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
-                if (result?.IsError == false)
+
+                if (result?.Code == 499)
+                {
+                    logger.Warning($"WebRTC answer error: {result?.Text}");
+                    await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
+                }
+                else
                     return result;
-
-                logger.Warning($"WebRTC answer error: {result?.Text}");
-                await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
             }
-
             return null;
         }
 

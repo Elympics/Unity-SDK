@@ -194,6 +194,8 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
+            var logger = _logger.WithMethodName();
+            logger.Log("Connected And Synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _ = _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
@@ -206,13 +208,15 @@ namespace Elympics
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
         {
+            var logger = _logger.WithMethodName();
             if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
+                logger.Error($"Failed to authenticate user. {message.ErrorMessage}");
                 AuthenticatedUserMatchFailedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
                 return;
             }
-
+            logger.Log("User Authenticated.");
             AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
             _ = _gameServerClient.JoinMatchAsync();

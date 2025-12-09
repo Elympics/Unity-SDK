@@ -245,7 +245,10 @@ namespace Elympics
             if (_clientTickCalculator.Results.CanPredict)
             {
                 if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
+                {
                     ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                    PredictionStateChanged(false, _clientTickCalculator.Results);
+                }
                 _currentTicksWithoutPrediction = 0;
                 return;
             }
@@ -253,6 +256,7 @@ namespace Elympics
                 return;
 
             ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+            PredictionStateChanged(true, _clientTickCalculator.Results);
         }
 
         private void LogNetworkConditionsInInterval()
@@ -396,6 +400,8 @@ namespace Elympics
             _clientTickCalculator.Results.ReconciliationPerformed = true;
             ElympicsBehavioursManager.OnPostReconcile();
         }
+
+        private void PredictionStateChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results) => ElympicsBehavioursManager.OnPredictionStatusChanged(isBlocked, results);
 
         private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot)
         {

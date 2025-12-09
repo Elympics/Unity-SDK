@@ -17,7 +17,7 @@ namespace Elympics.Mappers
                 RttTicks = source.RttTicks,
                 WasTickJumpForced = source.WasTickJumpForced,
                 PredictionLimit = source.PredictionLimit,
-                DefaultTickRate = source.DefaultTickRate,
+                DefaultTickRate = (int)source.DefaultTickRate,
                 TicksToCatchup = source.TicksToCatchup,
                 NewTickFromCalculations = source.NewTickFromCalculations
             };

@@ -20,14 +20,17 @@ namespace Elympics.Public
         /// </summary>
         public long LastReceivedTick;
         /// <summary>
-        /// Weighted Clock Offset in ticks.
+        /// Weighted Local Clock Offset (LCO) in game ticks.
+        ///
+        /// This represents the time difference between the client's local clock and the server's clock,
+        /// smoothed using a running median filter and converted to game ticks.
         /// </summary>
         public double LcoTicks;
         public bool ReconciliationPerformed;
         public double RttTicks;
         public bool WasTickJumpForced;
         public long PredictionLimit;
-        public double DefaultTickRate;
+        public int DefaultTickRate;
         /// <summary>
         /// How many ticks the client had to catch up when a tick jump was forced.
         /// </summary>

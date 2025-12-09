@@ -17,7 +17,7 @@ namespace Elympics
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            var matchData = ElympicsLobbyClient.Instance?.MatchDataGuid ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
+            var matchData = LobbyRegister.GetMatchData() ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             var gameEngineAdapter = new GameEngineAdapter(gameConfig);

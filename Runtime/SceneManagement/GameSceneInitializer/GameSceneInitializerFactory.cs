@@ -1,4 +1,5 @@
 using System;
+using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 
 namespace Elympics
@@ -11,7 +12,7 @@ namespace Elympics
                 return new OnlineGameBotInitializer();
             if (ApplicationParameters.ShouldLoadElympicsOnlineServer)
                 return new OnlineGameServerInitializer();
-            if (ElympicsLobbyClient.Instance != null)
+            if (LobbyRegister.IsLobbyRegistered())
                 return LoadFromLobbyClient();
 
             if (ScriptingSymbols.IsUnityServer && !Application.isEditor)
@@ -29,15 +30,15 @@ namespace Elympics
             };
         }
 
-        private static GameSceneInitializer LoadFromLobbyClient() => ElympicsLobbyClient.Instance!.MatchMode switch
+        private static GameSceneInitializer LoadFromLobbyClient() => LobbyRegister.GetJoinedMatchMode() switch
         {
-            ElympicsLobbyClient.JoinedMatchMode.Online => new OnlineGameClientInitializer(),
-            ElympicsLobbyClient.JoinedMatchMode.HalfRemoteClient => new HalfRemoteGameClientInitializer(),
-            ElympicsLobbyClient.JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
-            ElympicsLobbyClient.JoinedMatchMode.Local => new LocalGameServerInitializer(),
-            ElympicsLobbyClient.JoinedMatchMode.SinglePlayer => new SinglePlayerGameInitializer(),
-            ElympicsLobbyClient.JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
-            _ => throw new ArgumentOutOfRangeException(nameof(ElympicsLobbyClient.Instance.MatchMode)),
+            JoinedMatchMode.Online => new OnlineGameClientInitializer(),
+            JoinedMatchMode.HalfRemoteClient => new HalfRemoteGameClientInitializer(),
+            JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
+            JoinedMatchMode.Local => new LocalGameServerInitializer(),
+            JoinedMatchMode.SinglePlayer => new SinglePlayerGameInitializer(),
+            JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
+            _ => throw new ArgumentOutOfRangeException(LobbyRegister.GetJoinedMatchMode().ToString()),
         };
 
         private static DebugOnlineClientInitializer InitializeDebugOnlinePlayer() => new();

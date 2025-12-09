@@ -130,9 +130,10 @@ namespace Elympics
             }
         }
 
-        private MatchmakingFinishedData? _matchDataGuid;
+        public JoinedMatchMode MatchMode { get; private set; }
+        void ILobby.PlayMatchInternal(MatchmakingFinishedData matchData) => PlayMatchInternal(matchData);
 
-        internal JoinedMatchMode MatchMode { get; private set; }
+        private MatchmakingFinishedData? _matchDataGuid;
 
         [Tooltip("Default starting value. The value can be changed at runtime using "
             + nameof(ElympicsLobbyClient)
@@ -703,17 +704,6 @@ namespace Elympics
             }
             return PlayerPrefs.GetString(key);
         }
-
-        internal enum JoinedMatchMode
-        {
-            Online,
-            Local,
-            SinglePlayer,
-            HalfRemoteClient,
-            HalfRemoteServer,
-            SnapshotReplay,
-        }
-
         #endregion
 
         internal int? FetchDecimalForCoin(Guid coinId)

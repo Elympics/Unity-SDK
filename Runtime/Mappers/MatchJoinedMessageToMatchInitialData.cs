@@ -30,17 +30,15 @@ namespace Elympics.Mappers
                 {
                     var guid = Guid.Parse(roomId);
                     var roomCustomData = new Dictionary<string, string>();
-                    foreach (var dataAmount in matchJoinedMessage.CustomRoomDataNumberPerRoom)
+                    var dataAmount = matchJoinedMessage.CustomRoomDataNumberPerRoom[index];
+                    var dataCounter = 0;
+                    while (dataCounter < dataAmount)
                     {
-                        var dataCounter = 0;
-                        while (dataCounter < dataAmount)
-                        {
-                            var key = matchJoinedMessage.CustomRoomDataKeys[pointer];
-                            var value = matchJoinedMessage.CustomRoomDataValues[pointer];
-                            roomCustomData.Add(key, value);
-                            ++dataCounter;
-                            ++pointer;
-                        }
+                        var key = matchJoinedMessage.CustomRoomDataKeys[pointer];
+                        var value = matchJoinedMessage.CustomRoomDataValues[pointer];
+                        roomCustomData.Add(key, value);
+                        ++dataCounter;
+                        ++pointer;
                     }
                     return (guid, (IReadOnlyDictionary<string, string>)roomCustomData);
                 }).ToDictionary(pair => pair.guid, pair => pair.Item2),

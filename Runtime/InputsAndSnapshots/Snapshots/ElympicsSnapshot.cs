@@ -73,5 +73,56 @@ namespace Elympics
                     Data.Add(new(sourceNetworkId, sourceData));
             }
         }
+
+
+        internal void MergeWithSnapshot(ElympicsSnapshot receivedSnapshot)
+        {
+            if (receivedSnapshot == null)
+                return;
+
+            Tick = receivedSnapshot.Tick;
+            TickStartUtc = receivedSnapshot.TickStartUtc;
+
+            if (receivedSnapshot.Factory != null)
+                Factory = new() { Parts = receivedSnapshot.Factory.Parts?.ToList() };
+
+            if (receivedSnapshot.TickToPlayersInputData != null)
+                TickToPlayersInputData = receivedSnapshot.TickToPlayersInputData;
+
+            if (receivedSnapshot.Data != null)
+            {
+                if (Data == null)
+                {
+                    Data = receivedSnapshot.Data;
+                    return;
+                }
+
+                var localIndex = 0;
+                var remoteIndex = 0;
+                while (remoteIndex < receivedSnapshot.Data.Count && localIndex < Data.Count)
+                {
+                    var receievedNetworkId = receivedSnapshot.Data[remoteIndex].Key;
+                    var localNetworkId = Data[localIndex].Key;
+                    if (localNetworkId == receievedNetworkId)
+                    {
+                        Data[localIndex] = receivedSnapshot.Data[remoteIndex];
+                        remoteIndex++;
+                        continue;
+                    }
+                    if (localNetworkId > receievedNetworkId)
+                    {
+                        Data.Insert(localIndex, receivedSnapshot.Data[remoteIndex]);
+                        remoteIndex++;
+                        continue;
+                    }
+                    localIndex++;
+                    if (localIndex >= Data.Count)
+                    {
+                        Data.Add(receivedSnapshot.Data[remoteIndex]);
+                        remoteIndex++;
+                    }
+                }
+            }
+        }
     }
 }

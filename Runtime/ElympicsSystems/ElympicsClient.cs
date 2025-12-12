@@ -44,7 +44,7 @@ namespace Elympics
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot _lastReceivedSnapshot;
         private long _latestReconciliationBaseSnapshotTick;
-        private readonly ElympicsSnapshot _mergedSnapshot = new();
+        private readonly ElympicsSnapshot _serverWorldState = new();
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
@@ -167,10 +167,10 @@ namespace Elympics
         internal override void ElympicsFixedUpdate()
         {
             var receivedSnapshot = _lastReceivedSnapshot;
+            _serverWorldState.MergeWithSnapshot(receivedSnapshot);
+            _clientTickCalculator.CalculateNextTick(_serverWorldState.Tick, _previousTick, _lastDelayedInputTick, _serverWorldState.TickStartUtc, TickStartUtc);
 
-            _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, _previousTick, _lastDelayedInputTick, receivedSnapshot.TickStartUtc, TickStartUtc);
-
-            _predictionBuffer.UpdateMinTick(receivedSnapshot.Tick);
+            _predictionBuffer.UpdateMinTick(_serverWorldState.Tick);
 
             if (_clientTickCalculator.Results.CanPredict)
                 using (ElympicsMarkers.Elympics_ProcessingInputMarker.Auto())
@@ -178,17 +178,17 @@ namespace Elympics
 
             SendBufferInput(Tick);
 
-            _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
+            _snapshotTracker.ProcessNewSnapshot(_serverWorldState);
 
             if (Config.Prediction)
             {
                 CheckIfPredictionIsBlocked();
 
                 using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
-                    ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == receivedSnapshot.Tick
+                    ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == _serverWorldState.Tick
                         ? null
-                        : receivedSnapshot);
-                _latestReconciliationBaseSnapshotTick = receivedSnapshot.Tick;
+                        : _serverWorldState);
+                _latestReconciliationBaseSnapshotTick = _serverWorldState.Tick;
 
                 using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
                     if (_clientTickCalculator.Results.CanPredict)
@@ -196,7 +196,7 @@ namespace Elympics
                         _tick = _clientTickCalculator.Results.CurrentTick;
 
                         using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
-                            ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
+                            ApplyUnpredictablePartOfSnapshot(_serverWorldState);
 
                         _snapshotTracker.InitializeNewBehaviours();
 
@@ -217,7 +217,7 @@ namespace Elympics
             }
             else
             {
-                ApplyFullSnapshot(receivedSnapshot);
+                ApplyFullSnapshot(_serverWorldState);
                 _snapshotTracker.InitializeNewBehaviours();
                 InvokeQueuedRpcMessages();
                 ElympicsBehavioursManager.CommitVars();
@@ -350,13 +350,7 @@ namespace Elympics
                 _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
             }
             else
-            {
-                //Not all snapshots sent by server contain data about all objects, but if we want to go back to a previous tick to resimulate
-                //we have to revert states of all objects, so we take missing data from local snapshot
-                _mergedSnapshot.DeepCopyFrom(receivedSnapshot);
-                _mergedSnapshot.FillMissingFrom(historySnapshot);
-                newSnapshot = _mergedSnapshot;
-            }
+                newSnapshot = receivedSnapshot;
 
             ElympicsBehavioursManager.OnPreReconcile();
 

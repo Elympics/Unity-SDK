@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 namespace SCS
 {
-    [SerializeField]
+    [Serializable]
     public class GetConfigResponse
     {
         public int ChainId;

@@ -77,6 +77,8 @@ namespace Elympics
 
             void OnConnectedCallback(bool connected)
             {
+                connectedCallback?.Invoke(connected);
+
                 if (!connected)
                     return;
 

@@ -84,6 +84,7 @@ namespace Elympics.Editor
             });
 
             _ = ticksPerSecond.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
+            _ = ticksPerSecond.RegisterValueChangedCallback(_ => UpdateInputLagHighValue());
             _ = minClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
             _ = maxClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
 
@@ -117,6 +118,7 @@ namespace Elympics.Editor
             UpdateDebugModeOptions();
             UpdateVersionUploadStatus();
             UpdateSnapshotReplayOptions();
+            UpdateInputLagHighValue();
 
             return inspectorTree;
 
@@ -239,6 +241,8 @@ namespace Elympics.Editor
                     snapshotReplayError.style.display = DisplayStyle.Flex;
                 }
             }
+
+            void UpdateInputLagHighValue() => inputLag.highValue = gameConfig.TicksPerSecond;
         }
     }
 }

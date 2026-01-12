@@ -144,13 +144,29 @@ const LibraryWebRtc = {
         this.unreliableEnded();
       };
 
+      this.pendingOfferResolvers = [];
+
       this.createOffer = async iceRestart => {
         const offer = await this.pc.createOffer({ iceRestart });
         webRtcState.log(`Created offer\n${JSON.stringify(offer)}`);
         await this.pc.setLocalDescription(offer);
-        await new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay));
+
+        let resolver;
+        webRtcState.log(`Gathering ICE candidates...`);
+        await Promise.race([
+          new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay)),
+          new Promise(r => {
+            resolver = r;
+            this.pendingOfferResolvers.push(r);
+          })
+        ]);
+        webRtcState.log(`ICE candidates gathered.`);
+        const index = this.pendingOfferResolvers.indexOf(resolver);
+        if (index > -1) {
+          this.pendingOfferResolvers.splice(index, 1);
+        }
+
         const updatedOffer = this.pc.localDescription;
-        webRtcState.log(`Updated offer after ${webRtcState.offerAnnouncingDelay} ms\n${JSON.stringify(updatedOffer)}`);
         if (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
           webRtcState.log(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
         }
@@ -185,6 +201,10 @@ const LibraryWebRtc = {
           iceCandidateCallback(candidateJson);
         } else {
           webRtcState.log("End of candidates");
+          while (this.pendingOfferResolvers.length > 0) {
+            const resolver = this.pendingOfferResolvers.pop();
+            resolver();
+          }
           iceCandidateCallback(candidate);
         }
       };

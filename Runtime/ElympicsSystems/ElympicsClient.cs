@@ -180,49 +180,38 @@ namespace Elympics
 
             _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
 
-            if (Config.Prediction)
-            {
-                CheckIfPredictionIsBlocked();
+            CheckIfPredictionIsBlocked();
 
-                using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
-                    ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == receivedSnapshot.Tick
-                        ? null
-                        : receivedSnapshot);
-                _latestReconciliationBaseSnapshotTick = receivedSnapshot.Tick;
+            using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
+                ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == receivedSnapshot.Tick
+                    ? null
+                    : receivedSnapshot);
+            _latestReconciliationBaseSnapshotTick = receivedSnapshot.Tick;
 
-                using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
-                    if (_clientTickCalculator.Results.CanPredict)
-                    {
-                        _tick = _clientTickCalculator.Results.CurrentTick;
+            using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
+                if (_clientTickCalculator.Results.CanPredict)
+                {
+                    _tick = _clientTickCalculator.Results.CurrentTick;
 
-                        using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
-                            ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
+                    using (ElympicsMarkers.Elympics_ApplyUnpredictablePartOfSnapshotMarker.Auto())
+                        ApplyUnpredictablePartOfSnapshot(receivedSnapshot);
 
-                        _snapshotTracker.InitializeNewBehaviours();
+                    _snapshotTracker.InitializeNewBehaviours();
 
-                        InvokeQueuedRpcMessages();
-                        ElympicsBehavioursManager.CommitVars();
+                    InvokeQueuedRpcMessages();
+                    ElympicsBehavioursManager.CommitVars();
 
-                        using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
-                            ApplyPredictedInput();
+                    using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
+                        ApplyPredictedInput();
 
-                        using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
-                            ElympicsBehavioursManager.ElympicsUpdate();
+                    using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
+                        ElympicsBehavioursManager.ElympicsUpdate();
 
-                        using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
-                            ProcessSnapshot(Tick);
+                    using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
+                        ProcessSnapshot(Tick);
 
-                        _previousTick = Tick;
-                    }
-            }
-            else
-            {
-                ApplyFullSnapshot(receivedSnapshot);
-                _snapshotTracker.InitializeNewBehaviours();
-                InvokeQueuedRpcMessages();
-                ElympicsBehavioursManager.CommitVars();
-                _previousTick = Tick;
-            }
+                    _previousTick = Tick;
+                }
 
             ElympicsUpdateDuration = 1 / _clientTickCalculator.Results.ElympicsUpdateTickRate;
 

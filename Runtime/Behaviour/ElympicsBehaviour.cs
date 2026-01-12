@@ -62,8 +62,6 @@ namespace Elympics
         {
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
                 return;
-            if (!ElympicsBase.Config.Prediction)
-                return;
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
                 return;
             throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: " + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} " + $"or {nameof(IInitializable.Initialize)}");

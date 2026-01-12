@@ -42,7 +42,6 @@ namespace Elympics.Editor
             var snapshotSendingInterval = inspectorTree.Q<SliderInt>("snapshot-sending-interval");
             var inputLag = inspectorTree.Q<SliderInt>("input-lag");
 
-            var predictionEnabled = inspectorTree.Q<Toggle>("prediction-toggle");
             var predictionLimit = inspectorTree.Q<SliderInt>("prediction-limit");
             var totalPredictionLimit = inspectorTree.Q<Label>("total-prediction-limit");
 
@@ -88,8 +87,6 @@ namespace Elympics.Editor
             _ = minClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
             _ = maxClientTickRateFactor.RegisterValueChangedCallback(_ => UpdateTicksPerSecondLabel());
 
-            _ = predictionEnabled.RegisterValueChangedCallback(_ => UpdatePredictionSection());
-
             _ = snapshotSendingInterval.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
             _ = inputLag.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
             _ = predictionLimit.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
@@ -116,7 +113,6 @@ namespace Elympics.Editor
 
             UpdateSceneButton();
             UpdateTicksPerSecondLabel();
-            UpdatePredictionSection();
             UpdateTotalPredictionLimitLabel();
             UpdateDebugModeOptions();
             UpdateVersionUploadStatus();
@@ -134,12 +130,6 @@ namespace Elympics.Editor
                 var minTps = Math.Round(gameConfig.MinTickRate, 2).ToString(CultureInfo.InvariantCulture);
                 var maxTps = Math.Round(gameConfig.MaxTickRate, 2).ToString(CultureInfo.InvariantCulture);
                 tpsLabel.text = $"Client ticks per second: {(minTps != maxTps ? $"from {minTps} to {maxTps}" : $"{minTps}")} ticks";
-            }
-
-            void UpdatePredictionSection()
-            {
-                predictionLimit.SetEnabled(gameConfig.Prediction);
-                totalPredictionLimit.SetEnabled(gameConfig.Prediction);
             }
 
             void UpdateTotalPredictionLimitLabel()

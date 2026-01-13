@@ -5,16 +5,12 @@
 
 * add com.unity.nuget.newtonsoft-json to Elympics SDK dependencies ([271d354](https://github.com/Elympics/Unity-SDK/commit/271d354f8947b2b10119500f7eb27cab2a8fd80a))
 * add fix to jslib to support firefox ([aa0fee5](https://github.com/Elympics/Unity-SDK/commit/aa0fee57446cf2aae716f9ca6291fe947109c746))
-* already existing key exception ([bf03ebb](https://github.com/Elympics/Unity-SDK/commit/bf03ebb6062be19ea2cb7cf0ed5aa7ff84acd943))
-* catch unityweb exception ([38220fa](https://github.com/Elympics/Unity-SDK/commit/38220fa29f504580777dff3e8e7e4e5f057757c6))
+* catch UnityWeb exception ([38220fa](https://github.com/Elympics/Unity-SDK/commit/38220fa29f504580777dff3e8e7e4e5f057757c6))
 * change SerializableField to Serializable attribute ([af11471](https://github.com/Elympics/Unity-SDK/commit/af11471f0f38dd846767b6f1006bd593029da597))
 * enable synchronization for ElympicsVars set directly in the Unity inspector ([c8370a6](https://github.com/Elympics/Unity-SDK/commit/c8370a6d731c217304b51f60fadb6f62ef16cb51))
-* formatting ([e8e4b7b](https://github.com/Elympics/Unity-SDK/commit/e8e4b7b6aca788850a90c6fa08a731ddce3ee5ae))
 * invoke connectedCallback in HalfRemoteMatchConnectClient.ConnectAndJoinAsPlayer ([a032155](https://github.com/Elympics/Unity-SDK/commit/a0321550cd3e997c96e943c3237f7c7c10b1aa69))
 * properly resolve type name when WaitForLobbyData operation times out ([09f7e41](https://github.com/Elympics/Unity-SDK/commit/09f7e41a0da8b5b34dc0a21404b873b151603791))
-* remove meta files of empty folders ([176f1ea](https://github.com/Elympics/Unity-SDK/commit/176f1eade8d9060125b62196a1874d6f37cad0ec))
-* remove thread sleep ([9ce880d](https://github.com/Elympics/Unity-SDK/commit/9ce880d2a70002d89b12e069c5bcf823495191e0))
-* webrtc.jsbli has to be compatiblie with es2020 ([1829769](https://github.com/Elympics/Unity-SDK/commit/1829769a7e28c5b2a7e188047dd26a2214885146))
+* remove thread sleep during WebRtc connection establishment ([9ce880d](https://github.com/Elympics/Unity-SDK/commit/9ce880d2a70002d89b12e069c5bcf823495191e0))
 
 
 ### Features

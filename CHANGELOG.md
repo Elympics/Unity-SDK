@@ -1,3 +1,46 @@
+## [0.23.0](https://github.com/Elympics/Unity-SDK/compare/v0.22.0...v0.23.0) (2026-01-13)
+
+
+### Bug Fixes 🪲
+
+* add com.unity.nuget.newtonsoft-json to Elympics SDK dependencies ([271d354](https://github.com/Elympics/Unity-SDK/commit/271d354f8947b2b10119500f7eb27cab2a8fd80a))
+* add fix to jslib to support firefox ([aa0fee5](https://github.com/Elympics/Unity-SDK/commit/aa0fee57446cf2aae716f9ca6291fe947109c746))
+* already existing key exception ([bf03ebb](https://github.com/Elympics/Unity-SDK/commit/bf03ebb6062be19ea2cb7cf0ed5aa7ff84acd943))
+* catch unityweb exception ([38220fa](https://github.com/Elympics/Unity-SDK/commit/38220fa29f504580777dff3e8e7e4e5f057757c6))
+* change SerializableField to Serializable attribute ([af11471](https://github.com/Elympics/Unity-SDK/commit/af11471f0f38dd846767b6f1006bd593029da597))
+* enable synchronization for ElympicsVars set directly in the Unity inspector ([c8370a6](https://github.com/Elympics/Unity-SDK/commit/c8370a6d731c217304b51f60fadb6f62ef16cb51))
+* formatting ([e8e4b7b](https://github.com/Elympics/Unity-SDK/commit/e8e4b7b6aca788850a90c6fa08a731ddce3ee5ae))
+* invoke connectedCallback in HalfRemoteMatchConnectClient.ConnectAndJoinAsPlayer ([a032155](https://github.com/Elympics/Unity-SDK/commit/a0321550cd3e997c96e943c3237f7c7c10b1aa69))
+* properly resolve type name when WaitForLobbyData operation times out ([09f7e41](https://github.com/Elympics/Unity-SDK/commit/09f7e41a0da8b5b34dc0a21404b873b151603791))
+* remove meta files of empty folders ([176f1ea](https://github.com/Elympics/Unity-SDK/commit/176f1eade8d9060125b62196a1874d6f37cad0ec))
+* remove thread sleep ([9ce880d](https://github.com/Elympics/Unity-SDK/commit/9ce880d2a70002d89b12e069c5bcf823495191e0))
+* webrtc.jsbli has to be compatiblie with es2020 ([1829769](https://github.com/Elympics/Unity-SDK/commit/1829769a7e28c5b2a7e188047dd26a2214885146))
+
+
+### Features
+
+* add a summary for the ElympicsVar<T>.ValueChanged event ([c6bf694](https://github.com/Elympics/Unity-SDK/commit/c6bf6940c0a5a40b28ff26e15cefef6b38fdef0c))
+* add custom property drawer for basic ElympicsVar types ([a480a57](https://github.com/Elympics/Unity-SDK/commit/a480a57975212c398ba1417c5ee29a7db0dd1931))
+* add custom property drawers for ElympicsArray and ElympicsList ([73f8af7](https://github.com/Elympics/Unity-SDK/commit/73f8af71c97fe48afef45f127cfb2f3efdd9f258))
+* add custom warnings for different cases of object instantiation and destruction prediction errors ([3e7c912](https://github.com/Elympics/Unity-SDK/commit/3e7c91207016bc450d4f4a938436aaf07b06fe2d))
+* add ElympicsLong type of ElympicsVar ([dfceaa0](https://github.com/Elympics/Unity-SDK/commit/dfceaa063dd05fe1abf37325c2b4e0ef2a54da3c))
+* add GameObject name and network ID to warnings logged for fields with incorrectly predicted state on client ([cb36bb6](https://github.com/Elympics/Unity-SDK/commit/cb36bb67a7fb19315961e3399375e0413cc00960))
+* add missing match initial data on server ([1e4bf30](https://github.com/Elympics/Unity-SDK/commit/1e4bf300bbdf6be330348891c9548330ebdc40c4))
+* add optional ELYMPICS_PRODUCTION symbol that can be defined to improve performance by removing logs in some cases ([57b6e91](https://github.com/Elympics/Unity-SDK/commit/57b6e9145cbf76be4e467910878ed4a055a13b9d))
+* add optional position and rotation to the ElympicsMonoBehaviour.ElympicsInstantiate method ([e01bc76](https://github.com/Elympics/Unity-SDK/commit/e01bc76484a34b7b2548fd1fecd266ab10c664ab))
+* add prediction status information handler ([61f255f](https://github.com/Elympics/Unity-SDK/commit/61f255f32418c070c1cc7f9ef581b0a5bc78a6da))
+* add specific warnings for when entire factory state is incorrectly predicted to exist or not exist on client ([6408932](https://github.com/Elympics/Unity-SDK/commit/6408932637570f3294c7b12d4c02f9d863528e89))
+* add tick numbers to prediction warnings ([786ac31](https://github.com/Elympics/Unity-SDK/commit/786ac3192fd5955e44a47b7f83847d4eadbc0974))
+* allow enabling and disabling ElympicsVar synchronization in inspector for ElympicsVars stores in Unity serialized fields ([05b09b7](https://github.com/Elympics/Unity-SDK/commit/05b09b79175b90729a53449ef4e70970a7151cc7))
+* improve error message for incorrect use of DestroyInstance, so it explains that the ArgumentException can be caused by calling that method on the same object more than once ([c8420bd](https://github.com/Elympics/Unity-SDK/commit/c8420bda4a8e8c1a735c2bacff1035de98f868f2))
+* improve the clarity of the warning logged when client doesn't predict spawning or destruction of objects correctly ([ca4b018](https://github.com/Elympics/Unity-SDK/commit/ca4b01817d5cf0ebb7bd31d53eb810d6d2d96e04))
+* increase default prediction limit ([f9638e2](https://github.com/Elympics/Unity-SDK/commit/f9638e2862753907efbf5fb35f1829174d166a55))
+* make factory methods optional in constructors of ElympicsArray and ElympicsList ([f928d5c](https://github.com/Elympics/Unity-SDK/commit/f928d5c12f1ae046ec3159f76a5c3c374fd17d58))
+* remove redundant warning logged once per behaviour when any of its fields have incorrectly predicted state on the client ([9c783d8](https://github.com/Elympics/Unity-SDK/commit/9c783d8e7830f0884518f4d1c4d9099411b5d994))
+* send match initial data to clients ([2d3f231](https://github.com/Elympics/Unity-SDK/commit/2d3f23110cad9da921a40aeca9c58e639d87a1a6))
+
+
+
 ## [0.22.0](https://github.com/Elympics/Unity-SDK/compare/v0.21.1...v0.22.0) (2025-11-05)
 
 ### Bug Fixes 🪲

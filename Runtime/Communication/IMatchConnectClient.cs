@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Threading;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 
 namespace Elympics
 {
-    public interface IMatchConnectClient : IDisposable
+    internal interface IMatchConnectClient : IDisposable
     {
         event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
         event Action ConnectingFailed;
@@ -17,7 +18,7 @@ namespace Elympics
         event Action<string> AuthenticatedAsSpectatorWithError;
 
         event Action<string> MatchJoinedWithError;
-        event Action<Guid> MatchJoinedWithMatchId;
+        event Action<MatchInitialData> MatchJoinedWithMatchInitData;
 
         event Action<Guid> MatchEndedWithMatchId;
 

@@ -33,6 +33,7 @@ internal class RoomClientMock : IRoomsClient
         bool isSingleTeam,
         IReadOnlyDictionary<string, string> customRoomData,
         IReadOnlyDictionary<string, string> customMatchmakingData,
+        IReadOnlyDictionary<string, string>? customPlayerData = null,
         CompetitivenessConfig? competitivenessConfig = null,
         CancellationToken ct = default)
     {
@@ -40,13 +41,13 @@ internal class RoomClientMock : IRoomsClient
         return RoomIdReturnTask ?? UniTask.FromResult(Guid.Empty);
     }
 
-    public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, CancellationToken ct = default)
+    public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
     {
         JoinRoomWithRoomIdInvokedArgs = (roomId, teamIndex, ct);
         return RoomIdReturnTask ?? UniTask.FromResult(Guid.Empty);
     }
 
-    public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, CancellationToken ct = default)
+    public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
     {
         JoinRoomWithJoinCodeInvokedArgs = (joinCode, teamIndex, ct);
         return RoomIdReturnTask ?? UniTask.FromResult(Guid.Empty);

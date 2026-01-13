@@ -8,6 +8,8 @@ namespace Elympics
     {
         private const int NullReferenceNetworkId = -1;
 
+        public ElympicsGameObject() : this(default, true) { }
+
         public ElympicsGameObject(ElympicsBehaviour value = default, bool enableSynchronization = true)
             : base(value, enableSynchronization, new ElympicsGameObjectEqualityComparer())
         { }

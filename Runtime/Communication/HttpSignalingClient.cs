@@ -27,16 +27,27 @@ namespace Elympics
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();
 
-            var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
-
-            if (isCanceled)
+            try
+            {
+                var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
+                if (isCanceled)
+                    return new WebSignalingClientResponse
+                    {
+                        IsError = true,
+                        Text = "Operation cancelled.",
+                        Code = 499
+                    };
+                return HandleCompleted(result);
+            }
+            catch (Exception e)
+            {
                 return new WebSignalingClientResponse
                 {
                     IsError = true,
-                    Text = "Operation cancelled.",
+                    Text = e.Message,
+                    Code = 500
                 };
-
-            return HandleCompleted(result);
+            }
         }
 
         public UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string peerId, CancellationToken ct = default) =>
@@ -45,6 +56,7 @@ namespace Elympics
         private static WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
             var isError = webRequest.IsConnectionError() || webRequest.IsProtocolError();
+            var code = webRequest.responseCode;
             var text = webRequest.IsConnectionError()
                 ? webRequest.error
                 : webRequest.downloadHandler.text;
@@ -52,6 +64,7 @@ namespace Elympics
             {
                 IsError = isError,
                 Text = text,
+                Code = code
             };
         }
     }

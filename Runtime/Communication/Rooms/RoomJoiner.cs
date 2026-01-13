@@ -61,22 +61,23 @@ namespace Elympics
             bool isEphemeral,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null) =>
             SetupRoomTracking(new RoomJoiningState.Creating(roomName),
-                () => _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, competitivenessConfig));
+                () => _client.CreateRoom(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, customPlayerData, competitivenessConfig));
 
-        public UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null) =>
+        public UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null, IReadOnlyDictionary<string, string>? customPlayerData = null) =>
             joinCode != null
-                ? JoinRoom(joinCode, teamIndex)
-                : JoinRoom(roomId!.Value, teamIndex);
+                ? JoinRoom(joinCode, teamIndex, customPlayerData)
+                : JoinRoom(roomId!.Value, teamIndex, customPlayerData);
 
-        private async UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex) =>
+        private async UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData) =>
             await SetupRoomTracking(new RoomJoiningState.JoiningByJoinCode(joinCode),
-                () => _client.JoinRoom(joinCode, teamIndex));
+                () => _client.JoinRoom(joinCode, teamIndex, customPlayerData));
 
-        private async UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex) =>
+        private async UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData) =>
             await SetupRoomTracking(new RoomJoiningState.JoiningByRoomId(roomId),
-                () => _client.JoinRoom(roomId, teamIndex));
+                () => _client.JoinRoom(roomId, teamIndex, customPlayerData));
 
         private async UniTask<Guid> SetupRoomTracking(RoomJoiningState initialJoiningState, Func<UniTask<Guid>> mainOperationFactory, CancellationToken ct = default)
         {

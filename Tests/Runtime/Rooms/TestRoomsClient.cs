@@ -48,7 +48,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
+            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty, null);
             WsSessionMock.ResultToReturn = new RoomOperationResultDto(Guid.Empty, TestRoomGuid);
 
             // Act
@@ -67,7 +67,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
+            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty, null);
             RoomsClient.Session = null;
 
             // Act
@@ -86,7 +86,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator CreatingRoomShouldThrowIfIncompatibleResultIsReturned() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty);
+            var expectedMessage = new CreateRoomDto("test room name", true, false, "test queue", true, new Dictionary<string, string>(), new Dictionary<string, string>(), null, null, Guid.Empty, null);
             WsSessionMock.ResultToReturn = new OperationResultDto(Guid.Empty);
 
             // Act
@@ -106,7 +106,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomByIdShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null);
+            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null, null);
             WsSessionMock.ResultToReturn = new RoomOperationResultDto(Guid.Empty, TestRoomGuid);
 
             // Act
@@ -119,7 +119,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomByIdShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null);
+            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null, null);
             RoomsClient.Session = null;
 
             // Act
@@ -132,7 +132,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomByIdShouldThrowIfIncompatibleResultIsReturned() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null);
+            var expectedMessage = new JoinWithRoomIdDto(TestRoomGuid, null, null);
             WsSessionMock.ResultToReturn = new OperationResultDto(Guid.Empty);
 
             // Act
@@ -146,7 +146,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomUsingJoinCodeShouldExecuteCorrectly() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithJoinCodeDto("test join code", null);
+            var expectedMessage = new JoinWithJoinCodeDto("test join code", null, null);
             WsSessionMock.ResultToReturn = new RoomOperationResultDto(Guid.Empty, TestRoomGuid);
 
             // Act
@@ -159,7 +159,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomUsingJoinCodeShouldThrowIfThereIsNoSession() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithJoinCodeDto("test join code", null);
+            var expectedMessage = new JoinWithJoinCodeDto("test join code", null, null);
             RoomsClient.Session = null;
 
             // Act
@@ -172,7 +172,7 @@ namespace Elympics.Tests.Rooms
         [UnityTest]
         public IEnumerator JoiningRoomUsingJoinCodeShouldThrowIfIncompatibleResultIsReturned() => UniTask.ToCoroutine(async () =>
         {
-            var expectedMessage = new JoinWithJoinCodeDto("test join code", null);
+            var expectedMessage = new JoinWithJoinCodeDto("test join code", null, null);
             WsSessionMock.ResultToReturn = new OperationResultDto(Guid.Empty);
 
             // Act

@@ -44,7 +44,7 @@ namespace Elympics
         [SerializeField] private int maxAllowedLagInTicks = 15;
         [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private bool prediction = true;
-        [SerializeField] private int predictionLimitInTicks = 8;
+        [SerializeField] private int predictionLimitInTicks = 25;
 
         [SerializeField] private bool detailedNetworkLog;
 
@@ -134,6 +134,7 @@ namespace Elympics
 #endif
         }
 
+
         internal void ProcessElympicsConfigDataChanged() => DataChanged?.Invoke();
 
         public static bool GetUseWeb(bool defaultUseWeb)
@@ -193,11 +194,11 @@ namespace Elympics
         [Serializable]
         public class InitialUserData
         {
-            public string userId = "";
             public bool isBot;
             public double botDifficulty;
             public byte[] gameEngineData = Array.Empty<byte>();
             public float[] matchmakerData = Array.Empty<float>();
+            public List<CustomData> customDatas = new();
         }
 
         [Serializable]
@@ -205,6 +206,21 @@ namespace Elympics
         {
             public string queueName = "";
             public string regionName = "";
+            public List<TestRoomCustomData> roomCustomData = new();
+            public List<CustomData> customMatchmakingData = new();
+        }
+
+        [Serializable]
+        public class TestRoomCustomData
+        {
+            public List<CustomData> roomCustomData = new();
+        }
+
+        [Serializable]
+        public struct CustomData
+        {
+            public string key;
+            public string value;
         }
     }
 }

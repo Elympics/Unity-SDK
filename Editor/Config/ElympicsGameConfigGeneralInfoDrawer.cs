@@ -25,6 +25,7 @@ namespace Elympics
         private int _previousPlayers;
         private Object _previousSceneAsset;
         private bool _verifyGameScenePath;
+        private SerializedProperty _matchInitData;
 
         public event System.Action DataChanged;
 

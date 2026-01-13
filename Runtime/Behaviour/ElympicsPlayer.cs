@@ -43,7 +43,13 @@ namespace Elympics
 
         public static explicit operator int(ElympicsPlayer elympicsPlayer) => elympicsPlayer.playerIndex;
 
-        public override string ToString() => playerIndex.ToString();
+        public override string ToString() => playerIndex switch
+        {
+            AllValue => nameof(All),
+            WorldValue => nameof(World),
+            InvalidValue => nameof(Invalid),
+            _ => playerIndex.ToString()
+        };
 
         public bool Equals(ElympicsPlayer other) => playerIndex == other.playerIndex;
         public override bool Equals(object obj) => obj is ElympicsPlayer other && Equals(other);

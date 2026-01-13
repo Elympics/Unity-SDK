@@ -14,5 +14,6 @@ namespace MatchTcpLibrary
     {
         public bool IsError { get; set; }
         public string Text { get; set; }
+        public long Code { get; set; }
     }
 }

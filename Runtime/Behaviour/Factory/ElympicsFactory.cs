@@ -47,10 +47,10 @@ namespace Elympics
             _elympicsFactoryPartsToRemove = new List<ElympicsPlayer>();
         }
 
-        internal GameObject CreateInstance(string pathInResources, ElympicsPlayer player)
+        internal GameObject CreateInstance(string pathInResources, ElympicsPlayer player, InstantiatedTransformConfig? transformConfig)
         {
             var elympicsFactoryPart = GetOrCreateFactoryPart(player);
-            return elympicsFactoryPart.CreateInstance(pathInResources);
+            return elympicsFactoryPart.CreateInstance(pathInResources, transformConfig);
         }
 
         internal void DestroyInstance(GameObject go)
@@ -58,7 +58,7 @@ namespace Elympics
             if (!_playersObjects.TryGetValue(go, out var player))
             {
                 const string message = "Trying to destroy an object not instantiated by Elympics. "
-                    + "This may also be a result of using an incorrectly cached reference after reconciliation.";
+                    + "This may also be a result of using an incorrectly cached reference after reconciliation or trying to destroy the same object more than once.";
                 ElympicsLogger.LogError(message, go);
                 throw new ArgumentException(message, nameof(go));
             }
@@ -158,9 +158,9 @@ namespace Elympics
             _ = _elympicsFactoryParts.Remove(player);
         }
 
-        private GameObject Instantiate(ElympicsPlayer player, GameObject prefabGameObject)
+        private GameObject Instantiate(ElympicsPlayer player, GameObject prefabGameObject, InstantiatedTransformConfig? transformConfig)
         {
-            var instantiatedGameObject = Instantiate(prefabGameObject);
+            var instantiatedGameObject = transformConfig.HasValue ? Instantiate(prefabGameObject, transformConfig.Value.Position, transformConfig.Value.Rotation) : Instantiate(prefabGameObject);
             _playersObjects.Add(instantiatedGameObject, player);
             return instantiatedGameObject;
         }
@@ -171,48 +171,51 @@ namespace Elympics
             Destroy(go);
         }
 
-        internal bool ArePredictableStatesEqual(FactoryState historyState, FactoryState receivedState)
+        internal bool ArePredictableStatesEqual(FactoryState historyState, FactoryState receivedState, long historyTick, long lastSimulatedTick)
         {
-            return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player) && ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All);
+            return ArePredictableStatesEqualForPlayer(historyState, receivedState, _player, historyTick, lastSimulatedTick) && ArePredictableStatesEqualForPlayer(historyState, receivedState, ElympicsPlayer.All, historyTick, lastSimulatedTick);
         }
 
-        private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player)
+        private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
             var playerIndex = (int)player;
-            var historyStateData = FindStateData(historyState, playerIndex);
-            var receivedStateData = FindStateData(receivedState, playerIndex);
-
-            var historyStateDataExists = historyStateData != null;
-            var receivedStateDataExists = receivedStateData != null;
+            var historyStateDataExists = TryFindStateData(historyState, playerIndex, out var historyStateData);
+            var receivedStateDataExists = TryFindStateData(receivedState, playerIndex, out var receivedStateData);
 
             if (receivedStateDataExists && !historyStateDataExists)
+            {
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} in tick {historyTick} exists on server, but not on client. Last simulated tick: {lastSimulatedTick}. This means that client failed to predict that objects were spawned.");
                 return false;
+            }
             if (!receivedStateDataExists && historyStateDataExists)
+            {
+                ElympicsLogger.LogWarning($"Predictable factory state for player {player} in tick {historyTick} exists on client, but not on server. Last simulated tick: {lastSimulatedTick}. This means that client incorrectly predicted that objects were spawned (they were not spawned on the server).");
                 return false;
+            }
             if (!receivedStateDataExists && !historyStateDataExists)
                 return true;
 
-            using var ms1 = new MemoryStream(historyStateData.Value.Value);
-            using var br1 = new BinaryReader(ms1);
-            using var ms2 = new MemoryStream(receivedStateData.Value.Value);
-            using var br2 = new BinaryReader(ms2);
+            using var historyStateStream = new MemoryStream(historyStateData.Value);
+            using var historyStateReader = new BinaryReader(historyStateStream);
+            using var receivedStateStream = new MemoryStream(receivedStateData.Value);
+            using var receivedStateReader = new BinaryReader(receivedStateStream);
 
-            return _checkEqualsEnumerator.Equals(br1, br2) && _checkEqualsData.Equals(br1, br2);
+            return _checkEqualsEnumerator.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick) && _checkEqualsData.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick);
         }
 
-        private static KeyValuePair<int, byte[]>? FindStateData(FactoryState receivedState, int playerIndex)
+        private static bool TryFindStateData(FactoryState state, int playerIndex, out KeyValuePair<int, byte[]> data)
         {
-            KeyValuePair<int, byte[]>? stateData = null;
-            foreach (var partData in receivedState.Parts)
+            foreach (var partData in state.Parts)
             {
                 if (partData.Key != playerIndex)
                     continue;
 
-                stateData = partData;
-                break;
+                data = partData;
+                return true;
             }
 
-            return stateData;
+            data = default;
+            return false;
         }
     }
 }

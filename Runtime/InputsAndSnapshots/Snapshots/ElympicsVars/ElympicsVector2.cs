@@ -7,6 +7,11 @@ namespace Elympics
     [Serializable]
     public sealed class ElympicsVector2 : ElympicsVar<Vector2>
     {
+        //Parameterless constructor for Unity serialization
+        public ElympicsVector2() : this(default, true)
+        {
+        }
+
         public ElympicsVector2(Vector2 value = default, bool enableSynchronization = true, ElympicsVector2EqualityComparer comparer = null)
             : base(value, enableSynchronization, comparer ?? new ElympicsVector2EqualityComparer())
         {

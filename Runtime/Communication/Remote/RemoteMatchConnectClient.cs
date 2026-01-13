@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models.Public;
 using Elympics.ElympicsSystems.Internal;
+using Elympics.Mappers;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
@@ -22,6 +24,7 @@ namespace Elympics
 
         public event Action<string> MatchJoinedWithError;
         public event Action<Guid> MatchJoinedWithMatchId;
+        public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
 
         public event Action<Guid> MatchEndedWithMatchId;
 
@@ -191,6 +194,8 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
+            var logger = _logger.WithMethodName();
+            logger.Log("Connected And Synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _ = _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
@@ -203,13 +208,15 @@ namespace Elympics
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
         {
+            var logger = _logger.WithMethodName();
             if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
+                logger.Error($"Failed to authenticate user. {message.ErrorMessage}");
                 AuthenticatedUserMatchFailedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
                 return;
             }
-
+            logger.Log("User Authenticated.");
             AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
             _ = _gameServerClient.JoinMatchAsync();
@@ -240,8 +247,10 @@ namespace Elympics
                 return;
             }
 
+            var matchInitData = message.Map();
+
             logger.Log($"Match joined.");
-            MatchJoinedWithMatchId?.Invoke(message.MatchId != null ? new Guid(message.MatchId) : Guid.Empty);
+            MatchJoinedWithMatchInitData?.Invoke(matchInitData);
             _matchJoinedCallback?.Invoke();
         }
 

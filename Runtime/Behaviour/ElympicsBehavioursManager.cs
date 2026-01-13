@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Behaviour;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -206,7 +207,7 @@ namespace Elympics
             foreach (var stateData in fullSnapshot.Data)
             {
                 var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
-                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value);
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value, fullSnapshot.Tick);
 
                 foreach (var playerData in playerDatas)
                 {
@@ -266,11 +267,11 @@ namespace Elympics
 
         internal bool AreSnapshotsEqualOnPredictableBehaviours(ElympicsSnapshot historySnapshot, ElympicsSnapshot receivedSnapshot)
         {
-            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory))
-            {
-                ElympicsLogger.LogWarning("States not equal on factory.");
+            var historyTick = receivedSnapshot.Tick;
+            var lastSimulatedTick = _elympics.Tick;
+
+            if (!factory.ArePredictableStatesEqual(historySnapshot.Factory, receivedSnapshot.Factory, historyTick, lastSimulatedTick))
                 return false;
-            }
 
             var chosenElympicsBehaviours = _elympicsBehaviours.BehavioursPredictable;
             var finder = new NetworkBehaviourFinder(historySnapshot, receivedSnapshot);
@@ -283,10 +284,9 @@ namespace Elympics
                 if (!chosenElympicsBehaviours.TryGetValue(behaviourPair.NetworkId, out var elympicsBehaviour))
                     continue;
 
-                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond))
+                if (elympicsBehaviour.AreStatesEqual(behaviourPair.DataFromFirst, behaviourPair.DataFromSecond, historyTick))
                     continue;
 
-                ElympicsLogger.LogWarning($"States not equal for network ID {behaviourPair.NetworkId}.");
                 return false;
             }
             return true;
@@ -323,6 +323,12 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnPostReconcile();
+        }
+
+        internal void OnPredictionStatusChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        {
+            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+                elympicsBehaviour.OnPredictionStatsChanged(isBlocked, results);
         }
 
         internal void RefreshElympicsBehavioursView()
@@ -368,12 +374,17 @@ namespace Elympics
                 elympicsBehaviour.OnMatchJoinedFailed(errorMessage);
         }
 
-        internal void OnMatchJoined(Guid matchId)
+        public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
         {
+            #region ObsoleteCalls
+            // Obsolete - to be removed in future versions. Leave for backward compatibility.
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchJoined(matchId);
-        }
+                elympicsBehaviour.OnMatchJoined(matchInitData.MatchId);
+            #endregion
 
+            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
+                elympicsBehaviour.OnMatchJoinedWithInitData(matchInitData);
+        }
         internal void OnMatchEnded(Guid matchId)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)

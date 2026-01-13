@@ -356,7 +356,7 @@ namespace Elympics.Lobby
         {
             var result = await ResultUtils.WaitForResult<IFromLobby, Action<IFromLobby>>(timeout,
                 tcs => result => _ = tcs.TrySetResult(result),
-                $"{nameof(WaitForLobbyData)} {nameof(TData)} with {nameof(requestId)}: {requestId}",
+                $"{nameof(WaitForLobbyData)} {typeof(TData).Name} with {nameof(requestId)}: {requestId}",
                 handler => _dataResponses.TryAdd(requestId, handler),
                 _ => _dataResponses.TryRemove(requestId, out var _),
                 ct);

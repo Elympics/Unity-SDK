@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Elympics.Communication.Models.Public;
+using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 #if UNITY_EDITOR
@@ -322,9 +324,9 @@ namespace Elympics
             return metadata;
         }
 
-        internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState)
+        internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState, long tick)
         {
-            return _behaviourStateChangeFrequencyCalculator.UpdateNextStateAndCheckIfSendCanBeSkipped(currentState);
+            return _behaviourStateChangeFrequencyCalculator.UpdateNextStateAndCheckIfSendCanBeSkipped(currentState, tick);
         }
 
         internal void ApplyState(byte[] data, bool ignoreTolerance = false)
@@ -339,7 +341,7 @@ namespace Elympics
                 synchronizable.OnPostStateDeserialize();
         }
 
-        internal bool AreStatesEqual(byte[] data1, byte[] data2)
+        internal bool AreStatesEqual(byte[] data1, byte[] data2, long tick)
         {
             _memoryStream1.Write(data1, 0, data1.Length);
             _ = _memoryStream1.Seek(0, SeekOrigin.Begin);
@@ -349,13 +351,18 @@ namespace Elympics
             // bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
             // todo use in future for debug mode ~pprzestrzelski 06.06.2022
             var areEqual = true;
-            foreach (var backingField in _backingFields)
+            foreach ((var componentName, var backingFields) in _backingFieldsByComponents)
             {
-                if (!backingField.Equals(_binaryReader1, _binaryReader2))
+                foreach (var backingField in backingFields)
                 {
-                    if (!ElympicsBase.IsServer)
-                        ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]}", this);
-                    areEqual = false;
+                    if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
+                    {
+#if !ELYMPICS_PRODUCTION
+                        if (!ElympicsBase.IsServer)
+                            ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.", this);
+#endif
+                        areEqual = false;
+                    }
                 }
             }
             _ = _memoryStream1.Seek(0, SeekOrigin.Begin);
@@ -421,6 +428,13 @@ namespace Elympics
             foreach (var reconciliationHandler in _componentsContainer.ReconciliationHandlers)
                 reconciliationHandler.OnPostReconcile();
             _isReconciling = false;
+        }
+
+        public void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        {
+            var networkCondition = results.MapToNetworkNetworkCondition();
+            foreach (var reconciliationHandler in _componentsContainer.Updatables)
+                reconciliationHandler.PredictionStatusChanged(isBlocked, networkCondition);
         }
 
         #region ClientCallbacks
@@ -520,10 +534,18 @@ namespace Elympics
 
         internal void OnMatchJoined(Guid matchId)
         {
+#pragma warning disable CS0618 // Type or member is obsolete - call obsolete methods for backward compatibility
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnMatchJoined(matchId);
             foreach (var handler in _componentsContainer.ClientHandlers)
                 handler.OnMatchJoined(matchId.ToString());
+#pragma warning restore CS0618
+        }
+
+        public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
+        {
+            foreach (var handler in _componentsContainer.ClientHandlersGuid)
+                handler.OnMatchJoined(matchInitData);
         }
 
         internal void OnMatchJoinedFailed(string errorMessage)

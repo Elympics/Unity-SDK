@@ -1,4 +1,5 @@
 using System;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 
 namespace Elympics
@@ -44,9 +45,15 @@ namespace Elympics
         { }
 
         /// <summary>Called when the client successfully joins a match on a game server.</summary>
-        /// <param name="matchId">Match ID. Can be empty (this will be fixed in the next release).</param>
+        /// <param name="matchId">Match ID. Can be empty.</param>
+        [Obsolete("Use OnMatchJoined(MatchInitialData) instead.")]
         void OnMatchJoined(Guid matchId)
         { }
+
+        /// <summary>Called when the client successfully joins a match on a game server.</summary>
+        void OnMatchJoined(MatchInitialData matchInitialData)
+        { }
+
         void OnMatchJoinedFailed(string errorMessage)
         { }
         void OnMatchEnded(Guid matchId)

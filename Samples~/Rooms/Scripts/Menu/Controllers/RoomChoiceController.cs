@@ -139,7 +139,7 @@ public class RoomChoiceController : BaseWindow
         try
         {
             ManageWindowInteractability(false);
-            var room = await ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("solo", null, null, null, null, null, new CancellationTokenSource()!.Token);
+            var room = await ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("solo", null, null, null, null, null, null, new CancellationTokenSource()!.Token);
         }
         catch (Exception ex)
         {

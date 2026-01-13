@@ -403,6 +403,7 @@ namespace Elympics.Tests.Rooms
                 Arg.Any<bool>(),
                 Arg.Any<IReadOnlyDictionary<string, string>>(),
                 Arg.Any<IReadOnlyDictionary<string, string>>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
                 Arg.Any<CompetitivenessConfig?>(),
                 Arg.Any<CancellationToken>()).Returns(info =>
             {
@@ -429,6 +430,7 @@ namespace Elympics.Tests.Rooms
                 Arg.Any<bool>(),
                 Arg.Any<string>(),
                 Arg.Any<bool>(),
+                Arg.Any<IReadOnlyDictionary<string, string>>(),
                 Arg.Any<IReadOnlyDictionary<string, string>>(),
                 Arg.Any<IReadOnlyDictionary<string, string>>(),
                 Arg.Any<CompetitivenessConfig?>(),

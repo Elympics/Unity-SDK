@@ -15,9 +15,16 @@ namespace Elympics
                 IsBot = initialUserData.isBot,
                 BotDifficulty = initialUserData.botDifficulty,
                 MatchmakerData = initialUserData.matchmakerData,
-                GameEngineData = initialUserData.gameEngineData
+                GameEngineData = initialUserData.gameEngineData,
+                RoomId = null,
+                TeamIndex = null,
+                Telegramid = null,
+                Address = null,
+                Nickname = null,
+                NicknameType = null,
+                CustomData = initialUserData.customDatas.ToDictionary(x => x.key, x => x.value),
             })
-                .ToList();
+            .ToList();
         }
     }
 }

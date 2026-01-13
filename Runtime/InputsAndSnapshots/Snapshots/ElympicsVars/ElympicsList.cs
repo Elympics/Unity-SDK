@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Elympics
 {
     [Serializable]
-    public class ElympicsList<T> : ElympicsVar, IEnumerable<T> where T : ElympicsVar
+    public class ElympicsList<T> : ElympicsVar, IEnumerable<T> where T : ElympicsVar, new()
     {
         private Func<T> _factoryFunc;
         [SerializeField] private List<T> values;
@@ -20,6 +20,11 @@ namespace Elympics
         public bool IsReadOnly => false;
 
         public T this[int index] => values[index];
+
+        //Parameterless constructor for Unity serialization
+        public ElympicsList() : this(0) { }
+
+        public ElympicsList(int elementsInListAtStart = 0) : this(() => new T(), elementsInListAtStart, true) { }
 
         public ElympicsList(Func<T> factory, int elementsInListAtStart = 0, bool enableSynchronization = true) : base(enableSynchronization)
         {
@@ -62,17 +67,31 @@ namespace Elympics
             values.RemoveRange(values.Count - elementsToRemove, elementsToRemove);
         }
 
-        public override bool Equals(BinaryReader br1, BinaryReader br2)
+        public override bool Equals(BinaryReader br1, BinaryReader br2, out string difference1, out string difference2)
         {
+            difference1 = string.Empty;
+            difference2 = string.Empty;
             var list1Length = br1.ReadInt32();
             var list2Length = br2.ReadInt32();
 
             if (list1Length != list2Length)
+            {
+#if !ELYMPICS_PRODUCTION
+                difference1 = $"list with length of {list1Length}";
+                difference2 = $"list with length of {list2Length}";
+#endif
                 return false;
+            }
 
             for (var i = 0; i < list1Length; i++)
-                if (!_listElementInstanceForDataCompare.Equals(br1, br2))
+                if (!_listElementInstanceForDataCompare.Equals(br1, br2, out var elementDifference1, out var elementDifference2))
+                {
+#if !ELYMPICS_PRODUCTION
+                    difference1 = $"list with length of {list1Length} and value '{elementDifference1}' at index {i}";
+                    difference2 = $"list with length of {list2Length} and value '{elementDifference2}' at index {i}";
+#endif
                     return false;
+                }
 
             return true;
         }

@@ -21,9 +21,10 @@ namespace Elympics
             bool isEphemeral,
             IReadOnlyDictionary<string, string> customRoomData,
             IReadOnlyDictionary<string, string> customMatchmakingData,
+            IReadOnlyDictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? tournamentDetails = null);
 
-        public UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null);
+        UniTask<Guid> JoinRoom(Guid? roomId, string? joinCode, uint? teamIndex = null, IReadOnlyDictionary<string, string>? customPlayerData = null);
 
         void Reset();
     }

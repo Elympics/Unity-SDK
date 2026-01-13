@@ -24,7 +24,7 @@
         <ui:SliderInt picking-mode="Ignore" label="Max allowed lag" high-value="100" name="max-lag" show-input-field="true" binding-path="maxAllowedLagInTicks" tooltip="Limits the size of the prediction buffer" />
         <ui:SliderInt picking-mode="Ignore" label="Force jump threshold" high-value="100" name="force-jump-threshold" binding-path="forceJumpThresholdInTicks" show-input-field="true" tooltip="How far behind the desired tick client has to be to force a jump to that tick" />
         <ui:Toggle label="Prediction" name="prediction-toggle" binding-path="prediction" />
-        <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="25" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
+        <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="100" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
         <ui:Label text="Total prediction limit: XX ms" display-tooltip-when-elided="true" name="total-prediction-limit" tooltip="With input lag and snapshot sending period included" />
         <ui:IMGUIContainer name="client-connection-config" />
     </ui:Foldout>
@@ -67,8 +67,11 @@
             <ui:TextField label="Snapshot file path" name="snapshot-replay-path" tooltip="Path to a file or a folder where snapshots are stored." binding-path="snapshotFilePath" />
             <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="snapshot-replay-error" style="display: none;" />
         </ui:GroupBox>
-        <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
-            <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Reconcile" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
-        </ui:Foldout>
+        <ui:GroupBox name="halfremote-init-data">
+            <uie:PropertyField name="match-init-data" binding-path="testMatchData" />
+            <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
+                <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Match Init Data" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
+            </ui:Foldout>
+        </ui:GroupBox>
     </ui:Foldout>
 </ui:UXML>

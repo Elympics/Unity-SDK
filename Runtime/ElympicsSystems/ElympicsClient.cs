@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,17 +32,18 @@ namespace Elympics
 
         private bool _started;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
-        public IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
+        internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
         private IMatchClient _matchClient;
 
         // Prediction
-        internal IRoundTripTimeCalculator RoundTripTimeCalculator;
+        private IRoundTripTimeCalculator _roundTripTimeCalculator;
         private ClientTickCalculator _clientTickCalculator;
         private PredictionBuffer _predictionBuffer;
 
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot _lastReceivedSnapshot;
+        private long _latestReconciliationBaseSnapshotTick;
         private readonly ElympicsSnapshot _mergedSnapshot = new();
 
         private DateTime? _lastClientPrintNetworkConditions;
@@ -71,11 +73,11 @@ namespace Elympics
             _matchConnectClient = matchConnectClient;
             _matchClient = matchClient;
             elympicsBehavioursManager.InitializeInternal(this);
-            RoundTripTimeCalculator = new RoundTripTimeCalculator();
+            _roundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
 #endif
-            _clientTickCalculator = new ClientTickCalculator(RoundTripTimeCalculator, elympicsGameConfig);
+            _clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator, elympicsGameConfig);
             _predictionBuffer = new PredictionBuffer(elympicsGameConfig);
             _snapshotTracker = new ElympicsBehaviourFirstSnapshotTracker(elympicsBehavioursManager);
 
@@ -111,14 +113,14 @@ namespace Elympics
             _matchConnectClient.AuthenticatedUserMatchFailedWithError += OnAuthenticatedFailed;
             _matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(Guid.Empty);
             _matchConnectClient.AuthenticatedAsSpectatorWithError += OnAuthenticatedFailed;
-            _matchConnectClient.MatchJoinedWithMatchId += OnMatchJoined;
+            _matchConnectClient.MatchJoinedWithMatchInitData += OnMatchJoinedWithInitData;
             _matchConnectClient.MatchJoinedWithError += OnMatchJoinedFailed;
             _matchConnectClient.MatchEndedWithMatchId += OnMatchEnded;
         }
 
         private void OnConnectedWithSynchronizationData(TimeSynchronizationData data)
         {
-            RoundTripTimeCalculator.OnSynchronized(data);
+            _roundTripTimeCalculator.OnSynchronized(data);
             RaiseRttReceived(data);
             OnConnected(data);
         }
@@ -164,9 +166,7 @@ namespace Elympics
 
         internal override void ElympicsFixedUpdate()
         {
-            ElympicsSnapshot receivedSnapshot;
-            lock (LastReceivedSnapshotLock)
-                receivedSnapshot = _lastReceivedSnapshot;
+            var receivedSnapshot = _lastReceivedSnapshot;
 
             _clientTickCalculator.CalculateNextTick(receivedSnapshot.Tick, _previousTick, _lastDelayedInputTick, receivedSnapshot.TickStartUtc, TickStartUtc);
 
@@ -185,7 +185,10 @@ namespace Elympics
                 CheckIfPredictionIsBlocked();
 
                 using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
-                    ReconcileIfRequired(receivedSnapshot);
+                    ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == receivedSnapshot.Tick
+                        ? null
+                        : receivedSnapshot);
+                _latestReconciliationBaseSnapshotTick = receivedSnapshot.Tick;
 
                 using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
                     if (_clientTickCalculator.Results.CanPredict)
@@ -242,7 +245,10 @@ namespace Elympics
             if (_clientTickCalculator.Results.CanPredict)
             {
                 if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
+                {
                     ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                    PredictionStateChanged(false, _clientTickCalculator.Results);
+                }
                 _currentTicksWithoutPrediction = 0;
                 return;
             }
@@ -250,6 +256,7 @@ namespace Elympics
                 return;
 
             ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+            PredictionStateChanged(true, _clientTickCalculator.Results);
         }
 
         private void LogNetworkConditionsInInterval()
@@ -307,19 +314,24 @@ namespace Elympics
 
         private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot) => ElympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
 
-        private void ReconcileIfRequired(ElympicsSnapshot receivedSnapshot)
+        private void ReconcileIfRequired(ElympicsSnapshot? receivedSnapshot)
         {
+            if (receivedSnapshot == null)
+                return;
+
             if (Config.ReconciliationFrequency == ElympicsGameConfig.ReconciliationFrequencyEnum.Never)
                 return;
 
             var forceSnapShot = receivedSnapshot.Tick > Tick;
 
-            ElympicsSnapshot historySnapshot = null;
+            ElympicsSnapshot? historySnapshot = null;
             ElympicsSnapshot newSnapshot;
 
             if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
             {
-                _logger.WithMethodName().Warning($"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
+                _logger.WithMethodName()
+                    .Warning(
+                        $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                 return;
             }
 
@@ -335,6 +347,7 @@ namespace Elympics
                 //data for objects that happen to be in this snapshot
                 historySnapshot = receivedSnapshot;
                 newSnapshot = receivedSnapshot;
+                _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
             }
             else
             {
@@ -387,6 +400,8 @@ namespace Elympics
             _clientTickCalculator.Results.ReconciliationPerformed = true;
             ElympicsBehavioursManager.OnPostReconcile();
         }
+
+        private void PredictionStateChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results) => ElympicsBehavioursManager.OnPredictionStatusChanged(isBlocked, results);
 
         private void ApplyFullSnapshot(ElympicsSnapshot receivedSnapshot)
         {

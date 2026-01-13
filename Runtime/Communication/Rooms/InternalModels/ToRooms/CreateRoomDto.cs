@@ -19,7 +19,8 @@ namespace Elympics.Communication.Rooms.InternalModels.ToRooms
         [property: Key(7)] IReadOnlyDictionary<string, string> CustomMatchmakingData,
         [property: Key(8)] RoomTournamentDetails? TournamentDetails, // TODO: Start using this in SDK and on backend instead of CustomMatchmakingData ~kdudziak 2025-04-03
         [property: Key(9)] RoomBetDetailsSlim? BetDetailsSlim,
-        [property: Key(10)] Guid? RollingTournamentBetConfigId) : LobbyOperation
+        [property: Key(10)] Guid? RollingTournamentBetConfigId,
+        [property: Key(11)] IReadOnlyDictionary<string, string>? CustomPlayerData) : LobbyOperation
     {
         [SerializationConstructor]
         public CreateRoomDto(
@@ -33,7 +34,8 @@ namespace Elympics.Communication.Rooms.InternalModels.ToRooms
             IReadOnlyDictionary<string, string> customMatchmakingData,
             RoomTournamentDetails? tournamentDetails,
             RoomBetDetailsSlim? betDetailsSlim,
-            Guid? rollingTournamentBetConfigId) : this(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, tournamentDetails, betDetailsSlim, rollingTournamentBetConfigId) =>
+            Guid? rollingTournamentBetConfigId,
+            IReadOnlyDictionary<string, string>? customPlayerData) : this(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, tournamentDetails, betDetailsSlim, rollingTournamentBetConfigId, customPlayerData) =>
             OperationId = operationId;
 
         public virtual bool Equals(CreateRoomDto? other)
@@ -50,9 +52,10 @@ namespace Elympics.Communication.Rooms.InternalModels.ToRooms
                 && CustomRoomData.Count == other.CustomRoomData.Count
                 && CustomRoomData.IsTheSame(other.CustomRoomData)
                 && CustomMatchmakingData.Count == other.CustomMatchmakingData.Count
-                && CustomMatchmakingData.IsTheSame(other.CustomMatchmakingData);
+                && CustomMatchmakingData.IsTheSame(other.CustomMatchmakingData)
+                && CustomPlayerData.IsTheSame(other.CustomPlayerData);
         }
 
-        public override int GetHashCode() => HashCode.Combine(RoomName, QueueName, IsSingleTeam, IsPrivate, IsEphemeral, CustomRoomData.Count, CustomMatchmakingData.Count);
+        public override int GetHashCode() => HashCode.Combine(RoomName, QueueName, IsSingleTeam, IsPrivate, IsEphemeral, CustomRoomData.Count, CustomMatchmakingData.Count, CustomPlayerData?.Count);
     }
 }

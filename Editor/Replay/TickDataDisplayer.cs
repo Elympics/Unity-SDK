@@ -125,11 +125,6 @@ namespace Elympics.Editor.Replay
                 byteSum += SizeOfNetworkData(item);
             }
 
-            foreach (var item in snapshot.Factory.Parts)
-            {
-                byteSum += SizeOfNetworkData(item);
-            }
-
             return byteSum;
         }
 

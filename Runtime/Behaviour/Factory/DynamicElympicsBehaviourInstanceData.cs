@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using MessagePack;
 
 namespace Elympics
@@ -18,29 +17,6 @@ namespace Elympics
             ID = id;
             PrecedingNetworkIdEnumeratorValue = precedingNetworkIdEnumeratorValue;
             InstanceType = instanceType;
-        }
-
-        public byte[] Serialize()
-        {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-            bw.Write(ID);
-            bw.Write(PrecedingNetworkIdEnumeratorValue);
-            bw.Write(InstanceType);
-            return ms.ToArray();
-        }
-
-        public static DynamicElympicsBehaviourInstanceData DeserializeFrom(byte[] data)
-        {
-            using var ms = new MemoryStream(data);
-            using var br = new BinaryReader(ms);
-            var instanceData = new DynamicElympicsBehaviourInstanceData
-            {
-                ID = br.ReadInt32(),
-                PrecedingNetworkIdEnumeratorValue = br.ReadInt32(),
-                InstanceType = br.ReadString()
-            };
-            return instanceData;
         }
 
         public override bool Equals(object obj) => obj is DynamicElympicsBehaviourInstanceData data && Equals(data);

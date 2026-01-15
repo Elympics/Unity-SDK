@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Elympics
 {
     internal class FactoryNetworkIdEnumerator
@@ -8,21 +6,15 @@ namespace Elympics
 
         public FactoryNetworkIdEnumerator(int startNetworkId, int endNetworkId) => _enumerator = NetworkIdEnumerator.CreateNetworkIdEnumerator(startNetworkId, endNetworkId);
 
-        public void Serialize(BinaryWriter bw) => bw.Write(_enumerator.GetCurrent());
-
-        public void Deserialize(BinaryReader br) => _enumerator.MoveTo(br.ReadInt32());
-
-        public bool Equals(BinaryReader historyStateReader, BinaryReader receivedStateReader, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
+        public bool Equals(FactoryPartState historyPartState, FactoryPartState receivedPartState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
-            var historyCurrentNetworkId = historyStateReader.ReadInt32();
-            var receivedCurrentNetworkId = receivedStateReader.ReadInt32();
-            var areCurrentNetworkIdsEqual = historyCurrentNetworkId == receivedCurrentNetworkId;
+            var areCurrentNetworkIdsEqual = historyPartState.currentNetworkId == receivedPartState.currentNetworkId;
 
             if (!areCurrentNetworkIdsEqual)
             {
                 ElympicsLogger.LogWarning($"The predicted ID of the last object spawned for player {player} in local snapshot history for tick {historyTick} " +
                     $"doesn't match that received from the game server. " +
-                    $"ID in local history: {historyCurrentNetworkId} received ID: {receivedCurrentNetworkId}. " +
+                    $"ID in local history: {historyPartState.currentNetworkId} received ID: {receivedPartState.currentNetworkId}. " +
                     $"Last simulated tick: {lastSimulatedTick}. " +
                     $"This means that the client incorrectly predicted spawning/destruction of objects.");
             }

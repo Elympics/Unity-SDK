@@ -37,28 +37,24 @@ namespace Elympics
 
         internal bool IsEmpty => _instancesData.Count == 0;
 
-        internal byte[] GetState()
+        internal FactoryPartState GetState()
         {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-            _currentNetworkId.Serialize(bw);
-            _instancesData.Serialize(bw);
-            return ms.ToArray();
-        }
-
-        internal void ApplyState(byte[] data)
-        {
-            using (var ms = new MemoryStream(data))
-            using (var br = new BinaryReader(ms))
+            return new()
             {
-                _currentNetworkId.Deserialize(br);
-                _instancesData.Deserialize(br);
-            }
-
-            OnPostDataDeserialize();
+                currentNetworkId = _currentNetworkId.GetCurrent(),
+                dynamicInstancesState = _instancesData.GetState(),
+            };
         }
 
-        private void OnPostDataDeserialize()
+        internal void ApplyState(FactoryPartState data)
+        {
+            _currentNetworkId.MoveTo(data.currentNetworkId);
+            _instancesData.ApplyState(data.dynamicInstancesState);
+
+            OnPostStateApplied();
+        }
+
+        private void OnPostStateApplied()
         {
             var cachedNetworkIdEnumerator = _currentNetworkId.GetCurrent();
             if (!_instancesData.AreIncomingInstancesTheSame())

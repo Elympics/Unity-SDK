@@ -91,7 +91,7 @@ namespace Elympics.Tests
             {
                 Tick = 10,
                 TickStartUtc = DateTime.UtcNow,
-                Factory = new FactoryState { Parts = new List<KeyValuePair<int, byte[]>> { new(1, new byte[] { 1 }) } },
+                Factory = new FactoryState { Parts = new() { new(2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } }) } },
                 TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(),
                 Data = new List<KeyValuePair<int, byte[]>>(),
             };
@@ -101,7 +101,7 @@ namespace Elympics.Tests
             {
                 Tick = 20,
                 TickStartUtc = newTickStartUtc,
-                Factory = new FactoryState { Parts = new List<KeyValuePair<int, byte[]>> { new(2, new byte[] { 2 }) } },
+                Factory = new FactoryState { Parts = new() { new(2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } }), } },
                 TickToPlayersInputData = new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } },
                 Data = new List<KeyValuePair<int, byte[]>>(),
             };

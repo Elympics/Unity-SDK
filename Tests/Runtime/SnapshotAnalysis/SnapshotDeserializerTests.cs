@@ -66,7 +66,14 @@ namespace Elympics.Tests.SnapshotAnalysis
             {
                 Tick = tick,
                 TickStartUtc = DateTime.UtcNow,
-                Factory = new() { Parts = new() { new(27, new byte[] { 1, 2, 3 }), new(28, new byte[] { 1, 2, 3 }) } },
+                Factory = new()
+                {
+                    Parts = new()
+                    {
+                        new(27, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } }),
+                        new(33, new() { currentNetworkId = 34, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 35, new(36, 37, "tst2") } } } }),
+                    }
+                },
                 Data = new() { new(27, new byte[] { 1, 2, 3 }), new(28, new byte[] { 1, 2, 3 }) },
                 TickEndUtc = DateTime.UtcNow,
                 Metadata = new()

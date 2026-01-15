@@ -9,7 +9,7 @@ namespace Elympics
     [MessagePackObject]
     public class FactoryState : IEquatable<FactoryState>
     {
-        [Key(1)] public List<KeyValuePair<int, FactoryPartState>> Parts;
+        [Key(1)] public Dictionary<int, FactoryPartState> Parts;
 
         public override bool Equals(object obj) => Equals(obj as FactoryState);
         public bool Equals(FactoryState other) => other is not null && Parts.SequenceEqualNullable(other.Parts);

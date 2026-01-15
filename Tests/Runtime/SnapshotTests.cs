@@ -91,7 +91,7 @@ namespace Elympics.Tests
             {
                 Tick = 10,
                 TickStartUtc = DateTime.UtcNow,
-                Factory = new FactoryState { Parts = new() { new(2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } }) } },
+                Factory = new FactoryState { Parts = new() { { 2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } } } } },
                 TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(),
                 Data = new List<KeyValuePair<int, byte[]>>(),
             };
@@ -101,7 +101,7 @@ namespace Elympics.Tests
             {
                 Tick = 20,
                 TickStartUtc = newTickStartUtc,
-                Factory = new FactoryState { Parts = new() { new(2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } }), } },
+                Factory = new FactoryState { Parts = new() { { 2, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } } }, } },
                 TickToPlayersInputData = new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } },
                 Data = new List<KeyValuePair<int, byte[]>>(),
             };
@@ -111,7 +111,7 @@ namespace Elympics.Tests
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
             Assert.That(currentSnapshot.TickStartUtc, Is.EqualTo(newTickStartUtc));
             Assert.That(currentSnapshot.Factory.Parts.Count, Is.EqualTo(1));
-            Assert.That(currentSnapshot.Factory.Parts[0].Key, Is.EqualTo(2));
+            Assert.That(currentSnapshot.Factory.Parts.First().Key, Is.EqualTo(2));
             Assert.That(currentSnapshot.TickToPlayersInputData.Count, Is.EqualTo(1));
         }
 
@@ -375,6 +375,73 @@ namespace Elympics.Tests
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
             Assert.That(currentSnapshot.Data, Is.Not.Null);
             Assert.That(currentSnapshot.Data.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void MergeWithSnapshot_RemovesDataOfDestroyedObjects()
+        {
+            var currentSnapshot = new ElympicsSnapshot
+            {
+                Factory = new FactoryState
+                {
+                    Parts = new()
+                    {
+                        {
+                            2,
+                            new()
+                            {
+                                currentNetworkId = 32,
+                                dynamicInstancesState = new()
+                                {
+                                    instancesCounter = 2,
+                                    instances = new()
+                                    {
+                                        { 30, new(31, 32, "tst1") },
+                                        { 31, new(31, 32, "tst1") }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                Data = new List<KeyValuePair<int, byte[]>>()
+                {
+                    new(30, new byte[0]),
+                    new(31, new byte[0])
+                },
+            };
+
+            var receivedSnapshot = new ElympicsSnapshot
+            {
+                Factory = new FactoryState
+                {
+                    Parts = new()
+                    {
+                        {
+                            2,
+                            new()
+                            {
+                                currentNetworkId = 32,
+                                dynamicInstancesState = new()
+                                {
+                                    instancesCounter = 2,
+                                    instances = new()
+                                    {
+                                        { 31, new(31, 32, "tst1") }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                Data = new(),
+            };
+
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+
+            //Merge should cause data of object that was not present in received factory to be removed, because if object is not in factory it means it was destroyed
+            Assert.AreEqual(1, currentSnapshot.Data.Count);
+            Assert.AreEqual(31, currentSnapshot.Data.First().Key);
         }
     }
 }

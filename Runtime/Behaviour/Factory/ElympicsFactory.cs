@@ -74,7 +74,7 @@ namespace Elympics
         {
             var state = new FactoryState
             {
-                Parts = _elympicsFactoryParts.Select(x => new KeyValuePair<int, FactoryPartState>((int)x.Key, x.Value.GetState())).ToList()
+                Parts = new(_elympicsFactoryParts.Select(x => new KeyValuePair<int, FactoryPartState>((int)x.Key, x.Value.GetState())))
             };
 
             return state;
@@ -179,8 +179,8 @@ namespace Elympics
         private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
             var playerIndex = (int)player;
-            var historyStateDataExists = TryFindStateData(historyState, playerIndex, out var historyPartState);
-            var receivedStateDataExists = TryFindStateData(receivedState, playerIndex, out var receivedPartState);
+            var historyStateDataExists = historyState.Parts.TryGetValue(playerIndex, out var historyPartState);
+            var receivedStateDataExists = receivedState.Parts.TryGetValue(playerIndex, out var receivedPartState);
 
             if (receivedStateDataExists && !historyStateDataExists)
             {
@@ -196,21 +196,6 @@ namespace Elympics
                 return true;
 
             return _checkEqualsEnumerator.Equals(historyPartState, receivedPartState, player, historyTick, lastSimulatedTick) && _checkEqualsData.Equals(historyPartState, receivedPartState, player, historyTick, lastSimulatedTick);
-        }
-
-        private static bool TryFindStateData(FactoryState factoryState, int playerIndex, out FactoryPartState partState)
-        {
-            foreach (var partData in factoryState.Parts)
-            {
-                if (partData.Key != playerIndex)
-                    continue;
-
-                partState = partData.Value;
-                return true;
-            }
-
-            partState = default;
-            return false;
         }
     }
 }

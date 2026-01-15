@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Plugins.Elympics.Runtime.Util;
 using MessagePack;
-using PlayerId = System.Int32;
 
 namespace Elympics
 {
@@ -16,7 +15,8 @@ namespace Elympics
         [Key(1)] public DateTime TickStartUtc { get; set; }
         [Key(2)] public FactoryState Factory { get; set; }
         [Key(3)] public List<KeyValuePair<int, byte[]>> Data { get; set; }
-        [Key(4)] public Dictionary<PlayerId, TickToPlayerInput> TickToPlayersInputData { get; set; }
+        /// <summary>Key is PlayerId as int.</summary>
+        [Key(4)] public Dictionary<int, TickToPlayerInput> TickToPlayersInputData { get; set; }
 
         public ElympicsSnapshot()
         { }
@@ -35,7 +35,7 @@ namespace Elympics
         {
             Tick = other.Tick;
             TickStartUtc = other.TickStartUtc;
-            Factory = new() { Parts = other.Factory?.Parts?.ToList() };
+            Factory = new() { Parts = other.Factory?.Parts == null ? null : new(other.Factory.Parts) };
             Data = other.Data?.ToList();
         }
 
@@ -74,7 +74,6 @@ namespace Elympics
             }
         }
 
-
         internal void MergeWithSnapshot(ElympicsSnapshot receivedSnapshot)
         {
             if (receivedSnapshot == null)
@@ -84,7 +83,28 @@ namespace Elympics
             TickStartUtc = receivedSnapshot.TickStartUtc;
 
             if (receivedSnapshot.Factory != null)
-                Factory = new() { Parts = receivedSnapshot.Factory.Parts?.ToList() };
+            {
+                if (Data != null)
+                {
+                    foreach (var (playerId, factoryPartState) in Factory.Parts)
+                    {
+                        if (!receivedSnapshot.Factory.Parts.TryGetValue(playerId, out var receivedFactoryPartState))
+                            continue;
+
+                        foreach (var instanceId in factoryPartState.dynamicInstancesState.instances.Keys)
+                        {
+                            if (!receivedFactoryPartState.dynamicInstancesState.instances.ContainsKey(instanceId))
+                            {
+                                var index = Data.FindIndex(kvp => kvp.Key == instanceId);
+                                if (index >= 0)
+                                    Data.RemoveAt(index);
+                            }
+                        }
+                    }
+                }
+
+                Factory = new() { Parts = receivedSnapshot.Factory.Parts == null ? null : new(receivedSnapshot.Factory.Parts) };
+            }
 
             if (receivedSnapshot.TickToPlayersInputData != null)
                 TickToPlayersInputData = receivedSnapshot.TickToPlayersInputData;

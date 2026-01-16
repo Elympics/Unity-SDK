@@ -46,7 +46,8 @@ namespace Elympics
         /// </remarks>
         internal void FillMissingFrom(ElympicsSnapshot source)
         {
-            Data.EnsureCapacity(source.Data.Count);
+            if (Data != null && source.Data != null)
+                Data.EnsureCapacity(source.Data.Count);
 
             var minIndex = 0; //Both lists are ordered, so no need to go back to items that are already checked
             var originalCount = Data.Count; //We will add missing items to this list, but there is no need to take them into the account
@@ -82,29 +83,26 @@ namespace Elympics
             Tick = receivedSnapshot.Tick;
             TickStartUtc = receivedSnapshot.TickStartUtc;
 
-            if (receivedSnapshot.Factory != null)
+            if (Data != null)
             {
-                if (Data != null)
+                foreach (var (playerId, factoryPartState) in Factory.Parts)
                 {
-                    foreach (var (playerId, factoryPartState) in Factory.Parts)
-                    {
-                        if (!receivedSnapshot.Factory.Parts.TryGetValue(playerId, out var receivedFactoryPartState))
-                            continue;
+                    if (!receivedSnapshot.Factory.Parts.TryGetValue(playerId, out var receivedFactoryPartState))
+                        continue;
 
-                        foreach (var instanceId in factoryPartState.DynamicInstancesState.Instances.Keys)
+                    foreach (var instanceId in factoryPartState.DynamicInstancesState.Instances.Keys)
+                    {
+                        if (!receivedFactoryPartState.DynamicInstancesState.Instances.ContainsKey(instanceId))
                         {
-                            if (!receivedFactoryPartState.DynamicInstancesState.Instances.ContainsKey(instanceId))
-                            {
-                                var index = Data.FindIndex(kvp => kvp.Key == instanceId);
-                                if (index >= 0)
-                                    Data.RemoveAt(index);
-                            }
+                            var index = Data.FindIndex(kvp => kvp.Key == instanceId);
+                            if (index >= 0)
+                                Data.RemoveAt(index);
                         }
                     }
                 }
-
-                Factory = new(receivedSnapshot.Factory.Parts == null ? null : new(receivedSnapshot.Factory.Parts));
             }
+
+            Factory = new(new(receivedSnapshot.Factory.Parts));
 
             if (receivedSnapshot.TickToPlayersInputData != null)
                 TickToPlayersInputData = receivedSnapshot.TickToPlayersInputData;

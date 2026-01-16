@@ -4394,8 +4394,8 @@ namespace MessagePack.Formatters.Elympics
         {
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(2);
-            writer.Write(value.instancesCounter);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.DynamicElympicsBehaviourInstanceData>>(formatterResolver).Serialize(ref writer, value.instances, options);
+            writer.Write(value.InstancesCounter);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.DynamicElympicsBehaviourInstanceData>>(formatterResolver).Serialize(ref writer, value.Instances, options);
         }
 
         public global::Elympics.DynamicElympicsBehaviourInstancesDataState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4408,17 +4408,18 @@ namespace MessagePack.Formatters.Elympics
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.DynamicElympicsBehaviourInstancesDataState();
+            var __InstancesCounter__ = default(int);
+            var __Instances__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.DynamicElympicsBehaviourInstanceData>);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.instancesCounter = reader.ReadInt32();
+                        __InstancesCounter__ = reader.ReadInt32();
                         break;
                     case 1:
-                        ____result.instances = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.DynamicElympicsBehaviourInstanceData>>(formatterResolver).Deserialize(ref reader, options);
+                        __Instances__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.DynamicElympicsBehaviourInstanceData>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4426,6 +4427,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
+            var ____result = new global::Elympics.DynamicElympicsBehaviourInstancesDataState(__InstancesCounter__, __Instances__);
             reader.Depth--;
             return ____result;
         }
@@ -4744,26 +4746,30 @@ namespace MessagePack.Formatters.Elympics
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.ElympicsSnapshot();
+            var __TickStartUtc__ = default(global::System.DateTime);
+            var __Factory__ = default(global::Elympics.FactoryState);
+            var __Data__ = default(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>);
+            var __TickToPlayersInputData__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>);
+            var __Tick__ = default(long);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.Tick = reader.ReadInt64();
+                        __Tick__ = reader.ReadInt64();
                         break;
                     case 1:
-                        ____result.TickStartUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        __TickStartUtc__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.Factory = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
+                        __Factory__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 3:
-                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        __Data__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 4:
-                        ____result.TickToPlayersInputData = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
+                        __TickToPlayersInputData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4771,6 +4777,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
+            var ____result = new global::Elympics.ElympicsSnapshot(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__);
             reader.Depth--;
             return ____result;
         }
@@ -4854,32 +4861,38 @@ namespace MessagePack.Formatters.Elympics
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata();
+            var __TickEndUtc__ = default(global::System.DateTime);
+            var __Metadata__ = default(global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>);
+            var __TickStartUtc__ = default(global::System.DateTime);
+            var __Factory__ = default(global::Elympics.FactoryState);
+            var __Data__ = default(global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>);
+            var __TickToPlayersInputData__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>);
+            var __Tick__ = default(long);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.Tick = reader.ReadInt64();
+                        __Tick__ = reader.ReadInt64();
                         break;
                     case 1:
-                        ____result.TickStartUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        __TickStartUtc__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.Factory = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
+                        __Factory__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.FactoryState>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 3:
-                        ____result.Data = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
+                        __Data__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::System.Collections.Generic.KeyValuePair<int, byte[]>>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 4:
-                        ____result.TickToPlayersInputData = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
+                        __TickToPlayersInputData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 5:
-                        ____result.TickEndUtc = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
+                        __TickEndUtc__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 6:
-                        ____result.Metadata = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Deserialize(ref reader, options);
+                        __Metadata__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4887,6 +4900,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
+            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__, __TickEndUtc__, __Metadata__);
             reader.Depth--;
             return ____result;
         }
@@ -4899,8 +4913,8 @@ namespace MessagePack.Formatters.Elympics
         {
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(2);
-            writer.Write(value.currentNetworkId);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.DynamicElympicsBehaviourInstancesDataState>(formatterResolver).Serialize(ref writer, value.dynamicInstancesState, options);
+            writer.Write(value.CurrentNetworkId);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.DynamicElympicsBehaviourInstancesDataState>(formatterResolver).Serialize(ref writer, value.DynamicInstancesState, options);
         }
 
         public global::Elympics.FactoryPartState Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4913,17 +4927,18 @@ namespace MessagePack.Formatters.Elympics
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.FactoryPartState();
+            var __CurrentNetworkId__ = default(int);
+            var __DynamicInstancesState__ = default(global::Elympics.DynamicElympicsBehaviourInstancesDataState);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.currentNetworkId = reader.ReadInt32();
+                        __CurrentNetworkId__ = reader.ReadInt32();
                         break;
                     case 1:
-                        ____result.dynamicInstancesState = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.DynamicElympicsBehaviourInstancesDataState>(formatterResolver).Deserialize(ref reader, options);
+                        __DynamicInstancesState__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.DynamicElympicsBehaviourInstancesDataState>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4931,6 +4946,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
+            var ____result = new global::Elympics.FactoryPartState(__CurrentNetworkId__, __DynamicInstancesState__);
             reader.Depth--;
             return ____result;
         }
@@ -4941,15 +4957,8 @@ namespace MessagePack.Formatters.Elympics
 
         public void Serialize(ref global::MessagePack.MessagePackWriter writer, global::Elympics.FactoryState value, global::MessagePack.MessagePackSerializerOptions options)
         {
-            if (value == null)
-            {
-                writer.WriteNil();
-                return;
-            }
-
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(2);
-            writer.WriteNil();
+            writer.WriteArrayHeader(1);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.FactoryPartState>>(formatterResolver).Serialize(ref writer, value.Parts, options);
         }
 
@@ -4957,20 +4966,20 @@ namespace MessagePack.Formatters.Elympics
         {
             if (reader.TryReadNil())
             {
-                return null;
+                throw new global::System.InvalidOperationException("typecode is null, struct not supported");
             }
 
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.FactoryState();
+            var __Parts__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.FactoryPartState>);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
-                    case 1:
-                        ____result.Parts = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.FactoryPartState>>(formatterResolver).Deserialize(ref reader, options);
+                    case 0:
+                        __Parts__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.FactoryPartState>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -4978,6 +4987,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
+            var ____result = new global::Elympics.FactoryState(__Parts__);
             reader.Depth--;
             return ____result;
         }

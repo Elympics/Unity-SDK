@@ -62,26 +62,27 @@ namespace Elympics.Tests.SnapshotAnalysis
 
         private static ElympicsSnapshotWithMetadata CreateTestSnapshot(long tick)
         {
-            return new ElympicsSnapshotWithMetadata
-            {
-                Tick = tick,
-                TickStartUtc = DateTime.UtcNow,
-                Factory = new()
-                {
-                    Parts = new()
+            var tickStartUtc = DateTime.UtcNow;
+            var tickEndUtc = DateTime.UtcNow;
+            return new ElympicsSnapshotWithMetadata(
+                tick,
+                tickStartUtc,
+                new
+                (
+                    new()
                     {
-                        { 27, new() { currentNetworkId = 29, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 30, new(31, 32, "tst1") } } } } },
-                        { 33, new() { currentNetworkId = 34, dynamicInstancesState = new() { instancesCounter = 1, instances = new() { { 35, new(36, 37, "tst2") } } } } },
+                        { 27, new(29, new(1, new() { { 30, new(31, 32, "tst1") } } )) },
+                        { 33, new(34, new(1, new() { { 35, new(36, 37, "tst2") } } )) },
                     }
-                },
-                Data = new() { new(27, new byte[] { 1, 2, 3 }), new(28, new byte[] { 1, 2, 3 }) },
-                TickEndUtc = DateTime.UtcNow,
-                Metadata = new()
+                ),
+                new() { new(27, new byte[] { 1, 2, 3 }), new(28, new byte[] { 1, 2, 3 }) },
+                null,
+                tickEndUtc,
+                new()
                 {
                     new() { Name = "test", NetworkId = 27, PredictableFor = ElympicsPlayer.All, PrefabName = "test"},
                     new() { Name = "test", NetworkId = 28, PredictableFor = ElympicsPlayer.All, PrefabName = "test"}
-                }
-            };
+                });
         }
 
         private class ElympicsBehaviourMetadataComparer : IComparer

@@ -37,19 +37,12 @@ namespace Elympics
 
         internal bool IsEmpty => _instancesData.Count == 0;
 
-        internal FactoryPartState GetState()
-        {
-            return new()
-            {
-                currentNetworkId = _currentNetworkId.GetCurrent(),
-                dynamicInstancesState = _instancesData.GetState(),
-            };
-        }
+        internal FactoryPartState GetState() => new(_currentNetworkId.GetCurrent(), _instancesData.GetState());
 
         internal void ApplyState(FactoryPartState data)
         {
-            _currentNetworkId.MoveTo(data.currentNetworkId);
-            _instancesData.ApplyState(data.dynamicInstancesState);
+            _currentNetworkId.MoveTo(data.CurrentNetworkId);
+            _instancesData.ApplyState(data.DynamicInstancesState);
 
             OnPostStateApplied();
         }

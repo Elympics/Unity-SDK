@@ -18,21 +18,14 @@ namespace Elympics
 
         public DynamicElympicsBehaviourInstancesData(int instancesCounterStart) => _instancesCounter = instancesCounterStart;
 
-        public DynamicElympicsBehaviourInstancesDataState GetState()
-        {
-            return new()
-            {
-                instancesCounter = _instancesCounter,
-                instances = new(_instances)
-            };
-        }
+        public DynamicElympicsBehaviourInstancesDataState GetState() => new(_instancesCounter, new(_instances));
 
         public void ApplyState(DynamicElympicsBehaviourInstancesDataState data)
         {
-            _instancesCounter = data.instancesCounter;
+            _instancesCounter = data.InstancesCounter;
 
             _incomingInstances.Clear();
-            foreach ((var key, var value) in data.instances)
+            foreach ((var key, var value) in data.Instances)
             {
                 _incomingInstances.Add(key, value);
             }
@@ -100,15 +93,15 @@ namespace Elympics
 
         public bool Equals(FactoryPartState historyPartState, FactoryPartState receivedPartState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
-            var historyInstancesCount = historyPartState.dynamicInstancesState.instancesCounter;
-            var receivedInstancesCount = receivedPartState.dynamicInstancesState.instancesCounter;
+            var historyInstancesCount = historyPartState.DynamicInstancesState.InstancesCounter;
+            var receivedInstancesCount = receivedPartState.DynamicInstancesState.InstancesCounter;
 
             _equalsInstancesHistory.Clear();
-            foreach ((var key, var value) in historyPartState.dynamicInstancesState.instances)
+            foreach ((var key, var value) in historyPartState.DynamicInstancesState.Instances)
                 _equalsInstancesHistory.Add(key, value);
 
             _equalsInstancesReceived.Clear();
-            foreach ((var key, var value) in receivedPartState.dynamicInstancesState.instances)
+            foreach ((var key, var value) in receivedPartState.DynamicInstancesState.Instances)
                 _equalsInstancesReceived.Add(key, value);
 
             if (historyInstancesCount != receivedInstancesCount)

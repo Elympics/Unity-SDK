@@ -130,10 +130,8 @@ namespace Elympics
 
         internal ElympicsSnapshot GetLocalSnapshot()
         {
-            var snapshot = new ElympicsSnapshot
+            var snapshot = new ElympicsSnapshot(factory.GetState(), new List<KeyValuePair<int, byte[]>>(_elympicsBehaviours.Behaviours.Count))
             {
-                Factory = factory.GetState(),
-                Data = new List<KeyValuePair<int, byte[]>>(_elympicsBehaviours.Behaviours.Count),
                 TickStartUtc = _elympics.TickStartUtc
             };
 
@@ -191,14 +189,7 @@ namespace Elympics
 
             foreach (var playerData in playerDatas)
             {
-                var snapshot = new ElympicsSnapshot
-                {
-                    Factory = fullSnapshot.Factory,
-                    Data = new List<KeyValuePair<int, byte[]>>(fullSnapshot.Data.Count),
-                    TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(fullSnapshot.TickToPlayersInputData),
-                    Tick = fullSnapshot.Tick,
-                    TickStartUtc = fullSnapshot.TickStartUtc
-                };
+                var snapshot = ElympicsSnapshot.CreateDeepCopy(fullSnapshot);
                 _ = snapshot.TickToPlayersInputData.Remove((int)playerData.Player);
                 snapshots[playerData.Player] = snapshot;
             }

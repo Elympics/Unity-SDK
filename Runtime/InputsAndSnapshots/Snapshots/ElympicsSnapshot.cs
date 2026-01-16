@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,30 +16,28 @@ namespace Elympics
         [IgnoreMember] public sealed override long Tick { get; set; }
         [Key(1)] public DateTime TickStartUtc { get; set; }
         [Key(2)] public FactoryState Factory { get; set; }
-        [Key(3)] public List<KeyValuePair<int, byte[]>> Data { get; set; }
+        [Key(3)] public List<KeyValuePair<int, byte[]>>? Data { get; set; }
         /// <summary>Key is PlayerId as int.</summary>
-        [Key(4)] public Dictionary<int, TickToPlayerInput> TickToPlayersInputData { get; set; }
+        [Key(4)] public Dictionary<int, TickToPlayerInput>? TickToPlayersInputData { get; set; }
 
-        public ElympicsSnapshot()
-        { }
+        public ElympicsSnapshot(FactoryState factory, List<KeyValuePair<int, byte[]>>? data) : this(-1, default, factory, data, null) { }
 
-        protected ElympicsSnapshot(ElympicsSnapshot snapshot)
+        protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData) { }
+
+        [SerializationConstructor]
+        public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, List<KeyValuePair<int, byte[]>>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData)
         {
-            Tick = snapshot.Tick;
-            TickStartUtc = snapshot.TickStartUtc;
-            Factory = snapshot.Factory;
-            Data = snapshot.Data;
-            TickToPlayersInputData = snapshot.TickToPlayersInputData;
+            Tick = tick;
+            TickStartUtc = tickStartUtc;
+            Factory = factory;
+            Data = data;
+            TickToPlayersInputData = tickToPlayersInputData;
         }
+
+        public static ElympicsSnapshot CreateEmpty() => new(new FactoryState(new Dictionary<int, FactoryPartState>()), null);
 
         /// <summary>Turns this instance into non-recursive deep copy of <paramref name="other"/>.</summary>
-        internal void DeepCopyFrom(ElympicsSnapshot other)
-        {
-            Tick = other.Tick;
-            TickStartUtc = other.TickStartUtc;
-            Factory = new() { Parts = other.Factory?.Parts == null ? null : new(other.Factory.Parts) };
-            Data = other.Data?.ToList();
-        }
+        internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), other.Data.ToList(), new(other.TickToPlayersInputData));
 
         /// <summary>Add data for objects not contained in this snapshot that is present in <paramref name="source"/> to this snapshot.</summary>
         /// <remarks>
@@ -74,7 +74,7 @@ namespace Elympics
             }
         }
 
-        internal void MergeWithSnapshot(ElympicsSnapshot receivedSnapshot)
+        internal void MergeWithSnapshot(ElympicsSnapshot? receivedSnapshot)
         {
             if (receivedSnapshot == null)
                 return;
@@ -91,9 +91,9 @@ namespace Elympics
                         if (!receivedSnapshot.Factory.Parts.TryGetValue(playerId, out var receivedFactoryPartState))
                             continue;
 
-                        foreach (var instanceId in factoryPartState.dynamicInstancesState.instances.Keys)
+                        foreach (var instanceId in factoryPartState.DynamicInstancesState.Instances.Keys)
                         {
-                            if (!receivedFactoryPartState.dynamicInstancesState.instances.ContainsKey(instanceId))
+                            if (!receivedFactoryPartState.DynamicInstancesState.Instances.ContainsKey(instanceId))
                             {
                                 var index = Data.FindIndex(kvp => kvp.Key == instanceId);
                                 if (index >= 0)
@@ -103,7 +103,7 @@ namespace Elympics
                     }
                 }
 
-                Factory = new() { Parts = receivedSnapshot.Factory.Parts == null ? null : new(receivedSnapshot.Factory.Parts) };
+                Factory = new(receivedSnapshot.Factory.Parts == null ? null : new(receivedSnapshot.Factory.Parts));
             }
 
             if (receivedSnapshot.TickToPlayersInputData != null)

@@ -7,9 +7,6 @@ namespace Elympics
     [MessagePackObject]
     public class ElympicsSnapshotWithMetadata : ElympicsSnapshot
     {
-        public ElympicsSnapshotWithMetadata() =>
-            Metadata = new List<ElympicsBehaviourMetadata>();
-
         public ElympicsSnapshotWithMetadata(ElympicsSnapshot snapshot, DateTime tickEndUtc) : base(snapshot)
         {
             TickEndUtc = tickEndUtc;
@@ -20,6 +17,13 @@ namespace Elympics
         {
             TickEndUtc = tickEndUtc;
             Metadata = new List<ElympicsBehaviourMetadata>(snapshot.Metadata);
+        }
+
+        [SerializationConstructor]
+        public ElympicsSnapshotWithMetadata(long tick, DateTime tickStartUtc, FactoryState factory, List<KeyValuePair<int, byte[]>> data, Dictionary<int, TickToPlayerInput> tickToPlayersInputData, DateTime tickEndUtc, List<ElympicsBehaviourMetadata> metadata) : base(tick, tickStartUtc, factory, data, tickToPlayersInputData)
+        {
+            TickEndUtc = tickEndUtc;
+            Metadata = metadata;
         }
 
         [Key(5)] public DateTime TickEndUtc { get; set; }

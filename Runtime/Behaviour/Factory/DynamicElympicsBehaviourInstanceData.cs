@@ -1,16 +1,14 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using MessagePack;
 
 namespace Elympics
 {
-    [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Global")]
     [MessagePackObject]
-    public struct DynamicElympicsBehaviourInstanceData : IEquatable<DynamicElympicsBehaviourInstanceData>
+    public readonly struct DynamicElympicsBehaviourInstanceData : IEquatable<DynamicElympicsBehaviourInstanceData>
     {
-        [Key(0)] public int ID;
-        [Key(1)] public int PrecedingNetworkIdEnumeratorValue;
-        [Key(2)] public string InstanceType;
+        [Key(0)] public readonly int ID;
+        [Key(1)] public readonly int PrecedingNetworkIdEnumeratorValue;
+        [Key(2)] public readonly string InstanceType;
 
         public DynamicElympicsBehaviourInstanceData(int id, int precedingNetworkIdEnumeratorValue, string instanceType)
         {

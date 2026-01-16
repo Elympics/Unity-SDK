@@ -44,7 +44,7 @@ namespace Elympics
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot _lastReceivedSnapshot;
         private long _latestReconciliationBaseSnapshotTick;
-        private readonly ElympicsSnapshot _serverWorldState = new();
+        private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;

@@ -70,15 +70,7 @@ namespace Elympics
                 RemoveFactoryPart(player);
         }
 
-        internal FactoryState GetState()
-        {
-            var state = new FactoryState
-            {
-                Parts = new(_elympicsFactoryParts.Select(x => new KeyValuePair<int, FactoryPartState>((int)x.Key, x.Value.GetState())))
-            };
-
-            return state;
-        }
+        internal FactoryState GetState() => new(_elympicsFactoryParts.ToDictionary(x => (int)x.Key, x => x.Value.GetState()));
 
         internal void ApplyState(FactoryState state, HashSet<int> playerIndexesIncludeOnly = null, HashSet<int> playerIndexesToExclude = null)
         {

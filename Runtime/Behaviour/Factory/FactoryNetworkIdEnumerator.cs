@@ -8,13 +8,13 @@ namespace Elympics
 
         public bool Equals(FactoryPartState historyPartState, FactoryPartState receivedPartState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
-            var areCurrentNetworkIdsEqual = historyPartState.currentNetworkId == receivedPartState.currentNetworkId;
+            var areCurrentNetworkIdsEqual = historyPartState.CurrentNetworkId == receivedPartState.CurrentNetworkId;
 
             if (!areCurrentNetworkIdsEqual)
             {
                 ElympicsLogger.LogWarning($"The predicted ID of the last object spawned for player {player} in local snapshot history for tick {historyTick} " +
                     $"doesn't match that received from the game server. " +
-                    $"ID in local history: {historyPartState.currentNetworkId} received ID: {receivedPartState.currentNetworkId}. " +
+                    $"ID in local history: {historyPartState.CurrentNetworkId} received ID: {receivedPartState.CurrentNetworkId}. " +
                     $"Last simulated tick: {lastSimulatedTick}. " +
                     $"This means that the client incorrectly predicted spawning/destruction of objects.");
             }

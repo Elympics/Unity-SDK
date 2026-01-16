@@ -130,7 +130,7 @@ namespace Elympics
 
         internal ElympicsSnapshot GetLocalSnapshot()
         {
-            var snapshot = new ElympicsSnapshot(factory.GetState(), new List<KeyValuePair<int, byte[]>>(_elympicsBehaviours.Behaviours.Count))
+            var snapshot = new ElympicsSnapshot(factory.GetState(), new Dictionary<int, byte[]>(_elympicsBehaviours.Behaviours.Count))
             {
                 TickStartUtc = _elympics.TickStartUtc
             };
@@ -141,7 +141,7 @@ namespace Elympics
                 if (!elympicsBehaviour.HasAnyState)
                     continue;
 
-                snapshot.Data.Add(new KeyValuePair<int, byte[]>(networkId, elympicsBehaviour.GetState()));
+                snapshot.Data.Add(networkId, elympicsBehaviour.GetState());
             }
 
             return snapshot;
@@ -195,10 +195,10 @@ namespace Elympics
             }
 
             //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
-            foreach (var stateData in fullSnapshot.Data)
+            foreach (var (id, state) in fullSnapshot.Data)
             {
-                var elympicsBehaviour = _elympicsBehaviours.Behaviours[stateData.Key];
-                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(stateData.Value, fullSnapshot.Tick);
+                var elympicsBehaviour = _elympicsBehaviours.Behaviours[id];
+                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(state, fullSnapshot.Tick);
 
                 foreach (var playerData in playerDatas)
                 {
@@ -208,7 +208,7 @@ namespace Elympics
                     if (!elympicsBehaviour.IsVisibleTo(playerData.Player))
                         continue;
 
-                    snapshots[playerData.Player].Data.Add(stateData);
+                    snapshots[playerData.Player].Data.Add(id, state);
                 }
             }
 

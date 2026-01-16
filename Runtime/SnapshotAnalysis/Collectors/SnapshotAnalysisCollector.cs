@@ -70,10 +70,10 @@ namespace Elympics.SnapshotAnalysis
                         if (!copyCreated)
                         {
                             snapshotToStore = new ElympicsSnapshotWithMetadata(currentSnapshot, currentSnapshot.TickEndUtc);
-                            snapshotToStore.Data = new List<KeyValuePair<int, byte[]>>(snapshotToStore.Data);
+                            snapshotToStore.Data = new Dictionary<int, byte[]>(snapshotToStore.Data);
                             copyCreated = true;
                         }
-                        snapshotToStore.Data[behaviourPair.IndexFromSecond] = new KeyValuePair<int, byte[]>(behaviourPair.NetworkId, null!);
+                        snapshotToStore.Data![behaviourPair.NetworkId] = null!;
                     }
                 }
             }

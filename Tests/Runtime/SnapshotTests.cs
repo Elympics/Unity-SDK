@@ -21,12 +21,12 @@ namespace Elympics.Tests
             // "server" snapshot that might not contain all objects
             var snapshot = new ElympicsSnapshot(
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                initialNetworkIds.Select(networkId => new KeyValuePair<int, byte[]>(networkId, Array.Empty<byte>())).ToList());
+                initialNetworkIds.ToDictionary(networkId => networkId, networkId => Array.Empty<byte>()));
 
             // "local" snapshot that has data of all objects
             var source = new ElympicsSnapshot(
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                newNetworkIds.Select(networkId => new KeyValuePair<int, byte[]>(networkId, Array.Empty<byte>())).ToList());
+                newNetworkIds.ToDictionary(networkId => networkId, networkId => Array.Empty<byte>()));
 
             snapshot.FillMissingFrom(source);
 
@@ -42,7 +42,7 @@ namespace Elympics.Tests
                 10,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>> { new(1, new byte[] { 1, 2, 3 }) },
+                new Dictionary<int, byte[]> { { 1, new byte[] { 1, 2, 3 } } },
                 null);
 
             var originalTick = currentSnapshot.Tick;
@@ -63,7 +63,7 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>> { new(1, new byte[] { 1 }), new(2, new byte[] { 2 }) },
+                new Dictionary<int, byte[]> { { 1, new byte[] { 1 } }, { 2, new byte[] { 2 } } },
                 null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
@@ -81,7 +81,7 @@ namespace Elympics.Tests
                 10,
                 DateTime.UtcNow,
                 new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
-                new List<KeyValuePair<int, byte[]>>(),
+                new Dictionary<int, byte[]>(),
                 new Dictionary<int, TickToPlayerInput>());
 
             var newTickStartUtc = DateTime.UtcNow.AddSeconds(10);
@@ -89,7 +89,7 @@ namespace Elympics.Tests
                 20,
                 newTickStartUtc,
                 new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
-                new List<KeyValuePair<int, byte[]>>(),
+                new Dictionary<int, byte[]>(),
                 new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } });
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
@@ -108,11 +108,11 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 1 }),
-                    new(2, new byte[] { 2, 2 }),
-                    new(3, new byte[] { 3, 3 }),
+                    { 1, new byte[] { 1, 1 } },
+                    { 2, new byte[] { 2, 2 } },
+                    { 3, new byte[] { 3, 3 } },
                 },
                 null);
 
@@ -120,10 +120,10 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 10, 10 }),
-                    new(3, new byte[] { 30, 30 }),
+                    { 1, new byte[] { 10, 10 } },
+                    { 3, new byte[] { 30, 30 } },
                 },
                 null);
 
@@ -144,10 +144,10 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
-                    new(2, new byte[] { 2 }),
+                    { 1, new byte[] { 1 } },
+                    { 2, new byte[] { 2 } },
                 },
                 null);
 
@@ -155,10 +155,10 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(3, new byte[] { 3 }),
-                    new(4, new byte[] { 4 }),
+                    { 3, new byte[] { 3 } },
+                    { 4, new byte[] { 4 } },
                 },
                 null);
 
@@ -177,12 +177,12 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 1, 1 }),     // Will stay UNTOUCHED
-                    new(2, new byte[] { 2, 2, 2 }),     // Will be REPLACED
-                    new(3, new byte[] { 3, 3, 3 }),     // Will stay UNTOUCHED
-                    new(4, new byte[] { 4, 4, 4 }),     // Will be REPLACED
+                    { 1, new byte[] { 1, 1, 1 } },     // Will stay UNTOUCHED
+                    { 2, new byte[] { 2, 2, 2 } },     // Will be REPLACED
+                    { 3, new byte[] { 3, 3, 3 } },     // Will stay UNTOUCHED
+                    { 4, new byte[] { 4, 4, 4 } },     // Will be REPLACED
                 },
                 null);
 
@@ -191,12 +191,12 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(2, new byte[] { 20, 20, 20 }), // REPLACE existing ID 2
-                    new(4, new byte[] { 40, 40, 40 }), // REPLACE existing ID 4
-                    new(5, new byte[] { 50, 50, 50 }), // INSERT new ID 5
-                    new(6, new byte[] { 60, 60, 60 }), // INSERT new ID 6
+                    { 2, new byte[] { 20, 20, 20 } }, // REPLACE existing ID 2
+                    { 4, new byte[] { 40, 40, 40 } }, // REPLACE existing ID 4
+                    { 5, new byte[] { 50, 50, 50 } }, // INSERT new ID 5
+                    { 6, new byte[] { 60, 60, 60 } }, // INSERT new ID 6
                 },
                 null);
 
@@ -232,11 +232,11 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 100, 101, 102 }),
-                    new(2, new byte[] { 200, 201, 202 }),
-                    new(3, new byte[] { 250, 251, 252 }),
+                    { 1, new byte[] { 100, 101, 102 } },
+                    { 2, new byte[] { 200, 201, 202 } },
+                    { 3, new byte[] { 250, 251, 252 } },
                 },
                 null);
 
@@ -245,10 +245,10 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(10, new byte[] { 10 }),
-                    new(20, new byte[] { 20 }),
+                    { 10, new byte[] { 10 } },
+                    { 20, new byte[] { 20 } },
                 },
                 null);
 
@@ -277,11 +277,11 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 2, 3 }),
-                    new(2, new byte[] { 4, 5, 6 }),
-                    new(3, new byte[] { 7, 8, 9 }),
+                    { 1, new byte[] { 1, 2, 3 } },
+                    { 2, new byte[] { 4, 5, 6 } },
+                    { 3, new byte[] { 7, 8, 9 } },
                 },
                 null);
 
@@ -290,11 +290,11 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 111 }),
-                    new(2, new byte[] { 222 }),
-                    new(3, new byte[] { 233 }),
+                    { 1, new byte[] { 111 } },
+                    { 2, new byte[] { 222 } },
+                    { 3, new byte[] { 233 } },
                 },
                 null);
 
@@ -322,10 +322,10 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
-                    new(2, new byte[] { 2 }),
+                    { 1, new byte[] { 1 } },
+                    { 2, new byte[] { 2 } },
                 },
                 null);
 
@@ -333,7 +333,7 @@ namespace Elympics.Tests
                 20,
                 DateTime.UtcNow,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>(),
+                new Dictionary<int, byte[]>(),
                 null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
@@ -350,9 +350,9 @@ namespace Elympics.Tests
                 10,
                 default,
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
-                new List<KeyValuePair<int, byte[]>>
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
+                    { 1, new byte[] { 1 } },
                 },
                 null);
 
@@ -381,10 +381,10 @@ namespace Elympics.Tests
                     { 30, new(30, 29, "path1") },
                     { 31, new(31, 30, "path2") }
                 })) } }),
-                new List<KeyValuePair<int, byte[]>>()
+                new Dictionary<int, byte[]>
                 {
-                    new(30, new byte[0]),
-                    new(31, new byte[0])
+                    { 30, new byte[0] },
+                    { 31, new byte[0] }
                 },
                 null);
 
@@ -395,7 +395,7 @@ namespace Elympics.Tests
                 {
                     { 31, new(31, 30, "path2") }
                 })) } }),
-                new(),
+                new Dictionary<int, byte[]>(),
                 null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);

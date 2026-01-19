@@ -43,7 +43,6 @@ namespace Elympics
         [SerializeField] private int inputToSendBufferSize = InputsToSendBufferSizeDefault;
         [SerializeField] private int maxAllowedLagInTicks = 15;
         [SerializeField] private int forceJumpThresholdInTicks = 6;
-        [SerializeField] private bool prediction = true;
         [SerializeField] private int predictionLimitInTicks = 25;
 
         [SerializeField] private bool detailedNetworkLog;
@@ -84,7 +83,6 @@ namespace Elympics
                 ? ApplicationParameters.Parameters.ShouldUseWebRtc.GetValue(useWeb)
                 : !ApplicationParameters.Parameters.ShouldUseTcpUdp.GetValue(!useWeb);
 #endif
-        public bool Prediction => prediction;
         public bool ReconnectEnabled => enableReconnect;
         public ClientConnectionSettings ConnectionConfig => connectionConfig;
 

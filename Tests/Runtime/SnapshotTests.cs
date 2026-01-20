@@ -19,16 +19,14 @@ namespace Elympics.Tests
         public void FillMissingFrom(int[] initialNetworkIds, int[] newNetworkIds)
         {
             // "server" snapshot that might not contain all objects
-            var snapshot = new ElympicsSnapshot
-            {
-                Data = initialNetworkIds.Select(networkId => new KeyValuePair<int, byte[]>(networkId, Array.Empty<byte>())).ToList(),
-            };
+            var snapshot = new ElympicsSnapshot(
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                initialNetworkIds.ToDictionary(networkId => networkId, networkId => Array.Empty<byte>()));
 
             // "local" snapshot that has data of all objects
-            var source = new ElympicsSnapshot
-            {
-                Data = newNetworkIds.Select(networkId => new KeyValuePair<int, byte[]>(networkId, Array.Empty<byte>())).ToList(),
-            };
+            var source = new ElympicsSnapshot(
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                newNetworkIds.ToDictionary(networkId => networkId, networkId => Array.Empty<byte>()));
 
             snapshot.FillMissingFrom(source);
 
@@ -40,12 +38,12 @@ namespace Elympics.Tests
         [Test]
         public void MergeWithSnapshot_WithNullSnapshot_DoesNothing()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>> { new(1, new byte[] { 1, 2, 3 }) },
-            };
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]> { { 1, new byte[] { 1, 2, 3 } } },
+                null);
 
             var originalTick = currentSnapshot.Tick;
             var originalData = currentSnapshot.Data;
@@ -59,90 +57,79 @@ namespace Elympics.Tests
         [Test]
         public void MergeWithSnapshot_WithNullCurrentData_CopiesReceivedData()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = null,
-            };
+            var currentSnapshot = new ElympicsSnapshot(10, default, new FactoryState(new Dictionary<int, FactoryPartState>()), null, null);
 
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
-                {
-                    new(1, new byte[] { 1 }),
-                    new(2, new byte[] { 2 }),
-                },
-            };
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]> { { 1, new byte[] { 1 } }, { 2, new byte[] { 2 } } },
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
             Assert.That(currentSnapshot.Data, Is.Not.Null);
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(2));
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(2));
             CollectionAssert.AreEquivalent(new[] { 1, 2 }, currentSnapshot.Data.Select(kvp => kvp.Key));
         }
 
         [Test]
         public void MergeWithSnapshot_UpdatesBasicFields()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                TickStartUtc = DateTime.UtcNow,
-                Factory = new FactoryState { Parts = new List<KeyValuePair<int, byte[]>> { new(1, new byte[] { 1 }) } },
-                TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>(),
-                Data = new List<KeyValuePair<int, byte[]>>(),
-            };
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                DateTime.UtcNow,
+                new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
+                new Dictionary<int, byte[]>(),
+                new Dictionary<int, TickToPlayerInput>());
 
             var newTickStartUtc = DateTime.UtcNow.AddSeconds(10);
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = newTickStartUtc,
-                Factory = new FactoryState { Parts = new List<KeyValuePair<int, byte[]>> { new(2, new byte[] { 2 }) } },
-                TickToPlayersInputData = new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } },
-                Data = new List<KeyValuePair<int, byte[]>>(),
-            };
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                newTickStartUtc,
+                new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
+                new Dictionary<int, byte[]>(),
+                new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } });
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
             Assert.That(currentSnapshot.TickStartUtc, Is.EqualTo(newTickStartUtc));
             Assert.That(currentSnapshot.Factory.Parts.Count, Is.EqualTo(1));
-            Assert.That(currentSnapshot.Factory.Parts[0].Key, Is.EqualTo(2));
-            Assert.That(currentSnapshot.TickToPlayersInputData.Count, Is.EqualTo(1));
+            Assert.That(currentSnapshot.Factory.Parts.First().Key, Is.EqualTo(2));
+            Assert.That(currentSnapshot.TickToPlayersInputData!.Count, Is.EqualTo(1));
         }
 
         [Test]
         public void MergeWithSnapshot_UpdatesExistingNetworkIds()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 1 }),
-                    new(2, new byte[] { 2, 2 }),
-                    new(3, new byte[] { 3, 3 }),
+                    { 1, new byte[] { 1, 1 } },
+                    { 2, new byte[] { 2, 2 } },
+                    { 3, new byte[] { 3, 3 } },
                 },
-            };
+                null);
 
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 10, 10 }),
-                    new(3, new byte[] { 30, 30 }),
+                    { 1, new byte[] { 10, 10 } },
+                    { 3, new byte[] { 30, 30 } },
                 },
-            };
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(3));
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(3));
 
             var dataDict = currentSnapshot.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             Assert.That(dataDict[1], Is.EqualTo(new byte[] { 10, 10 }));
@@ -153,30 +140,31 @@ namespace Elympics.Tests
         [Test]
         public void MergeWithSnapshot_AddsNewNetworkIds()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
-                    new(2, new byte[] { 2 }),
+                    { 1, new byte[] { 1 } },
+                    { 2, new byte[] { 2 } },
                 },
-            };
+                null);
 
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(3, new byte[] { 3 }),
-                    new(4, new byte[] { 4 }),
+                    { 3, new byte[] { 3 } },
+                    { 4, new byte[] { 4 } },
                 },
-            };
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(4));
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(4));
             CollectionAssert.AreEquivalent(new[] { 1, 2, 3, 4 }, currentSnapshot.Data.Select(kvp => kvp.Key));
         }
 
@@ -185,36 +173,37 @@ namespace Elympics.Tests
         {
             // MAIN TEST: Verifies all three core behaviors in one comprehensive test
             // Current snapshot has network IDs: 1, 2, 3, 4
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 1, 1 }),     // Will stay UNTOUCHED
-                    new(2, new byte[] { 2, 2, 2 }),     // Will be REPLACED
-                    new(3, new byte[] { 3, 3, 3 }),     // Will stay UNTOUCHED
-                    new(4, new byte[] { 4, 4, 4 }),     // Will be REPLACED
+                    { 1, new byte[] { 1, 1, 1 } },     // Will stay UNTOUCHED
+                    { 2, new byte[] { 2, 2, 2 } },     // Will be REPLACED
+                    { 3, new byte[] { 3, 3, 3 } },     // Will stay UNTOUCHED
+                    { 4, new byte[] { 4, 4, 4 } },     // Will be REPLACED
                 },
-            };
+                null);
 
             // Received snapshot has network IDs: 2, 4, 5, 6
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(2, new byte[] { 20, 20, 20 }), // REPLACE existing ID 2
-                    new(4, new byte[] { 40, 40, 40 }), // REPLACE existing ID 4
-                    new(5, new byte[] { 50, 50, 50 }), // INSERT new ID 5
-                    new(6, new byte[] { 60, 60, 60 }), // INSERT new ID 6
+                    { 2, new byte[] { 20, 20, 20 } }, // REPLACE existing ID 2
+                    { 4, new byte[] { 40, 40, 40 } }, // REPLACE existing ID 4
+                    { 5, new byte[] { 50, 50, 50 } }, // INSERT new ID 5
+                    { 6, new byte[] { 60, 60, 60 } }, // INSERT new ID 6
                 },
-            };
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             // Verify total count: 2 untouched + 2 replaced + 2 inserted = 6
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(6), "Should have all network IDs: 2 untouched, 2 replaced, 2 inserted");
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(6), "Should have all network IDs: 2 untouched, 2 replaced, 2 inserted");
 
             // Verify all expected network IDs are present
             var networkIds = currentSnapshot.Data.Select(kvp => kvp.Key).ToArray();
@@ -239,33 +228,34 @@ namespace Elympics.Tests
         public void MergeWithSnapshot_KeepsUntouchedData_WhenReceivedHasOnlyNewIds()
         {
             // Focus on verifying UNTOUCHED behavior
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 100, 101, 102 }),
-                    new(2, new byte[] { 200, 201, 202 }),
-                    new(3, new byte[] { 250, 251, 252 }),
+                    { 1, new byte[] { 100, 101, 102 } },
+                    { 2, new byte[] { 200, 201, 202 } },
+                    { 3, new byte[] { 250, 251, 252 } },
                 },
-            };
+                null);
 
             // Received snapshot has completely different network IDs (no overlap)
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(10, new byte[] { 10 }),
-                    new(20, new byte[] { 20 }),
+                    { 10, new byte[] { 10 } },
+                    { 20, new byte[] { 20 } },
                 },
-            };
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             // All original data should remain untouched
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(5), "Should have all original + new data");
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(5), "Should have all original + new data");
 
             var dataDict = currentSnapshot.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
@@ -283,33 +273,34 @@ namespace Elympics.Tests
         public void MergeWithSnapshot_ReplacesAllMatchingIds_CompleteOverlap()
         {
             // Focus on verifying REPLACE behavior
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1, 2, 3 }),
-                    new(2, new byte[] { 4, 5, 6 }),
-                    new(3, new byte[] { 7, 8, 9 }),
+                    { 1, new byte[] { 1, 2, 3 } },
+                    { 2, new byte[] { 4, 5, 6 } },
+                    { 3, new byte[] { 7, 8, 9 } },
                 },
-            };
+                null);
 
             // Received snapshot has all the same network IDs but with different data
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 111 }),
-                    new(2, new byte[] { 222 }),
-                    new(3, new byte[] { 233 }),
+                    { 1, new byte[] { 111 } },
+                    { 2, new byte[] { 222 } },
+                    { 3, new byte[] { 233 } },
                 },
-            };
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(3), "Should have same number of entries");
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(3), "Should have same number of entries");
 
             var dataDict = currentSnapshot.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
@@ -327,54 +318,91 @@ namespace Elympics.Tests
         [Test]
         public void MergeWithSnapshot_WithEmptyReceivedData_KeepsCurrentData()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
-                    new(2, new byte[] { 2 }),
+                    { 1, new byte[] { 1 } },
+                    { 2, new byte[] { 2 } },
                 },
-            };
+                null);
 
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = new List<KeyValuePair<int, byte[]>>(),
-            };
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>(),
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(2));
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(2));
             CollectionAssert.AreEquivalent(new[] { 1, 2 }, currentSnapshot.Data.Select(kvp => kvp.Key));
         }
 
         [Test]
         public void MergeWithSnapshot_WithNullReceivedData_DoesNotModifyCurrentData()
         {
-            var currentSnapshot = new ElympicsSnapshot
-            {
-                Tick = 10,
-                Data = new List<KeyValuePair<int, byte[]>>
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
                 {
-                    new(1, new byte[] { 1 }),
+                    { 1, new byte[] { 1 } },
                 },
-            };
+                null);
 
-            var receivedSnapshot = new ElympicsSnapshot
-            {
-                Tick = 20,
-                TickStartUtc = DateTime.UtcNow,
-                Data = null,
-            };
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                null,
+                null);
 
             currentSnapshot.MergeWithSnapshot(receivedSnapshot);
 
             Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
             Assert.That(currentSnapshot.Data, Is.Not.Null);
-            Assert.That(currentSnapshot.Data.Count, Is.EqualTo(1));
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void MergeWithSnapshot_RemovesDataOfDestroyedObjects()
+        {
+            var currentSnapshot = new ElympicsSnapshot(
+                -1,
+                default,
+                new(new() { { 0, new(32, new(2, new()
+                {
+                    { 30, new(30, 29, "path1") },
+                    { 31, new(31, 30, "path2") }
+                })) } }),
+                new Dictionary<int, byte[]>
+                {
+                    { 30, new byte[0] },
+                    { 31, new byte[0] }
+                },
+                null);
+
+            var receivedSnapshot = new ElympicsSnapshot(
+                -1,
+                default,
+                new(new() { { 0, new(32, new(2, new()
+                {
+                    { 31, new(31, 30, "path2") }
+                })) } }),
+                new Dictionary<int, byte[]>(),
+                null);
+
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+
+            //Merge should cause data of object that was not present in received factory to be removed, because if object is not in factory it means it was destroyed
+            Assert.AreEqual(1, currentSnapshot.Data!.Count);
+            Assert.AreEqual(31, currentSnapshot.Data.First().Key);
         }
     }
 }

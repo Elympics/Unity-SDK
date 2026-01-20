@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -9,104 +7,102 @@ namespace Elympics
     internal class DynamicElympicsBehaviourInstancesData
     {
         private int _instancesCounter;
-        private readonly Dictionary<int, byte[]> _instancesSerialized = new();
-        private readonly Dictionary<int, byte[]> _incomingInstancesSerialized = new();
+        private readonly Dictionary<int, DynamicElympicsBehaviourInstanceData> _instances = new();
+        private readonly Dictionary<int, DynamicElympicsBehaviourInstanceData> _incomingInstances = new();
 
-        private readonly List<(int, byte[])> _instancesToRemoveSerialized = new();
-        private readonly List<(int, byte[])> _instancesToAddSerialized = new();
+        private readonly List<(int, DynamicElympicsBehaviourInstanceData)> _instancesToRemove = new();
+        private readonly List<(int, DynamicElympicsBehaviourInstanceData)> _instancesToAdd = new();
 
-        private readonly Dictionary<int, byte[]> _equalsInstancesSerializedhistory = new();
-        private readonly Dictionary<int, byte[]> _equalsInstancesSerializedreceived = new();
+        private readonly Dictionary<int, DynamicElympicsBehaviourInstanceData> _equalsInstancesHistory = new();
+        private readonly Dictionary<int, DynamicElympicsBehaviourInstanceData> _equalsInstancesReceived = new();
 
         public DynamicElympicsBehaviourInstancesData(int instancesCounterStart) => _instancesCounter = instancesCounterStart;
 
-        public void Serialize(BinaryWriter bw)
+        public DynamicElympicsBehaviourInstancesDataState GetState() => new(_instancesCounter, new(_instances));
+
+        public void ApplyState(DynamicElympicsBehaviourInstancesDataState data)
         {
-            bw.Write(_instancesCounter);
-            bw.Write(_instancesSerialized);
+            _instancesCounter = data.InstancesCounter;
+
+            _incomingInstances.Clear();
+            foreach ((var key, var value) in data.Instances)
+            {
+                _incomingInstances.Add(key, value);
+            }
+
+            CalculateIncomingInstancesDiff(_instances, _incomingInstances);
         }
 
-        public void Deserialize(BinaryReader br)
+        private void CalculateIncomingInstancesDiff(Dictionary<int, DynamicElympicsBehaviourInstanceData> instancesSerialized, Dictionary<int, DynamicElympicsBehaviourInstanceData> incomingInstancesSerialized)
         {
-            _instancesCounter = DeserializeInternalInstancesCounter(br);
-            DeserializeInternalIncomingInstances(br, _incomingInstancesSerialized);
-            CalculateIncomingInstancesDiff(_instancesSerialized, _incomingInstancesSerialized);
-        }
-
-        private static int DeserializeInternalInstancesCounter(BinaryReader br) => br.ReadInt32();
-
-        private void DeserializeInternalIncomingInstances(BinaryReader br, Dictionary<int, byte[]> incomingInstancesSerialized)
-        {
-            incomingInstancesSerialized.Clear();
-            br.ReadIntoDictionaryIntToByteArray(incomingInstancesSerialized);
-        }
-
-        private void CalculateIncomingInstancesDiff(Dictionary<int, byte[]> instancesSerialized, Dictionary<int, byte[]> incomingInstancesSerialized)
-        {
-            _instancesToRemoveSerialized.Clear();
-            _instancesToAddSerialized.Clear();
+            _instancesToRemove.Clear();
+            _instancesToAdd.Clear();
 
             foreach (var (instanceId, incomingInstanceData) in incomingInstancesSerialized)
             {
                 if (instancesSerialized.TryGetValue(instanceId, out var currentInstanceData))
                 {
-                    if (currentInstanceData.SequenceEqual(incomingInstanceData))
+                    if (currentInstanceData.Equals(incomingInstanceData))
                         continue;
 
-                    _instancesToRemoveSerialized.Add((instanceId, currentInstanceData));
-                    _instancesToAddSerialized.Add((instanceId, incomingInstanceData));
+                    _instancesToRemove.Add((instanceId, currentInstanceData));
+                    _instancesToAdd.Add((instanceId, incomingInstanceData));
                 }
                 else
                 {
-                    _instancesToAddSerialized.Add((instanceId, incomingInstanceData));
+                    _instancesToAdd.Add((instanceId, incomingInstanceData));
                 }
             }
 
             foreach (var (instanceId, currentInstanceData) in instancesSerialized)
             {
                 if (!incomingInstancesSerialized.ContainsKey(instanceId))
-                    _instancesToRemoveSerialized.Add((instanceId, currentInstanceData));
+                    _instancesToRemove.Add((instanceId, currentInstanceData));
             }
         }
 
-        internal bool AreIncomingInstancesTheSame() => _instancesToAddSerialized.Count == 0 && _instancesToRemoveSerialized.Count == 0;
+        internal bool AreIncomingInstancesTheSame() => _instancesToAdd.Count == 0 && _instancesToRemove.Count == 0;
 
-        internal (IEnumerable<InstanceData> instancesToRemove, IEnumerable<InstanceData> instancesToAdd) GetIncomingDiff() =>
-            (_instancesToRemoveSerialized.Select(x => InstanceData.DeserializeFrom(x.Item2)),
-                _instancesToAddSerialized.Select(x => InstanceData.DeserializeFrom(x.Item2)));
+        internal (IEnumerable<DynamicElympicsBehaviourInstanceData> instancesToRemove, IEnumerable<DynamicElympicsBehaviourInstanceData> instancesToAdd) GetIncomingDiff() =>
+            (_instancesToRemove.Select(x => x.Item2), _instancesToAdd.Select(x => x.Item2));
 
         internal void ApplyIncomingInstances()
         {
             // Important - first remove obsolete instances as there could be same ids but other instance content, then add new
-            foreach (var (instanceId, _) in _instancesToRemoveSerialized)
-                _ = _instancesSerialized.Remove(instanceId);
+            foreach (var (instanceId, _) in _instancesToRemove)
+                _ = _instances.Remove(instanceId);
 
-            foreach (var (instanceId, instanceDataSerialized) in _instancesToAddSerialized)
-                _instancesSerialized.Add(instanceId, instanceDataSerialized);
+            foreach (var (instanceId, instanceDataSerialized) in _instancesToAdd)
+                _instances.Add(instanceId, instanceDataSerialized);
         }
 
         internal void Remove(int instanceId)
         {
-            _ = _instancesSerialized.Remove(instanceId);
+            _ = _instances.Remove(instanceId);
         }
 
         internal int Add(int precedingNetworkIdEnumeratorValue, string pathInResources)
         {
             var instanceId = _instancesCounter;
             _instancesCounter++;
-            _instancesSerialized.Add(instanceId, new InstanceData(instanceId, precedingNetworkIdEnumeratorValue, pathInResources).Serialize());
+            _instances.Add(instanceId, new DynamicElympicsBehaviourInstanceData(instanceId, precedingNetworkIdEnumeratorValue, pathInResources));
             return instanceId;
         }
 
-        internal int Count => _instancesSerialized.Count;
+        internal int Count => _instances.Count;
 
-        public bool Equals(BinaryReader historyStateReader, BinaryReader receivedStateReader, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
+        public bool Equals(FactoryPartState historyPartState, FactoryPartState receivedPartState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
-            var historyInstancesCount = DeserializeInternalInstancesCounter(historyStateReader);
-            var receivedInstancesCount = DeserializeInternalInstancesCounter(receivedStateReader);
+            var historyInstancesCount = historyPartState.DynamicInstancesState.InstancesCounter;
+            var receivedInstancesCount = receivedPartState.DynamicInstancesState.InstancesCounter;
 
-            DeserializeInternalIncomingInstances(historyStateReader, _equalsInstancesSerializedhistory);
-            DeserializeInternalIncomingInstances(receivedStateReader, _equalsInstancesSerializedreceived);
+            _equalsInstancesHistory.Clear();
+            foreach ((var key, var value) in historyPartState.DynamicInstancesState.Instances)
+                _equalsInstancesHistory.Add(key, value);
+
+            _equalsInstancesReceived.Clear();
+            foreach ((var key, var value) in receivedPartState.DynamicInstancesState.Instances)
+                _equalsInstancesReceived.Add(key, value);
 
             if (historyInstancesCount != receivedInstancesCount)
             {
@@ -119,7 +115,7 @@ namespace Elympics
                 return false;
             }
 
-            CalculateIncomingInstancesDiff(_equalsInstancesSerializedhistory, _equalsInstancesSerializedreceived);
+            CalculateIncomingInstancesDiff(_equalsInstancesHistory, _equalsInstancesReceived);
             var areInstancesTheSame = AreIncomingInstancesTheSame();
 
 #if !ELYMPICS_PRODUCTION
@@ -130,13 +126,13 @@ namespace Elympics
                     .Append(" in local snapshot history for tick ").Append(historyTick).Append(" don't match those received from the game server. ")
                     .Append("Last simulated tick: ").Append(lastSimulatedTick).Append(". ");
 
-                if (_instancesToAddSerialized.Count > 0)
-                    _ = sb.Append($"Number of instances missing in local history: ").Append(_instancesToAddSerialized.Count).Append(". ")
+                if (_instancesToAdd.Count > 0)
+                    _ = sb.Append($"Number of instances missing in local history: ").Append(_instancesToAdd.Count).Append(". ")
                         .Append($"Client either didn't predict that those instances should be spawned or incorrectly predicted that they should be destroyed. ");
 
-                if (_instancesToRemoveSerialized.Count > 0)
+                if (_instancesToRemove.Count > 0)
                     _ = sb.Append($"Number of instances that don't exist in the received state, but are present in local history: ")
-                        .Append(_instancesToRemoveSerialized.Count).Append(". ")
+                        .Append(_instancesToRemove.Count).Append(". ")
                         .Append($"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
 
                 ElympicsLogger.LogWarning(sb.ToString());
@@ -144,44 +140,6 @@ namespace Elympics
 #endif
 
             return areInstancesTheSame;
-        }
-
-        [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Global")]
-        public struct InstanceData
-        {
-            public int ID;
-            public int PrecedingNetworkIdEnumeratorValue;
-            public string InstanceType;
-
-            public InstanceData(int id, int precedingNetworkIdEnumeratorValue, string instanceType)
-            {
-                ID = id;
-                PrecedingNetworkIdEnumeratorValue = precedingNetworkIdEnumeratorValue;
-                InstanceType = instanceType;
-            }
-
-            public byte[] Serialize()
-            {
-                using var ms = new MemoryStream();
-                using var bw = new BinaryWriter(ms);
-                bw.Write(ID);
-                bw.Write(PrecedingNetworkIdEnumeratorValue);
-                bw.Write(InstanceType);
-                return ms.ToArray();
-            }
-
-            public static InstanceData DeserializeFrom(byte[] data)
-            {
-                using var ms = new MemoryStream(data);
-                using var br = new BinaryReader(ms);
-                var instanceData = new InstanceData
-                {
-                    ID = br.ReadInt32(),
-                    PrecedingNetworkIdEnumeratorValue = br.ReadInt32(),
-                    InstanceType = br.ReadString()
-                };
-                return instanceData;
-            }
         }
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 #nullable enable
 
@@ -19,61 +21,32 @@ namespace Elympics.Behaviour
 
         public ref struct Enumerator
         {
-            private readonly ElympicsSnapshot _first;
-            private readonly ElympicsSnapshot _second;
+            private readonly IReadOnlyDictionary<int, byte[]> _first;
+            private readonly IReadOnlyDictionary<int, byte[]> _second;
+            private readonly IEnumerator<int> _keys;
 
-            private int _firstIndex;
-            private int _secondIndex;
+            private static readonly Dictionary<int, byte[]> EmptyDictionary = new(0);
 
             public Enumerator(ElympicsSnapshot first, ElympicsSnapshot second)
             {
-                _firstIndex = -1;
-                _secondIndex = -1;
-                _first = first;
-                _second = second;
+                _first = first.Data ?? EmptyDictionary;
+                _second = second.Data ?? EmptyDictionary;
+                _keys = _first.Keys.Intersect(_second.Keys).GetEnumerator();
             }
 
-            public bool MoveNext()
-            {
-                ++_firstIndex;
-                ++_secondIndex;
-                while (_firstIndex < _first.Data.Count && _secondIndex < _second.Data.Count)
-                {
-                    var (firstNetworkId, _) = _first.Data[_firstIndex];
-                    var (secondNetworkId, _) = _second.Data[_secondIndex];
-
-                    // Difference created by unpredictable factory
-                    if (firstNetworkId > secondNetworkId)
-                    {
-                        _secondIndex++;
-                        continue;
-                    }
-
-                    if (firstNetworkId < secondNetworkId)
-                    {
-                        _firstIndex++;
-                        continue;
-                    }
-                    break;
-                }
-                return _firstIndex < _first.Data.Count && _secondIndex < _second.Data.Count;
-            }
+            public bool MoveNext() => _keys.MoveNext();
 
             public BehaviourPair Current => new()
             {
-                NetworkId = _first.Data[_firstIndex].Key,
-                IndexFromFirst = _firstIndex,
-                IndexFromSecond = _secondIndex,
-                DataFromFirst = _first.Data[_firstIndex].Value,
-                DataFromSecond = _second.Data[_secondIndex].Value,
+                NetworkId = _keys.Current,
+                DataFromFirst = _first[_keys.Current],
+                DataFromSecond = _second[_keys.Current],
             };
         }
 
         public readonly struct BehaviourPair
         {
             public int NetworkId { get; init; }
-            public int IndexFromFirst { get; init; }
-            public int IndexFromSecond { get; init; }
             public byte[] DataFromFirst { get; init; }
             public byte[] DataFromSecond { get; init; }
         }

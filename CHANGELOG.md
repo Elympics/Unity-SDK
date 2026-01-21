@@ -1,3 +1,20 @@
+## [0.24.0](https://github.com/Elympics/Unity-SDK/compare/v0.23.0...v0.24.0) (2026-01-21)
+
+
+### Bug Fixes 🪲
+
+* allow setting input lag in game config to up to 1 second instead of just 15 ticks ([b2c53ea](https://github.com/Elympics/Unity-SDK/commit/b2c53eabb43bb36e70b794b6fb1ff1c3ff0211dc))
+* remove data that is not part of object state from snapshot state byte size calculation ([e49f166](https://github.com/Elympics/Unity-SDK/commit/e49f166c6321d14d0c0571cd7c7cd152c6a4b499))
+
+
+### Features
+
+* add wordlSnapshotState ([3b7507c](https://github.com/Elympics/Unity-SDK/commit/3b7507cde371895eff981781fe66d2aa958c38d9))
+* remove the ability to disable prediction globally from game config ([28a34d2](https://github.com/Elympics/Unity-SDK/commit/28a34d2ebe6183de6940745f373cb364780bd144))
+* uploading webgl client builds on platform ([b9a5463](https://github.com/Elympics/Unity-SDK/commit/b9a546387b41568fbb8899551be8e9c24443ad84))
+
+
+
 ## [0.23.0](https://github.com/Elympics/Unity-SDK/compare/v0.22.0...v0.23.0) (2026-01-13)
 
 

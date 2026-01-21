@@ -133,12 +133,14 @@ namespace Elympics
             return result;
         }
 
-        public string DrawStringField(string header, string content, float headerWidthPercentage01, bool canBeModified)
+        public string DrawStringField(string header, string content, float headerWidthPercentage01, bool canBeModified, string tooltip = "")
         {
             headerWidthPercentage01 = Mathf.Clamp(headerWidthPercentage01, 0.0f, 1.0f);
             var headerWidth = position.width * headerWidthPercentage01;
 
-            EditorGUI.LabelField(new Rect(horizontalMargin, currentSpaceBetweenElements, headerWidth - horizontalMargin, DefaultOneLineHeight), header, centeredStyleLabel);
+            var headerRect = new Rect(horizontalMargin, currentSpaceBetweenElements, headerWidth - horizontalMargin, DefaultOneLineHeight);
+            var headerContent = new GUIContent(header, tooltip);
+            EditorGUI.LabelField(headerRect, headerContent, centeredStyleLabel);
 
             EditorGUI.BeginDisabledGroup(!canBeModified);
             var result = EditorGUI.TextField(new Rect(headerWidth + horizontalMargin, currentSpaceBetweenElements, position.width - headerWidth - HorizontalMarginsWidth, DefaultOneLineHeight), content, centeredStyleTextField);

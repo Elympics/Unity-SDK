@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Elympics
 {
     [DisallowMultipleComponent]
-    public class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable, IStateSerializationHandler
+    public class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
     {
         private static ElympicsUnityPhysicsSimulator instance;
 
@@ -36,15 +36,7 @@ namespace Elympics
         }
 
         public void ElympicsUpdate() => SimulatePhysics(Elympics.TickDuration);
-        public void OnPostStateDeserialize()
-        {
-            //This is special case when Prediction is turned off for entire game.
-            if (ElympicsBase.Config.Prediction)
-                return;
 
-            //We must to force physics simulation because Unity GameObject Transform does not refresh automatically when ElympicsRigidBody components are updated.
-            SimulatePhysics(float.Epsilon);
-        }
         private void SimulatePhysics(float deltaTime)
         {
             if (!_isActive)
@@ -57,6 +49,5 @@ namespace Elympics
             _currentPhysicsScene?.Simulate(deltaTime);
             _ = _currentPhysicsScene2D?.Simulate(deltaTime);
         }
-        public void OnPreStateSerialize() { }
     }
 }

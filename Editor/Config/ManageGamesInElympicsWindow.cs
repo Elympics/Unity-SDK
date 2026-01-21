@@ -43,6 +43,21 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
     #endregion
 
+    #region Client build uploads
+
+    private static readonly string ClientBuildPathKey = "ElympicsClientBuildPathForUpload";
+    private static readonly string StreamingAssetsCatalogKey = "ElympicsStreamingAssetsCatalogForUpload";
+    private static readonly string ClientVersionTooltip = "Name of the client build version that will be uploaded. It doesn't have to match the game version from Elympics game config. The game version from Elympics game config is used to match client with server version, so you can upload a new client version with UI fixes without uploading a new server version.";
+    private static readonly string ClientBuildPathTooltip = "Path to the directory containing the client build that will be uploaded.";
+    private static readonly string StreamingAssetsPathTooltip = "Optional path to the remote streaming assets catalog used by WebGL build. If you are not using Addressables, leave this field empty.";
+
+    //Serialize those fields, so they survive domain reloads
+    public string clientBuildPath;
+    public string streamingAssetCatalogUrl;
+    public string clientVersionName;
+
+    #endregion
+
     private List<string> _availableRegions;
     private List<ElympicsWebIntegration.GameResponseModel> _accountGames;
     private CustomInspectorDrawer _customInspectorDrawer;
@@ -69,9 +84,15 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         SaveDataToScriptableObject();
 
-        var window = GetWindowWithRect<ManageGamesInElympicsWindow>(new Rect(0, 0, 500, 900), false, WindowTitle);
+        var window = GetWindowWithRect<ManageGamesInElympicsWindow>(new Rect(0, 0, 700, 900), false, WindowTitle);
         window.minSize = new Vector2(250, 500);
         window.maxSize = new Vector2(1000, 1800);
+        window.clientBuildPath = EditorPrefs.GetString(ClientBuildPathKey, string.Empty);
+        window.streamingAssetCatalogUrl = EditorPrefs.GetString(StreamingAssetsCatalogKey, string.Empty);
+
+        //Default to current server version
+        var chosenGame = ((ElympicsConfig)elympicsConfigSerializedObject.targetObject).GetCurrentGameConfig();
+        window.clientVersionName = chosenGame != null ? chosenGame.gameVersion : string.Empty;
 
         return window;
     }
@@ -340,7 +361,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
         _customInspectorDrawer.DrawHeader("Manage " + activeGameConfig.gameName + " in Elympics", 20, _elympicsColor);
         _customInspectorDrawer.Space();
 
-        if (_customInspectorDrawer.DrawButtonCentered("Upload", _resizableCenteredLabelWidth, 20))
+        if (_customInspectorDrawer.DrawButtonCentered("Build & upload server", _resizableCenteredLabelWidth, 20))
         {
             if (!ElympicsWebIntegration.IsConnectedToElympics())
                 return;
@@ -349,7 +370,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
             GUIUtility.ExitGUI();
         }
         _customInspectorDrawer.Space();
-        if (_customInspectorDrawer.DrawButtonCentered("Log Uploaded Versions", _resizableCenteredLabelWidth, 20))
+        if (_customInspectorDrawer.DrawButtonCentered("Log uploaded server versions", _resizableCenteredLabelWidth, 20))
         {
             if (!ElympicsWebIntegration.IsConnectedToElympics())
                 return;
@@ -366,6 +387,28 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         var wrappedLabelHeight = (int)_guiStyleWrappedTextCalculator.CalcHeight(new GUIContent(UploadGameInfo), position.width * 0.8f);
         _customInspectorDrawer.DrawLabelCentered(UploadGameInfo, _resizableCenteredLabelWidth, wrappedLabelHeight, true);
+
+        _customInspectorDrawer.Space();
+        _customInspectorDrawer.Space();
+        _customInspectorDrawer.Space();
+
+        clientVersionName = _customInspectorDrawer.DrawStringField("Client version", clientVersionName, 0.25f, true, ClientVersionTooltip);
+        clientBuildPath = _customInspectorDrawer.DrawStringField("Client build path", clientBuildPath, 0.25f, true, ClientBuildPathTooltip);
+        //streamingAssetCatalogUrl = _customInspectorDrawer.DrawStringField("Streaming assets catalog url", streamingAssetCatalogUrl, 0.25f, true, StreamingAssetsPathTooltip);
+
+        if (_customInspectorDrawer.DrawButtonCentered("Upload client", _resizableCenteredLabelWidth, 20))
+        {
+            //Save last used paths in editor prefs, so they can persist editor restarts
+            EditorPrefs.SetString(ClientBuildPathKey, clientBuildPath);
+            EditorPrefs.SetString(StreamingAssetsCatalogKey, streamingAssetCatalogUrl);
+
+            if (!ElympicsWebIntegration.IsConnectedToElympics())
+                return;
+
+            ElympicsWebIntegration.UploadClientBuild(clientBuildPath, activeGameConfig.GameId, clientVersionName, activeGameConfig.GameVersion, streamingAssetCatalogUrl);
+
+            GUIUtility.ExitGUI();
+        }
     }
 
     #endregion

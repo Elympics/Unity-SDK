@@ -50,6 +50,10 @@ namespace Elympics.Communication.Rooms.PublicModels
             return new CompetitivenessConfig(coinId.ToString(), CompetitivenessType.RollingTournament, totalPrize, numberOfPlayers, prizeDistribution ?? Array.Empty<decimal>());
         }
 
+        /// <summary>Creates a configuration for a competitive match with a bet.</summary>
+        /// <param name="coinId">ID of the coin to use.</param>
+        /// <param name="amount">The amount that the player will be charged as a match entry fee.</param>
+        /// <remarks>The prize received by each player on the winning team will be equal to <paramref name="amount"/> minus commission.</remarks>
         [PublicAPI]
         public static CompetitivenessConfig Bet(Guid coinId, decimal amount) => new(coinId.ToString(), CompetitivenessType.Bet, amount, -1, Array.Empty<decimal>());
 

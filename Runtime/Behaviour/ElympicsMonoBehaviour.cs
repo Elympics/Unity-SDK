@@ -81,9 +81,6 @@ namespace Elympics
 
         private GameObject InstantiateInternal(string pathInResources, ElympicsPlayer player, InstantiatedTransformConfig? transformConfig)
         {
-            if (!Elympics.IsServer && !_elympics.Config.Prediction)
-                throw new ElympicsException($"You cannot use {nameof(ElympicsInstantiate)} as a client or bot when prediction is disabled.");
-
             ThrowIfCalledInWrongContextWithPlayer(player);
             return GetFactory().CreateInstance(pathInResources, player, transformConfig);
         }
@@ -106,9 +103,6 @@ namespace Elympics
         /// <remarks>Only objects instantiated with <see cref="ElympicsInstantiate"/> may be destroyed with this method.</remarks>
         public void ElympicsDestroy(GameObject createdGameObject)
         {
-            if (!Elympics.IsServer && !_elympics.Config.Prediction)
-                throw new ElympicsException($"You cannot use {nameof(ElympicsDestroy)} as a client or bot when prediction is disabled.");
-
             ThrowIfCalledInWrongContext();
             GetFactory().DestroyInstance(createdGameObject);
         }

@@ -9,7 +9,7 @@
 
 ### Features
 
-* add wordlSnapshotState ([3b7507c](https://github.com/Elympics/Unity-SDK/commit/3b7507cde371895eff981781fe66d2aa958c38d9))
+* internal: add wordlSnapshotState ([3b7507c](https://github.com/Elympics/Unity-SDK/commit/3b7507cde371895eff981781fe66d2aa958c38d9))
 * remove the ability to disable prediction globally from game config ([28a34d2](https://github.com/Elympics/Unity-SDK/commit/28a34d2ebe6183de6940745f373cb364780bd144))
 * uploading webgl client builds on platform ([b9a5463](https://github.com/Elympics/Unity-SDK/commit/b9a546387b41568fbb8899551be8e9c24443ad84))
 

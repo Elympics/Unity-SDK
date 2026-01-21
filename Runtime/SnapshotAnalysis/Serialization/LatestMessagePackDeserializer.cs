@@ -26,13 +26,12 @@ namespace Elympics.SnapshotAnalysis.Serialization
                     Debug.Log($"Found snapshots {deserializedSnapshots.Snapshots.Length}");
                     foreach (var deserialized in deserializedSnapshots.Snapshots)
                     {
-                        for (var i = 0; i < deserialized.Data.Count; i++)
+                        foreach (var (id, state) in deserialized.Data!)
                         {
-                            var kvp = deserialized.Data[i];
-                            if (kvp.Value is not null)
-                                _unpackSourceData[kvp.Key] = kvp.Value;
+                            if (state != null)
+                                _unpackSourceData[id] = state;
                             else
-                                deserialized.Data[i] = new KeyValuePair<int, byte[]>(kvp.Key, _unpackSourceData[kvp.Key]);
+                                deserialized.Data[id] = _unpackSourceData[id];
                         }
 
                         snapshots.Add(deserialized.Tick, deserialized);

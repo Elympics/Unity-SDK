@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -70,15 +69,7 @@ namespace Elympics
                 RemoveFactoryPart(player);
         }
 
-        internal FactoryState GetState()
-        {
-            var state = new FactoryState
-            {
-                Parts = _elympicsFactoryParts.Select(x => new KeyValuePair<int, byte[]>((int)x.Key, x.Value.GetState())).ToList()
-            };
-
-            return state;
-        }
+        internal FactoryState GetState() => new(_elympicsFactoryParts.ToDictionary(x => (int)x.Key, x => x.Value.GetState()));
 
         internal void ApplyState(FactoryState state, HashSet<int> playerIndexesIncludeOnly = null, HashSet<int> playerIndexesToExclude = null)
         {
@@ -179,8 +170,8 @@ namespace Elympics
         private bool ArePredictableStatesEqualForPlayer(FactoryState historyState, FactoryState receivedState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {
             var playerIndex = (int)player;
-            var historyStateDataExists = TryFindStateData(historyState, playerIndex, out var historyStateData);
-            var receivedStateDataExists = TryFindStateData(receivedState, playerIndex, out var receivedStateData);
+            var historyStateDataExists = historyState.Parts.TryGetValue(playerIndex, out var historyPartState);
+            var receivedStateDataExists = receivedState.Parts.TryGetValue(playerIndex, out var receivedPartState);
 
             if (receivedStateDataExists && !historyStateDataExists)
             {
@@ -195,27 +186,7 @@ namespace Elympics
             if (!receivedStateDataExists && !historyStateDataExists)
                 return true;
 
-            using var historyStateStream = new MemoryStream(historyStateData.Value);
-            using var historyStateReader = new BinaryReader(historyStateStream);
-            using var receivedStateStream = new MemoryStream(receivedStateData.Value);
-            using var receivedStateReader = new BinaryReader(receivedStateStream);
-
-            return _checkEqualsEnumerator.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick) && _checkEqualsData.Equals(historyStateReader, receivedStateReader, player, historyTick, lastSimulatedTick);
-        }
-
-        private static bool TryFindStateData(FactoryState state, int playerIndex, out KeyValuePair<int, byte[]> data)
-        {
-            foreach (var partData in state.Parts)
-            {
-                if (partData.Key != playerIndex)
-                    continue;
-
-                data = partData;
-                return true;
-            }
-
-            data = default;
-            return false;
+            return _checkEqualsEnumerator.Equals(historyPartState, receivedPartState, player, historyTick, lastSimulatedTick) && _checkEqualsData.Equals(historyPartState, receivedPartState, player, historyTick, lastSimulatedTick);
         }
     }
 }

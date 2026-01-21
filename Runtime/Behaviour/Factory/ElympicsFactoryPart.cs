@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -37,28 +36,17 @@ namespace Elympics
 
         internal bool IsEmpty => _instancesData.Count == 0;
 
-        internal byte[] GetState()
+        internal FactoryPartState GetState() => new(_currentNetworkId.GetCurrent(), _instancesData.GetState());
+
+        internal void ApplyState(FactoryPartState data)
         {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-            _currentNetworkId.Serialize(bw);
-            _instancesData.Serialize(bw);
-            return ms.ToArray();
+            _currentNetworkId.MoveTo(data.CurrentNetworkId);
+            _instancesData.ApplyState(data.DynamicInstancesState);
+
+            OnPostStateApplied();
         }
 
-        internal void ApplyState(byte[] data)
-        {
-            using (var ms = new MemoryStream(data))
-            using (var br = new BinaryReader(ms))
-            {
-                _currentNetworkId.Deserialize(br);
-                _instancesData.Deserialize(br);
-            }
-
-            OnPostDataDeserialize();
-        }
-
-        private void OnPostDataDeserialize()
+        private void OnPostStateApplied()
         {
             var cachedNetworkIdEnumerator = _currentNetworkId.GetCurrent();
             if (!_instancesData.AreIncomingInstancesTheSame())

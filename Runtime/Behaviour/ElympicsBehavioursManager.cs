@@ -189,7 +189,7 @@ namespace Elympics
 
             foreach (var playerData in playerDatas)
             {
-                var snapshot = ElympicsSnapshot.CreateDeepCopy(fullSnapshot);
+                var snapshot = new ElympicsSnapshot(fullSnapshot.Tick, fullSnapshot.TickStartUtc, fullSnapshot.Factory, new(fullSnapshot.Data.Count), new(fullSnapshot.TickToPlayersInputData));
                 _ = snapshot.TickToPlayersInputData.Remove((int)playerData.Player);
                 snapshots[playerData.Player] = snapshot;
             }

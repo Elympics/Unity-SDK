@@ -1,3 +1,12 @@
+## [0.24.1](https://github.com/Elympics/Unity-SDK/compare/v0.24.0...v0.24.1) (2026-01-22)
+
+
+### Bug Fixes 🪲
+
+* exception when preparing a snapshot to be sent on server ([d79fd07](https://github.com/Elympics/Unity-SDK/commit/d79fd079a33bb65ff6ae3d42ef5e666288eeba26))
+
+
+
 ## [0.24.0](https://github.com/Elympics/Unity-SDK/compare/v0.23.0...v0.24.0) (2026-01-21)
 
 

@@ -213,6 +213,7 @@ csharp_preserve_single_line_blocks = true
 csharp_wrap_ternary_expr_style = wrap_if_long
 
 ## ReSharper
+csharp_indent_nested_foreach_stmt = true
 csharp_empty_block_style = together
 csharp_trailing_comma_in_multiline_lists = true:warning
 csharp_trailing_comma_in_singleline_lists = false:warning

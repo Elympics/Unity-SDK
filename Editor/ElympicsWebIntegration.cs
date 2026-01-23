@@ -311,6 +311,7 @@ namespace Elympics
                 updateProperty?.Invoke(availableRegions.Regions.ToList());
                 return;
             }
+
             onFailure?.Invoke();
         }
 
@@ -452,10 +453,9 @@ namespace Elympics
                         GameUploadedToTheCloud?.Invoke();
                     });
             }
-
         }
 
-        private static string[] compoundExtensions =
+        internal static string[] compoundExtensions =
         {
             ".framework.js",
             ".wasm",
@@ -471,11 +471,14 @@ namespace Elympics
             compoundExtension = string.Empty;
             foreach (var ext in knownCompoundExtensions)
             {
-                if (!fileName.EndsWith(ext.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                var extIndex = fileName.IndexOf(ext.AsSpan(), StringComparison.OrdinalIgnoreCase);
+                if (extIndex < 0)
                     continue;
-                compoundExtension = ext;
+
+                compoundExtension = fileName[extIndex..].ToString();
                 return true;
             }
+
             return false;
         }
 
@@ -486,6 +489,21 @@ namespace Elympics
             return false;
         }
 
+        internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
+        {
+            return fileNames.Select(fileName =>
+            {
+                if (TryGetFullExtension(fileName.AsSpan(), knownCompoundExtensions, out var compoundExtension))
+                {
+                    var splitExtension = compoundExtension.Split('.');
+                    var split = fileName.Split('.');
+                    var name = string.Join(".", split.Take(split.Length - splitExtension.Length + 1));
+                    return (name, compoundExtension);
+                }
+
+                return (string.Empty, string.Empty);
+            }).Where(file => !string.IsNullOrEmpty(file.Item1)).ToList();
+        }
 
         public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion, string streamingAssetsUrl)
         {
@@ -517,18 +535,13 @@ namespace Elympics
 
                 var filePaths = Directory.GetFiles(clientBuildPath);
                 var fileNames = filePaths.Select(Path.GetFileName).ToArray();
-                var validFiles = fileNames.Select(fileName =>
+                var validFiles = GetValidFiles(fileNames, compoundExtensions);
+
+                if (validFiles.Count != compoundExtensions.Length)
                 {
-                    if (TryGetFullExtension(fileName.AsSpan(), compoundExtensions, out var compoundExtension))
-                    {
-                        var name = fileName.Split('.').First();
-                        return (name, compoundExtension);
-                    }
-                    return (string.Empty, string.Empty);
-
-                }).Where(file => !string.IsNullOrEmpty(file.Item1)).ToList();
-
-                //TO DO: make sure all necessary files are present
+                    throw new ElympicsException(
+                        $"Not all required files will be uploaded to bucket{Environment.NewLine}Files in directory: {string.Join('|', fileNames)}{Environment.NewLine}Validated files: {string.Join('|', validFiles)}");
+                }
 
                 if (!ElympicsConfig.IsLogin)
                 {
@@ -536,6 +549,7 @@ namespace Elympics
                     EditorUtility.ClearProgressBar();
                     return;
                 }
+
                 EditorUtility.DisplayProgressBar(title, "Initializing upload", 0.1f);
 
                 var request = new ClientBuildUploadInitRequestModel()
@@ -544,7 +558,7 @@ namespace Elympics
                     clientGameVersion = clientGameVersion,
                     serverGameVersion = serverGameVersion,
                     streamingAssetsUrl = streamingAssetsUrl,
-                    files = validFiles.Select(fileNameAndExtension => FixedPrefix + fileNameAndExtension.Item2).ToArray(),
+                    files = validFiles.Select(fileNameAndExtension => FixedPrefix + fileNameAndExtension.extension).ToArray(),
                 };
 
                 var uri = GetCombinedUrl(ElympicsWebEndpoint, "client-builds", "init");
@@ -588,7 +602,6 @@ namespace Elympics
                 {
                     for (var index = 0; index < response.Files.Length; index++)
                     {
-
                         var fileUploadInfo = response.Files[index];
                         var responseFile = Path.Combine(clientBuildPath, fileUploadInfo.FilePath);
                         var expectedFile = validFiles[index];
@@ -602,6 +615,7 @@ namespace Elympics
                         var operation = request.SendWebRequest();
                         while (!operation.isDone)
                         { }
+
                         if (operation.webRequest.IsConnectionError() || operation.webRequest.IsProtocolError())
                             throw new ElympicsException($"Failed to upload file '{localFile}': {operation.webRequest.error}{Environment.NewLine}{operation.webRequest.downloadHandler.text}");
                     }

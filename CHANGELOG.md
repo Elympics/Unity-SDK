@@ -1,3 +1,12 @@
+## [0.24.2](https://github.com/Elympics/Unity-SDK/compare/v0.24.1...v0.24.2) (2026-01-23)
+
+
+### Bug Fixes 🪲
+
+* detect compressed builds ([a5c4a10](https://github.com/Elympics/Unity-SDK/commit/a5c4a1034d4c9a5687842816ef7fd4400c8d6ff3))
+
+
+
 ## [0.24.1](https://github.com/Elympics/Unity-SDK/compare/v0.24.0...v0.24.1) (2026-01-22)
 
 

@@ -65,6 +65,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
     private GUIStyle _guiStyleWrappedTextCalculator;
 
     private int _resizableCenteredLabelWidth;
+    private Vector2 _scrollPosition;
 
     private static ManageGamesInElympicsWindowData manageGamesInElympicsWindowData;
 
@@ -192,7 +193,11 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
         DrawAccountSection();
         DrawEndpointsSection();
+
+        _scrollPosition = _customInspectorDrawer.BeginScrollView(_scrollPosition);
+        _customInspectorDrawer.DrawAccountGames(_accountGames);
         DrawAvailableGamesSection();
+        _customInspectorDrawer.EndScrollView();
     }
 
     private void DrawAvailableRegionSection()
@@ -259,8 +264,6 @@ public class ManageGamesInElympicsWindow : EditorWindow
         _customInspectorDrawer.DrawEndpoint("Game Servers endpoint", elympicsGameServersEndpoint, elympicsGameServersEndpointChecker, 0.3f, 0.3f, out var gameServersEndpointChanged);
         if (gameServersEndpointChanged)
             elympicsGameServersEndpointChecker.UpdateUri(elympicsGameServersEndpoint.stringValue);
-
-        _customInspectorDrawer.DrawAccountGames(_accountGames);
     }
 
     #endregion

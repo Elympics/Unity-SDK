@@ -20,6 +20,12 @@ namespace Elympics
         private GUIStyle centeredStyleTextField = null;
         private GUIStyle headerStyleLabel = null;
 
+        // Scroll view support
+        private bool isInScrollView;
+        private int scrollViewStartY;
+        private float scrollContentHeight;
+        private Rect scrollViewRect;
+
         public CustomInspectorDrawer(Rect position, int spacingBetweenElements, int horizontalMargin)
         {
             this.position = position;
@@ -106,6 +112,31 @@ namespace Elympics
         public void Space() => IncreaseSpacingManually(spacingBetweenElements);
 
         public void IncreaseSpacingManually(int value) => currentSpaceBetweenElements += value;
+
+        public Vector2 BeginScrollView(Vector2 scrollPosition)
+        {
+            isInScrollView = true;
+            scrollViewStartY = currentSpaceBetweenElements;
+
+            var viewHeight = position.height - scrollViewStartY;
+            scrollViewRect = new Rect(0, scrollViewStartY, position.width, viewHeight);
+            var contentRect = new Rect(0, 0, position.width - 20, Mathf.Max(viewHeight, scrollContentHeight));
+
+            var newScrollPosition = GUI.BeginScrollView(scrollViewRect, scrollPosition, contentRect);
+
+            currentSpaceBetweenElements = 0;
+
+            return newScrollPosition;
+        }
+
+        public void EndScrollView()
+        {
+            scrollContentHeight = currentSpaceBetweenElements;
+            GUI.EndScrollView();
+
+            currentSpaceBetweenElements = scrollViewStartY + (int)scrollViewRect.height;
+            isInScrollView = false;
+        }
 
         public void DrawHeader(string content, int height, Color headerLineColor)
         {

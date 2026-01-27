@@ -26,6 +26,8 @@ namespace Elympics
         private const string DirectoryNameToUpload = "Games";
         private const string EngineSubdirectory = "Engine";
         private const string BotSubdirectory = "Bot";
+        private const string ContentEncodingKey = "Content-Encoding";
+        private const string ContentTypeKey = "Content-Type";
 
         private const string NamePattern = "^[0-9-a-zA-Z.]+$";
 
@@ -464,6 +466,15 @@ namespace Elympics
             ".data",
         };
 
+        private static string[] contentType =
+        {
+            "application/javascript",
+            "application/wasm",
+            "application/json",
+            "application/javascript",
+            "application/octet-stream",
+        };
+
         private const string FixedPrefix = "Build";
 
         private static bool TryGetFullExtension(ReadOnlySpan<char> fileName, string[] knownCompoundExtensions, out string compoundExtension)
@@ -488,6 +499,29 @@ namespace Elympics
                 return fileCompoundExtension == compoundExtension;
             return false;
         }
+
+        private static string FetchEncoding(string compoundExtension)
+        {
+            var fileName = compoundExtension.AsSpan();
+            if (fileName.EndsWith(".br"))
+                return "br";
+            if (fileName.EndsWith(".gz"))
+                return "gzip";
+            return string.Empty;
+        }
+
+        private static string FetchContentType(string fileExtension)
+        {
+            for (var i = 0; i < compoundExtensions.Length; i++)
+            {
+                var ext = compoundExtensions[i];
+                if (fileExtension.Contains(ext))
+                    return contentType[i];
+            }
+
+            throw new ElympicsException("Unknown content type: " + fileExtension);
+        }
+
 
         internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
         {
@@ -611,7 +645,12 @@ namespace Elympics
                         EditorUtility.DisplayProgressBar(title, $"Uploading file '{localFile}'", 0.2f);
                         var filePath = Path.Combine(clientBuildPath, localFile);
                         using var request = UnityWebRequest.Put(fileUploadInfo.SignedUrl, File.ReadAllBytes(filePath));
-                        request.SetRequestHeader("Content-Type", "application/octet-stream");
+                        var requestContentType = FetchContentType(expectedFile.Item2);
+                        request.SetRequestHeader(ContentTypeKey, requestContentType);
+                        var encoding = FetchEncoding(expectedFile.Item2);
+                        if (!string.IsNullOrEmpty(encoding))
+                            request.SetRequestHeader(ContentEncodingKey, encoding);
+
                         var operation = request.SendWebRequest();
                         while (!operation.isDone)
                         { }

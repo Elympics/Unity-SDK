@@ -8,7 +8,7 @@
 
 ### Features
 
-* scroll view for manage games ([0d7a0cc](https://github.com/Elympics/Unity-SDK/commit/0d7a0cc8840c5318d563d7e0a24f1d088fa37c0c))
+* scroll view for manage games editor window ([0d7a0cc](https://github.com/Elympics/Unity-SDK/commit/0d7a0cc8840c5318d563d7e0a24f1d088fa37c0c))
 
 
 

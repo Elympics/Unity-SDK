@@ -1,3 +1,17 @@
+## [0.24.3](https://github.com/Elympics/Unity-SDK/compare/v0.24.2...v0.24.3) (2026-01-27)
+
+
+### Bug Fixes 🪲
+
+* add content type and encoding headers ([cd3f790](https://github.com/Elympics/Unity-SDK/commit/cd3f790b2fabc34fbb95af548263d8a715e0329b))
+
+
+### Features
+
+* scroll view for manage games ([0d7a0cc](https://github.com/Elympics/Unity-SDK/commit/0d7a0cc8840c5318d563d7e0a24f1d088fa37c0c))
+
+
+
 ## [0.24.2](https://github.com/Elympics/Unity-SDK/compare/v0.24.1...v0.24.2) (2026-01-23)
 
 

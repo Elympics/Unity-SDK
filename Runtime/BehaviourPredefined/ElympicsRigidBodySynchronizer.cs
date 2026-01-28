@@ -35,6 +35,8 @@ namespace Elympics
         private ElympicsBool _useGravity;
         private ElympicsBool _isKinematic;
 
+        private bool _hasPendingUpdate;
+
         private Rigidbody Rigidbody { get; set; }
 
         public void Initialize()
@@ -53,6 +55,21 @@ namespace Elympics
         }
 
         public void OnPostStateDeserialize()
+        {
+            //If Rigidbody is disabled, changes to some of its properties are ignored, so we have to wait and only apply them once the object is enabled
+            if (isActiveAndEnabled)
+                ApplyValues();
+            else
+                _hasPendingUpdate = true;
+        }
+
+        private void OnEnable()
+        {
+            if (_hasPendingUpdate)
+                ApplyValues();
+        }
+
+        private void ApplyValues()
         {
             if (_position.EnabledSynchronization)
                 Rigidbody.position = _position.Value;

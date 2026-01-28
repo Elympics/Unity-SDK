@@ -14,6 +14,6 @@ namespace Elympics
         {
         }
 
-        protected override float Distance(Vector2 a, Vector2 b) => Vector2.SqrMagnitude(a - b);
+        protected override float Distance(Vector2 a, Vector2 b) => Vector2.Distance(a, b);
     }
 }

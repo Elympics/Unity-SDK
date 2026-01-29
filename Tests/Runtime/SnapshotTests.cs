@@ -179,10 +179,10 @@ namespace Elympics.Tests
                 new FactoryState(new Dictionary<int, FactoryPartState>()),
                 new Dictionary<int, byte[]>
                 {
-                    { 1, new byte[] { 1, 1, 1 } },     // Will stay UNTOUCHED
-                    { 2, new byte[] { 2, 2, 2 } },     // Will be REPLACED
-                    { 3, new byte[] { 3, 3, 3 } },     // Will stay UNTOUCHED
-                    { 4, new byte[] { 4, 4, 4 } },     // Will be REPLACED
+                    { 1, new byte[] { 1, 1, 1 } }, // Will stay UNTOUCHED
+                    { 2, new byte[] { 2, 2, 2 } }, // Will be REPLACED
+                    { 3, new byte[] { 3, 3, 3 } }, // Will stay UNTOUCHED
+                    { 4, new byte[] { 4, 4, 4 } }, // Will be REPLACED
                 },
                 null);
 
@@ -374,13 +374,20 @@ namespace Elympics.Tests
         public void MergeWithSnapshot_RemovesDataOfDestroyedObjects()
         {
             var currentSnapshot = new ElympicsSnapshot(
-                -1,
+                1,
                 default,
-                new(new() { { 0, new(32, new(2, new()
+                new(new()
                 {
-                    { 30, new(30, 29, "path1") },
-                    { 31, new(31, 30, "path2") }
-                })) } }),
+                    {
+                        0, new(32,
+                            new(2,
+                                new()
+                                {
+                                    { 30, new(30, 29, "path1") },
+                                    { 31, new(31, 30, "path2") }
+                                }))
+                    }
+                }),
                 new Dictionary<int, byte[]>
                 {
                     { 30, new byte[0] },
@@ -389,12 +396,19 @@ namespace Elympics.Tests
                 null);
 
             var receivedSnapshot = new ElympicsSnapshot(
-                -1,
+                2,
                 default,
-                new(new() { { 0, new(32, new(2, new()
+                new(new()
                 {
-                    { 31, new(31, 30, "path2") }
-                })) } }),
+                    {
+                        0, new(32,
+                            new(2,
+                                new()
+                                {
+                                    { 31, new(31, 30, "path2") }
+                                }))
+                    }
+                }),
                 new Dictionary<int, byte[]>(),
                 null);
 
@@ -403,6 +417,73 @@ namespace Elympics.Tests
             //Merge should cause data of object that was not present in received factory to be removed, because if object is not in factory it means it was destroyed
             Assert.AreEqual(1, currentSnapshot.Data!.Count);
             Assert.AreEqual(31, currentSnapshot.Data.First().Key);
+        }
+
+        [Test]
+        public void MergeWithSnapshot_CalledTwiceWithSameSnapshot_ShouldNotThrow()
+        {
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                null, // Data is null - this triggers aliasing on first merge
+                null);
+
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
+                {
+                    { 1, new byte[] { 1, 2, 3 } },
+                    { 2, new byte[] { 4, 5, 6 } },
+                    { 3, new byte[] { 7, 8, 9 } },
+                },
+                null);
+
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+
+            Assert.That(currentSnapshot.Data,
+                Is.SameAs(receivedSnapshot.Data),
+                "After first merge with null Data, currentSnapshot.Data should be aliased to receivedSnapshot.Data");
+
+            Assert.DoesNotThrow(() => currentSnapshot.MergeWithSnapshot(receivedSnapshot),
+                "MergeWithSnapshot should not throw when called twice with the same snapshot");
+
+            // Verify data integrity after both merges
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(3));
+            Assert.That(currentSnapshot.Tick, Is.EqualTo(20));
+        }
+
+        [Test]
+        public void MergeWithSnapshot_CalledTwiceWithSameSnapshot_DataIntegrity()
+        {
+            var currentSnapshot = new ElympicsSnapshot(
+                10,
+                default,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                null,
+                null);
+
+            var receivedSnapshot = new ElympicsSnapshot(
+                20,
+                DateTime.UtcNow,
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
+                new Dictionary<int, byte[]>
+                {
+                    { 1, new byte[] { 10 } },
+                    { 2, new byte[] { 20 } },
+                },
+                null);
+
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+            currentSnapshot.MergeWithSnapshot(receivedSnapshot);
+
+            Assert.That(currentSnapshot.Data!.Count, Is.EqualTo(2));
+            var dataDict = currentSnapshot.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            Assert.That(dataDict[1], Is.EqualTo(new byte[] { 10 }));
+            Assert.That(dataDict[2], Is.EqualTo(new byte[] { 20 }));
         }
     }
 }

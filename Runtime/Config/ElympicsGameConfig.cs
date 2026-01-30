@@ -70,7 +70,10 @@ namespace Elympics
             set => gameVersion = value;
         }
 
-        public int MaxPlayers => maxPlayers;
+        public const int MinPlayersAllowed = 1;
+        public const int MaxPlayersAllowed = 32;
+
+        public int MaxPlayers => Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
         public string GameplayScene => gameplayScene;
 
         public bool BotsInServer => botsInServer;
@@ -160,6 +163,11 @@ namespace Elympics
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            maxPlayers = Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
+        }
+
         internal void UpdateGameVersion(string newGameVersion)
         {
             gameVersion = newGameVersion;

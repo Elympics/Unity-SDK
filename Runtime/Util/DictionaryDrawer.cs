@@ -74,14 +74,14 @@ namespace Elympics
         private static readonly Dictionary<Type, Func<Rect, object, object>> Fields =
             new()
             {
-                {typeof(int), (rect, value) => EditorGUI.IntField(rect, (int) value)},
-                {typeof(float), (rect, value) => EditorGUI.FloatField(rect, (float) value)},
-                {typeof(string), (rect, value) => EditorGUI.TextField(rect, (string) value)},
-                {typeof(bool), (rect, value) => EditorGUI.Toggle(rect, (bool) value)},
-                {typeof(Vector2), (rect, value) => EditorGUI.Vector2Field(rect, GUIContent.none, (Vector2) value)},
-                {typeof(Vector3), (rect, value) => EditorGUI.Vector3Field(rect, GUIContent.none, (Vector3) value)},
-                {typeof(Bounds), (rect, value) => EditorGUI.BoundsField(rect, (Bounds) value)},
-                {typeof(Rect), (rect, value) => EditorGUI.RectField(rect, (Rect) value)},
+                { typeof(int), (rect, value) => EditorGUI.IntField(rect, (int)value) },
+                { typeof(float), (rect, value) => EditorGUI.FloatField(rect, (float)value) },
+                { typeof(string), (rect, value) => EditorGUI.TextField(rect, (string)value) },
+                { typeof(bool), (rect, value) => EditorGUI.Toggle(rect, (bool)value) },
+                { typeof(Vector2), (rect, value) => EditorGUI.Vector2Field(rect, GUIContent.none, (Vector2)value) },
+                { typeof(Vector3), (rect, value) => EditorGUI.Vector3Field(rect, GUIContent.none, (Vector3)value) },
+                { typeof(Bounds), (rect, value) => EditorGUI.BoundsField(rect, (Bounds)value) },
+                { typeof(Rect), (rect, value) => EditorGUI.RectField(rect, (Rect)value) },
             };
 
         private static T DoField<T>(Rect rect, Type type, T value)

@@ -9,7 +9,7 @@ namespace Elympics.Tests
     /// <see cref="DynamicElympicsBehaviourInstanceData"/> structure that stores explicit NetworkIds.
     /// </summary>
     [TestFixture]
-    [Category("NetworkIdSync")]
+    [Category("NetworkIdEnumerator")]
     public class NetworkIdSyncTests
     {
         private NetworkIdEnumerator _sut;

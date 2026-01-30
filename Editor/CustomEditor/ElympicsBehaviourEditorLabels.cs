@@ -36,10 +36,12 @@ namespace Elympics
 
         private const string Label_VisibilityTooltip = "Choose which players will receive data about this object";
 
-        private const string Label_StateUpdateFrequency = "State update frequency: ";
+        private const string Label_ReplicationPriority = "Replication Priority: ";
+        private const string Label_ReplicationPrioritySummary = "Determines the relative importance of this entity for bandwidth scheduling. Higher-priority entities are sent first when bandwidth is limited.";
+        private const string Label_ReplicationPriorityTooltip = "Priority ordering for bandwidth scheduling. Does not control re-send frequency.";
 
-        private const string Label_StateUpdateFrequencySummary = "Decide how often object state will be send in next snapshots";
-
-        private const string Label_StateUpdateFrequencyTooltip = "For the next X miliseconds, state will be updated once per Y miliseconds";
+        private const string Label_NetUpdateInterval = "Net Update Interval (ticks): ";
+        private const string Label_NetUpdateIntervalSummary = "Minimum ticks between unacknowledged re-sends. State changes are always sent immediately regardless of this setting.";
+        private const string Label_NetUpdateIntervalTooltip = "How many ticks to wait before re-sending this entity when the client has not acknowledged receipt. Lower values = more aggressive re-sends.";
     }
 }

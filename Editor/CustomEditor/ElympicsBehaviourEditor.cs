@@ -31,7 +31,8 @@ namespace Elympics
 
         private SerializedProperty _visibleToPlayers;
 
-        private SerializedProperty _stateUpdateFrequencyStages;
+        private SerializedProperty _replicationPriority;
+        private SerializedProperty _netUpdateIntervalInTicks;
 
         private StringBuilder _stringBuilder;
 
@@ -57,8 +58,8 @@ namespace Elympics
             _predictableToPlayers = serializedObject.FindProperty(nameof(_behaviour.predictableFor));
             _isUpdatableForNonOwners = serializedObject.FindProperty(nameof(_behaviour.isUpdatableForNonOwners));
             _visibleToPlayers = serializedObject.FindProperty(nameof(_behaviour.visibleFor));
-            _stateUpdateFrequencyStages = serializedObject.FindProperty(nameof(_behaviour.stateFrequencyStages));
-
+            _replicationPriority = serializedObject.FindProperty(nameof(_behaviour.replicationPriority));
+            _netUpdateIntervalInTicks = serializedObject.FindProperty(nameof(_behaviour.netUpdateIntervalInTicks));
             _stringBuilder = new StringBuilder();
         }
 
@@ -78,7 +79,7 @@ namespace Elympics
             DrawNetworkId();
             DrawPredictability();
             DrawVisibility();
-            DrawStateChangeFrequencyStages();
+            DrawReplicationPriority();
             DrawObservedMonoBehaviours();
 
             _ = serializedObject.ApplyModifiedProperties();
@@ -170,10 +171,12 @@ namespace Elympics
             EditorGUILayout.Space();
         }
 
-        private void DrawStateChangeFrequencyStages()
+        private void DrawReplicationPriority()
         {
-            _ = EditorGUILayout.PropertyField(_stateUpdateFrequencyStages, new GUIContent(Label_StateUpdateFrequency, Label_StateUpdateFrequencyTooltip), true);
-            EditorGUILayout.LabelField(Label_StateUpdateFrequencySummary, summaryLabelStyle);
+            // ReplicationPriority hidden — BandwidthSchedulingSystem is pass-through, no effect yet.
+
+            _ = EditorGUILayout.PropertyField(_netUpdateIntervalInTicks, new GUIContent(Label_NetUpdateInterval, Label_NetUpdateIntervalTooltip), true);
+            EditorGUILayout.LabelField(Label_NetUpdateIntervalSummary, summaryLabelStyle);
             EditorGUILayout.Space();
         }
 

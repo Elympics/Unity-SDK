@@ -28,7 +28,7 @@ namespace Elympics.SnapshotAnalysis
                 gameConfig.GameName,
                 gameConfig.gameId,
                 gameConfig.gameVersion,
-                gameConfig.Players,
+                gameConfig.MaxPlayers,
                 ElympicsConfig.SdkVersion,
                 gameConfig.TickDuration,
                 new CollectorMatchData

@@ -24,7 +24,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     public void Initialize()
     {
         var config = ElympicsConfig.LoadCurrentElympicsGameConfig();
-        _playerCount = config.Players;
+        _playerCount = config.MaxPlayers;
         if (playerLabels.Length < _playerCount)
         {
             Debug.LogError(mainLabel.text = "Player count too high");

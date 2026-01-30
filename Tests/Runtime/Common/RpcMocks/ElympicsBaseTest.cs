@@ -22,6 +22,8 @@ namespace Elympics.Tests.RpcMocks
         public override bool IsBot => _isBot;
         public override long Tick => 0;
 
+        public override ElympicsPlayer Player => ElympicsPlayer.FromIndex(0);
+
         internal override void ElympicsFixedUpdate()
         { }
 

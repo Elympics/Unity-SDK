@@ -4,6 +4,7 @@ using System.Linq;
 using Elympics.Communication.Models.Public;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Mappers;
+
 namespace Elympics
 {
     internal class HalfRemoteGameClientInitializer : GameClientInitializer
@@ -22,11 +23,14 @@ namespace Elympics
 
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
 
+            if (playersList.Count > elympicsGameConfig.MaxPlayers)
+                throw new ElympicsException($"Current player amount {playersList.Count} is greater than maximum player amount {elympicsGameConfig.MaxPlayers} ");
+
             if (playersList.Count <= playerIndex)
                 throw ElympicsLogger.LogException("Half Remote client won't be initialized because "
-                    + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
-                    + $"The list has only {playersList.Count} entries. "
-                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+                                                  + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
+                                                  + $"The list has only {playersList.Count} entries. "
+                                                  + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
             logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
             var userId = playersList[playerIndex].UserId;
@@ -45,7 +49,6 @@ namespace Elympics
                     var roomId = new Guid(index, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                     var roomCustomData = x.roomCustomData.ToDictionary(customData => customData.key, customData => customData.value);
                     return (roomid: roomId, (IReadOnlyDictionary<string, string>)roomCustomData);
-
                 }).ToDictionary(pair => pair.roomid, pair => pair.Item2),
                 CustomMatchmakingData = customMatchmakingData.ToDictionary(x => x.key, x => x.value),
                 ExternalGameData = new byte[] { },
@@ -74,7 +77,8 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                logger);
+                logger,
+                elympicsGameConfig.MaxPlayers);
         }
 
         public override void Dispose() => _halfRemoteMatchConnectClient?.Dispose();

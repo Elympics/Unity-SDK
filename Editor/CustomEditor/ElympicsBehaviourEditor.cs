@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Elympics
 {
@@ -22,8 +23,7 @@ namespace Elympics
         private ElympicsBehaviour _behaviour;
 
         private SerializedProperty _networkId;
-        private SerializedProperty _forceNetworkId;
-        private bool _useAutoId = true;
+        private SerializedProperty _autoAssignNetworkId;
 
         private SerializedProperty _predictableToPlayers;
 
@@ -42,15 +42,17 @@ namespace Elympics
         private ElympicsComponentsToSync _selectedComponentsToSync;
 
         private static string MakeWarning(string text) => $"<color=yellow>{text}</color>";
-        private bool IsPredictableForAnyone => ((ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.Invalid || (ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.World) && !IsPredictableForEveryone;
+
+        private bool IsPredictableForAnyone => ((ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.Invalid || (ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.World)
+                                               && !IsPredictableForEveryone;
+
         private bool IsPredictableForEveryone => (ElympicsPlayer)_predictableToPlayers.GetValue() == ElympicsPlayer.All || (bool)_isUpdatableForNonOwners.GetValue();
 
         private void OnEnable()
         {
             _behaviour = serializedObject.targetObject as ElympicsBehaviour;
             _networkId = serializedObject.FindProperty(nameof(_behaviour.networkId));
-            _forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.forceNetworkId));
-            _useAutoId = !_forceNetworkId.boolValue;
+            _autoAssignNetworkId = serializedObject.FindProperty(nameof(_behaviour.autoAssignNetworkId));
 
             _predictableToPlayers = serializedObject.FindProperty(nameof(_behaviour.predictableFor));
             _isUpdatableForNonOwners = serializedObject.FindProperty(nameof(_behaviour.isUpdatableForNonOwners));
@@ -72,8 +74,8 @@ namespace Elympics
                 return;
             }
 
+            DrawAutoAssignToggle();
             DrawNetworkId();
-            DrawUseAutoId();
             DrawPredictability();
             DrawVisibility();
             DrawStateChangeFrequencyStages();
@@ -84,23 +86,73 @@ namespace Elympics
             DrawSynchronizationButtons();
         }
 
-        private void DrawNetworkId()
+        private void DrawAutoAssignToggle()
         {
-            _ = EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(Label_NetworkId);
-            GUI.enabled = !_useAutoId;
-            _ = EditorGUILayout.PropertyField(_networkId, GUIContent.none);
-            GUI.enabled = true;
-            EditorGUILayout.EndHorizontal();
+            _ = EditorGUILayout.PropertyField(_autoAssignNetworkId, new GUIContent(Label_AutoId, Label_AutoIdTooltip));
+            EditorGUILayout.LabelField(Label_AutoIdSummary, summaryLabelStyle);
             EditorGUILayout.Space();
         }
 
-        private void DrawUseAutoId()
+        private void DrawNetworkId()
         {
-            _useAutoId = EditorGUILayout.Toggle(new GUIContent(Label_AutoId, Label_AutoIdTooltip), _useAutoId);
-            _forceNetworkId.boolValue = !_useAutoId;
-            EditorGUILayout.LabelField(Label_AutoIdSummary, summaryLabelStyle);
+            if (_autoAssignNetworkId.boolValue)
+                return;
+
+            _ = EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(Label_NetworkId, GUILayout.Width(70));
+
+            var previousId = _networkId.intValue;
+            var committedId = EditorGUILayout.DelayedIntField(previousId);
+
+            if (committedId != previousId)
+            {
+                var error = ValidateManualId(committedId, _behaviour);
+                if (error != null)
+                {
+                    ElympicsLogger.LogError(error);
+                    _networkId.intValue = ElympicsBehaviour.UndefinedNetworkId;
+                }
+                else
+                {
+                    _networkId.intValue = committedId;
+                }
+
+                _ = serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(_behaviour);
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            if (_networkId.intValue == ElympicsBehaviour.UndefinedNetworkId)
+                EditorGUILayout.LabelField(MakeWarning("No NetworkId assigned. Type a value and press Enter."), _warningStyle);
+
             EditorGUILayout.Space();
+        }
+
+        private static string ValidateManualId(int id, ElympicsBehaviour self)
+        {
+            if (id is < NetworkIdConstants.ManualIdMin or > NetworkIdConstants.ManualIdMax)
+                return $"NetworkId {id} is out of range. Manual IDs must be between {NetworkIdConstants.ManualIdMin} and {NetworkIdConstants.ManualIdMax}.";
+
+            var takenBy = FindBehaviourWithManualId(id, self);
+            if (takenBy)
+                return $"NetworkId {id} is already used by {takenBy.gameObject.name}.";
+
+            return null;
+        }
+
+        private static ElympicsBehaviour FindBehaviourWithManualId(int id, ElympicsBehaviour self)
+        {
+            var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(SceneManager.GetActiveScene(), true);
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == self)
+                    continue;
+                if (behaviour.NetworkId == id)
+                    return behaviour;
+            }
+
+            return null;
         }
 
         private void DrawPredictability()
@@ -136,11 +188,13 @@ namespace Elympics
                     EditorGUILayout.LabelField($"- {mono.GetType().Name} ({GetInterfaceNames(mono)})", new GUIStyle(GUI.skin.label) { padding = new RectOffset(20, 0, 0, 0), richText = true });
                 if (mono is IUpdatable)
                     if (IsPredictableForAnyone)
-                        EditorGUILayout.LabelField($"{MakeWarning("Warning!")} Elympics Update doesn't execute on clients for non-predictable objects.", new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
+                        EditorGUILayout.LabelField($"{MakeWarning("Warning!")} Elympics Update doesn't execute on clients for non-predictable objects.",
+                            new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
                     else
                     {
                         var markedPase = IsPredictableForEveryone ? "every client" : "client " + _predictableToPlayers.GetValue().ToString();
-                        EditorGUILayout.LabelField($"Elympics Update for this object executes on {MakeWarning(markedPase)}.", new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
+                        EditorGUILayout.LabelField($"Elympics Update for this object executes on {MakeWarning(markedPase)}.",
+                            new GUIStyle(GUI.skin.label) { padding = new RectOffset(40, 0, 0, 0), fontSize = 11, richText = true });
                     }
             }
 
@@ -211,7 +265,6 @@ namespace Elympics
             {
                 AddSynchronizationWarningForComponent(Label_RigidBodyExistExistTransformWarning, ElympicsDocumentationUrls.Link_TransfromSynchronizerDocumentation);
             }
-
         }
 
         private void AddSynchronizationWarningForComponent(string warning, string documentationUrl)
@@ -223,12 +276,9 @@ namespace Elympics
             {
                 Application.OpenURL(documentationUrl);
             }
+
             EditorGUILayout.EndVertical();
         }
-
-        private bool IgnoreThisBehaviour(ElympicsBehaviour behaviour)
-            => behaviour.TryGetComponent<ElympicsFactory>(out _)
-               || behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out _);
 
         private void AddSynchronizationButton<TComponent>(ElympicsComponentsToSync buttonType) where TComponent : MonoBehaviour
         {
@@ -254,13 +304,14 @@ namespace Elympics
                     EditorUtility.SetDirty(_behaviour.gameObject);
                 }
             }
+
             GUI.color = Color.white;
         }
 
         private void ColorizeButton(ElympicsComponentsToSync buttonType)
         {
-            var changeColor = ((buttonType == ElympicsComponentsToSync.Rigidbody2D || buttonType == ElympicsComponentsToSync.Rigidbody) && HasComponent(ElympicsComponentsToSync.Transform)) ||
-                (buttonType == ElympicsComponentsToSync.Transform && (HasComponent(ElympicsComponentsToSync.Rigidbody) || HasComponent(ElympicsComponentsToSync.Rigidbody2D)));
+            var changeColor = ((buttonType == ElympicsComponentsToSync.Rigidbody2D || buttonType == ElympicsComponentsToSync.Rigidbody) && HasComponent(ElympicsComponentsToSync.Transform))
+                              || (buttonType == ElympicsComponentsToSync.Transform && (HasComponent(ElympicsComponentsToSync.Rigidbody) || HasComponent(ElympicsComponentsToSync.Rigidbody2D)));
 
             if (changeColor)
                 GUI.color = Color.yellow;

@@ -7,9 +7,6 @@ using Elympics.Communication.Models.Public;
 using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 
 namespace Elympics
@@ -23,7 +20,7 @@ namespace Elympics
         internal const int UndefinedNetworkId = -1;
         private const int DefaultAbsenceTickParameter = 0;
 
-        [SerializeField] internal bool forceNetworkId;
+        [SerializeField] internal bool autoAssignNetworkId;
         [SerializeField] internal int networkId = UndefinedNetworkId;
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
@@ -64,7 +61,9 @@ namespace Elympics
                 return;
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
                 return;
-            throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: " + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} " + $"or {nameof(IInitializable.Initialize)}");
+            throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: "
+                                        + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
+                                        + $"or {nameof(IInitializable.Initialize)}");
         }
 
         [UsedImplicitly] // from generated IL code
@@ -75,6 +74,7 @@ namespace Elympics
                 ElympicsLogger.LogWarning($"RPC {method.Name} will not be captured during reconciliation.");
                 return false;
             }
+
             if (_isInvokingRpc)
                 return false;
             if (ElympicsBase.IsLocalMode)
@@ -97,11 +97,13 @@ namespace Elympics
                 ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
                 return false;
             }
+
             if (_isInvokingRpc)
             {
                 _isInvokingRpc = false;
                 return true;
             }
+
             // TODO: The following two cases short-circuit RPCs so they are not queued for later bulk execution.
             // TODO: This may introduce unwanted behavior. ~dsygocki 2023-08-07
             if (ElympicsBase.IsLocalMode)
@@ -164,6 +166,7 @@ namespace Elympics
         private BinaryInputReader _inputReader;
 
         private Dictionary<ElympicsPlayer, (long Tick, byte[] Data)> _tickBasedInputByPlayer;
+
         internal void ClearInputs()
         {
             _tickBasedInputByPlayer.Clear();
@@ -195,39 +198,14 @@ namespace Elympics
                 inputReader = _inputReader;
                 return true;
             }
+
             return false;
         }
 
 #if UNITY_EDITOR
-        private bool _previousForceNetworkIdState;
-
         private void OnValidate()
         {
-            if (!forceNetworkId
-                && (_previousForceNetworkIdState || networkId == UndefinedNetworkId))
-                UpdateSerializedNetworkId();
-
             _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
-            _previousForceNetworkIdState = forceNetworkId;
-        }
-
-        private void OnEnable()
-        {
-            if (!forceNetworkId && IsMyNetworkIdTaken())
-                UpdateSerializedNetworkId();
-
-            _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
-        }
-
-        private bool IsMyNetworkIdTaken()
-        {
-            return FindObjectsOfType<ElympicsBehaviour>().Where(behaviour => behaviour != this).Select(behaviour => behaviour.NetworkId).Contains(networkId);
-        }
-
-        internal void UpdateSerializedNetworkId()
-        {
-            networkId = NetworkIdEnumerator.Instance.MoveNextAndGetCurrent();
-            EditorUtility.SetDirty(this);
         }
 
         private void OnDrawGizmos()
@@ -279,9 +257,12 @@ namespace Elympics
                             }
                         }
                         else
-                            ElympicsLogger.LogError($"Cannot synchronize {nameof(ElympicsVar)} {field.Name} " + $"in {field.DeclaringType}, because it hasn't been initialized " + "(its value is null).");
+                            ElympicsLogger.LogError($"Cannot synchronize {nameof(ElympicsVar)} {field.Name} "
+                                                    + $"in {field.DeclaringType}, because it hasn't been initialized "
+                                                    + "(its value is null).");
                     }
                 }
+
                 if (componentVars.Count > 0)
                     _backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
             }
@@ -357,7 +338,9 @@ namespace Elympics
                     {
 #if !ELYMPICS_PRODUCTION
                         if (!ElympicsBase.IsServer)
-                            ElympicsLogger.LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.", this);
+                            ElympicsLogger.LogWarning(
+                                $"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.",
+                                this);
 #endif
                         areEqual = false;
                         break;
@@ -367,6 +350,7 @@ namespace Elympics
                 if (!areEqual)
                     break;
             }
+
             _ = _memoryStream1.Seek(0, SeekOrigin.Begin);
             _ = _memoryStream2.Seek(0, SeekOrigin.Begin);
             return areEqual;

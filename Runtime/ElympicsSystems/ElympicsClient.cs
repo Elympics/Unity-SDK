@@ -65,14 +65,15 @@ namespace Elympics
             IMatchClient matchClient,
             InitialMatchPlayerDataGuid initialMatchPlayerData,
             ElympicsBehavioursManager elympicsBehavioursManager,
-            ElympicsLoggerContext logger)
+            ElympicsLoggerContext logger,
+            int maxPlayerCount)
         {
             _logger = logger.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;
             _matchClient = matchClient;
-            elympicsBehavioursManager.InitializeInternal(this);
+            elympicsBehavioursManager.InitializeInternal(this, maxPlayerCount);
             _roundTripTimeCalculator = new RoundTripTimeCalculator();
 #if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();

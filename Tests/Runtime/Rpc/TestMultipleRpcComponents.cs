@@ -19,11 +19,16 @@ namespace Elympics.Tests
         [OneTimeSetUp]
         public void PrepareScene()
         {
-            _elympicsObject = new GameObject("Elympics Systems", typeof(ElympicsBaseTest),
-                typeof(ElympicsBehavioursManager), typeof(ElympicsFactory));
-            _rpcHolderObject = new GameObject("RPC Holder", typeof(ElympicsBehaviour), typeof(RpcHolderComplex),
+            _elympicsObject = new GameObject("Elympics Systems",
+                typeof(ElympicsBaseTest),
+                typeof(ElympicsBehavioursManager),
+                typeof(ElympicsFactory));
+            _rpcHolderObject = new GameObject("RPC Holder",
+                typeof(ElympicsBehaviour),
+                typeof(RpcHolderComplex),
                 typeof(RpcHolderSimple));
 
+            _rpcHolderObject.GetComponent<ElympicsBehaviour>().NetworkId = 1;
             Assert.NotNull(_elympicsBase = _elympicsObject.GetComponent<ElympicsBaseTest>());
             Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderComplex>());
             Assert.NotNull(_anotherRpcHolder = _rpcHolderObject.GetComponent<RpcHolderSimple>());
@@ -36,7 +41,7 @@ namespace Elympics.Tests
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
-            behavioursManager.InitializeInternal(_elympicsBase);
+            behavioursManager.InitializeInternal(_elympicsBase, 100);
         }
 
         [SetUp]
@@ -90,9 +95,19 @@ namespace Elympics.Tests
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder);
             var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethod)), _anotherRpcHolder);
 
-            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1, expectedArgs.Item2, expectedArgs.Item3,
-                expectedArgs.Item4, expectedArgs.Item5, expectedArgs.Item6, expectedArgs.Item7, expectedArgs.Item8,
-                expectedArgs.Item9, expectedArgs.Item10, expectedArgs.Item11, expectedArgs.Item12, expectedArgs.Item13
+            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1,
+                expectedArgs.Item2,
+                expectedArgs.Item3,
+                expectedArgs.Item4,
+                expectedArgs.Item5,
+                expectedArgs.Item6,
+                expectedArgs.Item7,
+                expectedArgs.Item8,
+                expectedArgs.Item9,
+                expectedArgs.Item10,
+                expectedArgs.Item11,
+                expectedArgs.Item12,
+                expectedArgs.Item13
             );
             _anotherRpcHolder.PlayerToServerMethod();
 
@@ -130,9 +145,19 @@ namespace Elympics.Tests
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)), _rpcHolder);
             var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethod)), _anotherRpcHolder);
 
-            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1, expectedArgs.Item2, expectedArgs.Item3,
-                expectedArgs.Item4, expectedArgs.Item5, expectedArgs.Item6, expectedArgs.Item7, expectedArgs.Item8,
-                expectedArgs.Item9, expectedArgs.Item10, expectedArgs.Item11, expectedArgs.Item12, expectedArgs.Item13
+            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1,
+                expectedArgs.Item2,
+                expectedArgs.Item3,
+                expectedArgs.Item4,
+                expectedArgs.Item5,
+                expectedArgs.Item6,
+                expectedArgs.Item7,
+                expectedArgs.Item8,
+                expectedArgs.Item9,
+                expectedArgs.Item10,
+                expectedArgs.Item11,
+                expectedArgs.Item12,
+                expectedArgs.Item13
             );
             _anotherRpcHolder.ServerToPlayersMethod();
 

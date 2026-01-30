@@ -19,7 +19,7 @@ namespace Elympics
             // ElympicsBot has to setup callbacks BEFORE initializing GameBotAdapter - possible loss of events like Init ~pprzestrzelski 27.08.2021
             bot.InitializeInternal(gameConfig, gameBotAdapter, behavioursManager);
             InitializeBot(bot, gameConfig, gameBotAdapter);
-            behavioursManager.InitializeInternal(bot);
+            behavioursManager.InitializeInternal(bot, gameConfig.MaxPlayers);
 
             client.Destroy();
             server.Destroy();

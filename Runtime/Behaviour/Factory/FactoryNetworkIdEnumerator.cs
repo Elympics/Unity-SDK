@@ -4,7 +4,18 @@ namespace Elympics
     {
         private readonly NetworkIdEnumerator _enumerator;
 
-        public FactoryNetworkIdEnumerator(int startNetworkId, int endNetworkId) => _enumerator = NetworkIdEnumerator.CreateNetworkIdEnumerator(startNetworkId, endNetworkId);
+        public FactoryNetworkIdEnumerator(int playerIndex)
+            : this(playerIndex,
+                   ElympicsBehavioursManager.IndicesPerPlayer,
+                   ElympicsBehavioursManager.SceneObjectsMaxIndex,
+                   ElympicsBehavioursManager.SpawnableSpecialPlayerIndices)
+        {
+        }
+
+        /// <summary>
+        /// Constructor with explicit parameters for testing.
+        /// </summary>
+        private FactoryNetworkIdEnumerator(int playerIndex, int indicesPerPlayer, int sceneObjectsMaxIndex, int[] spawnableSpecialPlayerIndices) => _enumerator = NetworkIdEnumerator.CreateForPlayer(playerIndex, indicesPerPlayer, sceneObjectsMaxIndex, spawnableSpecialPlayerIndices);
 
         public bool Equals(FactoryPartState historyPartState, FactoryPartState receivedPartState, ElympicsPlayer player, long historyTick, long lastSimulatedTick)
         {

@@ -32,8 +32,8 @@ namespace Elympics
 
             _elympicsFactoryParts = new SortedDictionary<ElympicsPlayer, ElympicsFactoryPart>();
 
-            _checkEqualsEnumerator = new FactoryNetworkIdEnumerator(_player.StartNetworkId, _player.EndNetworkId);
-            _checkEqualsData = new DynamicElympicsBehaviourInstancesData(_player.StartNetworkId);
+            _checkEqualsEnumerator = new FactoryNetworkIdEnumerator((int)_player);
+            _checkEqualsData = new DynamicElympicsBehaviourInstancesData(_checkEqualsEnumerator.GetCurrent());
 
             _playersObjects = new Dictionary<GameObject, ElympicsPlayer>();
 

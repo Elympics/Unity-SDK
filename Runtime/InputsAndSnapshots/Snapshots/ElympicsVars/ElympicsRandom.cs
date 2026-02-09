@@ -39,6 +39,8 @@ namespace Elympics
             return areEqual;
         }
 
+        public override string ToString() => $"ElympicsRandom state: {_random.state}";
+
         internal override void Commit() { }
 
         /// <summary>Always call this method to set a seed before using this class.</summary>

@@ -49,7 +49,10 @@ namespace Elympics
                 matchData.UserSecret,
                 elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
-            elympicsGameConfig.players = matchData.MatchedPlayers.Length;
+            var matchPlayerCount = matchData.MatchedPlayers.Length;
+            if (matchPlayerCount > elympicsGameConfig.MaxPlayers)
+                throw new ElympicsException(
+                    $"Match player count ({matchPlayerCount}) exceeds configured {nameof(ElympicsGameConfig.MaxPlayers)} ({elympicsGameConfig.MaxPlayers}).");
             client.InitializeInternal(elympicsGameConfig,
                 matchConnectClient,
                 matchClient,
@@ -59,7 +62,8 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                gameLogger);
+                gameLogger,
+                elympicsGameConfig.MaxPlayers);
         }
     }
 }

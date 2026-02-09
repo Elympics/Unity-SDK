@@ -158,6 +158,9 @@ dotnet_diagnostic.IDE0100.severity = warning
 ### Remove unnecessary discard
 dotnet_diagnostic.IDE0110.severity = warning
 
+### Capture expression values that are never used
+dotnet_diagnostic.IDE0058.severity = warning
+
 ## C#
 csharp_style_unused_value_expression_statement_preference = discard_variable:warning
 csharp_style_unused_value_assignment_preference = discard_variable:warning

@@ -12,7 +12,7 @@ namespace Elympics
         private SerializedProperty _gameName;
         private SerializedProperty _gameId;
         private SerializedProperty _gameVersion;
-        private SerializedProperty _players;
+        private SerializedProperty _maxPlayers;
         private SerializedProperty _gameplayScene;
         private SerializedProperty _gameplaySceneAsset;
 
@@ -22,7 +22,7 @@ namespace Elympics
         private string _previousGameName;
         private string _previousGameId;
         private string _previousGameVersion;
-        private int _previousPlayers;
+        private int _previousMaxPlayers;
         private Object _previousSceneAsset;
         private bool _verifyGameScenePath;
         private SerializedProperty _matchInitData;
@@ -48,7 +48,7 @@ namespace Elympics
             _gameName = _gameConfigSo.FindProperty("gameName");
             _gameId = _gameConfigSo.FindProperty("gameId");
             _gameVersion = _gameConfigSo.FindProperty("gameVersion");
-            _players = _gameConfigSo.FindProperty("players");
+            _maxPlayers = _gameConfigSo.FindProperty("maxPlayers");
             _gameplayScene = _gameConfigSo.FindProperty("gameplayScene");
             _gameplaySceneAsset = _gameConfigSo.FindProperty("gameplaySceneAsset");
 
@@ -70,7 +70,7 @@ namespace Elympics
             dataChanged |= _previousGameName != _gameName.stringValue;
             dataChanged |= _previousGameId != _gameId.stringValue;
             dataChanged |= _previousGameVersion != _gameVersion.stringValue;
-            dataChanged |= _previousPlayers != _players.intValue;
+            dataChanged |= _previousMaxPlayers != _maxPlayers.intValue;
 
             if (dataChanged)
                 DataChanged?.Invoke();
@@ -78,7 +78,7 @@ namespace Elympics
             _previousGameName = _gameName.stringValue;
             _previousGameId = _gameId.stringValue;
             _previousGameVersion = _gameVersion.stringValue;
-            _previousPlayers = _players.intValue;
+            _previousMaxPlayers = _maxPlayers.intValue;
         }
 
         #region Game Config Settings Section

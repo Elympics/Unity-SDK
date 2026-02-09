@@ -22,10 +22,12 @@ namespace Elympics.Tests
         [OneTimeSetUp]
         public void PrepareScene()
         {
-            _elympicsObject = new GameObject("Elympics Systems", typeof(ElympicsBaseTest),
-                typeof(ElympicsBehavioursManager), typeof(ElympicsFactory));
+            _elympicsObject = new GameObject("Elympics Systems",
+                typeof(ElympicsBaseTest),
+                typeof(ElympicsBehavioursManager),
+                typeof(ElympicsFactory));
             _rpcHolderObject = new GameObject("RPC Holder", typeof(ElympicsBehaviour), typeof(RpcHolderComplex));
-
+            _rpcHolderObject.GetComponent<ElympicsBehaviour>().NetworkId = 1;
             Assert.NotNull(_elympicsBase = _elympicsObject.GetComponent<ElympicsBaseTest>());
             Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderComplex>());
             Assert.NotNull(_elympicsBehaviour = _rpcHolder.ElympicsBehaviour);
@@ -37,7 +39,7 @@ namespace Elympics.Tests
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
-            behavioursManager.InitializeInternal(_elympicsBase);
+            behavioursManager.InitializeInternal(_elympicsBase, 100);
         }
 
         [SetUp]
@@ -247,8 +249,8 @@ namespace Elympics.Tests
         [Test]
         public void ServerToPlayersRpcShouldNotBeInvokedNorDequeuedDuringReconciliation() =>
             Assert.Pass($"RPCs from {nameof(ElympicsBase.RpcMessagesToInvoke)} are neither invoked nor dequeued "
-                + $"during reconciliation as {nameof(ElympicsClient)} never calls "
-                + $"{nameof(ElympicsBase.InvokeQueuedRpcMessages)} in reconciliation context.");
+                        + $"during reconciliation as {nameof(ElympicsClient)} never calls "
+                        + $"{nameof(ElympicsBase.InvokeQueuedRpcMessages)} in reconciliation context.");
 
         [Test]
         public void PlayerToServerRpcShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
@@ -307,9 +309,19 @@ namespace Elympics.Tests
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
 
-            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1, expectedArgs.Item2, expectedArgs.Item3,
-                expectedArgs.Item4, expectedArgs.Item5, expectedArgs.Item6, expectedArgs.Item7, expectedArgs.Item8,
-                expectedArgs.Item9, expectedArgs.Item10, expectedArgs.Item11, expectedArgs.Item12, expectedArgs.Item13
+            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1,
+                expectedArgs.Item2,
+                expectedArgs.Item3,
+                expectedArgs.Item4,
+                expectedArgs.Item5,
+                expectedArgs.Item6,
+                expectedArgs.Item7,
+                expectedArgs.Item8,
+                expectedArgs.Item9,
+                expectedArgs.Item10,
+                expectedArgs.Item11,
+                expectedArgs.Item12,
+                expectedArgs.Item13
             );
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
@@ -364,9 +376,19 @@ namespace Elympics.Tests
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");
 
-            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1, expectedArgs.Item2, expectedArgs.Item3,
-                expectedArgs.Item4, expectedArgs.Item5, expectedArgs.Item6, expectedArgs.Item7, expectedArgs.Item8,
-                expectedArgs.Item9, expectedArgs.Item10, expectedArgs.Item11, expectedArgs.Item12, expectedArgs.Item13
+            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1,
+                expectedArgs.Item2,
+                expectedArgs.Item3,
+                expectedArgs.Item4,
+                expectedArgs.Item5,
+                expectedArgs.Item6,
+                expectedArgs.Item7,
+                expectedArgs.Item8,
+                expectedArgs.Item9,
+                expectedArgs.Item10,
+                expectedArgs.Item11,
+                expectedArgs.Item12,
+                expectedArgs.Item13
             );
 
             Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);

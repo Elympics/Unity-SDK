@@ -111,7 +111,10 @@ namespace Elympics
                 : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, logger, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
-            _elympicsGameConfig.players = matchData.MatchedPlayers.Length;
+            var matchPlayerCount = matchData.MatchedPlayers.Length;
+            if (matchPlayerCount > _elympicsGameConfig.MaxPlayers)
+                throw new ElympicsException(
+                    $"Match player count ({matchPlayerCount}) exceeds configured {nameof(ElympicsGameConfig.MaxPlayers)} ({_elympicsGameConfig.MaxPlayers}).");
             _client.InitializeInternal(_elympicsGameConfig,
             matchConnectClient,
             matchClient,
@@ -121,7 +124,8 @@ namespace Elympics
                 IsBot = false,
             },
             ElympicsBehavioursManager,
-            logger);
+            logger,
+            matchPlayerCount);
         }
     }
 }

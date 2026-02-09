@@ -57,7 +57,7 @@ namespace Elympics
                 ExternalGameData = Array.Empty<byte>()
             });
 
-            behavioursManager.InitializeInternal(server);
+            behavioursManager.InitializeInternal(server, 1);
             bot.Destroy();
         }
 

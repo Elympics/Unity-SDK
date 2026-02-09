@@ -20,7 +20,7 @@ namespace Elympics
         [SerializeField] internal string gameName = "Game";
         [SerializeField] internal string gameId = "fe9b83a9-7d50-4299-859a-93fd313f420b";
         [SerializeField] internal string gameVersion = "1";
-        [SerializeField] internal int players = 2;
+        [SerializeField] internal int maxPlayers = 2;
         [SerializeField] internal string gameplayScene = "";
 #if UNITY_EDITOR
         [SerializeField] internal SceneAsset? gameplaySceneAsset;
@@ -70,7 +70,7 @@ namespace Elympics
             set => gameVersion = value;
         }
 
-        public int Players => players;
+        public int MaxPlayers => maxPlayers;
         public string GameplayScene => gameplayScene;
 
         public bool BotsInServer => botsInServer;

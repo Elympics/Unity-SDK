@@ -24,8 +24,8 @@ namespace Elympics
         {
             _player = player;
 
-            _currentNetworkId = new FactoryNetworkIdEnumerator(player.StartNetworkId, player.EndNetworkId);
-            _instancesData = new DynamicElympicsBehaviourInstancesData(player.StartNetworkId);
+            _currentNetworkId = new FactoryNetworkIdEnumerator((int)player);
+            _instancesData = new DynamicElympicsBehaviourInstancesData(_currentNetworkId.GetCurrent());
             _createdInstanceWrappersCache = new Dictionary<int, CreatedInstanceWrapper>();
             _createdGameObjectsIds = new Dictionary<GameObject, int>();
             _instantiate = instantiate;

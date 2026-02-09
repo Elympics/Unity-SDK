@@ -8,19 +8,26 @@ namespace Elympics
     [MessagePackObject]
     public struct ElympicsPlayer : IEquatable<ElympicsPlayer>, IComparable<ElympicsPlayer>
     {
-        private const int AllValue = -3;
-        private const int WorldValue = -2;
-        private const int InvalidValue = -1;
-        private const int NetworkIdOffset = 4;
+        /// <summary>
+        /// Special player indices that can spawn/own networked objects.
+        /// Order determines slot assignment for NetworkId allocation:
+        /// - Index 0 in array → slot 0
+        /// - Index 1 in array → slot 1
+        /// - Regular players (0, 1, 2, ...) → slots starting at SpawnableSpecialPlayerIndices.Length
+        /// </summary>
+        public static readonly int[] SpawnableSpecialPlayerIndices = { -3, -2 }; // All, World
 
-        internal int StartNetworkId => (playerIndex + NetworkIdOffset) * ElympicsBehavioursManager.NetworkIdRange;
-        internal int EndNetworkId => StartNetworkId - 1 + ElympicsBehavioursManager.NetworkIdRange;
+        /// <summary>
+        /// Invalid player index - cannot spawn objects, not included in slot allocation.
+        /// </summary>
+        private const int InvalidPlayerIndex = -1;
 
-        public static readonly ElympicsPlayer All = new() { playerIndex = AllValue };
-        public static readonly ElympicsPlayer World = new() { playerIndex = WorldValue };
-        public static readonly ElympicsPlayer Invalid = new() { playerIndex = InvalidValue };
+        public static readonly ElympicsPlayer All = new() { playerIndex = SpawnableSpecialPlayerIndices[0] };
+        public static readonly ElympicsPlayer World = new() { playerIndex = SpawnableSpecialPlayerIndices[1] };
+        public static readonly ElympicsPlayer Invalid = new() { playerIndex = InvalidPlayerIndex };
 
-        [SerializeField][Key(0)] internal int playerIndex;
+        [SerializeField]
+        [Key(0)] internal int playerIndex;
 
         private ElympicsPlayer(int playerIndex)
         {
@@ -43,13 +50,16 @@ namespace Elympics
 
         public static explicit operator int(ElympicsPlayer elympicsPlayer) => elympicsPlayer.playerIndex;
 
-        public override string ToString() => playerIndex switch
+        public override string ToString()
         {
-            AllValue => nameof(All),
-            WorldValue => nameof(World),
-            InvalidValue => nameof(Invalid),
-            _ => playerIndex.ToString()
-        };
+            if (playerIndex == SpawnableSpecialPlayerIndices[0])
+                return nameof(All);
+            if (playerIndex == SpawnableSpecialPlayerIndices[1])
+                return nameof(World);
+            if (playerIndex == InvalidPlayerIndex)
+                return nameof(Invalid);
+            return playerIndex.ToString();
+        }
 
         public bool Equals(ElympicsPlayer other) => playerIndex == other.playerIndex;
         public override bool Equals(object obj) => obj is ElympicsPlayer other && Equals(other);

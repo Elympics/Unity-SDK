@@ -31,7 +31,7 @@ namespace Elympics
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
             InitializeGameServer(GameConfig, GameEngineAdapter);
-            BehavioursManager.InitializeInternal(Server);
+            BehavioursManager.InitializeInternal(Server, GameConfig.MaxPlayers);
 
             client.Destroy();
             bot.Destroy();

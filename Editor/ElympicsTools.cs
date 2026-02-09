@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -30,59 +29,8 @@ namespace Elympics
         [MenuItem(ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH, priority = 3)]
         public static void ResetIds()
         {
-            NetworkIdEnumerator.Instance.Reset();
-
             var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(SceneManager.GetActiveScene(), true);
-
-            ReassignNetworkIdsPreservingOrder(behaviours);
-            AssignNetworkIdsForNewBehaviours(behaviours);
-            CheckIfThereIsNoRepetitionsInNetworkIds(behaviours);
-        }
-
-        private static void ReassignNetworkIdsPreservingOrder(List<ElympicsBehaviour> behaviours)
-        {
-            var sortedBehaviours = new List<ElympicsBehaviour>();
-            foreach (var behaviour in behaviours)
-            {
-                if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId && !behaviour.forceNetworkId)
-                    sortedBehaviours.Add(behaviour);
-            }
-
-            sortedBehaviours.Sort((x, y) => x.NetworkId.CompareTo(y.NetworkId));
-
-            foreach (var behaviour in sortedBehaviours)
-                AssignNextNetworkId(behaviour);
-        }
-
-        private static void AssignNextNetworkId(ElympicsBehaviour behaviour) => behaviour.UpdateSerializedNetworkId();
-
-        private static void AssignNetworkIdsForNewBehaviours(List<ElympicsBehaviour> behaviours)
-        {
-            foreach (var behaviour in behaviours)
-            {
-                if (behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId)
-                    continue;
-
-                AssignNextNetworkId(behaviour);
-            }
-        }
-
-        private static void CheckIfThereIsNoRepetitionsInNetworkIds(List<ElympicsBehaviour> behaviours)
-        {
-            var behaviourNames = new Dictionary<int, string>();
-            foreach (var behaviour in behaviours)
-            {
-                var networkId = behaviour.NetworkId;
-                if (behaviourNames.TryGetValue(networkId, out var previousBehaviourName))
-                {
-                    ElympicsLogger.LogError($"Repeated network ID: {networkId} "
-                        + $"(in object {behaviour.gameObject.name})!\n"
-                        + $"Already used in object {previousBehaviourName}.");
-                    continue;
-                }
-
-                behaviourNames.Add(networkId, behaviour.gameObject.name);
-            }
+            SceneNetworkIdAssigner.ResetAllIds(behaviours);
         }
 
         private static ElympicsConfig CreateNewConfig()

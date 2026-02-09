@@ -20,12 +20,23 @@ namespace Elympics
         private ElympicsBase _elympics;
         private BinaryInputWriter _inputWriter;
 
-        internal const int NetworkIdRange = 10000000;
-        internal void InitializeInternal(ElympicsBase elympicsBase)
+        private const int SceneObjectsReserved = NetworkIdConstants.TotalSceneObjectsReserved;
+
+        internal static int IndicesPerPlayer { get; private set; }
+
+        internal static int SceneObjectsMaxIndex => SceneObjectsReserved - 1;
+        internal static int[] SpawnableSpecialPlayerIndices => ElympicsPlayer.SpawnableSpecialPlayerIndices;
+        internal void InitializeInternal(ElympicsBase elympicsBase, int maxPlayerCount)
         {
             _inputWriter = new BinaryInputWriter();
 
             _elympics = elympicsBase;
+
+            IndicesPerPlayer = NetworkIdConstants.CalculateIndicesPerPlayer(
+                SceneObjectsReserved,
+                maxPlayerCount,
+                ElympicsPlayer.SpawnableSpecialPlayerIndices.Length);
+
             factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);

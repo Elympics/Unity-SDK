@@ -80,7 +80,7 @@ namespace Elympics.Tests
             var currentSnapshot = new ElympicsSnapshot(
                 10,
                 DateTime.UtcNow,
-                new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
+                new(new() { { 2, new(29, new(1, new() { { 30, new(31, new[] { 32 }, "tst1") } })) } }),
                 new Dictionary<int, byte[]>(),
                 new Dictionary<int, TickToPlayerInput>());
 
@@ -88,7 +88,7 @@ namespace Elympics.Tests
             var receivedSnapshot = new ElympicsSnapshot(
                 20,
                 newTickStartUtc,
-                new(new() { { 2, new(29, new(1, new() { { 30, new(31, 32, "tst1") } })) } }),
+                new(new() { { 2, new(29, new(1, new() { { 30, new(31, new[] { 32 }, "tst1") } })) } }),
                 new Dictionary<int, byte[]>(),
                 new Dictionary<int, TickToPlayerInput> { { 0, new TickToPlayerInput() } });
 
@@ -383,8 +383,8 @@ namespace Elympics.Tests
                             new(2,
                                 new()
                                 {
-                                    { 30, new(30, 29, "path1") },
-                                    { 31, new(31, 30, "path2") }
+                                    { 30, new(30, new[] { 29 }, "path1") },
+                                    { 31, new(31, new[] { 30 }, "path2") }
                                 }))
                     }
                 }),
@@ -405,7 +405,7 @@ namespace Elympics.Tests
                             new(2,
                                 new()
                                 {
-                                    { 31, new(31, 30, "path2") }
+                                    { 31, new(31, new[] { 30 }, "path2") }
                                 }))
                     }
                 }),

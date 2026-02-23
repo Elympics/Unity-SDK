@@ -21,6 +21,9 @@ namespace Elympics
 
         // Generational ID tracking - FIFO queue to spread generation increments across all indices
         private readonly Queue<int> _freeIndices;
+
+        // Companion set for O(1) membership test — prevents double-enqueue in ReleaseId
+        private readonly HashSet<int> _freeIndicesSet;
         private ushort[] _generations;
         private int _nextFreshIndex;
 
@@ -74,9 +77,10 @@ namespace Elympics
             _min = min;
             _max = Math.Min(max, NetworkIdConstants.MaxIndex);
             _freeIndices = new Queue<int>();
+            _freeIndicesSet = new HashSet<int>(InitialGenerationsCapacity);
             _generations = new ushort[InitialGenerationsCapacity];
             _dynamicAllocatedIds = new HashSet<int>();
-            _current = _min - 1;
+            _current = _min - 1; // Immediately overwritten by MoveNextAndGetCurrent below
             _nextFreshIndex = _min;
 
             _ = MoveNextAndGetCurrent();
@@ -89,27 +93,52 @@ namespace Elympics
             int index;
             int generation;
 
-            // Try to reuse from free queue first (FIFO - oldest released index)
+            // Try to reuse from free queue first (FIFO - oldest released index).
             // FIFO ensures indices cycle through all free slots before reusing,
-            // spreading generation increments evenly to prevent wrap-around in long matches
-            if (_freeIndices.Count > 0)
+            // spreading generation increments evenly to prevent wrap-around in long matches.
+            //
+            // Indices whose current-generation id is still live in _dynamicAllocatedIds (e.g.
+            // reclaimed by SyncAllocatedId while sitting in the queue) are simply discarded —
+            // NOT re-enqueued. This is safe because SyncAllocatedId's caller will call ReleaseId
+            // later, which will add the index back to the queue at that time. The companion
+            // _freeIndicesSet prevents double-enqueue so the queue length always equals the
+            // number of distinct free indices.
+            //
+            // A second subtle case arises from ReleaseId → SyncAllocatedId → ReleaseId on the same
+            // index: two physical entries end up in the queue because SyncAllocatedId clears
+            // _freeIndicesSet (allowing the second ReleaseId to enqueue again). This is safe because
+            // the first (stale) entry is consumed by GetNext — either allocated normally or discarded
+            // when the live entry has already incremented the generation — and the second entry is
+            // processed correctly in a subsequent GetNext call.
+            while (_freeIndices.Count > 0)
             {
                 index = _freeIndices.Dequeue();
+                _ = _freeIndicesSet.Remove(index);
 
-                // Increment generation on reuse (with wraparound, skip 0)
+                // Discard if SyncAllocatedId re-registered this index while it was in the queue.
                 var currGen = _generations[index];
+                var currentId = EncodeNetworkId(currGen, index);
+                if (_dynamicAllocatedIds.Contains(currentId))
+                    continue;
+
+                // Increment generation on reuse
                 if (currGen == ushort.MaxValue)
                     throw ElympicsLogger.LogException(new OverflowException($"Cannot use new networkId generation. The pool of generations (min: {0}, max: {ushort.MaxValue}) has been used up."));
-                generation = ++_generations[index];
+                generation = currGen + 1;
+
+                var candidateId = EncodeNetworkId(generation, index);
+                _generations[index] = (ushort)generation;
+                if (!_dynamicAllocatedIds.Add(candidateId))
+                    throw ElympicsLogger.LogException($"Generated network ID {candidateId} (index={index}, gen={generation}) is already in use.");
+
+                return candidateId;
             }
-            else
-            {
-                // Allocate new fresh index
-                index = GetNextFreshIndex();
-                EnsureGenerationCapacity(index);
-                _generations[index] = 1; // First generation for dynamic objects
-                generation = 1;
-            }
+
+            // Allocate new fresh index
+            index = GetNextFreshIndex();
+            EnsureGenerationCapacity(index);
+            _generations[index] = 1; // First generation for dynamic objects
+            generation = 1;
 
             var networkId = EncodeNetworkId(generation, index);
 
@@ -160,8 +189,8 @@ namespace Elympics
             var index = ExtractIndex(networkId);
             var generation = ExtractGeneration(networkId);
 
-            // Only recycle dynamic IDs (generation > 0) that match current generation
-            // Scene objects (generation 0) are never recycled
+            // Only recycle dynamic IDs (generation > 0) that match current generation.
+            // Scene objects (generation 0) are never recycled.
             if (generation == 0)
                 return;
 
@@ -171,8 +200,15 @@ namespace Elympics
                 return;
             }
 
+            // Guard against double-release: if the index is already in the free queue, drop the
+            // second release silently. Without this guard a double-release creates a ghost entry
+            // that causes GetNext to hand out the same index twice in future ticks.
+            if (_freeIndicesSet.Contains(index))
+                return;
+
             // Add to back of free queue (FIFO - will be reused after all other free indices)
             _freeIndices.Enqueue(index);
+            _ = _freeIndicesSet.Add(index);
         }
 
         public int MoveNextAndGetCurrent()
@@ -182,6 +218,42 @@ namespace Elympics
         }
 
         public void MoveTo(int newCurrent) => _current = newCurrent;
+
+        /// <summary>
+        /// Informs the enumerator that a NetworkId has been allocated externally (e.g. assigned by the server
+        /// and received in a snapshot). This keeps the enumerator state consistent so future allocations
+        /// via <see cref="MoveNextAndGetCurrent"/> do not collide with ids already in use.
+        /// Silently ignores generation-0 (scene) ids and ids whose index is outside this enumerator's range.
+        /// </summary>
+        internal void SyncAllocatedId(int networkId)
+        {
+            var index = ExtractIndex(networkId);
+            var generation = ExtractGeneration(networkId);
+
+            // Scene objects (generation 0) are never managed by this allocator
+            if (generation == 0)
+                return;
+
+            // Ignore ids outside our assigned index range
+            if (index < _min || index > _max)
+                return;
+
+            EnsureGenerationCapacity(index);
+
+            _generations[index] = (ushort)generation;
+
+            // Advance _nextFreshIndex past this index so fresh allocation never picks it
+            if (index >= _nextFreshIndex)
+                _nextFreshIndex = index + 1;
+
+            // If this index was in the free queue (from a prior ReleaseId), remove it from the
+            // companion set so that a future ReleaseId for this synced id is not incorrectly
+            // treated as a double-release.
+            _ = _freeIndicesSet.Remove(index);
+
+            // Track in the allocated set so double-allocation is detected
+            _ = _dynamicAllocatedIds.Add(networkId);
+        }
 
         private void EnsureGenerationCapacity(int index)
         {

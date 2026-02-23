@@ -13,7 +13,8 @@ namespace Elympics
         }
 
         /// <summary>
-        /// Constructor with explicit parameters for testing.
+        /// Internal constructor used by the public constructor and overload entry-points.
+        /// Accepts explicit allocation parameters instead of reading from ElympicsBehavioursManager statics.
         /// </summary>
         private FactoryNetworkIdEnumerator(int playerIndex, int indicesPerPlayer, int sceneObjectsMaxIndex, int[] spawnableSpecialPlayerIndices) => _enumerator = NetworkIdEnumerator.CreateForPlayer(playerIndex, indicesPerPlayer, sceneObjectsMaxIndex, spawnableSpecialPlayerIndices);
 
@@ -23,9 +24,9 @@ namespace Elympics
 
             if (!areCurrentNetworkIdsEqual)
             {
-                ElympicsLogger.LogWarning($"The predicted ID of the last object spawned for player {player} in local snapshot history for tick {historyTick} " +
+                ElympicsLogger.LogWarning($"The current enumerator position (last allocated NetworkId) for player {player} in local snapshot history for tick {historyTick} " +
                     $"doesn't match that received from the game server. " +
-                    $"ID in local history: {historyPartState.CurrentNetworkId} received ID: {receivedPartState.CurrentNetworkId}. " +
+                    $"Position in local history: {historyPartState.CurrentNetworkId}, received position: {receivedPartState.CurrentNetworkId}. " +
                     $"Last simulated tick: {lastSimulatedTick}. " +
                     $"This means that the client incorrectly predicted spawning/destruction of objects.");
             }
@@ -37,5 +38,8 @@ namespace Elympics
         public void MoveTo(int to) => _enumerator.MoveTo(to);
         public int MoveNextAndGetCurrent() => _enumerator.MoveNextAndGetCurrent();
         public void ReleaseId(int networkId) => _enumerator.ReleaseId(networkId);
+
+        /// <inheritdoc cref="NetworkIdEnumerator.SyncAllocatedId"/>
+        internal void SyncAllocatedId(int networkId) => _enumerator.SyncAllocatedId(networkId);
     }
 }

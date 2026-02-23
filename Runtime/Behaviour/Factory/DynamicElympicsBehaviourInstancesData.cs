@@ -81,11 +81,11 @@ namespace Elympics
             _ = _instances.Remove(instanceId);
         }
 
-        internal int Add(int precedingNetworkIdEnumeratorValue, string pathInResources)
+        internal int Add(int[] networkIds, string pathInResources)
         {
             var instanceId = _instancesCounter;
             _instancesCounter++;
-            _instances.Add(instanceId, new DynamicElympicsBehaviourInstanceData(instanceId, precedingNetworkIdEnumeratorValue, pathInResources));
+            _instances.Add(instanceId, new DynamicElympicsBehaviourInstanceData(instanceId, networkIds, pathInResources));
             return instanceId;
         }
 
@@ -133,7 +133,7 @@ namespace Elympics
                 if (_instancesToRemove.Count > 0)
                     _ = sb.Append($"Number of instances that don't exist in the received state, but are present in local history: ")
                         .Append(_instancesToRemove.Count).Append(". ")
-                        .Append($"Client either didn't predict that those instances should be destoryed or incorrectly predicted that they should be spawned.");
+                        .Append($"Client either didn't predict that those instances should be destroyed or incorrectly predicted that they should be spawned.");
 
                 ElympicsLogger.LogWarning(sb.ToString());
             }

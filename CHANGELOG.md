@@ -1,3 +1,24 @@
+## [0.25.0](https://github.com/Elympics/Unity-SDK/compare/v0.24.3...v0.25.0) (2026-02-25)
+
+
+### Bug Fixes 🪲
+
+* add missing dependencies on packages and modules ([37f4c99](https://github.com/Elympics/Unity-SDK/commit/37f4c991f6dde80ad0556fffbe42d840cb6a60fd))
+* batchmode client upload synchronous ([2b4eadc](https://github.com/Elympics/Unity-SDK/commit/2b4eadcefa618ef359012555d5655c99c8ae4b51))
+* ElympicsVector2 not using tolerance correctly ([ae03c32](https://github.com/Elympics/Unity-SDK/commit/ae03c32e0b06663bf02ec63f5aa7dfde87ccae79))
+* ElympicsVector3 not using tolerance correctly ([38044eb](https://github.com/Elympics/Unity-SDK/commit/38044eb3698d8c36140b154b3dce52287c3887dc))
+* invalid operation exception ([0f76658](https://github.com/Elympics/Unity-SDK/commit/0f76658360b49ca291cdd0859606da0657b9dad8))
+* networkid sync fix ([84f01c4](https://github.com/Elympics/Unity-SDK/commit/84f01c4892453c8f50ae15c93cd09b29ade30a4d))
+* prediction warnings showing incorrect values ([3d37086](https://github.com/Elympics/Unity-SDK/commit/3d3708637239769cfd0f14a110857e40714992d5))
+* rigidbody synchronization on disabled objects ([0d3b209](https://github.com/Elympics/Unity-SDK/commit/0d3b2097a856f9a76649e6390395c05f2cea4147))
+
+
+### Features
+
+* add generative network ids ([7508a75](https://github.com/Elympics/Unity-SDK/commit/7508a75c234dd91fa2cce76d99141b73cfd9ed04))
+
+
+
 ## [0.24.3](https://github.com/Elympics/Unity-SDK/compare/v0.24.2...v0.24.3) (2026-01-27)
 
 

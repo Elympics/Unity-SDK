@@ -71,8 +71,8 @@ namespace Elympics.Tests.SnapshotAnalysis
                 (
                     new()
                     {
-                        { 27, new(29, new(1, new() { { 30, new(31, 32, "tst1") } } )) },
-                        { 33, new(34, new(1, new() { { 35, new(36, 37, "tst2") } } )) },
+                        { 27, new(29, new(1, new() { { 30, new(31, new[] { 32 }, "tst1") } } )) },
+                        { 33, new(34, new(1, new() { { 35, new(36, new[] { 37 }, "tst2") } } )) },
                     }
                 ),
                 new() { { 27, new byte[] { 1, 2, 3 } }, { 28, new byte[] { 1, 2, 3 } } },

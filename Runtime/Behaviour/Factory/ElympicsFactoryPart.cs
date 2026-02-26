@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Elympics
@@ -20,12 +19,17 @@ namespace Elympics
         private readonly Dictionary<int, CreatedInstanceWrapper> _createdInstanceWrappersCache;
         private readonly Dictionary<GameObject, int> _createdGameObjectsIds;
 
-        internal ElympicsFactoryPart(ElympicsPlayer player, Func<ElympicsPlayer, GameObject, InstantiatedTransformConfig?, GameObject> instantiate, Action<ElympicsPlayer, GameObject> destroy, Action<ElympicsBehaviour> addBehaviour, Action<int> removeBehaviour)
+        internal ElympicsFactoryPart(
+            ElympicsPlayer player,
+            Func<ElympicsPlayer, GameObject, InstantiatedTransformConfig?, GameObject> instantiate,
+            Action<ElympicsPlayer, GameObject> destroy,
+            Action<ElympicsBehaviour> addBehaviour,
+            Action<int> removeBehaviour)
         {
             _player = player;
 
-            _currentNetworkId = new FactoryNetworkIdEnumerator(player.StartNetworkId, player.EndNetworkId);
-            _instancesData = new DynamicElympicsBehaviourInstancesData(player.StartNetworkId);
+            _currentNetworkId = new FactoryNetworkIdEnumerator((int)player);
+            _instancesData = new DynamicElympicsBehaviourInstancesData(_currentNetworkId.GetCurrent());
             _createdInstanceWrappersCache = new Dictionary<int, CreatedInstanceWrapper>();
             _createdGameObjectsIds = new Dictionary<GameObject, int>();
             _instantiate = instantiate;
@@ -48,41 +52,79 @@ namespace Elympics
 
         private void OnPostStateApplied()
         {
-            var cachedNetworkIdEnumerator = _currentNetworkId.GetCurrent();
-            if (!_instancesData.AreIncomingInstancesTheSame())
-            {
-                var (instancesToRemove, instancesToAdd) = _instancesData.GetIncomingDiff();
-                foreach (var instanceData in instancesToRemove)
-                    DestroyInstanceInternal(instanceData.ID);
+            if (_instancesData.AreIncomingInstancesTheSame())
+                return;
 
-                foreach (var instanceData in instancesToAdd)
-                {
-                    _currentNetworkId.MoveTo(instanceData.PrecedingNetworkIdEnumeratorValue);
-                    _ = CreateInstanceInternal(instanceData.ID, instanceData.InstanceType, null);
-                }
+            var (instancesToRemove, instancesToAdd) = _instancesData.GetIncomingDiff();
 
-                _instancesData.ApplyIncomingInstances();
-            }
+            foreach (var instanceData in instancesToRemove)
+                DestroyInstanceInternal(instanceData.ID);
 
-            _currentNetworkId.MoveTo(cachedNetworkIdEnumerator);
+            foreach (var instanceData in instancesToAdd)
+                _ = CreateInstanceInternal(instanceData.ID, instanceData.InstanceType, null, instanceData.NetworkIds);
+
+            _instancesData.ApplyIncomingInstances();
         }
 
         internal GameObject CreateInstance(string pathInResources, InstantiatedTransformConfig? transformConfig)
         {
-            var instanceId = _instancesData.Add(_currentNetworkId.GetCurrent(), pathInResources);
-            var instanceWrapper = CreateInstanceInternal(instanceId, pathInResources, transformConfig);
+            var instanceWrapper = CreateInstanceInternal(null, pathInResources, transformConfig, null);
+            // Record the instance now that we know its NetworkIds
+            var instanceId = _instancesData.Add(instanceWrapper.NetworkIds, pathInResources);
+            _createdInstanceWrappersCache[instanceId] = instanceWrapper;
+            _createdGameObjectsIds[instanceWrapper.GameObject] = instanceId;
             return instanceWrapper.GameObject;
         }
 
-        private CreatedInstanceWrapper CreateInstanceInternal(int instanceId, string pathInResources, InstantiatedTransformConfig? transformConfig)
+        /// <summary>
+        /// Creates an instance of the prefab at <paramref name="pathInResources"/>.
+        /// </summary>
+        /// <param name="instanceId">
+        /// When non-null the caller has already reserved the instanceId (client apply path).
+        /// When null this method does NOT add to dictionaries — the caller does it after.
+        /// </param>
+        /// <param name="pathInResources">Path passed to <see cref="Resources.Load{T}"/>.</param>
+        /// <param name="transformConfig">Optional spawn transform.</param>
+        /// <param name="explicitNetworkIds">
+        /// When non-null (client path), assign these NetworkIds directly to each behaviour in order,
+        /// and sync them with the enumerator so future server allocations do not collide.
+        /// When null (server path), let the enumerator allocate new ids via <see cref="FactoryNetworkIdEnumerator.MoveNextAndGetCurrent"/>.
+        /// </param>
+        private CreatedInstanceWrapper CreateInstanceInternal(int? instanceId, string pathInResources, InstantiatedTransformConfig? transformConfig, int[] explicitNetworkIds)
         {
             var createdPrefab = Resources.Load<GameObject>(pathInResources)
                                 ?? throw new ArgumentException($"Prefab you want to instantiate ({pathInResources}) does not exist");
             var createdGameObject = _instantiate(_player, createdPrefab, transformConfig);
             var elympicsBehaviours = createdGameObject.GetComponentsInChildren<ElympicsBehaviour>(true);
-            foreach (var behaviour in elympicsBehaviours)
+
+            if (explicitNetworkIds != null && explicitNetworkIds.Length != elympicsBehaviours.Length)
+                throw new InvalidOperationException(
+                    $"NetworkIds array length ({explicitNetworkIds.Length}) does not match the number of ElympicsBehaviours ({elympicsBehaviours.Length}) on prefab '{pathInResources}'. "
+                    + "This indicates a prefab mismatch between server and client.");
+
+            var assignedNetworkIds = new int[elympicsBehaviours.Length];
+
+            for (var i = 0; i < elympicsBehaviours.Length; i++)
             {
-                behaviour.NetworkId = _currentNetworkId.MoveNextAndGetCurrent();
+                var behaviour = elympicsBehaviours[i];
+                int networkId;
+
+                if (explicitNetworkIds != null)
+                {
+                    // Client path: assign the server-authoritative NetworkId directly
+                    networkId = explicitNetworkIds[i];
+                    behaviour.NetworkId = networkId;
+                    // Keep enumerator state consistent so future allocations don't collide
+                    _currentNetworkId.SyncAllocatedId(networkId);
+                }
+                else
+                {
+                    // Server path: let the enumerator generate the next id
+                    networkId = _currentNetworkId.MoveNextAndGetCurrent();
+                    behaviour.NetworkId = networkId;
+                }
+
+                assignedNetworkIds[i] = networkId;
                 behaviour.PredictableFor = _player;
                 behaviour.PrefabName = pathInResources;
                 _addBehaviour?.Invoke(behaviour);
@@ -91,11 +133,15 @@ namespace Elympics
             var instanceWrapper = new CreatedInstanceWrapper
             {
                 GameObject = createdGameObject,
-                NetworkIds = elympicsBehaviours.Select(x => x.NetworkId).ToList()
+                NetworkIds = assignedNetworkIds,
             };
 
-            _createdInstanceWrappersCache.Add(instanceId, instanceWrapper);
-            _createdGameObjectsIds.Add(instanceWrapper.GameObject, instanceId);
+            // When instanceId is provided (client apply path), register in caches immediately
+            if (instanceId.HasValue)
+            {
+                _createdInstanceWrappersCache.Add(instanceId.Value, instanceWrapper);
+                _createdGameObjectsIds.Add(instanceWrapper.GameObject, instanceId.Value);
+            }
 
             return instanceWrapper;
         }
@@ -136,7 +182,7 @@ namespace Elympics
         private class CreatedInstanceWrapper
         {
             public GameObject GameObject { get; set; }
-            public List<int> NetworkIds { get; set; }
+            public int[] NetworkIds { get; set; }
         }
     }
 }

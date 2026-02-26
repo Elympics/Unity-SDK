@@ -4346,7 +4346,7 @@ namespace MessagePack.Formatters.Elympics
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             writer.WriteArrayHeader(3);
             writer.Write(value.ID);
-            writer.Write(value.PrecedingNetworkIdEnumeratorValue);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int[]>(formatterResolver).Serialize(ref writer, value.NetworkIds, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Serialize(ref writer, value.InstanceType, options);
         }
 
@@ -4361,7 +4361,7 @@ namespace MessagePack.Formatters.Elympics
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
             var __ID__ = default(int);
-            var __PrecedingNetworkIdEnumeratorValue__ = default(int);
+            var __NetworkIds__ = default(int[]);
             var __InstanceType__ = default(string);
 
             for (int i = 0; i < length; i++)
@@ -4372,7 +4372,7 @@ namespace MessagePack.Formatters.Elympics
                         __ID__ = reader.ReadInt32();
                         break;
                     case 1:
-                        __PrecedingNetworkIdEnumeratorValue__ = reader.ReadInt32();
+                        __NetworkIds__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<int[]>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
                         __InstanceType__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
@@ -4383,7 +4383,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
-            var ____result = new global::Elympics.DynamicElympicsBehaviourInstanceData(__ID__, __PrecedingNetworkIdEnumeratorValue__, __InstanceType__);
+            var ____result = new global::Elympics.DynamicElympicsBehaviourInstanceData(__ID__, __NetworkIds__, __InstanceType__);
             reader.Depth--;
             return ____result;
         }

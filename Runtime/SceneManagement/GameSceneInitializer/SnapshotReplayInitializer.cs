@@ -60,7 +60,7 @@ namespace Elympics
             },
             true);
             // @formatter:on
-            behavioursManager.InitializeInternal(server);
+            behavioursManager.InitializeInternal(server, gameConfig.MaxPlayers);
             bot.Destroy();
 
             replayManipulator.LoadReplay(updateLoop, new ReplayData { InitData = initData, Snapshots = snapshots });

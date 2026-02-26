@@ -43,6 +43,8 @@ namespace Elympics.Tests
 
             _elympicsBehaviour.PredictableFor = ElympicsPlayer.All;
             _elympicsObject.GetComponent<ElympicsBehaviour>().PredictableFor = ElympicsPlayer.All;
+            _elympicsObject.GetComponent<ElympicsBehaviour>().NetworkId = 1;
+            _rpcHolderObject.GetComponent<ElympicsBehaviour>().NetworkId = 2;
 
             _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
@@ -85,7 +87,7 @@ namespace Elympics.Tests
         private void SetupBeforeUpdate()
         {
             SetupBeforeInitialization();
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 100);
         }
 
         private void SetupBeforePhysicsUpdate()
@@ -147,11 +149,13 @@ namespace Elympics.Tests
 
         private bool WasPlayerToServerRpcInvokedOrScheduled() =>
             _rpcHolder.PlayerToServerMethodCalled || WasPlayerToServerRpcScheduled();
+
         private bool WasServerToPlayersRpcInvokedOrScheduled() =>
             _rpcHolder.ServerToPlayersMethodCalled || WasServerToPlayersRpcScheduled();
 
         private bool WasPlayerToServerRpcScheduled() =>
             WasRpcScheduled(_rpcHolder.GetType().GetMethod(nameof(RpcHolderInContext.PlayerToServerMethod)));
+
         private bool WasServerToPlayersRpcScheduled() =>
             WasRpcScheduled(_rpcHolder.GetType().GetMethod(nameof(RpcHolderInContext.ServerToPlayersMethod)));
 
@@ -165,9 +169,11 @@ namespace Elympics.Tests
         #region Act methods
 
         private void RunInitialization() =>
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 100);
+
         private void RunUpdate() =>
             _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
+
         private void MoveTriggerAndRunUpdate()
         {
             _trigger!.GetComponent<Rigidbody>().position = new Vector3(0, 0, 0);

@@ -66,6 +66,9 @@ namespace Elympics
             if (receivedSnapshot == null)
                 return;
 
+            if (Tick >= receivedSnapshot.Tick)
+                return;
+
             Tick = receivedSnapshot.Tick;
             TickStartUtc = receivedSnapshot.TickStartUtc;
 

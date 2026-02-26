@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using Elympics.Editor;
 using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -26,10 +26,6 @@ namespace Elympics
         private const string DirectoryNameToUpload = "Games";
         private const string EngineSubdirectory = "Engine";
         private const string BotSubdirectory = "Bot";
-        private const string ContentEncodingKey = "Content-Encoding";
-        private const string ContentTypeKey = "Content-Type";
-
-        private const string NamePattern = "^[0-9-a-zA-Z.]+$";
 
         private static string ElympicsWebEndpoint => ElympicsConfig.Load().ElympicsApiEndpoint;
 
@@ -130,37 +126,6 @@ namespace Elympics
             public long exp = 0;
         }
 
-        [Serializable]
-        private class ClientBuildUploadInitRequestModel
-        {
-            public string gameId;
-            public string clientGameVersion;
-            public string serverGameVersion;
-            public string streamingAssetsUrl;
-            public string[] files;
-        }
-
-        [Serializable]
-        public class ClientBuildUploadInitResponseModel
-        {
-            public string UploadId;
-            public DateTime ExpiresAt;
-            public FileUploadInfo[] Files;
-
-            public struct FileUploadInfo
-            {
-                public string FilePath;
-                public string SignedUrl;
-                public string GcsPath;
-            }
-        }
-
-        [Serializable]
-        private class ClientBuildUploadCompleteRequestModel
-        {
-            public string uploadId;
-            public bool success;
-        }
 
         private static UnityWebRequestAsyncOperation Login(string username, string password, Action<UnityWebRequest> completed = null)
         {
@@ -457,87 +422,11 @@ namespace Elympics
             }
         }
 
-        internal static string[] compoundExtensions =
-        {
-            ".framework.js",
-            ".wasm",
-            ".elympicsmeta.json",
-            ".loader.js",
-            ".data",
-        };
-
-        private static string[] contentType =
-        {
-            "application/javascript",
-            "application/wasm",
-            "application/json",
-            "application/javascript",
-            "application/octet-stream",
-        };
-
-        private const string FixedPrefix = "Build";
-
-        private static bool TryGetFullExtension(ReadOnlySpan<char> fileName, string[] knownCompoundExtensions, out string compoundExtension)
-        {
-            compoundExtension = string.Empty;
-            foreach (var ext in knownCompoundExtensions)
-            {
-                var extIndex = fileName.IndexOf(ext.AsSpan(), StringComparison.OrdinalIgnoreCase);
-                if (extIndex < 0)
-                    continue;
-
-                compoundExtension = fileName[extIndex..].ToString();
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool DoesFileHaveGivenCompoundExtension(string fileName, string compoundExtension)
-        {
-            if (TryGetFullExtension(fileName.AsSpan(), compoundExtensions, out var fileCompoundExtension))
-                return fileCompoundExtension == compoundExtension;
-            return false;
-        }
-
-        private static string FetchEncoding(string compoundExtension)
-        {
-            var fileName = compoundExtension.AsSpan();
-            if (fileName.EndsWith(".br"))
-                return "br";
-            if (fileName.EndsWith(".gz"))
-                return "gzip";
-            return string.Empty;
-        }
-
-        private static string FetchContentType(string fileExtension)
-        {
-            for (var i = 0; i < compoundExtensions.Length; i++)
-            {
-                var ext = compoundExtensions[i];
-                if (fileExtension.Contains(ext))
-                    return contentType[i];
-            }
-
-            throw new ElympicsException("Unknown content type: " + fileExtension);
-        }
-
+        // For backwards compatibility - delegate to WebGLUploader
+        internal static string[] compoundExtensions => WebGLUploader.CompoundExtensions;
 
         internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
-        {
-            return fileNames.Select(fileName =>
-            {
-                if (TryGetFullExtension(fileName.AsSpan(), knownCompoundExtensions, out var compoundExtension))
-                {
-                    var splitExtension = compoundExtension.Split('.');
-                    var split = fileName.Split('.');
-                    var name = string.Join(".", split.Take(split.Length - splitExtension.Length + 1));
-                    return (name, compoundExtension);
-                }
-
-                return (string.Empty, string.Empty);
-            }).Where(file => !string.IsNullOrEmpty(file.Item1)).ToList();
-        }
+            => WebGLUploader.GetValidFiles(fileNames, knownCompoundExtensions);
 
         public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion, string streamingAssetsUrl)
         {
@@ -554,140 +443,75 @@ namespace Elympics
 
                 EditorUtility.DisplayProgressBar(title, "Gathering files", 0f);
 
-                if (!Directory.Exists(clientBuildPath))
+                var validationError = WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out var validFiles);
+                if (validationError != null)
                 {
-                    FailWithError($"Client build directory '{clientBuildPath}' does not exist.");
-                    return;
-                }
-
-                var isNameValid = Regex.IsMatch(clientGameVersion, NamePattern);
-                if (!isNameValid)
-                {
-                    FailWithError($"Client game version '{clientGameVersion}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.");
-                    return;
-                }
-
-                var filePaths = Directory.GetFiles(clientBuildPath);
-                var fileNames = filePaths.Select(Path.GetFileName).ToArray();
-                var validFiles = GetValidFiles(fileNames, compoundExtensions);
-
-                if (validFiles.Count != compoundExtensions.Length)
-                {
-                    throw new ElympicsException(
-                        $"Not all required files will be uploaded to bucket{Environment.NewLine}Files in directory: {string.Join('|', fileNames)}{Environment.NewLine}Validated files: {string.Join('|', validFiles)}");
-                }
-
-                if (!ElympicsConfig.IsLogin)
-                {
-                    ElympicsLogger.LogError("You must be logged in Elympics to upload a client build.");
-                    EditorUtility.ClearProgressBar();
+                    FailWithError(validationError);
                     return;
                 }
 
                 EditorUtility.DisplayProgressBar(title, "Initializing upload", 0.1f);
 
-                var request = new ClientBuildUploadInitRequestModel()
+                var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, streamingAssetsUrl, validFiles);
+                _ = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest, webRequest =>
                 {
-                    gameId = gameId,
-                    clientGameVersion = clientGameVersion,
-                    serverGameVersion = serverGameVersion,
-                    streamingAssetsUrl = streamingAssetsUrl,
-                    files = validFiles.Select(fileNameAndExtension => FixedPrefix + fileNameAndExtension.extension).ToArray(),
-                };
-
-                var uri = GetCombinedUrl(ElympicsWebEndpoint, "client-builds", "init");
-                _ = ElympicsEditorWebClient.SendJsonPostRequestApi(uri,
-                    request,
-                    webRequestInit =>
+                    try
                     {
-                        try
-                        {
-                            if (TryDeserializeResponse<ClientBuildUploadInitResponseModel>(webRequestInit, "Initialize client build upload", out var response))
-                                OnClientBuildUploadInitResponse(response, validFiles);
-                            else
-                                throw new ElympicsException("Failed to initialize client build upload.");
-                        }
-                        catch (ElympicsException e)
-                        {
-                            FailWithException(e);
-                        }
-                    });
-
-                void FailWithError(string error)
-                {
-                    EditorUtility.ClearProgressBar();
-                    ElympicsLogger.LogError(error);
-                    _ = EditorUtility.DisplayDialog(title, error, "OK");
-                }
-
-                void FailWithException(Exception exception)
-                {
-                    EditorUtility.ClearProgressBar();
-                    _ = ElympicsLogger.LogException(exception);
-                    _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{exception.Message}", "OK");
-                }
+                        if (TryDeserializeResponse<WebGLUploader.UploadInitResponse>(webRequest, "Initialize client build upload", out var response))
+                            OnClientBuildUploadInitResponse(response, validFiles);
+                        else
+                            throw new ElympicsException("Failed to initialize client build upload.");
+                    }
+                    catch (ElympicsException e)
+                    {
+                        FailWithException(e);
+                    }
+                });
             }
 
-
-            void OnClientBuildUploadInitResponse(ClientBuildUploadInitResponseModel response, List<(string, string)> validFiles)
+            void OnClientBuildUploadInitResponse(WebGLUploader.UploadInitResponse response, List<(string name, string extension)> validFiles)
             {
-                var completeUri = GetCombinedUrl(ElympicsWebEndpoint, "client-builds", "complete");
-                try
-                {
-                    for (var index = 0; index < response.Files.Length; index++)
-                    {
-                        var fileUploadInfo = response.Files[index];
-                        var responseFile = Path.Combine(clientBuildPath, fileUploadInfo.FilePath);
-                        var expectedFile = validFiles[index];
-                        if (!DoesFileHaveGivenCompoundExtension(responseFile, expectedFile.Item2))
-                            throw new ElympicsException($"Uploaded file '{fileUploadInfo.FilePath}' does not match expected extension '{expectedFile.Item2}'.");
-                        var localFile = expectedFile.Item1 + expectedFile.Item2;
-                        EditorUtility.DisplayProgressBar(title, $"Uploading file '{localFile}'", 0.2f);
-                        var filePath = Path.Combine(clientBuildPath, localFile);
-                        using var request = UnityWebRequest.Put(fileUploadInfo.SignedUrl, File.ReadAllBytes(filePath));
-                        var requestContentType = FetchContentType(expectedFile.Item2);
-                        request.SetRequestHeader(ContentTypeKey, requestContentType);
-                        var encoding = FetchEncoding(expectedFile.Item2);
-                        if (!string.IsNullOrEmpty(encoding))
-                            request.SetRequestHeader(ContentEncodingKey, encoding);
+                var uploadError = WebGLUploader.UploadFilesToGcs(
+                    clientBuildPath,
+                    response,
+                    validFiles,
+                    (fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.2f + progress * 0.7f));
 
-                        var operation = request.SendWebRequest();
-                        while (!operation.isDone)
-                        { }
-
-                        if (operation.webRequest.IsConnectionError() || operation.webRequest.IsProtocolError())
-                            throw new ElympicsException($"Failed to upload file '{localFile}': {operation.webRequest.error}{Environment.NewLine}{operation.webRequest.downloadHandler.text}");
-                    }
-                }
-                catch (Exception e)
+                if (uploadError != null)
                 {
                     EditorUtility.ClearProgressBar();
-                    _ = ElympicsLogger.LogException(e);
-                    _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "OK");
+                    ElympicsLogger.LogError(uploadError);
+                    if (!Application.isBatchMode)
+                        _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{uploadError}", "OK");
 
-
-                    _ = ElympicsEditorWebClient.SendJsonPostRequestApi(completeUri,
-                        new ClientBuildUploadCompleteRequestModel
-                        {
-                            uploadId = response.UploadId,
-                            success = false,
-                        });
-
+                    _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, false);
                     return;
                 }
 
-                _ = ElympicsEditorWebClient.SendJsonPostRequestApi(completeUri,
-                    new ClientBuildUploadCompleteRequestModel
-                    {
-                        uploadId = response.UploadId,
-                        success = true,
-                    });
+                _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, true);
 
                 ElympicsLogger.Log("Client build uploaded successfully.");
                 EditorUtility.ClearProgressBar();
             }
+
+            void FailWithError(string error)
+            {
+                EditorUtility.ClearProgressBar();
+                ElympicsLogger.LogError(error);
+                if (!Application.isBatchMode)
+                    _ = EditorUtility.DisplayDialog(title, error, "OK");
+            }
+
+            void FailWithException(Exception exception)
+            {
+                EditorUtility.ClearProgressBar();
+                _ = ElympicsLogger.LogException(exception);
+                if (!Application.isBatchMode)
+                    _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{exception.Message}", "OK");
+            }
         }
 
+        [PublicAPI]
         public static void UploadClientBuildInBatchmode(
             string username,
             string password,
@@ -698,7 +522,36 @@ namespace Elympics
             string streamingAssetsUrl)
         {
             LoginAsDeveloper(username, password);
-            UploadClientBuild(clientBuildPath, gameId, clientGameVersion, serverGameVersion, streamingAssetsUrl);
+
+            var validationError = WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out var validFiles);
+            if (validationError != null)
+                throw new ElympicsException(validationError);
+
+            var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, streamingAssetsUrl, validFiles);
+            var initOp = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest);
+            while (!initOp.isDone)
+            { }
+
+            if (!TryDeserializeResponse<WebGLUploader.UploadInitResponse>(initOp.webRequest, "Initialize client build upload", out var initResponse))
+                throw new ElympicsException("Failed to initialize client build upload.");
+
+            var uploadError = WebGLUploader.UploadFilesToGcs(clientBuildPath, initResponse, validFiles);
+            if (uploadError != null)
+            {
+                var failOp = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, initResponse.UploadId, false);
+                while (!failOp.isDone)
+                { }
+                throw new ElympicsException(uploadError);
+            }
+
+            var completeOp = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, initResponse.UploadId, true);
+            while (!completeOp.isDone)
+            { }
+
+            if (completeOp.webRequest.IsConnectionError() || completeOp.webRequest.IsProtocolError())
+                throw new ElympicsException($"Failed to complete client build upload: {completeOp.webRequest.error}");
+
+            ElympicsLogger.Log("Client build uploaded successfully.");
         }
 
         private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)

@@ -38,6 +38,8 @@ namespace Elympics
         private ElympicsFloat _gravityScale;
         private ElympicsBool _isKinematic;
 
+        private bool _hasPendingUpdate;
+
         private bool SynchronizeMass => _mass.EnabledSynchronization && !Rigidbody2D.useAutoMass;
 
         private Rigidbody2D Rigidbody2D { get; set; }
@@ -60,6 +62,23 @@ namespace Elympics
 
         public void OnPostStateDeserialize()
         {
+            //If Rigidbody2D is disabled, changes to some of its properties are ignored, so we have to wait and only apply them once the object is enabled
+            if (isActiveAndEnabled)
+                ApplyValues();
+            else
+                _hasPendingUpdate = true;
+        }
+
+        private void OnEnable()
+        {
+            if (_hasPendingUpdate)
+                ApplyValues();
+        }
+
+        private void ApplyValues()
+        {
+            _hasPendingUpdate = false;
+
             if (_position.EnabledSynchronization)
                 Rigidbody2D.position = _position.Value;
             if (_rotation.EnabledSynchronization)

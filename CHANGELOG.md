@@ -15,7 +15,7 @@
 
 ### Features
 
-* add generative network ids ([7508a75](https://github.com/Elympics/Unity-SDK/commit/7508a75c234dd91fa2cce76d99141b73cfd9ed04))
+* BREAKING CHANGE: add generative network ids ([7508a75](https://github.com/Elympics/Unity-SDK/commit/7508a75c234dd91fa2cce76d99141b73cfd9ed04))
 
 
 

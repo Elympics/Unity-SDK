@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Weaver;
 using Elympics.Weaver.Extensions;
+using Elympics.Weaving;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -14,8 +16,10 @@ namespace Elympics.Editor
 
         private ElympicsWeaverAssembly _assembly;
 
-        public override void VisitModule(ModuleDefinition moduleDefinition) =>
+        protected override void StartVisiting(ModuleDefinition moduleDefinition)
+        {
             _assembly = new ElympicsWeaverAssembly(moduleDefinition.Assembly);
+        }
 
         internal void ValidateRpcMethodDefinition(MethodDefinition methodDefinition)
         {
@@ -152,6 +156,15 @@ namespace Elympics.Editor
 
             // Calling standard method
             rpcILProcessor.InsertBefore(firstInstruction, originalMethodBodyBranch);
+        }
+
+        protected override void FinishVisiting(ModuleDefinition moduleDefinition)
+        {
+            var processedAttribute = new CustomAttribute(moduleDefinition
+                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(Array.Empty<Type>())));
+            moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
+
+            _assembly = null;
         }
     }
 }

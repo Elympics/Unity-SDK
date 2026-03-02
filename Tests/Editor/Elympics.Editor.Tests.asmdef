@@ -9,7 +9,6 @@
         "UniTask",
         "MessagePack",
         "Elympics.Tests",
-        "Elympics.Weaver",
         "Elympics.Editor.Weaving",
         "SmartContractService.Test"
     ],
@@ -21,7 +20,7 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll",
-        "Elympics.Mono.Cecil.dll"
+        "Mono.Cecil.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

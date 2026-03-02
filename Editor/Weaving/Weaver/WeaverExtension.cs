@@ -1,5 +1,4 @@
 using System;
-using Elympics.Weaving;
 using Mono.Cecil;
 using UnityEngine;
 
@@ -66,13 +65,15 @@ namespace Elympics.Weaver
         /// Invoked whenever we start editing a module. Used to populate our
         /// helper functions
         /// </summary>
-        public virtual void OnBeforeModuleEdited(ModuleDefinition moduleDefinition, Log log)
+        public void OnBeforeModuleEdited(ModuleDefinition moduleDefinition, Log log)
         {
             if (m_RequiredScriptingSymbols.isActive)
             {
                 m_Log = log;
                 m_ActiveModule = moduleDefinition;
                 Log("Visiting module");
+
+                StartVisiting(moduleDefinition);
             }
             else
             {
@@ -83,21 +84,21 @@ namespace Elympics.Weaver
         /// <summary>
         /// Invoked when we have finished editing a module
         /// </summary>
-        public virtual void OnModuleEditComplete(ModuleDefinition moduleDefinition)
+        public void OnModuleEditComplete(ModuleDefinition moduleDefinition)
         {
-            var processedAttribute = new CustomAttribute(moduleDefinition
-                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(Array.Empty<Type>())));
-            moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
+            FinishVisiting(moduleDefinition);
 
             m_ActiveModule = null;
             Log("Module visitation complete");
         }
 
+        protected virtual void StartVisiting(ModuleDefinition moduleDefinition) { }
         public virtual void VisitModule(ModuleDefinition moduleDefinition) { }
         public virtual void VisitType(TypeDefinition typeDefinition) { }
         public virtual void VisitMethod(MethodDefinition methodDefinition) { }
         public virtual void VisitField(FieldDefinition fieldDefinition) { }
         public virtual void VisitProperty(PropertyDefinition propertyDefinition) { }
+        protected virtual void FinishVisiting(ModuleDefinition moduleDefinition) { }
 
         #region -= Logging =-
         /// <summary>

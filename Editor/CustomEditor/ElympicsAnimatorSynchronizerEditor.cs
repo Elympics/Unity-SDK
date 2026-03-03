@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Linq;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
@@ -8,7 +7,7 @@ using UnityEngine;
 namespace Elympics
 {
     [CustomEditor(typeof(ElympicsAnimatorSynchronizer))]
-    internal partial class ElympicsAnimatorSynchronizerEditor : Editor
+    internal partial class ElympicsAnimatorSynchronizerEditor : UnityEditor.Editor
     {
         private ElympicsAnimatorSynchronizer _animatorSynchronizer;
         private AnimatorController _controller;
@@ -139,4 +138,3 @@ namespace Elympics
         }
     }
 }
-#endif

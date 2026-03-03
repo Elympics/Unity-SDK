@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -6,7 +5,7 @@ namespace Elympics
 {
     [CustomEditor(typeof(ElympicsBehavioursManager))]
     [CanEditMultipleObjects]
-    public class ElympicsBehavioursManagerEditor : Editor
+    public class ElympicsBehavioursManagerEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
@@ -17,4 +16,3 @@ namespace Elympics
         }
     }
 }
-#endif

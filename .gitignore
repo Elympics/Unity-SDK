@@ -557,5 +557,8 @@ FodyWeavers.xsd
 # Custom rules
 #
 
+# Track Unity .meta files for assets
+!*.meta
+
 # Related to the internal test for Elympics.dll weaving lock problem
 Runtime/WeaverLockingProblemTest.*

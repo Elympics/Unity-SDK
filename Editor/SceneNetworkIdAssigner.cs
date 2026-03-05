@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Elympics
@@ -30,6 +31,7 @@ namespace Elympics
 
         private static void OnSceneSaved(Scene scene)
         {
+            Debug.Log("Scene saved");
             ValidateScene(scene);
         }
 
@@ -65,60 +67,69 @@ namespace Elympics
             CheckForDuplicateNetworkIds(behaviours);
         }
 
-        internal static void AssignPredefinedNetworkIds(List<ElympicsBehaviour> behaviours)
+        private static void AssignPredefinedNetworkIds(List<ElympicsBehaviour> behaviours)
         {
+            // TODO: set it up so that the components from the Elympics prefab cannot be used in other places, seal the classes etc. ~dsygocki 2026-03-05
             foreach (var behaviour in behaviours)
-            {
-                if (behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out _))
+                if (behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out var physicsSimulator) && physicsSimulator.GetType() == typeof(ElympicsUnityPhysicsSimulator))
                 {
+                    if (behaviour.networkId == NetworkIdConstants.PhysicsSimulatorNetworkId && behaviour.autoAssignNetworkId)
+                        continue;
+                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.PhysicsSimulatorNetworkId;
                     behaviour.autoAssignNetworkId = true;
-                    EditorUtility.SetDirty(behaviour);
                 }
-                else if (behaviour.TryGetComponent<ServerLogBehaviour>(out _))
+                else if (behaviour.TryGetComponent<ServerLogBehaviour>(out var logBehaviour) && logBehaviour.GetType() == typeof(ServerLogBehaviour))
                 {
+                    if (behaviour.networkId == NetworkIdConstants.ServerLogNetworkId && behaviour.autoAssignNetworkId)
+                        continue;
+                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.ServerLogNetworkId;
                     behaviour.autoAssignNetworkId = true;
-                    EditorUtility.SetDirty(behaviour);
                 }
-                else if (behaviour.TryGetComponent<DefaultServerHandler>(out _))
+                else if (behaviour.TryGetComponent<DefaultServerHandler>(out var serverHandler) && serverHandler.GetType() == typeof(DefaultServerHandler))
                 {
+                    if (behaviour.networkId == NetworkIdConstants.DefaultServerHandlerNetworkId && behaviour.autoAssignNetworkId)
+                        continue;
+                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.DefaultServerHandlerNetworkId;
                     behaviour.autoAssignNetworkId = true;
-                    EditorUtility.SetDirty(behaviour);
                 }
-            }
         }
 
-        private static bool IsPredefinedBehaviour(ElympicsBehaviour behaviour)
-            => behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out _)
-               || behaviour.TryGetComponent<ServerLogBehaviour>(out _)
-               || behaviour.TryGetComponent<DefaultServerHandler>(out _);
+        internal static bool IsPredefinedBehaviour(ElympicsBehaviour behaviour)
+            => (behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out var physicsSimulator) && physicsSimulator.GetType() == typeof(ElympicsUnityPhysicsSimulator))
+            || (behaviour.TryGetComponent<ServerLogBehaviour>(out var logBehaviour) && logBehaviour.GetType() == typeof(ServerLogBehaviour))
+            || (behaviour.TryGetComponent<DefaultServerHandler>(out var serverHandler) && serverHandler.GetType() == typeof(DefaultServerHandler));
 
         private static int GetNextNetworkId()
         {
             if (nextId >= NetworkIdConstants.DefaultSceneObjectsReserved)
                 ElympicsLogger.LogWarning($"Scene object NetworkId {nextId} exceeds reserved range "
-                                          + $"(max {NetworkIdConstants.DefaultSceneObjectsReserved - 1}). "
-                                          + "Consider increasing DefaultSceneObjectsReserved.");
+                    + $"(max {NetworkIdConstants.DefaultSceneObjectsReserved - 1}). "
+                    + "Consider increasing DefaultSceneObjectsReserved.");
 
             return nextId++;
         }
 
         private static void AssignNetworkId(ElympicsBehaviour behaviour)
         {
-            behaviour.networkId = GetNextNetworkId();
-            EditorUtility.SetDirty(behaviour);
+            var id = GetNextNetworkId();
+            if (behaviour.networkId == id)
+                return;
+            Undo.RecordObject(behaviour, "Assign predefined network ID");
+            behaviour.networkId = id;
         }
 
         private static void ReassignAutoIds(List<ElympicsBehaviour> behaviours)
         {
             var sortedBehaviours = new List<ElympicsBehaviour>();
             foreach (var behaviour in behaviours)
-            {
                 if (behaviour.autoAssignNetworkId && !IsPredefinedBehaviour(behaviour))
                     sortedBehaviours.Add(behaviour);
-            }
 
             sortedBehaviours.Sort((x, y) => x.NetworkId.CompareTo(y.NetworkId));
 
@@ -129,12 +140,9 @@ namespace Elympics
         private static void CheckForEmptyManualIds(List<ElympicsBehaviour> behaviours)
         {
             foreach (var behaviour in behaviours)
-            {
                 if (!behaviour.autoAssignNetworkId && behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId)
                     ElympicsLogger.LogWarning($"Manual NetworkId not assigned on {behaviour.gameObject.name}. "
-                                              + "Use the inspector to assign an ID.",
-                        behaviour);
-            }
+                        + "Use the inspector to assign an ID.", behaviour);
         }
 
         private static void CheckForDuplicateNetworkIds(List<ElympicsBehaviour> behaviours)
@@ -152,8 +160,8 @@ namespace Elympics
                 if (behaviourNames.TryGetValue(networkId, out var previousBehaviourName))
                 {
                     ElympicsLogger.LogError($"Repeated network ID: {networkId} "
-                                            + $"(in object {behaviour.gameObject.name})!\n"
-                                            + $"Already used in object {previousBehaviourName}.");
+                        + $"(in object {behaviour.gameObject.name})!\n"
+                        + $"Already used in object {previousBehaviourName}.");
                     continue;
                 }
 

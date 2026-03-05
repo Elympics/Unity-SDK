@@ -5,6 +5,7 @@ using Elympics.Behaviour;
 using Elympics.Communication.Models.Public;
 using Elympics.Replication;
 using MatchTcpClients.Synchronizer;
+using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
@@ -39,6 +40,8 @@ namespace Elympics
                 ElympicsPlayer.SpawnableSpecialPlayerIndices.Length);
 
             factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
+
+
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
             var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);

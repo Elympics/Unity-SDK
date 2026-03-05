@@ -69,7 +69,7 @@ namespace Elympics
             _warningStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Normal, wordWrap = true, richText = true };
             EditorStyles.label.wordWrap = true;
             serializedObject.Update();
-            if (IgnoreComponent(_behaviour))
+            if (SceneNetworkIdAssigner.IsPredefinedBehaviour(_behaviour))
             {
                 EditorGUILayout.LabelField(Label_BehaviourNotModifiable);
                 return;

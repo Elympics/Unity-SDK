@@ -68,7 +68,7 @@ namespace Elympics
             if (!migratedAutoNetworkId.boolValue)
             {
                 _autoAssignNetworkId.boolValue = !forceNetworkId.boolValue;
-                serializedObject.ApplyModifiedProperties();
+                _ = serializedObject.ApplyModifiedProperties();
             }
         }
 

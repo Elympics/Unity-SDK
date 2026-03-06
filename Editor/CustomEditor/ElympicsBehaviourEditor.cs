@@ -61,6 +61,15 @@ namespace Elympics
             _replicationPriority = serializedObject.FindProperty(nameof(_behaviour.replicationPriority));
             _netUpdateIntervalInTicks = serializedObject.FindProperty(nameof(_behaviour.netUpdateIntervalInTicks));
             _stringBuilder = new StringBuilder();
+
+            // TODO: remove the following measures of backwards compatibility one day (3/3) ~dsygocki 2026-03-06
+            var forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.forceNetworkId));
+            var migratedAutoNetworkId = serializedObject.FindProperty(nameof(_behaviour.migratedAutoNetworkId));
+            if (!migratedAutoNetworkId.boolValue)
+            {
+                _autoAssignNetworkId.boolValue = !forceNetworkId.boolValue;
+                serializedObject.ApplyModifiedProperties();
+            }
         }
 
         public override void OnInspectorGUI()

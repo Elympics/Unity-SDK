@@ -72,37 +72,37 @@ namespace Elympics
             foreach (var behaviour in behaviours)
                 if (behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out var physicsSimulator) && physicsSimulator.GetType() == typeof(ElympicsUnityPhysicsSimulator))
                 {
-                    if (behaviour.networkId == NetworkIdConstants.PhysicsSimulatorNetworkId && behaviour.autoAssignNetworkId)
+                    if (behaviour.networkId == NetworkIdConstants.PhysicsSimulatorNetworkId && behaviour.AutoAssignNetworkId)
                         continue;
                     Undo.RecordObject(behaviour, "Re-assign predefined network ID");
                     PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.PhysicsSimulatorNetworkId;
-                    behaviour.autoAssignNetworkId = true;
+                    behaviour.AutoAssignNetworkId = true;
                 }
                 else if (behaviour.TryGetComponent<ServerLogBehaviour>(out var logBehaviour) && logBehaviour.GetType() == typeof(ServerLogBehaviour))
                 {
-                    if (behaviour.networkId == NetworkIdConstants.ServerLogNetworkId && behaviour.autoAssignNetworkId)
+                    if (behaviour.networkId == NetworkIdConstants.ServerLogNetworkId && behaviour.AutoAssignNetworkId)
                         continue;
                     Undo.RecordObject(behaviour, "Re-assign predefined network ID");
                     PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.ServerLogNetworkId;
-                    behaviour.autoAssignNetworkId = true;
+                    behaviour.AutoAssignNetworkId = true;
                 }
                 else if (behaviour.TryGetComponent<DefaultServerHandler>(out var serverHandler) && serverHandler.GetType() == typeof(DefaultServerHandler))
                 {
-                    if (behaviour.networkId == NetworkIdConstants.DefaultServerHandlerNetworkId && behaviour.autoAssignNetworkId)
+                    if (behaviour.networkId == NetworkIdConstants.DefaultServerHandlerNetworkId && behaviour.AutoAssignNetworkId)
                         continue;
                     Undo.RecordObject(behaviour, "Re-assign predefined network ID");
                     PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
                     behaviour.networkId = NetworkIdConstants.DefaultServerHandlerNetworkId;
-                    behaviour.autoAssignNetworkId = true;
+                    behaviour.AutoAssignNetworkId = true;
                 }
         }
 
         private static void ReassignAutoIds(List<ElympicsBehaviour> behaviours)
         {
             var sortedBehaviours = behaviours
-                .Where(behaviour => behaviour.autoAssignNetworkId && !IsPredefinedBehaviour(behaviour))
+                .Where(behaviour => behaviour.AutoAssignNetworkId && !IsPredefinedBehaviour(behaviour))
                 .ToList();
             HierarchicalSorting.Sort(sortedBehaviours);
             foreach (var behaviour in sortedBehaviours)
@@ -118,7 +118,7 @@ namespace Elympics
         private static void CheckForEmptyManualIds(List<ElympicsBehaviour> behaviours)
         {
             foreach (var behaviour in behaviours)
-                if (!behaviour.autoAssignNetworkId && behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId)
+                if (!behaviour.AutoAssignNetworkId && behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId)
                     ElympicsLogger.LogError($"Manual NetworkId not assigned on {behaviour.gameObject.name}. "
                         + "Use the inspector to assign an ID.", behaviour);
         }
@@ -127,7 +127,7 @@ namespace Elympics
         {
             foreach (var behaviour in behaviours)
             {
-                if (behaviour.autoAssignNetworkId)
+                if (behaviour.AutoAssignNetworkId)
                     continue;
 
                 var id = behaviour.NetworkId;
@@ -141,7 +141,7 @@ namespace Elympics
             var behaviourNames = new Dictionary<int, string>();
             foreach (var behaviour in behaviours)
             {
-                if (behaviour.autoAssignNetworkId)
+                if (behaviour.AutoAssignNetworkId)
                     continue;
 
                 var networkId = behaviour.NetworkId;

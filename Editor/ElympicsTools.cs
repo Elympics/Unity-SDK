@@ -27,11 +27,7 @@ namespace Elympics
         }
 
         [MenuItem(ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH, priority = 3)]
-        public static void ResetIds()
-        {
-            var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(SceneManager.GetActiveScene(), true);
-            SceneNetworkIdAssigner.ResetAllIds(behaviours);
-        }
+        public static void ResetIds() => SceneNetworkIdAssigner.ResetAllIds(SceneManager.GetActiveScene());
 
         private static ElympicsConfig CreateNewConfig()
         {

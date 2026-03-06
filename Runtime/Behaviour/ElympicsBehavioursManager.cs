@@ -41,8 +41,6 @@ namespace Elympics
 
             factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
 
-
-
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
             var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
             foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));

@@ -355,6 +355,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4303807548553876502, guid: 2b63418f73f4d3c4c9fc129bdcba11ed,
+        type: 3}
+      propertyPath: networkId
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4303807548553876502, guid: 2b63418f73f4d3c4c9fc129bdcba11ed,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4303807549376297011, guid: 2b63418f73f4d3c4c9fc129bdcba11ed,
         type: 3}
       propertyPath: m_Name

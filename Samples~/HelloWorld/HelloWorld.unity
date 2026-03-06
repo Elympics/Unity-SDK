@@ -189,7 +189,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 4
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 5
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -438,7 +440,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 2
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 3
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -679,7 +683,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 3
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 4
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -900,7 +906,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 5
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 6
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1319,7 +1327,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 1
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 7
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 1

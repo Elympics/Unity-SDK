@@ -172,7 +172,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 13
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 23
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -371,7 +373,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 1
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 20
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -598,7 +602,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 12
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 13
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -765,7 +771,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 2
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 21
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -949,7 +957,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 3
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 19
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1236,7 +1246,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 4
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 17
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1421,7 +1433,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 5
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 18
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1684,12 +1698,16 @@ MonoBehaviour:
   - {fileID: 1014822122}
   - {fileID: 1014822121}
   player1Side:
+    _enabledSynchronization: 1
     currentValue: 0
   player2Side:
+    _enabledSynchronization: 1
     currentValue: 0
   currentPlayerTurn:
+    _enabledSynchronization: 1
     currentValue: -1
   gameOver:
+    _enabledSynchronization: 1
     currentValue: 0
 --- !u!114 &1571053395
 MonoBehaviour:
@@ -1704,7 +1722,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 6
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 14
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1830,7 +1850,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 9
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 12
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -1917,7 +1939,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 11
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 16
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -2167,7 +2191,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 10
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 22
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -2348,7 +2374,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 8
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 15
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -2737,7 +2765,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 16
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -2882,7 +2915,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 21
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -3087,7 +3125,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 15
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -3216,7 +3259,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 22
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -3502,7 +3550,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 20
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -3659,7 +3712,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 19
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -4093,7 +4151,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 18
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -4458,7 +4521,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 14
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -4664,7 +4732,12 @@ PrefabInstance:
     - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
       propertyPath: networkId
-      value: 17
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4471252227400161466, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
+        type: 3}
+      propertyPath: migratedAutoNetworkId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7282388270608991529, guid: 89a2e4702bf6d784ab19fa0c9df039c1,
         type: 3}
@@ -5118,10 +5191,5 @@ PrefabInstance:
       propertyPath: linkedLogic.Array.data[1]
       value: 
       objectReference: {fileID: 1878197420}
-    - target: {fileID: 7761056987631085800, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: networkId
-      value: 7
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f96262bc694c229408688203398b88ed, type: 3}

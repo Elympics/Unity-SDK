@@ -2,7 +2,7 @@ using System;
 using Elympics;
 using UnityEngine;
 
-public class SampleInitilizer : MonoBehaviour
+public class SampleInitializer : MonoBehaviour
 {
     [SerializeField] private RoomChoiceController roomChoiceController;
     [SerializeField] private RoomCreationController roomCreationController;
@@ -13,13 +13,14 @@ public class SampleInitilizer : MonoBehaviour
     private Action onSignout;
     private Action onSignin;
     private Action onStart;
+
     private void Awake()
     {
         onSignin += roomController.InitController;
         onSignin += roomChoiceController.ReinitializeRoomRecords;
 
         onSignout += roomController.DeinitController;
-        onSignout += ElympicsLobbyClient.Instance.SignOut;
+        onSignout += ElympicsLobbyClient.Instance!.SignOut;
         onSignout += authenticateWindowController.EnableAuthenticateView;
 
         roomNavigationController.Init();
@@ -29,6 +30,7 @@ public class SampleInitilizer : MonoBehaviour
         roomChoiceController.Init(roomController);
         roomCreationController.Init(roomController);
     }
+
     private void OnDestroy()
     {
         onSignin -= roomController.InitController;
@@ -36,7 +38,7 @@ public class SampleInitilizer : MonoBehaviour
 
         onSignout -= roomController.DeinitController;
         onSignout -= authenticateWindowController.EnableAuthenticateView;
-        onSignout -= ElympicsLobbyClient.Instance.SignOut;
+        onSignout -= ElympicsLobbyClient.Instance!.SignOut;
 
         roomCreationController.Deinit();
         roomChoiceController.Deinit();

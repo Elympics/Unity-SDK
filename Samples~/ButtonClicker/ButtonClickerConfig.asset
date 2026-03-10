@@ -10,24 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
-  m_Name: HelloWorldConfig
+  m_Name: ButtonClickerConfig
   m_EditorClassIdentifier: 
-  gameName: ButtonClicker
+  gameName: Button Clicker sample
   gameId: 288af85e-11f9-491f-bc1e-f8503040ebb1
   gameVersion: 3.4
-  players: 1
-  gameplayScene: Assets/Samples/HelloWorld/HelloWorld.unity
+  maxPlayers: 2
+  gameplayScene: Assets/Samples/ButtonClicker/ButtonClicker.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1
   useWeb: 0
-  legacyMatchmakingClient: 0
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
+    sessionConnectRetries: 10
     synchronizerTimeout: 20
     minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
+    webRtcOfferAnnounceDelay: 1
     webRtcOfferTimeout: 5
     webRtcOfferMaxRetries: 5
     webRtcOfferRetryDelay: 1
@@ -37,23 +38,33 @@ MonoBehaviour:
   maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
+  inputToSendBufferSize: 3
   maxAllowedLagInTicks: 15
-  prediction: 1
+  forceJumpThresholdInTicks: 6
   predictionLimitInTicks: 15
   detailedNetworkLog: 0
   mode: 2
   halfRemoteMode: 0
-  useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
+  recordSnapshots: 0
+  snapshotFilePath: 
   playerIndexForHalfRemoteMode: 1
   testMatchData:
     queueName: p1
     regionName: 
+    roomCustomData: []
+    customMatchmakingData: []
   testPlayers:
-  - userId: 0
-    isBot: 0
+  - isBot: 0
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []
+    customDatas: []
+  halfRemoteLagConfig:
+    DelayMs: 0
+    PacketLoss: 0
+    JitterMs: 0
+    RandomSeed: 4206969
+  reconciliationFrequency: 0

@@ -18,50 +18,39 @@
   ],
   "samples": [
     {
-      "displayName": "Simple Menu",
-      "description": "Simple menu scene with all play modes and available games choose buttons",
-      "path": "Samples~/SimpleMenu"
-    },
-    {
-      "displayName": "Empty",
-      "description": "Empty project with Elympics included on scene",
-      "path": "Samples~/Empty"
-    },
-    {
-      "displayName": "Button Clicker",
+      "displayName": "Button Clicker [Game]",
       "description": "Clicker-type game for 1-4 players. Remember to set the player count in game config and queue settings",
-      "path": "Samples~/HelloWorld"
+      "path": "Samples~/ButtonClicker"
     },
     {
-      "displayName": "Tech Demo",
+      "displayName": "Tech Demo [Game]",
       "description": "Sample with 2 players throwing instantiable balls",
       "path": "Samples~/TechDemo"
     },
     {
-      "displayName": "Match events",
+      "displayName": "Match events [Game]",
       "description": "A sample to illustrate the lifecycle of Elympics match",
       "path": "Samples~/MatchEvents"
     },
     {
-      "displayName": "EGB test",
-      "description": "A sample for checking response data from External Game Backend",
+      "displayName": "EGB test [Menu] [Game]",
+      "description": "A sample menu for setting Matchmaking and GameEngine data with a game for checking the response from External Game Backend",
       "path": "Samples~/EgbTest"
     },
     {
-      "displayName": "Leaderboard test",
-      "description": "A sample to illustrate usage of leaderboards. Works only if your game has generated any leaderboard data",
+      "displayName": "Rooms-based menu [Menu]",
+      "description": "Showcase of the rooms feature",
+      "path": "Samples~/RoomsMenu"
+    },
+    {
+      "displayName": "Leaderboard menu [Menu]",
+      "description": "A sample menu with leaderboards only (no Play button) to illustrate usage of leaderboards. Works only if your game has generated any leaderboard data",
       "path": "Samples~/Leaderboards"
     },
     {
-      "displayName": "TicTacToe and more (Draft)",
-      "description": "TicTacToe with bot and all of the Elympics stuff",
-      "path": "Samples~/TicTacToe",
-      "interactiveImport": true
-    },
-    {
-      "displayName": "Rooms sample",
-      "description": "Showcase of the rooms feature ",
-      "path": "Samples~/Rooms"
+      "displayName": "Simple menu [Menu]",
+      "description": "Simple menu scene with all play modes and all available games listed",
+      "path": "Samples~/SimpleMenu"
     }
   ],
   "dependencies": {

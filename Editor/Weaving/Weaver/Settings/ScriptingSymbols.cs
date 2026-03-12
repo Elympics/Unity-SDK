@@ -1,65 +1,38 @@
 using System;
+using System.Linq;
 using UnityEditor;
-using UnityEngine;
 
 namespace Elympics.Weaver
 {
-    [Serializable]
-    public struct ScriptingSymbols
+    public static class ScriptingSymbols
     {
-        [SerializeField]
-        public string value;
-        [SerializeField]
-        private bool m_IsActive;
-
-        /// <summary>
-        /// Returns back true if the symbols are defined.
-        /// </summary>
-        public bool isActive => m_IsActive;
-
-        public void ValidateSymbols()
+        public static bool ValidateSymbols(this string value)
         {
+            value = value?.Trim();
+
             if (string.IsNullOrEmpty(value))
-            {
-                m_IsActive = true;
-                return;
-            }
+                return true;
 
-            var spitKey = new[] { ';' };
+            var splitKey = new[] { ';' };
 
-            var requiredDefines = value.Split(spitKey, StringSplitOptions.RemoveEmptyEntries);
+            var requiredDefines = value.Split(splitKey, StringSplitOptions.RemoveEmptyEntries);
             var activeDefines = EditorUserBuildSettings.activeScriptCompilationDefines;
 
-            foreach (var user in requiredDefines)
+            foreach (var untrimmedDefine in requiredDefines)
             {
-                var wasFound = false;
-                var isInversed = user[0] == '!';
+                var define = untrimmedDefine.Trim();
+                var isInversed = define[0] == '!';
                 var indexA = isInversed ? 1 : 0;
 
-                foreach (var current in activeDefines)
-                {
-
-                    // Make sure we are the same length
-                    if (user.Length - indexA != current.Length)
-                    {
-                        continue;
-                    }
-
-                    if (string.Compare(user, indexA, current, 0, current.Length) == 0)
-                    {
-                        wasFound = true;
-                        break;
-                    }
-                }
+                var wasFound = activeDefines
+                    .Where(current => define.Length - indexA == current.Length)
+                    .Any(current => string.Compare(define, indexA, current, 0, current.Length) == 0);
 
                 if (wasFound == isInversed)
-                {
-                    m_IsActive = false;
-                    return;
-                }
+                    return false;
             }
 
-            m_IsActive = true;
+            return true;
         }
     }
 }

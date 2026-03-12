@@ -47,7 +47,7 @@ namespace Elympics.Weaver
 
 
                     // Loop over modules if we are editing them
-                    if (m_SubObjects[componentIndex].isActive && (m_ActiveDefinitions & DefinitionType.Module) == DefinitionType.Module)
+                    if ((m_ActiveDefinitions & DefinitionType.Module) == DefinitionType.Module)
                     {
                         m_SubObjects[componentIndex].VisitModule(moduleCollection);
                     }
@@ -76,10 +76,7 @@ namespace Elympics.Weaver
                 {
                     for (var componentIndex = m_SubObjects.Length - 1; componentIndex >= 0; componentIndex--)
                     {
-                        if (m_SubObjects[componentIndex].isActive)
-                        {
-                            m_SubObjects[componentIndex].VisitType(typeCollection[typeIndex]);
-                        }
+                        m_SubObjects[componentIndex].VisitType(typeCollection[typeIndex]);
                     }
                     // visit Methods
                     VisitMethods(typeCollection[typeIndex].Methods);
@@ -106,10 +103,7 @@ namespace Elympics.Weaver
                 {
                     for (var componentIndex = m_SubObjects.Length - 1; componentIndex >= 0; componentIndex--)
                     {
-                        if (m_SubObjects[componentIndex].isActive)
-                        {
-                            m_SubObjects[componentIndex].VisitMethod(methodCollection[methodIndex]);
-                        }
+                        m_SubObjects[componentIndex].VisitMethod(methodCollection[methodIndex]);
                     }
                     // Increase count
                     totalMethodsVisited++;
@@ -130,10 +124,7 @@ namespace Elympics.Weaver
                 {
                     for (var componentIndex = m_SubObjects.Length - 1; componentIndex >= 0; componentIndex--)
                     {
-                        if (m_SubObjects[componentIndex].isActive)
-                        {
-                            m_SubObjects[componentIndex].VisitField(fieldCollection[fieldIndex]);
-                        }
+                        m_SubObjects[componentIndex].VisitField(fieldCollection[fieldIndex]);
                     }
                     // Increase count
                     totalFieldsVisited++;
@@ -154,10 +145,7 @@ namespace Elympics.Weaver
                 {
                     for (var componentIndex = m_SubObjects.Length - 1; componentIndex >= 0; componentIndex--)
                     {
-                        if (m_SubObjects[componentIndex].isActive)
-                        {
-                            m_SubObjects[componentIndex].VisitProperty(propertyCollection[propertyIndex]);
-                        }
+                        m_SubObjects[componentIndex].VisitProperty(propertyCollection[propertyIndex]);
                     }
                     // Increase count
                     totalPropertiesVisited++;

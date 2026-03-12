@@ -1,6 +1,5 @@
 using System;
 using Mono.Cecil;
-using UnityEngine;
 
 namespace Elympics.Weaver
 {
@@ -18,17 +17,9 @@ namespace Elympics.Weaver
 
     public abstract class WeaverComponent : ILogable
     {
-        // Hidden for now
-        [SerializeField, HideInInspector]
-        private bool m_IsActive = true;
-        [SerializeField, HideInInspector]
-        private ScriptingSymbols m_RequiredScriptingSymbols;
-
         private ModuleDefinition m_ActiveModule;
         public abstract string ComponentName { get; }
         private Log m_Log;
-
-        public bool isActive => m_IsActive && m_RequiredScriptingSymbols.isActive;
 
         /// <summary>
         /// Returns back the type system for the module
@@ -47,11 +38,6 @@ namespace Elympics.Weaver
         /// </summary>
         public string label => GetType().Name;
 
-        public WeaverComponent()
-        {
-            m_RequiredScriptingSymbols.ValidateSymbols();
-        }
-
         /// <summary>
         /// Returns true if this addin effects the definition
         /// of a type.
@@ -67,18 +53,11 @@ namespace Elympics.Weaver
         /// </summary>
         public void OnBeforeModuleEdited(ModuleDefinition moduleDefinition, Log log)
         {
-            if (m_RequiredScriptingSymbols.isActive)
-            {
-                m_Log = log;
-                m_ActiveModule = moduleDefinition;
-                Log("Visiting module");
+            m_Log = log;
+            m_ActiveModule = moduleDefinition;
+            Log("Visiting module");
 
-                StartVisiting(moduleDefinition);
-            }
-            else
-            {
-                Log("Visitation skip as scripting define requirements not met.");
-            }
+            StartVisiting(moduleDefinition);
         }
 
         /// <summary>

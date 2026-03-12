@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Elympics.Replication;
 using Elympics.Tests.RpcMocks;
 using NUnit.Framework;
 using UnityEngine;
@@ -46,6 +47,12 @@ namespace Elympics.Tests
             _elympicsObject.GetComponent<ElympicsBehaviour>().NetworkId = 1;
             _rpcHolderObject.GetComponent<ElympicsBehaviour>().NetworkId = 2;
 
+            var maxPlayers = 2;
+            ElympicsWorld.Current = new ElympicsWorld(
+                maxPlayers,
+                NetworkIdConstants.MaxIndex + 1,
+                NetworkIdConstants.MaxNetworkObjects);
+
             _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
             _act = _rpcHolder switch
@@ -87,7 +94,7 @@ namespace Elympics.Tests
         private void SetupBeforeUpdate()
         {
             SetupBeforeInitialization();
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 100);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 2);
         }
 
         private void SetupBeforePhysicsUpdate()
@@ -100,7 +107,11 @@ namespace Elympics.Tests
         private void CreateBehavioursManager()
         {
             foreach (var behaviourManager in _elympicsObject.GetComponents<ElympicsBehavioursManager>())
-                Object.DestroyImmediate(behaviourManager);
+                Object.DestroyImmediate(behaviourManager); // OnDestroy nulls ElympicsWorld.Current
+            ElympicsWorld.Current = new ElympicsWorld(
+                2,
+                NetworkIdConstants.MaxIndex + 1,
+                NetworkIdConstants.MaxNetworkObjects);
             var behavioursManager = _elympicsObject.AddComponent<ElympicsBehavioursManager>();
             Assert.NotNull(behavioursManager);
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
@@ -169,7 +180,7 @@ namespace Elympics.Tests
         #region Act methods
 
         private void RunInitialization() =>
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 100);
+            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 2);
 
         private void RunUpdate() =>
             _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
@@ -187,6 +198,8 @@ namespace Elympics.Tests
         {
             Object.Destroy(_elympicsObject);
             Object.Destroy(_rpcHolderObject);
+            ElympicsWorld.Current?.Dispose();
+            ElympicsWorld.Current = null;
         }
     }
 }

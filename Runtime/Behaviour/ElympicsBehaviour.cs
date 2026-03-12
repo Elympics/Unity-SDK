@@ -25,14 +25,8 @@ namespace Elympics
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
         [SerializeField] internal ElympicsPlayer visibleFor = ElympicsPlayer.All;
-
-        [SerializeField]
-        internal ElympicsBehaviourStateChangeFrequencyStage[] stateFrequencyStages =
-        {
-            new(500, 30),
-            new(1000, 200),
-            new(1000, 1000)
-        };
+        [SerializeField] internal ReplicationPriority replicationPriority = ReplicationPriority.Normal;
+        [SerializeField] internal int netUpdateIntervalInTicks = 1;
 
         private ElympicsComponentsContainer _componentsContainer;
 
@@ -43,7 +37,6 @@ namespace Elympics
         private List<ElympicsVar> _backingFields;
         private Dictionary<ElympicsVar, string> _backingFieldsNames;
         private List<(string, List<ElympicsVar>)> _backingFieldsByComponents;
-        private ElympicsBehaviourStateChangeFrequencyCalculator _behaviourStateChangeFrequencyCalculator;
 
         internal bool HasAnyState => _componentsContainer.Observables.Length > 0;
         internal bool HasAnyInput => _componentsContainer.InputHandler != null;
@@ -156,7 +149,28 @@ namespace Elympics
         internal ElympicsBase ElympicsBase { get; private set; }
         public bool IsPredictableTo(ElympicsPlayer player) => predictableFor == ElympicsPlayer.All || player == predictableFor || player == ElympicsPlayer.World;
         public bool IsOwnedBy(ElympicsPlayer player) => IsPredictableTo(player);
-        internal bool IsVisibleTo(ElympicsPlayer player) => visibleFor == ElympicsPlayer.All || player == visibleFor || player == ElympicsPlayer.World;
+        internal bool IsVisibleTo(ElympicsPlayer player)
+        {
+            // World (server) can always see everything
+            if (player == ElympicsPlayer.World)
+                return true;
+
+            // If replication world is initialized and entity is registered, use bitmask
+            var world = Replication.ElympicsWorld.Current;
+            if (world != null)
+            {
+                var playerIdx = (int)player;
+                if (playerIdx >= 0)
+                {
+                    var d = world.GetDenseIndex(networkId);
+                    if (d >= 0)
+                        return (world.InterestMask[d] & (1u << playerIdx)) != 0;
+                }
+            }
+
+            // Fallback: original logic
+            return visibleFor == ElympicsPlayer.All || player == visibleFor;
+        }
 
         private MemoryStream _memoryStream1;
         private MemoryStream _memoryStream2;
@@ -203,11 +217,6 @@ namespace Elympics
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
-        {
-            _behaviourStateChangeFrequencyCalculator?.ResetStateUpdateFrequencyStage();
-        }
-
         private void OnDrawGizmos()
         { }
 #endif
@@ -221,8 +230,6 @@ namespace Elympics
             _binaryWriter1 = new BinaryWriter(_memoryStream1);
 
             ElympicsBase = elympicsBase;
-
-            _behaviourStateChangeFrequencyCalculator = new ElympicsBehaviourStateChangeFrequencyCalculator(stateFrequencyStages, AreStatesEqual, elympicsBase.Config);
 
             _componentsContainer = new ElympicsComponentsContainer(this);
 
@@ -301,11 +308,6 @@ namespace Elympics
             }
 
             return metadata;
-        }
-
-        internal bool UpdateCurrentStateAndCheckIfSendCanBeSkipped(byte[] currentState, long tick)
-        {
-            return _behaviourStateChangeFrequencyCalculator.UpdateNextStateAndCheckIfSendCanBeSkipped(currentState, tick);
         }
 
         internal void ApplyState(byte[] data, bool ignoreTolerance = false)

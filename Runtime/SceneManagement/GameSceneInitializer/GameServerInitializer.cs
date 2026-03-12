@@ -1,4 +1,5 @@
 using Elympics.ElympicsSystems;
+using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
 using UnityEngine;
 
@@ -28,6 +29,8 @@ namespace Elympics
             BehavioursManager = behavioursManager;
             Server = server;
             GameConfig = gameConfig;
+            // ReplicationPipeline + PipelineBuffers only needed on server
+            ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
             InitializeGameServer(GameConfig, GameEngineAdapter);

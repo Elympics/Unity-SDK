@@ -117,6 +117,23 @@ namespace Elympics
         internal void ApplyPredictableState(FactoryState state) => ApplyState(state, _predictablePlayers, null);
         internal void ApplyUnpredictableState(FactoryState state) => ApplyState(state, null, _predictablePlayers);
 
+        /// <summary>
+        /// Destroys all dynamic instances across all player factory parts and clears the factory state.
+        /// Called during reconnect reset to clean up all runtime-spawned objects.
+        /// </summary>
+        internal void DestroyAllDynamicInstances()
+        {
+            // Use existing cached list to avoid allocation.
+            _elympicsFactoryPartsToRemove.Clear();
+            _elympicsFactoryPartsToRemove.AddRange(_elympicsFactoryParts.Keys);
+            foreach (var player in _elympicsFactoryPartsToRemove)
+                RemoveFactoryPart(player);
+
+            // Defensive: individual DestroyInstanceInternal calls already remove entries,
+            // but Clear ensures consistency if any destruction fails or throws.
+            _playersObjects.Clear();
+        }
+
         private void RemoveIfNotInState(HashSet<int> playerIndexes)
         {
             _elympicsFactoryPartsToRemove.Clear();

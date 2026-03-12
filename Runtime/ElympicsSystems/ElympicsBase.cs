@@ -220,6 +220,20 @@ namespace Elympics
 
         protected void Enqueue(Action action) => asyncEventsDispatcher.Enqueue(action);
 
+        /// <summary>Resets the time accumulator so the next ElympicsFixedUpdate fires fresh after reconnect.</summary>
+        internal void ResetTimer()
+        {
+            _timer = 0;
+            _previousUtcForDeltaTime = DateTime.UtcNow;
+        }
+
+        /// <summary>Discards all pending and queued RPC messages. Called during reconnect reset.</summary>
+        internal void ResetRpcQueues()
+        {
+            RpcMessagesToSend.Messages.Clear();
+            lock (RpcMessagesToInvokeLock)
+                RpcMessagesToInvoke.Clear();
+        }
 
         #region IElympics
 

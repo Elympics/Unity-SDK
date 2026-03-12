@@ -30,7 +30,10 @@ namespace Elympics
         /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
         public static event Action<TimeSynchronizationData, long> TimeSynchronized;
 
-        private bool _started;
+        private volatile bool _started;
+        private volatile bool _wasEverStarted;
+        private volatile bool _reconnectResetPending;
+        private Action _onAuthenticatedAsSpectator;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
         internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
@@ -106,13 +109,14 @@ namespace Elympics
             _matchClient.SnapshotReceived += OnSnapshotReceived;
             _matchClient.Synchronized += OnMatchClientSynchronized;
             _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
-            _matchConnectClient.DisconnectedByServer += OnDisconnectedByServer;
-            _matchConnectClient.DisconnectedByClient += OnDisconnectedByClient;
+            _matchConnectClient.DisconnectedByServer += OnDisconnectedByServerHandler;
+            _matchConnectClient.DisconnectedByClient += OnDisconnectedByClientHandler;
             _matchConnectClient.ConnectedWithSynchronizationData += OnConnectedWithSynchronizationData;
             _matchConnectClient.ConnectingFailed += OnConnectingFailed;
             _matchConnectClient.AuthenticatedUserMatchWithUserId += OnAuthenticated;
             _matchConnectClient.AuthenticatedUserMatchFailedWithError += OnAuthenticatedFailed;
-            _matchConnectClient.AuthenticatedAsSpectator += () => OnAuthenticated(Guid.Empty);
+            _onAuthenticatedAsSpectator = () => OnAuthenticated(Guid.Empty);
+            _matchConnectClient.AuthenticatedAsSpectator += _onAuthenticatedAsSpectator;
             _matchConnectClient.AuthenticatedAsSpectatorWithError += OnAuthenticatedFailed;
             _matchConnectClient.MatchJoinedWithMatchInitData += OnMatchJoinedWithInitData;
             _matchConnectClient.MatchJoinedWithError += OnMatchJoinedFailed;
@@ -137,6 +141,21 @@ namespace Elympics
 
         private void OnDestroy()
         {
+            if (_matchConnectClient != null)
+            {
+                _matchConnectClient.DisconnectedByServer -= OnDisconnectedByServerHandler;
+                _matchConnectClient.DisconnectedByClient -= OnDisconnectedByClientHandler;
+                _matchConnectClient.ConnectedWithSynchronizationData -= OnConnectedWithSynchronizationData;
+                _matchConnectClient.ConnectingFailed -= OnConnectingFailed;
+                _matchConnectClient.AuthenticatedUserMatchWithUserId -= OnAuthenticated;
+                _matchConnectClient.AuthenticatedUserMatchFailedWithError -= OnAuthenticatedFailed;
+                _matchConnectClient.AuthenticatedAsSpectator -= _onAuthenticatedAsSpectator;
+                _matchConnectClient.AuthenticatedAsSpectatorWithError -= OnAuthenticatedFailed;
+                _matchConnectClient.MatchJoinedWithMatchInitData -= OnMatchJoinedWithInitData;
+                _matchConnectClient.MatchJoinedWithError -= OnMatchJoinedFailed;
+                _matchConnectClient.MatchEndedWithMatchId -= OnMatchEnded;
+            }
+
             if (_matchClient != null)
             {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
@@ -151,17 +170,85 @@ namespace Elympics
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
         {
             lock (LastReceivedSnapshotLock)
+            {
                 if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
                 {
                     _lastReceivedSnapshot = elympicsSnapshot;
                     _matchClient.SetLastReceivedSnapshot(elympicsSnapshot.Tick);
                 }
 
-            if (!_started)
-                StartClient();
+                if (!_started && !_reconnectResetPending)
+                {
+                    if (_wasEverStarted)
+                    {
+                        _reconnectResetPending = true;
+                        Enqueue(() =>
+                        {
+                            if (this == null)
+                                return; // MonoBehaviour destroyed during scene unload
+                            _reconnectResetPending = false;
+                            if (_started)
+                                return;
+                            ResetForReconnect();
+                            StartClient();
+                        });
+                    }
+                    else
+                    {
+                        StartClient();
+                    }
+                }
+            }
         }
 
-        private void StartClient() => _started = true;
+        private void StartClient()
+        {
+            _started = true;
+            _wasEverStarted = true;
+        }
+
+        private void StopClient() => _started = false;
+
+        private void OnDisconnectedByServerHandler()
+        {
+            StopClient();
+            OnDisconnectedByServer();
+        }
+
+        private void OnDisconnectedByClientHandler()
+        {
+            StopClient();
+            OnDisconnectedByClient();
+        }
+
+        private void ResetForReconnect()
+        {
+            var log = _logger.WithMethodName();
+            log.Log("Resetting for reconnect...");
+
+            ElympicsBehavioursManager.DestroyAllDynamicInstances();
+            ElympicsBehavioursManager.ResetWorldAndReRegisterSceneObjects();
+
+            _tick = -1;
+            _lastReceivedSnapshot = null;
+            _latestReconciliationBaseSnapshotTick = -1;
+            _serverWorldState.ResetToEmpty();
+            _currentTicksWithoutPrediction = 0;
+            _previousTick = 0;
+            _lastDelayedInputTick = 0;
+            _lastClientPrintNetworkConditions = null;
+            _inputList.Clear();
+
+            _roundTripTimeCalculator = new RoundTripTimeCalculator();
+            _clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator, Config);
+            _predictionBuffer = new PredictionBuffer(Config);
+            _snapshotTracker = new ElympicsBehaviourFirstSnapshotTracker(ElympicsBehavioursManager);
+
+            ResetRpcQueues();
+            ResetTimer();
+
+            log.Log("Reconnect reset complete.");
+        }
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
 
@@ -239,9 +326,11 @@ namespace Elympics
                     ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
                     PredictionStateChanged(false, _clientTickCalculator.Results);
                 }
+
                 _currentTicksWithoutPrediction = 0;
                 return;
             }
+
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 

@@ -32,7 +32,20 @@ namespace Elympics
             TickToPlayersInputData = tickToPlayersInputData;
         }
 
-        public static ElympicsSnapshot CreateEmpty() => new(new FactoryState(new Dictionary<int, FactoryPartState>()), null);
+        public static ElympicsSnapshot CreateEmpty() => new(new FactoryState(new Dictionary<int, FactoryPartState>()), new Dictionary<int, byte[]>());
+
+        /// <summary>
+        /// Resets this instance to an empty state in place.
+        /// Used during reconnect to avoid reallocating the readonly <c>_serverWorldState</c> field in ElympicsClient.
+        /// </summary>
+        internal void ResetToEmpty()
+        {
+            Tick = -1;
+            TickStartUtc = default;
+            Factory.Parts.Clear();
+            Data?.Clear();
+            TickToPlayersInputData?.Clear();
+        }
 
         /// <summary>Turns this instance into non-recursive deep copy of <paramref name="other"/>.</summary>
         internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), new(other.Data), new(other.TickToPlayersInputData));

@@ -70,7 +70,8 @@ namespace Elympics.Editor.Weaving
                 if (!settings.RequireScriptingSymbols.ValidateSymbols())
                     continue;
                 foreach (var weavedAssembly in settings.WeavedAssemblies)
-                    WeavedAssemblyNames.Add(Path.GetFileName(weavedAssembly.Name));
+                    if (!WeavedAssemblyNames.Add(Path.GetFileName(weavedAssembly.Name)))
+                        ElympicsLogger.LogWarning($"[Weaver] Assembly {Path.GetFileName(weavedAssembly.Name)} already in list");
             }
             ElympicsLogger.LogDebug($"[Weaver] Updated WeavedAssemblyNames: [{string.Join(", ", WeavedAssemblyNames)}]");
         }

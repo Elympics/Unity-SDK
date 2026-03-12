@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using JetBrains.Annotations;
 
 namespace Elympics.ElympicsSystems.Internal
@@ -61,17 +60,6 @@ namespace Elympics.ElympicsSystems.Internal
 
             ElympicsLogger.CurrentContext = this;
         }
-
-        [Pure] [Conditional("ELYMPICS_DEBUG")] public void LogDebug(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
-
-        [Pure] public void Log(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
-
-        [Pure] public void Warning(string message) => ElympicsLogger.LogWarning(message, TimeUtil.DateTimeNowToString, this);
-
-        [Pure] public void Error(string message) => ElympicsLogger.LogError(message, TimeUtil.DateTimeNowToString, this);
-
-        public Exception CaptureAndThrow(Exception exception) => ElympicsLogger.CaptureAndThrow(exception, TimeUtil.DateTimeNowToString, this);
-        public void Exception(Exception exception) => ElympicsLogger.LogException(exception, TimeUtil.DateTimeNowToString, this);
 
         public override string ToString() =>
             $"{nameof(Context)}: {Context} | "

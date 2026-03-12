@@ -33,13 +33,11 @@ namespace Elympics
         private static string PrependWithDetails(string message)
         {
             lock (StringBuilder)
-            {
                 return StringBuilder.Clear()
 #if !UNITY_EDITOR
                     .Append(TimeUtil.DateTimeNowToString + " ")
 #endif
                     .Append(string.Format(AppPrefixFormat, DefaultApp)).Append(message).ToString();
-            }
         }
 
         private static string PrependWithDetails(string message, string time, ElympicsLoggerContext context)
@@ -49,6 +47,20 @@ namespace Elympics
         }
 
         private static void InformClients(string message, string time, ElympicsLoggerContext context, LogLevel logLevel) => CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent() { Message = message, Time = time, Context = context, LogLevel = logLevel });
+
+        #region Debug-only logs
+
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message) => Debug.Log(PrependWithDetails(message));
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message, Object context) => Debug.Log(PrependWithDetails(message), context);
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebugFormat(string format, params object[] args) => Debug.LogFormat(PrependWithDetails(format), args);
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebugFormat(Object context, string format, params object[] args) => Debug.LogFormat(context, PrependWithDetails(format), args);
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message, string time, ElympicsLoggerContext context)
+        {
+            Debug.Log(PrependWithDetails(message, time, context));
+            InformClients(message, time, context, LogLevel.Log);
+        }
+
+        #endregion
 
         #region Logs
 

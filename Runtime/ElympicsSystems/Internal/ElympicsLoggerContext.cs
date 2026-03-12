@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using JetBrains.Annotations;
 
 namespace Elympics.ElympicsSystems.Internal
@@ -60,6 +61,8 @@ namespace Elympics.ElympicsSystems.Internal
 
             ElympicsLogger.CurrentContext = this;
         }
+
+        [Pure] [Conditional("ELYMPICS_DEBUG")] public void LogDebug(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
 
         [Pure] public void Log(string message) => ElympicsLogger.Log(message, TimeUtil.DateTimeNowToString, this);
 

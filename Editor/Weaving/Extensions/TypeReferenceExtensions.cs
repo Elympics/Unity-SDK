@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using Mono.Cecil;
 
-namespace Elympics.Editor
+namespace Elympics.Editor.Weaving.Extensions
 {
     public static class TypeReferenceExtensions
     {
-        public static bool IsSubclassOf<T>(this TypeReference typeReference) => IsSubclassOf(typeReference, typeof(T));
+        public static bool IsSubclassOf<T>(this TypeReference typeReference) => typeReference.IsSubclassOf(typeof(T));
 
         private static bool Is(this TypeReference typeReference, Type type)
         {

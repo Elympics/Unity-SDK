@@ -4,7 +4,7 @@ using UnityEngine.Serialization;
 
 #nullable enable
 
-namespace Elympics.Weaver
+namespace Elympics.Editor.Weaving.Settings
 {
     /// <summary>
     /// Keeps track of the assembly path and if the

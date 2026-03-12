@@ -6,7 +6,7 @@ using Debug = UnityEngine.Debug;
 
 #nullable enable
 
-namespace Elympics.Weaver
+namespace Elympics.Editor.Weaving.Settings
 {
     public class WeaverSettings : ScriptableObject
     {

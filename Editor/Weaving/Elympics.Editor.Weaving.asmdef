@@ -1,6 +1,6 @@
 {
     "name": "Elympics.Editor.Weaving",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "GUID:98c20d83c9beb3344bdbd3db8ff8d852",
         "GUID:55474caa31465b9438ca777a042ed702"

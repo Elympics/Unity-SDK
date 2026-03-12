@@ -1,25 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Weaver;
-using Elympics.Weaver.Extensions;
+using Elympics.Editor.Weaving.Extensions;
 using Elympics.Weaving;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Elympics.Editor
+namespace Elympics.Editor.Weaving.Components.Elympics
 {
     public class ElympicsRpcComponent : WeaverComponent
     {
-        public override string ComponentName => nameof(ElympicsRpcComponent);
-        public override DefinitionType EffectedDefintions => DefinitionType.Module | DefinitionType.Method;
+        public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 
         private ElympicsWeaverAssembly _assembly;
 
-        protected override void StartVisiting(ModuleDefinition moduleDefinition)
-        {
+        protected override void StartVisiting(ModuleDefinition moduleDefinition) =>
             _assembly = new ElympicsWeaverAssembly(moduleDefinition.Assembly);
-        }
 
         internal void ValidateRpcMethodDefinition(MethodDefinition methodDefinition)
         {
@@ -30,7 +26,7 @@ namespace Elympics.Editor
                 throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} cannot be static");
             if (methodDefinition.IsVirtual || methodDefinition.IsAbstract)
                 throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} cannot be virtual or abstract");
-            if (methodDefinition.ReturnType != typeSystem.Void)
+            if (methodDefinition.ReturnType != TypeSystem.Void)
                 throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} must return void");
 
             if (typeOwner.Methods.Count(m => m.Name == methodDefinition.Name) > 1)
@@ -38,7 +34,7 @@ namespace Elympics.Editor
 
             var unacceptableParameters = methodDefinition.Parameters
                 .Where(argument => !argument.ParameterType.IsPrimitive)
-                .Where(argument => argument.ParameterType != typeSystem.String);
+                .Where(argument => argument.ParameterType != TypeSystem.String);
             foreach (var parameter in unacceptableParameters)
                 throw new InvalidRpcMethodDefinitionException($"RPC method {methodDefinition.FullName} can only have "
                     + $"primitive types or strings as parameters. However parameter {parameter.Name} is of type "

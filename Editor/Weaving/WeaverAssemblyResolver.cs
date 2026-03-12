@@ -5,14 +5,14 @@ using Mono.Cecil;
 using UnityEditor;
 using UnityEditor.Compilation;
 
-namespace Elympics.Weaver
+namespace Elympics.Editor.Weaving
 {
     public class WeaverAssemblyResolver : DefaultAssemblyResolver
     {
         public WeaverAssemblyResolver(string assemblyPath)
         {
             var compiledAssemblies = CompilationPipeline.GetAssemblies();
-            var asm = compiledAssemblies.FirstOrDefault(x => FileUtility.Normalize(x.outputPath) == FileUtility.Normalize(assemblyPath))
+            var asm = compiledAssemblies.FirstOrDefault(x => NormalizePath(x.outputPath) == NormalizePath(assemblyPath))
                 ?? compiledAssemblies.FirstOrDefault(x => Path.GetFileName(x.outputPath) == Path.GetFileName(assemblyPath));
             var dependencies = new HashSet<string> { Path.GetDirectoryName(assemblyPath) };
             if (asm != null)
@@ -28,5 +28,8 @@ namespace Elympics.Weaver
             foreach (var systemDir in CompilationPipeline.GetSystemAssemblyDirectories(apiLevel))
                 AddSearchDirectory(systemDir);
         }
+
+        private static string NormalizePath(string path) =>
+            path.Replace(Path.DirectorySeparatorChar, '/');
     }
 }

@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using UnityEditor;
 
-namespace Elympics.Weaver
+namespace Elympics.Editor.Weaving.Extensions
 {
-    public static class ScriptingSymbols
+    public static class ScriptingSymbolsExtensions
     {
         public static bool ValidateSymbols(this string value)
         {

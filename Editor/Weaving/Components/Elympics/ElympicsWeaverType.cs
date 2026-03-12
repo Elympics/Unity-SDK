@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 
-namespace Elympics.Editor
+namespace Elympics.Editor.Weaving.Components.Elympics
 {
     public class ElympicsWeaverType
     {

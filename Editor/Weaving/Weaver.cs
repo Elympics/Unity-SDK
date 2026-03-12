@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Elympics.Editor;
+using Elympics.Editor.Weaving.Components;
+using Elympics.Editor.Weaving.Components.Elympics;
+using Elympics.Editor.Weaving.Extensions;
+using Elympics.Editor.Weaving.Settings;
 using Elympics.Weaving;
-using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
 using UnityEditor;
@@ -18,68 +20,15 @@ using Debug = UnityEngine.Debug;
 
 #nullable enable
 
-namespace Elympics.Weaver
+namespace Elympics.Editor.Weaving
 {
+    [InitializeOnLoad]
     public static class Weaver
     {
-        private static readonly Log Log = new(new LoggableContext());
-
         private static readonly ComponentController Components = new(new ElympicsRpcComponent());
         private static readonly Stopwatch Timer = new();
 
         private static readonly HashSet<string> WeavedAssemblyNames = new();
-
-        private static void UpdateWeavedAssembliesList()
-        {
-            WeavedAssemblyNames.Clear();
-            foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(WeaverSettings).FullName}"))
-            {
-                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                var settings = AssetDatabase.LoadAssetAtPath<WeaverSettings>(assetPath);
-                if (!settings.IsEnabled)
-                    continue;
-                if (!settings.RequireScriptingSymbols.ValidateSymbols())
-                    continue;
-                foreach (var weavedAssembly in settings.WeavedAssemblies)
-                    WeavedAssemblyNames.Add(Path.GetFileName(weavedAssembly.Name));
-            }
-            ElympicsLogger.LogDebug($"[Weaver] Updated WeavedAssemblyNames: [{string.Join(", ", WeavedAssemblyNames)}]");
-        }
-
-        [UsedImplicitly]
-        [InitializeOnLoadMethod]
-        private static void Initialize()
-        {
-            ElympicsLogger.LogDebug("[Weaver] InitializeOnLoadMethod");
-
-            Debug.Log("[Weaver] Subscribing to compilationFinished");
-            CompilationPipeline.compilationFinished += OnCompilationFinished;
-
-            UpdateWeavedAssembliesList();
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
-
-        [PostProcessScene]
-        public static void PostprocessScene()
-        {
-            ElympicsLogger.LogDebug("[Weaver] PostProcessScene");
-
-            UpdateWeavedAssembliesList();
-
-            if (!BuildPipeline.isBuildingPlayer)
-                return;
-            var scene = SceneManager.GetActiveScene();
-            if (!scene.IsValid() || scene.buildIndex != 0)
-                return;
-
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
-
-        private static void OnCompilationFinished(object context)
-        {
-            ElympicsLogger.LogDebug("[Weaver] OnCompilationFinished");
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
 
         private static ReaderParameters GetReaderParameters(string assemblyPath) =>
             new()
@@ -97,6 +46,34 @@ namespace Elympics.Weaver
                 WriteSymbols = true,
                 SymbolWriterProvider = new PdbWriterProvider(),
             };
+
+        static Weaver()
+        {
+            ElympicsLogger.LogDebug("[Weaver] InitializeOnLoad");
+
+            Debug.Log("[Weaver] Subscribing to compilationFinished");
+            CompilationPipeline.compilationFinished += OnCompilationFinished;
+
+            UpdateWeavedAssembliesList();
+            WeaveAssemblies(CompilationPipeline.GetAssemblies());
+        }
+
+        private static void UpdateWeavedAssembliesList()
+        {
+            WeavedAssemblyNames.Clear();
+            foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(WeaverSettings).FullName}"))
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                var settings = AssetDatabase.LoadAssetAtPath<WeaverSettings>(assetPath);
+                if (!settings.IsEnabled)
+                    continue;
+                if (!settings.RequireScriptingSymbols.ValidateSymbols())
+                    continue;
+                foreach (var weavedAssembly in settings.WeavedAssemblies)
+                    WeavedAssemblyNames.Add(Path.GetFileName(weavedAssembly.Name));
+            }
+            ElympicsLogger.LogDebug($"[Weaver] Updated WeavedAssemblyNames: [{string.Join(", ", WeavedAssemblyNames)}]");
+        }
 
         private static bool HasBeenAlreadyWeaved(string assemblyPath)
         {
@@ -138,24 +115,42 @@ namespace Elympics.Weaver
                 using (var assemblyStream = new FileStream(assemblyPath, FileMode.Open, FileAccess.ReadWrite))
                 {
                     using var moduleDefinition = ModuleDefinition.ReadModule(assemblyStream, GetReaderParameters(assemblyPath));
-                    Components.VisitModule(moduleDefinition, Log);
+                    Components.VisitModule(moduleDefinition);
                     moduleDefinition.Write(GetWriterParameters());
                 }
 
                 Timer.Stop();
                 ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly completed\n"
                     + $"Time: {Timer.ElapsedMilliseconds} ms\n"
-                    + $"Types visited: {Components.totalTypesVisited}\n"
-                    + $"Methods visited: {Components.totalMethodsVisited}\n"
-                    + $"Fields visited: {Components.totalFieldsVisited}\n"
-                    + $"Properties visited: {Components.totalPropertiesVisited}");
+                    + $"Types visited: {Components.TotalTypesVisited}\n"
+                    + $"Methods visited: {Components.TotalMethodsVisited}\n"
+                    + $"Fields visited: {Components.TotalFieldsVisited}\n"
+                    + $"Properties visited: {Components.TotalPropertiesVisited}");
             }
         }
 
-        private class LockReloadAssembliesScope : IDisposable
+        #region Callbacks
+
+        [PostProcessScene]
+        public static void PostprocessScene()
         {
-            public LockReloadAssembliesScope() => EditorApplication.LockReloadAssemblies();
-            public void Dispose() => EditorApplication.UnlockReloadAssemblies();
+            ElympicsLogger.LogDebug("[Weaver] PostProcessScene");
+
+            UpdateWeavedAssembliesList();
+
+            if (!BuildPipeline.isBuildingPlayer)
+                return;
+            var scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || scene.buildIndex != 0)
+                return;
+
+            WeaveAssemblies(CompilationPipeline.GetAssemblies());
+        }
+
+        private static void OnCompilationFinished(object context)
+        {
+            ElympicsLogger.LogDebug("[Weaver] OnCompilationFinished");
+            WeaveAssemblies(CompilationPipeline.GetAssemblies());
         }
 
         private class BuildPreprocessing : IPreprocessBuildWithReport, IPostprocessBuildWithReport
@@ -175,11 +170,6 @@ namespace Elympics.Weaver
             }
         }
 
-        private class LoggableContext : ILogable
-        {
-            string ILogable.label => nameof(Weaver);
-        }
-
         private class AssetPostprocessing : AssetPostprocessor
         {
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
@@ -192,6 +182,14 @@ namespace Elympics.Weaver
                 UpdateWeavedAssembliesList();
                 WeaveAssemblies(CompilationPipeline.GetAssemblies());
             }
+        }
+
+        #endregion
+
+        private class LockReloadAssembliesScope : IDisposable
+        {
+            public LockReloadAssembliesScope() => EditorApplication.LockReloadAssemblies();
+            public void Dispose() => EditorApplication.UnlockReloadAssemblies();
         }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using Elympics.Weaver;
+using Elympics.Editor.Weaving.Components.Elympics;
 using Mono.Cecil;
 using NUnit.Framework;
 
@@ -34,7 +34,7 @@ namespace Elympics.Editor.Tests
                 .First(m => m.Name == methodName);
             var methodReference = assembly.MainModule.ImportReference(methodInfo);
             var methodDefinition = methodReference.Resolve();
-            _component.OnBeforeModuleEdited(methodDefinition.Module, new Log(null));
+            _component.OnBeforeModuleEdited(methodDefinition.Module);
             _component.ValidateRpcMethodDefinition(methodDefinition);
         }
 

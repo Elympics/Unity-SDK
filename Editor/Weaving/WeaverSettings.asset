@@ -12,14 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07ccf61e689f3ae4bb1e5518c0e5814d, type: 3}
   m_Name: WeaverSettings
   m_EditorClassIdentifier: 
-  m_RequiredScriptingSymbols:
-    value: 
-    m_IsActive: 1
-  m_WeavedAssemblies:
-  - m_RelativePath: Library/ScriptAssemblies/Assembly-CSharp.dll
-    m_IsActive: 1
-    shouldThrowIfNotFound: 1
-  - m_RelativePath: Library/ScriptAssemblies/Elympics.Tests.dll
-    m_IsActive: 1
-    shouldThrowIfNotFound: 0
-  m_IsEnabled: 1
+  isEnabled: 1
+  requiredScriptingSymbols: 
+  weavedAssemblies:
+  - name: Assembly-CSharp.dll
+  - name: Elympics.Tests.dll

@@ -4,7 +4,7 @@ using Mono.Cecil;
 
 namespace Elympics.Editor.Weaving.Extensions
 {
-    public static class TypeReferenceExtensions
+    internal static class TypeReferenceExtensions
     {
         public static bool IsSubclassOf<T>(this TypeReference typeReference) => typeReference.IsSubclassOf(typeof(T));
 

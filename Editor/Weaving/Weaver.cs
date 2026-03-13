@@ -11,8 +11,6 @@ using Elympics.Weaving;
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
 using UnityEngine.SceneManagement;
@@ -22,7 +20,7 @@ using UnityEngine.SceneManagement;
 namespace Elympics.Editor.Weaving
 {
     [InitializeOnLoad]
-    public static class Weaver
+    internal static class Weaver
     {
         private static readonly ComponentController Components = new(new ElympicsRpcComponent());
         private static readonly Stopwatch Timer = new();
@@ -156,23 +154,6 @@ namespace Elympics.Editor.Weaving
         {
             ElympicsLogger.LogDebug("[Weaver] OnCompilationFinished");
             WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
-
-        private class BuildPreprocessing : IPreprocessBuildWithReport, IPostprocessBuildWithReport
-        {
-            public int callbackOrder => -100;
-
-            public void OnPreprocessBuild(BuildReport report)
-            {
-                ElympicsLogger.LogDebug("[Weaver] OnPreprocessBuild");
-                WeaveAssemblies(CompilationPipeline.GetAssemblies(AssembliesType.Player));
-            }
-
-            public void OnPostprocessBuild(BuildReport report)
-            {
-                ElympicsLogger.LogDebug("[Weaver] OnPostprocessBuild");
-                WeaveAssemblies(CompilationPipeline.GetAssemblies(AssembliesType.Player));
-            }
         }
 
         private class AssetPostprocessing : AssetPostprocessor

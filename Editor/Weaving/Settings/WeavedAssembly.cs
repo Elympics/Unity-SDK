@@ -11,7 +11,7 @@ namespace Elympics.Editor.Weaving.Settings
     /// weaving is enabled or not.
     /// </summary>
     [Serializable]
-    public class WeavedAssembly
+    internal class WeavedAssembly
     {
         [SerializeField, FormerlySerializedAs("m_RelativePath")]
         private string name = "";

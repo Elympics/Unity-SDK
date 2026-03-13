@@ -2,7 +2,7 @@ using Mono.Cecil;
 
 namespace Elympics.Editor.Weaving.Components.Elympics
 {
-    public class ElympicsWeaverAssembly
+    internal class ElympicsWeaverAssembly
     {
         public readonly AssemblyDefinition Assembly;
         private ElympicsWeaverType _elympicsMonoBehaviour;

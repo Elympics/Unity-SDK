@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace Elympics.Editor.Weaving.Extensions
 {
-    public static class ScriptingSymbolsExtensions
+    internal static class ScriptingSymbolsExtensions
     {
         public static bool ValidateSymbols(this string value)
         {

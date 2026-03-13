@@ -5,7 +5,7 @@ using Mono.Collections.Generic;
 namespace Elympics.Editor.Weaving.Components
 {
     [System.Serializable]
-    public class ComponentController
+    internal class ComponentController
     {
         public int TotalTypesVisited { get; private set; }
         public int TotalMethodsVisited { get; private set; }

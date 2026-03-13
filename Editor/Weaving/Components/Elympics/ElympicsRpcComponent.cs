@@ -8,7 +8,7 @@ using Mono.Cecil.Cil;
 
 namespace Elympics.Editor.Weaving.Components.Elympics
 {
-    public class ElympicsRpcComponent : WeaverComponent
+    internal class ElympicsRpcComponent : WeaverComponent
     {
         public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 

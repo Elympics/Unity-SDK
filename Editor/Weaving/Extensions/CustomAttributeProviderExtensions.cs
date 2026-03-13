@@ -4,7 +4,7 @@ using Mono.Cecil;
 
 namespace Elympics.Editor.Weaving.Extensions
 {
-    public static class CustomAttributeProviderExtensions
+    internal static class CustomAttributeProviderExtensions
     {
         public static CustomAttribute GetCustomAttribute<T>(this ICustomAttributeProvider instance) =>
             instance.HasCustomAttributes

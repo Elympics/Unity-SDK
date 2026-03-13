@@ -4,7 +4,7 @@ using Mono.Cecil;
 namespace Elympics.Editor.Weaving.Components
 {
     [Flags]
-    public enum DefinitionType
+    internal enum DefinitionType
     {
         None = 0,
         Module = 1 << 1,
@@ -15,7 +15,7 @@ namespace Elympics.Editor.Weaving.Components
         All = Module | Type | Method | Field | Property
     }
 
-    public abstract class WeaverComponent
+    internal abstract class WeaverComponent
     {
         private ModuleDefinition _activeModule;
 

@@ -5,7 +5,7 @@ using Mono.Cecil;
 
 namespace Elympics.Editor.Weaving.Components.Elympics
 {
-    public class ElympicsWeaverType
+    internal class ElympicsWeaverType
     {
         public readonly TypeReference Reference;
 

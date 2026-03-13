@@ -7,7 +7,7 @@ using UnityEditor.Compilation;
 
 namespace Elympics.Editor.Weaving
 {
-    public class WeaverAssemblyResolver : DefaultAssemblyResolver
+    internal class WeaverAssemblyResolver : DefaultAssemblyResolver
     {
         public WeaverAssemblyResolver(string assemblyPath)
         {

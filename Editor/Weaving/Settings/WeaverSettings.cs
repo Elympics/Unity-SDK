@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 
 namespace Elympics.Editor.Weaving.Settings
 {
-    public class WeaverSettings : ScriptableObject
+    internal class WeaverSettings : ScriptableObject
     {
         [SerializeField, FormerlySerializedAs("m_IsEnabled")]
         private bool isEnabled = true;

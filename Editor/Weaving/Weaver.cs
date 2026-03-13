@@ -77,14 +77,13 @@ namespace Elympics.Editor.Weaving
 
         private static bool HasBeenAlreadyWeaved(string assemblyPath)
         {
-            using var assemblyStream = new FileStream(assemblyPath, FileMode.Open, FileAccess.Read);
-            using var moduleDefinition = ModuleDefinition.ReadModule(assemblyStream,
-                GetReaderParameters(assemblyPath));
+            using var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath, GetReaderParameters(assemblyPath));
             var soughtAttributeType = moduleDefinition.ImportReference(typeof(ProcessedByElympicsAttribute));
             return moduleDefinition.Assembly.CustomAttributes
                 .Any(attribute => attribute.AttributeType.FullName == soughtAttributeType.FullName);
         }
 
+        private static readonly object Lock = new ();
         private static int counter;
         private static void WeaveAssemblies(IList<Assembly> assemblies)
         {
@@ -96,8 +95,9 @@ namespace Elympics.Editor.Weaving
                 + $"To process ({processedAssemblies.Length}): [{string.Join(", ", processedAssemblies.Select(assembly => assembly.outputPath))}]\n"
                 + $"To skip ({skippedAssemblies.Length}): [{string.Join(", ", skippedAssemblies.Select(assembly => assembly.outputPath))}]");
 
-            foreach (var assembly in processedAssemblies)
-                WeaveAssembly(assembly.outputPath);
+            lock (Lock)
+                foreach (var assembly in processedAssemblies)
+                    WeaveAssembly(assembly.outputPath);
 
             static void WeaveAssembly(string assemblyPath)
             {
@@ -118,11 +118,10 @@ namespace Elympics.Editor.Weaving
                 }
                 ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: HasBeenAlreadyWeaved = false");
 
-                using (var assemblyStream = new FileStream(assemblyPath, FileMode.Open, FileAccess.ReadWrite))
+                using (var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath, GetReaderParameters(assemblyPath)))
                 {
-                    using var moduleDefinition = ModuleDefinition.ReadModule(assemblyStream, GetReaderParameters(assemblyPath));
                     Components.VisitModule(moduleDefinition);
-                    moduleDefinition.Write(GetWriterParameters());
+                    moduleDefinition.Write(assemblyPath, GetWriterParameters());
                 }
 
                 Timer.Stop();

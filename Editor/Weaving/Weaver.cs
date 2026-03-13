@@ -81,7 +81,7 @@ namespace Elympics.Editor.Weaving
                 .Any(attribute => attribute.AttributeType.FullName == soughtAttributeType.FullName);
         }
 
-        private static readonly object Lock = new ();
+        private static readonly object Lock = new();
         private static int counter;
         private static void WeaveAssemblies(IList<Assembly> assemblies)
         {

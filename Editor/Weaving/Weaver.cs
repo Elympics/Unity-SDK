@@ -106,6 +106,12 @@ namespace Elympics.Editor.Weaving
                 ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly called");
                 Timer.Restart();
 
+                if (!File.Exists(assemblyPath))
+                {
+                    ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: Exists = false");
+                    return;
+                }
+                ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: Exists = true");
                 if (HasBeenAlreadyWeaved(assemblyPath))
                 {
                     ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: HasBeenAlreadyWeaved = true");

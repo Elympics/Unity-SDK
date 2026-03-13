@@ -16,7 +16,6 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
 
 #nullable enable
 
@@ -51,7 +50,7 @@ namespace Elympics.Editor.Weaving
         {
             ElympicsLogger.LogDebug("[Weaver] InitializeOnLoad");
 
-            Debug.Log("[Weaver] Subscribing to compilationFinished");
+            ElympicsLogger.LogDebug("[Weaver] Subscribing to compilationFinished");
             CompilationPipeline.compilationFinished += OnCompilationFinished;
 
             UpdateWeavedAssembliesList();

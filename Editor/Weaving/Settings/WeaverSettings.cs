@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
-using Debug = UnityEngine.Debug;
 
 #nullable enable
 
@@ -24,7 +23,7 @@ namespace Elympics.Editor.Weaving.Settings
         public string RequireScriptingSymbols => requiredScriptingSymbols;
         public List<WeavedAssembly> WeavedAssemblies => weavedAssemblies;
 
-        private void OnEnable() => Debug.Log($"[WeaverSettings] [{AssetDatabase.GetAssetPath(this)}] OnEnable");
+        private void OnEnable() => ElympicsLogger.LogDebug($"[WeaverSettings] [{AssetDatabase.GetAssetPath(this)}] OnEnable");
     }
 }
 

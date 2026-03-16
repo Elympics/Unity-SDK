@@ -16,7 +16,11 @@ fi
 echo "Running changelog generation..."
 
 node ./.scripts/ci/update_version.js "$BRANCH_VERSION" ../../package.json \
-  ../../Runtime/AssemblyInfo.cs ../../Editor/AssemblyInfo.cs ../../Tests/Runtime/AssemblyInfo.cs
+  ../../Runtime/AssemblyInfo.cs \
+  ../../Runtime/SmartContractService/AssemblyInfo.cs \
+  ../../Editor/AssemblyInfo.cs \
+  ../../Editor/Weaving/AssemblyInfo.cs \
+  ../../Tests/Runtime/AssemblyInfo.cs
 
 echo "Version updated"
 echo "Generating changelog..."

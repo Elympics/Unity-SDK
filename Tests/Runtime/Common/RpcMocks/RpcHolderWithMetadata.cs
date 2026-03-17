@@ -1,25 +1,23 @@
-using System;
-
 #nullable enable
 
 namespace Elympics.Tests.RpcMocks
 {
     public class RpcHolderWithMetadata : ElympicsMonoBehaviour
     {
-        public ValueTuple<RpcMetadata>? StpWithOptionalMetadataArgs;
-        public ValueTuple<RpcMetadata>? PtsWithOptionalMetadataArgs;
+        public RpcMetadata? StpWithOptionalMetadataArgs;
+        public RpcMetadata? PtsWithOptionalMetadataArgs;
 
         [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
-        public void StpWithOptionalMetadataUsingDefault(RpcMetadata metadata = default) => StpWithOptionalMetadataArgs = new ValueTuple<RpcMetadata>(metadata);
+        public void StpWithOptionalMetadataUsingDefault(RpcMetadata metadata = default) => StpWithOptionalMetadataArgs = metadata;
 
         [ElympicsRpc(ElympicsRpcDirection.ServerToPlayers)]
-        public void StpWithOptionalMetadataUsingNew(RpcMetadata metadata = new()) => StpWithOptionalMetadataArgs = new ValueTuple<RpcMetadata>(metadata);
+        public void StpWithOptionalMetadataUsingNew(RpcMetadata metadata = new()) => StpWithOptionalMetadataArgs = metadata;
 
         [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
-        public void PtsWithOptionalMetadataUsingDefault(RpcMetadata metadata = default) => PtsWithOptionalMetadataArgs = new ValueTuple<RpcMetadata>(metadata);
+        public void PtsWithOptionalMetadataUsingDefault(RpcMetadata metadata = default) => PtsWithOptionalMetadataArgs = metadata;
 
         [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
-        public void PtsWithOptionalMetadataUsingNew(RpcMetadata metadata = new()) => PtsWithOptionalMetadataArgs = new ValueTuple<RpcMetadata>(metadata);
+        public void PtsWithOptionalMetadataUsingNew(RpcMetadata metadata = new()) => PtsWithOptionalMetadataArgs = metadata;
 
         public void Reset()
         {

@@ -50,6 +50,7 @@ namespace Elympics.Tests
             const int maxPlayers = 2;
             ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
 
+            _elympicsInstance.SetElympicsStatus(new ElympicsStatus(false, true, false));
             _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
             _act = _rpcHolder switch

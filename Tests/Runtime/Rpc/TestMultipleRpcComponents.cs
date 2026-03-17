@@ -43,6 +43,7 @@ namespace Elympics.Tests
             const int maxPlayers = 2;
             ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
 
+            _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, true, false));
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 

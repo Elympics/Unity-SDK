@@ -8,8 +8,6 @@ namespace Elympics
     [PublicAPI]
     public readonly struct RpcMetadata : IEquatable<RpcMetadata>
     {
-        public static readonly RpcMetadata Default;
-
         public ElympicsPlayer Sender => ThrowIfUninitializedOrReturn(_sender);
 
         private readonly bool _initialized;

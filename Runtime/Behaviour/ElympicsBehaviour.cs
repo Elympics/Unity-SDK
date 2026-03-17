@@ -132,6 +132,7 @@ namespace Elympics
             if (ShouldRpcBeCapturedToInvoke(properties))
                 ElympicsBase.QueueRpcMessagesFromServerToInvoke(new ElympicsRpcMessageList
                 {
+                    Sender = (int)Elympics.Player,
                     Tick = ElympicsBase.Tick,
                     Messages = new List<ElympicsRpcMessage> { rpcMessage },
                 });

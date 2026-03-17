@@ -99,7 +99,8 @@ namespace Elympics
                 if ((int)player == rpcMessageList.Sender)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
                 else
-                    ElympicsLogger.LogWarning($"[RPC] RPC from Tick {rpcMessageList.Tick} Sender {rpcMessageList.Sender} userId:{_playersToUserIds[ElympicsPlayer.FromIndex(rpcMessageList.Sender)]} is not the same as socket owner {player} Uid: {userId}. RPC will be not invoked.");
+                    ElympicsLogger.LogWarning($"[RPC] RPC from Tick {rpcMessageList.Tick} Sender {rpcMessageList.Sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(rpcMessageList.Sender)]}"
+                        + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
             }
         }
 

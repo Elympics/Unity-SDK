@@ -32,7 +32,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method must return void");
 
             if (typeOwner.Methods.Count(m => m.Name == methodDefinition.Name) > 1)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, $"RPC method cannot have an overload");
+                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot have an overload");
 
             var unacceptableParameters = methodDefinition.Parameters
                 .Select((p, i) => (Index: i, Parameter: p))

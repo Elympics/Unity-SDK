@@ -47,11 +47,8 @@ namespace Elympics.Tests
             _elympicsObject.GetComponent<ElympicsBehaviour>().NetworkId = 1;
             _rpcHolderObject.GetComponent<ElympicsBehaviour>().NetworkId = 2;
 
-            var maxPlayers = 2;
-            ElympicsWorld.Current = new ElympicsWorld(
-                maxPlayers,
-                NetworkIdConstants.MaxIndex + 1,
-                NetworkIdConstants.MaxNetworkObjects);
+            const int maxPlayers = 2;
+            ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
 
             _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
@@ -108,10 +105,7 @@ namespace Elympics.Tests
         {
             foreach (var behaviourManager in _elympicsObject.GetComponents<ElympicsBehavioursManager>())
                 Object.DestroyImmediate(behaviourManager); // OnDestroy nulls ElympicsWorld.Current
-            ElympicsWorld.Current = new ElympicsWorld(
-                2,
-                NetworkIdConstants.MaxIndex + 1,
-                NetworkIdConstants.MaxNetworkObjects);
+            ElympicsWorld.Current = new ElympicsWorld(2);
             var behavioursManager = _elympicsObject.AddComponent<ElympicsBehavioursManager>();
             Assert.NotNull(behavioursManager);
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();

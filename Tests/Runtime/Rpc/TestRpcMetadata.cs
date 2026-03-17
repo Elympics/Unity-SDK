@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Replication;
 using Elympics.Tests.RpcMocks;
 using NUnit.Framework;
 using UnityEngine;
@@ -21,6 +22,9 @@ namespace Elympics.Tests
         [OneTimeSetUp]
         public void PrepareScene()
         {
+            const int maxPlayers = 1;
+            ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
+
             _elympicsObject = new GameObject("Elympics Systems", typeof(ElympicsBaseTest),
                 typeof(ElympicsBehavioursManager), typeof(ElympicsFactory));
             _rpcHolderObject = new GameObject("RPC Holder", typeof(ElympicsBehaviour), typeof(RpcHolderWithMetadata));
@@ -28,6 +32,8 @@ namespace Elympics.Tests
             Assert.NotNull(_elympicsBase = _elympicsObject.GetComponent<ElympicsBaseTest>());
             Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderWithMetadata>());
             Assert.NotNull(_elympicsBehaviour = _rpcHolder.ElympicsBehaviour);
+            _elympicsBehaviour.AutoAssignNetworkId = true;
+            _elympicsBehaviour.networkId = 1001;
             var behavioursManager = _elympicsObject.GetComponent<ElympicsBehavioursManager>();
             Assert.NotNull(behavioursManager);
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
@@ -36,7 +42,7 @@ namespace Elympics.Tests
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
-            behavioursManager.InitializeInternal(_elympicsBase);
+            behavioursManager.InitializeInternal(_elympicsBase, maxPlayers);
         }
 
         [SetUp]

@@ -40,11 +40,8 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            var maxPlayers = 2;
-            ElympicsWorld.Current = new ElympicsWorld(
-                maxPlayers,
-                NetworkIdConstants.MaxIndex + 1,
-                NetworkIdConstants.MaxNetworkObjects);
+            const int maxPlayers = 2;
+            ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
 
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;

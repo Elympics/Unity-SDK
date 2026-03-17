@@ -70,7 +70,7 @@ namespace Elympics.Replication
         /// </summary>
         internal IDenseLayoutObserver DenseLayoutObserver { get; set; }
 
-        internal ElympicsWorld(int maxPlayers, int maxSparseSlots, int maxDenseEntities)
+        internal ElympicsWorld(int maxPlayers, int maxSparseSlots = NetworkIdConstants.MaxIndex + 1, int maxDenseEntities = NetworkIdConstants.MaxNetworkObjects)
         {
             Debug.Assert(maxPlayers <= 32, $"[ElympicsWorld] maxPlayers ({maxPlayers}) exceeds 32. Interest bitmask uses uint (32 bits).");
             MaxPlayers = maxPlayers;

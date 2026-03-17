@@ -88,10 +88,12 @@ namespace Elympics.Editor.Tests
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.OutArgumentMethod))]
         public void MethodsWithArgumentsThatAreNotPrimitiveTypesOrStringsShouldNotPassValidation(string methodName)
         {
-            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+            var exception = Assert.Throws<AggregateException>(() =>
                 RunValidation(typeof(ElympicsMonoBehaviourSubclass), methodName));
-            Assert.True(exception.Message.Contains("primitive"));
-            Assert.True(exception.Message.Contains("string"));
+            Assert.That(exception.InnerExceptions, Has.Count.EqualTo(1));
+            var innerException = exception.InnerExceptions.First();
+            Assert.That(innerException, Is.InstanceOf<InvalidRpcMethodDefinitionException>());
+            Assert.That(innerException.Message, Contains.Substring("unsupported type"));
         }
 
         [Test]
@@ -105,16 +107,24 @@ namespace Elympics.Editor.Tests
         [Test]
         public void MethodsWhichHaveMoreThanOneMetadataParameterShouldNotPassValidation()
         {
-            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+            var exception = Assert.Throws<AggregateException>(() =>
                 RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.MoreThanOneMetadata)));
-            Assert.True(exception.Message.Contains("single"));
+            Assert.That(exception.InnerExceptions, Has.Count.EqualTo(1));
+            var innerException = exception.InnerExceptions.First();
+            Assert.That(innerException, Is.InstanceOf<InvalidRpcMethodDefinitionException>());
+            Assert.That(innerException.Message, Contains.Substring(nameof(RpcMetadata)));
+            Assert.That(innerException.Message, Contains.Substring("too many times"));
         }
 
         [Test]
         public void MethodsWhichHaveNonOptionalMetadataParameterShouldNotPassValidation()
         {
-            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+            var exception = Assert.Throws<AggregateException>(() =>
                 RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.RequiredMetadata)));
+            Assert.That(exception.InnerExceptions, Has.Count.EqualTo(1));
+            var innerException = exception.InnerExceptions.First();
+            Assert.That(innerException, Is.InstanceOf<InvalidRpcMethodDefinitionException>());
+            Assert.That(innerException.Message, Contains.Substring(nameof(RpcMetadata)));
             Assert.True(exception.Message.Contains("optional"));
         }
 

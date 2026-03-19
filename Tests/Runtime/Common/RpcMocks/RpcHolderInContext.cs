@@ -11,6 +11,17 @@ namespace Elympics.Tests.RpcMocks
             ShouldCallPlayerToServerMethod = false;
             ShouldCallServerToPlayerMethod = false;
         }
+
+        public abstract void Setup(ElympicsBaseTest elympicsInstance);
+        public abstract void Act(ElympicsBaseTest elympicsInstance);
+
+        protected void CallRpc()
+        {
+            if (ShouldCallPlayerToServerMethod)
+                PlayerToServerMethod();
+            if (ShouldCallServerToPlayerMethod)
+                ServerToPlayersMethod();
+        }
     }
 }
 

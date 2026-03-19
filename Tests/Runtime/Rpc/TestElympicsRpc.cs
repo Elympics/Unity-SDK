@@ -117,26 +117,6 @@ namespace Elympics.Tests
                 Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId].Method);
         }
 
-        [Test]
-        public void SchedulingRpcShouldThrowIfCalledInWrongContext([Values] ElympicsBase.CallContext context)
-        {
-            var allowedContexts = new[]
-            {
-                ElympicsBase.CallContext.ElympicsUpdate,
-                ElympicsBase.CallContext.Initialize,
-                ElympicsBase.CallContext.RpcInvoking,
-            };
-            TestDelegate schedulingAction = () => _rpcHolder.ServerToPlayersMethod();
-
-            using var tmpContext = _elympicsBase.SetTemporaryCallContext(context);
-            _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneServer);
-
-            if (allowedContexts.Contains(context))
-                Assert.DoesNotThrow(schedulingAction);
-            else
-                _ = Assert.Throws<ElympicsException>(schedulingAction);
-        }
-
         public record DirectionTestCase(ElympicsStatus Status, ElympicsRpcDirection Direction, bool ShouldThrow);
 
         private static IEnumerable<DirectionTestCase> DirectionTestCases =>

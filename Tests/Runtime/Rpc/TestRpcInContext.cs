@@ -13,6 +13,8 @@ namespace Elympics.Tests
     [TestFixture(typeof(RpcHolderInitializable))]
     [TestFixture(typeof(RpcHolderUpdatable))]
     [TestFixture(typeof(RpcHolderOnTriggerEnter))]
+    [TestFixture(typeof(RpcHolderValueChanged))]
+    [TestFixture(typeof(RpcHolderNoContext))]
     internal class TestRpcInContext
     {
         private readonly GameObject _elympicsObject;
@@ -25,7 +27,7 @@ namespace Elympics.Tests
         private readonly TestDelegate _act;
         private readonly TestDelegate _setup;
 
-        private GameObject _trigger;
+        #region Setup and teardown
 
         public TestRpcInContext(Type rpcHolderType)
         {
@@ -53,81 +55,35 @@ namespace Elympics.Tests
             _elympicsInstance.SetElympicsStatus(new ElympicsStatus(false, true, false));
             _elympicsInstance.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), _elympicsObject.GetComponent<ElympicsBehavioursManager>());
 
-            _act = _rpcHolder switch
+            _setup = () =>
             {
-                RpcHolderInitializable => RunInitialization,
-                RpcHolderUpdatable => RunUpdate,
-                RpcHolderOnTriggerEnter => MoveTriggerAndRunUpdate,
-                _ => throw new ArgumentOutOfRangeException(nameof(rpcHolderType)),
+                _elympicsBehaviour.RpcMethods.Clear();
+                CreateBehavioursManager(_elympicsObject, _elympicsInstance);
+                _rpcHolder.Setup(_elympicsInstance);
             };
-
-            _setup = _rpcHolder switch
-            {
-                RpcHolderInitializable => SetupBeforeInitialization,
-                RpcHolderUpdatable => SetupBeforeUpdate,
-                RpcHolderOnTriggerEnter => SetupBeforePhysicsUpdate,
-                _ => throw new ArgumentOutOfRangeException(nameof(rpcHolderType)),
-            };
+            _act = () => _rpcHolder.Act(_elympicsInstance);
         }
 
         [SetUp]
         public void SetupSut()
         {
             _setup();
-
             _elympicsInstance.SetElympicsStatus(new ElympicsStatus(false, false, false));
             _elympicsInstance.SetPermanentCallContext(ElympicsBase.CallContext.None);
             _elympicsInstance.ClearRpcQueues();
             _rpcHolder.Reset();
         }
 
-        #region Setup methods
-
-        private void SetupBeforeInitialization()
+        [OneTimeTearDown]
+        public void CleanScene()
         {
-            _elympicsBehaviour.RpcMethods.Clear();
-            CreateBehavioursManager();
+            Object.Destroy(_elympicsObject);
+            Object.Destroy(_rpcHolderObject);
+            ElympicsWorld.Current?.Dispose();
+            ElympicsWorld.Current = null;
         }
 
-        private void SetupBeforeUpdate()
-        {
-            SetupBeforeInitialization();
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 2);
-        }
-
-        private void SetupBeforePhysicsUpdate()
-        {
-            SetupBeforeUpdate();
-            CreateTriggerCube();
-            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
-        }
-
-        private void CreateBehavioursManager()
-        {
-            foreach (var behaviourManager in _elympicsObject.GetComponents<ElympicsBehavioursManager>())
-                Object.DestroyImmediate(behaviourManager); // OnDestroy nulls ElympicsWorld.Current
-            ElympicsWorld.Current = new ElympicsWorld(2);
-            var behavioursManager = _elympicsObject.AddComponent<ElympicsBehavioursManager>();
-            Assert.NotNull(behavioursManager);
-            var factory = _elympicsObject.GetComponent<ElympicsFactory>();
-            Assert.NotNull(factory);
-            behavioursManager.factory = factory;
-            _elympicsInstance.ElympicsBehavioursManager = behavioursManager;
-        }
-
-        private void CreateTriggerCube()
-        {
-            if (_trigger != null)
-                Object.DestroyImmediate(_trigger);
-            _trigger = new GameObject("Trigger cube", typeof(BoxCollider), typeof(Rigidbody));
-            _trigger.GetComponent<BoxCollider>().isTrigger = true;
-            var rigidbody = _trigger.GetComponent<Rigidbody>();
-            Assert.NotNull(rigidbody);
-            rigidbody.useGravity = false;
-            rigidbody.position = new Vector3(5, 5, 5);
-        }
-
-        #endregion Setup methods
+        #endregion
 
         public record ContextTestCase(ElympicsStatus Status, bool ShouldCallPlayerToServer, bool ShouldCallServerToPlayer);
 
@@ -153,6 +109,8 @@ namespace Elympics.Tests
             Assert.AreEqual(testCase.ShouldCallServerToPlayer, WasServerToPlayersRpcInvokedOrScheduled());
         }
 
+        #region Helpers
+
         private bool WasPlayerToServerRpcInvokedOrScheduled() =>
             _rpcHolder.PlayerToServerMethodCalled || WasPlayerToServerRpcScheduled();
 
@@ -174,29 +132,19 @@ namespace Elympics.Tests
                 .Any(message => message.MethodId == expectedId);
         }
 
-        #region Act methods
-
-        private void RunInitialization() =>
-            _elympicsInstance.ElympicsBehavioursManager.InitializeInternal(_elympicsInstance, 2);
-
-        private void RunUpdate() =>
-            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
-
-        private void MoveTriggerAndRunUpdate()
+        protected static void CreateBehavioursManager(GameObject elympicsObject, ElympicsBaseTest elympicsInstance)
         {
-            _trigger!.GetComponent<Rigidbody>().position = new Vector3(0, 0, 0);
-            _elympicsInstance.ElympicsBehavioursManager.ElympicsUpdate();
+            foreach (var behaviourManager in elympicsObject.GetComponents<ElympicsBehavioursManager>())
+                Object.DestroyImmediate(behaviourManager); // OnDestroy nulls ElympicsWorld.Current
+            ElympicsWorld.Current = new ElympicsWorld(2);
+            var behavioursManager = elympicsObject.AddComponent<ElympicsBehavioursManager>();
+            Assert.NotNull(behavioursManager);
+            var factory = elympicsObject.GetComponent<ElympicsFactory>();
+            Assert.NotNull(factory);
+            behavioursManager.factory = factory;
+            elympicsInstance.ElympicsBehavioursManager = behavioursManager;
         }
 
-        #endregion Act methods
-
-        [OneTimeTearDown]
-        public void CleanScene()
-        {
-            Object.Destroy(_elympicsObject);
-            Object.Destroy(_rpcHolderObject);
-            ElympicsWorld.Current?.Dispose();
-            ElympicsWorld.Current = null;
-        }
+        #endregion
     }
 }

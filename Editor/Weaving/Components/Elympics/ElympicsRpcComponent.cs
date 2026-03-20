@@ -12,6 +12,9 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 {
     internal class ElympicsRpcComponent : WeaverComponent
     {
+        private const string StartMarker = nameof(ElympicsRpcComponent) + " Start Marker";
+        private const string EndMarker = nameof(ElympicsRpcComponent) + " End Marker";
+
         public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 
         private ElympicsWeaverAssembly? _assembly;
@@ -128,6 +131,14 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
             var returnBeforeOriginalBody = ilProcessor.Create(OpCodes.Ret);
             var originalBodyStart = methodDefinition.Body.Instructions[0];
+
+            var loadStartMarker = ilProcessor.Create(OpCodes.Ldstr, StartMarker);
+            var loadEndMarker = ilProcessor.Create(OpCodes.Ldstr, EndMarker);
+            var pop = ilProcessor.Create(OpCodes.Pop);
+
+            // Mark the start of the injected IL code
+            ilProcessor.InsertBefore(originalBodyStart, loadStartMarker);
+            ilProcessor.InsertBefore(originalBodyStart, pop);
 
             // Get MethodInfo and ElympicsRpcProperties
             ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);

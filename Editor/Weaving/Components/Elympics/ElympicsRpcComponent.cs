@@ -86,7 +86,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var getMethodInfoMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
             var getRpcPropertiesMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
 
-            var throwIfRpcContextNotValidMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ThrowIfRpcContextNotValid));
             var shouldRpcBeCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
             var onRpcCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldRpcBeInvokedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
@@ -108,7 +107,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var callGetElympicsBehaviour = ilProcessor.Create(OpCodes.Call, getElympicsBehaviourMethodReference);
             var loadMethodInfoFromVariable = ilProcessor.Create(OpCodes.Ldloc, methodInfoVariable);
             var loadRpcPropertiesFromVariable = ilProcessor.Create(OpCodes.Ldloc, rpcPropertiesVariable);
-            var callValidateRpcContext = ilProcessor.Create(OpCodes.Call, throwIfRpcContextNotValidMethodReference);
             var callShouldBeCaptured = ilProcessor.Create(OpCodes.Call, shouldRpcBeCapturedMethodReference);
             var callOnRpcCaptured = ilProcessor.Create(OpCodes.Call, onRpcCapturedMethodReference);
             var callShouldBeInvoked = ilProcessor.Create(OpCodes.Call, shouldRpcBeInvokedMethodReference);
@@ -149,13 +147,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
             ilProcessor.InsertBefore(originalBodyStart, callGetRpcProperties);
             ilProcessor.InsertBefore(originalBodyStart, storeRpcPropertiesToVariable);
-
-            // Call ValidateRpcContext
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetElympicsBehaviour);
-            ilProcessor.InsertBefore(originalBodyStart, loadRpcPropertiesFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, callValidateRpcContext);
 
             // Call ShouldRpcBeInvokedInstantly and branch
             ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);

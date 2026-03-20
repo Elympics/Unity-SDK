@@ -64,25 +64,6 @@ namespace Elympics
             internal set => networkId = value;
         }
 
-        /// Throws exception if the RPC method is called in incorrect context.
-        /// <param name="properties">Configuration of the RPC method.</param>
-        /// <param name="methodInfo">The RPC method called.</param>
-        /// <exception cref="ElympicsException">Thrown if <see cref="ElympicsBase.CurrentCallContext"/> is not valid for calling RPCs.</exception>
-        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
-        [UsedImplicitly(ImplicitUseKindFlags.Access)]
-#pragma warning disable IDE0060
-        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties properties, MethodInfo methodInfo)
-#pragma warning enable IDE0060
-        {
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
-                return;
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
-                return;
-            throw new ElympicsException($"Error calling {methodInfo.DeclaringType?.FullName}.{methodInfo.Name}: "
-                + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
-                + $"or {nameof(IInitializable.Initialize)}");
-        }
-
         /// Decides if the RPC should be invoked instantly in the current instance instead of requesting it over network.
         /// <param name="properties">Configuration of the RPC method.</param>
         /// <param name="methodInfo">The RPC method called.</param>
@@ -94,7 +75,7 @@ namespace Elympics
         {
             if (_isReconciling)
             {
-                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
                 return false;
             }
 
@@ -119,7 +100,7 @@ namespace Elympics
         {
             if (_isReconciling)
             {
-                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
                 return false;
             }
 
@@ -386,10 +367,9 @@ namespace Elympics
             // bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
             // todo use in future for debug mode ~pprzestrzelski 06.06.2022
             var areEqual = true;
-            foreach ((var componentName, var backingFields) in _backingFieldsByComponents)
+            foreach (var (componentName, backingFields) in _backingFieldsByComponents)
             {
                 foreach (var backingField in backingFields)
-                {
                     if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
                     {
 #if !ELYMPICS_PRODUCTION
@@ -401,7 +381,6 @@ namespace Elympics
                         areEqual = false;
                         break;
                     }
-                }
 
                 if (!areEqual)
                     break;

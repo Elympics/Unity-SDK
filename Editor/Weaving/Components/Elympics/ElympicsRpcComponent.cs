@@ -14,7 +14,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
     {
         public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 
-        private ElympicsWeaverAssembly _assembly;
+        private ElympicsWeaverAssembly? _assembly;
 
         protected override void StartVisiting(ModuleDefinition moduleDefinition) =>
             _assembly = new ElympicsWeaverAssembly(moduleDefinition.Assembly);
@@ -68,6 +68,9 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         public override void VisitMethod(MethodDefinition methodDefinition)
         {
+            if (_assembly is null)
+                throw new InvalidOperationException($"Assembly visiting has not been started for ${nameof(ElympicsRpcComponent)}");
+
             if (methodDefinition.GetCustomAttribute<ElympicsRpcAttribute>() == null)
                 return;
 
@@ -172,13 +175,19 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             // Return just before the original code
             ilProcessor.InsertBefore(originalBodyStart, returnBeforeOriginalBody);
 
+            // Mark the end of the injected IL code
+            ilProcessor.InsertBefore(originalBodyStart, loadEndMarker);
+            ilProcessor.InsertBefore(originalBodyStart, pop);
+
             // The original code continues from here (if branched to originalBodyStart)
         }
 
         protected override void FinishVisiting(ModuleDefinition moduleDefinition)
         {
+            var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
             var processedAttribute = new CustomAttribute(moduleDefinition
-                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(Array.Empty<Type>())));
+                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(new[] { typeof(string) })));
+            processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.Boolean, elympicsVersion));
             moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
 
             _assembly = null;

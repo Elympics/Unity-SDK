@@ -11,5 +11,6 @@ namespace Elympics.Communication.Utils
         public static TimeSpan WebSocketHeartbeatTimeout = TimeSpan.FromSeconds(30);
 
         public static TimeSpan IceCandidateTimeout = TimeSpan.FromSeconds(5);
+        public static TimeSpan IceServersTimeout = TimeSpan.FromSeconds(5);
     }
 }

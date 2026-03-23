@@ -36,7 +36,8 @@ const LibraryWebRtc = {
       iceCandidateCallback,
       offerCallback
     ) {
-      this.pc = new RTCPeerConnection();
+      this.rtcConfig = {};
+      this.pc = new RTCPeerConnection(this.rtcConfig);
 
       this.reliableDc = this.pc.createDataChannel("reliable");
       this.reliableReceived = reliableReceived;
@@ -186,6 +187,12 @@ const LibraryWebRtc = {
       this.sendUnreliable = function (message) {
         if (this.unreliableDc.readyState !== "open") return;
         this.unreliableDc.send(message);
+      };
+
+      this.setIceServers = function (iceServers) {
+        this.rtcConfig.iceServers = iceServers;
+        webRtcState.log("Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
+        this.pc.setConfiguration(this.rtcConfig);
       };
 
       this.close = function () {
@@ -398,6 +405,28 @@ const LibraryWebRtc = {
 
     delete webRtcState.instances[id];
     instance.close();
+  },
+
+  // biome-ignore lint/complexity/useArrowFunction: <explanation>
+  WebRtcSetIceServers: function (id, iceServersJsonPtr) {
+    const instance = webRtcState.instances[id];
+    if (!instance) {
+      webRtcState.log(`Instance not found for ID: ${id}`);
+      return;
+    }
+
+    let iceServers = null;
+    if (iceServersJsonPtr) {
+      const json = UTF8ToString(iceServersJsonPtr);
+      if (json && json.length > 0) {
+        const parsed = JSON.parse(json);
+        iceServers = Array.isArray(parsed) ? parsed : (parsed.iceServers || [parsed]);
+      }
+    }
+
+    if (iceServers) {
+      instance.setIceServers(iceServers);
+    }
   },
 
   // biome-ignore lint/complexity/useArrowFunction: <explanation>

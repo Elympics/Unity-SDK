@@ -32,12 +32,14 @@ namespace Elympics
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
             var gameLogger = ElympicsLogger.CurrentContext!.Value.SetGameMode("online").WithApp(ElympicsLoggerContext.GameplayContextApp);
+            var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
                     gameLogger,
-                    WebRtcFactory.CreateInstance)
+                    (delay) => WebRtcFactory.CreateInstance(delay),
+                    iceServersUri)
                 : new TcpUdpGameServerClient(serializer,
                     config,
                     IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress),

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Rooms.Models;
@@ -20,14 +21,22 @@ namespace Elympics
         {
             if (matchmakingData is null)
                 return false;
-            return MatchmakingState == matchmakingData.State.Map()
-                && QueueName == matchmakingData.QueueName
-                && TeamSize == matchmakingData.TeamSize
-                && TeamCount == matchmakingData.TeamCount
-                && Equals(MatchData, matchmakingData.MatchData?.Map())
-                && CustomData.Count == matchmakingData.CustomData.Count
-                && CustomData.IsTheSame(matchmakingData.CustomData)
-                && BetDetails == matchmakingData.BetDetails?.Map();
+            try
+            {
+                return MatchmakingState == matchmakingData.State.Map()
+                    && QueueName == matchmakingData.QueueName
+                    && TeamSize == matchmakingData.TeamSize
+                    && TeamCount == matchmakingData.TeamCount
+                    && Equals(MatchData, matchmakingData.MatchData?.Map())
+                    && CustomData.Count == matchmakingData.CustomData.Count
+                    && CustomData.IsTheSame(matchmakingData.CustomData)
+                    && BetDetails == matchmakingData.BetDetails?.Map();
+            }
+            catch (ArgumentOutOfRangeException exc)
+            {
+                ElympicsLogger.LogWarning($"Ignoring unparsable bet details: {matchmakingData.BetDetails}\nException:\n{exc.Message}\n{exc.StackTrace}");
+                return false;
+            }
         }
 
         internal RoomMatchmakingData(MatchmakingData data)

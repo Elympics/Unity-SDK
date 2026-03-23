@@ -1,3 +1,12 @@
+## [0.25.1](https://github.com/Elympics/Unity-SDK/compare/v0.25.0...v0.25.1) (2026-03-23)
+
+
+### Bug Fixes 🪲
+
+* Ignore unknown chain types ([7a4a58b](https://github.com/Elympics/Unity-SDK/commit/7a4a58b6744cc53e2c895cfdf8c818cb2d1f6f51))
+
+
+
 ## [0.25.0](https://github.com/Elympics/Unity-SDK/compare/v0.24.3...v0.25.0) (2026-02-25)
 
 

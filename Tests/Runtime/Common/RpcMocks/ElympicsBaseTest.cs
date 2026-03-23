@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elympics.Tests.RpcMocks
 {
     public record ElympicsStatus(bool IsClient, bool IsServer, bool IsBot, int PlayerIndex = 0)
@@ -30,22 +28,14 @@ namespace Elympics.Tests.RpcMocks
         internal override void ElympicsFixedUpdate()
         { }
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList)
-        {
-            var newElympicsRpcMessageList = new ElympicsRpcMessageList
-            {
-                Sender = rpcMessageList.Sender,
-                Tick = rpcMessageList.Tick,
-                Messages = new List<ElympicsRpcMessage>(rpcMessageList.Messages),
-            };
-            RpcMessagesToInvoke.Add(newElympicsRpcMessageList);
-        }
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+            RpcMessagesToInvoke.AddRange(rpcMessageList);
 
         public void SetElympicsStatus(ElympicsStatus status) => (_isClient, _isServer, _isBot, _playerIndex) = status;
 
         public void ClearRpcQueues()
         {
-            RpcMessagesToSend.Messages.Clear();
+            RpcMessagesToSend.Clear();
             RpcMessagesToInvoke.Clear();
         }
     }

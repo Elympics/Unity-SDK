@@ -161,7 +161,7 @@ namespace Elympics.Tests
             _rpcHolder.PlayerToServerMethod();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
@@ -174,7 +174,7 @@ namespace Elympics.Tests
             _rpcHolder.PlayerToServerMethod();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
@@ -187,7 +187,7 @@ namespace Elympics.Tests
             _rpcHolder.ServerToPlayersMethod();
 
             Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
@@ -218,11 +218,11 @@ namespace Elympics.Tests
 
             _ = methodInfo!.Invoke(_rpcHolder, Array.Empty<object>());
 
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
 
-            var queuedRpc = _elympicsBase.RpcMessagesToSend.Messages[0];
+            var queuedRpc = _elympicsBase.RpcMessagesToSend[0];
             Assert.AreEqual(expectedMethodId, queuedRpc.MethodId);
             Assert.AreEqual(_elympicsBehaviour.NetworkId, queuedRpc.NetworkId);
             Assert.Zero(queuedRpc.Arguments.Length);
@@ -238,7 +238,7 @@ namespace Elympics.Tests
             _rpcHolder.PlayerToServerMethod();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
         }
 
@@ -257,19 +257,18 @@ namespace Elympics.Tests
             _rpcHolder.PlayerToServerMethod();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
         }
 
@@ -282,18 +281,18 @@ namespace Elympics.Tests
             _rpcHolder.ServerToPlayersMethod();
 
             Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(_rpcHolder.ServerToPlayersMethodCalled);
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
         }
 
@@ -305,7 +304,9 @@ namespace Elympics.Tests
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
 
-            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1,
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            _rpcHolder.PlayerToServerMethodWithArgs(
+                expectedArgs.Item1,
                 expectedArgs.Item2,
                 expectedArgs.Item3,
                 expectedArgs.Item4,
@@ -321,18 +322,17 @@ namespace Elympics.Tests
             );
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.PlayerToServerMethodLastCallArguments.HasValue);
             var actualArgs = _rpcHolder.PlayerToServerMethodLastCallArguments.Value;
@@ -348,18 +348,17 @@ namespace Elympics.Tests
             _rpcHolder.CallPlayerToServerMethodPrivate();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodPrivateCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.PlayerToServerMethodPrivateCalled);
         }
@@ -372,7 +371,9 @@ namespace Elympics.Tests
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");
 
-            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1,
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            _rpcHolder.ServerToPlayersMethodWithArgs(
+                expectedArgs.Item1,
                 expectedArgs.Item2,
                 expectedArgs.Item3,
                 expectedArgs.Item4,
@@ -388,17 +389,17 @@ namespace Elympics.Tests
             );
 
             Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.ServerToPlayersMethodLastCallArguments.HasValue);
             var actualArgs = _rpcHolder.ServerToPlayersMethodLastCallArguments.Value;
@@ -418,14 +419,13 @@ namespace Elympics.Tests
                 MethodId = _elympicsBehaviour.RpcMethods.GetIdOf(calledRpcMethod),
                 Arguments = Array.Empty<object>(),
             };
-            var rpcMessageList = new ElympicsRpcMessageList { Messages = new List<ElympicsRpcMessage> { rpcMessage } };
-            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessageList);
+            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessage);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(_rpcHolder.PingServerToPlayersCalled);
             Assert.IsFalse(_rpcHolder.PongPlayerToServerCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
         }
 
@@ -449,14 +449,13 @@ namespace Elympics.Tests
                 MethodId = _elympicsBehaviour.RpcMethods.GetIdOf(calledRpcMethod),
                 Arguments = Array.Empty<object>(),
             };
-            var rpcMessageList = new ElympicsRpcMessageList { Messages = new List<ElympicsRpcMessage> { rpcMessage } };
-            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessageList);
+            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessage);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(_rpcHolder.PingPlayerToServerCalled);
             Assert.IsFalse(_rpcHolder.PongServerToPlayersCalled);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
         }
 
@@ -486,31 +485,30 @@ namespace Elympics.Tests
                 MethodId = _elympicsBehaviour.RpcMethods.GetIdOf(calledRpcMethod),
                 Arguments = Array.Empty<object>(),
             };
-            var rpcMessageList = new ElympicsRpcMessageList { Messages = new List<ElympicsRpcMessage> { rpcMessage } };
-            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessageList);
+            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessage);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(testCase.WasPingCalled(_rpcHolder));
             Assert.IsFalse(testCase.WasPongCalled(_rpcHolder));
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         [Test]
         public void NoRpcCalledShouldCauseNothingToBeQueuedAndInvoked()
         {
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
         }
 
@@ -536,19 +534,13 @@ namespace Elympics.Tests
             gameEngineAdapter.RpcMessageListReceived += OnRpcMessageListReceived;
 
             gameEngineAdapter.OnInGameDataFromPlayerUnreliableReceived(MessagePackSerializer.Serialize<IToServer>(
-                new ElympicsRpcMessageList
-                {
-                    Tick = 2,
-                    Sender = 1,
-                    Messages = new List<ElympicsRpcMessage>(),
-                }),
+                new ElympicsRpcMessageList(new ElympicsRpcMessage { Sender = 1 })),
                 playerIds[1]);
 
             gameEngineAdapter.RpcMessageListReceived -= OnRpcMessageListReceived;
             Assert.That(receivedRpcList, Is.Not.Null);
-            Assert.That(receivedRpcList.Tick, Is.EqualTo(2));
-            Assert.That(receivedRpcList.Sender, Is.EqualTo(1));
-            Assert.That(receivedRpcList.Messages.Count, Is.Zero);
+            Assert.That(receivedRpcList.Count, Is.EqualTo(1));
+            Assert.That(receivedRpcList[0].Sender, Is.EqualTo(1));
 
             void OnRpcMessageListReceived(ElympicsRpcMessageList list) => receivedRpcList = list;
         }
@@ -575,12 +567,7 @@ namespace Elympics.Tests
             gameEngineAdapter.RpcMessageListReceived += OnRpcMessageListReceived;
 
             gameEngineAdapter.OnInGameDataFromPlayerUnreliableReceived(MessagePackSerializer.Serialize<IToServer>(
-                    new ElympicsRpcMessageList
-                    {
-                        Tick = 2,
-                        Sender = 0,
-                        Messages = new List<ElympicsRpcMessage>(),
-                    }),
+                new ElympicsRpcMessageList(new ElympicsRpcMessage { Sender = 0 })),
                 playerIds[1]);
 
             gameEngineAdapter.RpcMessageListReceived -= OnRpcMessageListReceived;

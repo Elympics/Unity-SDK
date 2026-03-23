@@ -128,14 +128,18 @@ namespace Elympics
         {
             var rpcMethod = new RpcMethod(methodInfo, target);
             var methodId = RpcMethods.GetIdOf(rpcMethod);
-            var rpcMessage = new ElympicsRpcMessage(NetworkId, methodId, arguments);
+            var scheduledTick = properties.WaitForTick ? ElympicsBase.Tick : 0;
+            var rpcMessage = new ElympicsRpcMessage
+            {
+                NetworkId = NetworkId,
+                MethodId = methodId,
+                Arguments = arguments,
+                Sender = (int)Elympics.Player,
+                SentOnTick = ElympicsBase.Tick,
+                ExecuteNotBeforeTick = scheduledTick,
+            };
             if (ShouldRpcBeCapturedToInvoke(properties))
-                ElympicsBase.QueueRpcMessagesFromServerToInvoke(new ElympicsRpcMessageList
-                {
-                    Sender = (int)Elympics.Player,
-                    Tick = ElympicsBase.Tick,
-                    Messages = new List<ElympicsRpcMessage> { rpcMessage },
-                });
+                ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
             else
                 ElympicsBase.QueueRpcMessageToSend(rpcMessage);
 

@@ -127,8 +127,8 @@ namespace Elympics.Tests
         {
             var rpcMethod = new RpcMethod(methodInfo, _rpcHolder);
             var expectedId = _elympicsBehaviour.RpcMethods.GetIdOf(rpcMethod);
-            return _elympicsInstance.RpcMessagesToSend.Messages
-                .Concat(_elympicsInstance.RpcMessagesToInvoke.SelectMany(x => x.Messages))
+            return _elympicsInstance.RpcMessagesToSend
+                .Concat(_elympicsInstance.RpcMessagesToInvoke)
                 .Any(message => message.MethodId == expectedId);
         }
 

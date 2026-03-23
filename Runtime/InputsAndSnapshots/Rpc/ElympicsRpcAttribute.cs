@@ -10,16 +10,25 @@ namespace Elympics
 
     public struct ElympicsRpcProperties
     {
-        public readonly ElympicsRpcDirection Direction;
+        public ElympicsRpcDirection Direction { get; set; }
+        public bool WaitForTick { get; set; }
 
-        public ElympicsRpcProperties(ElympicsRpcDirection direction) => Direction = direction;
+        public ElympicsRpcProperties(ElympicsRpcDirection direction) =>
+            (Direction, WaitForTick) = (direction, true);
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     public class ElympicsRpcAttribute : Attribute
     {
-        internal readonly ElympicsRpcProperties Properties;
+        public bool WaitForTick
+        {
+            get => Properties.WaitForTick;
+            set => Properties.WaitForTick = value;
+        }
 
-        public ElympicsRpcAttribute(ElympicsRpcDirection direction) => Properties = new ElympicsRpcProperties(direction);
+        internal ElympicsRpcProperties Properties;
+
+        public ElympicsRpcAttribute(ElympicsRpcDirection direction) =>
+            Properties = new ElympicsRpcProperties(direction);
     }
 }

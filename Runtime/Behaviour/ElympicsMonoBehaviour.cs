@@ -117,11 +117,17 @@ namespace Elympics
 
         private ElympicsFactory GetFactory() => _factory ??= FindObjectOfType<ElympicsFactory>();
 
-        [UsedImplicitly] // from generated IL code
+        /// Retrieves data of this object's method of the given name.
+        /// <param name="methodName">The method name.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
         protected internal MethodInfo GetMethodInfo(string methodName) =>
             GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-        [UsedImplicitly] // from generated IL code
+        /// Retrieves RPC configuration for the given method.
+        /// <param name="methodInfo">The RPC method.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
         protected internal ElympicsRpcProperties GetRpcProperties(MethodInfo methodInfo) =>
             methodInfo!.GetCustomAttributes<ElympicsRpcAttribute>().First().Properties;
     }

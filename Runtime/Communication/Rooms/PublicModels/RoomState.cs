@@ -82,7 +82,16 @@ namespace Elympics
             stateDiff.NewRoomName = !RoomName.Equals(stateUpdate.RoomName) ? stateUpdate.RoomName : null;
             stateDiff.NewIsPrivate = IsPrivate != stateUpdate.IsPrivate ? stateUpdate.IsPrivate : null;
             var currentBet = MatchmakingData?.BetDetails;
-            var newBet = stateUpdate.MatchmakingData?.BetDetails?.Map();
+            RoomBetDetails? newBet;
+            try
+            {
+                newBet = stateUpdate.MatchmakingData?.BetDetails?.Map();
+            }
+            catch (ArgumentOutOfRangeException exc)
+            {
+                newBet = null;
+                ElympicsLogger.LogWarning($"Ignoring unparsable bet details: {newBet}\nException:\n{exc.Message}\n{exc.StackTrace}");
+            }
             if (currentBet != newBet)
             {
                 stateDiff.UpdatedBetAmount = true;
@@ -183,7 +192,15 @@ namespace Elympics
             PrivilegedHost = stateUpdate.HasPrivilegedHost;
             IsPrivate = stateUpdate.IsPrivate;
             JoinCode = stateUpdate.JoinCode;
-            MatchmakingData = stateUpdate.MatchmakingData != null ? new RoomMatchmakingData(stateUpdate.MatchmakingData) : null;
+            try
+            {
+                MatchmakingData = stateUpdate.MatchmakingData != null ? new RoomMatchmakingData(stateUpdate.MatchmakingData) : null;
+            }
+            catch (ArgumentOutOfRangeException exc)
+            {
+                MatchmakingData = null;
+                ElympicsLogger.LogWarning($"Ignoring unparsable bet details: {stateUpdate.MatchmakingData}\nException:\n{exc.Message}\n{exc.StackTrace}");
+            }
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();
@@ -198,7 +215,15 @@ namespace Elympics
             RoomName = stateUpdate.RoomName;
             PrivilegedHost = stateUpdate.HasPrivilegedHost;
             IsPrivate = stateUpdate.IsPrivate;
-            MatchmakingData = stateUpdate.MatchmakingData != null ? new RoomMatchmakingData(stateUpdate.MatchmakingData) : null;
+            try
+            {
+                MatchmakingData = stateUpdate.MatchmakingData != null ? new RoomMatchmakingData(stateUpdate.MatchmakingData) : null;
+            }
+            catch (ArgumentOutOfRangeException exc)
+            {
+                MatchmakingData = null;
+                ElympicsLogger.LogWarning($"Ignoring unparsable matchmaking data: {MatchmakingData}\nException:\n{exc.Message}\n{exc.StackTrace}");
+            }
             _customData.Clear();
             _customData.AddRange(stateUpdate.CustomData);
             _users.Clear();

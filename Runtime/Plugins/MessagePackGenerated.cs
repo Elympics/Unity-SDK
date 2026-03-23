@@ -3234,20 +3234,22 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomChainDto();
+            var __ExternalId__ = default(int);
+            var __Type__ = default(global::Elympics.Communication.Rooms.InternalModels.ChainTypeDto);
+            var __Name__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.ExternalId = reader.ReadInt32();
+                        __ExternalId__ = reader.ReadInt32();
                         break;
                     case 1:
-                        ____result.Type = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.ChainTypeDto>(formatterResolver).Deserialize(ref reader, options);
+                        __Type__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.ChainTypeDto>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.Name = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __Name__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -3255,6 +3257,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
                 }
             }
 
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomChainDto(__ExternalId__, __Type__, __Name__);
             reader.Depth--;
             return ____result;
         }
@@ -3288,20 +3291,22 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomCoinDto();
+            var __CoinId__ = default(global::System.Guid);
+            var __Chain__ = default(global::Elympics.Communication.Rooms.InternalModels.RoomChainDto);
+            var __Currency__ = default(global::Elympics.Communication.Rooms.InternalModels.RoomCurrencyDto);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.CoinId = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
+                        __CoinId__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Guid>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 1:
-                        ____result.Chain = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomChainDto>(formatterResolver).Deserialize(ref reader, options);
+                        __Chain__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomChainDto>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.Currency = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomCurrencyDto>(formatterResolver).Deserialize(ref reader, options);
+                        __Currency__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.Communication.Rooms.InternalModels.RoomCurrencyDto>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -3309,6 +3314,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
                 }
             }
 
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomCoinDto(__CoinId__, __Chain__, __Currency__);
             reader.Depth--;
             return ____result;
         }
@@ -3343,23 +3349,26 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomCurrencyDto();
+            var __Ticker__ = default(string);
+            var __Address__ = default(string);
+            var __Decimals__ = default(int);
+            var __IconUrl__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        ____result.Ticker = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __Ticker__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 1:
-                        ____result.Address = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __Address__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 2:
-                        ____result.Decimals = reader.ReadInt32();
+                        __Decimals__ = reader.ReadInt32();
                         break;
                     case 3:
-                        ____result.IconUrl = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
+                        __IconUrl__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<string>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -3367,6 +3376,7 @@ namespace MessagePack.Formatters.Elympics.Communication.Rooms.InternalModels
                 }
             }
 
+            var ____result = new global::Elympics.Communication.Rooms.InternalModels.RoomCurrencyDto(__Ticker__, __Address__, __Decimals__, __IconUrl__);
             reader.Depth--;
             return ____result;
         }

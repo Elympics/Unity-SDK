@@ -645,7 +645,14 @@ namespace Elympics
             var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
             foreach (var coin in gameDataResponse.CoinData)
-                coins.Add(await coin.Map().ToCoinInfo(loggerContext));
+                try
+                {
+                    coins.Add(await coin.Map().ToCoinInfo(loggerContext));
+                }
+                catch (ArgumentOutOfRangeException exc)
+                {
+                    ElympicsLogger.LogWarning($"Ignoring unparsable coin details: {coin}\nException:\n{exc.Message}\n{exc.StackTrace}");
+                }
             AvailableCoins = coins;
             await _roomsManager.Value.CheckJoinedRoomStatus(gameDataResponse);
         }

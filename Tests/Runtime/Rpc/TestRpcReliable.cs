@@ -10,14 +10,14 @@ namespace Elympics.Tests
 {
     [TestFixture]
     [Category("RPC")]
-    public class TestRpcShouldWaitForTick
+    public class TestRpcReliable
     {
         private GameObject _elympicsObject;
         private GameObject _rpcHolderObject;
 
         private ElympicsBaseTest _elympicsBase;
         private ElympicsBehaviour _elympicsBehaviour;
-        private RpcHolderWaitForTick _rpcHolder;
+        private RpcHolderReliable _rpcHolder;
 
         #region Setup and teardown
 
@@ -29,10 +29,10 @@ namespace Elympics.Tests
 
             _elympicsObject = new GameObject("Elympics Systems", typeof(ElympicsBaseTest),
                 typeof(ElympicsBehavioursManager), typeof(ElympicsFactory));
-            _rpcHolderObject = new GameObject("RPC Holder", typeof(ElympicsBehaviour), typeof(RpcHolderWaitForTick));
+            _rpcHolderObject = new GameObject("RPC Holder", typeof(ElympicsBehaviour), typeof(RpcHolderReliable));
 
             Assert.NotNull(_elympicsBase = _elympicsObject.GetComponent<ElympicsBaseTest>());
-            Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderWaitForTick>());
+            Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderReliable>());
             Assert.NotNull(_elympicsBehaviour = _rpcHolder.ElympicsBehaviour);
             _elympicsBehaviour.AutoAssignNetworkId = true;
             _elympicsBehaviour.networkId = 1001;
@@ -67,94 +67,93 @@ namespace Elympics.Tests
 
         #endregion
 
-        public record WaitingTestCase(
+        public record ReliableTestCase(
             ElympicsStatus Status,
-            Action<RpcHolderWaitForTick> Call,
-            Func<RpcHolderWaitForTick, bool> WasExecuted);
+            Action<RpcHolderReliable> Call,
+            Func<RpcHolderReliable, bool> WasExecuted);
 
-        private static List<WaitingTestCase> waitingTestCases =
+        private static List<ReliableTestCase> reliableTestCase =
             new()
             {
-                new WaitingTestCase(
+                new ReliableTestCase(
                     ElympicsStatus.StandaloneClient,
-                    rpcHolder => rpcHolder.PlayerToServerMethodWaiting(),
-                    rpcHolder => rpcHolder.PlayerToServerWaitingMethodCalled),
-                new WaitingTestCase(
+                    rpcHolder => rpcHolder.PlayerToServerMethodReliable(),
+                    rpcHolder => rpcHolder.PlayerToServerReliableMethodCalled),
+                new ReliableTestCase(
                     ElympicsStatus.StandaloneServer,
-                    rpcHolder => rpcHolder.ServerToPlayersMethodWaiting(),
-                    rpcHolder => rpcHolder.ServerToPlayersWaitingMethodCalled),
+                    rpcHolder => rpcHolder.ServerToPlayersMethodReliable(),
+                    rpcHolder => rpcHolder.ServerToPlayersReliableMethodCalled),
             };
 
         [Test]
-        public void RpcWithWaitForTickSetToTrueShouldNotBeExecutedInTickPriorToSendingTick([ValueSource(nameof(waitingTestCases))] WaitingTestCase testCase)
+        public void ReliableRpcShouldBeSentUsingReliableQueues([ValueSource(nameof(reliableTestCase))] ReliableTestCase testCase)
         {
-            _elympicsBase.SetTick(5);
             _elympicsBase.SetElympicsStatus(testCase.Status);
+            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             testCase.Call(_rpcHolder);
-            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             const int messageCount = 1;
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.EqualTo(messageCount));
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.EqualTo(messageCount));
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
+            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
-            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.EqualTo(messageCount));
-
-            _elympicsBase.SetTick(4);
-            _elympicsBase.InvokeQueuedRpcMessages();
-
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.EqualTo(messageCount));
             Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
-            _elympicsBase.SetTick(5);
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
             Assert.That(testCase.WasExecuted(_rpcHolder), Is.True);
         }
 
-        private static List<WaitingTestCase> notWaitingTestCases =
+        private static List<ReliableTestCase> unreliableTestCases =
             new()
             {
-                new WaitingTestCase(
+                new ReliableTestCase(
                     ElympicsStatus.StandaloneClient,
-                    rpcHolder => rpcHolder.PlayerToServerMethodNotWaiting(),
-                    rpcHolder => rpcHolder.PlayerToServerNotWaitingMethodCalled),
-                new WaitingTestCase(
+                    rpcHolder => rpcHolder.PlayerToServerMethodUnreliable(),
+                    rpcHolder => rpcHolder.PlayerToServerUnreliableMethodCalled),
+                new ReliableTestCase(
                     ElympicsStatus.StandaloneServer,
-                    rpcHolder => rpcHolder.ServerToPlayersMethodNotWaiting(),
-                    rpcHolder => rpcHolder.ServerToPlayersNotWaitingMethodCalled),
+                    rpcHolder => rpcHolder.ServerToPlayersMethodUnreliable(),
+                    rpcHolder => rpcHolder.ServerToPlayersUnreliableMethodCalled),
             };
 
         [Test]
-        public void RpcWithWaitForTickSetToFalseShouldNotBeExecutedAsSoonAsPossible([ValueSource(nameof(notWaitingTestCases))] WaitingTestCase testCase)
+        public void UnreliableRpcShouldBeSentUsingUnreliableQueues([ValueSource(nameof(unreliableTestCases))] ReliableTestCase testCase)
         {
-            _elympicsBase.SetTick(5);
             _elympicsBase.SetElympicsStatus(testCase.Status);
+            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             testCase.Call(_rpcHolder);
-            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             const int messageCount = 1;
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.EqualTo(messageCount));
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.EqualTo(messageCount));
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
+            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.EqualTo(messageCount));
+            Assert.That(testCase.WasExecuted(_rpcHolder), Is.False);
 
-            _elympicsBase.SetTick(4);
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendReliable.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSendUnreliable.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
             Assert.That(testCase.WasExecuted(_rpcHolder), Is.True);
         }

@@ -93,8 +93,8 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), true);
+        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
         public async Task SendRawDataToServer(byte[] rawData, bool reliable)
         {

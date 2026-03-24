@@ -28,17 +28,20 @@ namespace Elympics.Tests.RpcMocks
             ? ElympicsPlayer.FromIndex(_playerIndex)
             : _isServer ? ElympicsPlayer.World : ElympicsPlayer.Invalid;
 
+        public ElympicsRpcMessageList RpcMessagesToSend => RpcMessagesToSendReliable;
+
         internal override void ElympicsFixedUpdate()
         { }
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             RpcMessagesToInvoke.AddRange(rpcMessageList);
 
         public void SetElympicsStatus(ElympicsStatus status) => (_isClient, _isServer, _isBot, _playerIndex) = status;
 
         public void ClearRpcQueues()
         {
-            RpcMessagesToSend.Clear();
+            RpcMessagesToSendReliable.Clear();
+            RpcMessagesToSendUnreliable.Clear();
             RpcMessagesToInvoke.Clear();
         }
     }

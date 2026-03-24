@@ -141,7 +141,7 @@ namespace Elympics
             if (ShouldRpcBeCapturedToInvoke(properties))
                 ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
             else
-                ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+                ElympicsBase.QueueRpcMessageToSend(rpcMessage, properties.Reliable);
 
         }
 

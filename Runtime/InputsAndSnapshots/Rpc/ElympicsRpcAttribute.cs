@@ -14,9 +14,10 @@ namespace Elympics
     {
         public ElympicsRpcDirection Direction { get; set; }
         public bool WaitForTick { get; set; }
+        public bool Reliable { get; set; }
 
         public ElympicsRpcProperties(ElympicsRpcDirection direction) =>
-            (Direction, WaitForTick) = (direction, true);
+            (Direction, WaitForTick, Reliable) = (direction, true, true);
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
@@ -31,6 +32,16 @@ namespace Elympics
         {
             get => Properties.WaitForTick;
             set => Properties.WaitForTick = value;
+        }
+
+        /// <summary>
+        /// Decides if the RPC should be sent over a reliable channel or an unreliable one.
+        /// </summary>
+        /// <value>true (by default)</value>
+        public bool Reliable
+        {
+            get => Properties.Reliable;
+            set => Properties.Reliable = value;
         }
 
         internal ElympicsRpcProperties Properties;

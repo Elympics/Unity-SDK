@@ -122,8 +122,8 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, true);
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
 
 
         //TODO refactor this....

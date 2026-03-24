@@ -380,8 +380,8 @@ namespace Elympics
 
         private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            _matchClient.SendRpcMessageList(rpcMessageList);
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            _matchClient.SendRpcMessageList(rpcMessageList, reliable);
 
         private void ApplyPredictedInput()
         {

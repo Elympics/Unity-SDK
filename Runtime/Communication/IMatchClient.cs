@@ -11,7 +11,7 @@ namespace Elympics
         event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
         void AddInputToSendBuffer(ElympicsInput input);
-        Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
+        Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable);
         Task SendBufferInput(long tick);
         void SetLastReceivedSnapshot(long tick);
     }

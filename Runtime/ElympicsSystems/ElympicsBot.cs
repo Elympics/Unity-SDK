@@ -57,8 +57,8 @@ namespace Elympics
             SendQueuedRpcMessages();
         }
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            _gameBotAdapter.SendRpcMessageList(rpcMessageList);
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            _gameBotAdapter.SendRpcMessageList(rpcMessageList, reliable);
 
         private void ProcessInput(long snapshotTick)
         {

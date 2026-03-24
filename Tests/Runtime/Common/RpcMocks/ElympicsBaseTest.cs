@@ -19,7 +19,10 @@ namespace Elympics.Tests.RpcMocks
         public override bool IsClient => _isClient;
         public override bool IsServer => _isServer;
         public override bool IsBot => _isBot;
-        public override long Tick => 0;
+        public override long Tick => _tick;
+        private long _tick;
+
+        public void SetTick(long tick) => _tick = tick;
 
         public override ElympicsPlayer Player => _isClient || _isBot
             ? ElympicsPlayer.FromIndex(_playerIndex)

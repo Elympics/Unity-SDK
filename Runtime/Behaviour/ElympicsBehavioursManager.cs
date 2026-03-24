@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elympics.Behaviour;
 using Elympics.Communication.Models.Public;
+using Elympics.Replication;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -64,11 +65,22 @@ namespace Elympics
                 InitializeElympicsBehaviour(elympicsBehaviour);
                 _elympicsBehaviours.Add(elympicsBehaviour);
             }
+
+            // Register all scene behaviours into the replication world
+            foreach (var kvp in _elympicsBehaviours.Behaviours)
+            {
+                var elympicsBehaviour = kvp.Value;
+                if (elympicsBehaviour.HasAnyState)
+                    ElympicsWorld.Current.RegisterEntity(elympicsBehaviour.NetworkId, elympicsBehaviour.visibleFor, elympicsBehaviour.netUpdateIntervalInTicks);
+            }
         }
 
         private void OnDestroy()
         {
             _inputWriter?.Dispose();
+            ReplicationPipeline.Current?.Dispose();
+            ElympicsWorld.Current?.Dispose();
+            ElympicsWorld.Current = null;
         }
 
         private void InitializeElympicsBehaviour(ElympicsBehaviour elympicsBehaviour)
@@ -80,11 +92,65 @@ namespace Elympics
         {
             InitializeElympicsBehaviour(elympicsBehaviour);
             _elympicsBehaviours.Add(elympicsBehaviour);
+
+            // Register in replication world
+            if (ElympicsWorld.Current != null && elympicsBehaviour.HasAnyState)
+                ElympicsWorld.Current.RegisterEntity(elympicsBehaviour.NetworkId, elympicsBehaviour.visibleFor, elympicsBehaviour.netUpdateIntervalInTicks);
         }
 
         private void RemoveBehaviour(int networkId)
         {
+            // Unregister from replication world (before removing from container)
+            if (ElympicsWorld.Current != null && ElympicsWorld.Current.GetDenseIndex(networkId) >= 0)
+                ElympicsWorld.Current.UnregisterEntity(networkId);
+
             _elympicsBehaviours.Remove(networkId);
+        }
+
+        /// <summary>Destroys all dynamic factory instances. Called during reconnect reset.</summary>
+        internal void DestroyAllDynamicInstances() => factory.DestroyAllDynamicInstances();
+
+        /// <summary>
+        /// Resets the ElympicsWorld and PipelineBuffers, then re-registers all scene-only behaviours
+        /// (skipping dynamic ghost objects pending Destroy) into the fresh world state.
+        /// </summary>
+        internal void ResetWorldAndReRegisterSceneObjects()
+        {
+            ElympicsWorld.Current?.Reset();
+
+            _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
+            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
+            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
+
+            foreach (var elympicsBehaviour in foundElympicsBehaviours)
+            {
+                var networkId = elympicsBehaviour.NetworkId;
+
+                if (networkId < 0)
+                    continue;
+
+                // Skip dynamic ghost objects that haven't been destroyed yet by Unity's deferred Destroy.
+                // Dynamic objects always have networkId index >= SceneObjectsReserved (2000+).
+                if (NetworkIdConstants.ExtractIndex(networkId) > SceneObjectsMaxIndex)
+                    continue;
+
+                if (_elympicsBehaviours.Contains(networkId))
+                    continue;
+
+                // Do NOT re-initialize — scene objects are already initialized from the first connection.
+                _elympicsBehaviours.Add(elympicsBehaviour);
+            }
+
+            // Re-register scene behaviours into the freshly reset world.
+            foreach (var kvp in _elympicsBehaviours.Behaviours)
+            {
+                var elympicsBehaviour = kvp.Value;
+                if (elympicsBehaviour.HasAnyState)
+                    ElympicsWorld.Current?.RegisterEntity(elympicsBehaviour.NetworkId, elympicsBehaviour.visibleFor, elympicsBehaviour.netUpdateIntervalInTicks);
+            }
+
+            // Reset factory state — new Initialize replaces old _elympicsFactoryParts.
+            factory.Initialize(_elympics, AddNewBehaviour, RemoveBehaviour);
         }
 
         internal List<GameObject> GetAllElympicsBehavioursGO()
@@ -192,38 +258,6 @@ namespace Elympics
                 var newMetaData = oldMetadata.WithStateMetadata(stateMetaData);
                 snapshotWithMetadata.Metadata[index] = newMetaData;
             }
-        }
-
-        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> GetSnapshotsToSend(ElympicsSnapshot fullSnapshot, params PlayerData[] playerDatas)
-        {
-            var snapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>(playerDatas.Length);
-
-            foreach (var playerData in playerDatas)
-            {
-                var snapshot = new ElympicsSnapshot(fullSnapshot.Tick, fullSnapshot.TickStartUtc, fullSnapshot.Factory, new(fullSnapshot.Data.Count), new(fullSnapshot.TickToPlayersInputData));
-                _ = snapshot.TickToPlayersInputData.Remove((int)playerData.Player);
-                snapshots[playerData.Player] = snapshot;
-            }
-
-            //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
-            foreach (var (id, state) in fullSnapshot.Data)
-            {
-                var elympicsBehaviour = _elympicsBehaviours.Behaviours[id];
-                var canBeSkipped = elympicsBehaviour.UpdateCurrentStateAndCheckIfSendCanBeSkipped(state, fullSnapshot.Tick);
-
-                foreach (var playerData in playerDatas)
-                {
-                    //If player didn't receive any snapshots, don't skip any visible behaviours
-                    if (playerData.LastReceivedSnapshot >= 0 && canBeSkipped)
-                        continue;
-                    if (!elympicsBehaviour.IsVisibleTo(playerData.Player))
-                        continue;
-
-                    snapshots[playerData.Player].Data.Add(id, state);
-                }
-            }
-
-            return snapshots;
         }
 
         internal void ApplySnapshot(ElympicsSnapshot elympicsSnapshot, StatePredictability statePredictability = StatePredictability.Both, bool ignoreTolerance = false)

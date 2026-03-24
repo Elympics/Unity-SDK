@@ -5,6 +5,7 @@ using System.Linq;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;
 using MessagePack;
+using UnityEngine.Assertions;
 using IGameEngine = GameEngineCore.V2._0.IGameEngine;
 using InitialMatchData = GameEngineCore.V1._4.InitialMatchData;
 
@@ -68,6 +69,14 @@ namespace Elympics
             foreach (var userId in userIds)
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
+            var world = Replication.ElympicsWorld.Current;
+            Assert.IsNotNull(world);
+            if (world != null)
+            {
+                for (var i = 0; i < Players.Length; i++)
+                    world.ActivatePlayer(i, Players[i].Player);
+            }
+
             _initialMatchData = initialMatchData;
             ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
         }
@@ -91,7 +100,12 @@ namespace Elympics
 
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)
         {
-            Players[(int)player].LastReceivedSnapshot = inputList.LastReceivedSnapshot;
+            var playerIndex = (int)player;
+            Players[playerIndex].LastReceivedSnapshot = inputList.LastReceivedSnapshot;
+
+            // Enqueue update for thread-safe drain at tick start
+            var world = Replication.ElympicsWorld.Current;
+            world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
 
             foreach (var value in inputList.Values)
                 AddInputToBuffer(value, player, value.Tick == inputList.Values[^1].Tick);
@@ -119,7 +133,12 @@ namespace Elympics
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            Players[(int)player].LastReceivedSnapshot = -1;
+            var playerIndex = (int)player;
+            Players[playerIndex].LastReceivedSnapshot = -1;
+
+            // Enqueue update for thread-safe drain at tick start
+            var world = Replication.ElympicsWorld.Current;
+            world?.PlayerUpdateQueue.Enqueue(playerIndex, -1);
         }
 
         public void Tick(long tick)

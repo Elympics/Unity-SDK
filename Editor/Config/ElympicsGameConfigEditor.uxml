@@ -3,6 +3,7 @@
         <ui:TextField picking-mode="Ignore" label="Game name" binding-path="gameName" name="game-name" />
         <ui:TextField picking-mode="Ignore" label="Game ID" binding-path="gameId" name="game-id" />
         <ui:TextField picking-mode="Ignore" label="Game version" binding-path="gameVersion" name="game-version" />
+        <ui:SliderInt picking-mode="Ignore" label="Max players" high-value="32" low-value="1" show-input-field="true" name="max-players" binding-path="maxPlayers" tooltip="Maximum number of players allowed in a match" />
         <ui:GroupBox name="scene-group" style="padding-left: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; margin-top: 3px; margin-bottom: 3px;">
             <uie:ObjectField label="Gameplay scene" name="scene-object" type="UnityEditor.SceneAsset, UnityEditor" binding-path="gameplaySceneAsset" allow-scene-objects="false" style="flex-grow: 1;" />
             <ui:TextField picking-mode="Ignore" label="Gameplay scene path" name="scene-path" binding-path="gameplayScene" readonly="true" style="-unity-text-align: upper-left;" />

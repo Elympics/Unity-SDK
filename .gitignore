@@ -141,4 +141,5 @@ crashlytics-build.properties
 Assets/GIT_IGNORE/
 Assets/GIT_IGNORE.meta
 
-
+# Related to the internal test for Elympics.dll weaving lock problem
+Runtime/WeaverLockingProblemTest.*

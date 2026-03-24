@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Replication;
 using Elympics.Tests.RpcMocks;
 using NUnit.Framework;
 using UnityEngine;
@@ -36,10 +37,16 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
+            var maxPlayers = 2;
+            ElympicsWorld.Current = new ElympicsWorld(
+                maxPlayers,
+                NetworkIdConstants.MaxIndex + 1,
+                NetworkIdConstants.MaxNetworkObjects);
+
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
-            behavioursManager.InitializeInternal(_elympicsBase, 100);
+            behavioursManager.InitializeInternal(_elympicsBase, maxPlayers);
         }
 
         [SetUp]
@@ -57,6 +64,8 @@ namespace Elympics.Tests
         {
             Object.Destroy(_elympicsObject);
             Object.Destroy(_rpcHolderObject);
+            ElympicsWorld.Current?.Dispose();
+            ElympicsWorld.Current = null;
         }
 
         [Test]

@@ -7,10 +7,7 @@ namespace Elympics
     {
         private Dictionary<string, PingResults> _mockResults = new();
 
-        public PingResultResultFactoryMock()
-        {
-            GeneratePingResults(true);
-        }
+        public PingResultResultFactoryMock() => GeneratePingResults(true);
         public async UniTask<PingResults> GetPingResult(string region) => await UniTask.FromResult(_mockResults[region]);
 
         public void Reset()

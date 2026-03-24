@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Elympics.Replication;
 using UnityEngine;
 
 namespace Elympics.ElympicsSystems
@@ -61,10 +62,9 @@ namespace Elympics.ElympicsSystems
             using (ElympicsMarkers.Elympics_ProcessSnapshotMarker.Auto())
                 if (ShouldSendSnapshot(fullSnapshot.Tick))
                 {
-                    // gather state info from scene and send to clients
-                    var sanitizedSnapshotsPerPlayer = _behavioursManager.GetSnapshotsToSend(fullSnapshot, _gameEngineAdapter.Players);
-
-                    _gameEngineAdapter.SendSnapshotsToPlayers(sanitizedSnapshotsPerPlayer);
+                    ElympicsWorld.Current.BeginTick(fullSnapshot, fullSnapshot.Tick);
+                    ReplicationPipeline.Current.Execute();
+                    _gameEngineAdapter.SendSnapshotsToPlayers(ReplicationPipeline.Current.Buffers.OutputSnapshots);
                 }
         }
         public void HandleRenderFrame(in RenderData renderData)

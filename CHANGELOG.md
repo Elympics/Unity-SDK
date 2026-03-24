@@ -1,3 +1,20 @@
+## [0.26.0](https://github.com/Elympics/Unity-SDK/compare/v0.25.1...v0.26.0) (2026-03-24)
+
+
+### Bug Fixes 🪲
+
+* Fix the issue with Elympics.dll becoming locked ([2db404d](https://github.com/Elympics/Unity-SDK/commit/2db404dc6f786b0647181e8beeddac3a16a34132))
+* Provide additional countermeasures to Elympics.dll locking problem ([b53ab90](https://github.com/Elympics/Unity-SDK/commit/b53ab907372b05f6cabf686952b5aae1d3e9761a))
+* Run weaving from a static class, not depending on a ScriptableObject ([4843722](https://github.com/Elympics/Unity-SDK/commit/48437227b2f734efef7af4af1dc9860dcd0f7c78))
+
+
+### Features
+
+* Add conditional ElympicsLogger.LogDebug for logging only when ELYMPICS_DEBUG is defined ([26dd92b](https://github.com/Elympics/Unity-SDK/commit/26dd92bea8a2d845bf9c99e3e0d34d8620b3a901))
+* Internal world replica state introduction ([b2e4e8f](https://github.com/Elympics/Unity-SDK/commit/b2e4e8f5acee443009b676f18c86ce96a357b4a9))
+
+
+
 ## [0.25.1](https://github.com/Elympics/Unity-SDK/compare/v0.25.0...v0.25.1) (2026-03-23)
 
 

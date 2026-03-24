@@ -11,7 +11,7 @@
 ### Features
 
 * Add conditional ElympicsLogger.LogDebug for logging only when ELYMPICS_DEBUG is defined ([26dd92b](https://github.com/Elympics/Unity-SDK/commit/26dd92bea8a2d845bf9c99e3e0d34d8620b3a901))
-* internal world replica state introduction ([b2e4e8f](https://github.com/Elympics/Unity-SDK/commit/b2e4e8f5acee443009b676f18c86ce96a357b4a9))
+* Internal world replica state introduction ([b2e4e8f](https://github.com/Elympics/Unity-SDK/commit/b2e4e8f5acee443009b676f18c86ce96a357b4a9))
 
 
 

@@ -169,6 +169,13 @@ namespace Elympics.Editor.Weaving
             {
                 ElympicsLogger.LogDebug($"[Weaver] OnPostprocessAllAssets ({importedAssets.Length} imported, {deletedAssets.Length} deleted, {movedFromAssetPaths.Length} moved)");
 
+                if (deletedAssets.Any(path => path.EndsWith($"/{RuntimeWeavingAssemblyName}")))
+                {
+                    ElympicsLogger.LogDebug("[Weaver] Weaver is being removed, requesting recompilation...");
+                    CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
+                    return;
+                }
+
                 var concatenatedAssets = importedAssets.Concat(deletedAssets).Concat(movedAssets);
                 var elympicsWeavingCodeUpdated = concatenatedAssets
                     .Any(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath) is EditorWeavingAssemblyName or RuntimeWeavingAssemblyName);

@@ -45,9 +45,9 @@ namespace Elympics.Tests.RpcMocks
 
         [ElympicsRpc(ElympicsRpcDirection.PlayerToServer)]
         private void PlayerToServerMethodPrivate() => PlayerToServerMethodPrivateCalled = true;
-
         public void CallPlayerToServerMethodPrivate() => PlayerToServerMethodPrivate();
-        public MethodInfo PlayerToServerMethodPrivateInfo => GetType().GetMethod(nameof(PlayerToServerMethodPrivate), BindingFlags.Instance | BindingFlags.NonPublic);
+        public static MethodInfo PlayerToServerMethodPrivateInfo =>
+            typeof(RpcHolderComplex).GetMethod(nameof(PlayerToServerMethodPrivate), BindingFlags.Instance | BindingFlags.NonPublic);
 
         public override void Reset()
         {

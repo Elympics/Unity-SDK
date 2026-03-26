@@ -77,7 +77,7 @@ namespace Elympics.Tests
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)), _rpcHolder),
-                new(_rpcHolder.PlayerToServerMethodPrivateInfo, _rpcHolder),
+                new(RpcHolderComplex.PlayerToServerMethodPrivateInfo, _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)), _rpcHolder),

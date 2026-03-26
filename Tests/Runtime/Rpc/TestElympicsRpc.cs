@@ -88,7 +88,8 @@ namespace Elympics.Tests
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)),
-                _rpcHolder.PlayerToServerMethodPrivateInfo,
+                RpcHolderComplex.PlayerToServerMethodPrivateInfo,
+                RpcHolder.ParentPlayerToServerMethodPrivateInfo,
             };
             var expectedRpcMethods = allMethodInfos.Select(methodInfo => new RpcMethod(methodInfo, _rpcHolder)).ToArray();
 
@@ -101,10 +102,11 @@ namespace Elympics.Tests
         {
             var sortedMethodInfos = new[]
             {
+                RpcHolder.ParentPlayerToServerMethodPrivateInfo,
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)),
-                _rpcHolder.PlayerToServerMethodPrivateInfo,
+                RpcHolderComplex.PlayerToServerMethodPrivateInfo,
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)),
@@ -361,6 +363,30 @@ namespace Elympics.Tests
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.PlayerToServerMethodPrivateCalled);
+        }
+
+        [Test]
+        public void ParentPrivateMethodRpcShouldBeInvokedCorrectlyAfterBeingScheduledSentAndReceived()
+        {
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
+            _elympicsBase.SetElympicsStatus(ElympicsStatus.StandaloneClient);
+
+            _rpcHolder.CallParentPlayerToServerMethodPrivate();
+
+            Assert.IsFalse(_rpcHolder.ParentPlayerToServerMethodPrivateCalled);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+
+            _elympicsBase.SendQueuedRpcMessages();
+
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
+
+            _elympicsBase.InvokeQueuedRpcMessages();
+
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.IsTrue(_rpcHolder.ParentPlayerToServerMethodPrivateCalled);
         }
 
         [Test]

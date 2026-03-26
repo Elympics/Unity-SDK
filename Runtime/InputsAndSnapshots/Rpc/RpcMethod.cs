@@ -38,6 +38,6 @@ namespace Elympics
             !left.Equals(right);
 
         public override string ToString() =>
-            $"{nameof(RpcMethod)} ({MethodInfo.DeclaringType!.FullName}.{MethodInfo.Name} of {Target})";
+            $"{nameof(RpcMethod)} ({MethodInfo.GetFullName()} of {Target})";
     }
 }

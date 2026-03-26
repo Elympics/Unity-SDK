@@ -26,16 +26,18 @@ namespace Elympics.Editor.Weaving.Components.Elympics
         {
             var typeOwner = methodDefinition.DeclaringType;
             if (typeOwner == null || !typeOwner.IsSubclassOf<ElympicsMonoBehaviour>())
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, $"RPC method declaring type has to be a subclass of {nameof(ElympicsMonoBehaviour)}");
+                throw InvalidRpcMethodDefinitionException.NotElympicsSubclass(methodDefinition.FullName);
             if (methodDefinition.IsStatic)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be static");
+                throw InvalidRpcMethodDefinitionException.Static(methodDefinition.FullName);
             if (methodDefinition.IsVirtual || methodDefinition.IsAbstract)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be virtual or abstract");
+                throw InvalidRpcMethodDefinitionException.Virtual(methodDefinition.FullName);
             if (methodDefinition.ReturnType != TypeSystem.Void)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method must return void");
+                throw InvalidRpcMethodDefinitionException.NonVoidReturn(methodDefinition.FullName);
+            if (methodDefinition.ContainsGenericParameter)
+                throw InvalidRpcMethodDefinitionException.Generic(methodDefinition.FullName);
 
             if (typeOwner.Methods.Count(m => m.Name == methodDefinition.Name) > 1)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot have an overload");
+                throw InvalidRpcMethodDefinitionException.Overloaded(methodDefinition.FullName);
 
             var unacceptableParameters = methodDefinition.Parameters
                 .Select((p, i) => (Index: i, Parameter: p))
@@ -98,6 +100,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var getElympicsBehaviourMethodReference = _assembly.ElympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
 
             var loadThisOnStack = ilProcessor.Create(OpCodes.Ldarg_0);
+            var loadTypeNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.DeclaringType.FullName);
             var loadMethodNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.Name);
             var callGetMethodInfo = ilProcessor.Create(OpCodes.Call, getMethodInfoMethodReference);
             var storeMethodInfoToVariable = ilProcessor.Create(OpCodes.Stloc, methodInfoVariable);
@@ -140,6 +143,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
             // Get MethodInfo and ElympicsRpcProperties
             ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
+            ilProcessor.InsertBefore(originalBodyStart, loadTypeNameOnStack);
             ilProcessor.InsertBefore(originalBodyStart, loadMethodNameOnStack);
             ilProcessor.InsertBefore(originalBodyStart, callGetMethodInfo);
             ilProcessor.InsertBefore(originalBodyStart, storeMethodInfoToVariable);

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Elympics.Util;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -118,11 +119,15 @@ namespace Elympics
         private ElympicsFactory GetFactory() => _factory ??= FindObjectOfType<ElympicsFactory>();
 
         /// Retrieves data of this object's method of the given name.
+        /// <param name="typeName">The full name of the declaring type of the method.</param>
         /// <param name="methodName">The method name.</param>
         /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
         [UsedImplicitly(ImplicitUseKindFlags.Access)]
-        protected internal MethodInfo GetMethodInfo(string methodName) =>
-            GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        protected internal MethodInfo GetMethodInfo(string typeName, string methodName) =>
+            GetType()
+                .GetBaseTypes()
+                .First(t => t.FullName == typeName)
+                .GetMethod(methodName, RpcMethodsContainer.MethodFlags);
 
         /// Retrieves RPC configuration for the given method.
         /// <param name="methodInfo">The RPC method.</param>

@@ -84,11 +84,11 @@ namespace Elympics.Tests
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)),
-                typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)),
-                typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)),
                 RpcHolderComplex.PlayerToServerMethodPrivateInfo,
+                typeof(RpcHolder).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)),
+                typeof(RpcHolder).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)),
                 RpcHolder.ParentPlayerToServerMethodPrivateInfo,
             };
             var expectedRpcMethods = allMethodInfos.Select(methodInfo => new RpcMethod(methodInfo, _rpcHolder)).ToArray();
@@ -98,20 +98,20 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void RpcMethodMapShouldBeSortedAlphabetically()
+        public void RpcMethodMapShouldBeSortedFromDerivedToBaseAndAlphabetically()
         {
             var sortedMethodInfos = new[]
             {
-                RpcHolder.ParentPlayerToServerMethodPrivateInfo,
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers)),
-                typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)),
                 RpcHolderComplex.PlayerToServerMethodPrivateInfo,
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)),
-                typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)),
                 typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)),
+                RpcHolder.ParentPlayerToServerMethodPrivateInfo,
+                typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)),
+                typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)),
             };
             var sortedRpcMethods = sortedMethodInfos.Select(methodInfo => new RpcMethod(methodInfo, _rpcHolder)).ToArray();
 
@@ -211,8 +211,8 @@ namespace Elympics.Tests
             _elympicsBase.SetElympicsStatus(testCase.Status);
             var methodInfo = testCase.Direction switch
             {
-                ElympicsRpcDirection.PlayerToServer => _rpcHolder.GetType().GetMethod(nameof(_rpcHolder.PlayerToServerMethod)),
-                ElympicsRpcDirection.ServerToPlayers => _rpcHolder.GetType().GetMethod(nameof(_rpcHolder.ServerToPlayersMethod)),
+                ElympicsRpcDirection.PlayerToServer => typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)),
+                ElympicsRpcDirection.ServerToPlayers => typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)),
                 _ => throw new ArgumentOutOfRangeException(nameof(testCase.Direction)),
             };
             var rpcMethod = new RpcMethod(methodInfo, _rpcHolder);

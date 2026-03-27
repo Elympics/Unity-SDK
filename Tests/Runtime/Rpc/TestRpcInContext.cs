@@ -118,10 +118,10 @@ namespace Elympics.Tests
             _rpcHolder.ServerToPlayersMethodCalled || WasServerToPlayersRpcScheduled();
 
         private bool WasPlayerToServerRpcScheduled() =>
-            WasRpcScheduled(_rpcHolder.GetType().GetMethod(nameof(RpcHolderInContext.PlayerToServerMethod)));
+            WasRpcScheduled(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)));
 
         private bool WasServerToPlayersRpcScheduled() =>
-            WasRpcScheduled(_rpcHolder.GetType().GetMethod(nameof(RpcHolderInContext.ServerToPlayersMethod)));
+            WasRpcScheduled(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)));
 
         private bool WasRpcScheduled(MethodInfo methodInfo)
         {

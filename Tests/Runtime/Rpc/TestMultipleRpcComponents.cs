@@ -70,23 +70,25 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void RpcMethodMapShouldBeCorrectlyRegisteredAndSortedByComponentIndexAndByMethodNameAlphabetically()
+        public void RpcMethodMapShouldBeCorrectlyRegisteredAndSortedByComponentIndexAndFromDerivedToBaseAndByMethodNameAlphabetically()
         {
             var sortedRpcMethods = new RpcMethod[]
             {
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers)), _rpcHolder),
-                new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)), _rpcHolder),
                 new(RpcHolderComplex.PlayerToServerMethodPrivateInfo, _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)), _rpcHolder),
-                new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)), _rpcHolder),
-                new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethod)), _anotherRpcHolder),
+                new(RpcHolder.ParentPlayerToServerMethodPrivateInfo, _rpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _rpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _rpcHolder),
                 new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethodWithArgs)), _anotherRpcHolder),
-                new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethod)), _anotherRpcHolder),
                 new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethodWithArgs)), _anotherRpcHolder),
+                new(RpcHolder.ParentPlayerToServerMethodPrivateInfo, _anotherRpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _anotherRpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _anotherRpcHolder),
             };
 
             for (ushort methodId = 0; methodId < sortedRpcMethods.Length; methodId++)
@@ -101,7 +103,7 @@ namespace Elympics.Tests
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder);
-            var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethod)), _anotherRpcHolder);
+            var secondRpcMethod = new RpcMethod(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _anotherRpcHolder);
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             _rpcHolder.PlayerToServerMethodWithArgs(
@@ -152,7 +154,7 @@ namespace Elympics.Tests
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)), _rpcHolder);
-            var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethod)), _anotherRpcHolder);
+            var secondRpcMethod = new RpcMethod(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _anotherRpcHolder);
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             _rpcHolder.ServerToPlayersMethodWithArgs(

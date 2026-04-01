@@ -50,25 +50,26 @@ namespace Elympics
 
         private static bool IsValid(MethodInfo method, MethodInfo[] typeMethods)
         {
+            var isValid = true;
             if (method.ReturnType != typeof(void))
             {
                 _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.NonVoidReturn(method.GetFullName()));
-                return false;
+                isValid = false;
             }
             if (method.IsAbstract || method.IsVirtual)
             {
                 _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Virtual(method.GetFullName()));
-                return false;
+                isValid = false;
             }
             if (method.ContainsGenericParameters)
             {
                 _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Generic(method.GetFullName()));
-                return false;
+                isValid = false;
             }
             if (typeMethods.Count(m => m.Name == method.Name) > 1)
             {
                 _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Overloaded(method.GetFullName()));
-                return false;
+                isValid = false;
             }
             var unacceptableParameters = method.GetParameters()
                 .Select((p, i) => (Index: i, Parameter: p))
@@ -82,11 +83,13 @@ namespace Elympics
                 if (parameter.ParameterType.FullName != typeof(RpcMetadata).FullName)
                 {
                     _ = ElympicsLogger.LogException(new UnsupportedParameterTypeException(method.GetFullName(), parameter.Position, parameter.Name, parameter.ParameterType.FullName));
+                    isValid = false;
                     continue;
                 }
                 if (parameter is { IsOptional: false, HasDefaultValue: false })
                 {
                     _ = ElympicsLogger.LogException(InvalidRpcMetadataParameterDefinitionException.FromNonOptional(method.GetFullName(), parameter.Position, parameter.Name));
+                    isValid = false;
                     continue;
                 }
                 if (metadataParameter is null)
@@ -95,8 +98,9 @@ namespace Elympics
                     continue;
                 }
                 _ = ElympicsLogger.LogException(InvalidRpcMetadataParameterDefinitionException.FromDuplicated(method.GetFullName(), parameter.Position, parameter.Name, metadataParameter.Position, metadataParameter.Name));
+                isValid = false;
             }
-            return true;
+            return isValid;
         }
 
         public ushort GetIdOf(RpcMethod rpcMethod) => _rpcMethodIds[rpcMethod];

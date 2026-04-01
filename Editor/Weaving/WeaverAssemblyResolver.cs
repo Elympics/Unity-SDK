@@ -13,7 +13,7 @@ namespace Elympics.Editor.Weaving
         public WeaverAssemblyResolver(string assemblyPath)
         {
             var compiledAssemblies = CompilationPipeline.GetAssemblies();
-            var asm = compiledAssemblies.FirstOrDefault(x => x.outputPath.NormalizePath() == assemblyPath.NormalizePath())
+            var asm = compiledAssemblies.FirstOrDefault(x => PathUtil.Normalize(x.outputPath) == PathUtil.Normalize(assemblyPath))
                 ?? compiledAssemblies.FirstOrDefault(x => Path.GetFileName(x.outputPath) == Path.GetFileName(assemblyPath));
             var dependencies = new HashSet<string> { Path.GetDirectoryName(assemblyPath) };
             if (asm != null)

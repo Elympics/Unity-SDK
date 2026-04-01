@@ -74,7 +74,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
         public override void VisitMethod(MethodDefinition methodDefinition)
         {
             if (_assembly is null)
-                throw new InvalidOperationException($"Assembly visiting has not been started for ${nameof(ElympicsRpcComponent)}");
+                throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
 
             if (methodDefinition.GetCustomAttribute<ElympicsRpcAttribute>() == null)
                 return;
@@ -193,7 +193,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
             var processedAttribute = new CustomAttribute(moduleDefinition
                 .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(new[] { typeof(string) })));
-            processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.Boolean, elympicsVersion));
+            processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
             moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
 
             _assembly = null;

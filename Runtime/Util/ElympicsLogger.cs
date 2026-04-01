@@ -65,6 +65,23 @@ namespace Elympics
 
         #endregion
 
+        #region Trace-level debug logs
+
+        [Conditional("ELYMPICS_TRACE")] public static void LogTrace(string message) => Debug.Log(PrependWithDetails(message));
+        [Conditional("ELYMPICS_TRACE")] public static void LogTrace(string message, Object context) => Debug.Log(PrependWithDetails(message), context);
+        [Conditional("ELYMPICS_TRACE")] public static void LogTraceFormat(string format, params object[] args) => Debug.LogFormat(PrependWithDetails(format), args);
+        [Conditional("ELYMPICS_TRACE")] public static void LogTraceFormat(Object context, string format, params object[] args) => Debug.LogFormat(context, PrependWithDetails(format), args);
+
+        [Conditional("ELYMPICS_TRACE")]
+        public static void LogTrace(this ElympicsLoggerContext context, string message)
+        {
+            var time = TimeUtil.DateTimeNowToString;
+            Debug.Log(PrependWithDetails(message, time, context));
+            InformClients(message, time, context, LogLevel.Log);
+        }
+
+        #endregion
+
         #region Logs
 
         public static void Log(string message) => Debug.Log(PrependWithDetails(message));

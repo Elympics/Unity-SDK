@@ -129,7 +129,7 @@ namespace Elympics
                 {
                     if (RpcMessagesToInvoke[i].ExecuteNotBeforeTick > Tick)
                         continue;
-                    _rpcMessagesToInvokeInCurrentTick.Add(RpcMessagesToInvoke[i]);
+                    _rpcMessagesToInvokeInCurrentTick.Insert(0, RpcMessagesToInvoke[i]);
                     RpcMessagesToInvoke.RemoveAt(i);
                 }
             foreach (var rpcMessage in _rpcMessagesToInvokeInCurrentTick)
@@ -142,11 +142,11 @@ namespace Elympics
             var totalRpcs = RpcMessagesToSendReliable.Count + RpcMessagesToSendUnreliable.Count;
             if (totalRpcs == 0)
             {
-                ElympicsLogger.LogDebug($"No RPCs to send for Player: {Player} Tick: {Tick}, skipping...");
+                ElympicsLogger.LogTrace($"No RPCs to send for Player: {Player} Tick: {Tick}, skipping...");
                 return;
             }
 
-            ElympicsLogger.LogDebug($"Sending {totalRpcs} RPCs for Player: {Player} Tick: {Tick}");
+            ElympicsLogger.LogTrace($"Sending {totalRpcs} RPCs for Player: {Player} Tick: {Tick}");
             if (RpcMessagesToSendReliable.Count > 0)
             {
                 SendRpcMessageList(RpcMessagesToSendReliable, true);

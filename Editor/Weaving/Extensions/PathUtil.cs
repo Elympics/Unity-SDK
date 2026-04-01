@@ -2,9 +2,9 @@ using System.IO;
 
 namespace Elympics.Editor.Weaving.Extensions
 {
-    internal static class PathExtensions
+    internal static class PathUtil
     {
-        public static string NormalizePath(this string path) =>
+        public static string Normalize(string path) =>
             path.Replace(Path.DirectorySeparatorChar, '/');
     }
 }

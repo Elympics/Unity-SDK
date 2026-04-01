@@ -46,12 +46,12 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 var parameter = unacceptableParameters[i].Parameter;
                 if (parameter.ParameterType.FullName != typeof(RpcMetadata).FullName)
                 {
-                    exceptionList.Add(new UnsupportedParameterTypeException(methodDefinition.FullName, parameter));
+                    exceptionList.Add(new UnsupportedParameterTypeException(methodDefinition.FullName, parameter.Index, parameter.Name, parameter.ParameterType.FullName));
                     continue;
                 }
                 if (parameter is { IsOptional: false, HasDefault: false })
                 {
-                    exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromNonOptional(methodDefinition.FullName, parameter));
+                    exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromNonOptional(methodDefinition.FullName, parameter.Index, parameter.Name));
                     continue;
                 }
                 if (metadataParameter is null)
@@ -59,7 +59,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                     metadataParameter = parameter;
                     continue;
                 }
-                exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromDuplicated(methodDefinition.FullName, metadataParameter, parameter));
+                exceptionList.Add(InvalidRpcMetadataParameterDefinitionException.FromDuplicated(methodDefinition.FullName, parameter.Index, parameter.Name, metadataParameter.Index, metadataParameter.Name));
             }
 
             if (exceptionList.Any())

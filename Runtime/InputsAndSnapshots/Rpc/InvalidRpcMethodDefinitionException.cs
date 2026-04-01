@@ -1,5 +1,3 @@
-using Mono.Cecil;
-
 namespace Elympics
 {
     public class InvalidRpcMethodDefinitionException : ElympicsException
@@ -11,8 +9,8 @@ namespace Elympics
 
     public class UnsupportedParameterTypeException : InvalidRpcMethodDefinitionException
     {
-        public UnsupportedParameterTypeException(string methodName, ParameterDefinition parameter)
-            : base(methodName, $"Parameter {parameter.Index + 1}. {parameter.Name} is of unsupported type: {parameter.ParameterType.FullName}")
+        public UnsupportedParameterTypeException(string methodName, int parameterIndex, string parameterName, string parameterTypeName)
+            : base(methodName, $"Parameter {parameterIndex + 1}. {parameterName} is of unsupported type: {parameterTypeName}")
         { }
     }
 
@@ -22,11 +20,11 @@ namespace Elympics
             : base(methodName, reason)
         { }
 
-        public static InvalidRpcMetadataParameterDefinitionException FromNonOptional(string methodName, ParameterDefinition parameter) =>
-            new(methodName, $"Parameter {parameter.Index + 1}. {parameter.Name} of type {nameof(RpcMetadata)} must be optional");
+        public static InvalidRpcMetadataParameterDefinitionException FromNonOptional(string methodName, int parameterIndex, string parameterName) =>
+            new(methodName, $"Parameter {parameterIndex + 1}. {parameterName} of type {nameof(RpcMetadata)} must be optional");
 
-        public static InvalidRpcMetadataParameterDefinitionException FromDuplicated(string methodName, ParameterDefinition previousParameter, ParameterDefinition currentParameter) =>
+        public static InvalidRpcMetadataParameterDefinitionException FromDuplicated(string methodName, int parameterIndex, string parameterName, int previousParameterIndex, string previousParameterName) =>
             new(methodName, $"Parameter of type {nameof(RpcMetadata)} is defined too many times: "
-                + $"{currentParameter.Index + 1}. {currentParameter.Name} after {previousParameter.Index + 1}. {previousParameter.Name}");
+                + $"{parameterIndex + 1}. {parameterName} after {previousParameterIndex + 1}. {previousParameterName}");
     }
 }

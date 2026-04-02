@@ -144,12 +144,12 @@ namespace Elympics
         // this is NOT called from generated IL code
         internal void OnRpcInvoked(ElympicsPlayer sender, ushort methodId, params object[] arguments)
         {
-            var rpcMethod = RpcMethods[methodId];
+            var (rpcMethod, rpcMethodDetails) = RpcMethods[methodId];
             _isInvokingRpc = true;
             try
             {
                 using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking))
-                    rpcMethod.Call(arguments, new RpcMetadata(sender));
+                    rpcMethod.Call(rpcMethodDetails, arguments, new RpcMetadata(sender));
             }
             finally
             {

@@ -90,7 +90,7 @@ namespace Elympics.Tests
             };
 
             for (ushort methodId = 0; methodId < sortedRpcMethods.Length; methodId++)
-                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId]);
+                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId].Method);
         }
 
         [Test]
@@ -130,8 +130,8 @@ namespace Elympics.Tests
             Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
             var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[0].MethodId;
             var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[1].MethodId;
-            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId]);
-            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId]);
+            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId].Method);
+            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId].Method);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
@@ -180,8 +180,8 @@ namespace Elympics.Tests
             Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
             var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[0].MethodId;
             var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[1].MethodId;
-            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId]);
-            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId]);
+            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId].Method);
+            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId].Method);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 

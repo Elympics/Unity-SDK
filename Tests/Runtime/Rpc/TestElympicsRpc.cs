@@ -114,7 +114,7 @@ namespace Elympics.Tests
             var sortedRpcMethods = sortedMethodInfos.Select(methodInfo => new RpcMethod(methodInfo, _rpcHolder)).ToArray();
 
             for (ushort methodId = 0; methodId < sortedRpcMethods.Length; methodId++)
-                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId]);
+                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId].Method);
         }
 
         [Test]

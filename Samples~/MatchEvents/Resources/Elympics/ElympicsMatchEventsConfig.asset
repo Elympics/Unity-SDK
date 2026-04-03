@@ -12,22 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsMatchEventsConfig
   m_EditorClassIdentifier: 
-  gameName: Match events
+  gameName: Match Events sample
   gameId: 7f98ae1a-1df1-44ee-957a-465c7ff43fa7
   gameVersion: 9
-  players: 2
+  maxPlayers: 2
   gameplayScene: Assets/Samples/MatchEvents/Scenes/MatchEventsGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 2cda990e2423bbf4892e6590ba056729,
     type: 3}
   botsInServer: 1
   useWeb: 0
-  legacyMatchmakingClient: 0
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
+    sessionConnectRetries: 10
     synchronizerTimeout: 20
     minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
+    webRtcOfferAnnounceDelay: 1
     webRtcOfferTimeout: 5
     webRtcOfferMaxRetries: 5
     webRtcOfferRetryDelay: 1
@@ -37,28 +38,38 @@ MonoBehaviour:
   maxClientTickRateFactor: 1.25
   snapshotSendingPeriodInTicks: 1
   inputLagTicks: 2
+  inputToSendBufferSize: 3
   maxAllowedLagInTicks: 15
-  prediction: 1
+  forceJumpThresholdInTicks: 6
   predictionLimitInTicks: 8
   detailedNetworkLog: 0
   mode: 2
   halfRemoteMode: 0
-  useWebInHalfRemote: 0
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
+  recordSnapshots: 0
+  snapshotFilePath: 
   playerIndexForHalfRemoteMode: 1
   testMatchData:
     queueName: 
     regionName: 
+    roomCustomData: []
+    customMatchmakingData: []
   testPlayers:
-  - userId: 0
-    isBot: 0
+  - isBot: 0
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []
-  - userId: 1
-    isBot: 1
+    customDatas: []
+  - isBot: 1
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []
+    customDatas: []
+  halfRemoteLagConfig:
+    DelayMs: 0
+    PacketLoss: 0
+    JitterMs: 0
+    RandomSeed: 4206969
+  reconciliationFrequency: 0

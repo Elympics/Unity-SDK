@@ -66,16 +66,6 @@ namespace Elympics
         [SerializeField] private ElympicsEthSigner? ethSigner;
         private ITelegramSigner? _telegramSigner;
 
-        // TODO: remove the following measures of backwards compatibility one day ~dsygocki 2023-04-28
-        private AuthType AuthenticateOnAwakeWith => migratedAuthSettings
-            ? authenticateOnAwakeWith
-            : authenticateOnAwake
-                ? AuthType.ClientSecret
-                : AuthType.None;
-
-        [SerializeField, HideInInspector] private bool authenticateOnAwake = true;
-        [SerializeField, HideInInspector] private bool migratedAuthSettings;
-
         [Obsolete("Use instead" + nameof(ElympicsConnectionEstablished))]
         public event Action<AuthData>? AuthenticationSucceeded;
 
@@ -229,7 +219,7 @@ namespace Elympics
             awakeLogger.Log("Initialized");
 
             CurrentState = new DisconnectedState(this);
-            if (AuthenticateOnAwakeWith != AuthType.None)
+            if (authenticateOnAwakeWith != AuthType.None)
                 ConnectToElympicsAsync(new ConnectionData
                 {
                     AuthType = authenticateOnAwakeWith,

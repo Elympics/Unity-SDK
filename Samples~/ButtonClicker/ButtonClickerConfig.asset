@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
-  m_Name: EgbTestConfig
+  m_Name: ButtonClickerConfig
   m_EditorClassIdentifier: 
-  gameName: EGB Test sample
-  gameId: 1e8cea62-c4a2-40a8-8eb6-ae979fac6d48
-  gameVersion: 1.1
+  gameName: Button Clicker sample
+  gameId: 288af85e-11f9-491f-bc1e-f8503040ebb1
+  gameVersion: 3.4
   maxPlayers: 2
-  gameplayScene: Assets/Samples/EgbTest/Scenes/EgbTestGameplay.unity
-  gameplaySceneAsset: {fileID: 102900000, guid: a42c95641b7d92742b53156c2f7f3f04,
+  gameplayScene: Assets/Samples/ButtonClicker/ButtonClicker.unity
+  gameplaySceneAsset: {fileID: 102900000, guid: a71fcde6e6c243d42a383e88eb2eb75f,
     type: 3}
   botsInServer: 1
   useWeb: 0
@@ -41,7 +41,7 @@ MonoBehaviour:
   inputToSendBufferSize: 3
   maxAllowedLagInTicks: 15
   forceJumpThresholdInTicks: 6
-  predictionLimitInTicks: 8
+  predictionLimitInTicks: 15
   detailedNetworkLog: 0
   mode: 2
   halfRemoteMode: 0
@@ -52,17 +52,15 @@ MonoBehaviour:
   snapshotFilePath: 
   playerIndexForHalfRemoteMode: 1
   testMatchData:
-    queueName: Solo
-    regionName: warsaw
+    queueName: p1
+    regionName: 
     roomCustomData: []
     customMatchmakingData: []
   testPlayers:
   - isBot: 0
     botDifficulty: 0
-    gameEngineData: 69a69a
-    matchmakerData:
-    - 0
-    - 0
+    gameEngineData: 
+    matchmakerData: []
     customDatas: []
   halfRemoteLagConfig:
     DelayMs: 0

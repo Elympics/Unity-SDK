@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
+using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
@@ -19,9 +20,11 @@ namespace MatchTcpClients
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
         private readonly Func<TimeSpan, IWebRtcClient> _webRtcFactory;
+        private readonly Uri? _iceServersUri;
 
         private IWebRtcClient? _webRtcClient;
         private string? _answer;
+        private string? _iceServersJson;
         private readonly ElympicsLoggerContext _logger;
         private CancellationTokenSource? _stateCancellationTokenSource;
         private CancellationTokenSource? _linkedCts;
@@ -33,10 +36,12 @@ namespace MatchTcpClients
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
             ElympicsLoggerContext logger,
-            Func<TimeSpan, IWebRtcClient>? customWebRtcFactory = null) : base(serializer, config, logger)
+            Func<TimeSpan, IWebRtcClient>? customWebRtcFactory = null,
+            Uri? iceServersUri = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? (_ => new WebRtcClient());
+            _webRtcFactory = customWebRtcFactory ?? ((_) => new WebRtcClient());
+            _iceServersUri = iceServersUri;
             _logger = logger.WithContext(nameof(WebGameServerClient));
         }
 
@@ -106,6 +111,21 @@ namespace MatchTcpClients
                 throw new InvalidOperationException("WebRTC client not initialized");
 
             var logger = _logger.WithMethodName();
+
+            if (_iceServersUri != null)
+            {
+                var iceServers = await HttpSignalingClient.FetchIceServersAsync(
+                    _iceServersUri, ElympicsTimeout.IceServersTimeout, ct);
+                _iceServersJson = iceServers.Length > 0
+                    ? JsonUtility.ToJson(new IceServersResponse { iceServers = iceServers })
+                    : null;
+                if (_iceServersJson != null)
+                {
+                    logger.Log($"Fetched ICE servers: {_iceServersJson}");
+                    _webRtcClient!.SetIceServers(_iceServersJson);
+                }
+            }
+
             _webRtcClient.ReceiveWithThread();
             _answer = null;
             try
@@ -113,7 +133,11 @@ namespace MatchTcpClients
                 for (var i = 0; i < Config.SessionConnectRetries; i++)
                 {
                     if (i > 0)
+                    {
                         Initialize();
+                        if (_iceServersJson != null)
+                            _webRtcClient!.SetIceServers(_iceServersJson);
+                    }
 
                     SubscribeToWebConnectionStatus();
                     _stateCancellationTokenSource = new CancellationTokenSource();

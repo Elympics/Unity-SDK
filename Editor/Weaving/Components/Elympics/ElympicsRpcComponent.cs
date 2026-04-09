@@ -12,9 +12,12 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 {
     internal class ElympicsRpcComponent : WeaverComponent
     {
+        private const string StartMarker = nameof(ElympicsRpcComponent) + " Start Marker";
+        private const string EndMarker = nameof(ElympicsRpcComponent) + " End Marker";
+
         public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 
-        private ElympicsWeaverAssembly _assembly;
+        private ElympicsWeaverAssembly? _assembly;
 
         protected override void StartVisiting(ModuleDefinition moduleDefinition) =>
             _assembly = new ElympicsWeaverAssembly(moduleDefinition.Assembly);
@@ -23,16 +26,18 @@ namespace Elympics.Editor.Weaving.Components.Elympics
         {
             var typeOwner = methodDefinition.DeclaringType;
             if (typeOwner == null || !typeOwner.IsSubclassOf<ElympicsMonoBehaviour>())
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, $"RPC method declaring type has to be a subclass of {nameof(ElympicsMonoBehaviour)}");
+                throw InvalidRpcMethodDefinitionException.NotElympicsSubclass(methodDefinition.FullName);
             if (methodDefinition.IsStatic)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be static");
+                throw InvalidRpcMethodDefinitionException.Static(methodDefinition.FullName);
             if (methodDefinition.IsVirtual || methodDefinition.IsAbstract)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot be virtual or abstract");
+                throw InvalidRpcMethodDefinitionException.Virtual(methodDefinition.FullName);
             if (methodDefinition.ReturnType != TypeSystem.Void)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method must return void");
+                throw InvalidRpcMethodDefinitionException.NonVoidReturn(methodDefinition.FullName);
+            if (methodDefinition.ContainsGenericParameter)
+                throw InvalidRpcMethodDefinitionException.Generic(methodDefinition.FullName);
 
             if (typeOwner.Methods.Count(m => m.Name == methodDefinition.Name) > 1)
-                throw new InvalidRpcMethodDefinitionException(methodDefinition.FullName, "RPC method cannot have an overload");
+                throw InvalidRpcMethodDefinitionException.Overloaded(methodDefinition.FullName);
 
             var unacceptableParameters = methodDefinition.Parameters
                 .Select((p, i) => (Index: i, Parameter: p))
@@ -68,6 +73,9 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         public override void VisitMethod(MethodDefinition methodDefinition)
         {
+            if (_assembly is null)
+                throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
+
             if (methodDefinition.GetCustomAttribute<ElympicsRpcAttribute>() == null)
                 return;
 
@@ -80,7 +88,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var getMethodInfoMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
             var getRpcPropertiesMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
 
-            var throwIfRpcContextNotValidMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ThrowIfRpcContextNotValid));
             var shouldRpcBeCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
             var onRpcCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldRpcBeInvokedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
@@ -93,6 +100,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var getElympicsBehaviourMethodReference = _assembly.ElympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
 
             var loadThisOnStack = ilProcessor.Create(OpCodes.Ldarg_0);
+            var loadTypeNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.DeclaringType.FullName);
             var loadMethodNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.Name);
             var callGetMethodInfo = ilProcessor.Create(OpCodes.Call, getMethodInfoMethodReference);
             var storeMethodInfoToVariable = ilProcessor.Create(OpCodes.Stloc, methodInfoVariable);
@@ -102,7 +110,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var callGetElympicsBehaviour = ilProcessor.Create(OpCodes.Call, getElympicsBehaviourMethodReference);
             var loadMethodInfoFromVariable = ilProcessor.Create(OpCodes.Ldloc, methodInfoVariable);
             var loadRpcPropertiesFromVariable = ilProcessor.Create(OpCodes.Ldloc, rpcPropertiesVariable);
-            var callValidateRpcContext = ilProcessor.Create(OpCodes.Call, throwIfRpcContextNotValidMethodReference);
             var callShouldBeCaptured = ilProcessor.Create(OpCodes.Call, shouldRpcBeCapturedMethodReference);
             var callOnRpcCaptured = ilProcessor.Create(OpCodes.Call, onRpcCapturedMethodReference);
             var callShouldBeInvoked = ilProcessor.Create(OpCodes.Call, shouldRpcBeInvokedMethodReference);
@@ -126,8 +133,17 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var returnBeforeOriginalBody = ilProcessor.Create(OpCodes.Ret);
             var originalBodyStart = methodDefinition.Body.Instructions[0];
 
+            var loadStartMarker = ilProcessor.Create(OpCodes.Ldstr, StartMarker);
+            var loadEndMarker = ilProcessor.Create(OpCodes.Ldstr, EndMarker);
+            var pop = ilProcessor.Create(OpCodes.Pop);
+
+            // Mark the start of the injected IL code
+            ilProcessor.InsertBefore(originalBodyStart, loadStartMarker);
+            ilProcessor.InsertBefore(originalBodyStart, pop);
+
             // Get MethodInfo and ElympicsRpcProperties
             ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
+            ilProcessor.InsertBefore(originalBodyStart, loadTypeNameOnStack);
             ilProcessor.InsertBefore(originalBodyStart, loadMethodNameOnStack);
             ilProcessor.InsertBefore(originalBodyStart, callGetMethodInfo);
             ilProcessor.InsertBefore(originalBodyStart, storeMethodInfoToVariable);
@@ -135,13 +151,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
             ilProcessor.InsertBefore(originalBodyStart, callGetRpcProperties);
             ilProcessor.InsertBefore(originalBodyStart, storeRpcPropertiesToVariable);
-
-            // Call ValidateRpcContext
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetElympicsBehaviour);
-            ilProcessor.InsertBefore(originalBodyStart, loadRpcPropertiesFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, callValidateRpcContext);
 
             // Call ShouldRpcBeInvokedInstantly and branch
             ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
@@ -172,13 +181,19 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             // Return just before the original code
             ilProcessor.InsertBefore(originalBodyStart, returnBeforeOriginalBody);
 
+            // Mark the end of the injected IL code
+            ilProcessor.InsertBefore(originalBodyStart, loadEndMarker);
+            ilProcessor.InsertBefore(originalBodyStart, pop);
+
             // The original code continues from here (if branched to originalBodyStart)
         }
 
         protected override void FinishVisiting(ModuleDefinition moduleDefinition)
         {
+            var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
             var processedAttribute = new CustomAttribute(moduleDefinition
-                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(Array.Empty<Type>())));
+                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(new[] { typeof(string) })));
+            processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
             moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
 
             _assembly = null;

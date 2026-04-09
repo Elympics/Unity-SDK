@@ -196,18 +196,17 @@ namespace Elympics.Tests
 
         private void AssertRpcIsQueuedAndInvoked(int messageCount = 1)
         {
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.EqualTo(messageCount));
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.EqualTo(messageCount));
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
-            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.EqualTo(messageCount > 0 ? 1 : 0));
-            Assert.That(_elympicsBase.RpcMessagesToInvoke[0].Messages.Count, Is.EqualTo(messageCount));
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.EqualTo(messageCount));
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToSend.Count, Is.Zero);
             Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
         }
 

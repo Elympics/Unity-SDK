@@ -1,3 +1,4 @@
+using System;
 using MessagePack;
 
 namespace Elympics
@@ -5,20 +6,12 @@ namespace Elympics
     [MessagePackObject]
     public class ElympicsRpcMessage
     {
-        [Key(0)] public int NetworkId;
-        [Key(1)] public ushort MethodId;
-        [Key(2)] public object[] Arguments;
-
-        public ElympicsRpcMessage()
-        {
-        }
-
-        public ElympicsRpcMessage(int networkId, ushort methodId, params object[] arguments)
-        {
-            NetworkId = networkId;
-            MethodId = methodId;
-            Arguments = arguments;
-        }
+        [Key(0)] public int NetworkId { get; set; }
+        [Key(1)] public ushort MethodId { get; set; }
+        [Key(2)] public object[] Arguments { get; set; } = Array.Empty<object>();
+        [Key(3)] public int Sender { get; set; }
+        [Key(4)] public long SentOnTick { get; set; }
+        [Key(5)] public long ExecuteNotBeforeTick { get; set; }
 
         public override string ToString() =>
             $"{nameof(ElympicsRpcMessage)}: Caller network ID {NetworkId}, RPC method ID {MethodId}, arguments count {Arguments.Length}";

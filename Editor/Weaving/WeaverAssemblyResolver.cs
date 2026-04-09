@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Elympics.Editor.Weaving.Extensions;
 using Mono.Cecil;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -12,7 +13,7 @@ namespace Elympics.Editor.Weaving
         public WeaverAssemblyResolver(string assemblyPath)
         {
             var compiledAssemblies = CompilationPipeline.GetAssemblies();
-            var asm = compiledAssemblies.FirstOrDefault(x => NormalizePath(x.outputPath) == NormalizePath(assemblyPath))
+            var asm = compiledAssemblies.FirstOrDefault(x => PathUtil.Normalize(x.outputPath) == PathUtil.Normalize(assemblyPath))
                 ?? compiledAssemblies.FirstOrDefault(x => Path.GetFileName(x.outputPath) == Path.GetFileName(assemblyPath));
             var dependencies = new HashSet<string> { Path.GetDirectoryName(assemblyPath) };
             if (asm != null)
@@ -28,8 +29,5 @@ namespace Elympics.Editor.Weaving
             foreach (var systemDir in CompilationPipeline.GetSystemAssemblyDirectories(apiLevel))
                 AddSearchDirectory(systemDir);
         }
-
-        private static string NormalizePath(string path) =>
-            path.Replace(Path.DirectorySeparatorChar, '/');
     }
 }

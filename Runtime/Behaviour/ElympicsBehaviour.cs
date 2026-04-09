@@ -64,28 +64,18 @@ namespace Elympics
             internal set => networkId = value;
         }
 
-        [UsedImplicitly] // from generated IL code
-#pragma warning disable IDE0060
-        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties properties, MethodInfo method)
-#pragma warning enable IDE0060
-        {
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
-                return;
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
-                return;
-            throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: "
-                                        + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
-                                        + $"or {nameof(IInitializable.Initialize)}");
-        }
-
-        [UsedImplicitly] // from generated IL code
+        /// Decides if the RPC should be invoked instantly in the current instance instead of requesting it over network.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
         public bool ShouldRpcBeInvokedInstantly(ElympicsRpcProperties properties, MethodInfo methodInfo)
 #pragma warning enable IDE0060
         {
             if (_isReconciling)
             {
-                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
                 return false;
             }
 
@@ -99,14 +89,18 @@ namespace Elympics
             ElympicsBase.IsLocalMode
             || (ElympicsBase.IsBotOnServer && properties.Direction == ElympicsRpcDirection.PlayerToServer);
 
-        [UsedImplicitly]  // from generated IL code
+        /// Decides if the RPC should be captured and queued to be requested over network or invoked later locally.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
         public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo)
 #pragma warning enable IDE0060
         {
             if (_isReconciling)
             {
-                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be invoked during reconciliation.");
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
                 return false;
             }
 
@@ -121,27 +115,41 @@ namespace Elympics
             return true;
         }
 
-        [UsedImplicitly] // from generated IL code
+        /// Captures the RPC and queues it to be requested over network or invoked later locally.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <param name="target">The object that owns the RPC method.</param>
+        /// <param name="arguments">Call arguments.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
-        public void OnRpcCaptured(ElympicsRpcProperties properties, MethodInfo method, object target, params object[] arguments)
+        public void OnRpcCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo, object target, params object[] arguments)
 #pragma warning enable IDE0060
         {
-            var rpcMethod = new RpcMethod(method, target);
+            var rpcMethod = new RpcMethod(methodInfo, target);
             var methodId = RpcMethods.GetIdOf(rpcMethod);
-            var rpcMessage = new ElympicsRpcMessage(NetworkId, methodId, arguments);
+            var scheduledTick = properties.WaitForTick ? ElympicsBase.Tick : 0;
+            var rpcMessage = new ElympicsRpcMessage
+            {
+                NetworkId = NetworkId,
+                MethodId = methodId,
+                Arguments = arguments,
+                Sender = (int)Elympics.Player,
+                SentOnTick = ElympicsBase.Tick,
+                ExecuteNotBeforeTick = scheduledTick,
+            };
             if (ShouldRpcBeCapturedToInvoke(properties))
-                ElympicsBase.QueueRpcMessagesFromServerToInvoke(new ElympicsRpcMessageList
-                {
-                    Sender = (int)Elympics.Player,
-                    Tick = ElympicsBase.Tick,
-                    Messages = new List<ElympicsRpcMessage> { rpcMessage },
-                });
+                ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
             else
-                ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+                ElympicsBase.QueueRpcMessageToSend(rpcMessage, properties.Reliable);
 
         }
 
-        // this is NOT called from generated IL code
+        /// Invokes the RPC.
+        /// <param name="sender">The player that sent the RPC. <see cref="ElympicsPlayer.World"/> in case of server-to-player RPCs.</param>
+        /// <param name="methodId">The ID of the RPC method called.</param>
+        /// <param name="arguments">Call arguments.</param>
+        /// <remarks>This is NOT called from IL code injected by Elympics Weaver into RPC methods.</remarks>
         internal void OnRpcInvoked(ElympicsPlayer sender, ushort methodId, params object[] arguments)
         {
             var (rpcMethod, rpcMethodDetails) = RpcMethods[methodId];
@@ -363,10 +371,9 @@ namespace Elympics
             // bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
             // todo use in future for debug mode ~pprzestrzelski 06.06.2022
             var areEqual = true;
-            foreach ((var componentName, var backingFields) in _backingFieldsByComponents)
+            foreach (var (componentName, backingFields) in _backingFieldsByComponents)
             {
                 foreach (var backingField in backingFields)
-                {
                     if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
                     {
 #if !ELYMPICS_PRODUCTION
@@ -378,7 +385,6 @@ namespace Elympics
                         areEqual = false;
                         break;
                     }
-                }
 
                 if (!areEqual)
                     break;

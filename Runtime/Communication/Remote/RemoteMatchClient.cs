@@ -80,8 +80,8 @@ namespace Elympics
             }
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            await SendDataToServer(rpcMessageList, true);
+        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            await SendDataToServer(rpcMessageList, reliable);
 
         private async Task SendDataToServer(IToServer data, bool reliable)
         {

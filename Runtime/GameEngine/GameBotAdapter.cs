@@ -55,7 +55,7 @@ namespace Elympics
         internal event Action<ElympicsSnapshot> SnapshotReceived;
         internal event Action<ElympicsRpcMessageList> RpcMessageListReceived;
         internal void SendInput(ElympicsInput input) => SendDataToServer(input, false);
-        internal void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) => SendDataToServer(rpcMessageList, true);
+        internal void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) => SendDataToServer(rpcMessageList, reliable);
 
         private void SendDataToServer(IToServer data, bool reliable)
         {

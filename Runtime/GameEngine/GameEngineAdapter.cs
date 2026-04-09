@@ -72,10 +72,8 @@ namespace Elympics
             var world = Replication.ElympicsWorld.Current;
             Assert.IsNotNull(world);
             if (world != null)
-            {
                 for (var i = 0; i < Players.Length; i++)
                     world.ActivatePlayer(i, Players[i].Player);
-            }
 
             _initialMatchData = initialMatchData;
             ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
@@ -96,11 +94,19 @@ namespace Elympics
                 ProcessReceivedInputList(inputList, player);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
             {
-                if ((int)player == rpcMessageList.Sender)
+                for (var i = rpcMessageList.Count - 1; i >= 0; i--)
+                {
+                    var sentTick = rpcMessageList[i].SentOnTick;
+                    var sender = rpcMessageList[i].Sender;
+                    if ((int)player != sender)
+                    {
+                        rpcMessageList.RemoveAt(i);
+                        ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(sender)]}"
+                            + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
+                    }
+                }
+                if (rpcMessageList.Count > 0)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
-                else
-                    ElympicsLogger.LogWarning($"[RPC] RPC from Tick {rpcMessageList.Tick} Sender {rpcMessageList.Sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(rpcMessageList.Sender)]}"
-                        + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
             }
         }
 

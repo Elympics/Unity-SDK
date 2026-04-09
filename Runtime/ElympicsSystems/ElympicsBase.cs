@@ -18,10 +18,12 @@ namespace Elympics
         [SerializeField]
         private GameObject[] linkedLogic;
 
-        internal readonly ElympicsRpcMessageList RpcMessagesToSend = new();
-        internal readonly List<ElympicsRpcMessageList> RpcMessagesToInvoke = new();
+        internal readonly ElympicsRpcMessageList RpcMessagesToSendReliable = new();
+        internal readonly ElympicsRpcMessageList RpcMessagesToSendUnreliable = new();
+
         private static readonly object RpcMessagesToInvokeLock = new();
-        private readonly List<ElympicsRpcMessageList> _rpcMessagesToInvokeInCurrentTick = new();
+        internal readonly ElympicsRpcMessageList RpcMessagesToInvoke = new();
+        private readonly List<ElympicsRpcMessage> _rpcMessagesToInvokeInCurrentTick = new();
 
         private readonly Stopwatch _elympicsUpdateStopwatch = new();
         private double _timer;
@@ -125,26 +127,37 @@ namespace Elympics
             lock (RpcMessagesToInvokeLock)
                 for (var i = RpcMessagesToInvoke.Count - 1; i >= 0; i--)
                 {
-                    if (RpcMessagesToInvoke[i].Tick > Tick)
+                    if (RpcMessagesToInvoke[i].ExecuteNotBeforeTick > Tick)
                         continue;
-                    _rpcMessagesToInvokeInCurrentTick.Add(RpcMessagesToInvoke[i]);
+                    _rpcMessagesToInvokeInCurrentTick.Insert(0, RpcMessagesToInvoke[i]);
                     RpcMessagesToInvoke.RemoveAt(i);
                 }
-            foreach (var rpcMessageList in _rpcMessagesToInvokeInCurrentTick)
-                foreach (var rpcMessage in rpcMessageList.Messages)
-                    if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
-                        behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessageList.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
+            foreach (var rpcMessage in _rpcMessagesToInvokeInCurrentTick)
+                if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
+                    behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessage.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
         internal void SendQueuedRpcMessages()
         {
-            if (RpcMessagesToSend.Messages.Count == 0)
+            var totalRpcs = RpcMessagesToSendReliable.Count + RpcMessagesToSendUnreliable.Count;
+            if (totalRpcs == 0)
+            {
+                ElympicsLogger.LogTrace($"No RPCs to send for Player: {Player} Tick: {Tick}, skipping...");
                 return;
-            RpcMessagesToSend.Sender = (int)Player;
-            RpcMessagesToSend.Tick = Tick;
-            ElympicsLogger.Log($"Sending RPC for Player: {Player} Tick: {Tick}");
-            SendRpcMessageList(RpcMessagesToSend);
-            RpcMessagesToSend.Messages.Clear();
+            }
+
+            ElympicsLogger.LogTrace($"Sending {totalRpcs} RPCs for Player: {Player} Tick: {Tick}");
+            if (RpcMessagesToSendReliable.Count > 0)
+            {
+                SendRpcMessageList(RpcMessagesToSendReliable, true);
+                RpcMessagesToSendReliable.Clear();
+            }
+
+            if (RpcMessagesToSendUnreliable.Count > 0)
+            {
+                SendRpcMessageList(RpcMessagesToSendUnreliable, false);
+                RpcMessagesToSendUnreliable.Clear();
+            }
         }
 
         private void LogFixedUpdateThrottle()
@@ -175,15 +188,22 @@ namespace Elympics
         protected virtual bool ShouldDoElympicsUpdate() => true;
         internal abstract void ElympicsFixedUpdate();
 
-        internal void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
-        internal abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
+        internal void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage, bool reliable) => (reliable ? RpcMessagesToSendReliable : RpcMessagesToSendUnreliable).Add(rpcMessage);
+        internal abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable);
 
         internal void QueueRpcMessagesFromServerToInvoke(ElympicsRpcMessageList rpcMessageList) =>
             QueueRpcMessagesToInvoke(rpcMessageList);
+        internal void QueueRpcMessageFromServerToInvoke(ElympicsRpcMessage rpcMessage) =>
+            QueueRpcMessageToInvoke(rpcMessage);
         protected void QueueRpcMessagesToInvoke(ElympicsRpcMessageList rpcMessageList)
         {
             lock (RpcMessagesToInvokeLock)
-                RpcMessagesToInvoke.Add(rpcMessageList);
+                RpcMessagesToInvoke.AddRange(rpcMessageList);
+        }
+        protected void QueueRpcMessageToInvoke(ElympicsRpcMessage rpcMessage)
+        {
+            lock (RpcMessagesToInvokeLock)
+                RpcMessagesToInvoke.Add(rpcMessage);
         }
 
         protected virtual void ElympicsLateFixedUpdate()
@@ -232,7 +252,8 @@ namespace Elympics
         /// <summary>Discards all pending and queued RPC messages. Called during reconnect reset.</summary>
         internal void ResetRpcQueues()
         {
-            RpcMessagesToSend.Messages.Clear();
+            RpcMessagesToSendReliable.Clear();
+            RpcMessagesToSendUnreliable.Clear();
             lock (RpcMessagesToInvokeLock)
                 RpcMessagesToInvoke.Clear();
         }

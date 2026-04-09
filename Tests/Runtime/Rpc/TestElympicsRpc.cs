@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Elympics.Replication;
 using Elympics.Tests.RpcMocks;
+using GameEngineCore.V1._4;
+using MessagePack;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Elympics.Tests
@@ -13,12 +17,16 @@ namespace Elympics.Tests
     [Category("RPC")]
     internal class TestElympicsRpc
     {
+        private const int MaxPlayers = 2;
+
         private GameObject _elympicsObject;
         private GameObject _rpcHolderObject;
 
         private ElympicsBaseTest _elympicsBase;
         private ElympicsBehaviour _elympicsBehaviour;
         private RpcHolderComplex _rpcHolder;
+
+        #region Setup and teardown
 
         [OneTimeSetUp]
         public void PrepareScene()
@@ -37,16 +45,13 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            var maxPlayers = 2;
-            ElympicsWorld.Current = new ElympicsWorld(
-                maxPlayers,
-                NetworkIdConstants.MaxIndex + 1,
-                NetworkIdConstants.MaxNetworkObjects);
+            ElympicsWorld.Current = new ElympicsWorld(MaxPlayers);
 
+            _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, true, false));
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
-            behavioursManager.InitializeInternal(_elympicsBase, maxPlayers);
+            behavioursManager.InitializeInternal(_elympicsBase, MaxPlayers);
         }
 
         [SetUp]
@@ -67,6 +72,8 @@ namespace Elympics.Tests
             ElympicsWorld.Current?.Dispose();
             ElympicsWorld.Current = null;
         }
+
+        #endregion
 
         [Test]
         public void AllRpcMethodsShouldBeCorrectlyRegisteredInRpcMethodMap()
@@ -107,7 +114,7 @@ namespace Elympics.Tests
             var sortedRpcMethods = sortedMethodInfos.Select(methodInfo => new RpcMethod(methodInfo, _rpcHolder)).ToArray();
 
             for (ushort methodId = 0; methodId < sortedRpcMethods.Length; methodId++)
-                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId]);
+                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId].Method);
         }
 
         [Test]
@@ -166,42 +173,42 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void PlayerToServerRpcScheduledOnServerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void PlayerToServerRpcScheduledOnServerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.ServerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
 
-            Assert.IsTrue(_rpcHolder.PlayerToServerMethodCalled);
+            Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         [Test]
-        public void PlayerToServerRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void PlayerToServerRpcScheduledOnLocalPlayerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.PlayerToServerMethod();
 
-            Assert.IsTrue(_rpcHolder.PlayerToServerMethodCalled);
+            Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         [Test]
-        public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeInvokedWithoutAddingToQueues()
+        public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
 
             _rpcHolder.ServerToPlayersMethod();
 
-            Assert.IsTrue(_rpcHolder.ServerToPlayersMethodCalled);
+            Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
         }
 
         public record SendingQueueTestCase(ElympicsStatus Status, ElympicsRpcDirection Direction);
@@ -487,7 +494,7 @@ namespace Elympics.Tests
             };
 
         [Test]
-        public void RpcOfOppositeDirectionShouldBeInvokedInstantlyInsideCurrentlyInvokedRpcInLocalMode([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
+        public void RpcOfOppositeDirectionShouldBeQueuedToBeInvokedInsideCurrentlyInvokedRpcInLocalMode([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
@@ -505,9 +512,102 @@ namespace Elympics.Tests
             _elympicsBase.InvokeQueuedRpcMessages();
 
             Assert.IsTrue(testCase.WasPingCalled(_rpcHolder));
-            Assert.IsTrue(testCase.WasPongCalled(_rpcHolder));
+            Assert.IsFalse(testCase.WasPongCalled(_rpcHolder));
             Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
+        }
+
+        [Test]
+        public void NoRpcCalledShouldCauseNothingToBeQueuedAndInvoked()
+        {
+            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
+
+            _elympicsBase.SendQueuedRpcMessages();
+
+            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
+
+            _elympicsBase.InvokeQueuedRpcMessages();
+
+            Assert.That(_elympicsBase.RpcMessagesToSend.Messages.Count, Is.Zero);
+            Assert.That(_elympicsBase.RpcMessagesToInvoke.Count, Is.Zero);
+        }
+
+        [Test]
+        public void ReceivedRpcDataWithMatchingSenderShouldNotBeIgnored()
+        {
+            ElympicsRpcMessageList receivedRpcList = null;
+            var playerIds = new string[MaxPlayers];
+            playerIds[0] = "00000000-046c-0000-0000-000012345678";
+            playerIds[1] = "00000000-046c-0000-0001-000012345678";
+            var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
+            gameConfig.maxPlayers = MaxPlayers;
+            var gameEngineAdapter = new GameEngineAdapter(gameConfig);
+            var initialMatchData = new InitialMatchData
+            {
+                UserData = new[]
+                {
+                    new InitialMatchUserData { UserId = Guid.Parse(playerIds[0]) },
+                    new InitialMatchUserData { UserId = Guid.Parse(playerIds[1]) },
+                }
+            };
+            gameEngineAdapter.Initialize(initialMatchData);
+            gameEngineAdapter.RpcMessageListReceived += OnRpcMessageListReceived;
+
+            gameEngineAdapter.OnInGameDataFromPlayerUnreliableReceived(MessagePackSerializer.Serialize<IToServer>(
+                new ElympicsRpcMessageList
+                {
+                    Tick = 2,
+                    Sender = 1,
+                    Messages = new List<ElympicsRpcMessage>(),
+                }),
+                playerIds[1]);
+
+            gameEngineAdapter.RpcMessageListReceived -= OnRpcMessageListReceived;
+            Assert.That(receivedRpcList, Is.Not.Null);
+            Assert.That(receivedRpcList.Tick, Is.EqualTo(2));
+            Assert.That(receivedRpcList.Sender, Is.EqualTo(1));
+            Assert.That(receivedRpcList.Messages.Count, Is.Zero);
+
+            void OnRpcMessageListReceived(ElympicsRpcMessageList list) => receivedRpcList = list;
+        }
+
+        [Test]
+        public void ReceivedRpcDataWithNonMatchingSenderShouldBeIgnored()
+        {
+            ElympicsRpcMessageList receivedRpcList = null;
+            var playerIds = new string[MaxPlayers];
+            playerIds[0] = "00000000-046c-0000-0000-000012345678";
+            playerIds[1] = "00000000-046c-0000-0001-000012345678";
+            var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
+            gameConfig.maxPlayers = MaxPlayers;
+            var gameEngineAdapter = new GameEngineAdapter(gameConfig);
+            var initialMatchData = new InitialMatchData
+            {
+                UserData = new[]
+                {
+                    new InitialMatchUserData { UserId = Guid.Parse(playerIds[0]) },
+                    new InitialMatchUserData { UserId = Guid.Parse(playerIds[1]) },
+                }
+            };
+            gameEngineAdapter.Initialize(initialMatchData);
+            gameEngineAdapter.RpcMessageListReceived += OnRpcMessageListReceived;
+
+            gameEngineAdapter.OnInGameDataFromPlayerUnreliableReceived(MessagePackSerializer.Serialize<IToServer>(
+                    new ElympicsRpcMessageList
+                    {
+                        Tick = 2,
+                        Sender = 0,
+                        Messages = new List<ElympicsRpcMessage>(),
+                    }),
+                playerIds[1]);
+
+            gameEngineAdapter.RpcMessageListReceived -= OnRpcMessageListReceived;
+            LogAssert.Expect(LogType.Warning, new Regex(@".*\bSender\b.*"));
+            Assert.That(receivedRpcList, Is.Null);
+
+            void OnRpcMessageListReceived(ElympicsRpcMessageList list) => receivedRpcList = list;
         }
     }
 }

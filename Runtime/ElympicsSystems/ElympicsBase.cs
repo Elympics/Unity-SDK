@@ -133,14 +133,16 @@ namespace Elympics
             foreach (var rpcMessageList in _rpcMessagesToInvokeInCurrentTick)
                 foreach (var rpcMessage in rpcMessageList.Messages)
                     if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
-                        behaviour.OnRpcInvoked(rpcMessage.MethodId, rpcMessage.Arguments);
+                        behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessageList.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
         internal void SendQueuedRpcMessages()
         {
             if (RpcMessagesToSend.Messages.Count == 0)
                 return;
+            RpcMessagesToSend.Sender = (int)Player;
             RpcMessagesToSend.Tick = Tick;
+            ElympicsLogger.Log($"Sending RPC for Player: {Player} Tick: {Tick}");
             SendRpcMessageList(RpcMessagesToSend);
             RpcMessagesToSend.Messages.Clear();
         }
@@ -167,17 +169,17 @@ namespace Elympics
         private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) =>
             $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
 
-        public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour)
-        {
-            return ElympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
-        }
+        public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour) =>
+            ElympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
 
         protected virtual bool ShouldDoElympicsUpdate() => true;
         internal abstract void ElympicsFixedUpdate();
 
-        public void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
+        internal void QueueRpcMessageToSend(ElympicsRpcMessage rpcMessage) => RpcMessagesToSend.Messages.Add(rpcMessage);
         internal abstract void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList);
 
+        internal void QueueRpcMessagesFromServerToInvoke(ElympicsRpcMessageList rpcMessageList) =>
+            QueueRpcMessagesToInvoke(rpcMessageList);
         protected void QueueRpcMessagesToInvoke(ElympicsRpcMessageList rpcMessageList)
         {
             lock (RpcMessagesToInvokeLock)
@@ -246,6 +248,7 @@ namespace Elympics
         public virtual bool IsReplay => false;
         public bool IsClientOrBot => IsClient || IsBot;
         internal bool IsLocalMode => IsServer && IsClient; // assuming there is only one client (and Unlimited Bots Work)
+        internal bool IsBotOnServer => IsServer && IsBot;
 
         public float TickDuration => Config.TickDuration;
         public int TicksPerSecond => Config.TicksPerSecond;

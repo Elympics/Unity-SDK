@@ -4690,8 +4690,9 @@ namespace MessagePack.Formatters.Elympics
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(2);
+            writer.WriteArrayHeader(3);
             writer.Write(value.Tick);
+            writer.Write(value.Sender);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Serialize(ref writer, value.Messages, options);
         }
 
@@ -4715,6 +4716,9 @@ namespace MessagePack.Formatters.Elympics
                         ____result.Tick = reader.ReadInt64();
                         break;
                     case 1:
+                        ____result.Sender = reader.ReadInt32();
+                        break;
+                    case 2:
                         ____result.Messages = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:

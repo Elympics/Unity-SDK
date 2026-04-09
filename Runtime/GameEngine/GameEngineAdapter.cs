@@ -95,7 +95,13 @@ namespace Elympics
             if (deserializedData is ElympicsInputList inputList)
                 ProcessReceivedInputList(inputList, player);
             else if (deserializedData is ElympicsRpcMessageList rpcMessageList)
-                RpcMessageListReceived?.Invoke(rpcMessageList);
+            {
+                if ((int)player == rpcMessageList.Sender)
+                    RpcMessageListReceived?.Invoke(rpcMessageList);
+                else
+                    ElympicsLogger.LogWarning($"[RPC] RPC from Tick {rpcMessageList.Tick} Sender {rpcMessageList.Sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(rpcMessageList.Sender)]}"
+                        + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
+            }
         }
 
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)

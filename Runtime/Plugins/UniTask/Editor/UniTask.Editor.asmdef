@@ -1,5 +1,6 @@
 {
     "name": "UniTask.Editor",
+    "rootNamespace": "",
     "references": [
         "UniTask"
     ],
@@ -8,9 +9,9 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

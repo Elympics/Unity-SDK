@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Elympics.Tests.RpcMocks
 {
-    public record ElympicsStatus(bool IsClient, bool IsServer, bool IsBot)
+    public record ElympicsStatus(bool IsClient, bool IsServer, bool IsBot, int PlayerIndex = 0)
     {
         public static ElympicsStatus StandaloneClient => new(true, false, false);
         public static ElympicsStatus StandaloneServer => new(false, true, false);
@@ -16,13 +16,16 @@ namespace Elympics.Tests.RpcMocks
         private bool _isClient;
         private bool _isServer;
         private bool _isBot;
+        private int _playerIndex;
 
         public override bool IsClient => _isClient;
         public override bool IsServer => _isServer;
         public override bool IsBot => _isBot;
         public override long Tick => 0;
 
-        public override ElympicsPlayer Player => ElympicsPlayer.FromIndex(0);
+        public override ElympicsPlayer Player => _isClient || _isBot
+            ? ElympicsPlayer.FromIndex(_playerIndex)
+            : _isServer ? ElympicsPlayer.World : ElympicsPlayer.Invalid;
 
         internal override void ElympicsFixedUpdate()
         { }
@@ -31,13 +34,14 @@ namespace Elympics.Tests.RpcMocks
         {
             var newElympicsRpcMessageList = new ElympicsRpcMessageList
             {
+                Sender = rpcMessageList.Sender,
                 Tick = rpcMessageList.Tick,
                 Messages = new List<ElympicsRpcMessage>(rpcMessageList.Messages),
             };
             RpcMessagesToInvoke.Add(newElympicsRpcMessageList);
         }
 
-        public void SetElympicsStatus(ElympicsStatus status) => (_isClient, _isServer, _isBot) = status;
+        public void SetElympicsStatus(ElympicsStatus status) => (_isClient, _isServer, _isBot, _playerIndex) = status;
 
         public void ClearRpcQueues()
         {

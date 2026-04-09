@@ -7,11 +7,13 @@ namespace Elympics
     internal class RpcMethodsContainer
     {
         private readonly Dictionary<ushort, RpcMethod> _rpcMethods = new();
+        private readonly Dictionary<ushort, RpcMethodDetails> _rpcMethodDetails = new();
         private readonly Dictionary<RpcMethod, ushort> _rpcMethodIds = new();
 
         private ushort _methodIdCounter;
 
-        public RpcMethod this[ushort methodId] => _rpcMethods[methodId];
+        public (RpcMethod Method, RpcMethodDetails Details) this[ushort methodId] =>
+            (_rpcMethods[methodId], _rpcMethodDetails[methodId]);
 
         public void CollectFrom(IObservable observable)
         {
@@ -25,7 +27,9 @@ namespace Elympics
                 if (attributes.All(attribute => attribute.AttributeType != typeof(ElympicsRpcAttribute)))
                     continue;
                 var rpcMethod = new RpcMethod(method, observable);
+                var rpcMethodDetails = new RpcMethodDetails(rpcMethod);
                 _rpcMethods.Add(_methodIdCounter, rpcMethod);
+                _rpcMethodDetails.Add(_methodIdCounter, rpcMethodDetails);
                 _rpcMethodIds.Add(rpcMethod, _methodIdCounter);
                 _methodIdCounter++;
             }

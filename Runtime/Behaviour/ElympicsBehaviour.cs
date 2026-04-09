@@ -65,7 +65,9 @@ namespace Elympics
         }
 
         [UsedImplicitly] // from generated IL code
-        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties _, MethodInfo method)
+#pragma warning disable IDE0060
+        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties properties, MethodInfo method)
+#pragma warning enable IDE0060
         {
             if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
                 return;
@@ -77,30 +79,30 @@ namespace Elympics
         }
 
         [UsedImplicitly] // from generated IL code
-        public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo method)
+#pragma warning disable IDE0060
+        public bool ShouldRpcBeInvokedInstantly(ElympicsRpcProperties properties, MethodInfo methodInfo)
+#pragma warning enable IDE0060
         {
             if (_isReconciling)
             {
-                ElympicsLogger.LogWarning($"RPC {method.Name} will not be captured during reconciliation.");
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
                 return false;
             }
 
-            if (_isInvokingRpc)
+            if (!_isInvokingRpc)
                 return false;
-            if (ElympicsBase.IsLocalMode)
-                return false;
-            if (ElympicsBase.IsServer
-                && ElympicsBase.IsBot
-                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
-                return false;
-            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
-                || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
-                throw new RpcDirectionMismatchException(properties, method);
+            _isInvokingRpc = false;
             return true;
         }
 
-        [UsedImplicitly] // from generated IL code
-        public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo methodInfo)
+        private bool ShouldRpcBeCapturedToInvoke(ElympicsRpcProperties properties) =>
+            ElympicsBase.IsLocalMode
+            || (ElympicsBase.IsBotOnServer && properties.Direction == ElympicsRpcDirection.PlayerToServer);
+
+        [UsedImplicitly]  // from generated IL code
+#pragma warning disable IDE0060
+        public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo)
+#pragma warning enable IDE0060
         {
             if (_isReconciling)
             {
@@ -109,40 +111,45 @@ namespace Elympics
             }
 
             if (_isInvokingRpc)
-            {
-                _isInvokingRpc = false;
+                return false;
+            if (ShouldRpcBeCapturedToInvoke(properties))
                 return true;
-            }
-
-            // TODO: The following two cases short-circuit RPCs so they are not queued for later bulk execution.
-            // TODO: This may introduce unwanted behavior. ~dsygocki 2023-08-07
-            if (ElympicsBase.IsLocalMode)
-                return true;
-            if (ElympicsBase.IsServer
-                && ElympicsBase.IsBot
-                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
-                return true;
-            return false;
+            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer
+                    && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
+                || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
+                throw new RpcDirectionMismatchException(properties, methodInfo);
+            return true;
         }
 
         [UsedImplicitly] // from generated IL code
-        public void OnRpcCaptured(ElympicsRpcProperties _, MethodInfo method, object target, params object[] arguments)
+#pragma warning disable IDE0060
+        public void OnRpcCaptured(ElympicsRpcProperties properties, MethodInfo method, object target, params object[] arguments)
+#pragma warning enable IDE0060
         {
             var rpcMethod = new RpcMethod(method, target);
             var methodId = RpcMethods.GetIdOf(rpcMethod);
             var rpcMessage = new ElympicsRpcMessage(NetworkId, methodId, arguments);
-            ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+            if (ShouldRpcBeCapturedToInvoke(properties))
+                ElympicsBase.QueueRpcMessagesFromServerToInvoke(new ElympicsRpcMessageList
+                {
+                    Sender = (int)Elympics.Player,
+                    Tick = ElympicsBase.Tick,
+                    Messages = new List<ElympicsRpcMessage> { rpcMessage },
+                });
+            else
+                ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+
         }
 
         // this is NOT called from generated IL code
-        internal void OnRpcInvoked(ushort methodId, params object[] arguments)
+        internal void OnRpcInvoked(ElympicsPlayer sender, ushort methodId, params object[] arguments)
         {
-            var rpcMethod = RpcMethods[methodId];
+            var (rpcMethod, rpcMethodDetails) = RpcMethods[methodId];
             _isInvokingRpc = true;
             try
             {
                 using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking))
-                    rpcMethod.Call(arguments);
+                    rpcMethod.Call(rpcMethodDetails, arguments, new RpcMetadata(sender));
             }
             finally
             {

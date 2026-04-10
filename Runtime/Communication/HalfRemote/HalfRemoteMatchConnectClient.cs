@@ -7,6 +7,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
+using Elympics.GameEngine.Libraries.WebRtc;
 using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -125,7 +126,10 @@ namespace Elympics
 
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateInstance(TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay));
+            _webRtcClient = WebRtcFactory.CreateInstance(new WebRtcConfig
+            {
+                OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
+            });
             string offer = null;
             var offerSet = false;
             _webRtcClient.OfferCreated += s =>

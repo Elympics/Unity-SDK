@@ -2,12 +2,13 @@
     "name": "Elympics.WebRtc",
     "rootNamespace": "",
     "references": [
-        "GUID:f12aafacab75a87499e7e45c873ffab8"
+        "GUID:f12aafacab75a87499e7e45c873ffab8",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],

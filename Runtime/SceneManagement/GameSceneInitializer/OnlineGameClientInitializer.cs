@@ -38,7 +38,7 @@ namespace Elympics
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
                     gameLogger,
-                    (delay) => WebRtcFactory.CreateInstance(delay),
+                    WebRtcFactory.CreateInstance,
                     iceServersUri)
                 : new TcpUdpGameServerClient(serializer,
                     config,

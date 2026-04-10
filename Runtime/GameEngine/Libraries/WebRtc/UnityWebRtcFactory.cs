@@ -2,8 +2,9 @@
 // #undef UNITY_EDITOR
 // #define UNITY_WEBGL
 
-using System;
+using Elympics.GameEngine.Libraries.WebRtc;
 #if UNITY_WEBGL && !UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
@@ -12,7 +13,7 @@ using WebRtcWrapper;
 
 namespace Elympics.Libraries
 {
-    public static class WebRtcFactory
+    internal static class WebRtcFactory
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         private class WebRtcClientAdapter : IWebRtcClient
@@ -47,37 +48,21 @@ namespace Elympics.Libraries
             public event Action<string> OfferCreated;
             public event Action<string> IceCandidateCreated;
 
-            public void Dispose()
-            {
-                HandleInstanceDestroy(_instanceId);
-            }
+            public void Dispose() => HandleInstanceDestroy(_instanceId);
 
-            public void SetIceServers(string iceServersJson)
-            {
-                WebRtcSetIceServers(_instanceId, iceServersJson);
-            }
+            public void SetIceServers(string iceServersJson) => WebRtcSetIceServers(_instanceId, iceServersJson);
 
-            public void CreateOffer(bool restart)
-            {
-                WebRtcCreateOffer(_instanceId, restart);
-            }
+            public void CreateOffer(bool restart) => WebRtcCreateOffer(_instanceId, restart);
 
-            public void OnAnswer(string answerJson)
-            {
-                WebRtcOnAnswer(_instanceId, answerJson);
-            }
+            public void OnAnswer(string answerJson) => WebRtcOnAnswer(_instanceId, answerJson);
 
             public void ReceiveWithThread()
-            {
-            }
+            { }
 
             public bool ReceiveReliableOnce()   => true;
             public bool ReceiveUnreliableOnce() => true;
 
-            public void Close()
-            {
-                WebRtcClose(_instanceId);
-            }
+            public void Close() => WebRtcClose(_instanceId);
 
             public void OnReliableReceived(byte[] data) => ReliableReceived?.Invoke(data);
             public void OnReliableError(string error)   => ReliableReceivingError?.Invoke(error);
@@ -104,9 +89,9 @@ namespace Elympics.Libraries
 
         public delegate void OnReceivingEndedCallback(int instanceId);
 
-        public delegate void OnIceConnectionStateChanged(int instanceId, IntPtr newState);
+        public delegate void OnIceConnectionStateChangedCallback(int instanceId, IntPtr newState);
 
-        public delegate void OnConnectionStateChanged(int instanceId, IntPtr newState);
+        public delegate void OnConnectionStateChangedCallback(int instanceId, IntPtr newState);
 
         public delegate void OnOfferCallback(int instanceId, IntPtr offer);
 
@@ -143,10 +128,10 @@ namespace Elympics.Libraries
         public static extern void WebRtcSetOnUnreliableEnded(OnReceivingEndedCallback callback);
 
         [DllImport("__Internal")]
-        public static extern void WebRtcSetOnIceConnectionStateChanged(OnIceConnectionStateChanged callback);
+        public static extern void WebRtcSetOnIceConnectionStateChanged(OnIceConnectionStateChangedCallback callback);
 
         [DllImport("__Internal")]
-        public static extern void WebRtcSetOnConnectionStateChanged(OnConnectionStateChanged callback);
+        public static extern void WebRtcSetOnConnectionStateChanged(OnConnectionStateChangedCallback callback);
 
 
         [DllImport("__Internal")]
@@ -170,7 +155,7 @@ namespace Elympics.Libraries
         [DllImport("__Internal")]
         public static extern int WebRtcClose(int instanceId);
 
-        private static bool _isInitialized;
+        private static bool isInitialized;
 
         private static void Initialize(int offerAnnounceDelayMs)
         {
@@ -186,7 +171,7 @@ namespace Elympics.Libraries
             WebRtcSetOnOffer(DelegateOnOffer);
             WebRtcSetOnIceCandidate(DelegateOnIceCandidate);
 
-            _isInitialized = true;
+            isInitialized = true;
         }
 
         public static void HandleInstanceDestroy(int instanceId)
@@ -257,7 +242,7 @@ namespace Elympics.Libraries
             instanceRef.OnUnreliableEnded();
         }
 
-        [MonoPInvokeCallback(typeof(OnIceConnectionStateChanged))]
+        [MonoPInvokeCallback(typeof(OnIceConnectionStateChangedCallback))]
         public static void DelegateOnIceConnectionStateChanged(int instanceId, IntPtr newState)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
@@ -267,7 +252,7 @@ namespace Elympics.Libraries
             instanceRef.OnIceConnectionStateChanged(errorMsg);
         }
 
-        [MonoPInvokeCallback(typeof(OnConnectionStateChanged))]
+        [MonoPInvokeCallback(typeof(OnConnectionStateChangedCallback))]
         public static void DelegateOnConnectionStateChanged(int instanceId, IntPtr newState)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
@@ -298,11 +283,11 @@ namespace Elympics.Libraries
         }
 #endif
 
-        public static IWebRtcClient CreateInstance(TimeSpan offerAnnounceDelay)
+        public static IWebRtcClient CreateInstance(WebRtcConfig config)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (!_isInitialized)
-                Initialize((int)offerAnnounceDelay.TotalMilliseconds);
+            if (!isInitialized)
+                Initialize((int)config.OfferAnnounceDelay.TotalMilliseconds);
 
             var instanceId = WebRtcAllocate();
             var wrapper = new WebRtcClientAdapter(instanceId);
@@ -310,7 +295,7 @@ namespace Elympics.Libraries
 
             return wrapper;
 #else
-            return new WebRtcClient();
+            return new UnityWebRtcClient(config);
 #endif
         }
     }

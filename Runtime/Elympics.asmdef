@@ -17,11 +17,9 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "UnityConnectors-packed2.1.dll",
-        "WebRtcWrapper.dll",
         "GameEngineCore.dll",
         "GameBotCore.dll",
-        "websocket-sharp.dll",
-        ""
+        "websocket-sharp.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

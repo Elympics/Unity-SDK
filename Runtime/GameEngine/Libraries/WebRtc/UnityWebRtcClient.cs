@@ -170,7 +170,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var offerOp = _peerConnection.CreateOffer(ref options);
             await offerOp;
             var offer = offerOp.Desc;
-            Debug.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson(offer));
+            Debug.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson(new SessionDescription(offer)));
             await _peerConnection.SetLocalDescription(ref offer);
             Debug.Log("[WebRTC] Gathering ICE candidates...");
 
@@ -186,7 +186,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var updatedOffer = _peerConnection.LocalDescription;
             // TODO: log chosen candidates ~dsygocki 2026-04-10
 
-            var offerJson = JsonUtility.ToJson(updatedOffer);
+            var offerJson = JsonUtility.ToJson(new SessionDescription(updatedOffer));
             Debug.Log("[WebRTC] Offer created\n" + offerJson);
             OfferCreated?.Invoke(offerJson);
         }
@@ -207,7 +207,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public void OnAnswer(string answerJson)
         {
             Debug.Log("[WebRTC] Answer received\n" + answerJson);
-            var answer = JsonUtility.FromJson<RTCSessionDescription>(answerJson);
+            var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
+            var answer = (RTCSessionDescription)answerCustom;
             _ = _peerConnection.SetRemoteDescription(ref answer); // TODO: handle async ~dsygocki 2026-04-10
         }
 
@@ -250,7 +251,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnIceCandidate(RTCIceCandidate candidate)
         {
-            var candidateJson = candidate.Candidate;
+            var candidateJson = JsonUtility.ToJson(candidate.SdpMLineIndex.HasValue
+                ? new IceCandidateInitWithSdpMLineIndex(candidate)
+                : new IceCandidateInitWithoutSdpMLineIndex(candidate));
             Debug.Log("[WebRTC] Candidate received\n" + candidateJson);
             try
             {
@@ -268,6 +271,64 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         internal struct IceServersResponse
         {
             public RTCIceServer[] iceServers;
+        }
+
+        [Serializable]
+        internal struct SessionDescription
+        {
+            public string type;
+            public string sdp;
+
+            public SessionDescription(RTCSessionDescription sessionDescription)
+            {
+                type = sessionDescription.type.ToString().ToLower();
+                sdp = sessionDescription.sdp;
+            }
+
+            public static explicit operator RTCSessionDescription(SessionDescription sessionDescription) => new()
+            {
+                type = sessionDescription.type switch
+                {
+                    "offer" => RTCSdpType.Offer,
+                    "pranswer" => RTCSdpType.Pranswer,
+                    "answer" => RTCSdpType.Answer,
+                    "rollback" => RTCSdpType.Rollback,
+                    _ => throw new ArgumentOutOfRangeException(nameof(sessionDescription.type), sessionDescription.type, "Unsupported session description type"),
+                },
+                sdp = sessionDescription.sdp,
+            };
+        }
+
+        [Serializable]
+        internal struct IceCandidateInitWithSdpMLineIndex
+        {
+            public string candidate;
+            public string? sdpMid;
+            public int sdpMLineIndex;
+            public string? usernameFragment;
+
+            public IceCandidateInitWithSdpMLineIndex(RTCIceCandidate iceCandidate)
+            {
+                candidate = iceCandidate.Candidate;
+                sdpMid = iceCandidate.SdpMid;
+                sdpMLineIndex = iceCandidate.SdpMLineIndex ?? throw new ArgumentNullException(nameof(iceCandidate.SdpMLineIndex));
+                usernameFragment = iceCandidate.UserNameFragment;
+            }
+        }
+
+        [Serializable]
+        internal struct IceCandidateInitWithoutSdpMLineIndex
+        {
+            public string candidate;
+            public string? sdpMid;
+            public string? usernameFragment;
+
+            public IceCandidateInitWithoutSdpMLineIndex(RTCIceCandidate iceCandidate)
+            {
+                candidate = iceCandidate.Candidate;
+                sdpMid = iceCandidate.SdpMid;
+                usernameFragment = iceCandidate.UserNameFragment;
+            }
         }
     }
 }

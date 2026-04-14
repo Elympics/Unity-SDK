@@ -10,7 +10,9 @@
         "Elympics.Core",
         "Unity.Mathematics",
         "Elympics.WebRtc",
-        "Elympics.Proto"
+        "Elympics.Proto",
+        "GameEngineCore",
+        "GameBotCore"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

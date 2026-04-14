@@ -71,7 +71,7 @@ namespace Elympics
         [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
         public bool ShouldRpcBeInvokedInstantly(ElympicsRpcProperties properties, MethodInfo methodInfo)
-#pragma warning enable IDE0060
+#pragma warning restore IDE0060
         {
             if (_isReconciling)
             {
@@ -96,7 +96,7 @@ namespace Elympics
         [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
         public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo)
-#pragma warning enable IDE0060
+#pragma warning restore IDE0060
         {
             if (_isReconciling)
             {
@@ -124,7 +124,7 @@ namespace Elympics
         [UsedImplicitly(ImplicitUseKindFlags.Access)]
 #pragma warning disable IDE0060
         public void OnRpcCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo, object target, params object[] arguments)
-#pragma warning enable IDE0060
+#pragma warning restore IDE0060
         {
             var rpcMethod = new RpcMethod(methodInfo, target);
             var methodId = RpcMethods.GetIdOf(rpcMethod);

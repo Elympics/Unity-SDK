@@ -53,10 +53,10 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                 webRtcClient.OfferCreated += s =>
                 {
                     offer = s;
-                    tcs.TrySetResult(null);
+                    _ = tcs.TrySetResult(null);
                 };
                 webRtcClient.CreateOffer(false);
-                await tcs.Task;
+                _ = await tcs.Task;
 
                 if (string.IsNullOrEmpty(offer))
                     throw new ArgumentException("Offer is empty");

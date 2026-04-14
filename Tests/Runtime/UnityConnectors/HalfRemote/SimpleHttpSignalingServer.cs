@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -73,8 +73,8 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
                             response.StatusCode = (int)HttpStatusCode.OK;
                             response.AddHeader("Content-Type", "application/json");
-                            using (var writeStream = new StreamWriter(response.OutputStream, Encoding.ASCII))
-                                await writeStream.WriteAsync(answer);
+                            using var writeStream = new StreamWriter(response.OutputStream, Encoding.ASCII);
+                            await writeStream.WriteAsync(answer);
                         }
 
                         break;

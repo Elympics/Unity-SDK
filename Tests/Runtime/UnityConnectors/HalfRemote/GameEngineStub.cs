@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using GameEngineCore.V1._1;
 using GameEngineCore.V1._3;

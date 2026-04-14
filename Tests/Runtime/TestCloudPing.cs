@@ -11,6 +11,7 @@ namespace Elympics.Tests
     public class TestCloudPing
     {
         private PingResultResultFactoryMock _pingResultFactory;
+
         [OneTimeSetUp]
         public void SutSetup()
         {

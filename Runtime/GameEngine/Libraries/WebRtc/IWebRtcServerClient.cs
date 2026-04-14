@@ -1,8 +1,9 @@
+using System;
 using System.Threading.Tasks;
 
 namespace WebRtcWrapper
 {
-    public interface IWebRtcServerClient : IWebRtcCommunication
+    public interface IWebRtcServerClient : IWebRtcCommunication, IDisposable
     {
         Task<string> CreateAnswerAsync(string offerJson);
 
@@ -19,5 +20,7 @@ namespace WebRtcWrapper
         bool ReceiveReliableOnce();
         bool ReceiveUnreliableOnce();
         void Close();
+
+        void IDisposable.Dispose() { }
     }
 }

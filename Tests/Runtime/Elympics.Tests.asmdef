@@ -5,7 +5,9 @@
         "UnityEngine.TestRunner",
         "Elympics",
         "UniTask",
-        "MessagePack"
+        "MessagePack",
+        "Elympics.WebRtc",
+        "Elympics.Proto"
     ],
     "includePlatforms": [],
     "excludePlatforms": [
@@ -33,7 +35,8 @@
         "nunit.framework.dll",
         "NSubstitute.dll",
         "Newtonsoft.Json.dll",
-        "GameEngineCore.dll"
+        "GameEngineCore.dll",
+        "UnityConnectors-packed2.1.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

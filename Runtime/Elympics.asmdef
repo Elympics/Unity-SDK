@@ -9,7 +9,8 @@
         "AssemblyCommunicator",
         "Elympics.Core",
         "Unity.Mathematics",
-        "Elympics.WebRtc"
+        "Elympics.WebRtc",
+        "Elympics.Proto"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

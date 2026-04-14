@@ -1,25 +1,23 @@
 using System;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Elympics.GameEngine.Libraries.WebRtc;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
 
 #nullable enable
 
-namespace Elympics.GameEngine.Libraries.WebRtc
+namespace GameEngine.Libraries.WebRtc
 {
-    internal class UnityWebRtcClient : IWebRtcClient
+    public class UnityWebRtcServerClient : IWebRtcServerClient
     {
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
 
-        private readonly WebRtcConfig _config;
-
         private readonly RTCPeerConnection _peerConnection;
-        private readonly RTCDataChannel _reliableDc;
-        private readonly RTCDataChannel _unreliableDc;
-
-        private UniTaskCompletionSource? _offerResolver;
+        private RTCDataChannel? _reliableDc;
+        private RTCDataChannel? _unreliableDc;
 
         public event Action<byte[]>? ReliableReceived;
         public event Action<string>? ReliableReceivingError;
@@ -32,18 +30,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public event Action<string>? OfferCreated;
-        public event Action<string>? IceCandidateCreated;
-
-        public UnityWebRtcClient(WebRtcConfig config)
+        public UnityWebRtcServerClient()
         {
-            _config = config;
-            var configuration = new RTCConfiguration
-            {
-                iceServers = Array.Empty<RTCIceServer>(),
-            };
-            _peerConnection = new RTCPeerConnection(ref configuration);
+            _peerConnection = new RTCPeerConnection();
 
+            _peerConnection.OnDataChannel += OnDataChannel;
             _reliableDc = _peerConnection.CreateDataChannel(ReliableChannelLabel);
             _reliableDc.OnOpen += OnReliableOpen;
             _reliableDc.OnMessage += OnReliableReceived;
@@ -61,9 +52,31 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _unreliableDc.OnClose += OnUnreliableEnded;
             _unreliableDc.OnError += OnUnreliableError;
 
-            _peerConnection.OnIceCandidate += OnIceCandidate;
             _peerConnection.OnIceConnectionChange += OnIceConnectionStateChanged;
             _peerConnection.OnConnectionStateChange += OnConnectionStateChanged;
+        }
+
+        private void OnDataChannel(RTCDataChannel channel)
+        {
+            Debug.Log($"[WebRTC] Data channel created: {channel.Label}");
+            if (channel.Label == ReliableChannelLabel)
+            {
+                _reliableDc = channel;
+                _reliableDc.OnOpen += OnReliableOpen;
+                _reliableDc.OnMessage += OnReliableReceived;
+                _reliableDc.OnClose += OnReliableEnded;
+                _reliableDc.OnError += OnReliableError;
+            }
+            else if (channel.Label == UnreliableChannelLabel)
+            {
+                _unreliableDc = channel;
+                _unreliableDc.OnOpen += OnUnreliableOpen;
+                _unreliableDc.OnMessage += OnUnreliableReceived;
+                _unreliableDc.OnClose += OnUnreliableEnded;
+                _unreliableDc.OnError += OnUnreliableError;
+            }
+            else
+                Debug.LogWarning($"[WebRTC] Unknown data channel: {channel.Label}");
         }
 
         private static void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
@@ -130,98 +143,38 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendReliable(byte[] data)
         {
-            if (_reliableDc.ReadyState is not RTCDataChannelState.Open)
+            if (_reliableDc?.ReadyState is not RTCDataChannelState.Open)
                 return;
             _reliableDc.Send(data);
         }
 
         public void SendUnreliable(byte[] data)
         {
-            if (_unreliableDc.ReadyState is not RTCDataChannelState.Open)
+            if (_unreliableDc?.ReadyState is not RTCDataChannelState.Open)
                 return;
             _unreliableDc.Send(data);
         }
 
-        public void Close()
+        private async UniTask<string> CreateAnswer(string offerJson)
         {
-            _reliableDc.Close();
-            _unreliableDc.Close();
-            _peerConnection.Close();
-        }
-
-        public void Dispose()
-        {
-            Close();
-            _reliableDc.Dispose();
-            _unreliableDc.Dispose();
-            _peerConnection.Dispose();
-        }
-
-        #region Unused
-
-        public void ReceiveWithThread()
-        { }
-
-        public bool ReceiveReliableOnce() => true;
-        public bool ReceiveUnreliableOnce() => true;
-
-        #endregion
-
-        private async UniTask CreateOfferAsync(bool restart)
-        {
-            var options = new RTCOfferAnswerOptions { iceRestart = restart };
-            var offerOp = _peerConnection.CreateOffer(ref options);
-            await offerOp;
-            var offer = offerOp.Desc;
-            Debug.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson((SessionDescription)offer));
-            await _peerConnection.SetLocalDescription(ref offer);
-            Debug.Log("[WebRTC] Gathering ICE candidates...");
-
-            _offerResolver = new UniTaskCompletionSource();
-            var receivedCandidate = await UniTask.Delay(_config.OfferAnnounceDelay,
-                DelayType.Realtime,
-                cancellationToken: _offerResolver.Task.ToCancellationToken()).SuppressCancellationThrow();
-            Debug.Log(receivedCandidate
-                ? "[WebRTC] ICE candidates gathering ended successfully."
-                : "[WebRTC] ICE candidates gathering timed out.");
-            _offerResolver = null;
-
-            var updatedOffer = _peerConnection.LocalDescription;
+            var offerCustom = JsonUtility.FromJson<SessionDescription>(offerJson);
+            var offer = (RTCSessionDescription)offerCustom;
+            await _peerConnection.SetRemoteDescription(ref offer);
+            var answerOp = _peerConnection.CreateAnswer();
+            await answerOp;
+            var answer = answerOp.Desc;
+            var answerCustom = (SessionDescription)answer;
+            var answerJson = JsonUtility.ToJson(answerCustom);
+            Debug.Log("[WebRTC] Created answer\n" + answerJson);
+            await _peerConnection.SetLocalDescription(ref answer);
+            return answerJson;
             // TODO: log chosen candidates ~dsygocki 2026-04-10
-
-            var offerJson = JsonUtility.ToJson((SessionDescription)updatedOffer);
-            Debug.Log("[WebRTC] Offer created\n" + offerJson);
-            OfferCreated?.Invoke(offerJson);
         }
 
-        public async void CreateOffer(bool restart)
+        public Task<string> CreateAnswerAsync(string offerJson)
         {
             // TODO: handle async ~dsygocki 2026-04-10
-            try
-            {
-                await CreateOfferAsync(restart);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-
-        public void OnAnswer(string answerJson)
-        {
-            Debug.Log("[WebRTC] Answer received\n" + answerJson);
-            var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
-            var answer = (RTCSessionDescription)answerCustom;
-            _ = _peerConnection.SetRemoteDescription(ref answer); // TODO: handle async ~dsygocki 2026-04-10
-        }
-
-        public void SetIceServers(string iceServersJson)
-        {
-            var config = _peerConnection.GetConfiguration();
-            config.iceServers = JsonUtility.FromJson<IceServersResponse>(iceServersJson).iceServers;
-            var errorType = _peerConnection.SetConfiguration(ref config);
-            if (errorType is not RTCErrorType.None)
-                throw new InvalidOperationException($"Error updating ICE server list in RTC configuration: {errorType}");
+            return CreateAnswer(offerJson).AsTask();
         }
 
         private void OnIceConnectionStateChanged(RTCIceConnectionState newState)
@@ -252,28 +205,34 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
         }
 
-        private void OnIceCandidate(RTCIceCandidate candidate)
-        {
-            var candidateJson = JsonUtility.ToJson(candidate.SdpMLineIndex.HasValue
-                ? new IceCandidateInitWithSdpMLineIndex(candidate)
-                : new IceCandidateInitWithoutSdpMLineIndex(candidate));
-            Debug.Log("[WebRTC] Candidate received\n" + candidateJson);
-            try
-            {
-                IceCandidateCreated?.Invoke(candidateJson);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
+        #region Unused
 
-            _ = _offerResolver?.TrySetResult();
+        public void ReceiveReliable()
+        { }
+
+        public void ReceiveUnreliable()
+        { }
+
+        public bool ReceiveReliableOnce() => true;
+        public bool ReceiveUnreliableOnce() => true;
+
+        #endregion
+
+        public void Close()
+        {
+            _reliableDc?.Close();
+            _unreliableDc?.Close();
+            _peerConnection.Close();
         }
 
-        [Serializable]
-        internal struct IceServersResponse
+        public void Dispose()
         {
-            public RTCIceServer[] iceServers;
+            Close();
+            _reliableDc?.Dispose();
+            _reliableDc = null;
+            _unreliableDc?.Dispose();
+            _unreliableDc = null;
+            _peerConnection.Dispose();
         }
     }
 }

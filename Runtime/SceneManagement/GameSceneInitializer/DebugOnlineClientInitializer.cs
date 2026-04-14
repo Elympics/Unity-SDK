@@ -41,9 +41,14 @@ namespace Elympics
             else
             {
                 testPlayerData = new ElympicsGameConfig.InitialUserData();
-                ElympicsLogger.LogWarning("Using empty initial user data, " + $"because no data for player ID: {playerIndex} in \"Test players\" list. " + $"The list has only {_elympicsGameConfig.TestPlayers.Count} entries. " + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+                ElympicsLogger.LogWarning("Using empty initial user data, "
+                    + $"because no data for player ID: {playerIndex} in \"Test players\" list. "
+                    + $"The list has only {_elympicsGameConfig.TestPlayers.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             }
+
             _initialPlayerData = new InitialMatchPlayerDataGuid(ElympicsPlayer.FromIndex(playerIndex), testPlayerData.gameEngineData, testPlayerData.matchmakerData);
+            Connect().Forget();
         }
 
         private async UniTask Connect()
@@ -81,16 +86,16 @@ namespace Elympics
             ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData, _initialPlayerData.GameEngineData, testMatchData.queueName, regionName, false);
 
             _matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData
-            {
-                GameId = new Guid(_elympicsGameConfig.GameId),
-                GameVersion = _elympicsGameConfig.GameVersion,
-                QueueName = testMatchData.queueName,
-                RegionName = regionName,
-                GameEngineData = _initialPlayerData.GameEngineData,
-                MatchmakerData = _initialPlayerData.MatchmakerData,
-            },
-            result.Value,
-            cts.Token);
+                {
+                    GameId = new Guid(_elympicsGameConfig.GameId),
+                    GameVersion = _elympicsGameConfig.GameVersion,
+                    QueueName = testMatchData.queueName,
+                    RegionName = regionName,
+                    GameEngineData = _initialPlayerData.GameEngineData,
+                    MatchmakerData = _initialPlayerData.MatchmakerData,
+                },
+                result.Value,
+                cts.Token);
         }
 
         private void OnMatchmakingSucceeded(MatchmakingFinishedData matchData)
@@ -108,26 +113,34 @@ namespace Elympics
             logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
-                ? new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId), logger,
-                    (delay) => WebRtcFactory.CreateInstance(delay), iceServersUri)
+                ? new WebGameServerClient(serializer,
+                    config,
+                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
+                    logger,
+                    WebRtcFactory.CreateInstance,
+                    iceServersUri)
                 : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
-            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, logger, matchData.TcpUdpServerAddress, matchData.WebServerAddress, matchData.UserSecret, _elympicsGameConfig.UseWeb);
+            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
+                logger,
+                matchData.TcpUdpServerAddress,
+                matchData.WebServerAddress,
+                matchData.UserSecret,
+                _elympicsGameConfig.UseWeb);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
             var matchPlayerCount = matchData.MatchedPlayers.Length;
             if (matchPlayerCount > _elympicsGameConfig.MaxPlayers)
-                throw new ElympicsException(
-                    $"Match player count ({matchPlayerCount}) exceeds configured {nameof(ElympicsGameConfig.MaxPlayers)} ({_elympicsGameConfig.MaxPlayers}).");
+                throw new ElympicsException($"Match player count ({matchPlayerCount}) exceeds configured {nameof(ElympicsGameConfig.MaxPlayers)} ({_elympicsGameConfig.MaxPlayers}).");
             _client.InitializeInternal(_elympicsGameConfig,
-            matchConnectClient,
-            matchClient,
-            new InitialMatchPlayerDataGuid(_initialPlayerData.Player, _initialPlayerData.GameEngineData, _initialPlayerData.MatchmakerData)
-            {
-                UserId = _initialPlayerData.UserId,
-                IsBot = false,
-            },
-            ElympicsBehavioursManager,
-            logger,
-            matchPlayerCount);
+                matchConnectClient,
+                matchClient,
+                new InitialMatchPlayerDataGuid(_initialPlayerData.Player, _initialPlayerData.GameEngineData, _initialPlayerData.MatchmakerData)
+                {
+                    UserId = _initialPlayerData.UserId,
+                    IsBot = false,
+                },
+                ElympicsBehavioursManager,
+                logger,
+                matchPlayerCount);
         }
     }
 }

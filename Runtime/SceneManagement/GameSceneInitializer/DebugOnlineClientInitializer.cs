@@ -86,14 +86,14 @@ namespace Elympics
             ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData, _initialPlayerData.GameEngineData, testMatchData.queueName, regionName, false);
 
             _matchmakerClient.JoinMatchmakerAsync(new JoinMatchmakerData
-                {
-                    GameId = new Guid(_elympicsGameConfig.GameId),
-                    GameVersion = _elympicsGameConfig.GameVersion,
-                    QueueName = testMatchData.queueName,
-                    RegionName = regionName,
-                    GameEngineData = _initialPlayerData.GameEngineData,
-                    MatchmakerData = _initialPlayerData.MatchmakerData,
-                },
+            {
+                GameId = new Guid(_elympicsGameConfig.GameId),
+                GameVersion = _elympicsGameConfig.GameVersion,
+                QueueName = testMatchData.queueName,
+                RegionName = regionName,
+                GameEngineData = _initialPlayerData.GameEngineData,
+                MatchmakerData = _initialPlayerData.MatchmakerData,
+            },
                 result.Value,
                 cts.Token);
         }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GameBotCore.V1._2
 {
-    public class BotConfiguration : GameBotCore.V1._1.BotConfiguration
+    public class BotConfiguration : _1.BotConfiguration
     {
         public List<string>? MatchPlayers { get; set; }
     }

@@ -2,7 +2,7 @@
 
 namespace GameBotCore.V1._3
 {
-    public class BotConfiguration : GameBotCore.V1._2.BotConfiguration
+    public class BotConfiguration : _2.BotConfiguration
     {
         public byte[]? GameEngineData { get; set; }
 

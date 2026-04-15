@@ -76,6 +76,7 @@ namespace ProtoUnityGameEngine {
 
   }
   #region Messages
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class InGameDataReliableReceivedMsg : pb::IMessage<InGameDataReliableReceivedMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -260,7 +261,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -283,7 +288,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -302,6 +311,7 @@ namespace ProtoUnityGameEngine {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class InGameDataUnreliableReceivedMsg : pb::IMessage<InGameDataUnreliableReceivedMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -486,7 +496,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -509,7 +523,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -528,6 +546,7 @@ namespace ProtoUnityGameEngine {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class PlayerConnectedMsg : pb::IMessage<PlayerConnectedMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -683,7 +702,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -702,7 +725,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -717,6 +744,7 @@ namespace ProtoUnityGameEngine {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class PlayerDisconnectedMsg : pb::IMessage<PlayerDisconnectedMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -872,7 +900,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -891,7 +923,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -906,6 +942,7 @@ namespace ProtoUnityGameEngine {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class InitialMatchDataMsg : pb::IMessage<InitialMatchDataMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -969,11 +1006,13 @@ namespace ProtoUnityGameEngine {
 
     /// <summary>Field number for the "matchId" field.</summary>
     public const int MatchIdFieldNumber = 2;
+    private readonly static string MatchIdDefaultValue = "";
+
     private string matchId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string MatchId {
-      get { return matchId_ ?? ""; }
+      get { return matchId_ ?? MatchIdDefaultValue; }
       set {
         matchId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
@@ -993,11 +1032,13 @@ namespace ProtoUnityGameEngine {
 
     /// <summary>Field number for the "queueName" field.</summary>
     public const int QueueNameFieldNumber = 3;
+    private readonly static string QueueNameDefaultValue = "";
+
     private string queueName_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string QueueName {
-      get { return queueName_ ?? ""; }
+      get { return queueName_ ?? QueueNameDefaultValue; }
       set {
         queueName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
@@ -1017,11 +1058,13 @@ namespace ProtoUnityGameEngine {
 
     /// <summary>Field number for the "regionName" field.</summary>
     public const int RegionNameFieldNumber = 4;
+    private readonly static string RegionNameDefaultValue = "";
+
     private string regionName_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RegionName {
-      get { return regionName_ ?? ""; }
+      get { return regionName_ ?? RegionNameDefaultValue; }
       set {
         regionName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
@@ -1063,11 +1106,13 @@ namespace ProtoUnityGameEngine {
 
     /// <summary>Field number for the "externalGameData" field.</summary>
     public const int ExternalGameDataFieldNumber = 7;
+    private readonly static pb::ByteString ExternalGameDataDefaultValue = pb::ByteString.Empty;
+
     private pb::ByteString externalGameData_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pb::ByteString ExternalGameData {
-      get { return externalGameData_ ?? pb::ByteString.Empty; }
+      get { return externalGameData_ ?? ExternalGameDataDefaultValue; }
       set {
         externalGameData_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
@@ -1234,8 +1279,8 @@ namespace ProtoUnityGameEngine {
       if (other.HasRegionName) {
         RegionName = other.RegionName;
       }
-      customRoomDatas_.Add(other.customRoomDatas_);
-      customMatchmakingData_.Add(other.customMatchmakingData_);
+      customRoomDatas_.MergeFrom(other.customRoomDatas_);
+      customMatchmakingData_.MergeFrom(other.customMatchmakingData_);
       if (other.HasExternalGameData) {
         ExternalGameData = other.ExternalGameData;
       }
@@ -1250,7 +1295,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1293,7 +1342,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1335,6 +1388,7 @@ namespace ProtoUnityGameEngine {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static partial class Types {
+      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class UserData : pb::IMessage<UserData>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
@@ -1453,11 +1507,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "roomId" field.</summary>
         public const int RoomIdFieldNumber = 6;
+        private readonly static string RoomIdDefaultValue = "";
+
         private string roomId_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public string RoomId {
-          get { return roomId_ ?? ""; }
+          get { return roomId_ ?? RoomIdDefaultValue; }
           set {
             roomId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
           }
@@ -1477,11 +1533,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "teamIndex" field.</summary>
         public const int TeamIndexFieldNumber = 7;
+        private readonly static uint TeamIndexDefaultValue = 0;
+
         private uint teamIndex_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public uint TeamIndex {
-          get { if ((_hasBits0 & 1) != 0) { return teamIndex_; } else { return 0; } }
+          get { if ((_hasBits0 & 1) != 0) { return teamIndex_; } else { return TeamIndexDefaultValue; } }
           set {
             _hasBits0 |= 1;
             teamIndex_ = value;
@@ -1502,11 +1560,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "telegramId" field.</summary>
         public const int TelegramIdFieldNumber = 8;
+        private readonly static string TelegramIdDefaultValue = "";
+
         private string telegramId_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public string TelegramId {
-          get { return telegramId_ ?? ""; }
+          get { return telegramId_ ?? TelegramIdDefaultValue; }
           set {
             telegramId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
           }
@@ -1526,11 +1586,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "address" field.</summary>
         public const int AddressFieldNumber = 9;
+        private readonly static string AddressDefaultValue = "";
+
         private string address_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public string Address {
-          get { return address_ ?? ""; }
+          get { return address_ ?? AddressDefaultValue; }
           set {
             address_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
           }
@@ -1550,11 +1612,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "nickname" field.</summary>
         public const int NicknameFieldNumber = 10;
+        private readonly static string NicknameDefaultValue = "";
+
         private string nickname_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public string Nickname {
-          get { return nickname_ ?? ""; }
+          get { return nickname_ ?? NicknameDefaultValue; }
           set {
             nickname_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
           }
@@ -1574,11 +1638,13 @@ namespace ProtoUnityGameEngine {
 
         /// <summary>Field number for the "nicknameType" field.</summary>
         public const int NicknameTypeFieldNumber = 11;
+        private readonly static string NicknameTypeDefaultValue = "";
+
         private string nicknameType_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public string NicknameType {
-          get { return nicknameType_ ?? ""; }
+          get { return nicknameType_ ?? NicknameTypeDefaultValue; }
           set {
             nicknameType_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
           }
@@ -1850,7 +1916,7 @@ namespace ProtoUnityGameEngine {
           if (other.HasNicknameType) {
             NicknameType = other.NicknameType;
           }
-          customData_.Add(other.customData_);
+          customData_.MergeFrom(other.customData_);
           _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
         }
 
@@ -1862,7 +1928,11 @@ namespace ProtoUnityGameEngine {
         #else
           uint tag;
           while ((tag = input.ReadTag()) != 0) {
-            switch(tag) {
+          if ((tag & 7) == 4) {
+            // Abort on any end group tag.
+            return;
+          }
+          switch(tag) {
               default:
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
                 break;
@@ -1926,7 +1996,11 @@ namespace ProtoUnityGameEngine {
         void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
           uint tag;
           while ((tag = input.ReadTag()) != 0) {
-            switch(tag) {
+          if ((tag & 7) == 4) {
+            // Abort on any end group tag.
+            return;
+          }
+          switch(tag) {
               default:
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
                 break;
@@ -1986,6 +2060,7 @@ namespace ProtoUnityGameEngine {
 
       }
 
+      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class CustomRoomData : pb::IMessage<CustomRoomData>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
@@ -2118,7 +2193,7 @@ namespace ProtoUnityGameEngine {
           if (other == null) {
             return;
           }
-          customRoomData_.Add(other.customRoomData_);
+          customRoomData_.MergeFrom(other.customRoomData_);
           _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
         }
 
@@ -2130,7 +2205,11 @@ namespace ProtoUnityGameEngine {
         #else
           uint tag;
           while ((tag = input.ReadTag()) != 0) {
-            switch(tag) {
+          if ((tag & 7) == 4) {
+            // Abort on any end group tag.
+            return;
+          }
+          switch(tag) {
               default:
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
                 break;
@@ -2149,7 +2228,11 @@ namespace ProtoUnityGameEngine {
         void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
           uint tag;
           while ((tag = input.ReadTag()) != 0) {
-            switch(tag) {
+          if ((tag & 7) == 4) {
+            // Abort on any end group tag.
+            return;
+          }
+          switch(tag) {
               default:
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
                 break;
@@ -2169,6 +2252,7 @@ namespace ProtoUnityGameEngine {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TickMsg : pb::IMessage<TickMsg>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2324,7 +2408,11 @@ namespace ProtoUnityGameEngine {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2343,7 +2431,11 @@ namespace ProtoUnityGameEngine {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

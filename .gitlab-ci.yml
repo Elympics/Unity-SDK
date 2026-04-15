@@ -2,6 +2,7 @@ variables:
   NODE_VERSION: "18.13.0"
   DOTNET_VERSION: "8.0"
   MESSAGEPACK_VERSION: "2.5.124"
+  PROTOC_VERSION: "34.1"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
   UNITY_VERSION: 2021.3.16f1
   UNITY_ARCH: linux-il2cpp-1.0.1
@@ -256,8 +257,6 @@ verify-formatting:
     reports:
       codequality: format-report.codequality.json
 
-
-
 verify-messagepack-generated:
   extends:
     - .unity_image
@@ -271,7 +270,7 @@ verify-messagepack-generated:
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
     - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-    - apt-get update && apt-get install -y --no-install-recommends jq dotnet-sdk-$DOTNET_VERSION
+    - apt-get update && apt-get install -y --no-install-recommends dotnet-sdk-$DOTNET_VERSION
     - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
   script:
     - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'
@@ -280,6 +279,32 @@ verify-messagepack-generated:
     when: always
     paths:
       - MessagePackGenerated.cs
+    expire_in: 1 day
+
+verify-compiled-protos:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: check
+  needs:
+    - job: create-testing-project
+  variables:
+    GIT_DEPTH: 1
+    PROTO_SCHEMAS_DIR: "${PACKAGE_DIR}/Runtime/GameEngine/Libraries/Proto/Protos"
+    ORIGINAL_COMPILED_PATH: ../ProtosCompiled
+    CURRENT_COMPILED_PATH: ../ProtosCompiledCurrent
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends unzip
+    - wget "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" -O protoc.zip
+    - unzip -o protoc.zip -d /usr/local
+  script:
+    - cd "$PROTO_SCHEMAS_DIR"
+    - PROTOS_OUT_DIR="$CURRENT_COMPILED_PATH" ./.compile_protos.sh
+    - diff -rx "*.meta" "$ORIGINAL_COMPILED_PATH" "$CURRENT_COMPILED_PATH"
+  artifacts:
+    when: always
+    paths:
+      - "$PROTO_SCHEMAS_DIR/$CURRENT_COMPILED_PATH"
     expire_in: 1 day
 
 .trigger:

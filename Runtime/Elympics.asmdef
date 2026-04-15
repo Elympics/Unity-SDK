@@ -12,16 +12,14 @@
         "Elympics.WebRtc",
         "Elympics.Proto",
         "GameEngineCore",
-        "GameBotCore"
+        "GameBotCore",
+        "UnityConnectors"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "UnityConnectors-packed2.1.dll",
-        "GameEngineCore.dll",
-        "GameBotCore.dll",
         "websocket-sharp.dll"
     ],
     "autoReferenced": true,

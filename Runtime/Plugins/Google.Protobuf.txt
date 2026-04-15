@@ -1,0 +1,2 @@
+Google.Protobuf.dll/3.22.1
+netstandard2.0

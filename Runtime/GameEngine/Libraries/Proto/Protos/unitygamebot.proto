@@ -1,0 +1,34 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "ProtoUnityGameBot";
+
+package grpc_server;
+
+message InGameDataReliableReceivedMsg {
+  bytes data = 1;
+}
+
+message InGameDataUnreliableReceivedMsg {
+  bytes data = 1;
+}
+
+message TickMsg {
+  int64 tick = 1;
+}
+
+message BotConfiguration1Msg {
+  string matchId = 1;
+  string userId = 2;
+  double difficulty = 3;
+}
+
+message BotConfiguration2Msg {
+  BotConfiguration1Msg botConfiguration1 = 1;
+  repeated string matchPlayers = 2;
+}
+
+message BotConfiguration3Msg {
+  BotConfiguration2Msg botConfiguration2 = 1;
+  repeated float matchmakerData = 2;
+  bytes gameEngineData = 3;
+}

@@ -8,7 +8,8 @@
         "MessagePack",
         "Elympics.WebRtc",
         "Elympics.Proto",
-        "GameEngineCore"
+        "GameEngineCore",
+        "UnityConnectors"
     ],
     "includePlatforms": [],
     "excludePlatforms": [
@@ -35,9 +36,7 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "NSubstitute.dll",
-        "Newtonsoft.Json.dll",
-        "GameEngineCore.dll",
-        "UnityConnectors-packed2.1.dll"
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

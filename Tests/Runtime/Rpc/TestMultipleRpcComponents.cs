@@ -40,12 +40,10 @@ namespace Elympics.Tests
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();
             Assert.NotNull(factory);
 
-            var maxPlayers = 2;
-            ElympicsWorld.Current = new ElympicsWorld(
-                maxPlayers,
-                NetworkIdConstants.MaxIndex + 1,
-                NetworkIdConstants.MaxNetworkObjects);
+            const int maxPlayers = 2;
+            ElympicsWorld.Current = new ElympicsWorld(maxPlayers);
 
+            _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, true, false));
             _elympicsBase.InitializeInternal(ScriptableObject.CreateInstance<ElympicsGameConfig>(), behavioursManager);
             behavioursManager.factory = factory;
 
@@ -72,27 +70,29 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void RpcMethodMapShouldBeCorrectlyRegisteredAndSortedByComponentIndexAndByMethodNameAlphabetically()
+        public void RpcMethodMapShouldBeCorrectlyRegisteredAndSortedByComponentIndexAndFromDerivedToBaseAndByMethodNameAlphabetically()
         {
             var sortedRpcMethods = new RpcMethod[]
             {
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingServerToPlayers)), _rpcHolder),
-                new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethod)), _rpcHolder),
-                new(_rpcHolder.PlayerToServerMethodPrivateInfo, _rpcHolder),
+                new(RpcHolderComplex.PlayerToServerMethodPrivateInfo, _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongPlayerToServer)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PongServerToPlayers)), _rpcHolder),
-                new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethod)), _rpcHolder),
                 new(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)), _rpcHolder),
-                new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethod)), _anotherRpcHolder),
+                new(RpcHolder.ParentPlayerToServerMethodPrivateInfo, _rpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _rpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _rpcHolder),
                 new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethodWithArgs)), _anotherRpcHolder),
-                new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethod)), _anotherRpcHolder),
                 new(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethodWithArgs)), _anotherRpcHolder),
+                new(RpcHolder.ParentPlayerToServerMethodPrivateInfo, _anotherRpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _anotherRpcHolder),
+                new(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _anotherRpcHolder),
             };
 
             for (ushort methodId = 0; methodId < sortedRpcMethods.Length; methodId++)
-                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId]);
+                Assert.AreEqual(sortedRpcMethods[methodId], _elympicsBehaviour.RpcMethods[methodId].Method);
         }
 
         [Test]
@@ -103,9 +103,11 @@ namespace Elympics.Tests
             var expectedArgs = (false, byte.MinValue, sbyte.MinValue, ushort.MinValue, short.MinValue, uint.MinValue,
                 int.MinValue, ulong.MinValue, long.MinValue, float.MinValue, double.MinValue, char.MinValue, "");
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PlayerToServerMethodWithArgs)), _rpcHolder);
-            var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.PlayerToServerMethod)), _anotherRpcHolder);
+            var secondRpcMethod = new RpcMethod(typeof(RpcHolder).GetMethod(nameof(RpcHolder.PlayerToServerMethod)), _anotherRpcHolder);
 
-            _rpcHolder.PlayerToServerMethodWithArgs(expectedArgs.Item1,
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            _rpcHolder.PlayerToServerMethodWithArgs(
+                expectedArgs.Item1,
                 expectedArgs.Item2,
                 expectedArgs.Item3,
                 expectedArgs.Item4,
@@ -122,22 +124,21 @@ namespace Elympics.Tests
             _anotherRpcHolder.PlayerToServerMethod();
 
             Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
-            Assert.AreEqual(2, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(2, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
-            Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
-            var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[0].MethodId;
-            var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[1].MethodId;
-            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId]);
-            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId]);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke.Count);
+            var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].MethodId;
+            var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[1].MethodId;
+            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId].Method);
+            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId].Method);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.PlayerToServerMethodLastCallArguments.HasValue);
             var actualArgs = _rpcHolder.PlayerToServerMethodLastCallArguments.Value;
@@ -153,9 +154,11 @@ namespace Elympics.Tests
             var expectedArgs = (true, byte.MaxValue, sbyte.MaxValue, ushort.MaxValue, short.MaxValue, uint.MaxValue,
                 int.MaxValue, ulong.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, char.MaxValue, "Some test string");
             var firstRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.ServerToPlayersMethodWithArgs)), _rpcHolder);
-            var secondRpcMethod = new RpcMethod(typeof(RpcHolderSimple).GetMethod(nameof(RpcHolderSimple.ServerToPlayersMethod)), _anotherRpcHolder);
+            var secondRpcMethod = new RpcMethod(typeof(RpcHolder).GetMethod(nameof(RpcHolder.ServerToPlayersMethod)), _anotherRpcHolder);
 
-            _rpcHolder.ServerToPlayersMethodWithArgs(expectedArgs.Item1,
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            _rpcHolder.ServerToPlayersMethodWithArgs(
+                expectedArgs.Item1,
                 expectedArgs.Item2,
                 expectedArgs.Item3,
                 expectedArgs.Item4,
@@ -172,22 +175,21 @@ namespace Elympics.Tests
             _anotherRpcHolder.ServerToPlayersMethod();
 
             Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
-            Assert.AreEqual(2, _elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.AreEqual(2, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
 
             _elympicsBase.SendQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
-            Assert.AreEqual(1, _elympicsBase.RpcMessagesToInvoke.Count);
-            Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke[0].Messages.Count);
-            var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[0].MethodId;
-            var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].Messages[1].MethodId;
-            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId]);
-            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId]);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(2, _elympicsBase.RpcMessagesToInvoke.Count);
+            var receivedFirstRpcMethodId = _elympicsBase.RpcMessagesToInvoke[0].MethodId;
+            var receivedSecondRpcMethodId = _elympicsBase.RpcMessagesToInvoke[1].MethodId;
+            Assert.AreEqual(firstRpcMethod, _elympicsBehaviour.RpcMethods[receivedFirstRpcMethodId].Method);
+            Assert.AreEqual(secondRpcMethod, _elympicsBehaviour.RpcMethods[receivedSecondRpcMethodId].Method);
 
             _elympicsBase.InvokeQueuedRpcMessages();
 
-            Assert.Zero(_elympicsBase.RpcMessagesToSend.Messages.Count);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
             Assert.IsTrue(_rpcHolder.ServerToPlayersMethodLastCallArguments.HasValue);
             var actualArgs = _rpcHolder.ServerToPlayersMethodLastCallArguments.Value;

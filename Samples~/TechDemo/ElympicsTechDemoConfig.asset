@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: ElympicsTechDemoConfig
   m_EditorClassIdentifier: 
-  gameName: TechDemo
+  gameName: Tech Demo sample
   gameId: 4f1a8596-8ba7-45c7-89dc-50d8562e4796
   gameVersion: 22
-  players: 1
-  gameplayScene: Assets/Samples/Rooms/Scenes/RoomSampleGameplayScene.unity
-  gameplaySceneAsset: {fileID: 102900000, guid: 5776eba0313d3484791b09a933dc96ec,
+  maxPlayers: 2
+  gameplayScene: Assets/Samples/TechDemo/TechDemo.unity
+  gameplaySceneAsset: {fileID: 102900000, guid: 69dd9c1d70a588c4fba23ad579800771,
     type: 3}
   botsInServer: 1
   useWeb: 0
@@ -28,6 +28,7 @@ MonoBehaviour:
     synchronizerTimeout: 20
     minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
+    webRtcOfferAnnounceDelay: 1
     webRtcOfferTimeout: 5
     webRtcOfferMaxRetries: 5
     webRtcOfferRetryDelay: 1
@@ -40,7 +41,6 @@ MonoBehaviour:
   inputToSendBufferSize: 3
   maxAllowedLagInTicks: 25
   forceJumpThresholdInTicks: 6
-  prediction: 1
   predictionLimitInTicks: 25
   detailedNetworkLog: 0
   mode: 1
@@ -48,13 +48,23 @@ MonoBehaviour:
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
+  recordSnapshots: 0
+  snapshotFilePath: 
   playerIndexForHalfRemoteMode: 0
   testMatchData:
     queueName: 
     regionName: 
+    roomCustomData: []
+    customMatchmakingData: []
   testPlayers:
-  - userId: p0
-    isBot: 0
+  - isBot: 0
     botDifficulty: 0
     gameEngineData: 
     matchmakerData: []
+    customDatas: []
+  halfRemoteLagConfig:
+    DelayMs: 0
+    PacketLoss: 0
+    JitterMs: 0
+    RandomSeed: 4206969
+  reconciliationFrequency: 0

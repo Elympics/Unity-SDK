@@ -3,7 +3,8 @@ set -e
 
 echo "Creating Testing Project"
 PACKAGE_FOLDER=${PACKAGE_DIR}/
-ASSETS_FOLDER=${UNITY_DIR}/Assets/
+ASSETS_FOLDER=${UNITY_DIR}/Assets
+PACKAGES_FOLDER=${UNITY_DIR}/Packages
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -createProject "$UNITY_DIR" \
@@ -21,6 +22,26 @@ else
   exit 1
 fi
 
+echo "Removing default packages"
+
+echo '{ "dependencies": { } }' > "${PACKAGES_FOLDER}/manifest.json"
+
+${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+  -projectPath "$UNITY_DIR" \
+  -logFile /dev/stdout \
+  -batchmode \
+  -nographics \
+  -quit
+
+UNITY_EXIT_CODE=$?
+
+if [ $UNITY_EXIT_CODE -eq 0 ]; then
+  echo "Run succeeded, no failures occurred"
+else
+  echo "Failed to remove packages"
+  exit 1
+fi
+
 echo "Moving Package files to appropriate directories"
 
 mkdir -p "$PACKAGE_FOLDER"
@@ -29,6 +50,6 @@ cp -r Runtime{,.meta} "$PACKAGE_FOLDER"
 cp -r Tests{,.meta} "$PACKAGE_FOLDER"
 cp package.json{,.meta} "$PACKAGE_FOLDER"
 cp -r Samples~ "$PACKAGE_FOLDER"
-mv "${PACKAGE_FOLDER}Samples~" "${ASSETS_FOLDER}Samples"
+mv "${PACKAGE_FOLDER}Samples~" "${ASSETS_FOLDER}/Samples"
 
 echo "Elympics moved ✅"

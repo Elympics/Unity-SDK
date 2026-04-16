@@ -2,33 +2,105 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+#nullable enable
+
 namespace Elympics
 {
     internal class RpcMethodsContainer
     {
+        public const BindingFlags MethodFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+
         private readonly Dictionary<ushort, RpcMethod> _rpcMethods = new();
+        private readonly Dictionary<ushort, RpcMethodDetails> _rpcMethodDetails = new();
         private readonly Dictionary<RpcMethod, ushort> _rpcMethodIds = new();
 
         private ushort _methodIdCounter;
 
-        public RpcMethod this[ushort methodId] => _rpcMethods[methodId];
+        public (RpcMethod Method, RpcMethodDetails Details) this[ushort methodId] =>
+            (_rpcMethods[methodId], _rpcMethodDetails[methodId]);
 
         public void CollectFrom(IObservable observable)
         {
-            var sortedTypeMethods = observable.GetType()
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .OrderBy(x => x.Name)
-                .ToArray();
+            var type = observable.GetType();
+            // RPC method declaring type has to be a subclass of ElympicsMonoBehaviour
+            if (!type.IsSubclassOf(typeof(ElympicsMonoBehaviour)))
+                return;
+            var sortedTypeMethods = new List<MethodInfo>();
+            while (type is not null)
+            {
+                // RPC method cannot be static
+                var methods = type.GetMethods(MethodFlags);
+                var filteredMethods = methods
+                    .Where(m => m.CustomAttributes.Any(a => a.AttributeType == typeof(ElympicsRpcAttribute)))
+                    .Where(m => IsValid(m, methods));
+                sortedTypeMethods.AddRange(filteredMethods.OrderBy(x => x.Name));
+                type = type.BaseType;
+            }
             foreach (var method in sortedTypeMethods)
             {
-                var attributes = method.CustomAttributes;
-                if (attributes.All(attribute => attribute.AttributeType != typeof(ElympicsRpcAttribute)))
-                    continue;
+                ElympicsLogger.LogDebug($"Registering RPC method: {method.GetFullName()} on object of type {observable.GetType().FullName} (name: {((ElympicsMonoBehaviour)observable).name})");
                 var rpcMethod = new RpcMethod(method, observable);
+                var rpcMethodDetails = new RpcMethodDetails(rpcMethod);
                 _rpcMethods.Add(_methodIdCounter, rpcMethod);
+                _rpcMethodDetails.Add(_methodIdCounter, rpcMethodDetails);
                 _rpcMethodIds.Add(rpcMethod, _methodIdCounter);
                 _methodIdCounter++;
             }
+        }
+
+        private static bool IsValid(MethodInfo method, MethodInfo[] typeMethods)
+        {
+            var isValid = true;
+            if (method.ReturnType != typeof(void))
+            {
+                _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.NonVoidReturn(method.GetFullName()));
+                isValid = false;
+            }
+            if (method.IsAbstract || method.IsVirtual)
+            {
+                _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Virtual(method.GetFullName()));
+                isValid = false;
+            }
+            if (method.ContainsGenericParameters)
+            {
+                _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Generic(method.GetFullName()));
+                isValid = false;
+            }
+            if (typeMethods.Count(m => m.Name == method.Name) > 1)
+            {
+                _ = ElympicsLogger.LogException(InvalidRpcMethodDefinitionException.Overloaded(method.GetFullName()));
+                isValid = false;
+            }
+            var unacceptableParameters = method.GetParameters()
+                .Select((p, i) => (Index: i, Parameter: p))
+                .Where(tuple => !tuple.Parameter.ParameterType.IsPrimitive)
+                .Where(tuple => tuple.Parameter.ParameterType != typeof(string))
+                .ToList();
+            ParameterInfo? metadataParameter = null;
+            for (var i = 0; i < unacceptableParameters.Count; i++)
+            {
+                var parameter = unacceptableParameters[i].Parameter;
+                if (parameter.ParameterType.FullName != typeof(RpcMetadata).FullName)
+                {
+                    _ = ElympicsLogger.LogException(new UnsupportedParameterTypeException(method.GetFullName(), parameter.Position, parameter.Name, parameter.ParameterType.FullName));
+                    isValid = false;
+                    continue;
+                }
+                if (parameter is { IsOptional: false, HasDefaultValue: false })
+                {
+                    _ = ElympicsLogger.LogException(InvalidRpcMetadataParameterDefinitionException.FromNonOptional(method.GetFullName(), parameter.Position, parameter.Name));
+                    isValid = false;
+                    continue;
+                }
+                if (metadataParameter is null)
+                {
+                    metadataParameter = parameter;
+                    continue;
+                }
+                _ = ElympicsLogger.LogException(InvalidRpcMetadataParameterDefinitionException.FromDuplicated(method.GetFullName(), parameter.Position, parameter.Name, metadataParameter.Position, metadataParameter.Name));
+                isValid = false;
+            }
+            return isValid;
         }
 
         public ushort GetIdOf(RpcMethod rpcMethod) => _rpcMethodIds[rpcMethod];

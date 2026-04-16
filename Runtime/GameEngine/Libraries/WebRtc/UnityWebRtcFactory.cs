@@ -52,6 +52,11 @@ namespace Elympics.Libraries
                 HandleInstanceDestroy(_instanceId);
             }
 
+            public void SetIceServers(string iceServersJson)
+            {
+                WebRtcSetIceServers(_instanceId, iceServersJson);
+            }
+
             public void CreateOffer(bool restart)
             {
                 WebRtcCreateOffer(_instanceId, restart);
@@ -112,6 +117,9 @@ namespace Elympics.Libraries
 
         [DllImport("__Internal")]
         public static extern void WebRtcFree(int instanceId);
+
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetIceServers(int instanceId, string iceServersJson);
 
         [DllImport("__Internal")]
         public static extern void WebRtcSetOfferAnnouncingDelay(int delayMs);

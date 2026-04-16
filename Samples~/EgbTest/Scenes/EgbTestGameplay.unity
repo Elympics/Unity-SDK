@@ -959,7 +959,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 0
-  networkId: 1
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 3
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0

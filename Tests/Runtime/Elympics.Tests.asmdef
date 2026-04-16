@@ -32,7 +32,8 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "NSubstitute.dll",
-        "Newtonsoft.Json.dll"
+        "Newtonsoft.Json.dll",
+        "GameEngineCore.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

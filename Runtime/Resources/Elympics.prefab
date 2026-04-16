@@ -58,7 +58,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 2000000100
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 0
   predictableFor:
     playerIndex: -3
   isUpdatableForNonOwners: 0
@@ -120,7 +122,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 2000000001
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 1
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
@@ -196,7 +200,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceNetworkId: 1
-  networkId: 2000000000
+  migratedAutoNetworkId: 1
+  autoAssignNetworkId: 1
+  networkId: 2
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0

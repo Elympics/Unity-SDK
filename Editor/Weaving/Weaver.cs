@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Elympics.Editor.Weaving.Components;
@@ -22,6 +23,9 @@ namespace Elympics.Editor.Weaving
     [InitializeOnLoad]
     internal static class Weaver
     {
+        private const string EditorWeavingAssemblyName = "Elympics.Editor.Weaving.dll";
+        private const string RuntimeWeavingAssemblyName = "Elympics.Weaving.dll";
+
         private static readonly ComponentController Components = new(new ElympicsRpcComponent());
         private static readonly Stopwatch Timer = new();
 
@@ -88,6 +92,7 @@ namespace Elympics.Editor.Weaving
             using var lockScope = new LockReloadAssembliesScope();
 
             var processedAssemblies = assemblies.Where(assembly => WeavedAssemblyNames.Contains(Path.GetFileName(assembly.outputPath))).ToArray();
+            // ReSharper disable once RedundantAssignment
             var skippedAssemblies = assemblies.Where(assembly => !WeavedAssemblyNames.Contains(Path.GetFileName(assembly.outputPath))).ToArray();
             ElympicsLogger.LogDebug("[Weaver] Processing assemblies...\n"
                 + $"To process ({processedAssemblies.Length}): [{string.Join(", ", processedAssemblies.Select(assembly => assembly.outputPath))}]\n"
@@ -99,6 +104,7 @@ namespace Elympics.Editor.Weaving
 
             static void WeaveAssembly(string assemblyPath)
             {
+                // ReSharper disable once RedundantAssignment
                 var runId = counter++;
                 ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly called");
                 Timer.Restart();
@@ -156,17 +162,33 @@ namespace Elympics.Editor.Weaving
             WeaveAssemblies(CompilationPipeline.GetAssemblies());
         }
 
+        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private class AssetPostprocessing : AssetPostprocessor
         {
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
             {
                 ElympicsLogger.LogDebug($"[Weaver] OnPostprocessAllAssets ({importedAssets.Length} imported, {deletedAssets.Length} deleted, {movedFromAssetPaths.Length} moved)");
-                var weaverSettingsChanged = importedAssets.Concat(deletedAssets).Concat(movedAssets)
-                    .Any(assetPath => AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(WeaverSettings));
-                if (!weaverSettingsChanged)
+
+                if (deletedAssets.Any(path => path.EndsWith($"/{RuntimeWeavingAssemblyName}")))
+                {
+                    ElympicsLogger.LogDebug("[Weaver] Weaver is being removed, requesting recompilation...");
+                    CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
                     return;
-                UpdateWeavedAssembliesList();
-                WeaveAssemblies(CompilationPipeline.GetAssemblies());
+                }
+
+                var concatenatedAssets = importedAssets.Concat(deletedAssets).Concat(movedAssets);
+                var elympicsWeavingCodeUpdated = concatenatedAssets
+                    .Any(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath) is EditorWeavingAssemblyName or RuntimeWeavingAssemblyName);
+                var weaverSettingsChanged = concatenatedAssets
+                    .Any(assetPath => AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(WeaverSettings));
+                ElympicsLogger.LogDebug($"[Weaver] Elympics.Weaving code updated: {elympicsWeavingCodeUpdated}, Weaver settings changed: {weaverSettingsChanged}");
+
+                if (weaverSettingsChanged)
+                    UpdateWeavedAssembliesList();
+                if (elympicsWeavingCodeUpdated)
+                    CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
+                else if (weaverSettingsChanged)
+                    WeaveAssemblies(CompilationPipeline.GetAssemblies());
             }
         }
 

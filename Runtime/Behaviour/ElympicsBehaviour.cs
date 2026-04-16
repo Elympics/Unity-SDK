@@ -8,6 +8,9 @@ using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Elympics
 {
@@ -20,7 +23,21 @@ namespace Elympics
         internal const int UndefinedNetworkId = -1;
         private const int DefaultAbsenceTickParameter = 0;
 
-        [SerializeField] internal bool autoAssignNetworkId;
+        // TODO: remove the following measures of backwards compatibility one day (1/3) ~dsygocki 2026-03-06
+        internal bool AutoAssignNetworkId
+        {
+            get => migratedAutoNetworkId ? autoAssignNetworkId : !forceNetworkId;
+            set
+            {
+                autoAssignNetworkId = value;
+                migratedAutoNetworkId = true;
+            }
+        }
+
+        [SerializeField, HideInInspector] internal bool forceNetworkId;
+        [SerializeField, HideInInspector] internal bool migratedAutoNetworkId;
+
+        [SerializeField] internal bool autoAssignNetworkId = true;
         [SerializeField] internal int networkId = UndefinedNetworkId;
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
@@ -47,43 +64,14 @@ namespace Elympics
             internal set => networkId = value;
         }
 
-        [UsedImplicitly] // from generated IL code
-        public void ThrowIfRpcContextNotValid(ElympicsRpcProperties _, MethodInfo method)
-        {
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.RpcInvoking or ElympicsBase.CallContext.Initialize)
-                return;
-            if (ElympicsBase.CurrentCallContext is ElympicsBase.CallContext.ElympicsUpdate)
-                return;
-            throw new ElympicsException($"Error calling {method.DeclaringType?.FullName}.{method.Name}: "
-                                        + $"RPC cannot be scheduled outside of {nameof(IUpdatable.ElympicsUpdate)} "
-                                        + $"or {nameof(IInitializable.Initialize)}");
-        }
-
-        [UsedImplicitly] // from generated IL code
-        public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo method)
-        {
-            if (_isReconciling)
-            {
-                ElympicsLogger.LogWarning($"RPC {method.Name} will not be captured during reconciliation.");
-                return false;
-            }
-
-            if (_isInvokingRpc)
-                return false;
-            if (ElympicsBase.IsLocalMode)
-                return false;
-            if (ElympicsBase.IsServer
-                && ElympicsBase.IsBot
-                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
-                return false;
-            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
-                || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
-                throw new RpcDirectionMismatchException(properties, method);
-            return true;
-        }
-
-        [UsedImplicitly] // from generated IL code
-        public bool ShouldRpcBeInvoked(ElympicsRpcProperties properties, MethodInfo methodInfo)
+        /// Decides if the RPC should be invoked instantly in the current instance instead of requesting it over network.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
+#pragma warning disable IDE0060
+        public bool ShouldRpcBeInvokedInstantly(ElympicsRpcProperties properties, MethodInfo methodInfo)
+#pragma warning enable IDE0060
         {
             if (_isReconciling)
             {
@@ -91,41 +79,85 @@ namespace Elympics
                 return false;
             }
 
-            if (_isInvokingRpc)
+            if (!_isInvokingRpc)
+                return false;
+            _isInvokingRpc = false;
+            return true;
+        }
+
+        private bool ShouldRpcBeCapturedToInvoke(ElympicsRpcProperties properties) =>
+            ElympicsBase.IsLocalMode
+            || (ElympicsBase.IsBotOnServer && properties.Direction == ElympicsRpcDirection.PlayerToServer);
+
+        /// Decides if the RPC should be captured and queued to be requested over network or invoked later locally.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
+#pragma warning disable IDE0060
+        public bool ShouldRpcBeCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo)
+#pragma warning enable IDE0060
+        {
+            if (_isReconciling)
             {
-                _isInvokingRpc = false;
-                return true;
+                ElympicsLogger.LogWarning($"RPC {methodInfo.Name} will not be captured during reconciliation.");
+                return false;
             }
 
-            // TODO: The following two cases short-circuit RPCs so they are not queued for later bulk execution.
-            // TODO: This may introduce unwanted behavior. ~dsygocki 2023-08-07
-            if (ElympicsBase.IsLocalMode)
+            if (_isInvokingRpc)
+                return false;
+            if (ShouldRpcBeCapturedToInvoke(properties))
                 return true;
-            if (ElympicsBase.IsServer
-                && ElympicsBase.IsBot
-                && properties.Direction == ElympicsRpcDirection.PlayerToServer)
-                return true;
-            return false;
+            if ((properties.Direction == ElympicsRpcDirection.PlayerToServer
+                    && !(ElympicsBase.IsClient || ElympicsBase.IsBot))
+                || (properties.Direction == ElympicsRpcDirection.ServerToPlayers && !ElympicsBase.IsServer))
+                throw new RpcDirectionMismatchException(properties, methodInfo);
+            return true;
         }
 
-        [UsedImplicitly] // from generated IL code
-        public void OnRpcCaptured(ElympicsRpcProperties _, MethodInfo method, object target, params object[] arguments)
+        /// Captures the RPC and queues it to be requested over network or invoked later locally.
+        /// <param name="properties">Configuration of the RPC method.</param>
+        /// <param name="methodInfo">The RPC method called.</param>
+        /// <param name="target">The object that owns the RPC method.</param>
+        /// <param name="arguments">Call arguments.</param>
+        /// <remarks>Called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        [UsedImplicitly(ImplicitUseKindFlags.Access)]
+#pragma warning disable IDE0060
+        public void OnRpcCaptured(ElympicsRpcProperties properties, MethodInfo methodInfo, object target, params object[] arguments)
+#pragma warning enable IDE0060
         {
-            var rpcMethod = new RpcMethod(method, target);
+            var rpcMethod = new RpcMethod(methodInfo, target);
             var methodId = RpcMethods.GetIdOf(rpcMethod);
-            var rpcMessage = new ElympicsRpcMessage(NetworkId, methodId, arguments);
-            ElympicsBase.QueueRpcMessageToSend(rpcMessage);
+            var scheduledTick = properties.WaitForTick ? ElympicsBase.Tick : 0;
+            var rpcMessage = new ElympicsRpcMessage
+            {
+                NetworkId = NetworkId,
+                MethodId = methodId,
+                Arguments = arguments,
+                Sender = (int)Elympics.Player,
+                SentOnTick = ElympicsBase.Tick,
+                ExecuteNotBeforeTick = scheduledTick,
+            };
+            if (ShouldRpcBeCapturedToInvoke(properties))
+                ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
+            else
+                ElympicsBase.QueueRpcMessageToSend(rpcMessage, properties.Reliable);
+
         }
 
-        // this is NOT called from generated IL code
-        internal void OnRpcInvoked(ushort methodId, params object[] arguments)
+        /// Invokes the RPC.
+        /// <param name="sender">The player that sent the RPC. <see cref="ElympicsPlayer.World"/> in case of server-to-player RPCs.</param>
+        /// <param name="methodId">The ID of the RPC method called.</param>
+        /// <param name="arguments">Call arguments.</param>
+        /// <remarks>This is NOT called from IL code injected by Elympics Weaver into RPC methods.</remarks>
+        internal void OnRpcInvoked(ElympicsPlayer sender, ushort methodId, params object[] arguments)
         {
-            var rpcMethod = RpcMethods[methodId];
+            var (rpcMethod, rpcMethodDetails) = RpcMethods[methodId];
             _isInvokingRpc = true;
             try
             {
                 using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking))
-                    rpcMethod.Call(arguments);
+                    rpcMethod.Call(rpcMethodDetails, arguments, new RpcMetadata(sender));
             }
             finally
             {
@@ -217,8 +249,17 @@ namespace Elympics
         }
 
 #if UNITY_EDITOR
-        private void OnDrawGizmos()
-        { }
+        private void OnValidate()
+        {
+            // TODO: remove the following measures of backwards compatibility one day (2/3) ~dsygocki 2026-03-06
+            if (PrefabUtility.IsPartOfPrefabAsset(this) || migratedAutoNetworkId)
+                return;
+            Undo.RecordObject(this, $"Migrate auto network ID settings from {nameof(ElympicsBehaviour)} {name}");
+            autoAssignNetworkId = !forceNetworkId;
+            migratedAutoNetworkId = true;
+            if (PrefabUtility.IsPartOfPrefabInstance(this))
+                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+        }
 #endif
 
         internal void InitializeInternal(ElympicsBase elympicsBase)
@@ -248,7 +289,6 @@ namespace Elympics
             {
                 var componentVars = new List<ElympicsVar>();
                 foreach (var field in observable.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                {
                     if (elympicsVarType.IsAssignableFrom(field.FieldType))
                     {
                         if (field.GetValue(observable) is ElympicsVar value)
@@ -268,7 +308,6 @@ namespace Elympics
                                                     + $"in {field.DeclaringType}, because it hasn't been initialized "
                                                     + "(its value is null).");
                     }
-                }
 
                 if (componentVars.Count > 0)
                     _backingFieldsByComponents.Add((observable.GetType().Name, componentVars));
@@ -332,10 +371,9 @@ namespace Elympics
             // bool areEqual = _backingFields.All(backingField => backingField.Equals(_binaryReader1, _binaryReader2));
             // todo use in future for debug mode ~pprzestrzelski 06.06.2022
             var areEqual = true;
-            foreach ((var componentName, var backingFields) in _backingFieldsByComponents)
+            foreach (var (componentName, backingFields) in _backingFieldsByComponents)
             {
                 foreach (var backingField in backingFields)
-                {
                     if (!backingField.Equals(_binaryReader1, _binaryReader2, out var difference1, out var difference2))
                     {
 #if !ELYMPICS_PRODUCTION
@@ -347,7 +385,6 @@ namespace Elympics
                         areEqual = false;
                         break;
                     }
-                }
 
                 if (!areEqual)
                     break;

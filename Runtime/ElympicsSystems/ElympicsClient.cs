@@ -108,7 +108,7 @@ namespace Elympics
         {
             _matchClient.SnapshotReceived += OnSnapshotReceived;
             _matchClient.Synchronized += OnMatchClientSynchronized;
-            _matchClient.RpcMessageListReceived += QueueRpcMessagesToInvoke;
+            _matchClient.RpcMessageListReceived += QueueRpcMessagesFromServerToInvoke;
             _matchConnectClient.DisconnectedByServer += OnDisconnectedByServerHandler;
             _matchConnectClient.DisconnectedByClient += OnDisconnectedByClientHandler;
             _matchConnectClient.ConnectedWithSynchronizationData += OnConnectedWithSynchronizationData;
@@ -160,7 +160,7 @@ namespace Elympics
             {
                 _matchClient.SnapshotReceived -= OnSnapshotReceived;
                 _matchClient.Synchronized -= OnMatchClientSynchronized;
-                _matchClient.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
+                _matchClient.RpcMessageListReceived -= QueueRpcMessagesFromServerToInvoke;
                 _matchClient.Dispose();
             }
 
@@ -380,8 +380,8 @@ namespace Elympics
 
         private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            _matchClient.SendRpcMessageList(rpcMessageList);
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            _matchClient.SendRpcMessageList(rpcMessageList, reliable);
 
         private void ApplyPredictedInput()
         {

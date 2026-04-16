@@ -397,16 +397,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 359210302102351433, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: networkId
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 359210302102351433, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: autoAssignNetworkId
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2302576099153469726, guid: f96262bc694c229408688203398b88ed,
         type: 3}
       propertyPath: disableInEditor
@@ -509,16 +499,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7761056987631085800, guid: f96262bc694c229408688203398b88ed,
         type: 3}
-      propertyPath: networkId
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 7761056987631085800, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: autoAssignNetworkId
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7761056987631085800, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
       propertyPath: stateFrequencyStages.Array.data[0].frequencyInMiliseconds
       value: 30
       objectReference: {fileID: 0}
@@ -546,16 +526,6 @@ PrefabInstance:
         type: 3}
       propertyPath: stateFrequencyStages.Array.data[2].stageDurationInMiliseconds
       value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 7939587856119930963, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: networkId
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7939587856119930963, guid: f96262bc694c229408688203398b88ed,
-        type: 3}
-      propertyPath: autoAssignNetworkId
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1649471005663938754, guid: f96262bc694c229408688203398b88ed, type: 3}

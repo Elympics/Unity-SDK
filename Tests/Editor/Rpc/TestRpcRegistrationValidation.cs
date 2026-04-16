@@ -4,6 +4,7 @@ using System.Reflection;
 using Elympics.Editor.Weaving.Components.Elympics;
 using Mono.Cecil;
 using NUnit.Framework;
+using static Elympics.Tests.CustomAsserts;
 
 namespace Elympics.Editor.Tests
 {
@@ -88,10 +89,9 @@ namespace Elympics.Editor.Tests
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.OutArgumentMethod))]
         public void MethodsWithArgumentsThatAreNotPrimitiveTypesOrStringsShouldNotPassValidation(string methodName)
         {
-            var exception = Assert.Throws<InvalidRpcMethodDefinitionException>(() =>
+            var exception = AssertThrowsAggregated<InvalidRpcMethodDefinitionException>(() =>
                 RunValidation(typeof(ElympicsMonoBehaviourSubclass), methodName));
-            Assert.True(exception.Message.Contains("primitive"));
-            Assert.True(exception.Message.Contains("string"));
+            Assert.That(exception.Message, Contains.Substring("unsupported type"));
         }
 
         [Test]
@@ -103,8 +103,28 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
+        public void MethodsWhichHaveMoreThanOneMetadataParameterShouldNotPassValidation()
+        {
+            var exception = AssertThrowsAggregated<InvalidRpcMethodDefinitionException>(() =>
+                RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.MoreThanOneMetadata)));
+            Assert.That(exception.Message, Contains.Substring(nameof(RpcMetadata)));
+            Assert.That(exception.Message, Contains.Substring("too many times"));
+        }
+
+        [Test]
+        public void MethodsWhichHaveNonOptionalMetadataParameterShouldNotPassValidation()
+        {
+            var exception = AssertThrowsAggregated<InvalidRpcMethodDefinitionException>(() =>
+                RunValidation(typeof(ElympicsMonoBehaviourSubclass), nameof(ElympicsMonoBehaviourSubclass.RequiredMetadata)));
+            Assert.That(exception.Message, Contains.Substring(nameof(RpcMetadata)));
+            Assert.That(exception.Message, Contains.Substring("optional"));
+        }
+
+        [Test]
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethod))]
         [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithArguments))]
+        [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithMetadata))]
+        [TestCase(nameof(ElympicsMonoBehaviourSubclass.ValidMethodWithArgumentsAndMetadata))]
         [TestCase(ElympicsMonoBehaviourSubclass.PrivateValidMethodName)]
         public void MethodsWithValidDefinitionShouldPassValidation(string methodName)
         {
@@ -125,9 +145,13 @@ namespace Elympics.Editor.Tests
             public void OutArgumentMethod(out string str) => str = "";
             public void OverloadedMethod() { }
             public void OverloadedMethod(int a) { }
+            public void MoreThanOneMetadata(RpcMetadata metadata1 = default, RpcMetadata metadata2 = default) { }
+            public void RequiredMetadata(RpcMetadata metadata) { }
 
             public void ValidMethod() { }
             public void ValidMethodWithArguments(int a, float b, string c) { }
+            public void ValidMethodWithMetadata(RpcMetadata metadata = default) { }
+            public void ValidMethodWithArgumentsAndMetadata(int a, float b, string c, RpcMetadata metadata = default) { }
             private void PrivateValidMethod() { }
             public const string PrivateValidMethodName = nameof(PrivateValidMethod);
 

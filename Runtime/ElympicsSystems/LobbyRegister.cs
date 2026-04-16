@@ -3,14 +3,15 @@ using Elympics.ElympicsSystems.Internal;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.SnapshotAnalysis.Retrievers;
-using JetBrains.Annotations;
+
+#nullable enable
+
 namespace Elympics
 {
     internal static class LobbyRegister
     {
-        public static ILobby ElympicsLobby;
-        public static ILobby PlayPadLobby;
-
+        public static ILobby? ElympicsLobby;
+        public static ILobby? PlayPadLobby;
 
         public static bool IsLobbyRegistered() => PlayPadLobby != null || ElympicsLobby != null;
 
@@ -34,10 +35,9 @@ namespace Elympics
 
         public static void PlayMatchInternal(MatchmakingFinishedData matchData) => PlayPadLobby?.PlayMatchInternal(matchData);
 
-        public static bool IsAuthenticated() => PlayPadLobby.AuthData != null || ElympicsLobby.AuthData != null;
+        public static bool IsAuthenticated() => GetAuthData() != null;
 
-        [CanBeNull]
-        public static MatchmakingFinishedData GetMatchData()
+        public static MatchmakingFinishedData? GetMatchData()
         {
             if (PlayPadLobby?.MatchDataGuid != null)
                 return PlayPadLobby.MatchDataGuid;
@@ -46,13 +46,7 @@ namespace Elympics
             return null;
         }
 
-        public static AuthData GetAuthData()
-        {
-            if (PlayPadLobby?.AuthData != null)
-                return PlayPadLobby.AuthData;
-            if (ElympicsLobby?.AuthData != null)
-                return ElympicsLobby.AuthData;
-            return null;
-        }
+        public static AuthData? GetAuthData() =>
+            PlayPadLobby?.AuthData ?? ElympicsLobby?.AuthData;
     }
 }

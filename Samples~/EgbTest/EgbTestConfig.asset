@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fdc79f884b648722df4e56317063, type: 3}
   m_Name: EgbTestConfig
   m_EditorClassIdentifier: 
-  gameName: SampleEgbTest
+  gameName: EGB Test sample
   gameId: 1e8cea62-c4a2-40a8-8eb6-ae979fac6d48
   gameVersion: 1.1
-  players: 1
+  maxPlayers: 2
   gameplayScene: Assets/Samples/EgbTest/Scenes/EgbTestGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: a42c95641b7d92742b53156c2f7f3f04,
     type: 3}
@@ -24,9 +24,11 @@ MonoBehaviour:
   enableReconnect: 0
   connectionConfig:
     sessionConnectTimeout: 15
+    sessionConnectRetries: 10
     synchronizerTimeout: 20
     minContinuousSynchronizationInterval: 0.02
     unreliablePingTimeout: 5
+    webRtcOfferAnnounceDelay: 1
     webRtcOfferTimeout: 5
     webRtcOfferMaxRetries: 5
     webRtcOfferRetryDelay: 1
@@ -38,8 +40,7 @@ MonoBehaviour:
   inputLagTicks: 2
   inputToSendBufferSize: 3
   maxAllowedLagInTicks: 15
-  forceJumpTresholdInTicks: 6
-  prediction: 1
+  forceJumpThresholdInTicks: 6
   predictionLimitInTicks: 8
   detailedNetworkLog: 0
   mode: 2
@@ -47,15 +48,25 @@ MonoBehaviour:
   ipForHalfRemoteMode: 127.0.0.1
   tcpPortForHalfRemoteMode: 9101
   webPortForHalfRemoteMode: 9102
+  recordSnapshots: 0
+  snapshotFilePath: 
   playerIndexForHalfRemoteMode: 1
   testMatchData:
     queueName: Solo
     regionName: warsaw
+    roomCustomData: []
+    customMatchmakingData: []
   testPlayers:
-  - userId: 0
-    isBot: 0
+  - isBot: 0
     botDifficulty: 0
     gameEngineData: 69a69a
     matchmakerData:
     - 0
     - 0
+    customDatas: []
+  halfRemoteLagConfig:
+    DelayMs: 0
+    PacketLoss: 0
+    JitterMs: 0
+    RandomSeed: 4206969
+  reconciliationFrequency: 0

@@ -24,11 +24,7 @@ namespace Elympics
                 var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
                 // ElympicsWorld needed for all modes (client uses it for IsVisibleTo bitmask lookup)
 
-                ElympicsWorld.Current = new ElympicsWorld(
-                    elympicsGameConfig!.MaxPlayers,
-                    NetworkIdConstants.MaxIndex + 1, // maxSparseSlots
-                    NetworkIdConstants.MaxNetworkObjects // maxDenseEntities (hard cap)
-                );
+                ElympicsWorld.Current = new ElympicsWorld(elympicsGameConfig!.MaxPlayers);
                 ElympicsLogger.Log($"Initializing Elympics v{ElympicsConfig.SdkVersion} game scene for {elympicsGameConfig.GameName} "
                                    + $"(ID: {elympicsGameConfig.GameId}), version {elympicsGameConfig.GameVersion}");
                 _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);

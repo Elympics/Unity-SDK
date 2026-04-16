@@ -1,5 +1,6 @@
 {
     "name": "UniTask.TextMeshPro",
+    "rootNamespace": "",
     "references": [
         "UniTask",
         "Unity.TextMeshPro"
@@ -7,7 +8,7 @@
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],

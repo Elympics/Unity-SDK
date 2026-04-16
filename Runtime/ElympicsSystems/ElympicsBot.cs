@@ -22,7 +22,7 @@ namespace Elympics
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _gameBotAdapter = gameBotAdapter;
             _gameBotAdapter.SnapshotReceived += OnSnapshotReceived;
-            _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesToInvoke;
+            _gameBotAdapter.RpcMessageListReceived += QueueRpcMessagesFromServerToInvoke;
             _gameBotAdapter.InitializedWithMatchPlayerData += data =>
             {
                 OnStandaloneBotInit(data);
@@ -57,8 +57,8 @@ namespace Elympics
             SendQueuedRpcMessages();
         }
 
-        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList) =>
-            _gameBotAdapter.SendRpcMessageList(rpcMessageList);
+        internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            _gameBotAdapter.SendRpcMessageList(rpcMessageList, reliable);
 
         private void ProcessInput(long snapshotTick)
         {

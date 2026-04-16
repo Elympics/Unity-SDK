@@ -412,6 +412,6 @@ trigger:renovate:
     branch: develop
     strategy: depend
   variables:
-    renovate-games: "true"
+    RENOVATE_GAMES: "true"
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'

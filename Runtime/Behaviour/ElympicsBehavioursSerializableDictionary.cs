@@ -12,8 +12,7 @@ namespace Elympics
 #if UNITY_EDITOR
         [CustomPropertyDrawer(typeof(ElympicsBehavioursSerializableDictionary))]
         internal class Drawer : DictionaryDrawer<ElympicsBehavioursSerializableDictionary, int, ElympicsBehaviour>
-        {
-        }
+        { }
 #endif
     }
 }

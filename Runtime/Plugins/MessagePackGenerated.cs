@@ -1018,17 +1018,15 @@ namespace MessagePack.Formatters.Elympics
 
         public ElympicsDataWithTickFormatter()
         {
-            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(3, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
+            this.typeToKeyAndJumpMap = new global::System.Collections.Generic.Dictionary<global::System.RuntimeTypeHandle, global::System.Collections.Generic.KeyValuePair<int, int>>(2, global::MessagePack.Internal.RuntimeTypeHandleEqualityComparer.Default)
             {
                 { typeof(global::Elympics.ElympicsSnapshot).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(0, 0) },
                 { typeof(global::Elympics.ElympicsInput).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(1, 1) },
-                { typeof(global::Elympics.ElympicsRpcMessageList).TypeHandle, new global::System.Collections.Generic.KeyValuePair<int, int>(2, 2) },
             };
-            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(3)
+            this.keyToJumpMap = new global::System.Collections.Generic.Dictionary<int, int>(2)
             {
                 { 0, 0 },
                 { 1, 1 },
-                { 2, 2 },
             };
         }
 
@@ -1046,9 +1044,6 @@ namespace MessagePack.Formatters.Elympics
                         break;
                     case 1:
                         global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsInput)value, options);
-                        break;
-                    case 2:
-                        global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Serialize(ref writer, (global::Elympics.ElympicsRpcMessageList)value, options);
                         break;
                     default:
                         break;
@@ -1088,9 +1083,6 @@ namespace MessagePack.Formatters.Elympics
                     break;
                 case 1:
                     result = (global::Elympics.ElympicsDataWithTick)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsInput>(options.Resolver).Deserialize(ref reader, options);
-                    break;
-                case 2:
-                    result = (global::Elympics.ElympicsDataWithTick)global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::Elympics.ElympicsRpcMessageList>(options.Resolver).Deserialize(ref reader, options);
                     break;
                 default:
                     reader.Skip();
@@ -4633,10 +4625,13 @@ namespace MessagePack.Formatters.Elympics
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(3);
+            writer.WriteArrayHeader(6);
             writer.Write(value.NetworkId);
             writer.Write(value.MethodId);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<object[]>(formatterResolver).Serialize(ref writer, value.Arguments, options);
+            writer.Write(value.Sender);
+            writer.Write(value.SentOnTick);
+            writer.Write(value.ExecuteNotBeforeTick);
         }
 
         public global::Elympics.ElympicsRpcMessage Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -4649,22 +4644,29 @@ namespace MessagePack.Formatters.Elympics
             options.Security.DepthStep(ref reader);
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
             var length = reader.ReadArrayHeader();
-            var __NetworkId__ = default(int);
-            var __MethodId__ = default(ushort);
-            var __Arguments__ = default(object[]);
+            var ____result = new global::Elympics.ElympicsRpcMessage();
 
             for (int i = 0; i < length; i++)
             {
                 switch (i)
                 {
                     case 0:
-                        __NetworkId__ = reader.ReadInt32();
+                        ____result.NetworkId = reader.ReadInt32();
                         break;
                     case 1:
-                        __MethodId__ = reader.ReadUInt16();
+                        ____result.MethodId = reader.ReadUInt16();
                         break;
                     case 2:
-                        __Arguments__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<object[]>(formatterResolver).Deserialize(ref reader, options);
+                        ____result.Arguments = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<object[]>(formatterResolver).Deserialize(ref reader, options);
+                        break;
+                    case 3:
+                        ____result.Sender = reader.ReadInt32();
+                        break;
+                    case 4:
+                        ____result.SentOnTick = reader.ReadInt64();
+                        break;
+                    case 5:
+                        ____result.ExecuteNotBeforeTick = reader.ReadInt64();
                         break;
                     default:
                         reader.Skip();
@@ -4672,7 +4674,6 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
-            var ____result = new global::Elympics.ElympicsRpcMessage(__NetworkId__, __MethodId__, __Arguments__);
             reader.Depth--;
             return ____result;
         }
@@ -4690,8 +4691,7 @@ namespace MessagePack.Formatters.Elympics
             }
 
             global::MessagePack.IFormatterResolver formatterResolver = options.Resolver;
-            writer.WriteArrayHeader(2);
-            writer.Write(value.Tick);
+            writer.WriteArrayHeader(1);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Serialize(ref writer, value.Messages, options);
         }
 
@@ -4712,9 +4712,6 @@ namespace MessagePack.Formatters.Elympics
                 switch (i)
                 {
                     case 0:
-                        ____result.Tick = reader.ReadInt64();
-                        break;
-                    case 1:
                         ____result.Messages = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsRpcMessage>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:

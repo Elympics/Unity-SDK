@@ -4,7 +4,7 @@ namespace Elympics
     /// Central configuration for NetworkId allocation system.
     /// Used by NetworkIdEnumerator, ElympicsBehavioursManager, and related classes.
     /// </summary>
-    public static class NetworkIdConstants
+    internal static class NetworkIdConstants
     {
         /// <summary>
         /// Bit shift for generation component in NetworkId encoding.

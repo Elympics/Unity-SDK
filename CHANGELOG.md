@@ -26,7 +26,7 @@
 * Make assemblies recompile when scripts in Elympics(.Editor).Weaving change ([9e89cea](https://github.com/Elympics/Unity-SDK/commit/9e89ceaafa72c090c1e24ff91f1c2439892d9324))
 * Mark start and end of injected IL code ([fa7a579](https://github.com/Elympics/Unity-SDK/commit/fa7a579436ba16d8ffc76964c97fe5592cf90d33))
 * Put Version in [ProcessedByElympics] ([bb6adc3](https://github.com/Elympics/Unity-SDK/commit/bb6adc321327b824c06a46f613d6decf030445cb))
-* webrtc ice servers support ([954eda9](https://github.com/Elympics/Unity-SDK/commit/954eda9a7064ce9599d6bb01b2a21cdc94ef1f35))
+* Webrtc ice servers support ([954eda9](https://github.com/Elympics/Unity-SDK/commit/954eda9a7064ce9599d6bb01b2a21cdc94ef1f35))
 
 
 

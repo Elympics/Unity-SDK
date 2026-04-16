@@ -1,3 +1,35 @@
+## [0.27.0](https://github.com/Elympics/Unity-SDK/compare/v0.26.0...v0.27.0) (2026-04-16)
+
+
+### Bug Fixes 🪲
+
+* Add Burst 1.8.3 dependency to avoid issues with Mono.Cecil ([859e7f4](https://github.com/Elympics/Unity-SDK/commit/859e7f4b11c9d12b81146f59d1c9000e5e6aeb95))
+* Add Rider IDE dependency ([e72f9e7](https://github.com/Elympics/Unity-SDK/commit/e72f9e756f2ccf644b08a44f078d4af578142e84))
+* Correctly assign Sender in local mode and tests ([ba2b5e7](https://github.com/Elympics/Unity-SDK/commit/ba2b5e71151340a84132598ef03293cf690be720))
+* Don't mark scene dirty if network ID wouldn't change ([a9eb6ca](https://github.com/Elympics/Unity-SDK/commit/a9eb6caa7b6083f2843cf6192ef33e3935dc48ae))
+* Fix NRE when checking for authentication status with no PlayPadLobby on scene ([fc86d33](https://github.com/Elympics/Unity-SDK/commit/fc86d33c15746e6e3267d9bde606b0814dcda306))
+* Fix parent private RPCs from base classes not being called ([9bc1832](https://github.com/Elympics/Unity-SDK/commit/9bc1832250f97f7820085710ef24a1d4591c64ac))
+* Make network IDs auto-reassign on every save, play and load ([584684d](https://github.com/Elympics/Unity-SDK/commit/584684dc90a2d0ceacb85e236f795febdacbe228))
+* Recompile DLLs when Weaver is removed ([48f839f](https://github.com/Elympics/Unity-SDK/commit/48f839fedb5829e1dd56b7a591abfdb2ec945940))
+* Remove references to Mono.Cecil from runtime Elympics assembly ([afb5179](https://github.com/Elympics/Unity-SDK/commit/afb51793f49aa70d4588427fa74d550c3f0412f8))
+* Update dependencies to include TextMeshPro ([8a3fbcf](https://github.com/Elympics/Unity-SDK/commit/8a3fbcf6217f1afc2e2e7bc79ca80ebec31b7000))
+
+
+### Features
+
+* Add Roslyn analyzer for warning when server-to-player RPC is used in Initialize ([96261cf](https://github.com/Elympics/Unity-SDK/commit/96261cf237967dcc0e4445057fafc1146f19951e))
+* Add WaitForTick property to ElympicsRpc attribute ([d1e9dff](https://github.com/Elympics/Unity-SDK/commit/d1e9dffbda646e88fda21c2c94c9969756b380d5))
+* Allow for sending RPCs over unreliable channel ([368220b](https://github.com/Elympics/Unity-SDK/commit/368220be3feb2503398182d10515cf7e3b63bd27))
+* Allow RPCs to be called in all contexts ([a55db03](https://github.com/Elympics/Unity-SDK/commit/a55db03c2d9ff81bab3c4d49595b5551d04ec3bc))
+* block rpc messages. ([8947f89](https://github.com/Elympics/Unity-SDK/commit/8947f890f28ba4fd46f60de56aaf7b86e91faa66))
+* Introduce RPC metadata with information on RPC sender ([9eff1cd](https://github.com/Elympics/Unity-SDK/commit/9eff1cd3a35edaafc38689c065a87905af567be1))
+* Make assemblies recompile when scripts in Elympics(.Editor).Weaving change ([9e89cea](https://github.com/Elympics/Unity-SDK/commit/9e89ceaafa72c090c1e24ff91f1c2439892d9324))
+* Mark start and end of injected IL code ([fa7a579](https://github.com/Elympics/Unity-SDK/commit/fa7a579436ba16d8ffc76964c97fe5592cf90d33))
+* Put Version in [ProcessedByElympics] ([bb6adc3](https://github.com/Elympics/Unity-SDK/commit/bb6adc321327b824c06a46f613d6decf030445cb))
+* Webrtc ice servers support ([954eda9](https://github.com/Elympics/Unity-SDK/commit/954eda9a7064ce9599d6bb01b2a21cdc94ef1f35))
+
+
+
 ## [0.26.0](https://github.com/Elympics/Unity-SDK/compare/v0.25.1...v0.26.0) (2026-03-24)
 
 

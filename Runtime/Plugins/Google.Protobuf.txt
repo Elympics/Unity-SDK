@@ -1,2 +1,0 @@
-https://www.nuget.org/packages/Google.Protobuf/3.34.1
-netstandard2.0

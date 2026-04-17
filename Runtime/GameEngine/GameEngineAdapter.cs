@@ -18,8 +18,6 @@ namespace Elympics
 {
     internal class GameEngineAdapter : IGameEngine
     {
-        internal PlayerData[] Players { get; private set; } = Array.Empty<PlayerData>();
-
         public event Action<byte[], string>? InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string>? InGameDataForPlayerOnUnreliableChannelGenerated;
         public event Action<byte[]>? InGameDataForSpectatorsOnReliableChannelGenerated;
@@ -40,8 +38,8 @@ namespace Elympics
         public event Action<ElympicsRpcMessageList>? RpcMessageListReceived;
 
         private InitialMatchData _initialMatchData = null!;
+        private int UserCount => _initialMatchData.UserData.Count;
         private Dictionary<Guid, ElympicsPlayer> _userIdsToPlayers = null!;
-        private Dictionary<ElympicsPlayer, Guid> _playersToUserIds = null!;
 
         private readonly int _playerInputBufferSize;
 
@@ -59,11 +57,9 @@ namespace Elympics
 
         public void Initialize(InitialMatchData initialMatchData, bool isReplay)
         {
-            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(i => new PlayerData(ElympicsPlayer.FromIndex(i))).ToArray();
+            _initialMatchData = initialMatchData;
 
             var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
-
-            _playersToUserIds = ElympicsPlayerAssociations.GetPlayersToUserIds(userIds);
             _userIdsToPlayers = ElympicsPlayerAssociations.GetUserIdsToPlayers(userIds);
 
             foreach (var userId in userIds)
@@ -72,10 +68,9 @@ namespace Elympics
             var world = Replication.ElympicsWorld.Current;
             Assert.IsNotNull(world);
             if (world != null)
-                for (var i = 0; i < Players.Length; i++)
-                    world.RegisterPlayer(i, Players[i].Player);
+                for (var i = 0; i < UserCount; i++)
+                    world.RegisterPlayer(i);
 
-            _initialMatchData = initialMatchData;
             ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
         }
 
@@ -101,7 +96,7 @@ namespace Elympics
                     if ((int)player != sender)
                     {
                         rpcMessageList.RemoveAt(i);
-                        ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(sender)]}"
+                        ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_initialMatchData.UserData[sender].UserId}"
                             + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
                     }
                 }
@@ -113,8 +108,6 @@ namespace Elympics
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)
         {
             var playerIndex = (int)player;
-            Players[playerIndex].LastReceivedSnapshot = inputList.LastReceivedSnapshot;
-
             // Enqueue update for thread-safe drain at tick start
             var world = Replication.ElympicsWorld.Current;
             world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
@@ -152,8 +145,6 @@ namespace Elympics
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            var playerIndex = (int)player;
-            Players[playerIndex].LastReceivedSnapshot = -1;
             var world = Replication.ElympicsWorld.Current;
             world?.DeactivatePlayer((int)player);
         }
@@ -193,7 +184,7 @@ namespace Elympics
         private void SendDataToPlayer(IFromServer data, ElympicsPlayer player, bool reliable)
         {
             var sendData = reliable ? InGameDataForPlayerOnReliableChannelGenerated : InGameDataForPlayerOnUnreliableChannelGenerated;
-            var userId = _playersToUserIds[player];
+            var userId = _initialMatchData.UserData[(int)player].UserId;
             var serializedData = MessagePackSerializer.Serialize(data);
             sendData?.Invoke(serializedData, userId.ToString());
         }
@@ -206,9 +197,9 @@ namespace Elympics
                 return;
             }
 
-            if (result.Count != Players.Length)
+            if (result.Count != UserCount)
             {
-                ElympicsLogger.LogError($"Invalid length of match result: expected {Players.Length}, " + $"has {result.Count}.");
+                ElympicsLogger.LogError($"Invalid length of match result: expected {UserCount}, " + $"has {result.Count}.");
                 GameEnded?.Invoke(null);
                 return;
             }
@@ -216,7 +207,7 @@ namespace Elympics
             var matchResult = new ResultMatchUserDatas();
             for (var i = 0; i < result.Count; i++)
             {
-                var userId = _playersToUserIds[Players[i].Player];
+                var userId = _initialMatchData.UserData[i].UserId;
                 matchResult.Add(new ResultMatchUserData
                 {
                     UserId = userId.ToString(),

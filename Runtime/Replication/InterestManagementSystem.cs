@@ -19,11 +19,11 @@ namespace Elympics.Replication
         /// <param name="sparseToDense">Array mapping sparse networkId slot index to dense index; negative value means the NetworkEntity is not registered (input).</param>
         /// <param name="relevantEntities">Per-player 2-D buffer filled with dense indices of NetworkEntities relevant to each player (output).</param>
         internal static void Execute(
-            Dictionary<int, byte[]> currentData,
-            uint[] interestMask,
-            PackedArray<int> activePlayers,
-            int[] sparseToDense,
-            PackedArray2D<int> relevantEntities)
+            IReadOnlyDictionary<int, byte[]> currentData,
+            IReadOnlyList<uint> interestMask,
+            in PackedArray<int> activePlayers,
+            IReadOnlyList<int> sparseToDense,
+            ref PackedArray2D<int> relevantEntities)
         {
             if (currentData == null)
                 return;

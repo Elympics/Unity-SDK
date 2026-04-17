@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elympics.Replication
 {
     /// <summary>
@@ -27,14 +29,14 @@ namespace Elympics.Replication
         /// <param name="relevantEntities">Per-player 2-D buffer of dense indices produced by <see cref="InterestManagementSystem"/> (input).</param>
         /// <param name="dirtySorted">Per-player 2-D buffer filled with the dense indices of NetworkEntities that must be sent this tick (output).</param>
         internal static void Execute(
-            long[] playerLastReceivedSnapshot,
-            PackedArray<int> activePlayers,
-            long[] lastModifiedTick,
-            long[][] lastSentTick,
+            IReadOnlyList<long> playerLastReceivedSnapshot,
+            in PackedArray<int> activePlayers,
+            IReadOnlyList<long> lastModifiedTick,
+            IReadOnlyList<IReadOnlyList<long>> lastSentTick,
             long currentTick,
-            int[] netUpdateInterval,
-            PackedArray2D<int> relevantEntities,
-            PackedArray2D<int> dirtySorted)
+            IReadOnlyList<int> netUpdateInterval,
+            in PackedArray2D<int> relevantEntities,
+            ref PackedArray2D<int> dirtySorted)
         {
             for (var i = 0; i < activePlayers.Count; i++)
             {

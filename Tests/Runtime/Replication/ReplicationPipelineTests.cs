@@ -53,7 +53,7 @@ namespace Elympics.Tests.Runtime.Replication
             // Activate players
             for (var i = 0; i < playerCount; i++)
             {
-                world.RegisterPlayer(i, ElympicsPlayer.FromIndex(i));
+                world.RegisterPlayer(i);
                 world.ActivatePlayer(i);
             }
 
@@ -536,9 +536,9 @@ namespace Elympics.Tests.Runtime.Replication
             ElympicsWorld.Current = world;
             _sut = new ReplicationPipeline(4, world);
 
-            world.RegisterPlayer(0, ElympicsPlayer.FromIndex(0));
+            world.RegisterPlayer(0);
+            world.RegisterPlayer(2);
             world.ActivatePlayer(0);
-            world.RegisterPlayer(2, ElympicsPlayer.FromIndex(2));
             world.ActivatePlayer(2);
 
             world.RegisterEntity(10, ElympicsPlayer.All);

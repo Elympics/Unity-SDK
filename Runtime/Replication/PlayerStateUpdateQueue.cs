@@ -40,11 +40,9 @@ namespace Elympics.Replication
         internal void DrainTo(long[] playerLastReceivedSnapshot, PackedArray<int> activePlayers)
         {
             while (_queue.TryDequeue(out var update))
-            {
                 for (var i = 0; i < activePlayers.Count; i++)
                     if (update.PlayerIndex == activePlayers[i] && update.LastReceivedSnapshot > playerLastReceivedSnapshot[update.PlayerIndex])
                         playerLastReceivedSnapshot[update.PlayerIndex] = update.LastReceivedSnapshot;
-            }
         }
 
         /// <summary>

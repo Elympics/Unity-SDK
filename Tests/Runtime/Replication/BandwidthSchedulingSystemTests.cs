@@ -42,7 +42,7 @@ namespace Elympics.Tests.Runtime.Replication
             var activePlayers = CreateActivePlayers(0, 1);
 
             // Act
-            BandwidthSchedulingSystem.Execute(activePlayers, dirtySorted, scheduled);
+            BandwidthSchedulingSystem.Execute(activePlayers, dirtySorted, ref scheduled);
 
             // Assert
             Assert.That(scheduled.RowCount(0), Is.EqualTo(3));
@@ -63,7 +63,7 @@ namespace Elympics.Tests.Runtime.Replication
             var activePlayers = CreateActivePlayers(0, 1);
 
             // Act
-            BandwidthSchedulingSystem.Execute(activePlayers, dirtySorted, scheduled);
+            BandwidthSchedulingSystem.Execute(activePlayers, dirtySorted, ref scheduled);
 
             // Assert
             Assert.That(scheduled.RowCount(0), Is.EqualTo(0));

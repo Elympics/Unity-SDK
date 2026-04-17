@@ -41,7 +41,7 @@ namespace Elympics.Replication
                 currentData,
                 previousData,
                 currentTick,
-                _world.LastModifiedTick,
+                ref _world.LastModifiedTick,
                 _world.SparseToDense);
 
             var activePlayers = new PackedArray<int>(_world.ActivePlayers, _world.ActivePlayersCount);
@@ -54,7 +54,7 @@ namespace Elympics.Replication
                 _world.InterestMask,
                 activePlayers,
                 _world.SparseToDense,
-                relevantEntities);
+                ref relevantEntities);
 
             PrioritizationSystem.Execute(
                 _world.PlayerLastReceivedSnapshot,
@@ -64,12 +64,12 @@ namespace Elympics.Replication
                 currentTick,
                 _world.NetUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             BandwidthSchedulingSystem.Execute(
                 activePlayers,
                 dirtySorted,
-                scheduled);
+                ref scheduled);
 
             SnapshotEncoderSystem.Execute(
                 _world.CurrentSnapshot,
@@ -77,12 +77,12 @@ namespace Elympics.Replication
                 activePlayers,
                 scheduled,
                 _world.DenseToSparse,
-                Buffers.OutputSnapshots);
+                ref Buffers.OutputSnapshots);
 
             AckTrackingSystem.Execute(
                 activePlayers,
                 scheduled,
-                Buffers.LastSentTick,
+                ref Buffers.LastSentTick,
                 currentTick);
         }
 

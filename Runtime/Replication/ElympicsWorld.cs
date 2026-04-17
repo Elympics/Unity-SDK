@@ -60,7 +60,7 @@ namespace Elympics.Replication
         internal int DenseCapacity { get; private set; }
         private int _maxDenseCapacity;
         private readonly int _maxSparseSlots;
-        internal long[] LastModifiedTick { get; private set; }
+        internal long[] LastModifiedTick;
         internal uint[] InterestMask { get; private set; }
         internal int[] NetUpdateInterval { get; private set; }
 
@@ -138,7 +138,7 @@ namespace Elympics.Replication
         /// Assigns the player identity.
         /// Called by GameEngineAdapter.Initialize() after the match is set up.
         /// </summary>
-        internal void RegisterPlayer(int playerIndex, ElympicsPlayer id)
+        internal void RegisterPlayer(int playerIndex)
         {
             if (playerIndex < 0 || playerIndex >= MaxPlayers)
             {
@@ -146,7 +146,7 @@ namespace Elympics.Replication
                 return;
             }
 
-            PlayerIds[playerIndex] = id;
+            PlayerIds[playerIndex] = ElympicsPlayer.FromIndex(playerIndex);
             PlayerLastReceivedSnapshot[playerIndex] = -1;
         }
 
@@ -165,13 +165,11 @@ namespace Elympics.Replication
 
             // Check for duplicate activation by scanning the active players array.
             for (var i = 0; i < ActivePlayersCount; i++)
-            {
                 if (ActivePlayers[i] == playerIndex)
                 {
                     ElympicsLogger.LogWarning($"[ElympicsWorld] Player at index {playerIndex} already active. Skipping.");
                     return;
                 }
-            }
 
             PlayerLastReceivedSnapshot[playerIndex] = -1;
 
@@ -194,17 +192,14 @@ namespace Elympics.Replication
 
             // Check for duplicate activation by scanning the active players array.
             for (var i = 0; i < ActivePlayersCount; i++)
-            {
                 if (ActivePlayers[i] == playerIndex)
                 {
                     for (var j = i + 1; j < ActivePlayersCount; j++)
-                    {
                         ActivePlayers[j - 1] = ActivePlayers[j];
-                    }
                     ActivePlayersCount--;
                     return;
                 }
-            }
+
             ElympicsLogger.LogWarning($"[ElympicsWorld] Player at index {playerIndex} is not active. Skipping.");
         }
 

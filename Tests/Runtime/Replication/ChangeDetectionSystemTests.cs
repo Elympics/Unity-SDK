@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Elympics.Replication;
 using NUnit.Framework;
@@ -40,7 +41,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -56,7 +57,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -72,7 +73,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(0)); // Not stamped
@@ -88,7 +89,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -105,7 +106,7 @@ namespace Elympics.Tests.Runtime.Replication
 
             // Act & Assert - should not throw
             Assert.DoesNotThrow(() =>
-                ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense));
+                ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense));
         }
 
         [Test]
@@ -118,7 +119,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense(); // networkId 10 not registered
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert - no crash, nothing stamped
             Assert.That(lastModifiedTick[0], Is.EqualTo(0));
@@ -134,7 +135,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -150,7 +151,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -167,7 +168,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert - both null means no change, not stamped
             Assert.That(lastModifiedTick[0], Is.EqualTo(0));
@@ -183,7 +184,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -208,7 +209,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0), (20, 1), (30, 2));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick)); // Changed
@@ -226,7 +227,7 @@ namespace Elympics.Tests.Runtime.Replication
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(CurrentTick));
@@ -236,13 +237,13 @@ namespace Elympics.Tests.Runtime.Replication
         public void Execute_EmptyByteArrays_NotStamped()
         {
             // Arrange
-            var currentData = new Dictionary<int, byte[]> { [10] = new byte[0] };
-            var previousData = new Dictionary<int, byte[]> { [10] = new byte[0] };
+            var currentData = new Dictionary<int, byte[]> { [10] = Array.Empty<byte>() };
+            var previousData = new Dictionary<int, byte[]> { [10] = Array.Empty<byte>() };
             var lastModifiedTick = new long[10];
             var sparseToDense = CreateSparseToDense((10, 0));
 
             // Act
-            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, lastModifiedTick, sparseToDense);
+            ChangeDetectionSystem.Execute(currentData, previousData, CurrentTick, ref lastModifiedTick, sparseToDense);
 
             // Assert
             Assert.That(lastModifiedTick[0], Is.EqualTo(0)); // Not stamped

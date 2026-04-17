@@ -61,9 +61,9 @@ namespace Elympics.Tests.Runtime.Replication
         {
             // Arrange
             _sut = new ElympicsWorld(4, 256, 512);
-            _sut.RegisterPlayer(0, ElympicsPlayer.FromIndex(0));
+            _sut.RegisterPlayer(0);
+            _sut.RegisterPlayer(1);
             _sut.ActivatePlayer(0);
-            _sut.RegisterPlayer(1, ElympicsPlayer.FromIndex(1));
             _sut.ActivatePlayer(1);
             Assert.That(_sut.ActivePlayersCount, Is.EqualTo(2));
 

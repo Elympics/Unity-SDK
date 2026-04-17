@@ -135,11 +135,27 @@ namespace Elympics.Replication
         }
 
         /// <summary>
-        /// Marks a player slot as active and assigns the player identity.
-        /// Appends <paramref name="playerIndex"/> to <see cref="ActivePlayers"/>.
+        /// Assigns the player identity.
         /// Called by GameEngineAdapter.Initialize() after the match is set up.
         /// </summary>
-        internal void ActivatePlayer(int playerIndex, ElympicsPlayer id)
+        internal void RegisterPlayer(int playerIndex, ElympicsPlayer id)
+        {
+            if (playerIndex < 0 || playerIndex >= MaxPlayers)
+            {
+                ElympicsLogger.LogError($"[ElympicsWorld] Cannot register player at index {playerIndex}: out of range [0, {MaxPlayers}).");
+                return;
+            }
+
+            PlayerIds[playerIndex] = id;
+            PlayerLastReceivedSnapshot[playerIndex] = -1;
+        }
+
+        /// <summary>
+        /// Marks a player slot as active.
+        /// Appends <paramref name="playerIndex"/> to <see cref="ActivePlayers"/>.
+        /// Called by GameEngineAdapter.OnPlayerConnected().
+        /// </summary>
+        internal void ActivatePlayer(int playerIndex)
         {
             if (playerIndex < 0 || playerIndex >= MaxPlayers)
             {
@@ -157,11 +173,39 @@ namespace Elympics.Replication
                 }
             }
 
-            PlayerIds[playerIndex] = id;
             PlayerLastReceivedSnapshot[playerIndex] = -1;
 
             ActivePlayers[ActivePlayersCount] = playerIndex;
             ActivePlayersCount++;
+        }
+
+        /// <summary>
+        /// Marks a player slot as inactive.
+        /// Shrinks <paramref name="playerIndex"/> to <see cref="ActivePlayers"/>.
+        /// Called by GameEngineAdapter.OnPlayerDisconnected().
+        /// </summary>
+        internal void DeactivatePlayer(int playerIndex)
+        {
+            if (playerIndex < 0 || playerIndex >= MaxPlayers)
+            {
+                ElympicsLogger.LogError($"[ElympicsWorld] Cannot deactivate player at index {playerIndex}: out of range [0, {MaxPlayers}).");
+                return;
+            }
+
+            // Check for duplicate activation by scanning the active players array.
+            for (var i = 0; i < ActivePlayersCount; i++)
+            {
+                if (ActivePlayers[i] == playerIndex)
+                {
+                    for (var j = i + 1; j < ActivePlayersCount; j++)
+                    {
+                        ActivePlayers[j - 1] = ActivePlayers[j];
+                    }
+                    ActivePlayersCount--;
+                    return;
+                }
+            }
+            ElympicsLogger.LogWarning($"[ElympicsWorld] Player at index {playerIndex} is not active. Skipping.");
         }
 
         public void Dispose()
@@ -194,9 +238,10 @@ namespace Elympics.Replication
 
         internal void BeginTick(ElympicsSnapshot fullSnapshot, long tick)
         {
+            var activePlayers = new PackedArray<int>(ActivePlayers, ActivePlayersCount);
             // Drain queued player state updates from the network thread
             // before any pipeline reads, ensuring consistent data for this tick.
-            PlayerUpdateQueue.DrainTo(PlayerLastReceivedSnapshot);
+            PlayerUpdateQueue.DrainTo(PlayerLastReceivedSnapshot, activePlayers);
 
             PreviousSnapshot = CurrentSnapshot;
             CurrentSnapshot = fullSnapshot;

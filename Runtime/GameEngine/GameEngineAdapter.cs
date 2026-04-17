@@ -73,7 +73,7 @@ namespace Elympics
             Assert.IsNotNull(world);
             if (world != null)
                 for (var i = 0; i < Players.Length; i++)
-                    world.ActivatePlayer(i, Players[i].Player);
+                    world.RegisterPlayer(i, Players[i].Player);
 
             _initialMatchData = initialMatchData;
             ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
@@ -140,17 +140,22 @@ namespace Elympics
 
         internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input) => AddInputToBuffer(input, input.Player, true);
 
-        public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
+        public void OnPlayerConnected(string userId)
+        {
+            var player = _userIdsToPlayers[new Guid(userId)];
+            var world = Replication.ElympicsWorld.Current;
+            world?.ActivatePlayer((int)player);
+            PlayerConnected?.Invoke(player);
+        }
+
         public void OnPlayerDisconnected(string userId)
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
             var playerIndex = (int)player;
             Players[playerIndex].LastReceivedSnapshot = -1;
-
-            // Enqueue update for thread-safe drain at tick start
             var world = Replication.ElympicsWorld.Current;
-            world?.PlayerUpdateQueue.Enqueue(playerIndex, -1);
+            world?.DeactivatePlayer((int)player);
         }
 
         public void Tick(long tick)

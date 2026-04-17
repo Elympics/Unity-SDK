@@ -37,12 +37,13 @@ namespace Elympics.Replication
         /// to handle out-of-order network delivery.
         /// Called from the simulation thread at tick start, before pipeline execution.
         /// </summary>
-        internal void DrainTo(long[] playerLastReceivedSnapshot)
+        internal void DrainTo(long[] playerLastReceivedSnapshot, PackedArray<int> activePlayers)
         {
             while (_queue.TryDequeue(out var update))
             {
-                if (update.LastReceivedSnapshot > playerLastReceivedSnapshot[update.PlayerIndex])
-                    playerLastReceivedSnapshot[update.PlayerIndex] = update.LastReceivedSnapshot;
+                for (var i = 0; i < activePlayers.Count; i++)
+                    if (update.PlayerIndex == activePlayers[i] && update.LastReceivedSnapshot > playerLastReceivedSnapshot[update.PlayerIndex])
+                        playerLastReceivedSnapshot[update.PlayerIndex] = update.LastReceivedSnapshot;
             }
         }
 

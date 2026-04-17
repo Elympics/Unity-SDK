@@ -45,7 +45,7 @@ namespace Elympics.Replication
         /// Per-player snapshots produced by <see cref="SnapshotEncoderSystem"/> at the end of the pipeline.
         /// Keyed by <see cref="ElympicsPlayer"/> so the server can send each player only their relevant state.
         /// </summary>
-        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> OutputSnapshots;
+        internal Dictionary<ElympicsPlayer, ElympicsSnapshot> OutputSnapshots { get; private set; }
 
         /// <summary>
         /// Persistent per-player, per-entity tick when the entity was last included in a snapshot
@@ -53,7 +53,7 @@ namespace Elympics.Replication
         /// players have lastRecv = -1 which bypasses all ack checks.
         /// NOT cleared each tick — persists across ticks.
         /// </summary>
-        internal long[][] LastSentTick;
+        internal long[][] LastSentTick { get; private set; }
 
         private readonly int _maxPlayers;
         private int _denseCapacity;

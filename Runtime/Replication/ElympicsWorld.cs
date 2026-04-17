@@ -60,7 +60,7 @@ namespace Elympics.Replication
         internal int DenseCapacity { get; private set; }
         private int _maxDenseCapacity;
         private readonly int _maxSparseSlots;
-        internal long[] LastModifiedTick;
+        internal long[] LastModifiedTick { get; private set; }
         internal uint[] InterestMask { get; private set; }
         internal int[] NetUpdateInterval { get; private set; }
 

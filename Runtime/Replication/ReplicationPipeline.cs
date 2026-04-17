@@ -36,18 +36,17 @@ namespace Elympics.Replication
             var currentData = _world.CurrentSnapshot.Data;
             var previousData = _world.PreviousSnapshot.Data;
             var currentTick = _world.CurrentTick;
+            var lastModifiedTick = _world.LastModifiedTick;
 
             ChangeDetectionSystem.Execute(
                 currentData,
                 previousData,
                 currentTick,
-                ref _world.LastModifiedTick,
+                ref lastModifiedTick,
                 _world.SparseToDense);
 
             var activePlayers = new PackedArray<int>(_world.ActivePlayers, _world.ActivePlayersCount);
             var relevantEntities = new PackedArray2D<int>(Buffers.RelevantEntities, Buffers.RelevantCounts);
-            var dirtySorted = new PackedArray2D<int>(Buffers.DirtySorted, Buffers.DirtySortedCounts);
-            var scheduled = new PackedArray2D<int>(Buffers.Scheduled, Buffers.ScheduledCounts);
 
             InterestManagementSystem.Execute(
                 currentData,
@@ -55,6 +54,8 @@ namespace Elympics.Replication
                 activePlayers,
                 _world.SparseToDense,
                 ref relevantEntities);
+
+            var dirtySorted = new PackedArray2D<int>(Buffers.DirtySorted, Buffers.DirtySortedCounts);
 
             PrioritizationSystem.Execute(
                 _world.PlayerLastReceivedSnapshot,
@@ -66,10 +67,14 @@ namespace Elympics.Replication
                 relevantEntities,
                 ref dirtySorted);
 
+            var scheduled = new PackedArray2D<int>(Buffers.Scheduled, Buffers.ScheduledCounts);
+
             BandwidthSchedulingSystem.Execute(
                 activePlayers,
                 dirtySorted,
                 ref scheduled);
+
+            var outputSnapshots = Buffers.OutputSnapshots;
 
             SnapshotEncoderSystem.Execute(
                 _world.CurrentSnapshot,
@@ -77,12 +82,14 @@ namespace Elympics.Replication
                 activePlayers,
                 scheduled,
                 _world.DenseToSparse,
-                ref Buffers.OutputSnapshots);
+                ref outputSnapshots);
+
+            var lastSentTick = Buffers.LastSentTick;
 
             AckTrackingSystem.Execute(
                 activePlayers,
                 scheduled,
-                ref Buffers.LastSentTick,
+                ref lastSentTick,
                 currentTick);
         }
 

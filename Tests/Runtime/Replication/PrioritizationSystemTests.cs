@@ -30,23 +30,6 @@ namespace Elympics.Tests.Runtime.Replication
         }
 
         /// <summary>
-        /// Creates a PackedArray2D with pre-filled values (indexed [row][col]) and row counts.
-        /// </summary>
-        private static PackedArray2D<int> CreateFilledBuffer(int rows, int cols, int[][] values, int[] rowCounts)
-        {
-            var backingArray = CreateJagged(rows, cols);
-            var counts = new int[rows];
-            for (var row = 0; row < rows; row++)
-            {
-                counts[row] = rowCounts[row];
-                for (var col = 0; col < rowCounts[row]; col++)
-                    backingArray[row][col] = values[row][col];
-            }
-
-            return new PackedArray2D<int>(backingArray, counts);
-        }
-
-        /// <summary>
         /// Overload that pre-fills lastSentTick[p][d] = playerLastReceivedSnapshot[p] for all (p, d).
         /// Used by existing tests to reproduce the old "dirty = lastModifiedTick > lastRecv" behaviour
         /// under the new two-condition ack logic.
@@ -131,7 +114,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(3)); // Cold start: all 3
@@ -167,7 +150,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(2)); // Only 2 dirty
@@ -196,7 +179,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(0));
@@ -231,7 +214,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(0)); // All clean
@@ -267,7 +250,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(4)); // Cold start: all 4
@@ -300,7 +283,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert - boundary: equal means NOT dirty
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(0));
@@ -331,7 +314,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert - boundary: one tick after means dirty
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(1));
@@ -371,7 +354,7 @@ namespace Elympics.Tests.Runtime.Replication
                 0L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert - only players 0 and 2 processed
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(2)); // Player 0: cold start, all 2
@@ -415,7 +398,7 @@ namespace Elympics.Tests.Runtime.Replication
                 65L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — re-send fires exactly at boundary tick
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(1));
@@ -450,7 +433,7 @@ namespace Elympics.Tests.Runtime.Replication
                 64L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — throttled, not included
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(0));
@@ -485,7 +468,7 @@ namespace Elympics.Tests.Runtime.Replication
                 65L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — confirmed delivered, skip
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(0));
@@ -521,7 +504,7 @@ namespace Elympics.Tests.Runtime.Replication
                 51L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — genuinely dirty, immediate inclusion
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(1));
@@ -557,7 +540,7 @@ namespace Elympics.Tests.Runtime.Replication
                 65L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — never-sent entity is treated as dirty, included immediately
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(1));
@@ -600,7 +583,7 @@ namespace Elympics.Tests.Runtime.Replication
                 51L,
                 netUpdateInterval,
                 relevantEntities,
-                dirtySorted);
+                ref dirtySorted);
 
             // Assert — only the Critical entity passes throttle
             Assert.That(dirtySorted.RowCount(0), Is.EqualTo(1));

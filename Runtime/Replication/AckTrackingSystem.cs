@@ -18,9 +18,9 @@ namespace Elympics.Replication
         /// <param name="lastSentTick">Per-player-per-NetworkEntity 2-D array (<c>[playerIndex, denseIndex]</c>) recording the last tick on which each NetworkEntity was sent to each player; updated in-place (output).</param>
         /// <param name="currentTick">The tick number being processed; written into <paramref name="lastSentTick"/> for every scheduled NetworkEntity.</param>
         internal static void Execute(
-            PackedArray<int> activePlayers,
-            PackedArray2D<int> scheduled,
-            long[][] lastSentTick,
+            in PackedArray<int> activePlayers,
+            in PackedArray2D<int> scheduled,
+            ref long[][] lastSentTick,
             long currentTick)
         {
             for (var i = 0; i < activePlayers.Count; i++)

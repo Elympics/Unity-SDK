@@ -654,7 +654,8 @@ namespace Elympics
             if (string.IsNullOrEmpty(authTokenExpStr))
             {
                 SetAsLoggedOut();
-                throw new ElympicsException("Can't check auth token expiration time. Are you logged in?");
+                _ = ElympicsLogger.LogException(new ElympicsException("Can't check auth token expiration time. Are you logged in?"));
+                return;
             }
 
             var authTokenExp = long.Parse(authTokenExpStr);

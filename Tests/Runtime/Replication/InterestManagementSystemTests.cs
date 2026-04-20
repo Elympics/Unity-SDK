@@ -129,7 +129,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(maxPlayers, 128), new int[maxPlayers]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(2)); // Player 0 sees both
@@ -151,7 +151,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(2, 128), new int[2]);
 
             // Act & Assert - should not throw
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Counts should remain 0
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(0));
@@ -172,7 +172,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(maxPlayers, 128), new int[maxPlayers]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert - no player sees it
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(0));
@@ -191,7 +191,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(maxPlayers, 128), new int[maxPlayers]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert - no crash, nothing added
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(0));
@@ -219,7 +219,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(maxPlayers, 128), new int[maxPlayers]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(0)); // Player 0 sees nothing
@@ -248,7 +248,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(4, 128), new int[4]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert - only active players get relevant entities
             Assert.That(relevantEntities.RowCount(0), Is.EqualTo(1)); // Active player 0
@@ -296,7 +296,7 @@ namespace Elympics.Tests.Runtime.Replication
             var relevantEntities = new PackedArray2D<int>(CreateJagged(maxPlayers, 128), new int[maxPlayers]);
 
             // Act
-            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, relevantEntities);
+            InterestManagementSystem.Execute(currentData, interestMask, activePlayers, sparseToDense, ref relevantEntities);
 
             // Assert - all 32 players should see the entity
             for (var p = 0; p < maxPlayers; p++)

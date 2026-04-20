@@ -18,8 +18,10 @@ namespace Elympics.Tests.Runtime.Replication
             queue.Enqueue(0, 100);
             queue.Enqueue(0, 95);
 
+            var activePlayers = new[] { 0, 1, 2, 3 };
+            var activePlayerCount = activePlayers.Length;
             // Act
-            queue.DrainTo(playerLastReceived);
+            queue.DrainTo(playerLastReceived, new PackedArray<int>(activePlayers, activePlayerCount));
 
             // Assert - max-wins: 100 should be kept, 95 should be ignored
             Assert.That(playerLastReceived[0], Is.EqualTo(100));
@@ -37,8 +39,10 @@ namespace Elympics.Tests.Runtime.Replication
             queue.Enqueue(2, 30);
             queue.Enqueue(0, 60);
 
+            var activePlayers = new[] { 0, 1, 2, 3 };
+            var activePlayerCount = activePlayers.Length;
             // Act
-            queue.DrainTo(playerLastReceived);
+            queue.DrainTo(playerLastReceived, new PackedArray<int>(activePlayers, activePlayerCount));
 
             // Assert - each player gets their own max value independently
             Assert.That(playerLastReceived[0], Is.EqualTo(60));
@@ -54,8 +58,10 @@ namespace Elympics.Tests.Runtime.Replication
             var queue = new PlayerStateUpdateQueue();
             var playerLastReceived = new long[] { 10, 20, 30, 40 };
 
+            var activePlayers = new[] { 0, 1, 2, 3 };
+            var activePlayerCount = activePlayers.Length;
             // Act
-            queue.DrainTo(playerLastReceived);
+            queue.DrainTo(playerLastReceived, new PackedArray<int>(activePlayers, activePlayerCount));
 
             // Assert - values unchanged
             Assert.That(playerLastReceived[0], Is.EqualTo(10));
@@ -77,7 +83,9 @@ namespace Elympics.Tests.Runtime.Replication
 
             // Drain into fresh array
             var playerLastReceived = new long[4];
-            queue.DrainTo(playerLastReceived);
+            var activePlayers = new[] { 0, 1, 2, 3 };
+            var activePlayerCount = activePlayers.Length;
+            queue.DrainTo(playerLastReceived, new PackedArray<int>(activePlayers, activePlayerCount));
 
             // Assert - nothing was applied
             Assert.That(playerLastReceived[0], Is.EqualTo(0));

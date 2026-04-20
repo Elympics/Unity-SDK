@@ -88,7 +88,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             Assert.That(outputSnapshots.Count, Is.EqualTo(2));
@@ -127,7 +127,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap0 = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -154,7 +154,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act & Assert - should not throw
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             Assert.That(outputSnapshots.Count, Is.EqualTo(0));
         }
@@ -180,7 +180,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             Assert.That(outputSnapshots.Count, Is.EqualTo(0));
@@ -210,7 +210,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -231,7 +231,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -258,7 +258,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -291,7 +291,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -328,7 +328,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert
             var snap = outputSnapshots[ElympicsPlayer.FromIndex(0)];
@@ -357,7 +357,7 @@ namespace Elympics.Tests.Runtime.Replication
             var outputSnapshots = new Dictionary<ElympicsPlayer, ElympicsSnapshot>();
 
             // Act
-            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, outputSnapshots);
+            SnapshotEncoderSystem.Execute(fullSnapshot, playerIds, activePlayers, scheduled, denseToSparse, ref outputSnapshots);
 
             // Assert - only 2 players get output
             Assert.That(outputSnapshots.Count, Is.EqualTo(2));

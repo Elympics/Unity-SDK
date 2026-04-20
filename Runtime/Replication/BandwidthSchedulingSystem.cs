@@ -16,9 +16,9 @@ namespace Elympics.Replication
         /// <param name="dirtySorted">Per-player 2-D buffer of dense indices produced by <see cref="PrioritizationSystem"/> (input).</param>
         /// <param name="scheduled">Per-player 2-D buffer filled with the dense indices of NetworkEntities that will be included in this tick's snapshot for each player (output).</param>
         internal static void Execute(
-            PackedArray<int> activePlayers,
-            PackedArray2D<int> dirtySorted,
-            PackedArray2D<int> scheduled)
+            in PackedArray<int> activePlayers,
+            in PackedArray2D<int> dirtySorted,
+            ref PackedArray2D<int> scheduled)
         {
             for (var i = 0; i < activePlayers.Count; i++)
             {

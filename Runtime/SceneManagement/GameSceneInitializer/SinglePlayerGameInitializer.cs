@@ -15,15 +15,16 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager)
+            ElympicsBehavioursManager behavioursManager,
+            ElympicsLoggerContext logger)
         {
             var matchData = LobbyRegister.GetMatchData() ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             var gameEngineAdapter = new GameEngineAdapter(gameConfig);
             var config = ElympicsConfig.Load() ?? throw new Exception("Missing ElympicsConfig");
-            var loggerContext = new ElympicsLoggerContext(Guid.Empty).SetElympicsContext(ElympicsConfig.SdkVersion, config.GetCurrentGameConfig().gameId).SetGameMode("single player").WithApp(ElympicsLoggerContext.GameplayContextApp);
-            _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, config, loggerContext, behavioursManager, matchData.MatchId);
+            logger = logger.SetGameMode("single player");
+            _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, config, logger, behavioursManager, matchData.MatchId);
             //TODO Right now we drop support for bots on singleplayer. ~kpieta 20.02.2025
             server.InitializeInternal(gameConfig,
                 gameEngineAdapter,

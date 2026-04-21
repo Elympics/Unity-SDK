@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using GameEngineCore.V1._3;
 using Google.Protobuf;
 using Proto.ProtoClient;
@@ -12,7 +13,7 @@ using UnityConnectors.HalfRemote.Server;
 
 namespace UnityConnectors.HalfRemote
 {
-    public class HalfRemoteGameEngineProtoConnector : IDisposable, IGameEngineProtoReceiver, IWebClientInitializer
+    internal class HalfRemoteGameEngineProtoConnector : IDisposable, IGameEngineProtoReceiver, IWebClientInitializer
     {
         private readonly List<IHalfRemoteGameEngineServer> _listeners;
         private readonly IWebClientInitializer _webClientInitializer;
@@ -34,7 +35,7 @@ namespace UnityConnectors.HalfRemote
         private readonly Dictionary<Guid, GameEngineProtoClient> _reliableClients;
         private readonly Dictionary<Guid, GameEngineProtoClient> _unreliableClients;
 
-        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint)
+        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, ElympicsLoggerContext logger)
         {
             _reliableClients = new Dictionary<Guid, GameEngineProtoClient>();
             _unreliableClients = new Dictionary<Guid, GameEngineProtoClient>();
@@ -42,7 +43,7 @@ namespace UnityConnectors.HalfRemote
             var serverNtpReceiver = new ServerNtpReceiver();
 
             var tcpHalfRemoteGameEngineServer = new TcpHalfRemoteGameEngineServer(tcpListenEndpoint, this, serverNtpReceiver);
-            var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver);
+            var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver, logger);
 
             _webClientInitializer = webHalfRemoteGameEngineServer;
             _listeners = new List<IHalfRemoteGameEngineServer>

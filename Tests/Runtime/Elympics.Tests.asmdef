@@ -9,7 +9,8 @@
         "Elympics.WebRtc",
         "Elympics.Proto",
         "GameEngineCore",
-        "UnityConnectors"
+        "UnityConnectors",
+        "Elympics.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [

@@ -1,4 +1,5 @@
 using Elympics.ElympicsSystems;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
 using UnityEngine;
@@ -20,7 +21,8 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager)
+            ElympicsBehavioursManager behavioursManager,
+            ElympicsLoggerContext logger)
         {
             Time.maximumDeltaTime = gameConfig.TickDuration * 2;
             Application.targetFrameRate = gameConfig.TicksPerSecond * 2;
@@ -33,7 +35,7 @@ namespace Elympics
             ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
-            InitializeGameServer(GameConfig, GameEngineAdapter);
+            InitializeGameServer(GameConfig, GameEngineAdapter, logger);
             BehavioursManager.InitializeInternal(Server, GameConfig.MaxPlayers);
 
             client.Destroy();
@@ -41,7 +43,7 @@ namespace Elympics
             // singlePlayer.Destroy();
         }
 
-        protected abstract void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter);
+        protected abstract void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, ElympicsLoggerContext logger);
 
         protected abstract SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector();
         protected abstract IServerPlayerHandler ProvideInputRetriever();

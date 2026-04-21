@@ -1,6 +1,8 @@
+#nullable enable
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
@@ -24,24 +26,25 @@ namespace UnityConnectors.HalfRemote.Server
         public event Action<string, string> ListeningError;
         public event Action<string> ListeningEnded;
 
-
         private readonly IPEndPoint _listenEndpoint;
         private readonly IGameEngineProtoReceiver _gameEngineProtoReceiver;
         private readonly IServerNtpReceiver _serverNtpReceiver;
+        private readonly ElympicsLoggerContext _logger;
 
         private IWebRtcServer? _webRtcListener;
         private bool _running;
 
-        public WebHalfRemoteGameEngineServer(IPEndPoint listenEndpoint, IGameEngineProtoReceiver gameEngineProtoReceiver, IServerNtpReceiver serverNtpReceiver)
+        public WebHalfRemoteGameEngineServer(IPEndPoint listenEndpoint, IGameEngineProtoReceiver gameEngineProtoReceiver, IServerNtpReceiver serverNtpReceiver, ElympicsLoggerContext logger)
         {
             _listenEndpoint = listenEndpoint;
             _gameEngineProtoReceiver = gameEngineProtoReceiver;
             _serverNtpReceiver = serverNtpReceiver;
+            _logger = logger.WithContext(nameof(WebHalfRemoteGameEngineServer));
         }
 
         public void Start()
         {
-            _webRtcListener = new UnityWebRtcServer(_listenEndpoint.Port, "");
+            _webRtcListener = new UnityWebRtcServer(_logger);
             _webRtcListener.Start();
 
             _running = true;

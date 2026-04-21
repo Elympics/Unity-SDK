@@ -1,5 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
+using Elympics.ElympicsSystems.Internal;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
@@ -14,6 +15,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private const string UnreliableChannelLabel = "unreliable";
 
         private readonly WebRtcConfig _config;
+        private readonly ElympicsLoggerContext _logger;
 
         private readonly RTCPeerConnection _peerConnection;
         private readonly RTCDataChannel _reliableDc;
@@ -35,9 +37,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public event Action<string>? OfferCreated;
         public event Action<string>? IceCandidateCreated;
 
-        public UnityWebRtcClient(WebRtcConfig config)
+        public UnityWebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
         {
             _config = config;
+            _logger = logger.WithContext(nameof(UnityWebRtcClient));
             var configuration = new RTCConfiguration
             {
                 iceServers = Array.Empty<RTCIceServer>(),
@@ -66,38 +69,41 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _peerConnection.OnConnectionStateChange += OnConnectionStateChanged;
         }
 
-        private static void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
-        private static void OnUnreliableOpen() => OnChannel(UnreliableChannelLabel, "opened");
+        private void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
+        private void OnUnreliableOpen() => OnChannel(UnreliableChannelLabel, "opened");
 
         private void OnReliableReceived(byte[] bytes) => ReliableReceived?.Invoke(bytes);
         private void OnUnreliableReceived(byte[] bytes) => UnreliableReceived?.Invoke(bytes);
 
         private void OnReliableError(RTCError error)
         {
+            var logger = _logger.WithMethodName();
             try
             {
                 ReliableReceivingError?.Invoke(error.ToString());
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnUnreliableError(RTCError error)
         {
+            var logger = _logger.WithMethodName();
             try
             {
                 UnreliableReceivingError?.Invoke(error.ToString());
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnReliableEnded()
         {
+            var logger = _logger.WithMethodName();
             OnChannel(ReliableChannelLabel, "closed");
             try
             {
@@ -105,12 +111,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnUnreliableEnded()
         {
+            var logger = _logger.WithMethodName();
             OnChannel(UnreliableChannelLabel, "closed");
             try
             {
@@ -118,14 +125,15 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
-        private static void OnChannel(string name, string eventType)
+        private void OnChannel(string name, string eventType)
         {
+            var logger = _logger.WithMethodName();
             // TODO: log chosen candidates ~dsygocki 2026-04-10
-            Debug.Log($"[WebRTC] Channel '{name}' has {eventType}");
+            logger.Log($"[WebRTC] Channel '{name}' has {eventType}");
         }
 
         public void SendReliable(byte[] data)
@@ -169,19 +177,20 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private async UniTask CreateOfferAsync(bool restart)
         {
+            var logger = _logger.WithMethodName();
             var options = new RTCOfferAnswerOptions { iceRestart = restart };
             var offerOp = _peerConnection.CreateOffer(ref options);
             await offerOp;
             var offer = offerOp.Desc;
-            Debug.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson((SessionDescription)offer));
+            logger.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson((SessionDescription)offer));
             await _peerConnection.SetLocalDescription(ref offer);
-            Debug.Log("[WebRTC] Gathering ICE candidates...");
+            logger.Log("[WebRTC] Gathering ICE candidates...");
 
             _offerResolver = new UniTaskCompletionSource();
             var receivedCandidate = await UniTask.Delay(_config.OfferAnnounceDelay,
                 DelayType.Realtime,
                 cancellationToken: _offerResolver.Task.ToCancellationToken()).SuppressCancellationThrow();
-            Debug.Log(receivedCandidate
+            logger.Log(receivedCandidate
                 ? "[WebRTC] ICE candidates gathering ended successfully."
                 : "[WebRTC] ICE candidates gathering timed out.");
             _offerResolver = null;
@@ -190,12 +199,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             // TODO: log chosen candidates ~dsygocki 2026-04-10
 
             var offerJson = JsonUtility.ToJson((SessionDescription)updatedOffer);
-            Debug.Log("[WebRTC] Offer created\n" + offerJson);
+            logger.Log("[WebRTC] Offer created\n" + offerJson);
             OfferCreated?.Invoke(offerJson);
         }
 
         public async void CreateOffer(bool restart)
         {
+            var logger = _logger.WithMethodName();
             // TODO: handle async ~dsygocki 2026-04-10
             try
             {
@@ -203,13 +213,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         public void OnAnswer(string answerJson)
         {
-            Debug.Log("[WebRTC] Answer received\n" + answerJson);
+            var logger = _logger.WithMethodName();
+            logger.Log("[WebRTC] Answer received\n" + answerJson);
             var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
             var answer = (RTCSessionDescription)answerCustom;
             _ = _peerConnection.SetRemoteDescription(ref answer); // TODO: handle async ~dsygocki 2026-04-10
@@ -226,45 +237,48 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnIceConnectionStateChanged(RTCIceConnectionState newState)
         {
+            var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            Debug.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
+            logger.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnConnectionStateChanged(RTCPeerConnectionState newState)
         {
+            var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            Debug.Log("[WebRTC] Connection state changed\n" + stringifiedState);
+            logger.Log("[WebRTC] Connection state changed\n" + stringifiedState);
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)
         {
+            var logger = _logger.WithMethodName();
             var candidateJson = JsonUtility.ToJson(candidate.SdpMLineIndex.HasValue
                 ? new IceCandidateInitWithSdpMLineIndex(candidate)
                 : new IceCandidateInitWithoutSdpMLineIndex(candidate));
-            Debug.Log("[WebRTC] Candidate received\n" + candidateJson);
+            logger.Log("[WebRTC] Candidate received\n" + candidateJson);
             try
             {
                 IceCandidateCreated?.Invoke(candidateJson);
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
 
             _ = _offerResolver?.TrySetResult();

@@ -1,4 +1,5 @@
 using Elympics.ElympicsSystems;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore.V1._4;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace Elympics
 
         private GameEngineAdapter _localGameEngineAdapter;
 
-        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
+        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, ElympicsLoggerContext logger)
         {
             _localGameEngineAdapter = gameEngineAdapter;
             _localGameEngineAdapter.Initialize(new InitialMatchData { UserData = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig) });

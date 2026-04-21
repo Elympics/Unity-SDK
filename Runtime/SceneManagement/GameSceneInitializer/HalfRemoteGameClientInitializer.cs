@@ -12,7 +12,7 @@ namespace Elympics
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
 
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
         {
             const string gameModeName = "half remote";
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
@@ -31,11 +31,12 @@ namespace Elympics
                                                   + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                                                   + $"The list has only {playersList.Count} entries. "
                                                   + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
-            logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+            logger = logger.SetGameMode(gameModeName)
+                .WithApp(ElympicsLoggerContext.GameplayContextApp)
+                .SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
             var userId = playersList[playerIndex].UserId;
-            var matchmakerData = playersList[playerIndex].MatchmakerData;
-            var gameEngineData = playersList[playerIndex].GameEngineData;
+            var matchmakerData = playersList[playerIndex].MatchmakerData ?? Array.Empty<float>();
+            var gameEngineData = playersList[playerIndex].GameEngineData ?? Array.Empty<byte>();
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
             var halfRemoteMatchInitialData = new MatchInitialData
@@ -58,8 +59,8 @@ namespace Elympics
                     UserId = x.UserId,
                     IsBot = x.IsBot,
                     BotDifficulty = x.BotDifficulty,
-                    GameEngineData = x.GameEngineData,
-                    MatchmakerData = x.MatchmakerData,
+                    GameEngineData = x.GameEngineData ?? Array.Empty<byte>(),
+                    MatchmakerData = x.MatchmakerData ?? Array.Empty<float>(),
                     RoomId = x.RoomId,
                     TeamIndex = x.TeamIndex,
                     Nickname = x.Nickname,
@@ -67,7 +68,7 @@ namespace Elympics
                     CustomData = x.CustomData
                 }).ToList()
             };
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, halfRemoteMatchInitialData);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, halfRemoteMatchInitialData, logger);
             client.InitializeInternal(elympicsGameConfig,
                 _halfRemoteMatchConnectClient,
                 _halfRemoteMatchClient,

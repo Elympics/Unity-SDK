@@ -2,6 +2,7 @@
 // #undef UNITY_EDITOR
 // #define UNITY_WEBGL
 
+using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
@@ -19,10 +20,12 @@ namespace Elympics.Libraries
         private class WebRtcClientAdapter : IWebRtcClient
         {
             private readonly int _instanceId;
+            private readonly ElympicsLoggerContext _logger;
 
-            public WebRtcClientAdapter(int instanceId)
+            public WebRtcClientAdapter(int instanceId, ElympicsLoggerContext logger)
             {
                 _instanceId = instanceId;
+                _logger = logger;
             }
 
             public void SendReliable(byte[] data)
@@ -79,9 +82,13 @@ namespace Elympics.Libraries
             public void OnOffer(string offerJson) => OfferCreated?.Invoke(offerJson);
 
             public void OnIceCandidate(string candidateJson) => IceCandidateCreated?.Invoke(candidateJson);
+
+            public void OnLog(string methodName, string logMessage) => _logger.WithMethodName(methodName).Log(logMessage);
+            public void OnLogWarning(string methodName, string logMessage) => _logger.WithMethodName(methodName).Warning(logMessage);
+            public void OnLogError(string methodName, string logMessage) => _logger.WithMethodName(methodName).Error(logMessage);
         }
 
-        private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new Dictionary<int, WebRtcClientAdapter>();
+        private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new();
 
         public delegate void OnReceivedCallback(int instanceId, IntPtr msgPtr, int msgSize);
 
@@ -96,6 +103,8 @@ namespace Elympics.Libraries
         public delegate void OnOfferCallback(int instanceId, IntPtr offer);
 
         public delegate void OnIceCandidateCallback(int instanceId, IntPtr iceCandidate);
+
+        public delegate void OnLogCallback(int instanceId, IntPtr methodName, IntPtr logMessage);
 
         [DllImport("__Internal")]
         public static extern int WebRtcAllocate();
@@ -133,6 +142,14 @@ namespace Elympics.Libraries
         [DllImport("__Internal")]
         public static extern void WebRtcSetOnConnectionStateChanged(OnConnectionStateChangedCallback callback);
 
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnLog(OnLogCallback callback);
+
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnLogWarning(OnLogCallback callback);
+
+        [DllImport("__Internal")]
+        public static extern void WebRtcSetOnLogError(OnLogCallback callback);
 
         [DllImport("__Internal")]
         public static extern void WebRtcSetOnOffer(OnOfferCallback callback);
@@ -170,6 +187,9 @@ namespace Elympics.Libraries
             WebRtcSetOnConnectionStateChanged(DelegateOnConnectionStateChanged);
             WebRtcSetOnOffer(DelegateOnOffer);
             WebRtcSetOnIceCandidate(DelegateOnIceCandidate);
+            WebRtcSetOnLog(DelegateOnLog);
+            WebRtcSetOnLogWarning(DelegateOnLogWarning);
+            WebRtcSetOnLogError(DelegateOnLogError);
 
             isInitialized = true;
         }
@@ -281,21 +301,54 @@ namespace Elympics.Libraries
             var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
             instanceRef.OnIceCandidate(candidateJson);
         }
+
+        [MonoPInvokeCallback(typeof(OnLogCallback))]
+        public static void DelegateOnLog(int instanceId, IntPtr methodName, IntPtr logMessage)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var methodNameString = Marshal.PtrToStringAuto(methodName);
+            var logMessageString = Marshal.PtrToStringAuto(logMessage);
+            instanceRef.OnLog(methodNameString, logMessageString);
+        }
+
+        [MonoPInvokeCallback(typeof(OnLogCallback))]
+        public static void DelegateOnLogWarning(int instanceId, IntPtr methodName, IntPtr logMessage)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var methodNameString = Marshal.PtrToStringAuto(methodName);
+            var logMessageString = Marshal.PtrToStringAuto(logMessage);
+            instanceRef.OnLogWarning(methodNameString, logMessageString);
+        }
+
+        [MonoPInvokeCallback(typeof(OnLogCallback))]
+        public static void DelegateOnLogError(int instanceId, IntPtr methodName, IntPtr logMessage)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var methodNameString = Marshal.PtrToStringAuto(methodName);
+            var logMessageString = Marshal.PtrToStringAuto(logMessage);
+            instanceRef.OnLogError(methodNameString, logMessageString);
+        }
 #endif
 
-        public static IWebRtcClient CreateInstance(WebRtcConfig config)
+        public static IWebRtcClient CreateInstance(WebRtcConfig config, ElympicsLoggerContext logger)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             if (!isInitialized)
                 Initialize((int)config.OfferAnnounceDelay.TotalMilliseconds);
 
             var instanceId = WebRtcAllocate();
-            var wrapper = new WebRtcClientAdapter(instanceId);
+            var wrapper = new WebRtcClientAdapter(instanceId, logger);
             Instances.Add(instanceId, wrapper);
 
             return wrapper;
 #else
-            return new UnityWebRtcClient(config);
+            return new UnityWebRtcClient(config, logger);
 #endif
         }
     }

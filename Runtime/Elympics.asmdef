@@ -6,7 +6,6 @@
         "UniTask",
         "MessagePack",
         "MessagePack.Annotations",
-        "AssemblyCommunicator",
         "Elympics.Core",
         "Unity.Mathematics",
         "Elympics.WebRtc",

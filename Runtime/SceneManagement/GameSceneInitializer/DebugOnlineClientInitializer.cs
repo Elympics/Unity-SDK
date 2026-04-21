@@ -15,6 +15,7 @@ namespace Elympics
         private static readonly TimeSpan MatchmakingTimeout = TimeSpan.FromSeconds(60);
 
         private ElympicsClient _client;
+        private ElympicsLoggerContext _logger;
 
         private IAuthClient _authClient;
         private MatchmakerClient _matchmakerClient;
@@ -22,9 +23,10 @@ namespace Elympics
         private ElympicsGameConfig _elympicsGameConfig;
         private InitialMatchPlayerDataGuid _initialPlayerData;
 
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
         {
             _client = client;
+            _logger = logger;
             _elympicsGameConfig = elympicsGameConfig;
             var elympicsConfig = ElympicsConfig.Load();
 
@@ -109,8 +111,9 @@ namespace Elympics
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
-            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
-            logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
+            var logger = _logger.SetGameMode(gameModeName)
+                .WithApp(ElympicsLoggerContext.GameplayContextApp)
+                .SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,

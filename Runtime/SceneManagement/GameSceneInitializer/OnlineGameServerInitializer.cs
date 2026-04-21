@@ -1,4 +1,5 @@
 using Elympics.ElympicsSystems;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.SnapshotAnalysis;
 using UnityConnectors;
 
@@ -8,7 +9,7 @@ namespace Elympics
     {
         private GameEngineProtoConnector _gameEngineProtoConnector;
 
-        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
+        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, ElympicsLoggerContext logger)
         {
             _gameEngineProtoConnector = new GameEngineProtoConnector(gameEngineAdapter);
             _gameEngineProtoConnector.Connect();

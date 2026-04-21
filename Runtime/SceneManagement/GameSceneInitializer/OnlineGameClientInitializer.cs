@@ -6,7 +6,7 @@ namespace Elympics
 {
     internal class OnlineGameClientInitializer : GameClientInitializer
     {
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
         {
             if (!LobbyRegister.IsAuthenticated())
             {
@@ -31,7 +31,8 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
-            var gameLogger = ElympicsLogger.CurrentContext!.Value.SetGameMode("online").WithApp(ElympicsLoggerContext.GameplayContextApp);
+            var gameLogger = logger.SetGameMode("online")
+                .WithApp(ElympicsLoggerContext.GameplayContextApp);
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,

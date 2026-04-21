@@ -5,7 +5,7 @@
         "Elympics",
         "MessagePack",
         "UniTask",
-        "AssemblyCommunicator"
+        "Elympics.Core"
     ],
     "includePlatforms": [
         "Editor"

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Elympics.Communication.Models.Public;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.Mappers;
 using GameBotCore.V1._3;
 
@@ -13,7 +14,7 @@ namespace Elympics
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
 
-        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter)
+        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter, ElympicsLoggerContext logger)
         {
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
@@ -63,8 +64,8 @@ namespace Elympics
                     UserId = x.UserId,
                     IsBot = x.IsBot,
                     BotDifficulty = x.BotDifficulty,
-                    GameEngineData = x.GameEngineData,
-                    MatchmakerData = x.MatchmakerData,
+                    GameEngineData = x.GameEngineData ?? Array.Empty<byte>(),
+                    MatchmakerData = x.MatchmakerData ?? Array.Empty<float>(),
                     RoomId = x.RoomId,
                     TeamIndex = x.TeamIndex,
                     Nickname = x.Nickname,
@@ -72,7 +73,7 @@ namespace Elympics
                     CustomData = x.CustomData
                 }).ToList()
             };
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData, logger);
 
             _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);

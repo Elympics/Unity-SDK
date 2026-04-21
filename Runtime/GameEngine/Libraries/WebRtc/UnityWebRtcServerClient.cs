@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Elympics;
+using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Unity.WebRTC;
 using UnityEngine;
@@ -10,10 +12,12 @@ using WebRtcWrapper;
 
 namespace GameEngine.Libraries.WebRtc
 {
-    public class UnityWebRtcServerClient : IWebRtcServerClient
+    internal class UnityWebRtcServerClient : IWebRtcServerClient
     {
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
+
+        private readonly ElympicsLoggerContext _logger;
 
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
@@ -30,8 +34,10 @@ namespace GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public UnityWebRtcServerClient()
+        public UnityWebRtcServerClient(ElympicsLoggerContext logger)
         {
+            _logger = logger.WithContext(nameof(UnityWebRtcServerClient));
+
             _peerConnection = new RTCPeerConnection();
 
             _peerConnection.OnDataChannel += OnDataChannel;
@@ -58,7 +64,8 @@ namespace GameEngine.Libraries.WebRtc
 
         private void OnDataChannel(RTCDataChannel channel)
         {
-            Debug.Log($"[WebRTC] Data channel created: {channel.Label}");
+            var logger = _logger.WithMethodName();
+            logger.Log($"[WebRTC] Data channel created: {channel.Label}");
             if (channel.Label == ReliableChannelLabel)
             {
                 _reliableDc = channel;
@@ -76,41 +83,44 @@ namespace GameEngine.Libraries.WebRtc
                 _unreliableDc.OnError += OnUnreliableError;
             }
             else
-                Debug.LogWarning($"[WebRTC] Unknown data channel: {channel.Label}");
+                logger.Warning($"[WebRTC] Unknown data channel: {channel.Label}");
         }
 
-        private static void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
-        private static void OnUnreliableOpen() => OnChannel(UnreliableChannelLabel, "opened");
+        private void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
+        private void OnUnreliableOpen() => OnChannel(UnreliableChannelLabel, "opened");
 
         private void OnReliableReceived(byte[] bytes) => ReliableReceived?.Invoke(bytes);
         private void OnUnreliableReceived(byte[] bytes) => UnreliableReceived?.Invoke(bytes);
 
         private void OnReliableError(RTCError error)
         {
+            var logger = _logger.WithMethodName();
             try
             {
                 ReliableReceivingError?.Invoke(error.ToString());
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnUnreliableError(RTCError error)
         {
+            var logger = _logger.WithMethodName();
             try
             {
                 UnreliableReceivingError?.Invoke(error.ToString());
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnReliableEnded()
         {
+            var logger = _logger.WithMethodName();
             OnChannel(ReliableChannelLabel, "closed");
             try
             {
@@ -118,12 +128,13 @@ namespace GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnUnreliableEnded()
         {
+            var logger = _logger.WithMethodName();
             OnChannel(UnreliableChannelLabel, "closed");
             try
             {
@@ -131,14 +142,15 @@ namespace GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
-        private static void OnChannel(string name, string eventType)
+        private void OnChannel(string name, string eventType)
         {
+            var logger = _logger.WithMethodName();
             // TODO: log chosen candidates ~dsygocki 2026-04-10
-            Debug.Log($"[WebRTC] Channel '{name}' has {eventType}");
+            logger.Log($"[WebRTC] Channel '{name}' has {eventType}");
         }
 
         public void SendReliable(byte[] data)
@@ -157,6 +169,7 @@ namespace GameEngine.Libraries.WebRtc
 
         private async UniTask<string> CreateAnswer(string offerJson)
         {
+            var logger = _logger.WithMethodName();
             var offerCustom = JsonUtility.FromJson<SessionDescription>(offerJson);
             var offer = (RTCSessionDescription)offerCustom;
             await _peerConnection.SetRemoteDescription(ref offer);
@@ -165,7 +178,7 @@ namespace GameEngine.Libraries.WebRtc
             var answer = answerOp.Desc;
             var answerCustom = (SessionDescription)answer;
             var answerJson = JsonUtility.ToJson(answerCustom);
-            Debug.Log("[WebRTC] Created answer\n" + answerJson);
+            logger.Log("[WebRTC] Created answer\n" + answerJson);
             await _peerConnection.SetLocalDescription(ref answer);
             return answerJson;
             // TODO: log chosen candidates ~dsygocki 2026-04-10
@@ -179,29 +192,31 @@ namespace GameEngine.Libraries.WebRtc
 
         private void OnIceConnectionStateChanged(RTCIceConnectionState newState)
         {
+            var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            Debug.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
+            logger.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 
         private void OnConnectionStateChanged(RTCPeerConnectionState newState)
         {
+            var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            Debug.Log("[WebRTC] Connection state changed\n" + stringifiedState);
+            logger.Log("[WebRTC] Connection state changed\n" + stringifiedState);
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                logger.Exception(e);
             }
         }
 

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using JetBrains.Annotations;
 
@@ -14,6 +15,7 @@ namespace Elympics.ElympicsSystems.Internal
         public ElympicsContext ElympicsContext;
         public UserContext UserContext;
         public ConnectionContext ConnectionContext;
+        public WebRtcContext WebRtcContext;
         public RoomContext RoomContext;
         public PlayPadContext PlayPadContext;
         public string Context;
@@ -22,39 +24,17 @@ namespace Elympics.ElympicsSystems.Internal
 
         public ElympicsLoggerContext(Guid sessionId)
         {
-            App = null;
+            App = string.Empty;
             SessionId = sessionId;
-            ElympicsContext = new ElympicsContext
-            {
-                SdkVersion = null,
-                GameId = null,
-                FleetName = null,
-                GameVersionId = null,
-            };
-            UserContext = new UserContext
-            {
-                UserId = null,
-                Nickname = null
-            };
-            ConnectionContext = new ConnectionContext
-            {
-                Region = null
-            };
-            RoomContext = new RoomContext()
-            {
-                MatchId = null,
-            };
-            PlayPadContext = new PlayPadContext
-            {
-                ProtocolVersion = null,
-                SdkVersion = null,
-                Capabilities = null,
-                TournamentId = null,
-                FeatureAccess = null
-            };
-            Context = null;
-            MethodName = null;
-            GameMode = null;
+            ElympicsContext = new ElympicsContext();
+            UserContext = new UserContext();
+            ConnectionContext = new ConnectionContext();
+            WebRtcContext = new WebRtcContext();
+            RoomContext = new RoomContext();
+            PlayPadContext = new PlayPadContext();
+            Context = string.Empty;
+            MethodName = string.Empty;
+            GameMode = string.Empty;
             if (ElympicsLogger.CurrentContext.HasValue)
                 return;
 
@@ -67,16 +47,17 @@ namespace Elympics.ElympicsSystems.Internal
             + $"{Environment.NewLine}{ElympicsContext}"
             + $"{Environment.NewLine}{UserContext}"
             + $"{Environment.NewLine}{ConnectionContext}"
+            + $"{Environment.NewLine}{WebRtcContext}"
             + $"{Environment.NewLine}{RoomContext}"
             + $"{Environment.NewLine}{PlayPadContext}";
     }
 
     internal class ElympicsContext
     {
-        public string SdkVersion;
-        public string GameId;
-        public string FleetName;
-        public string GameVersionId;
+        public string SdkVersion = string.Empty;
+        public string GameId = string.Empty;
+        public string FleetName = string.Empty;
+        public string GameVersionId = string.Empty;
 
         public void Clear()
         {
@@ -94,10 +75,10 @@ namespace Elympics.ElympicsSystems.Internal
 
     internal class UserContext
     {
-        public string UserId;
-        public string Nickname;
-        public string AuthType;
-        public string WalletAddress;
+        public string UserId = string.Empty;
+        public string Nickname = string.Empty;
+        public string AuthType = string.Empty;
+        public string WalletAddress = string.Empty;
 
         public void Clear()
         {
@@ -108,26 +89,41 @@ namespace Elympics.ElympicsSystems.Internal
         }
 
         public override string ToString() =>
-            $"{nameof(UserId)}: {UserId} | " + $"{nameof(Nickname)}: {Nickname} | " + $"{nameof(AuthType)}: {AuthType} | " + $"{nameof(WalletAddress)}: {WalletAddress} | ";
+            $"{nameof(UserId)}: {UserId} | "
+            + $"{nameof(Nickname)}: {Nickname} | "
+            + $"{nameof(AuthType)}: {AuthType} | "
+            + $"{nameof(WalletAddress)}: {WalletAddress} | ";
     }
 
     internal class ConnectionContext
     {
-        public string Region;
-        public string LobbyUrl;
+        public string Region = string.Empty;
+        public string LobbyUrl = string.Empty;
 
         public void Clear() => Region = string.Empty;
 
-        public override string ToString() => $"{nameof(Region)}: {Region} | " + $"{nameof(LobbyUrl)}: {LobbyUrl} | ";
+        public override string ToString() =>
+            $"{nameof(Region)}: {Region} | "
+            + $"{nameof(LobbyUrl)}: {LobbyUrl} | ";
+    }
+
+    internal class WebRtcContext
+    {
+        public bool UsesTurn;
+
+        public void Clear() => UsesTurn = false;
+
+        public override string ToString() =>
+            $"{nameof(UsesTurn)}: {UsesTurn} | ";
     }
 
     internal class RoomContext
     {
-        public string RoomId;
-        public string QueueName;
-        public string MatchId;
-        public string TcpUdpServerAddress;
-        public string WebServerAddress;
+        public string RoomId = string.Empty;
+        public string QueueName = string.Empty;
+        public string MatchId = string.Empty;
+        public string TcpUdpServerAddress = string.Empty;
+        public string WebServerAddress = string.Empty;
 
         public void Clear()
         {
@@ -146,11 +142,11 @@ namespace Elympics.ElympicsSystems.Internal
 
     internal class PlayPadContext
     {
-        public string SdkVersion;
-        public string ProtocolVersion;
-        public string Capabilities;
-        public string TournamentId;
-        public string FeatureAccess;
+        public string SdkVersion = string.Empty;
+        public string ProtocolVersion = string.Empty;
+        public string Capabilities = string.Empty;
+        public string TournamentId = string.Empty;
+        public string FeatureAccess = string.Empty;
 
         public override string ToString() => $"{nameof(Capabilities)}: {Capabilities} | "
             + $"{nameof(TournamentId)}: {TournamentId} | "

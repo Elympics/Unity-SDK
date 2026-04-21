@@ -8,9 +8,6 @@ using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Elympics
 {
@@ -23,22 +20,8 @@ namespace Elympics
         internal const int UndefinedNetworkId = -1;
         private const int DefaultAbsenceTickParameter = 0;
 
-        // TODO: remove the following measures of backwards compatibility one day (1/3) ~dsygocki 2026-03-06
-        internal bool AutoAssignNetworkId
-        {
-            get => migratedAutoNetworkId ? autoAssignNetworkId : !forceNetworkId;
-            set
-            {
-                autoAssignNetworkId = value;
-                migratedAutoNetworkId = true;
-            }
-        }
-
-        [SerializeField, HideInInspector] internal bool forceNetworkId;
-        [SerializeField, HideInInspector] internal bool migratedAutoNetworkId;
-
-        [SerializeField] internal bool autoAssignNetworkId = true;
-        [SerializeField] internal int networkId = UndefinedNetworkId;
+        internal static string NetworkIdPropertyName = nameof(networkId);
+        [SerializeField] private int networkId = UndefinedNetworkId;
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
         [SerializeField] internal ElympicsPlayer visibleFor = ElympicsPlayer.All;
@@ -247,20 +230,6 @@ namespace Elympics
 
             return false;
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            // TODO: remove the following measures of backwards compatibility one day (2/3) ~dsygocki 2026-03-06
-            if (PrefabUtility.IsPartOfPrefabAsset(this) || migratedAutoNetworkId)
-                return;
-            Undo.RecordObject(this, $"Migrate auto network ID settings from {nameof(ElympicsBehaviour)} {name}");
-            autoAssignNetworkId = !forceNetworkId;
-            migratedAutoNetworkId = true;
-            if (PrefabUtility.IsPartOfPrefabInstance(this))
-                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
-        }
-#endif
 
         internal void InitializeInternal(ElympicsBase elympicsBase)
         {

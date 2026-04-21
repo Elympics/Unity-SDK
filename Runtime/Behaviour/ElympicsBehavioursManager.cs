@@ -43,7 +43,7 @@ namespace Elympics
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
             var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
+            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
                 var networkId = elympicsBehaviour.NetworkId;
@@ -121,7 +121,7 @@ namespace Elympics
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
             var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
+            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
 
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Elympics
 {
-    public class ServerLogBehaviour : ElympicsMonoBehaviour, IInitializable, IReconciliationHandler
+    public sealed class ServerLogBehaviour : ElympicsMonoBehaviour, IInitializable, IReconciliationHandler
     {
         [Tooltip("Minimum level of collected logs")]
         [SerializeField] private Verbosity verbosity = Verbosity.Log;

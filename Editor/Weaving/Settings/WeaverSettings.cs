@@ -7,6 +7,7 @@ using UnityEngine.Serialization;
 
 namespace Elympics.Editor.Weaving.Settings
 {
+    [CreateAssetMenu(fileName = nameof(WeaverSettings), menuName = "Elympics/Weaver settings", order = 99)]
     internal class WeaverSettings : ScriptableObject
     {
         [SerializeField, FormerlySerializedAs("m_IsEnabled")]

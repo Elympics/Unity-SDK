@@ -13,7 +13,6 @@ namespace Elympics
     [DisallowMultipleComponent]
     public class ElympicsBehavioursManager : MonoBehaviour
     {
-        [SerializeField] internal ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new();
         [SerializeField] internal ElympicsFactory factory;
 
         private ElympicsBehavioursContainer _elympicsBehaviours;
@@ -42,8 +41,7 @@ namespace Elympics
             factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
+            var foundElympicsBehaviours = FindElympicsBehavioursSorted();
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
                 var networkId = elympicsBehaviour.NetworkId;
@@ -74,6 +72,13 @@ namespace Elympics
                 if (elympicsBehaviour.HasAnyState)
                     ElympicsWorld.Current.RegisterEntity(elympicsBehaviour.NetworkId, elympicsBehaviour.visibleFor, elympicsBehaviour.netUpdateIntervalInTicks);
             }
+        }
+
+        internal List<ElympicsBehaviour> FindElympicsBehavioursSorted()
+        {
+            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
+            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
+            return foundElympicsBehaviours;
         }
 
         private void OnDestroy()
@@ -120,8 +125,7 @@ namespace Elympics
             ElympicsWorld.Current?.Reset();
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
+            var foundElympicsBehaviours = FindElympicsBehavioursSorted();
 
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
@@ -366,23 +370,6 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnPredictionStatsChanged(isBlocked, results);
-        }
-
-        internal void RefreshElympicsBehavioursView()
-        {
-            elympicsBehavioursView.Clear();
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foreach (var elympicsBehaviour in foundElympicsBehaviours)
-            {
-                var networkId = elympicsBehaviour.NetworkId;
-                if (elympicsBehavioursView.ContainsKey(networkId))
-                {
-                    ElympicsLogger.LogWarning($"Duplicated entry detected for network ID {networkId}!", elympicsBehaviour);
-                    continue;
-                }
-
-                elympicsBehavioursView.Add(networkId, elympicsBehaviour);
-            }
         }
 
         #region ClientCallbacks

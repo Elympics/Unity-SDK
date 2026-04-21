@@ -9,14 +9,21 @@ using UnityEngine;
 namespace Elympics
 {
     // source: https://gamedev.stackexchange.com/a/193912
-    public static class HierarchicalSorting
+    internal static class HierarchicalSorting
     {
+#if !(UNITY_2022_3 || UNITY_6000_1_OR_NEWER)
+        private static readonly List<Component> ComponentListCached = new();
+#endif
+
         private static int GetComponentIndex(Component component)
         {
 #if UNITY_2022_3 || UNITY_6000_1_OR_NEWER
             return component.GetComponentIndex();
 #else
-            return Array.IndexOf(component.gameObject.GetComponents<Component>(), component);
+            component.gameObject.GetComponents(ComponentListCached);
+            var index = ComponentListCached.IndexOf(component);
+            ComponentListCached.Clear();
+            return index;
 #endif
         }
 
@@ -33,47 +40,43 @@ namespace Elympics
 
         private static int Compare(Transform? x, Transform? y)
         {
-            if (x == null && y == null)
+            if (x is null && y is null)
                 return 0;
 
-            if (x == null)
+            if (x is null)
                 return -1;
 
-            if (y == null)
+            if (y is null)
                 return +1;
+
+            if (x.gameObject.scene != y.gameObject.scene)
+                throw new ArgumentException("Cannot compare hierarchy of objects from different scenes", nameof(y));
 
             var hierarchy1 = GetHierarchy(x);
             var hierarchy2 = GetHierarchy(y);
 
-            while (true)
+            while (hierarchy1.Any() || hierarchy2.Any())
             {
                 if (!hierarchy1.Any())
                     return -1;
-
-                var pop1 = hierarchy1.Pop();
-
                 if (!hierarchy2.Any())
                     return +1;
 
-                var pop2 = hierarchy2.Pop();
-
-                var compare = pop1.CompareTo(pop2);
-
-                if (compare == 0)
-                    continue;
-
-                return compare;
+                var compare = hierarchy1.Pop().CompareTo(hierarchy2.Pop());
+                if (compare != 0)
+                    return compare;
             }
+            return 0;
         }
 
-        private static Stack<int> GetHierarchy(Transform transform)
+        public static Stack<int> GetHierarchy(Transform transform)
         {
-            if (transform == null)
+            if (transform is null)
                 throw new ArgumentNullException(nameof(transform));
 
             var stack = new Stack<int>();
             var current = transform;
-            while (current != null)
+            while (current is not null)
             {
                 stack.Push(current.GetSiblingIndex());
                 current = current.parent;

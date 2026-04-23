@@ -41,6 +41,21 @@ namespace Elympics.ElympicsSystems.Internal
             ElympicsLogger.CurrentContext = this;
         }
 
+        public ElympicsLoggerContext Copy() => new()
+        {
+            SessionId = SessionId,
+            App = App,
+            ElympicsContext = ElympicsContext,
+            UserContext = UserContext,
+            ConnectionContext = ConnectionContext,
+            WebRtcContext = WebRtcContext,
+            RoomContext = RoomContext,
+            PlayPadContext = PlayPadContext,
+            Context = Context,
+            MethodName = MethodName,
+            GameMode = GameMode,
+        };
+
         public override string ToString() =>
             $"{nameof(Context)}: {Context} | "
             + $"{nameof(MethodName)}: {MethodName} | "

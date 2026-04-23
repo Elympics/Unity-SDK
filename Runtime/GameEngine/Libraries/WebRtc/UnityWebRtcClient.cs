@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using Unity.WebRTC;
@@ -36,6 +38,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public event Action<string>? OfferCreated;
         public event Action<string>? IceCandidateCreated;
+        public event Action<(string LocalCandidate, string RemoteCandidate)>? CandidatePairChosen;
+
+        private CancellationTokenSource? _candidatePairCts;
 
         public UnityWebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
         {
@@ -224,6 +229,40 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
             var answer = (RTCSessionDescription)answerCustom;
             _ = _peerConnection.SetRemoteDescription(ref answer); // TODO: handle async ~dsygocki 2026-04-10
+            _candidatePairCts?.Cancel();
+            _candidatePairCts = new CancellationTokenSource();
+            WaitForCandidatePair(_candidatePairCts.Token).Forget();
+        }
+
+        private async UniTask WaitForCandidatePair(CancellationToken ct = default)
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                var asyncOp = _peerConnection.GetStats();
+                await asyncOp;
+                var report = asyncOp.Value;
+                var nominatedPair = report.Stats.Values.Where(s => s.Type == RTCStatsType.CandidatePair)
+                    .Cast<RTCIceCandidatePairStats>()
+                    .FirstOrDefault(s => s.nominated);
+                if (nominatedPair is not null)
+                {
+                    HandleCandidatePairChosen(report, nominatedPair);
+                    return;
+                }
+
+                _ = await UniTask.Delay(200, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
+            }
+        }
+
+        private void HandleCandidatePairChosen(RTCStatsReport statsReport, RTCIceCandidatePairStats candidatePairStats)
+        {
+            var localCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId];
+            var remoteCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId];
+            if (localCandidate.candidateType is "relay")
+                _logger.SetUsesTurn();
+            var pair = (localCandidate.ToJson(), remoteCandidate.ToJson());
+            Debug.Log("Chosen pair: " + pair);
+            CandidatePairChosen?.Invoke(pair);
         }
 
         public void SetIceServers(string iceServersJson)

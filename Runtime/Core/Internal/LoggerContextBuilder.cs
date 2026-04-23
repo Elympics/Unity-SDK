@@ -130,9 +130,16 @@ namespace Elympics.ElympicsSystems.Internal
             current.RoomContext.Clear();
             return current;
         }
+
         public static ElympicsLoggerContext SetGameMode(this ElympicsLoggerContext current, string gameMode)
         {
             current.GameMode = gameMode;
+            return current;
+        }
+
+        public static ElympicsLoggerContext SetUsesTurn(this ElympicsLoggerContext current, bool usesTurn = true)
+        {
+            current.WebRtcContext.UsesTurn = usesTurn;
             return current;
         }
 
@@ -142,55 +149,22 @@ namespace Elympics.ElympicsSystems.Internal
 
         public static ElympicsLoggerContext WithMethodName(this ElympicsLoggerContext current, [CallerMemberName] string methodName = "")
         {
-            var logger = new ElympicsLoggerContext
-            {
-                SessionId = current.SessionId,
-                App = current.App,
-                Context = current.Context,
-                MethodName = methodName,
-                ElympicsContext = current.ElympicsContext,
-                UserContext = current.UserContext,
-                ConnectionContext = current.ConnectionContext,
-                PlayPadContext = current.PlayPadContext,
-                RoomContext = current.RoomContext,
-                GameMode = current.GameMode,
-            };
+            var logger = current.Copy();
+            logger.MethodName = methodName;
             return logger;
         }
 
         public static ElympicsLoggerContext WithApp(this ElympicsLoggerContext current, string app)
         {
-            var logger = new ElympicsLoggerContext
-            {
-                SessionId = current.SessionId,
-                App = app,
-                Context = current.Context,
-                MethodName = current.MethodName,
-                ElympicsContext = current.ElympicsContext,
-                UserContext = current.UserContext,
-                ConnectionContext = current.ConnectionContext,
-                PlayPadContext = current.PlayPadContext,
-                RoomContext = current.RoomContext,
-                GameMode = current.GameMode,
-            };
+            var logger = current.Copy();
+            logger.App = app;
             return logger;
         }
 
         public static ElympicsLoggerContext WithContext(this ElympicsLoggerContext current, string context)
         {
-            var logger = new ElympicsLoggerContext
-            {
-                SessionId = current.SessionId,
-                App = current.App,
-                Context = context,
-                MethodName = current.MethodName,
-                ElympicsContext = current.ElympicsContext,
-                UserContext = current.UserContext,
-                ConnectionContext = current.ConnectionContext,
-                PlayPadContext = current.PlayPadContext,
-                RoomContext = current.RoomContext,
-                GameMode = current.GameMode,
-            };
+            var logger = current.Copy();
+            logger.Context = context;
             return logger;
         }
 

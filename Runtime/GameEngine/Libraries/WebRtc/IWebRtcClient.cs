@@ -8,6 +8,8 @@ namespace WebRtcWrapper
 
         event Action<string> IceCandidateCreated;
 
+        event Action<(string LocalCandidate, string RemoteCandidate)> CandidatePairChosen;
+
         void SetIceServers(string iceServersJson);
         void CreateOffer(bool restart);
 

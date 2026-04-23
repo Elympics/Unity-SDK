@@ -14,6 +14,7 @@ const LibraryWebRtc = {
     onUnreliableEnded: null,
     onOffer: null,
     onIceCandidate: null,
+    onCandidatePairChosen: null,
     onIceConnectionStateChanged: null,
     onConnectionStateChanged: null
     onLog: null
@@ -38,6 +39,7 @@ const LibraryWebRtc = {
       connectionStateChanged,
       iceCandidateCallback,
       offerCallback,
+      candidatePairChosenCallback,
       logCallback,
       logWarningCallback,
       logErrorCallback
@@ -179,10 +181,35 @@ const LibraryWebRtc = {
         }
         offerCallback(JSON.stringify(updatedOffer));
       };
+
+    var waitUntil = f => Promise.resolve(f())
+        .then(done => done || wait(200).then(() => waitUntil(f)));
+
+    var wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+      this.candidatePairCt = [false];
+
       this.onAnswer = function (answerJson) {
         logCallback('onAnswer', webRtcState.formatLog(`Answer received\n${answerJson}`));
         const answer = JSON.parse(answerJson);
         this.pc.setRemoteDescription(answer);
+        this.candidatePairCt[0] = true;
+        this.candidatePairCt = [false];
+        this.waitForCandidatePair(this.candidatePairCt);
+      };
+
+      this.waitForCandidatePair = async function (ct) {
+        while (!ct[0]) {
+          const stats = await this.pc.getStats();
+          const nominatedPair = stats.values().find(s => s.type === "candidate-pair" && s.nominated);
+          if (nominatedPair) {
+            const localCandidate = stats.get(nominatedPair.localCandidateId);
+            const remoteCandidate = state.get(nominatedPair.remoteCandidateId);
+            candidatePairChosenCallback(localCandidate, remoteCandidate);
+            return;
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
       };
 
       this.sendReliable = function (message) {
@@ -358,6 +385,21 @@ const LibraryWebRtc = {
       }
     };
 
+    const WebRtcCandidatePairChosenCallback = (localCandidate, remoteCandidate) => {
+      const localCandidateBytes = lengthBytesUTF8(localCandidate) + 1;
+      const localCandidateBuffer = _malloc(localCandidateBytes);
+      stringToUTF8(localCandidate, localCandidateBuffer, localCandidateBytes);
+      const remoteCandidateBytes = lengthBytesUTF8(remoteCandidate) + 1;
+      const remoteCandidateBuffer = _malloc(remoteCandidateBytes);
+      stringToUTF8(remoteCandidate, remoteCandidateBuffer, remoteCandidateBytes);
+
+      try {
+        Module.dynCall_viii(webRtcState.onCandidatePairChosen, id, localCandidateBuffer, remoteCandidateBuffer);
+      } finally {
+        _free(msgBuffer);
+      }
+    };
+
     const IceConnectionStateChanged = (state) => {
       const msgBytes = lengthBytesUTF8(state) + 1;
       const msgBuffer = _malloc(msgBytes);
@@ -445,6 +487,7 @@ const LibraryWebRtc = {
       ConnectionStateChanged,
       WebRtcIceCandidateCallback,
       WebRtcOfferCallback,
+      WebRtcCandidatePairChosenCallback,
       WebRtcLogCallback,
       WebRtcLogWarningCallback,
       WebRtcLogErrorCallback
@@ -539,6 +582,10 @@ const LibraryWebRtc = {
   // biome-ignore lint/complexity/useArrowFunction: <explanation>
   WebRtcSetOnConnectionStateChanged: function (callback) {
     webRtcState.onConnectionStateChanged = callback;
+  },
+
+  WebRtcSetOnCandidatePairChosen: function (callback) {
+    webRtcState.onCandidatePairChosen = callback;
   },
 
   WebRtcSetOnLog: function (callback) {

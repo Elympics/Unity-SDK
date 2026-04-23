@@ -4,6 +4,7 @@
 
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
+using UnityEngine;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
 using System.Collections.Generic;
@@ -28,28 +29,23 @@ namespace Elympics.Libraries
                 _logger = logger;
             }
 
-            public void SendReliable(byte[] data)
-            {
-                WebRtcSendReliable(_instanceId, data, data.Length);
-            }
+            public void SendReliable(byte[] data) => WebRtcSendReliable(_instanceId, data, data.Length);
 
-            public void SendUnreliable(byte[] data)
-            {
-                WebRtcSendUnreliable(_instanceId, data, data.Length);
-            }
+            public void SendUnreliable(byte[] data) => WebRtcSendUnreliable(_instanceId, data, data.Length);
 
             public event Action<byte[]> ReliableReceived;
             public event Action<string> ReliableReceivingError;
-            public event Action         ReliableReceivingEnded;
+            public event Action ReliableReceivingEnded;
 
             public event Action<byte[]> UnreliableReceived;
             public event Action<string> UnreliableReceivingError;
-            public event Action         UnreliableReceivingEnded;
+            public event Action UnreliableReceivingEnded;
             public event Action<string> IceConnectionStateChanged;
             public event Action<string> ConnectionStateChanged;
 
             public event Action<string> OfferCreated;
             public event Action<string> IceCandidateCreated;
+            public event Action<(string LocalCandidate, string RemoteCandidate)> CandidatePairChosen;
 
             public void Dispose() => HandleInstanceDestroy(_instanceId);
 
@@ -62,18 +58,18 @@ namespace Elympics.Libraries
             public void ReceiveWithThread()
             { }
 
-            public bool ReceiveReliableOnce()   => true;
+            public bool ReceiveReliableOnce() => true;
             public bool ReceiveUnreliableOnce() => true;
 
             public void Close() => WebRtcClose(_instanceId);
 
             public void OnReliableReceived(byte[] data) => ReliableReceived?.Invoke(data);
-            public void OnReliableError(string error)   => ReliableReceivingError?.Invoke(error);
-            public void OnReliableEnded()               => ReliableReceivingEnded?.Invoke();
+            public void OnReliableError(string error) => ReliableReceivingError?.Invoke(error);
+            public void OnReliableEnded() => ReliableReceivingEnded?.Invoke();
 
             public void OnUnreliableReceived(byte[] data) => UnreliableReceived?.Invoke(data);
-            public void OnUnreliableError(string error)   => UnreliableReceivingError?.Invoke(error);
-            public void OnUnreliableEnded()               => UnreliableReceivingEnded?.Invoke();
+            public void OnUnreliableError(string error) => UnreliableReceivingError?.Invoke(error);
+            public void OnUnreliableEnded() => UnreliableReceivingEnded?.Invoke();
 
             public void OnIceConnectionStateChanged(string newState) => IceConnectionStateChanged?.Invoke(newState);
 
@@ -86,6 +82,19 @@ namespace Elympics.Libraries
             public void OnLog(string methodName, string logMessage) => _logger.WithMethodName(methodName).Log(logMessage);
             public void OnLogWarning(string methodName, string logMessage) => _logger.WithMethodName(methodName).Warning(logMessage);
             public void OnLogError(string methodName, string logMessage) => _logger.WithMethodName(methodName).Error(logMessage);
+
+            public void OnCandidatePairChosen(string localCandidateStatsJson, string remoteCandidateStatsJson)
+            {
+                if (JsonUtility.FromJson<CandidateWithTypeOnly>(localCandidateStatsJson).candidateType == "relay")
+                    _logger.WebRtcContext.UsesTurn = true;
+                CandidatePairChosen?.Invoke((localCandidateStatsJson, remoteCandidateStatsJson));
+            }
+
+            [Serializable]
+            private struct CandidateWithTypeOnly
+            {
+                public string candidateType;
+            }
         }
 
         private static readonly Dictionary<int, WebRtcClientAdapter> Instances = new();
@@ -105,6 +114,8 @@ namespace Elympics.Libraries
         public delegate void OnIceCandidateCallback(int instanceId, IntPtr iceCandidate);
 
         public delegate void OnLogCallback(int instanceId, IntPtr methodName, IntPtr logMessage);
+
+        public delegate void OnCandidatePairChosenCallback(int instanceId, IntPtr localCandidateJsonPtr, IntPtr remoteCandidateJsonPtr);
 
         [DllImport("__Internal")]
         public static extern int WebRtcAllocate();
@@ -158,6 +169,9 @@ namespace Elympics.Libraries
         public static extern void WebRtcSetOnIceCandidate(OnIceCandidateCallback callback);
 
         [DllImport("__Internal")]
+        public static extern void WebRtcSetOnCandidatePairChosen(OnCandidatePairChosenCallback callback);
+
+        [DllImport("__Internal")]
         public static extern void WebRtcCreateOffer(int instanceId, bool restart);
 
         [DllImport("__Internal")]
@@ -187,6 +201,7 @@ namespace Elympics.Libraries
             WebRtcSetOnConnectionStateChanged(DelegateOnConnectionStateChanged);
             WebRtcSetOnOffer(DelegateOnOffer);
             WebRtcSetOnIceCandidate(DelegateOnIceCandidate);
+            WebRtcSetOnCandidatePairChosen(DelegateOnCandidatePairChosen);
             WebRtcSetOnLog(DelegateOnLog);
             WebRtcSetOnLogWarning(DelegateOnLogWarning);
             WebRtcSetOnLogError(DelegateOnLogError);
@@ -300,6 +315,17 @@ namespace Elympics.Libraries
 
             var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
             instanceRef.OnIceCandidate(candidateJson);
+        }
+
+        [MonoPInvokeCallback(typeof(OnCandidatePairChosenCallback))]
+        public static void DelegateOnCandidatePairChosen(int instanceId, IntPtr localCandidateJsonPtr, IntPtr remoteCandidateJsonPtr)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            var localCandidateJson = Marshal.PtrToStringAuto(localCandidateJsonPtr);
+            var remoteCandidateJson = Marshal.PtrToStringAuto(remoteCandidateJsonPtr);
+            instanceRef.OnCandidatePairChosen(localCandidateJson, remoteCandidateJson);
         }
 
         [MonoPInvokeCallback(typeof(OnLogCallback))]

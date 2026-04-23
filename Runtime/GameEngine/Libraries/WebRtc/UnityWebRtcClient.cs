@@ -259,7 +259,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var localCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId];
             var remoteCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId];
             if (localCandidate.candidateType is "relay")
-                _logger.SetUsesTurn();
+                _ = _logger.SetUsesTurn();
             var pair = (localCandidate.ToJson(), remoteCandidate.ToJson());
             Debug.Log("Chosen pair: " + pair);
             CandidatePairChosen?.Invoke(pair);

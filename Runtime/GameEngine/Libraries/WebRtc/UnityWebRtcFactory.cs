@@ -4,7 +4,6 @@
 
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
-using UnityEngine;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
 using System.Collections.Generic;

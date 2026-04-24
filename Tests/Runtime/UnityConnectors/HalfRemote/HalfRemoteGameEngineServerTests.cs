@@ -44,7 +44,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             const int webPort = 7895;
 
             var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/doSignaling"));
-            var webRtcClient = new UnityWebRtcClient(WebRtcConfig.Default, new ElympicsLoggerContext());
+            var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default, new ElympicsLoggerContext());
 
             async UniTask<HalfRemoteMatchClient> ConnectWebRtc()
             {

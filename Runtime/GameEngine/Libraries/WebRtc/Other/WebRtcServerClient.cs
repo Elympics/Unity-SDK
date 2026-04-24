@@ -1,18 +1,17 @@
 using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Elympics;
 using Elympics.ElympicsSystems.Internal;
-using Elympics.GameEngine.Libraries.WebRtc;
+using Elympics.GameEngine.Libraries.WebRtc.Other;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
 
 #nullable enable
 
-namespace GameEngine.Libraries.WebRtc
+namespace Elympics.GameEngine.Libraries.WebRtc
 {
-    internal class UnityWebRtcServerClient : IWebRtcServerClient
+    internal class WebRtcServerClient : IWebRtcServerClient
     {
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
@@ -34,9 +33,9 @@ namespace GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public UnityWebRtcServerClient(ElympicsLoggerContext logger)
+        public WebRtcServerClient(ElympicsLoggerContext logger)
         {
-            _logger = logger.WithContext(nameof(UnityWebRtcServerClient));
+            _logger = logger.WithContext(nameof(WebRtcServerClient));
 
             _peerConnection = new RTCPeerConnection();
 

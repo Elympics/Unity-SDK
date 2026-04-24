@@ -16,9 +16,9 @@ const LibraryWebRtc = {
         onIceCandidate: null,
         onCandidatePairChosen: null,
         onIceConnectionStateChanged: null,
-        onConnectionStateChanged: null
-        onLog: null
-        onLogWarning: null
+        onConnectionStateChanged: null,
+        onLog: null,
+        onLogWarning: null,
         onLogError: null
     },
 

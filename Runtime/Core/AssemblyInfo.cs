@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
 [assembly: InternalsVisibleTo("Elympics.WebRtc")]
+[assembly: InternalsVisibleTo("Elympics.WebRtc.WebGl")]
+[assembly: InternalsVisibleTo("Elympics.WebRtc.Other")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Editor")]
 [assembly: InternalsVisibleTo("SmartContractService")]

@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
-using Elympics.Libraries;
+using Elympics.GameEngine.Libraries.WebRtc;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using MatchTcpClients;
@@ -120,7 +120,7 @@ namespace Elympics
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
                     logger,
-                    WebRtcFactory.CreateInstance,
+                    WebRtcFactory.CreateClient,
                     iceServersUri)
                 : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,

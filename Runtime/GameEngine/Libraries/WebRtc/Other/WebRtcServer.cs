@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using Elympics.ElympicsSystems.Internal;
 using WebRtcWrapper;
 
-namespace GameEngine.Libraries.WebRtc
+namespace Elympics.GameEngine.Libraries.WebRtc
 {
-    internal class UnityWebRtcServer : IWebRtcServer
+    internal class WebRtcServer : IWebRtcServer
     {
         private readonly List<IWebRtcServerClient> _clients = new();
 
@@ -14,8 +14,8 @@ namespace GameEngine.Libraries.WebRtc
         private readonly int? _publicPortOverride;
         private readonly ElympicsLoggerContext _logger;
 
-        public UnityWebRtcServer(ElympicsLoggerContext logger) =>
-            _logger = logger.WithContext(nameof(UnityWebRtcServer));
+        public WebRtcServer(ElympicsLoggerContext logger) =>
+            _logger = logger.WithContext(nameof(WebRtcServer));
 
         public void Start(bool withReceiveThread = true)
         { }
@@ -25,7 +25,7 @@ namespace GameEngine.Libraries.WebRtc
 
         public IWebRtcServerClient CreateClient()
         {
-            var client = new UnityWebRtcServerClient(_logger);
+            var client = new WebRtcServerClient(_logger);
             _clients.Add(client);
             return client;
         }

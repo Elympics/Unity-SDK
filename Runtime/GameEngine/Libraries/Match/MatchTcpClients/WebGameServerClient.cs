@@ -8,7 +8,6 @@ using Elympics.Communication.Models;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
-using Elympics.Libraries;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using UnityEngine;
@@ -42,7 +41,7 @@ namespace MatchTcpClients
             Uri? iceServersUri = null) : base(serializer, config, logger)
         {
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? WebRtcFactory.CreateInstance;
+            _webRtcFactory = customWebRtcFactory ?? WebRtcFactory.CreateClient;
             _iceServersUri = iceServersUri;
             _logger = logger.WithContext(nameof(WebGameServerClient));
         }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
+using Elympics.GameEngine.Libraries.WebRtc.Other;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
@@ -11,7 +12,7 @@ using WebRtcWrapper;
 
 namespace Elympics.GameEngine.Libraries.WebRtc
 {
-    internal class UnityWebRtcClient : IWebRtcClient
+    internal class WebRtcClient : IWebRtcClient
     {
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
@@ -42,10 +43,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private CancellationTokenSource? _candidatePairCts;
 
-        public UnityWebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
+        public WebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
         {
             _config = config;
-            _logger = logger.WithContext(nameof(UnityWebRtcClient));
+            _logger = logger.WithContext(nameof(WebRtcClient));
             var configuration = new RTCConfiguration
             {
                 iceServers = Array.Empty<RTCIceServer>(),

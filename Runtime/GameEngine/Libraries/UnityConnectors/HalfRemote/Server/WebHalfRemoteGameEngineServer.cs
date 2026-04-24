@@ -3,7 +3,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
-using GameEngine.Libraries.WebRtc;
+using Elympics.GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
 using Proto.ProtoClient.Receivers;
@@ -44,7 +44,7 @@ namespace UnityConnectors.HalfRemote.Server
 
         public void Start()
         {
-            _webRtcListener = new UnityWebRtcServer(_logger);
+            _webRtcListener = WebRtcFactory.CreateServer(_logger);
             _webRtcListener.Start();
 
             _running = true;

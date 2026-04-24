@@ -9,7 +9,6 @@ using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
-using Elympics.Libraries;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using Proto.ProtoClient.NetworkClient;
@@ -131,7 +130,7 @@ namespace Elympics
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
-            _webRtcClient = WebRtcFactory.CreateInstance(new WebRtcConfig
+            _webRtcClient = WebRtcFactory.CreateClient(new WebRtcConfig
             {
                 OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
             }, logger);

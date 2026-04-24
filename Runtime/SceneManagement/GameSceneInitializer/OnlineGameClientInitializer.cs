@@ -1,5 +1,5 @@
 using Elympics.ElympicsSystems.Internal;
-using Elympics.Libraries;
+using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
 
 namespace Elympics
@@ -39,7 +39,7 @@ namespace Elympics
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
                     gameLogger,
-                    WebRtcFactory.CreateInstance,
+                    WebRtcFactory.CreateClient,
                     iceServersUri)
                 : new TcpUdpGameServerClient(serializer,
                     config,

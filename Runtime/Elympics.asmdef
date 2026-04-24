@@ -12,7 +12,8 @@
         "Elympics.Proto",
         "GameEngineCore",
         "GameBotCore",
-        "UnityConnectors"
+        "UnityConnectors",
+        "Elympics.WebRtc.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,20 +1,20 @@
 {
-    "name": "Elympics.WebRtc",
+    "name": "Elympics.WebRtc.Other",
     "rootNamespace": "",
     "references": [
         "GUID:f12aafacab75a87499e7e45c873ffab8",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:645313404a2d0c44abd9febb05cd1212",
-        "GUID:884c905e7a86c7444ad05287e5b8b669",
-        "GUID:598d50f0b99ecc342bb6bff69c950dbd",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:e2a0cb92652b07d409c674525eba884a"
     ],
     "includePlatforms": [],
-    "excludePlatforms": [],
+    "excludePlatforms": [
+        "WebGL"
+    ],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
+    "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

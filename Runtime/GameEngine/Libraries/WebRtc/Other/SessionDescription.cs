@@ -2,7 +2,7 @@
 using System;
 using Unity.WebRTC;
 
-namespace Elympics.GameEngine.Libraries.WebRtc
+namespace Elympics.GameEngine.Libraries.WebRtc.Other
 {
     [Serializable]
     internal struct SessionDescription

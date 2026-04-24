@@ -12,7 +12,7 @@ namespace Elympics
 {
     internal static class ElympicsLogger
     {
-        internal static ElympicsLoggerContext? CurrentContext;
+        internal static ElympicsLoggerContext CurrentContext = new(Guid.Empty);
         internal static Guid SessionId;
 
         private const string LogStringFormat = "[{0,-28}] [{1}] {2}";
@@ -26,6 +26,7 @@ namespace Elympics
         private static void Initialize()
         {
             SessionId = Guid.NewGuid();
+            CurrentContext.SessionId = SessionId;
             timer = new Stopwatch();
             timer.Start();
         }

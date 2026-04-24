@@ -1,7 +1,6 @@
 using System.Net;
 using System.Threading;
 using Elympics.ElympicsSystems;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore.V1._4;
@@ -17,14 +16,13 @@ namespace Elympics
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
         private CancellationTokenSource _systemToken;
 
-        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter, ElympicsLoggerContext logger)
+        protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _systemToken = new CancellationTokenSource();
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
                 gameEngineAdapter,
                 new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.TcpPortForHalfRemoteMode),
-                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode),
-                logger);
+                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
             _halfRemoteGameEngineProtoConnector.ReliableClientConnected += clientId =>
                 ElympicsLogger.Log($"Client {clientId} connected using reliable channel.");
             _halfRemoteGameEngineProtoConnector.ReliableClientReceivingError += (clientId, error) =>

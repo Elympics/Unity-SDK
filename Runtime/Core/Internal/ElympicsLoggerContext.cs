@@ -35,10 +35,6 @@ namespace Elympics.ElympicsSystems.Internal
             Context = string.Empty;
             MethodName = string.Empty;
             GameMode = string.Empty;
-            if (ElympicsLogger.CurrentContext.HasValue)
-                return;
-
-            ElympicsLogger.CurrentContext = this;
         }
 
         public ElympicsLoggerContext Copy() => new()

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Elympics.Communication.Models.Public;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Mappers;
 using GameBotCore.V1._3;
 
@@ -14,7 +13,7 @@ namespace Elympics
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
 
-        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter, ElympicsLoggerContext logger)
+        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter)
         {
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
@@ -73,7 +72,7 @@ namespace Elympics
                     CustomData = x.CustomData
                 }).ToList()
             };
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData, logger);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData);
 
             _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);

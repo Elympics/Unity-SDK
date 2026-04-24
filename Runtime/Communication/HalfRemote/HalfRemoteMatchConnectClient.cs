@@ -7,7 +7,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -55,9 +54,7 @@ namespace Elympics
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
 
-        private readonly ElympicsLoggerContext _logger;
-
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData, ElympicsLoggerContext logger)
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
             _ip = gameConfig.IpForHalfRemoteMode;
@@ -71,7 +68,6 @@ namespace Elympics
                 var baseUri = new Uri($"http://{_ip}:{_port}");
                 _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
             }
-            _logger = logger.WithContext(nameof(HalfRemoteMatchConnectClient));
         }
 
         public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
@@ -95,7 +91,6 @@ namespace Elympics
 
         private IEnumerator ConnectUsingTcp(Action<bool> connectedCallback, CancellationToken ct)
         {
-            var logger = _logger.WithMethodName();
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
                 if (!Application.isPlaying
@@ -105,13 +100,13 @@ namespace Elympics
                 {
                     _tcpClient = new TcpClient();
                     _tcpClient.Connect(IPAddress.Parse(_ip), _port);
-                    logger.Log($"TCP connected to {_ip}:{_port}");
+                    ElympicsLogger.Log($"TCP connected to {_ip}:{_port}");
                     break;
                 }
                 catch (Exception e)
                 {
                     _tcpClient = null;
-                    logger.Exception(e);
+                    _ = ElympicsLogger.LogException(e);
                 }
 
                 yield return WaitTimeToRetryConnect;
@@ -129,11 +124,10 @@ namespace Elympics
 
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
-            var logger = _logger.WithMethodName();
             _webRtcClient = WebRtcFactory.CreateClient(new WebRtcConfig
             {
                 OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
-            }, logger);
+            });
             string offer = null;
             var offerSet = false;
             _webRtcClient.OfferCreated += s =>
@@ -152,12 +146,12 @@ namespace Elympics
 
             if (!offerSet)
             {
-                logger.Error("Offer not received from WebRTC client.");
+                ElympicsLogger.LogError("Offer not received from WebRTC client.");
                 yield break;
             }
             if (string.IsNullOrEmpty(offer))
             {
-                logger.Error("Offer is null or empty.");
+                ElympicsLogger.LogError("Offer is null or empty.");
                 yield break;
             }
 
@@ -178,16 +172,16 @@ namespace Elympics
                     }
                     catch (Exception ex)
                     {
-                        logger.Error($"Failed to deserialize signaling response: {ex.Message}");
+                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
                     }
 
                 yield return WaitTimeToRetryConnect;
-                logger.Error(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
+                ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))
             {
-                logger.Error("WebRTC answer is empty because of a connection error " + "or an issue with signaling server.");
+                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error " + "or an issue with signaling server.");
                 connectedCallback.Invoke(false);
                 yield break;
             }
@@ -219,12 +213,12 @@ namespace Elympics
 
             if (!channelOpened)
             {
-                logger.Error("WebRTC channel not open after " + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
+                ElympicsLogger.LogError("WebRTC channel not open after " + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
                 connectedCallback.Invoke(false);
                 yield break;
             }
 
-            logger.Log("WebRTC received channel opened.");
+            ElympicsLogger.Log("WebRTC received channel opened.");
 
             yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
         }

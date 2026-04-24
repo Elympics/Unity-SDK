@@ -44,16 +44,16 @@ namespace Elympics
         private Action _disconnectedCallback;
         private Action _matchJoinedCallback;
 
-        private ElympicsLoggerContext _logger;
+        private readonly ElympicsLoggerContext _logger;
+
         public RemoteMatchConnectClient(
             IGameServerClient gameServerClient,
-            ElympicsLoggerContext logger,
             string tcpUdpServerAddress,
             string webServerAddress,
             string userSecret,
             bool useWeb = false)
         {
-            _logger = logger.WithContext(nameof(RemoteMatchConnectClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(RemoteMatchConnectClient));
             _gameServerClient = gameServerClient;
             _tcpUdpServerAddress = tcpUdpServerAddress;
             _webServerAddress = webServerAddress;

@@ -1,4 +1,3 @@
-using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 
 namespace Elympics
@@ -13,8 +12,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager,
-            ElympicsLoggerContext logger)
+            ElympicsBehavioursManager behavioursManager)
         {
             ElympicsBehavioursManager = behavioursManager;
             Time.fixedDeltaTime = gameConfig.TickDuration;
@@ -24,7 +22,7 @@ namespace Elympics
             server.Destroy();
             // singlePlayer.Destroy();
             //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympcisBase zamiast od argumentow.
-            InitializeClient(client, gameConfig, logger);
+            InitializeClient(client, gameConfig);
         }
 
         public override void Dispose()
@@ -34,6 +32,6 @@ namespace Elympics
                 _client.MatchConnectClient.Dispose();
         }
 
-        protected abstract void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger);
+        protected abstract void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig);
     }
 }

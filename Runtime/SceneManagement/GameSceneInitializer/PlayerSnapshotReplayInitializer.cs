@@ -1,6 +1,4 @@
 #nullable enable
-
-using Elympics.ElympicsSystems.Internal;
 using Elympics.SnapshotAnalysis;
 
 namespace Elympics
@@ -12,8 +10,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager,
-            ElympicsLoggerContext logger)
+            ElympicsBehavioursManager behavioursManager)
         {
 
             var snapshotRetriever = LobbyRegister.GetSnapshotRetriever();

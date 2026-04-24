@@ -193,7 +193,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
+            logger.Log($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
@@ -208,7 +208,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log("[WebRTC] Connection state changed\n" + stringifiedState);
+            logger.Log($"[WebRTC] Connection state changed: {stringifiedState}");
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);

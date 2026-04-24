@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
 using GameEngineCore.V1._3;
 using Google.Protobuf;
 using Proto.ProtoClient;
@@ -35,7 +34,7 @@ namespace UnityConnectors.HalfRemote
         private readonly Dictionary<Guid, GameEngineProtoClient> _reliableClients;
         private readonly Dictionary<Guid, GameEngineProtoClient> _unreliableClients;
 
-        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, ElympicsLoggerContext logger)
+        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint)
         {
             _reliableClients = new Dictionary<Guid, GameEngineProtoClient>();
             _unreliableClients = new Dictionary<Guid, GameEngineProtoClient>();
@@ -43,7 +42,7 @@ namespace UnityConnectors.HalfRemote
             var serverNtpReceiver = new ServerNtpReceiver();
 
             var tcpHalfRemoteGameEngineServer = new TcpHalfRemoteGameEngineServer(tcpListenEndpoint, this, serverNtpReceiver);
-            var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver, logger);
+            var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver);
 
             _webClientInitializer = webHalfRemoteGameEngineServer;
             _listeners = new List<IHalfRemoteGameEngineServer>

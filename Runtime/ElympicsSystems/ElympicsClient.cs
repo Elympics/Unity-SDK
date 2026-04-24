@@ -68,10 +68,9 @@ namespace Elympics
             IMatchClient matchClient,
             InitialMatchPlayerDataGuid initialMatchPlayerData,
             ElympicsBehavioursManager elympicsBehavioursManager,
-            ElympicsLoggerContext logger,
             int maxPlayerCount)
         {
-            _logger = logger.WithContext(nameof(ElympicsClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;

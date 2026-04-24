@@ -1,7 +1,5 @@
 #nullable enable
-
 using System;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Retrievers;
 
@@ -16,8 +14,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager,
-            ElympicsLoggerContext logger)
+            ElympicsBehavioursManager behavioursManager)
         {
             var retriever = new EditorSnapshotAnalysisRetriever(gameConfig.SnapshotFilePath);
             var replayVersion = retriever.RetrieveInitData().GameVersion;

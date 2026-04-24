@@ -12,7 +12,7 @@ namespace Elympics
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
 
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
             const string gameModeName = "half remote";
             var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
@@ -31,9 +31,7 @@ namespace Elympics
                                                   + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                                                   + $"The list has only {playersList.Count} entries. "
                                                   + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            logger = logger.SetGameMode(gameModeName)
-                .WithApp(ElympicsLoggerContext.GameplayContextApp)
-                .SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData ?? Array.Empty<float>();
             var gameEngineData = playersList[playerIndex].GameEngineData ?? Array.Empty<byte>();
@@ -68,7 +66,7 @@ namespace Elympics
                     CustomData = x.CustomData
                 }).ToList()
             };
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, halfRemoteMatchInitialData, logger);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, halfRemoteMatchInitialData);
             client.InitializeInternal(elympicsGameConfig,
                 _halfRemoteMatchConnectClient,
                 _halfRemoteMatchClient,
@@ -78,7 +76,6 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                logger,
                 elympicsGameConfig.MaxPlayers);
         }
 

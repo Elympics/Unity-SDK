@@ -20,7 +20,7 @@ namespace MatchTcpClients
     internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
-        private readonly Func<WebRtcConfig, ElympicsLoggerContext, IWebRtcClient> _webRtcFactory;
+        private readonly Func<WebRtcConfig, IWebRtcClient> _webRtcFactory;
         private readonly Uri? _iceServersUri;
 
         private IWebRtcClient? _webRtcClient;
@@ -36,14 +36,13 @@ namespace MatchTcpClients
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
-            ElympicsLoggerContext logger,
-            Func<WebRtcConfig, ElympicsLoggerContext, IWebRtcClient>? customWebRtcFactory = null,
-            Uri? iceServersUri = null) : base(serializer, config, logger)
+            Func<WebRtcConfig, IWebRtcClient>? customWebRtcFactory = null,
+            Uri? iceServersUri = null) : base(serializer, config)
         {
             _signalingClient = signalingClient;
             _webRtcFactory = customWebRtcFactory ?? WebRtcFactory.CreateClient;
             _iceServersUri = iceServersUri;
-            _logger = logger.WithContext(nameof(WebGameServerClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebGameServerClient));
         }
 
         public static Uri GetSignalingServerBaseAddress(string gsEndpoint, string publicWebEndpoint, string? regionName)
@@ -67,7 +66,7 @@ namespace MatchTcpClients
                 _webRtcClient.Dispose();
                 UnsubscribeFromWebConnectionStatus();
             }
-            _webRtcClient = _webRtcFactory(new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay }, _logger);
+            _webRtcClient = _webRtcFactory(new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay });
             ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
             UnreliableClient?.Dispose();

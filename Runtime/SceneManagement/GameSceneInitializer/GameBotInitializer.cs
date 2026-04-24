@@ -1,4 +1,3 @@
-using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 
 namespace Elympics
@@ -10,8 +9,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager,
-            ElympicsLoggerContext logger)
+            ElympicsBehavioursManager behavioursManager)
         {
             Time.maximumDeltaTime = gameConfig.TickDuration * 2;
             Application.targetFrameRate = gameConfig.TicksPerSecond * 2;
@@ -20,7 +18,7 @@ namespace Elympics
 
             // ElympicsBot has to setup callbacks BEFORE initializing GameBotAdapter - possible loss of events like Init ~pprzestrzelski 27.08.2021
             bot.InitializeInternal(gameConfig, gameBotAdapter, behavioursManager);
-            InitializeBot(bot, gameConfig, gameBotAdapter, logger);
+            InitializeBot(bot, gameConfig, gameBotAdapter);
             behavioursManager.InitializeInternal(bot, gameConfig.MaxPlayers);
 
             client.Destroy();
@@ -28,6 +26,6 @@ namespace Elympics
             // singlePlayer.Destroy();
         }
 
-        protected abstract void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter, ElympicsLoggerContext logger);
+        protected abstract void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter);
     }
 }

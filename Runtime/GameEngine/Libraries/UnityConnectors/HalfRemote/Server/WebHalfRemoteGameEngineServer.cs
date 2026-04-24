@@ -2,7 +2,6 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
@@ -29,22 +28,20 @@ namespace UnityConnectors.HalfRemote.Server
         private readonly IPEndPoint _listenEndpoint;
         private readonly IGameEngineProtoReceiver _gameEngineProtoReceiver;
         private readonly IServerNtpReceiver _serverNtpReceiver;
-        private readonly ElympicsLoggerContext _logger;
 
         private IWebRtcServer? _webRtcListener;
         private bool _running;
 
-        public WebHalfRemoteGameEngineServer(IPEndPoint listenEndpoint, IGameEngineProtoReceiver gameEngineProtoReceiver, IServerNtpReceiver serverNtpReceiver, ElympicsLoggerContext logger)
+        public WebHalfRemoteGameEngineServer(IPEndPoint listenEndpoint, IGameEngineProtoReceiver gameEngineProtoReceiver, IServerNtpReceiver serverNtpReceiver)
         {
             _listenEndpoint = listenEndpoint;
             _gameEngineProtoReceiver = gameEngineProtoReceiver;
             _serverNtpReceiver = serverNtpReceiver;
-            _logger = logger.WithContext(nameof(WebHalfRemoteGameEngineServer));
         }
 
         public void Start()
         {
-            _webRtcListener = WebRtcFactory.CreateServer(_logger);
+            _webRtcListener = WebRtcFactory.CreateServer();
             _webRtcListener.Start();
 
             _running = true;

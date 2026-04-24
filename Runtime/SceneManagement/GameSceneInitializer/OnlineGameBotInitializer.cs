@@ -1,4 +1,3 @@
-using Elympics.ElympicsSystems.Internal;
 using UnityConnectors;
 
 namespace Elympics
@@ -7,7 +6,7 @@ namespace Elympics
     {
         private GameBotProtoConnector _gameBotProtoConnector;
 
-        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter, ElympicsLoggerContext logger)
+        protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter)
         {
             _gameBotProtoConnector = new GameBotProtoConnector(gameBotAdapter);
             _gameBotProtoConnector.Connect();

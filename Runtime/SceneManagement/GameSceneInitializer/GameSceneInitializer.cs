@@ -1,5 +1,3 @@
-using Elympics.ElympicsSystems.Internal;
-
 namespace Elympics
 {
     internal abstract class GameSceneInitializer
@@ -9,8 +7,7 @@ namespace Elympics
             ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
-            ElympicsBehavioursManager behavioursManager,
-            ElympicsLoggerContext logger);
+            ElympicsBehavioursManager behavioursManager);
 
         public virtual void Dispose()
         { }

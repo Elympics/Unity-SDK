@@ -3,7 +3,6 @@ using System.Collections;
 using System.Net;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using NUnit.Framework;
 using Proto.ProtoClient.NetworkClient;
@@ -44,7 +43,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             const int webPort = 7895;
 
             var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/doSignaling"));
-            var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default, new ElympicsLoggerContext());
+            var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default);
 
             async UniTask<HalfRemoteMatchClient> ConnectWebRtc()
             {
@@ -103,7 +102,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                 Debug.Log($"Unreliable server data from player {userId}, {data.Length}");
             };
 
-            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, tcpListenEndpoint, webListenEndpoint, new ElympicsLoggerContext());
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, tcpListenEndpoint, webListenEndpoint);
             var signalingServerCts = new CancellationTokenSource();
             var signalingServer = new SimpleHttpSignalingServer(connector, webListenEndpoint);
             signalingServer.RunAsync(signalingServerCts.Token);

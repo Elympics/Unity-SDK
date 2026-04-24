@@ -15,11 +15,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly int _instanceId;
         private readonly ElympicsLoggerContext _logger;
 
-        public WebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
+        public WebRtcClient(WebRtcConfig config)
         {
             if (!isInitialized)
                 Initialize((int)config.OfferAnnounceDelay.TotalMilliseconds);
-            _logger = logger;
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcClient));
             _instanceId = WebRtcAllocate();
             Instances.Add(_instanceId, this);
         }

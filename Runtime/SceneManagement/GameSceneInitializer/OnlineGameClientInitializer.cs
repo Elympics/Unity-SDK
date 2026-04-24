@@ -6,7 +6,7 @@ namespace Elympics
 {
     internal class OnlineGameClientInitializer : GameClientInitializer
     {
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
             if (!LobbyRegister.IsAuthenticated())
             {
@@ -31,22 +31,18 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
-            var gameLogger = logger.SetGameMode("online")
-                .WithApp(ElympicsLoggerContext.GameplayContextApp);
+            _ = ElympicsLogger.CurrentContext.SetGameMode("online");
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    gameLogger,
                     WebRtcFactory.CreateClient,
                     iceServersUri)
                 : new TcpUdpGameServerClient(serializer,
                     config,
-                    IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress),
-                    gameLogger);
+                    IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                gameLogger,
                 matchData.TcpUdpServerAddress,
                 matchData.WebServerAddress,
                 matchData.UserSecret,
@@ -65,7 +61,6 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                gameLogger,
                 elympicsGameConfig.MaxPlayers);
         }
     }

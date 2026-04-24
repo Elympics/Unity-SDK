@@ -15,7 +15,6 @@ namespace Elympics
         private static readonly TimeSpan MatchmakingTimeout = TimeSpan.FromSeconds(60);
 
         private ElympicsClient _client;
-        private ElympicsLoggerContext _logger;
 
         private IAuthClient _authClient;
         private MatchmakerClient _matchmakerClient;
@@ -23,10 +22,9 @@ namespace Elympics
         private ElympicsGameConfig _elympicsGameConfig;
         private InitialMatchPlayerDataGuid _initialPlayerData;
 
-        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig, ElympicsLoggerContext logger)
+        protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
             _client = client;
-            _logger = logger;
             _elympicsGameConfig = elympicsGameConfig;
             var elympicsConfig = ElympicsConfig.Load();
 
@@ -111,20 +109,17 @@ namespace Elympics
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
-            var logger = _logger.SetGameMode(gameModeName)
-                .WithApp(ElympicsLoggerContext.GameplayContextApp)
+            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName)
                 .SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    logger,
                     WebRtcFactory.CreateClient,
                     iceServersUri)
-                : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress), logger);
+                : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                logger,
                 matchData.TcpUdpServerAddress,
                 matchData.WebServerAddress,
                 matchData.UserSecret,
@@ -142,7 +137,6 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                logger,
                 matchPlayerCount);
         }
     }

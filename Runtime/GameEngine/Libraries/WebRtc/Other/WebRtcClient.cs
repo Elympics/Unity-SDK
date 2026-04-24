@@ -43,10 +43,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private CancellationTokenSource? _candidatePairCts;
 
-        public WebRtcClient(WebRtcConfig config, ElympicsLoggerContext logger)
+        public WebRtcClient(WebRtcConfig config)
         {
             _config = config;
-            _logger = logger.WithContext(nameof(WebRtcClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcClient));
             var configuration = new RTCConfiguration
             {
                 iceServers = Array.Empty<RTCIceServer>(),
@@ -279,7 +279,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log("[WebRTC] ICE connection state changed\n" + stringifiedState);
+            logger.Log($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
@@ -294,7 +294,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log("[WebRTC] Connection state changed\n" + stringifiedState);
+            logger.Log($"[WebRTC] Connection state changed: {stringifiedState}");
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);

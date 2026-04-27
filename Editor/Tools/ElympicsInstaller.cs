@@ -15,6 +15,9 @@ namespace Elympics
 
         private static void InstallMissingUnityWebRtcMetaFiles()
         {
+#if UNITY_2022_OR_NEWER
+            return;
+#endif
             // source: https://github.com/Unity-Technologies/com.unity.webrtc/tree/3.0.0-pre.6/Runtime/Plugins/iOS/webrtc.framework
             const string infoPlistPath = "Packages/com.unity.webrtc/Runtime/Plugins/iOS/webrtc.framework/Info.plist";
             const string webrtcPath = "Packages/com.unity.webrtc/Runtime/Plugins/iOS/webrtc.framework/webrtc";

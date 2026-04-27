@@ -16,7 +16,7 @@ namespace Elympics
             {
                 var type = customClass;
 
-                while (typeof(IObservable).IsAssignableFrom(type.BaseType))
+                while (type.BaseType is not null && typeof(IObservable).IsAssignableFrom(type.BaseType))
                 {
                     type = type.BaseType;
 

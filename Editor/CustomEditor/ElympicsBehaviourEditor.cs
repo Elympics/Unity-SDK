@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Elympics
 {
@@ -23,7 +22,6 @@ namespace Elympics
         private ElympicsBehaviour _behaviour;
 
         private SerializedProperty _networkId;
-        private SerializedProperty _autoAssignNetworkId;
 
         private SerializedProperty _predictableToPlayers;
 
@@ -52,8 +50,7 @@ namespace Elympics
         private void OnEnable()
         {
             _behaviour = serializedObject.targetObject as ElympicsBehaviour;
-            _networkId = serializedObject.FindProperty(nameof(_behaviour.networkId));
-            _autoAssignNetworkId = serializedObject.FindProperty(nameof(_behaviour.autoAssignNetworkId));
+            _networkId = serializedObject.FindProperty(ElympicsBehaviour.NetworkIdPropertyName);
 
             _predictableToPlayers = serializedObject.FindProperty(nameof(_behaviour.predictableFor));
             _isUpdatableForNonOwners = serializedObject.FindProperty(nameof(_behaviour.isUpdatableForNonOwners));
@@ -61,15 +58,6 @@ namespace Elympics
             _replicationPriority = serializedObject.FindProperty(nameof(_behaviour.replicationPriority));
             _netUpdateIntervalInTicks = serializedObject.FindProperty(nameof(_behaviour.netUpdateIntervalInTicks));
             _stringBuilder = new StringBuilder();
-
-            // TODO: remove the following measures of backwards compatibility one day (3/3) ~dsygocki 2026-03-06
-            var forceNetworkId = serializedObject.FindProperty(nameof(_behaviour.forceNetworkId));
-            var migratedAutoNetworkId = serializedObject.FindProperty(nameof(_behaviour.migratedAutoNetworkId));
-            if (!migratedAutoNetworkId.boolValue)
-            {
-                _autoAssignNetworkId.boolValue = !forceNetworkId.boolValue;
-                _ = serializedObject.ApplyModifiedProperties();
-            }
         }
 
         public override void OnInspectorGUI()
@@ -84,7 +72,6 @@ namespace Elympics
                 return;
             }
 
-            DrawAutoAssignToggle();
             DrawNetworkId();
             DrawPredictability();
             DrawVisibility();
@@ -96,73 +83,21 @@ namespace Elympics
             DrawSynchronizationButtons();
         }
 
-        private void DrawAutoAssignToggle()
-        {
-            _ = EditorGUILayout.PropertyField(_autoAssignNetworkId, new GUIContent(Label_AutoId, Label_AutoIdTooltip));
-            EditorGUILayout.LabelField(Label_AutoIdSummary, summaryLabelStyle);
-            EditorGUILayout.Space();
-        }
-
         private void DrawNetworkId()
         {
-            if (_autoAssignNetworkId.boolValue)
-                return;
-
             _ = EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(Label_NetworkId, GUILayout.Width(70));
 
-            var previousId = _networkId.intValue;
-            var committedId = EditorGUILayout.DelayedIntField(previousId);
-
-            if (committedId != previousId)
-            {
-                var error = ValidateManualId(committedId, _behaviour);
-                if (error != null)
-                {
-                    ElympicsLogger.LogError(error);
-                    _networkId.intValue = ElympicsBehaviour.UndefinedNetworkId;
-                }
-                else
-                {
-                    _networkId.intValue = committedId;
-                }
-
-                _ = serializedObject.ApplyModifiedProperties();
-                EditorUtility.SetDirty(_behaviour);
-            }
+            EditorGUI.BeginDisabledGroup(true);
+            _ = EditorGUILayout.IntField(_networkId.intValue);
+            EditorGUI.EndDisabledGroup();
 
             EditorGUILayout.EndHorizontal();
 
             if (_networkId.intValue == ElympicsBehaviour.UndefinedNetworkId)
-                EditorGUILayout.LabelField(MakeWarning("No NetworkId assigned. Type a value and press Enter."), _warningStyle);
+                EditorGUILayout.LabelField(MakeWarning("No NetworkId assigned. Re-open the scene, save it or enter Play mode for it to be assigned automatically."), _warningStyle);
 
             EditorGUILayout.Space();
-        }
-
-        private static string ValidateManualId(int id, ElympicsBehaviour self)
-        {
-            if (id is < NetworkIdConstants.ManualIdMin or > NetworkIdConstants.ManualIdMax)
-                return $"NetworkId {id} is out of range. Manual IDs must be between {NetworkIdConstants.ManualIdMin} and {NetworkIdConstants.ManualIdMax}.";
-
-            var takenBy = FindBehaviourWithManualId(id, self);
-            if (takenBy)
-                return $"NetworkId {id} is already used by {takenBy.gameObject.name}.";
-
-            return null;
-        }
-
-        private static ElympicsBehaviour FindBehaviourWithManualId(int id, ElympicsBehaviour self)
-        {
-            var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(SceneManager.GetActiveScene(), true);
-            foreach (var behaviour in behaviours)
-            {
-                if (behaviour == self)
-                    continue;
-                if (behaviour.NetworkId == id)
-                    return behaviour;
-            }
-
-            return null;
         }
 
         private void DrawPredictability()

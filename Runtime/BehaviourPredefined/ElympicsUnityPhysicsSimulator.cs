@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Elympics
 {
     [DisallowMultipleComponent]
-    public class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
+    public sealed class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
     {
         private static ElympicsUnityPhysicsSimulator instance;
 

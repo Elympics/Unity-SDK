@@ -34,8 +34,7 @@ namespace Elympics.Tests
             Assert.NotNull(_elympicsBase = _elympicsObject.GetComponent<ElympicsBaseTest>());
             Assert.NotNull(_rpcHolder = _rpcHolderObject.GetComponent<RpcHolderWithMetadata>());
             Assert.NotNull(_elympicsBehaviour = _rpcHolder.ElympicsBehaviour);
-            _elympicsBehaviour.AutoAssignNetworkId = true;
-            _elympicsBehaviour.networkId = 1001;
+            _elympicsBehaviour.NetworkId = 1001;
             var behavioursManager = _elympicsObject.GetComponent<ElympicsBehavioursManager>();
             Assert.NotNull(behavioursManager);
             var factory = _elympicsObject.GetComponent<ElympicsFactory>();

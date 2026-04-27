@@ -570,3 +570,7 @@ Runtime/WeaverLockingProblemTest.*
 !*.dll
 !*.pdb
 !*.xml
+
+# Track additional compiler settings
+!*.rsp
+

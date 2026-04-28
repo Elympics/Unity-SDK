@@ -193,7 +193,8 @@ const LibraryWebRtc = {
                 this.pc.setRemoteDescription(answer);
                 this.candidatePairCt[0] = true;
                 this.candidatePairCt = [false];
-                this.waitForCandidatePair(this.candidatePairCt);
+                this.waitForCandidatePair(this.candidatePairCt)
+                    .catch(e => logErrorCallback('waitForCandidatePair', e.toString()));
             };
 
             this.waitForCandidatePair = async function (ct) {
@@ -203,7 +204,7 @@ const LibraryWebRtc = {
                     if (nominatedPair) {
                         const localCandidate = stats.get(nominatedPair.localCandidateId);
                         const remoteCandidate = stats.get(nominatedPair.remoteCandidateId);
-                        candidatePairChosenCallback(localCandidate, remoteCandidate);
+                        candidatePairChosenCallback(JSON.stringify(localCandidate), JSON.stringify(remoteCandidate));
                         return;
                     }
                     await new Promise(r => setTimeout(r, 200));

@@ -12,21 +12,20 @@ namespace Elympics
 {
     internal static class ElympicsLogger
     {
-        internal static ElympicsLoggerContext CurrentContext = new(Guid.Empty);
-        internal static Guid SessionId;
+        private static readonly Guid SessionId = Guid.NewGuid();
+        internal static ElympicsLoggerContext CurrentContext = new(SessionId);
 
         private const string LogStringFormat = "[{0,-28}] [{1}] {2}";
         private const string AppPrefixFormat = "[{0}] ";
         private const string DefaultApp = "ElympicsSdk";
 
-        private static Stopwatch timer;
+        private static Stopwatch timer = new();
         private static readonly StringBuilder StringBuilder = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void Initialize()
         {
-            SessionId = Guid.NewGuid();
-            CurrentContext.SessionId = SessionId;
+            timer.Stop();
             timer = new Stopwatch();
             timer.Start();
         }

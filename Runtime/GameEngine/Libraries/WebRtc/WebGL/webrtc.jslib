@@ -3,7 +3,7 @@ const LibraryWebRtc = {
         instances: {},
         lastId: 0,
 
-        formatLog: message => `[${new Date().toISOString()}] [WebRTC] ${message}`,
+        logToConsole: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
         onReliableReceived: null,
@@ -24,7 +24,7 @@ const LibraryWebRtc = {
 
     WebRtcAllocate: function () {
         const id = webRtcState.lastId++;
-        console.log(webRtcState.formatLog(`Allocating client #${id}`));
+        webRtcState.logToConsole(`Allocating client #${id}`);
 
         function WebRtcClient(
             reliableReceived,
@@ -58,7 +58,7 @@ const LibraryWebRtc = {
                     ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
                 const message = (name[0].toUpperCase() + name.slice(1)) + " data channel " + eventType;
-                logCallback('onChannel', webRtcState.formatLog(message + selectedPairJson));
+                logCallback('onChannel', message + selectedPairJson);
             };
 
             const buildErrorMessage = (err, details, baseMessage) => {
@@ -119,7 +119,7 @@ const LibraryWebRtc = {
             this.reliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;
                 const errorMessage = err.message || err.toString() || 'Unknown error';
-                logErrorCallback('reliableDc.onerror', webRtcState.formatLog(`Reliable Error: \n${errorMessage}`));
+                logErrorCallback('reliableDc.onerror', `Reliable Error: \n${errorMessage}`);
                 const message = buildErrorMessage(err, err.errorDetail, errorMessage);
                 this.reliableError(message);
             });
@@ -141,7 +141,7 @@ const LibraryWebRtc = {
             this.unreliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;
                 const errorMessage = err.message || err.toString() || 'Unknown error';
-                logErrorCallback('unreliableDc.onerror', webRtcState.formatLog(`UnReliable Error: \n${errorMessage}`));
+                logErrorCallback('unreliableDc.onerror', `Unreliable Error: \n${errorMessage}`);
                 const message = buildErrorMessage(err, err.errorDetail, errorMessage);
                 this.unreliableError(message);
             });
@@ -155,11 +155,11 @@ const LibraryWebRtc = {
 
             this.createOffer = async iceRestart => {
                 const offer = await this.pc.createOffer({iceRestart});
-                logCallback('createOffer', webRtcState.formatLog(`Created offer\n${JSON.stringify(offer)}`));
+                logCallback('createOffer', `Created offer\n${JSON.stringify(offer)}`);
                 await this.pc.setLocalDescription(offer);
 
                 let resolver;
-                logCallback('createOffer', webRtcState.formatLog(`Gathering ICE candidates...`));
+                logCallback('createOffer', `Gathering ICE candidates...`);
                 await Promise.race([
                     new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay)),
                     new Promise(r => {
@@ -167,7 +167,7 @@ const LibraryWebRtc = {
                         this.pendingOfferResolvers.push(r);
                     })
                 ]);
-                logCallback('createOffer', webRtcState.formatLog(`ICE candidates gathered.`));
+                logCallback('createOffer', `ICE candidates gathered.`);
                 const index = this.pendingOfferResolvers.indexOf(resolver);
                 if (index > -1) {
                     this.pendingOfferResolvers.splice(index, 1);
@@ -175,7 +175,7 @@ const LibraryWebRtc = {
 
                 const updatedOffer = this.pc.localDescription;
                 if (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
-                    logCallback('createOffer', webRtcState.formatLog(`Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`));
+                    logCallback('createOffer', `Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
                 }
                 offerCallback(JSON.stringify(updatedOffer));
             };
@@ -188,7 +188,7 @@ const LibraryWebRtc = {
             this.candidatePairCt = [false];
 
             this.onAnswer = function (answerJson) {
-                logCallback('onAnswer', webRtcState.formatLog(`Answer received\n${answerJson}`));
+                logCallback('onAnswer', `Answer received\n${answerJson}`);
                 const answer = JSON.parse(answerJson);
                 this.pc.setRemoteDescription(answer);
                 this.candidatePairCt[0] = true;
@@ -222,7 +222,7 @@ const LibraryWebRtc = {
 
             this.setIceServers = function (iceServers) {
                 this.rtcConfig.iceServers = iceServers;
-                logCallback('setIceServers', webRtcState.formatLog("Updating rtcConfig: " + JSON.stringify(this.rtcConfig)));
+                logCallback('setIceServers', "Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
                 this.pc.setConfiguration(this.rtcConfig);
             };
 
@@ -235,10 +235,10 @@ const LibraryWebRtc = {
             this.pc.onicecandidate = ({candidate}) => {
                 if (candidate !== null) {
                     const candidateJson = JSON.stringify(candidate.toJSON());
-                    logCallback('pc.onicecandidate', webRtcState.formatLog(`Candidate received\n${candidateJson}`));
+                    logCallback('pc.onicecandidate', `Candidate received\n${candidateJson}`);
                     iceCandidateCallback(candidateJson);
                 } else {
-                    logCallback('pc.onicecandidate', webRtcState.formatLog("End of candidates"));
+                    logCallback('pc.onicecandidate', "End of candidates");
                     while (this.pendingOfferResolvers.length > 0) {
                         const resolver = this.pendingOfferResolvers.pop();
                         resolver();
@@ -251,24 +251,24 @@ const LibraryWebRtc = {
             this.onConnectionStateChanged = connectionStateChanged;
 
             this.pc.oniceconnectionstatechange = _ => {
-                logCallback('pc.oniceconnectionstatechange', webRtcState.formatLog(`ICE connection state changed\n${this.pc.iceConnectionState}`));
+                logCallback('pc.oniceconnectionstatechange', `ICE connection state changed\n${this.pc.iceConnectionState}`);
                 this.onIceConnectionStateChanged(this.pc.iceConnectionState);
             };
 
             this.pc.onconnectionstatechange = _ => {
-                logCallback('pc.onconnectionstatechange', webRtcState.formatLog(`Connection state changed\n${this.pc.connectionState}`));
+                logCallback('pc.onconnectionstatechange', `Connection state changed\n${this.pc.connectionState}`);
                 this.onConnectionStateChanged(this.pc.connectionState);
             };
 
             this.pc.onicegatheringstatechange = ({target: connection}) => {
-                logCallback('pc.onicegatheringstatechange', webRtcState.formatLog(`ICE gathering state changed\n${connection.iceGatheringState}`));
+                logCallback('pc.onicegatheringstatechange', `ICE gathering state changed\n${connection.iceGatheringState}`);
                 if (connection.iceConnectionState === "failed") {
-                    logErrorCallback('pc.oniceconnectionstatechange', webRtcState.formatLog(`ICE connection failed, restart`));
+                    logErrorCallback('pc.oniceconnectionstatechange', `ICE connection failed, restart`);
                 }
             };
 
             this.pc.onsignalingstatechange = _ => {
-                logCallback('pc.onsignalingstatechange', webRtcState.formatLog(`Signaling state changed \n${this.pc.signalingState}`));
+                logCallback('pc.onsignalingstatechange', `Signaling state changed \n${this.pc.signalingState}`);
             };
         }
 
@@ -364,7 +364,7 @@ const LibraryWebRtc = {
 
         const WebRtcIceCandidateCallback = msg => {
             if (webRtcState.onIceCandidate === null) {
-                logCallback('WebRtcIceCandidateCallback', webRtcState.formatLog("onIceCandidate callback is not set"));
+                logCallback('WebRtcIceCandidateCallback', "onIceCandidate callback is not set");
                 return;
             }
             if (!msg) {
@@ -472,7 +472,7 @@ const LibraryWebRtc = {
             }
         };
 
-        console.log(webRtcState.formatLog("Receiving callbacks created"));
+        webRtcState.logToConsole("Receiving callbacks created");
 
         webRtcState.instances[id] = new WebRtcClient(
             WebRtcReliableReceived,
@@ -491,7 +491,7 @@ const LibraryWebRtc = {
             WebRtcLogErrorCallback
         );
 
-        console.log(webRtcState.formatLog("Client allocated"));
+        webRtcState.logToConsole("Client allocated");
 
         return id;
     },
@@ -507,7 +507,7 @@ const LibraryWebRtc = {
     WebRtcSetIceServers: function (id, iceServersJsonPtr) {
         const instance = webRtcState.instances[id];
         if (!instance) {
-            console.log(webRtcState.formatLog(`Instance not found for ID: ${id}`));
+            webRtcState.logToConsole(`Instance not found for ID: ${id}`);
             return;
         }
 
@@ -584,11 +584,11 @@ const LibraryWebRtc = {
     },
 
     WebRtcCreateOffer: function (id, iceRestart) {
-        console.log(webRtcState.formatLog("Creating offer" + (iceRestart ? "with restart" : "without restart")));
+        webRtcState.logToConsole("Creating offer" + (iceRestart ? "with restart" : "without restart"));
 
         const instance = webRtcState.instances[id];
         if (!instance) {
-            console.log(webRtcState.formatLog(`Instance not found for ID: ${id}`));
+            webRtcState.logToConsole(`Instance not found for ID: ${id}`);
             return;
         }
 

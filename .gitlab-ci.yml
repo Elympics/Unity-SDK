@@ -415,7 +415,7 @@ notify:slack-merged-to-develop:
     - |
       PAYLOAD=$(cat <<EOF
       {
-        "text": "*Merged to develop*\n\`\`\`\n$CI_COMMIT_MESSAGE\n\`\`\`"
+        "text": "*ELYMPICS SDK Merged to develop*\n\`\`\`\n$CI_COMMIT_MESSAGE\n\`\`\`"
       }
       EOF
       )

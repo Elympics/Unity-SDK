@@ -56,7 +56,6 @@ namespace Elympics.Editor.Weaving
             CompilationPipeline.compilationFinished += OnCompilationFinished;
 
             UpdateWeavedAssembliesList();
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
         }
 
         private static void UpdateWeavedAssembliesList()
@@ -140,22 +139,6 @@ namespace Elympics.Editor.Weaving
 
         #region Callbacks
 
-        [PostProcessScene]
-        public static void PostprocessScene()
-        {
-            ElympicsLogger.LogDebug("[Weaver] PostProcessScene");
-
-            UpdateWeavedAssembliesList();
-
-            if (!BuildPipeline.isBuildingPlayer)
-                return;
-            var scene = SceneManager.GetActiveScene();
-            if (!scene.IsValid() || scene.buildIndex != 0)
-                return;
-
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
-
         private static void OnCompilationFinished(object context)
         {
             ElympicsLogger.LogDebug("[Weaver] OnCompilationFinished");
@@ -185,10 +168,8 @@ namespace Elympics.Editor.Weaving
 
                 if (weaverSettingsChanged)
                     UpdateWeavedAssembliesList();
-                if (elympicsWeavingCodeUpdated)
+                if (elympicsWeavingCodeUpdated || weaverSettingsChanged)
                     CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
-                else if (weaverSettingsChanged)
-                    WeaveAssemblies(CompilationPipeline.GetAssemblies());
             }
         }
 

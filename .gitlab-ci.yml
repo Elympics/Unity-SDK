@@ -405,13 +405,20 @@ release:github:
   script:
     - gh release create "$CI_COMMIT_TAG" -t "$CI_COMMIT_TAG" -F ./release.description --repo "$GH_REPO" --verify-tag
 
-trigger:renovate:
+notify:slack-merged-to-develop:
   stage: trigger
-  trigger:
-    project: elympics/deployment
-    branch: develop
-    strategy: depend
+  image: curlimages/curl:latest
+  needs: []
   variables:
-    RENOVATE_GAMES: "true"
+    GIT_DEPTH: 1
+  script:
+    - |
+      PAYLOAD=$(cat <<EOF
+      {
+        "text": "*Merged to develop*\n\`\`\`\n$CI_COMMIT_MESSAGE\n\`\`\`"
+      }
+      EOF
+      )
+      curl -X POST -H 'Content-Type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'

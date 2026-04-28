@@ -108,7 +108,7 @@ const LibraryWebRtc = {
                         }
                         break;
                     case "data-channel-failure":
-                        message += ' | The connection RTCDataChannel has failed.'
+                        message += ' | The connection RTCDataChannel has failed.';
                         break;
                 }
                 return message;
@@ -394,7 +394,8 @@ const LibraryWebRtc = {
             try {
                 Module.dynCall_viii(webRtcState.onCandidatePairChosen, id, localCandidateBuffer, remoteCandidateBuffer);
             } finally {
-                _free(msgBuffer);
+                _free(localCandidateBuffer);
+                _free(remoteCandidateBuffer);
             }
         };
 

@@ -202,7 +202,7 @@ const LibraryWebRtc = {
                     const nominatedPair = stats.values().find(s => s.type === "candidate-pair" && s.nominated);
                     if (nominatedPair) {
                         const localCandidate = stats.get(nominatedPair.localCandidateId);
-                        const remoteCandidate = state.get(nominatedPair.remoteCandidateId);
+                        const remoteCandidate = stats.get(nominatedPair.remoteCandidateId);
                         candidatePairChosenCallback(localCandidate, remoteCandidate);
                         return;
                     }

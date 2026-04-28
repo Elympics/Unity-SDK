@@ -419,6 +419,6 @@ notify:slack-merged-to-develop:
       }
       EOF
       )
-      curl -X POST -H 'Content-Type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+      curl -X POST -H 'Content-Type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_SDK_CHANNEL"
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'

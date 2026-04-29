@@ -7,10 +7,14 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 
 namespace Elympics.Editor.CodeGen
 {
-    // Resolves assemblies strictly from compiledAssembly.References — no directory scanning.
-    // DefaultAssemblyResolver searches all reference directories (including Library/ScriptAssemblies),
-    // which can make Cecil accidentally import references to editor-only assemblies (e.g. Unity.Elympics.Editor.CodeGen)
-    // into the processed runtime assembly. Burst then fails to resolve those editor references.
+    /// <summary>
+    /// Resolves assemblies strictly from compiledAssembly.References - no directory scanning.
+    /// <remarks>
+    /// <see cref="DefaultAssemblyResolver"/>searches all reference directories (including Library/ScriptAssemblies),
+    /// which can make Cecil accidentally import references to editor-only assemblies (e.g. Unity.Elympics.Editor.CodeGen)
+    /// into the processed runtime assembly. Burst then fails to resolve those editor references.
+    /// </remarks>
+    /// </summary>
     internal sealed class ILPostProcessorAssemblyResolver : IAssemblyResolver
     {
         private readonly ICompiledAssembly _compiledAssembly;

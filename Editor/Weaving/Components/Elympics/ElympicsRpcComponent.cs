@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Elympics.Editor.Weaving.Extensions;
 using Elympics.Weaving;
 using Mono.Cecil;
@@ -81,6 +82,8 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
             ValidateRpcMethodDefinition(methodDefinition);
 
+            var module = _assembly.Assembly.MainModule;
+
             var parameters = methodDefinition.Parameters;
             var methodBody = methodDefinition.Body;
             var ilProcessor = methodBody.GetILProcessor();
@@ -92,7 +95,8 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var onRpcCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldRpcBeInvokedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
 
-            var methodInfoVariable = new VariableDefinition(_assembly.Assembly.MainModule.ImportReference(typeof(System.Reflection.MethodInfo)));
+            var methodInfoTypeRef = new TypeReference(typeof(MethodInfo).Namespace, nameof(MethodInfo), module, TypeSystem.CoreLibrary);
+            var methodInfoVariable = new VariableDefinition(methodInfoTypeRef);
             var rpcPropertiesVariable = new VariableDefinition(_assembly.ElympicsRpcProperties.Reference);
             methodBody.Variables.Add(methodInfoVariable);
             methodBody.Variables.Add(rpcPropertiesVariable);
@@ -117,7 +121,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var createArrayWithMethodArguments = new List<Instruction>
             {
                 ilProcessor.Create(OpCodes.Ldc_I4, parameters.Count),
-                ilProcessor.Create(OpCodes.Newarr, _assembly.Assembly.MainModule.TypeSystem.Object),
+                ilProcessor.Create(OpCodes.Newarr, TypeSystem.Object),
             };
             for (var i = 0; i < parameters.Count; i++)
             {

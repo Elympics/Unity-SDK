@@ -20,16 +20,15 @@ namespace Elympics.Editor.CodeGen
     {
         private const string ElympicsAssemblyName = "Elympics";
 
-        // String constants avoid assembly references to Elympics.asmdef / Elympics.Weaving.asmdef,
-        // which can't be called as Unity APIs are unavailable in ILPostProcessor context.
+        /// <remarks>In the form of string constant to avoid referencing Elympics.Weaving.dll</remarks>
         private const string ProcessedByElympicsAttributeFullName = "Elympics.Weaving.ProcessedByElympicsAttribute";
+        /// <remarks>In the form of string constant to avoid referencing Elympics.dll</remarks>
         private const string ElympicsRpcAttributeFullName = "Elympics.ElympicsRpcAttribute";
 
         public override ILPostProcessor GetInstance() => new ElympicsILPostProcessor();
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.References.Any(r =>
-                Path.GetFileNameWithoutExtension(r) == ElympicsAssemblyName);
+            compiledAssembly.References.Any(r => Path.GetFileNameWithoutExtension(r) == ElympicsAssemblyName);
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -74,6 +73,8 @@ namespace Elympics.Editor.CodeGen
         {
             var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
             var pdbData = compiledAssembly.InMemoryAssembly.PdbData;
+            // not using var to prevent the "Cannot access a closed Stream" exception
+            // instead, InMemory = true is used in ReaderParameters
             var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData);
             var pdbStream = pdbData != null ? new MemoryStream(pdbData) : null;
 
@@ -92,7 +93,7 @@ namespace Elympics.Editor.CodeGen
             }
             catch
             {
-                // Retry without symbols if portable PDB reading fails
+                // retry without symbols if portable PDB reading fails
                 peStream.Position = 0;
                 return AssemblyDefinition.ReadAssembly(peStream, new ReaderParameters
                 {
@@ -101,12 +102,6 @@ namespace Elympics.Editor.CodeGen
                     AssemblyResolver = resolver,
                 });
             }
-            // Neither peStream nor pdbStream are disposed here.
-            // When InMemory = true, Cecil stores the exact MemoryStream reference (not a copy) in
-            // Image.MemoryStream and reads method bodies from it lazily. Disposing peStream causes
-            // "Cannot access a closed Stream" when VisitMethod accesses methodDefinition.Body.
-            // pdbStream is similarly held by PortablePdbReader through the Write phase.
-            // Both are MemoryStream over managed byte arrays — no unmanaged resources, GC handles cleanup.
         }
 
         private static bool IsAlreadyProcessed(AssemblyDefinition assemblyDefinition) =>

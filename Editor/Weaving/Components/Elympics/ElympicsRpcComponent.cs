@@ -18,13 +18,11 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         public override DefinitionType AffectedDefinitions => DefinitionType.Method;
 
-        private ElympicsWeaverAssembly? _assembly;
-
-        protected override void StartVisiting(ModuleDefinition moduleDefinition) =>
-            _assembly = new ElympicsWeaverAssembly(moduleDefinition.Assembly);
-
         internal void ValidateRpcMethodDefinition(MethodDefinition methodDefinition)
         {
+            if (TypeSystem is null)
+                throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
+
             var typeOwner = methodDefinition.DeclaringType;
             if (typeOwner == null || !typeOwner.IsSubclassOf<ElympicsMonoBehaviour>())
                 throw InvalidRpcMethodDefinitionException.NotElympicsSubclass(methodDefinition.FullName);
@@ -74,7 +72,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         public override void VisitMethod(MethodDefinition methodDefinition)
         {
-            if (_assembly is null)
+            if (Assembly is null || Module is null || TypeSystem is null)
                 throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
 
             if (methodDefinition.GetCustomAttribute<ElympicsRpcAttribute>() == null)
@@ -82,26 +80,29 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
             ValidateRpcMethodDefinition(methodDefinition);
 
-            var module = _assembly.Assembly.MainModule;
-
             var parameters = methodDefinition.Parameters;
             var methodBody = methodDefinition.Body;
             var ilProcessor = methodBody.GetILProcessor();
 
-            var getMethodInfoMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
-            var getRpcPropertiesMethodReference = _assembly.ElympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
+            var elympicsMonoBehaviour = new ElympicsWeaverType(Assembly, typeof(ElympicsMonoBehaviour));
+            var getMethodInfoMethodReference = elympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
+            var getRpcPropertiesMethodReference = elympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
 
-            var shouldRpcBeCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
-            var onRpcCapturedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
-            var shouldRpcBeInvokedMethodReference = _assembly.ElympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
+            var elympicsBehaviour = new ElympicsWeaverType(Assembly, typeof(ElympicsBehaviour));
+            var shouldRpcBeCapturedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
+            var onRpcCapturedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
+            var shouldRpcBeInvokedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
 
-            var methodInfoTypeRef = new TypeReference(typeof(MethodInfo).Namespace, nameof(MethodInfo), module, TypeSystem.CoreLibrary);
+            // ImportReference(typeof(MethodInfo)) binds to the host editor CLR (System.Private.CoreLib 5.0),
+            // which Unity's Mono runtime can't resolve. Use the target module's CoreLibrary scope (mscorlib) instead.
+            var methodInfoTypeRef = new TypeReference(typeof(MethodInfo).Namespace, nameof(MethodInfo), Module, TypeSystem.CoreLibrary);
             var methodInfoVariable = new VariableDefinition(methodInfoTypeRef);
-            var rpcPropertiesVariable = new VariableDefinition(_assembly.ElympicsRpcProperties.Reference);
+            var elympicsRpcProperties = new ElympicsWeaverType(Assembly, typeof(ElympicsRpcProperties));
+            var rpcPropertiesVariable = new VariableDefinition(elympicsRpcProperties.Reference);
             methodBody.Variables.Add(methodInfoVariable);
             methodBody.Variables.Add(rpcPropertiesVariable);
 
-            var getElympicsBehaviourMethodReference = _assembly.ElympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
+            var getElympicsBehaviourMethodReference = elympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
 
             var loadThisOnStack = ilProcessor.Create(OpCodes.Ldarg_0);
             var loadTypeNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.DeclaringType.FullName);
@@ -194,13 +195,14 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         protected override void FinishVisiting(ModuleDefinition moduleDefinition)
         {
+            if (TypeSystem is null)
+                throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
+
             var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
             var processedAttribute = new CustomAttribute(moduleDefinition
                 .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(new[] { typeof(string) })));
             processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
             moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
-
-            _assembly = null;
         }
     }
 }

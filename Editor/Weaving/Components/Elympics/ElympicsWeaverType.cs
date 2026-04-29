@@ -9,28 +9,28 @@ namespace Elympics.Editor.Weaving.Components.Elympics
     {
         public readonly TypeReference Reference;
 
-        private readonly ElympicsWeaverAssembly _asm;
+        private readonly AssemblyDefinition _assembly;
         private readonly List<TypeDefinition> _baseDefinitions;
         private readonly Dictionary<string, MethodReference> _methods = new();
         private readonly Dictionary<string, MethodReference> _propertyGetters = new();
 
-        public ElympicsWeaverType(ElympicsWeaverAssembly asm, Type type)
+        public ElympicsWeaverType(AssemblyDefinition assembly, Type type)
         {
-            _asm = asm;
+            _assembly = assembly;
             var baseType = type;
             _baseDefinitions = new List<TypeDefinition>();
             while (baseType != null)
             {
-                _baseDefinitions.Add(ImportTypeDefinition(asm, type));
+                _baseDefinitions.Add(ImportTypeDefinition(assembly, type));
                 baseType = baseType.BaseType;
             }
 
             if (_baseDefinitions[0] != null)
-                Reference = asm.Assembly.MainModule.ImportReference(_baseDefinitions[0]);
+                Reference = assembly.MainModule.ImportReference(_baseDefinitions[0]);
         }
 
-        private static TypeDefinition ImportTypeDefinition(ElympicsWeaverAssembly asm, Type type) =>
-            asm.Assembly.MainModule.ImportReference(type).Resolve();
+        private static TypeDefinition ImportTypeDefinition(AssemblyDefinition assembly, Type type) =>
+            assembly.MainModule.ImportReference(type).Resolve();
 
         public MethodReference GetPropertyGetter(string name)
         {
@@ -43,7 +43,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 if (propertyDef == null)
                     continue;
 
-                methodRef = _asm.Assembly.MainModule.ImportReference(propertyDef.GetMethod);
+                methodRef = _assembly.MainModule.ImportReference(propertyDef.GetMethod);
                 _propertyGetters.Add(name, methodRef);
                 return methodRef;
             }
@@ -61,7 +61,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 if (methodDef == null)
                     continue;
 
-                methodRef = _asm.Assembly.MainModule.ImportReference(methodDef);
+                methodRef = _assembly.MainModule.ImportReference(methodDef);
                 _methods.Add(name, methodRef);
                 return methodRef;
             }

@@ -1,185 +1,46 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using Elympics.Editor.Weaving.Components;
-using Elympics.Editor.Weaving.Components.Elympics;
-using Elympics.Editor.Weaving.Extensions;
 using Elympics.Editor.Weaving.Settings;
-using Elympics.Weaving;
-using Mono.Cecil;
-using Mono.Cecil.Pdb;
 using UnityEditor;
-using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
-using UnityEngine.SceneManagement;
 
 #nullable enable
 
 namespace Elympics.Editor.Weaving
 {
-    [InitializeOnLoad]
-    internal static class Weaver
+    // Watches for changes that invalidate previously woven assemblies and requests a clean recompilation.
+    // The actual weaving is performed by ElympicsILPostProcessor (Elympics.Editor.CodeGen assembly),
+    // which runs automatically as part of Unity's ILPostProcessing pipeline.
+    [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+    internal class AssetPostprocessing : AssetPostprocessor
     {
+        private const string EditorCodeGenAssemblyName = "Elympics.Editor.CodeGen.dll";
         private const string EditorWeavingAssemblyName = "Elympics.Editor.Weaving.dll";
         private const string RuntimeWeavingAssemblyName = "Elympics.Weaving.dll";
 
-        private static readonly ComponentController Components = new(new ElympicsRpcComponent());
-        private static readonly Stopwatch Timer = new();
-
-        private static readonly HashSet<string> WeavedAssemblyNames = new();
-
-        private static ReaderParameters GetReaderParameters(string assemblyPath) =>
-            new()
-            {
-                ReadingMode = ReadingMode.Immediate,
-                InMemory = true,
-                AssemblyResolver = new WeaverAssemblyResolver(assemblyPath),
-                ReadSymbols = true,
-                SymbolReaderProvider = new PdbReaderProvider(),
-            };
-
-        private static WriterParameters GetWriterParameters() =>
-            new()
-            {
-                WriteSymbols = true,
-                SymbolWriterProvider = new PdbWriterProvider(),
-            };
-
-        static Weaver()
+        private static void OnPostprocessAllAssets(
+            string[] importedAssets,
+            string[] deletedAssets,
+            string[] movedAssets,
+            string[] movedFromAssetPaths)
         {
-            ElympicsLogger.LogDebug("[Weaver] InitializeOnLoad");
-
-            ElympicsLogger.LogDebug("[Weaver] Subscribing to compilationFinished");
-            CompilationPipeline.compilationFinished += OnCompilationFinished;
-
-            UpdateWeavedAssembliesList();
-        }
-
-        private static void UpdateWeavedAssembliesList()
-        {
-            WeavedAssemblyNames.Clear();
-            foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(WeaverSettings).FullName}"))
+            if (deletedAssets.Any(path => path.EndsWith($"/{RuntimeWeavingAssemblyName}")))
             {
-                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                var settings = AssetDatabase.LoadAssetAtPath<WeaverSettings>(assetPath);
-                if (!settings.IsEnabled)
-                    continue;
-                if (!settings.RequireScriptingSymbols.ValidateSymbols())
-                    continue;
-                foreach (var weavedAssembly in settings.WeavedAssemblies)
-                    if (!WeavedAssemblyNames.Add(Path.GetFileName(weavedAssembly.Name)))
-                        ElympicsLogger.LogWarning($"[Weaver] Assembly {Path.GetFileName(weavedAssembly.Name)} already in list");
+                CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
+                return;
             }
-            ElympicsLogger.LogDebug($"[Weaver] Updated WeavedAssemblyNames: [{string.Join(", ", WeavedAssemblyNames)}]");
-        }
 
-        private static bool HasBeenAlreadyWeaved(string assemblyPath)
-        {
-            using var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath, GetReaderParameters(assemblyPath));
-            var soughtAttributeType = moduleDefinition.ImportReference(typeof(ProcessedByElympicsAttribute));
-            return moduleDefinition.Assembly.CustomAttributes
-                .Any(attribute => attribute.AttributeType.FullName == soughtAttributeType.FullName);
-        }
+            var concatenatedAssets = importedAssets.Concat(deletedAssets).Concat(movedAssets);
 
-        private static readonly object Lock = new();
-        private static int counter;
-        private static void WeaveAssemblies(IList<Assembly> assemblies)
-        {
-            using var lockScope = new LockReloadAssembliesScope();
+            var elympicsWeavingCodeUpdated = concatenatedAssets
+                .Any(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath)
+                    is EditorCodeGenAssemblyName or EditorWeavingAssemblyName or RuntimeWeavingAssemblyName);
 
-            var processedAssemblies = assemblies.Where(assembly => WeavedAssemblyNames.Contains(Path.GetFileName(assembly.outputPath))).ToArray();
-            // ReSharper disable once RedundantAssignment
-            var skippedAssemblies = assemblies.Where(assembly => !WeavedAssemblyNames.Contains(Path.GetFileName(assembly.outputPath))).ToArray();
-            ElympicsLogger.LogDebug("[Weaver] Processing assemblies...\n"
-                + $"To process ({processedAssemblies.Length}): [{string.Join(", ", processedAssemblies.Select(assembly => assembly.outputPath))}]\n"
-                + $"To skip ({skippedAssemblies.Length}): [{string.Join(", ", skippedAssemblies.Select(assembly => assembly.outputPath))}]");
+            var weaverSettingsChanged = concatenatedAssets
+                .Any(assetPath => AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(WeaverSettings));
 
-            lock (Lock)
-                foreach (var assembly in processedAssemblies)
-                    WeaveAssembly(assembly.outputPath);
-
-            static void WeaveAssembly(string assemblyPath)
-            {
-                // ReSharper disable once RedundantAssignment
-                var runId = counter++;
-                ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly called");
-                Timer.Restart();
-
-                if (!File.Exists(assemblyPath))
-                {
-                    ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: Exists = false");
-                    return;
-                }
-                ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: Exists = true");
-                if (HasBeenAlreadyWeaved(assemblyPath))
-                {
-                    ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: HasBeenAlreadyWeaved = true");
-                    return;
-                }
-                ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly: HasBeenAlreadyWeaved = false");
-
-                using (var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath, GetReaderParameters(assemblyPath)))
-                {
-                    Components.VisitModule(moduleDefinition);
-                    moduleDefinition.Write(assemblyPath, GetWriterParameters());
-                }
-
-                Timer.Stop();
-                ElympicsLogger.LogDebug($"[Weaver]:{runId} [{assemblyPath}] WeaveAssembly completed\n"
-                    + $"Time: {Timer.ElapsedMilliseconds} ms\n"
-                    + $"Types visited: {Components.TotalTypesVisited}\n"
-                    + $"Methods visited: {Components.TotalMethodsVisited}\n"
-                    + $"Fields visited: {Components.TotalFieldsVisited}\n"
-                    + $"Properties visited: {Components.TotalPropertiesVisited}");
-            }
-        }
-
-        #region Callbacks
-
-        private static void OnCompilationFinished(object context)
-        {
-            ElympicsLogger.LogDebug("[Weaver] OnCompilationFinished");
-            WeaveAssemblies(CompilationPipeline.GetAssemblies());
-        }
-
-        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-        private class AssetPostprocessing : AssetPostprocessor
-        {
-            private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-            {
-                ElympicsLogger.LogDebug($"[Weaver] OnPostprocessAllAssets ({importedAssets.Length} imported, {deletedAssets.Length} deleted, {movedFromAssetPaths.Length} moved)");
-
-                if (deletedAssets.Any(path => path.EndsWith($"/{RuntimeWeavingAssemblyName}")))
-                {
-                    ElympicsLogger.LogDebug("[Weaver] Weaver is being removed, requesting recompilation...");
-                    CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
-                    return;
-                }
-
-                var concatenatedAssets = importedAssets.Concat(deletedAssets).Concat(movedAssets);
-                var elympicsWeavingCodeUpdated = concatenatedAssets
-                    .Any(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath) is EditorWeavingAssemblyName or RuntimeWeavingAssemblyName);
-                var weaverSettingsChanged = concatenatedAssets
-                    .Any(assetPath => AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(WeaverSettings));
-                ElympicsLogger.LogDebug($"[Weaver] Elympics.Weaving code updated: {elympicsWeavingCodeUpdated}, Weaver settings changed: {weaverSettingsChanged}");
-
-                if (weaverSettingsChanged)
-                    UpdateWeavedAssembliesList();
-                if (elympicsWeavingCodeUpdated || weaverSettingsChanged)
-                    CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
-            }
-        }
-
-        #endregion
-
-        private class LockReloadAssembliesScope : IDisposable
-        {
-            public LockReloadAssembliesScope() => EditorApplication.LockReloadAssemblies();
-            public void Dispose() => EditorApplication.UnlockReloadAssemblies();
+            if (elympicsWeavingCodeUpdated || weaverSettingsChanged)
+                CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
         }
     }
 }
-

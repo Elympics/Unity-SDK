@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Elympics.Editor.Weaving.Components;
 using Elympics.Editor.Weaving.Components.Elympics;
+using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
@@ -13,6 +15,7 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 
 namespace Elympics.Editor.CodeGen
 {
+    [UsedImplicitly]
     internal class ElympicsILPostProcessor : ILPostProcessor
     {
         private const string ElympicsAssemblyName = "Elympics";
@@ -48,12 +51,12 @@ namespace Elympics.Editor.CodeGen
             catch (AggregateException ex)
             {
                 foreach (var inner in ex.InnerExceptions)
-                    diagnostics.Add(Error(inner.Message));
+                    diagnostics.Add(Error(inner.Message, inner.StackTrace));
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, diagnostics);
             }
             catch (Exception ex)
             {
-                diagnostics.Add(Error($"[Elympics Weaver] Error processing {compiledAssembly.Name}: {ex.Message}"));
+                diagnostics.Add(Error($"[Elympics Weaver] Error processing {compiledAssembly.Name}: {ex.Message}", ex.StackTrace));
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, diagnostics);
             }
 
@@ -76,7 +79,7 @@ namespace Elympics.Editor.CodeGen
             var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
             var pdbData = compiledAssembly.InMemoryAssembly.PdbData;
             var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData);
-            MemoryStream? pdbStream = pdbData != null ? new MemoryStream(pdbData) : null;
+            var pdbStream = pdbData != null ? new MemoryStream(pdbData) : null;
 
             try
             {
@@ -102,11 +105,12 @@ namespace Elympics.Editor.CodeGen
                     AssemblyResolver = resolver,
                 });
             }
-            finally
-            {
-                pdbStream?.Dispose();
-                peStream.Dispose();
-            }
+            // Neither peStream nor pdbStream are disposed here.
+            // When InMemory = true, Cecil stores the exact MemoryStream reference (not a copy) in
+            // Image.MemoryStream and reads method bodies from it lazily. Disposing peStream causes
+            // "Cannot access a closed Stream" when VisitMethod accesses methodDefinition.Body.
+            // pdbStream is similarly held by PortablePdbReader through the Write phase.
+            // Both are MemoryStream over managed byte arrays — no unmanaged resources, GC handles cleanup.
         }
 
         private static bool IsAlreadyProcessed(AssemblyDefinition assemblyDefinition) =>
@@ -120,10 +124,12 @@ namespace Elympics.Editor.CodeGen
                           m.CustomAttributes.Any(a =>
                               a.AttributeType.FullName == ElympicsRpcAttributeFullName));
 
-        private static DiagnosticMessage Error(string message) => new()
+        private static DiagnosticMessage Error(string message, string stackTrace, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0) => new()
         {
             DiagnosticType = DiagnosticType.Error,
-            MessageData = message,
+            MessageData = message + Environment.NewLine + stackTrace,
+            File = filePath,
+            Line = lineNumber,
         };
     }
 }

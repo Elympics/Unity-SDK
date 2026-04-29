@@ -35,10 +35,7 @@ namespace Elympics.Editor.CodeGen
         {
             var assemblyDefinition = ReadAssembly(compiledAssembly);
 
-            if (IsAlreadyProcessed(assemblyDefinition))
-                return new ILPostProcessResult(null);
-
-            if (!HasAnyRpcMethods(assemblyDefinition))
+            if (IsAlreadyProcessed(assemblyDefinition) || !HasAnyRpcMethods(assemblyDefinition))
                 return new ILPostProcessResult(null);
 
             var diagnostics = new List<DiagnosticMessage>();
@@ -50,8 +47,7 @@ namespace Elympics.Editor.CodeGen
             }
             catch (AggregateException ex)
             {
-                foreach (var inner in ex.InnerExceptions)
-                    diagnostics.Add(Error(inner.Message, inner.StackTrace));
+                diagnostics.AddRange(ex.InnerExceptions.Select(inner => Error(inner.Message, inner.StackTrace)));
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, diagnostics);
             }
             catch (Exception ex)

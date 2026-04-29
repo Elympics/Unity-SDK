@@ -14,7 +14,7 @@ namespace Elympics.Editor.Weaving
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
     internal class AssetPostprocessing : AssetPostprocessor
     {
-        private const string EditorCodeGenAssemblyName = "Elympics.Editor.CodeGen.dll";
+        private const string EditorCodeGenAssemblyName = "Unity.Elympics.Editor.CodeGen.dll";
         private const string EditorWeavingAssemblyName = "Elympics.Editor.Weaving.dll";
         private const string RuntimeWeavingAssemblyName = "Elympics.Weaving.dll";
 

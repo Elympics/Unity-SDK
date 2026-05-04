@@ -11,6 +11,26 @@ using Mono.Cecil.Cil;
 
 namespace Elympics.Editor.Weaving.Components.Elympics
 {
+    /// <summary>
+    /// Class responsible for injecting IL code needed for running RPC methods.
+    /// </summary>
+    /// <remarks>
+    /// Attention is required when referencing types!
+    /// <list type="bullet">
+    /// <item>
+    /// When referencing core library types, it is important to use <see cref="WeaverComponent.TypeSystem"/>
+    /// either directly accessing its types (e.g. <see cref="TypeSystem.String"/>, <see cref="TypeSystem.Void"/>))
+    /// or using it as the metadata scope in <see cref="TypeReference"/> constructor.
+    /// This avoids binding to host editor CLR (System.Private.CoreLib 5.0) and prevents issues
+    /// with resolving libraries when only Unity's Mono runtime (mscorlib) is available.
+    /// </item>
+    /// <item>
+    /// When referencing Elympics types, <see cref="TypeReference.Resolve"/> must not be called,
+    /// because Elympics is auto-referenced and is not a direct reference of the processed assemblies (especially Assembly-CSharp).
+    /// No direct resolving also means no type mismatch between host and build core library.
+    /// </item>
+    /// </list>
+    /// </remarks>
     internal class ElympicsRpcComponent : WeaverComponent
     {
         private const string StartMarker = nameof(ElympicsRpcComponent) + " Start Marker";
@@ -93,8 +113,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var onRpcCapturedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldRpcBeInvokedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
 
-            // ImportReference(typeof(MethodInfo)) binds to the host editor CLR (System.Private.CoreLib 5.0),
-            // which Unity's Mono runtime can't resolve. Use the target module's CoreLibrary scope (mscorlib) instead.
             var methodInfoTypeRef = new TypeReference(typeof(MethodInfo).Namespace, nameof(MethodInfo), Module, TypeSystem.CoreLibrary);
             var methodInfoVariable = new VariableDefinition(methodInfoTypeRef);
             var elympicsRpcProperties = new ElympicsWeaverType(Assembly, typeof(ElympicsRpcProperties));
@@ -199,10 +217,12 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
 
             var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
-            var processedAttribute = new CustomAttribute(moduleDefinition
-                .ImportReference(typeof(ProcessedByElympicsAttribute).GetConstructor(new[] { typeof(string) })));
-            processedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
-            moduleDefinition.Assembly.CustomAttributes.Add(processedAttribute);
+            var attributeReference = moduleDefinition.ImportReference(typeof(ProcessedByElympicsAttribute));
+            var attributeConstructor = new MethodReference(".ctor", moduleDefinition.TypeSystem.Void, attributeReference) { HasThis = true };
+            attributeConstructor.Parameters.Add(new ParameterDefinition(moduleDefinition.TypeSystem.String));
+            var attributeWithParameters = new CustomAttribute(attributeConstructor);
+            attributeWithParameters.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
+            moduleDefinition.Assembly.CustomAttributes.Add(attributeWithParameters);
         }
     }
 }

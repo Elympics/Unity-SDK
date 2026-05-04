@@ -118,7 +118,7 @@ namespace Elympics.Editor.CodeGen
         private static DiagnosticMessage Error(string message, string stackTrace, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0) => new()
         {
             DiagnosticType = DiagnosticType.Error,
-            MessageData = message + Environment.NewLine + stackTrace,
+            MessageData = message + "|" + stackTrace.Replace('\n', '|'),
             File = filePath,
             Line = lineNumber,
         };

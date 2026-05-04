@@ -160,14 +160,14 @@ const LibraryWebRtc = {
 
                 let resolver;
                 logCallback('createOffer', `Gathering ICE candidates...`);
-                await Promise.race([
-                    new Promise(r => setTimeout(r, webRtcState.offerAnnouncingDelay)),
+                const reason = await Promise.race([
+                    new Promise(r => setTimeout(() => r('timeout'), webRtcState.offerAnnouncingDelay)),
                     new Promise(r => {
-                        resolver = r;
-                        this.pendingOfferResolvers.push(r);
+                        resolver = () => r('candidates gathered');
+                        this.pendingOfferResolvers.push(resolver);
                     })
                 ]);
-                logCallback('createOffer', `ICE candidates gathered.`);
+                logCallback('createOffer', `ICE candidates gathering ended due to: ${reason}.`);
                 const index = this.pendingOfferResolvers.indexOf(resolver);
                 if (index > -1) {
                     this.pendingOfferResolvers.splice(index, 1);
@@ -180,30 +180,25 @@ const LibraryWebRtc = {
                 offerCallback(JSON.stringify(updatedOffer));
             };
 
-            var waitUntil = f => Promise.resolve(f())
-                .then(done => done || wait(200).then(() => waitUntil(f)));
-
-            var wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
             this.candidatePairCt = [false];
 
-            this.onAnswer = function (answerJson) {
+            this.onAnswer = async answerJson => {
                 logCallback('onAnswer', `Answer received\n${answerJson}`);
                 const answer = JSON.parse(answerJson);
-                this.pc.setRemoteDescription(answer);
+                await this.pc.setRemoteDescription(answer);
                 this.candidatePairCt[0] = true;
                 this.candidatePairCt = [false];
-                this.waitForCandidatePair(this.candidatePairCt)
-                    .catch(e => logErrorCallback('waitForCandidatePair', e.toString()));
+                await this.waitForCandidatePair(this.candidatePairCt);
             };
 
-            this.waitForCandidatePair = async function (ct) {
+            this.waitForCandidatePair = async ct => {
                 while (!ct[0]) {
                     const stats = await this.pc.getStats();
-                    const nominatedPair = stats.values().find(s => s.type === "candidate-pair" && s.nominated);
+                    const nominatedPair = Array.from(stats.values()).find(s => s.type === "candidate-pair" && s.nominated);
                     if (nominatedPair) {
                         const localCandidate = stats.get(nominatedPair.localCandidateId);
                         const remoteCandidate = stats.get(nominatedPair.remoteCandidateId);
+                        logCallback('waitForCandidatePair', "Chosen candidate pair: " + JSON.stringify([localCandidate, remoteCandidate]));
                         candidatePairChosenCallback(JSON.stringify(localCandidate), JSON.stringify(remoteCandidate));
                         return;
                     }
@@ -211,23 +206,24 @@ const LibraryWebRtc = {
                 }
             };
 
-            this.sendReliable = function (message) {
+            this.sendReliable = message => {
                 if (this.reliableDc.readyState !== "open") return;
                 this.reliableDc.send(message);
             };
 
-            this.sendUnreliable = function (message) {
+            this.sendUnreliable = message => {
                 if (this.unreliableDc.readyState !== "open") return;
                 this.unreliableDc.send(message);
             };
 
-            this.setIceServers = function (iceServers) {
+            this.setIceServers = iceServers => {
                 this.rtcConfig.iceServers = iceServers;
                 logCallback('setIceServers', "Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
                 this.pc.setConfiguration(this.rtcConfig);
             };
 
-            this.close = function () {
+            this.close = () => {
+                this.candidatePairCt[0] = true;
                 this.reliableDc.close();
                 this.unreliableDc.close();
                 this.pc.close();
@@ -308,7 +304,7 @@ const LibraryWebRtc = {
         const WebRtcReliableEnded = () => {
             if (webRtcState.onReliableEnded === null) return;
 
-            Module.dynCall_vi(webRtcState.onReliableEnded, [id]);
+            Module.dynCall_vi(webRtcState.onReliableEnded, id);
         };
 
         const WebRtcUnreliableReceived = msg => {
@@ -346,7 +342,7 @@ const LibraryWebRtc = {
         const WebRtcUnreliableEnded = () => {
             if (webRtcState.onUnreliableEnded === null) return;
 
-            Module.dynCall_vi(webRtcState.onUnreliableEnded, [id]);
+            Module.dynCall_vi(webRtcState.onUnreliableEnded, id);
         };
 
         const WebRtcOfferCallback = msg => {
@@ -365,7 +361,7 @@ const LibraryWebRtc = {
 
         const WebRtcIceCandidateCallback = msg => {
             if (webRtcState.onIceCandidate === null) {
-                logCallback('WebRtcIceCandidateCallback', "onIceCandidate callback is not set");
+                WebRtcLogCallback('WebRtcIceCandidateCallback', "onIceCandidate callback is not set");
                 return;
             }
             if (!msg) {
@@ -586,7 +582,7 @@ const LibraryWebRtc = {
     },
 
     WebRtcCreateOffer: function (id, iceRestart) {
-        webRtcState.logToConsole("Creating offer" + (iceRestart ? "with restart" : "without restart"));
+        webRtcState.logToConsole("Creating offer " + (iceRestart ? "with restart" : "without restart"));
 
         const instance = webRtcState.instances[id];
         if (!instance) {

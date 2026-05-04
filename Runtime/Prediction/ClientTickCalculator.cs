@@ -2,9 +2,8 @@ using System;
 
 namespace Elympics
 {
-    public class ClientTickCalculator
+    internal class ClientTickCalculator
     {
-        private const float TimeThresholdToForceJumpSeconds = 0.2f;
         private const double MaxTickAheadWithNoChange = 1.0d;
         private const float LerpRatio = 0.35f;
         private readonly ElympicsGameConfig _config;
@@ -19,9 +18,10 @@ namespace Elympics
             _config = config;
         }
 
-        public void CalculateNextTick(long lastReceivedTick, long previousTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc)
+        public void CalculateNextTick(long lastReceivedTick, long previousTick, long lastDelayInputTick, DateTime receivedTickStartUtc, DateTime clientTickStartUtc, ReconciliationResult reconciliation)
         {
             Results.Reset();
+            Results.ReconciliationPerformed = reconciliation.Performed;
             var lastReceivedTickStart = receivedTickStartUtc.ToLocalTime();
             var clientTickStart = clientTickStartUtc.ToLocalTime();
 
@@ -33,7 +33,22 @@ namespace Elympics
             long newTick;
             bool canPredict;
 
-            if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, previousTick, lastReceivedTick, out var ticksToCatchup))
+            if (reconciliation.WasReanchored)
+            {
+                // Reconcile re-anchored previousTick to the snapshot tick. Project forward to where
+                // the server expects our input to land (lastReceivedTick + InputLag + clockDelta + RTT),
+                // i.e. calculatedNextTickExact. No threshold gating — the discrete jump is intentional.
+                var targetTick = (long)Math.Floor(calculatedNextTickExact);
+                var ticksToCatchup = Math.Max(0, targetTick - expectedPredictionTick);
+                canPredict = TrySetNextTick(lastReceivedTick, previousTick, out newTick, ticksToCatchup);
+                if (canPredict)
+                {
+                    Results.WasTickJumpForced = true;
+                    Results.TicksToCatchup = ticksToCatchup;
+                    ElympicsLogger.Log($"Reconciliation re-anchored client to tick {reconciliation.AnchoredTick}. Projecting forward {ticksToCatchup} ticks to {newTick}.");
+                }
+            }
+            else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, previousTick, lastReceivedTick, out var ticksToCatchup))
             {
                 canPredict = TrySetNextTick(lastReceivedTick, previousTick, out newTick, ticksToCatchup);
                 if (canPredict)

@@ -256,9 +256,18 @@ namespace Elympics
         {
             var receivedSnapshot = _lastReceivedSnapshot;
             _serverWorldState.MergeWithSnapshot(receivedSnapshot);
-            _clientTickCalculator.CalculateNextTick(_serverWorldState.Tick, _previousTick, _lastDelayedInputTick, _serverWorldState.TickStartUtc, TickStartUtc);
 
             _predictionBuffer.UpdateMinTick(_serverWorldState.Tick);
+
+            ReconciliationResult reconciliationResult;
+            using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
+                reconciliationResult = ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == _serverWorldState.Tick
+                    ? null
+                    : _serverWorldState);
+            _latestReconciliationBaseSnapshotTick = _serverWorldState.Tick;
+
+            _clientTickCalculator.CalculateNextTick(_serverWorldState.Tick, _previousTick, _lastDelayedInputTick, _serverWorldState.TickStartUtc, TickStartUtc, reconciliationResult);
+
 
             if (_clientTickCalculator.Results.CanPredict)
                 using (ElympicsMarkers.Elympics_ProcessingInputMarker.Auto())
@@ -270,11 +279,6 @@ namespace Elympics
 
             CheckIfPredictionIsBlocked();
 
-            using (ElympicsMarkers.Elympics_ReconcileLoopMarker.Auto())
-                ReconcileIfRequired(_latestReconciliationBaseSnapshotTick == _serverWorldState.Tick
-                    ? null
-                    : _serverWorldState);
-            _latestReconciliationBaseSnapshotTick = _serverWorldState.Tick;
 
             using (ElympicsMarkers.Elympics_PredictionMarker.Auto())
                 if (_clientTickCalculator.Results.CanPredict)
@@ -393,43 +397,43 @@ namespace Elympics
 
         private void ApplyUnpredictablePartOfSnapshot(ElympicsSnapshot snapshot) => ElympicsBehavioursManager.ApplySnapshot(snapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable);
 
-        private void ReconcileIfRequired(ElympicsSnapshot? receivedSnapshot)
+        private ReconciliationResult ReconcileIfRequired(ElympicsSnapshot? receivedSnapshot)
         {
             if (receivedSnapshot == null)
-                return;
+                return ReconciliationResult.None;
 
             if (Config.ReconciliationFrequency == ElympicsGameConfig.ReconciliationFrequencyEnum.Never)
-                return;
+                return ReconciliationResult.None;
 
-            var forceSnapShot = receivedSnapshot.Tick > Tick;
+            var clientWasBehind = receivedSnapshot.Tick > Tick;
 
             ElympicsSnapshot? historySnapshot = null;
             ElympicsSnapshot newSnapshot;
 
-            if (!forceSnapShot && !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot))
+            switch (clientWasBehind)
             {
-                _logger.WithMethodName()
-                    .Warning(
-                        $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
-                return;
+                case false when !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot):
+                    _logger.WithMethodName()
+                        .Warning(
+                            $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
+                    return ReconciliationResult.None;
+                case false
+                    when ElympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)
+                         && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot:
+                    return ReconciliationResult.None;
+                case true:
+                    //TO DO: Forcing should be triggered by server which should send a full snapshot when forcing jump forward
+                    //Not all snapshots sent by server contain data about all objects, so current implementation will only correctly set
+                    //data for objects that happen to be in this snapshot
+                    historySnapshot = receivedSnapshot;
+                    newSnapshot = receivedSnapshot;
+                    _previousTick = receivedSnapshot.Tick;
+                    _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
+                    break;
+                default:
+                    newSnapshot = receivedSnapshot;
+                    break;
             }
-
-            if (!forceSnapShot
-                && ElympicsBehavioursManager.AreSnapshotsEqualOnPredictableBehaviours(historySnapshot, receivedSnapshot)
-                && Config.ReconciliationFrequency != ElympicsGameConfig.ReconciliationFrequencyEnum.OnEverySnapshot)
-                return;
-
-            if (forceSnapShot)
-            {
-                //TO DO: Forcing should be triggered by server which should send a full snapshot when forcing jump forward
-                //Not all snapshots sent by server contain data about all objects, so current implementation will only correctly set
-                //data for objects that happen to be in this snapshot
-                historySnapshot = receivedSnapshot;
-                newSnapshot = receivedSnapshot;
-                _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
-            }
-            else
-                newSnapshot = receivedSnapshot;
 
             ElympicsBehavioursManager.OnPreReconcile();
 
@@ -438,8 +442,8 @@ namespace Elympics
             ElympicsBehavioursManager.ApplySnapshot(newSnapshot, ElympicsBehavioursManager.StatePredictability.Predictable, true);
             ElympicsBehavioursManager.ApplySnapshot(historySnapshot, ElympicsBehavioursManager.StatePredictability.Unpredictable, true);
 
-            var startResimulation = _clientTickCalculator.Results.LastReceivedTick + 1;
-            var endResimulation = _clientTickCalculator.Results.CurrentTick - 1;
+            var startResimulation = receivedSnapshot.Tick + 1;
+            var endResimulation = _previousTick;
             _tick = startResimulation;
             _snapshotTracker.ProcessNewSnapshot(receivedSnapshot);
             _snapshotTracker.InitializeNewBehaviours();
@@ -470,8 +474,10 @@ namespace Elympics
                     _ = _predictionBuffer.AddOrReplaceSnapshotInBuffer(newResimulatedSnapshot);
                 }
 
-            _clientTickCalculator.Results.ReconciliationPerformed = true;
             ElympicsBehavioursManager.OnPostReconcile();
+            return clientWasBehind
+                ? ReconciliationResult.Reanchored(receivedSnapshot.Tick)
+                : ReconciliationResult.Replayed();
         }
 
         private void PredictionStateChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results) => ElympicsBehavioursManager.OnPredictionStatusChanged(isBlocked, results);

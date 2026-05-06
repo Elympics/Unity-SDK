@@ -69,7 +69,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public event Action<string> OfferCreated;
         public event Action<string> IceCandidateCreated;
-        public event Action<(string LocalCandidate, string RemoteCandidate)> CandidatePairChosen;
+        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)> CandidatePairChosen;
 
         public void Dispose() => HandleInstanceDestroy(_instanceId);
 
@@ -109,15 +109,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnCandidatePairChosen(string localCandidateStatsJson, string remoteCandidateStatsJson)
         {
-            if (JsonUtility.FromJson<CandidateWithTypeOnly>(localCandidateStatsJson).candidateType == "relay")
+            var localCandidate = JsonUtility.FromJson<IceCandidateStats>(localCandidateStatsJson);
+            var remoteCandidate = JsonUtility.FromJson<IceCandidateStats>(remoteCandidateStatsJson);
+            if (localCandidate.candidateType == "relay" || localCandidate.HasTurnUrl())
                 _logger.WebRtcContext.UsesTurn = true;
-            CandidatePairChosen?.Invoke((localCandidateStatsJson, remoteCandidateStatsJson));
-        }
-
-        [Serializable]
-        private struct CandidateWithTypeOnly
-        {
-            public string candidateType;
+            CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
         }
 
         [DllImport("__Internal")] public static extern int WebRtcAllocate();

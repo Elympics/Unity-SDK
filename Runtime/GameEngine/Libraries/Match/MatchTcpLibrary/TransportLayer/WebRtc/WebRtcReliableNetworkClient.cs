@@ -7,7 +7,7 @@ using WebRtcWrapper;
 
 namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
-    public class WebRtcReliableNetworkClient : IReliableNetworkClient
+    internal class WebRtcReliableNetworkClient : IReliableNetworkClient
     {
         private readonly IWebRtcClient _webRtcClient;
 

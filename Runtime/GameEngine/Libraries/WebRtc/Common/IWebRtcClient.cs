@@ -1,14 +1,15 @@
 using System;
+using Elympics.GameEngine.Libraries.WebRtc;
 
 namespace WebRtcWrapper
 {
-    public interface IWebRtcClient : IWebRtcCommunication, IDisposable
+    internal interface IWebRtcClient : IWebRtcCommunication, IDisposable
     {
         event Action<string> OfferCreated;
 
         event Action<string> IceCandidateCreated;
 
-        event Action<(string LocalCandidate, string RemoteCandidate)> CandidatePairChosen;
+        event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)> CandidatePairChosen;
 
         void SetIceServers(string iceServersJson);
         void CreateOffer(bool restart);

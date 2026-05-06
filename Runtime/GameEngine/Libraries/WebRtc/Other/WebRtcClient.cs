@@ -39,7 +39,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public event Action<string>? OfferCreated;
         public event Action<string>? IceCandidateCreated;
-        public event Action<(string LocalCandidate, string RemoteCandidate)>? CandidatePairChosen;
+        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)>? CandidatePairChosen;
 
         private CancellationTokenSource? _candidatePairCts;
 
@@ -258,13 +258,30 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void HandleCandidatePairChosen(RTCStatsReport statsReport, RTCIceCandidatePairStats candidatePairStats)
         {
             var logger = _logger.WithMethodName();
-            var localCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId];
-            var remoteCandidate = (RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId];
-            if (localCandidate.candidateType is "relay")
+            var localCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId]);
+            var remoteCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId]);
+            if (localCandidate.candidateType is "relay" || localCandidate.HasTurnUrl())
                 _ = _logger.SetUsesTurn();
-            var pair = (localCandidate.ToJson(), remoteCandidate.ToJson());
-            logger.Log($"[WebRTC] Chosen candidate pair: {pair}");
-            CandidatePairChosen?.Invoke(pair);
+            logger.Log($"[WebRTC] Chosen candidate pair: {(JsonUtility.ToJson(localCandidate), JsonUtility.ToJson(remoteCandidate))}");
+            CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
+
+            static IceCandidateStats Cast(RTCIceCandidateStats candidate) =>
+                new()
+                {
+                    transportId = candidate.transportId,
+                    address = candidate.address,
+                    port = candidate.port,
+                    protocol = candidate.protocol,
+                    candidateType = candidate.candidateType,
+                    priority = candidate.priority,
+                    url = candidate.url,
+                    relayProtocol = candidate.relayProtocol,
+                    foundation = candidate.foundation,
+                    relatedAddress = candidate.relatedAddress,
+                    relatedPort = candidate.relatedPort,
+                    usernameFragment = candidate.usernameFragment,
+                    tcpType = candidate.tcpType
+                };
         }
 
         public void SetIceServers(string iceServersJson)

@@ -13,7 +13,7 @@ using WebRtcWrapper;
 
 namespace UnityConnectors.HalfRemote
 {
-    public class HalfRemoteMatchClient : ILogReceiver, IUnityGameEngineProtoReceiver, IClientNtpReceiver
+    internal class HalfRemoteMatchClient : ILogReceiver, IUnityGameEngineProtoReceiver, IClientNtpReceiver
     {
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;

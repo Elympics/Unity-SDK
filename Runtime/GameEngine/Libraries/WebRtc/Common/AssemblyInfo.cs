@@ -7,3 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.WebRtc.WebGl")]
 [assembly: InternalsVisibleTo("Elympics.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Tests.Editor")]
+[assembly: InternalsVisibleTo("UnityConnectors")]

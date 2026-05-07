@@ -16,12 +16,14 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         public ElympicsWeaverType(AssemblyDefinition assembly, Type type)
         {
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
             _assembly = assembly;
             var baseType = type;
             _baseDefinitions = new List<TypeDefinition>();
             while (baseType != null)
             {
-                _baseDefinitions.Add(ImportTypeDefinition(assembly, type));
+                _baseDefinitions.Add(ImportTypeDefinition(assembly, baseType));
                 baseType = baseType.BaseType;
             }
 

@@ -7,6 +7,7 @@ using Elympics;
 using Elympics.Communication.Models;
 using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
+using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace MatchTcpClients
     internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
-        private readonly Func<TimeSpan, IWebRtcClient> _webRtcFactory;
+        private readonly Func<WebRtcConfig, IWebRtcClient> _webRtcFactory;
         private readonly Uri? _iceServersUri;
 
         private IWebRtcClient? _webRtcClient;
@@ -35,14 +36,13 @@ namespace MatchTcpClients
             IGameServerSerializer serializer,
             GameServerClientConfig config,
             IGameServerWebSignalingClient signalingClient,
-            ElympicsLoggerContext logger,
-            Func<TimeSpan, IWebRtcClient>? customWebRtcFactory = null,
-            Uri? iceServersUri = null) : base(serializer, config, logger)
+            Func<WebRtcConfig, IWebRtcClient>? customWebRtcFactory = null,
+            Uri? iceServersUri = null) : base(serializer, config)
         {
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? ((_) => new WebRtcClient());
+            _webRtcFactory = customWebRtcFactory ?? WebRtcFactory.CreateClient;
             _iceServersUri = iceServersUri;
-            _logger = logger.WithContext(nameof(WebGameServerClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebGameServerClient));
         }
 
         public static Uri GetSignalingServerBaseAddress(string gsEndpoint, string publicWebEndpoint, string? regionName)
@@ -66,7 +66,7 @@ namespace MatchTcpClients
                 _webRtcClient.Dispose();
                 UnsubscribeFromWebConnectionStatus();
             }
-            _webRtcClient = _webRtcFactory(Config.OfferAnnounceDelay);
+            _webRtcClient = _webRtcFactory(new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay });
             ReliableClient?.Dispose();
             ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
             UnreliableClient?.Dispose();
@@ -251,7 +251,7 @@ namespace MatchTcpClients
 
                 if (result?.Code == 499)
                 {
-                    logger.Warning($"WebRTC answer error: {result?.Text}");
+                    logger.Warning($"WebRTC answer error: {result.Text}");
                     await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
                 }
                 else

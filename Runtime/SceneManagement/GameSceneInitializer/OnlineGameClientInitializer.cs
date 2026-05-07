@@ -1,5 +1,5 @@
 using Elympics.ElympicsSystems.Internal;
-using Elympics.Libraries;
+using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
 
 namespace Elympics
@@ -31,21 +31,18 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
-            var gameLogger = ElympicsLogger.CurrentContext!.Value.SetGameMode("online").WithApp(ElympicsLoggerContext.GameplayContextApp);
+            _ = ElympicsLogger.CurrentContext.SetGameMode("online");
             var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    gameLogger,
-                    (delay) => WebRtcFactory.CreateInstance(delay),
+                    WebRtcFactory.CreateClient,
                     iceServersUri)
                 : new TcpUdpGameServerClient(serializer,
                     config,
-                    IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress),
-                    gameLogger);
+                    IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                gameLogger,
                 matchData.TcpUdpServerAddress,
                 matchData.WebServerAddress,
                 matchData.UserSecret,
@@ -64,7 +61,6 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                gameLogger,
                 elympicsGameConfig.MaxPlayers);
         }
     }

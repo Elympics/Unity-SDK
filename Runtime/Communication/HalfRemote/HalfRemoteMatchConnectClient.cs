@@ -7,7 +7,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
-using Elympics.Libraries;
+using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using Proto.ProtoClient.NetworkClient;
@@ -53,7 +53,6 @@ namespace Elympics
 
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
-
 
         public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData)
         {
@@ -125,7 +124,10 @@ namespace Elympics
 
         private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateInstance(TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay));
+            _webRtcClient = WebRtcFactory.CreateClient(new WebRtcConfig
+            {
+                OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
+            });
             string offer = null;
             var offerSet = false;
             _webRtcClient.OfferCreated += s =>

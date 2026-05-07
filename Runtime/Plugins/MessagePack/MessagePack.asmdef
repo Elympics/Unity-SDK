@@ -9,12 +9,8 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "System.Memory.dll",
-        "System.Buffers.dll",
-        "System.Threading.Tasks.Extensions.dll",
-        "System.Runtime.CompilerServices.Unsafe.dll",
-        "Microsoft.NET.StringTools.dll",
-        "System.Runtime.Extensions.dll"
+        "Elympics.System.Runtime.CompilerServices.Unsafe.dll",
+        "Elympics.Microsoft.NET.StringTools.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

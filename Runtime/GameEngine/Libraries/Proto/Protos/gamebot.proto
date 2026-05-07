@@ -1,0 +1,15 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "ProtoGameBot";
+
+package grpc_server;
+
+message InitializedMsg {}
+
+message InGameDataForReliableChannelGeneratedMsg {
+  bytes data = 1;
+}
+
+message InGameDataForUnreliableChannelGeneratedMsg {
+  bytes data = 1;
+}

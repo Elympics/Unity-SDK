@@ -637,6 +637,7 @@ namespace Elympics
                 ElympicsLogger.Log($"Trying to pack {targetSubdirectory}...");
                 if (File.Exists(destinationFilePath))
                     File.Delete(destinationFilePath);
+                _ = Directory.CreateDirectory(buildPath);
                 ZipFile.CreateFromDirectory(buildPath, destinationFilePath, CompressionLevel.Optimal, false);
             }
             catch (Exception e)

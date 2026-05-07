@@ -41,7 +41,7 @@ namespace Elympics.Tests.Rooms
         {
             MatchLauncherMock = Substitute.For<IMatchLauncher>();
             RoomsClientMock = Substitute.For<IRoomsClient>();
-            var logger = new ElympicsLoggerContext(Guid.NewGuid());
+            var logger = new ElympicsLoggerContext(Guid.Empty);
             RoomJoiner = new RoomJoiner(RoomsClientMock)
             {
                 OperationTimeout = TimeSpan.FromSeconds(1),

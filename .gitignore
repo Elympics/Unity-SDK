@@ -565,3 +565,12 @@ FodyWeavers.xsd
 
 # Related to the internal test for Elympics.dll weaving lock problem
 Runtime/WeaverLockingProblemTest.*
+
+# Track DLLs, PDBs and XMLs for plugins
+!*.dll
+!*.pdb
+!*.xml
+
+# Track additional compiler settings
+!*.rsp
+

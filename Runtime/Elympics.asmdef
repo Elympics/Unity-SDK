@@ -6,21 +6,21 @@
         "UniTask",
         "MessagePack",
         "MessagePack.Annotations",
-        "AssemblyCommunicator",
         "Elympics.Core",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Elympics.WebRtc",
+        "Elympics.Proto",
+        "GameEngineCore",
+        "GameBotCore",
+        "UnityConnectors",
+        "Elympics.WebRtc.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "UnityConnectors-packed2.1.dll",
-        "WebRtcWrapper.dll",
-        "GameEngineCore.dll",
-        "GameBotCore.dll",
-        "websocket-sharp.dll",
-        ""
+        "websocket-sharp.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

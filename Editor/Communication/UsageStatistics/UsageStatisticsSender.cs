@@ -1,3 +1,4 @@
+using System;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 
@@ -12,6 +13,8 @@ namespace Elympics.Editor.Communication.UsageStatistics
         {
             if (ElympicsClonesManager.IsClone())
                 return;
+            if (Environment.GetEnvironmentVariable("CI") is not null)
+                return;
             OnAssemblyReload();
             EditorApplication.quitting += OnQuitting;
         }
@@ -20,10 +23,27 @@ namespace Elympics.Editor.Communication.UsageStatistics
         {
             if (SessionState.GetBool(SessionStartKey, false) || ElympicsConfig.Load() == null)
                 return;
-            ElympicsWebIntegration.PostStartEvent();
-            SessionState.SetBool(SessionStartKey, true);
+            try
+            {
+                ElympicsWebIntegration.PostStartEvent();
+                SessionState.SetBool(SessionStartKey, true);
+            }
+            catch (Exception e)
+            {
+                _ = ElympicsLogger.LogException(e);
+            }
         }
 
-        private static void OnQuitting() => ElympicsWebIntegration.PostStopEvent();
+        private static void OnQuitting()
+        {
+            try
+            {
+                ElympicsWebIntegration.PostStopEvent();
+            }
+            catch (Exception e)
+            {
+                _ = ElympicsLogger.LogException(e);
+            }
+        }
     }
 }

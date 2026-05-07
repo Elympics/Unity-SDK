@@ -42,9 +42,9 @@ namespace MatchTcpClients
 
         private readonly ElympicsLoggerContext _logger;
 
-        protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config, ElympicsLoggerContext logger)
+        protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config)
         {
-            _logger = logger.WithContext(nameof(GameServerClient));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(GameServerClient));
             _serializer = serializer;
             Config = config;
         }

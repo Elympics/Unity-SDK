@@ -15,18 +15,8 @@ namespace Elympics
         private const string BotSubdirectory = "Bot";
         private const string UnityBuildPath = "Unity";
 
-        private const string EngineWrapperFilename = "GameEngine.dll";
-        private const string BotWrapperFilename = "GameBot.dll";
-
         private const string ServerBuildAppNameLinux = "Unity";
         private const string ServerBuildAppNameWindows = "Unity.exe";
-
-        private static readonly string GuidOfAssetsPathPointer = AssetDatabase.FindAssets("t:ElympicsBasePath")[0];
-        private static readonly string BuildAssetsPath = Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(GuidOfAssetsPathPointer));
-        private static readonly string ServerWrapperPath = Path.Combine(BuildAssetsPath, "Wrapper");
-        private static readonly string GameBotNoopPath = Path.Combine(BuildAssetsPath, "GameBotNoop");
-        private const string ServerWrapperFilesPattern = "*.dll_";
-        private const string ServerWrapperTargetExtension = ".dll";
 
         internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
         internal static string BotPath => Path.Combine(ServerBuildPath, BotSubdirectory);
@@ -64,11 +54,7 @@ namespace Elympics
             //     return false;
             // }
 
-            var buildReport = BuildServerLinux(additionalOptions);
-            if (buildReport.summary.result == BuildResult.Succeeded)
-                RemoveHalfRemoteServerFilesFromElympicsBuild();
-
-            return buildReport;
+            return BuildServerLinux(additionalOptions);
         }
 
         private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
@@ -112,17 +98,6 @@ namespace Elympics
                 if (report.summary.result != BuildResult.Succeeded)
                     return report;
 
-                // Copy and pack
-
-                EditorUtility.DisplayProgressBar(title, "Copying engine wrapper to build path", 0.6f);
-                CopyWrapperToBuildPath(BotWrapperFilename, EngineSubdirectory);
-
-                EditorUtility.DisplayProgressBar(title, "Copying bot wrapper to build path", 0.75f);
-                if (config.BotsInServer)
-                    CopyGameBotNoopToBuildPath();
-                else
-                    CopyWrapperToBuildPath(EngineWrapperFilename, BotSubdirectory);
-
                 EditorUtility.DisplayProgressBar(title, $"Build finished at {ServerBuildPath}", 1f);
 
                 return report;
@@ -130,33 +105,6 @@ namespace Elympics
             finally
             {
                 EditorUtility.ClearProgressBar();
-            }
-        }
-
-        private static void CopyWrapperToBuildPath(string excludedFilename, string subdirectory)
-        {
-            _ = Directory.CreateDirectory(Path.Combine(ServerBuildPath, subdirectory));
-            var wrapperFiles = Directory.GetFiles(ServerWrapperPath, ServerWrapperFilesPattern);
-            wrapperFiles = wrapperFiles.Where(x => !x.Contains(excludedFilename)).ToArray();
-            foreach (var wrapperFile in wrapperFiles)
-            {
-                var filename = Path.GetFileName(wrapperFile);
-                var targetFile = Path.Combine(ServerBuildPath, subdirectory, filename);
-                targetFile = Path.ChangeExtension(targetFile, ServerWrapperTargetExtension);
-                File.Copy(wrapperFile, targetFile);
-            }
-        }
-
-        private static void CopyGameBotNoopToBuildPath()
-        {
-            _ = Directory.CreateDirectory(Path.Combine(ServerBuildPath, BotSubdirectory));
-            var botFiles = Directory.GetFiles(GameBotNoopPath, ServerWrapperFilesPattern);
-            foreach (var botFile in botFiles)
-            {
-                var filename = Path.GetFileName(botFile);
-                var targetFile = Path.Combine(ServerBuildPath, BotSubdirectory, filename);
-                targetFile = Path.ChangeExtension(targetFile, ServerWrapperTargetExtension);
-                File.Copy(botFile, targetFile);
             }
         }
 
@@ -176,27 +124,8 @@ namespace Elympics
             if (report.summary.totalErrors == 0)
                 return;
 
-            foreach (var step in report.steps)
-                foreach (var message in step.messages)
-                {
-                    if (message.type is not LogType.Error and not LogType.Exception)
-                        continue;
-                    if (MissingModuleRegex.IsMatch(message.content))
-                    {
-                        ElympicsLogger.LogError(MissingModuleErrorMessage);
-                        return;
-                    }
-                }
-        }
-
-        // Required - linux server not working in headless mode with WebRTC library ~pprzestrzelski 08.11.2021
-        private static void RemoveHalfRemoteServerFilesFromElympicsBuild()
-        {
-            var pluginsPath = Path.Combine(ServerBuildPath, EngineSubdirectory, ServerBuildAppNameLinux, $"{ServerBuildAppNameLinux}_Data", "Plugins");
-
-            var webRtcLibPath = Path.Combine(pluginsPath, "webrtc.so");
-            if (Directory.Exists(pluginsPath))
-                File.Delete(webRtcLibPath);
+            if (report.steps.SelectMany(step => step.messages).Any(m => m.type is LogType.Error or LogType.Exception && MissingModuleRegex.IsMatch(m.content)))
+                ElympicsLogger.LogError(MissingModuleErrorMessage);
         }
     }
 }

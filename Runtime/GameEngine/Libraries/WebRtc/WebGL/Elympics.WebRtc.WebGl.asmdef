@@ -1,0 +1,19 @@
+{
+    "name": "Elympics.WebRtc.WebGl",
+    "rootNamespace": "",
+    "references": [
+        "GUID:645313404a2d0c44abd9febb05cd1212",
+        "GUID:e2a0cb92652b07d409c674525eba884a"
+    ],
+    "includePlatforms": [
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

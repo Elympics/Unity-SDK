@@ -2,7 +2,7 @@
     "name": "Elympics.Tests.AssemblyCommunicator",
     "rootNamespace": "Elympics.Tests.AssemblyCommunicator",
     "references": [
-        "AssemblyCommunicator"
+        "Elympics.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [

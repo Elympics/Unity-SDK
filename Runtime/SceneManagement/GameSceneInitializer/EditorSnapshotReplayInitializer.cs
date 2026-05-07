@@ -1,5 +1,4 @@
 #nullable enable
-
 using System;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Retrievers;
@@ -19,7 +18,7 @@ namespace Elympics
         {
             var retriever = new EditorSnapshotAnalysisRetriever(gameConfig.SnapshotFilePath);
             var replayVersion = retriever.RetrieveInitData().GameVersion;
-            var currentVersion = ElympicsConfig.LoadCurrentElympicsGameConfig().GameVersion;
+            var currentVersion = gameConfig.GameVersion;
 
             if (replayVersion != currentVersion)
                 throw new Exception($"Game version mismatch. Replay was recorded using game version {replayVersion} and current game version is {currentVersion}. Use a matching version of the game to watch this replay.");

@@ -60,7 +60,7 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        private ElympicsLoggerContext _logger;
+        private readonly ElympicsLoggerContext _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ElympicsClient));
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -68,10 +68,8 @@ namespace Elympics
             IMatchClient matchClient,
             InitialMatchPlayerDataGuid initialMatchPlayerData,
             ElympicsBehavioursManager elympicsBehavioursManager,
-            ElympicsLoggerContext logger,
             int maxPlayerCount)
         {
-            _logger = logger.WithContext(nameof(ElympicsClient));
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;

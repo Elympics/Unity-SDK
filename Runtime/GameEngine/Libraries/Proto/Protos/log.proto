@@ -1,0 +1,24 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "ProtoLog";
+
+package grpc_server;
+
+message LogVerboseMsg {
+  string log = 1;
+}
+message LogDebugMsg {
+  string log = 1;
+}
+message LogInfoMsg {
+  string log = 1;
+}
+message LogWarningMsg {
+  string log = 1;
+}
+message LogErrorMsg {
+  string log = 1;
+}
+message LogFatalMsg {
+  string log = 1;
+}

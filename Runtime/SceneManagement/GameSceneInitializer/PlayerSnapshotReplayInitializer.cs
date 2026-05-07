@@ -1,5 +1,4 @@
 #nullable enable
-
 using Elympics.SnapshotAnalysis;
 
 namespace Elympics

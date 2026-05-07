@@ -10,7 +10,6 @@ namespace Elympics
             ElympicsBehavioursManager behavioursManager);
 
         public virtual void Dispose()
-        {
-        }
+        { }
     }
 }

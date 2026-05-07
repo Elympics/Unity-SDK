@@ -1,0 +1,52 @@
+﻿syntax = "proto3";
+import "google/protobuf/struct.proto";
+
+option csharp_namespace = "ProtoGameEngine";
+
+package grpc_server;
+
+message InitializedMsg {}
+
+message InGameDataForPlayerOnReliableChannelGeneratedMsg {
+  string userId = 1;
+  bytes data = 2;
+}
+
+message InGameDataForPlayerOnUnreliableChannelGeneratedMsg {
+  string userId = 1;
+  bytes data = 2;
+}
+
+message InGameDataForSpectatorsOnReliableChannelGeneratedMsg {
+  bytes data = 1;
+}
+
+message InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg {
+  bytes data = 1;
+}
+
+message InitializeReplaySystemMsg{
+  bytes data = 1;
+}
+
+message SnapshotDataForReplayGeneratedMsg{
+  bytes data = 1;
+}
+
+
+
+message NullableGameEndedMsg {
+  oneof kind {
+    google.protobuf.NullValue null = 1;
+    UserDatas data = 2;
+  }
+}
+
+message UserDatas {
+  message UserData {
+    string userId = 1;
+    repeated float matchmakerData = 2;
+    bytes gameEngineData = 3;
+  }
+  repeated UserData data = 1;
+}

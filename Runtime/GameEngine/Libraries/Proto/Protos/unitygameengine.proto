@@ -1,0 +1,54 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "ProtoUnityGameEngine";
+
+package grpc_server;
+
+message InGameDataReliableReceivedMsg {
+  string userId = 1;
+  bytes data = 2;
+}
+
+message InGameDataUnreliableReceivedMsg {
+  string userId = 1;
+  bytes data = 2;
+}
+
+message PlayerConnectedMsg {
+  string userId = 1;
+}
+
+message PlayerDisconnectedMsg {
+  string userId = 1;
+}
+
+message InitialMatchDataMsg {
+  message UserData {
+    string userId = 1;
+    bool isBot = 2;
+    double botDifficulty = 3;
+    repeated float matchmakerData = 4;
+    bytes gameEngineData = 5;
+    optional string roomId = 6;
+    optional uint32 teamIndex = 7;
+    optional string telegramId = 8;
+    optional string address = 9;
+    optional string nickname = 10;
+    optional string nicknameType = 11;
+    map<string, string> customData = 12;
+  }
+  message CustomRoomData {
+    map<string, string> customRoomData = 1;
+  }
+  repeated UserData initialMatchData = 1;
+  optional string matchId = 2;
+  optional string queueName = 3;
+  optional string regionName = 4;
+  map<string, CustomRoomData> customRoomDatas = 5;
+  map<string, string> customMatchmakingData = 6;
+  optional bytes externalGameData = 7;
+}
+
+message TickMsg {
+  int64 tick = 1;
+}

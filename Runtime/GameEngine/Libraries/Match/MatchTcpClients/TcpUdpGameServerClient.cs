@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Elympics;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.SimpleMessageEncoder;
@@ -19,8 +18,7 @@ namespace MatchTcpClients
         public TcpUdpGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
-            IPEndPoint endpoint,
-            ElympicsLoggerContext logger) : base(serializer, config, logger)
+            IPEndPoint endpoint) : base(serializer, config)
         {
             _endpoint = endpoint;
         }

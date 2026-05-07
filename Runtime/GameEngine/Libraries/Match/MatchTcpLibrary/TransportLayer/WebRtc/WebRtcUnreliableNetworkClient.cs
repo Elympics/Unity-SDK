@@ -9,7 +9,7 @@ using WebRtcWrapper;
 
 namespace MatchTcpLibrary.TransportLayer.WebRtc
 {
-    public class WebRtcUnreliableNetworkClient : IUnreliableNetworkClient
+    internal class WebRtcUnreliableNetworkClient : IUnreliableNetworkClient
     {
         private readonly IWebRtcClient _webRtcClient;
 

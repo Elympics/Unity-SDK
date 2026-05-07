@@ -23,7 +23,7 @@ namespace Elympics
             {
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => new LocalGameServerInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote => InitializeHalfRemotePlayers(elympicsGameConfig),
-                ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer => InitializeDebugOnlinePlayer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer => new DebugOnlineClientInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay => new EditorSnapshotReplayInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer => new SinglePlayerGameInitializer(),
                 _ => throw new ArgumentOutOfRangeException(nameof(elympicsGameConfig.GameplaySceneDebugMode)),
@@ -40,8 +40,6 @@ namespace Elympics
             JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
             _ => throw new ArgumentOutOfRangeException(LobbyRegister.GetJoinedMatchMode().ToString()),
         };
-
-        private static DebugOnlineClientInitializer InitializeDebugOnlinePlayer() => new();
 
         private static GameSceneInitializer InitializeHalfRemotePlayers(ElympicsGameConfig elympicsGameConfig)
         {

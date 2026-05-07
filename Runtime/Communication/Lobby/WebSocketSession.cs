@@ -32,7 +32,7 @@ namespace Elympics.Lobby
         private bool _isDisposed;
 
         private readonly IAsyncEventsDispatcher _dispatcher;
-        private ElympicsLoggerContext _logger;
+        private readonly ElympicsLoggerContext _logger;
         public delegate IWebSocket WebSocketFactory(string url, string? protocol = null);
         private readonly WebSocketFactory _wsFactory;
 

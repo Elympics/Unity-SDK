@@ -32,7 +32,8 @@ namespace Elympics.Editor.CodeGen
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
-            var assemblyDefinition = ReadAssembly(compiledAssembly);
+            using var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
+            var assemblyDefinition = ReadAssembly(compiledAssembly, resolver);
 
             if (IsAlreadyProcessed(assemblyDefinition) || !HasAnyRpcMethods(assemblyDefinition))
                 return new ILPostProcessResult(null);
@@ -69,9 +70,8 @@ namespace Elympics.Editor.CodeGen
                 diagnostics);
         }
 
-        private static AssemblyDefinition ReadAssembly(ICompiledAssembly compiledAssembly)
+        private static AssemblyDefinition ReadAssembly(ICompiledAssembly compiledAssembly, ILPostProcessorAssemblyResolver resolver)
         {
-            var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
             var pdbData = compiledAssembly.InMemoryAssembly.PdbData;
             // not using var to prevent the "Cannot access a closed Stream" exception
             // instead, InMemory = true is used in ReaderParameters
@@ -108,6 +108,11 @@ namespace Elympics.Editor.CodeGen
             assemblyDefinition.CustomAttributes.Any(a =>
                 a.AttributeType.FullName == ProcessedByElympicsAttributeFullName);
 
+        /// <remarks>
+        /// Only checks top-level types (skips nested classes).
+        /// </remarks>
+        /// <param name="assemblyDefinition">Assembly to check.</param>
+        /// <returns><c>true</c> if the assembly has RPC methods in its top-level classes, <c>false</c> otherwise.</returns>
         private static bool HasAnyRpcMethods(AssemblyDefinition assemblyDefinition) =>
             assemblyDefinition.MainModule.Types
                 .SelectMany(t => t.Methods)
@@ -115,10 +120,10 @@ namespace Elympics.Editor.CodeGen
                           m.CustomAttributes.Any(a =>
                               a.AttributeType.FullName == ElympicsRpcAttributeFullName));
 
-        private static DiagnosticMessage Error(string message, string stackTrace, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0) => new()
+        private static DiagnosticMessage Error(string message, string? stackTrace, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0) => new()
         {
             DiagnosticType = DiagnosticType.Error,
-            MessageData = message + "|" + stackTrace.Replace('\n', '|'),
+            MessageData = string.IsNullOrEmpty(stackTrace) ? message : message + "|" + stackTrace?.Replace('\n', '|'),
             File = filePath,
             Line = lineNumber,
         };

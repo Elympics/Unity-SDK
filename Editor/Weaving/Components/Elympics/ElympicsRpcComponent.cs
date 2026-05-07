@@ -15,21 +15,12 @@ namespace Elympics.Editor.Weaving.Components.Elympics
     /// Class responsible for injecting IL code needed for running RPC methods.
     /// </summary>
     /// <remarks>
-    /// Attention is required when referencing types!
-    /// <list type="bullet">
-    /// <item>
-    /// When referencing core library types, it is important to use <see cref="WeaverComponent.TypeSystem"/>
-    /// either directly accessing its types (e.g. <see cref="TypeSystem.String"/>, <see cref="TypeSystem.Void"/>))
+    /// Attention is required when referencing core library types!
+    /// It is important to use <see cref="WeaverComponent.TypeSystem"/>
+    /// either directly accessing its types (e.g. <see cref="TypeSystem.String"/>, <see cref="TypeSystem.Void"/>)
     /// or using it as the metadata scope in <see cref="TypeReference"/> constructor.
     /// This avoids binding to host editor CLR (System.Private.CoreLib 5.0) and prevents issues
     /// with resolving libraries when only Unity's Mono runtime (mscorlib) is available.
-    /// </item>
-    /// <item>
-    /// When referencing Elympics types, <see cref="TypeReference.Resolve"/> must not be called,
-    /// because Elympics is auto-referenced and is not a direct reference of the processed assemblies (especially Assembly-CSharp).
-    /// No direct resolving also means no type mismatch between host and build core library.
-    /// </item>
-    /// </list>
     /// </remarks>
     internal class ElympicsRpcComponent : WeaverComponent
     {
@@ -107,6 +98,7 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var elympicsMonoBehaviour = new ElympicsWeaverType(Assembly, typeof(ElympicsMonoBehaviour));
             var getMethodInfoMethodReference = elympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetMethodInfo));
             var getRpcPropertiesMethodReference = elympicsMonoBehaviour.GetMethod(nameof(ElympicsMonoBehaviour.GetRpcProperties));
+            var getElympicsBehaviourMethodReference = elympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
 
             var elympicsBehaviour = new ElympicsWeaverType(Assembly, typeof(ElympicsBehaviour));
             var shouldRpcBeCapturedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeCaptured));
@@ -119,23 +111,6 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var rpcPropertiesVariable = new VariableDefinition(elympicsRpcProperties.Reference);
             methodBody.Variables.Add(methodInfoVariable);
             methodBody.Variables.Add(rpcPropertiesVariable);
-
-            var getElympicsBehaviourMethodReference = elympicsMonoBehaviour.GetPropertyGetter(nameof(ElympicsMonoBehaviour.ElympicsBehaviour));
-
-            var loadThisOnStack = ilProcessor.Create(OpCodes.Ldarg_0);
-            var loadTypeNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.DeclaringType.FullName);
-            var loadMethodNameOnStack = ilProcessor.Create(OpCodes.Ldstr, methodDefinition.Name);
-            var callGetMethodInfo = ilProcessor.Create(OpCodes.Call, getMethodInfoMethodReference);
-            var storeMethodInfoToVariable = ilProcessor.Create(OpCodes.Stloc, methodInfoVariable);
-            var callGetRpcProperties = ilProcessor.Create(OpCodes.Call, getRpcPropertiesMethodReference);
-            var storeRpcPropertiesToVariable = ilProcessor.Create(OpCodes.Stloc, rpcPropertiesVariable);
-
-            var callGetElympicsBehaviour = ilProcessor.Create(OpCodes.Call, getElympicsBehaviourMethodReference);
-            var loadMethodInfoFromVariable = ilProcessor.Create(OpCodes.Ldloc, methodInfoVariable);
-            var loadRpcPropertiesFromVariable = ilProcessor.Create(OpCodes.Ldloc, rpcPropertiesVariable);
-            var callShouldBeCaptured = ilProcessor.Create(OpCodes.Call, shouldRpcBeCapturedMethodReference);
-            var callOnRpcCaptured = ilProcessor.Create(OpCodes.Call, onRpcCapturedMethodReference);
-            var callShouldBeInvoked = ilProcessor.Create(OpCodes.Call, shouldRpcBeInvokedMethodReference);
 
             var createArrayWithMethodArguments = new List<Instruction>
             {
@@ -153,62 +128,66 @@ namespace Elympics.Editor.Weaving.Components.Elympics
                 createArrayWithMethodArguments.Add(ilProcessor.Create(OpCodes.Stelem_Ref));
             }
 
-            var returnBeforeOriginalBody = ilProcessor.Create(OpCodes.Ret);
             var originalBodyStart = methodDefinition.Body.Instructions[0];
-
-            var loadStartMarker = ilProcessor.Create(OpCodes.Ldstr, StartMarker);
-            var loadEndMarker = ilProcessor.Create(OpCodes.Ldstr, EndMarker);
-            var pop = ilProcessor.Create(OpCodes.Pop);
+            var returnBeforeOriginalBody = ilProcessor.Create(OpCodes.Ret);
 
             // Mark the start of the injected IL code
-            ilProcessor.InsertBefore(originalBodyStart, loadStartMarker);
-            ilProcessor.InsertBefore(originalBodyStart, pop);
+            ilProcessor.InsertBefore(originalBodyStart, PushString(StartMarker));
+            ilProcessor.InsertBefore(originalBodyStart, Pop());
 
             // Get MethodInfo and ElympicsRpcProperties
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, loadTypeNameOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodNameOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetMethodInfo);
-            ilProcessor.InsertBefore(originalBodyStart, storeMethodInfoToVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, callGetRpcProperties);
-            ilProcessor.InsertBefore(originalBodyStart, storeRpcPropertiesToVariable);
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
+            ilProcessor.InsertBefore(originalBodyStart, PushString(methodDefinition.DeclaringType.FullName));
+            ilProcessor.InsertBefore(originalBodyStart, PushString(methodDefinition.Name));
+            ilProcessor.InsertBefore(originalBodyStart, Call(getMethodInfoMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, PopToVariable(methodInfoVariable));
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(methodInfoVariable));
+            ilProcessor.InsertBefore(originalBodyStart, Call(getRpcPropertiesMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, PopToVariable(rpcPropertiesVariable));
 
             // Call ShouldRpcBeInvokedInstantly and branch
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetElympicsBehaviour);
-            ilProcessor.InsertBefore(originalBodyStart, loadRpcPropertiesFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, callShouldBeInvoked);
-            ilProcessor.InsertBefore(originalBodyStart, ilProcessor.Create(OpCodes.Brtrue, originalBodyStart));
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
+            ilProcessor.InsertBefore(originalBodyStart, Call(getElympicsBehaviourMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(rpcPropertiesVariable));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(methodInfoVariable));
+            ilProcessor.InsertBefore(originalBodyStart, Call(shouldRpcBeInvokedMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, BranchIf(true, originalBodyStart));
 
             // Call ShouldRpcBeCaptured and branch
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetElympicsBehaviour);
-            ilProcessor.InsertBefore(originalBodyStart, loadRpcPropertiesFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, callShouldBeCaptured);
-            ilProcessor.InsertBefore(originalBodyStart, ilProcessor.Create(OpCodes.Brfalse, returnBeforeOriginalBody));
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
+            ilProcessor.InsertBefore(originalBodyStart, Call(getElympicsBehaviourMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(rpcPropertiesVariable));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(methodInfoVariable));
+            ilProcessor.InsertBefore(originalBodyStart, Call(shouldRpcBeCapturedMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, BranchIf(false, returnBeforeOriginalBody));
 
             // Call OnRpcCaptured
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
-            ilProcessor.InsertBefore(originalBodyStart, callGetElympicsBehaviour);
-            ilProcessor.InsertBefore(originalBodyStart, loadRpcPropertiesFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadMethodInfoFromVariable);
-            ilProcessor.InsertBefore(originalBodyStart, loadThisOnStack);
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
+            ilProcessor.InsertBefore(originalBodyStart, Call(getElympicsBehaviourMethodReference));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(rpcPropertiesVariable));
+            ilProcessor.InsertBefore(originalBodyStart, PushFromVariable(methodInfoVariable));
+            ilProcessor.InsertBefore(originalBodyStart, PushThis());
             foreach (var instruction in createArrayWithMethodArguments)
                 ilProcessor.InsertBefore(originalBodyStart, instruction);
-            ilProcessor.InsertBefore(originalBodyStart, callOnRpcCaptured);
+            ilProcessor.InsertBefore(originalBodyStart, Call(onRpcCapturedMethodReference));
 
             // Return just before the original code
             ilProcessor.InsertBefore(originalBodyStart, returnBeforeOriginalBody);
 
             // Mark the end of the injected IL code
-            ilProcessor.InsertBefore(originalBodyStart, loadEndMarker);
-            ilProcessor.InsertBefore(originalBodyStart, pop);
+            ilProcessor.InsertBefore(originalBodyStart, PushString(EndMarker));
+            ilProcessor.InsertBefore(originalBodyStart, Pop());
 
             // The original code continues from here (if branched to originalBodyStart)
+
+            Instruction PopToVariable(VariableDefinition variable) => ilProcessor.Create(OpCodes.Stloc, variable);
+            Instruction PushFromVariable(VariableDefinition variable) => ilProcessor.Create(OpCodes.Ldloc, variable);
+            Instruction PushThis() => ilProcessor.Create(OpCodes.Ldarg_0);
+            Instruction PushString(string value) => ilProcessor.Create(OpCodes.Ldstr, value);
+            Instruction Pop() => ilProcessor.Create(OpCodes.Pop);
+            Instruction Call(MethodReference methodReference) => ilProcessor.Create(OpCodes.Call, methodReference);
+            Instruction BranchIf(bool result, Instruction instruction) => ilProcessor.Create(result ? OpCodes.Brtrue : OpCodes.Brfalse, instruction);
         }
 
         protected override void FinishVisiting(ModuleDefinition moduleDefinition)

@@ -105,10 +105,8 @@ namespace Elympics.Editor.Weaving.Components.Elympics
             var onRpcCapturedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.OnRpcCaptured));
             var shouldRpcBeInvokedMethodReference = elympicsBehaviour.GetMethod(nameof(ElympicsBehaviour.ShouldRpcBeInvokedInstantly));
 
-            var methodInfoTypeRef = new TypeReference(typeof(MethodInfo).Namespace, nameof(MethodInfo), Module, TypeSystem.CoreLibrary);
-            var methodInfoVariable = new VariableDefinition(methodInfoTypeRef);
-            var elympicsRpcProperties = new ElympicsWeaverType(Assembly, typeof(ElympicsRpcProperties));
-            var rpcPropertiesVariable = new VariableDefinition(elympicsRpcProperties.Reference);
+            var methodInfoVariable = new VariableDefinition(getMethodInfoMethodReference.ReturnType);
+            var rpcPropertiesVariable = new VariableDefinition(getRpcPropertiesMethodReference.ReturnType);
             methodBody.Variables.Add(methodInfoVariable);
             methodBody.Variables.Add(rpcPropertiesVariable);
 
@@ -192,15 +190,18 @@ namespace Elympics.Editor.Weaving.Components.Elympics
 
         protected override void FinishVisiting(ModuleDefinition moduleDefinition)
         {
-            if (TypeSystem is null)
+            if (Module is null || TypeSystem is null)
                 throw new InvalidOperationException($"Assembly visiting has not been started for {nameof(ElympicsRpcComponent)}");
 
             var elympicsVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
+            // resolving isn't possible as the woven assembly does not directly reference Elympics.Weaving.dll
+            // but at the same time it isn't needed as the type hierarchy isn't traversed
             var attributeReference = moduleDefinition.ImportReference(typeof(ProcessedByElympicsAttribute));
-            var attributeConstructor = new MethodReference(".ctor", moduleDefinition.TypeSystem.Void, attributeReference) { HasThis = true };
-            attributeConstructor.Parameters.Add(new ParameterDefinition(moduleDefinition.TypeSystem.String));
+            var attributeConstructor = new MethodReference(".ctor", TypeSystem.Void, attributeReference) { HasThis = true };
+            attributeConstructor.Parameters.Add(new ParameterDefinition(TypeSystem.String));
             var attributeWithParameters = new CustomAttribute(attributeConstructor);
-            attributeWithParameters.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.String, elympicsVersion));
+            attributeWithParameters.ConstructorArguments
+                .Add(new CustomAttributeArgument(attributeConstructor.Parameters[0].ParameterType, elympicsVersion));
             moduleDefinition.Assembly.CustomAttributes.Add(attributeWithParameters);
         }
     }

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Elympics.Editor.Weaving.Components;
 using Mono.Cecil;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
@@ -21,9 +23,11 @@ namespace Elympics.Editor.CodeGen
         private readonly Dictionary<string, string> _referencesByName;
         private readonly Dictionary<string, AssemblyDefinition> _cache = new();
         private AssemblyDefinition? _selfAssembly;
+        private readonly ILogger? _logger;
 
-        public ILPostProcessorAssemblyResolver(ICompiledAssembly compiledAssembly)
+        public ILPostProcessorAssemblyResolver(ICompiledAssembly compiledAssembly, ILogger? logger = null)
         {
+            _logger = logger;
             _compiledAssembly = compiledAssembly;
             _referencesByName = new Dictionary<string, string>();
             foreach (var reference in compiledAssembly.References)
@@ -34,10 +38,12 @@ namespace Elympics.Editor.CodeGen
             }
         }
 
-        public AssemblyDefinition? Resolve(AssemblyNameReference name) => Resolve(name, default!);
+        public AssemblyDefinition? Resolve(AssemblyNameReference name) => Resolve(name, null);
 
-        public AssemblyDefinition? Resolve(AssemblyNameReference name, ReaderParameters parameters)
+        public AssemblyDefinition? Resolve(AssemblyNameReference name, ReaderParameters? parameters)
         {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
             if (name.Name == _compiledAssembly.Name)
                 return _selfAssembly ??= AssemblyDefinition.ReadAssembly(
                     new MemoryStream(_compiledAssembly.InMemoryAssembly.PeData),
@@ -47,7 +53,10 @@ namespace Elympics.Editor.CodeGen
                 return cached;
 
             if (!_referencesByName.TryGetValue(name.Name, out var path) || !File.Exists(path))
+            {
+                _logger?.LogInfo("Cannot find assembly: " + name.Name + "| cache: " + string.Join(", ", _cache.Keys) + "| references: " + string.Join(", ", _referencesByName.Keys));
                 return null;
+            }
 
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(path,
                 new ReaderParameters { ReadingMode = ReadingMode.Immediate, InMemory = true, AssemblyResolver = this });

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Elympics.Editor.Weaving.Components;
 using Elympics.Editor.Weaving.Components.Elympics;
+using Elympics.Weaving;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -20,11 +20,6 @@ namespace Elympics.Editor.CodeGen
     {
         private const string ElympicsAssemblyName = "Elympics";
 
-        /// <remarks>In the form of string constant to avoid referencing Elympics.Weaving.dll</remarks>
-        private const string ProcessedByElympicsAttributeFullName = "Elympics.Weaving.ProcessedByElympicsAttribute";
-        /// <remarks>In the form of string constant to avoid referencing Elympics.dll</remarks>
-        private const string ElympicsRpcAttributeFullName = "Elympics.ElympicsRpcAttribute";
-
         public override ILPostProcessor GetInstance() => new ElympicsILPostProcessor();
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
@@ -32,42 +27,43 @@ namespace Elympics.Editor.CodeGen
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
-            using var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
-            var assemblyDefinition = ReadAssembly(compiledAssembly, resolver);
-
-            if (IsAlreadyProcessed(assemblyDefinition) || !HasAnyRpcMethods(assemblyDefinition))
-                return new ILPostProcessResult(null);
-
             var diagnostics = new List<DiagnosticMessage>();
-            var components = new ComponentController(new ElympicsRpcComponent());
-
+            var diagnosticsLogger = new DiagnosticsLogger(diagnostics, $"[Elympics Weaver] Error processing {compiledAssembly.Name}: ");
             try
             {
+                using var resolver = new ILPostProcessorAssemblyResolver(compiledAssembly);
+                var assemblyDefinition = ReadAssembly(compiledAssembly, resolver);
+
+                if (IsAlreadyProcessed(assemblyDefinition) || !HasAnyRpcMethods(assemblyDefinition))
+                    return new ILPostProcessResult(null);
+
+                var components = new ComponentController(new ElympicsRpcComponent());
                 components.VisitModule(assemblyDefinition.MainModule);
+
+                var outPe = new MemoryStream();
+                var outPdb = new MemoryStream();
+                assemblyDefinition.Write(outPe, new WriterParameters
+                {
+                    WriteSymbols = true,
+                    SymbolWriterProvider = new PortablePdbWriterProvider(),
+                    SymbolStream = outPdb,
+                });
+
+                return new ILPostProcessResult(
+                    new InMemoryAssembly(outPe.ToArray(), outPdb.ToArray()),
+                    diagnostics);
             }
             catch (AggregateException ex)
             {
-                diagnostics.AddRange(ex.InnerExceptions.Select(inner => Error(inner.Message, inner.StackTrace)));
+                foreach (var inner in ex.InnerExceptions)
+                    diagnosticsLogger.LogException(inner);
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, diagnostics);
             }
             catch (Exception ex)
             {
-                diagnostics.Add(Error($"[Elympics Weaver] Error processing {compiledAssembly.Name}: {ex.Message}", ex.StackTrace));
+                diagnosticsLogger.LogException(ex);
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, diagnostics);
             }
-
-            var outPe = new MemoryStream();
-            var outPdb = new MemoryStream();
-            assemblyDefinition.Write(outPe, new WriterParameters
-            {
-                WriteSymbols = true,
-                SymbolWriterProvider = new PortablePdbWriterProvider(),
-                SymbolStream = outPdb,
-            });
-
-            return new ILPostProcessResult(
-                new InMemoryAssembly(outPe.ToArray(), outPdb.ToArray()),
-                diagnostics);
         }
 
         private static AssemblyDefinition ReadAssembly(ICompiledAssembly compiledAssembly, ILPostProcessorAssemblyResolver resolver)
@@ -106,7 +102,7 @@ namespace Elympics.Editor.CodeGen
 
         private static bool IsAlreadyProcessed(AssemblyDefinition assemblyDefinition) =>
             assemblyDefinition.CustomAttributes.Any(a =>
-                a.AttributeType.FullName == ProcessedByElympicsAttributeFullName);
+                a.AttributeType.FullName == typeof(ProcessedByElympicsAttribute).FullName);
 
         /// <remarks>
         /// Only checks top-level types (skips nested classes).
@@ -118,14 +114,6 @@ namespace Elympics.Editor.CodeGen
                 .SelectMany(t => t.Methods)
                 .Any(m => m.HasCustomAttributes &&
                           m.CustomAttributes.Any(a =>
-                              a.AttributeType.FullName == ElympicsRpcAttributeFullName));
-
-        private static DiagnosticMessage Error(string message, string? stackTrace, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0) => new()
-        {
-            DiagnosticType = DiagnosticType.Error,
-            MessageData = string.IsNullOrEmpty(stackTrace) ? message : message + "|" + stackTrace?.Replace('\n', '|'),
-            File = filePath,
-            Line = lineNumber,
-        };
+                              a.AttributeType.FullName == typeof(ElympicsRpcAttribute).FullName));
     }
 }

@@ -76,6 +76,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                             response.AddHeader("Content-Type", "application/json");
                             using var writeStream = new StreamWriter(response.OutputStream, Encoding.ASCII);
                             await writeStream.WriteAsync(responseJson);
+                            Debug.Log($"Answered {request.HttpMethod} request at path {request.Url.AbsolutePath}:\n{responseJson}");
                         }
 
                         break;

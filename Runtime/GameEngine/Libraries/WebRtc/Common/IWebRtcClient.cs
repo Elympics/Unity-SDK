@@ -9,6 +9,9 @@ namespace WebRtcWrapper
 
         event Action<string> IceCandidateCreated;
 
+        event Action ReliableChannelOpened;
+        event Action UnreliableChannelOpened;
+
         event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)> CandidatePairChosen;
 
         void SetIceServers(string iceServersJson);

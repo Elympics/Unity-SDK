@@ -190,12 +190,12 @@ namespace Elympics
             var channelOpened = false;
             var client = new HalfRemoteMatchClient(_userId.ToString(), _webRtcClient);
 
-            void OnChannelOpened(byte[] data, string playerId)
+            void OnChannelOpened()
             {
                 channelOpened = true;
             }
 
-            client.InGameDataForPlayerOnUnreliableChannelGenerated += OnChannelOpened;
+            _webRtcClient.UnreliableChannelOpened += OnChannelOpened;
 
             _webRtcClient.OnAnswer(answer);
 
@@ -209,7 +209,7 @@ namespace Elympics
                 yield return WaitTimeToRetryConnect;
             }
 
-            client.InGameDataForPlayerOnUnreliableChannelGenerated -= OnChannelOpened;
+            _webRtcClient.UnreliableChannelOpened -= OnChannelOpened;
 
             if (!channelOpened)
             {

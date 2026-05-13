@@ -172,7 +172,7 @@ namespace Elympics
                     }
                     catch (Exception ex)
                     {
-                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
+                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}\n{result.Text}");
                     }
 
                 yield return WaitTimeToRetryConnect;

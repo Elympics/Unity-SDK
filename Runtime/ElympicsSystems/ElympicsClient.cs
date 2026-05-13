@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
 using Elympics.ElympicsSystems.Internal;
@@ -91,7 +92,15 @@ namespace Elympics
             SetInitialized();
 
             if (connectOnStart)
-                StartCoroutine(ConnectAndJoinAsPlayer(success =>
+                RunConnectAndJoinAsPlayer();
+        }
+
+        private async void RunConnectAndJoinAsPlayer()
+        {
+            try
+            {
+                await UniTask.Yield();
+                await ConnectAndJoinAsPlayer(success =>
                     {
                         var log = _logger.WithMethodName();
                         if (success)
@@ -99,7 +108,12 @@ namespace Elympics
                         else
                             log.Error("Could not connect to the game server.");
                     },
-                    default));
+                    CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                _ = ElympicsLogger.LogException(e);
+            }
         }
 
         private void SetupCallbacks()

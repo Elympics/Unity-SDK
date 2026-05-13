@@ -52,22 +52,37 @@ namespace Elympics
         {
             var rawOffer = Encoding.UTF8.GetBytes(offer);
             using var request = new UnityWebRequest(_signalingUri, UnityWebRequest.kHttpVerbPOST);
-            request.timeout = (int)Math.Ceiling(timeout.TotalSeconds);
             request.uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" };
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();
 
             try
             {
-                var (isCanceled, result) = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct).SuppressCancellationThrow();
-                if (isCanceled)
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                _ = request.SendWebRequest();
+                var timeoutTask = UniTask.Delay(timeout, DelayType.Realtime, cancellationToken: cts.Token);
+                var webRequestTask = UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token);
+                var winnerIndex = await UniTask.WhenAny(timeoutTask, webRequestTask);
+                cts.Cancel();
+                if (!request.isDone)
+                    request.Abort();
+                if (winnerIndex == 0)
                     return new WebSignalingClientResponse
                     {
                         IsError = true,
-                        Text = "Operation cancelled.",
-                        Code = 499
+                        Code = 408,
+                        Text = "Request timeout"
                     };
-                return HandleCompleted(result);
+                return HandleCompleted(request);
+            }
+            catch (OperationCanceledException)
+            {
+                return new WebSignalingClientResponse
+                {
+                    IsError = true,
+                    Code = 499,
+                    Text = "Operation canceled"
+                };
             }
             catch (Exception e)
             {

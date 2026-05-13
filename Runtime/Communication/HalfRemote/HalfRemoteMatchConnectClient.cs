@@ -161,9 +161,19 @@ namespace Elympics
                 if (!Application.isPlaying)
                     yield break;
 
+                if (i > 0)
+                {
+                    yield return WaitTimeToRetryConnect;
+                    ElympicsLogger.Log("Retrying...\nSending the offer to the signaling server...");
+                }
+
                 WebSignalingClientResponse result = null;
                 yield return _signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(1), ct).ToCoroutine(x => result = x);
-                if (result?.IsError == false)
+                if (result is null)
+                    ElympicsLogger.LogError("No answer received from the signaling server.");
+                else if (result.IsError)
+                    ElympicsLogger.LogError("Error occurred while awaiting an answer from the signaling server: " + result.Text);
+                else
                     try
                     {
                         var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
@@ -172,16 +182,13 @@ namespace Elympics
                     }
                     catch (Exception ex)
                     {
-                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}\n{result.Text}");
+                        ElympicsLogger.LogError($"Failed to deserialize the answer from the signaling server: {ex.Message}\n{result.Text}");
                     }
-
-                yield return WaitTimeToRetryConnect;
-                ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
             }
 
             if (string.IsNullOrEmpty(answer))
             {
-                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error " + "or an issue with signaling server.");
+                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error or an issue with signaling server.");
                 connectedCallback.Invoke(false);
                 yield break;
             }

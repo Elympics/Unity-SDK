@@ -83,6 +83,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             var unreliableServerDataReceived = 0;
             var reliableClientDataReceived = 0;
             var unreliableClientDataReceived = 0;
+            var matchEnded = false;
 
             // SERVER
             var gameEngine = new GameEngineStub();
@@ -102,7 +103,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                 Debug.Log($"Unreliable server data from player {userId}, {data.Length}");
             };
 
-            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, tcpListenEndpoint, webListenEndpoint);
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, tcpListenEndpoint, webListenEndpoint, () => { });
             var signalingServerCts = new CancellationTokenSource();
             var signalingServer = new SimpleHttpSignalingServer(connector, webListenEndpoint);
             signalingServer.RunAsync(signalingServerCts.Token);
@@ -133,6 +134,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                 unreliableClientDataReceived++;
                 Debug.Log($"Unreliable client data for player {userId}, {data.Length}");
             };
+            client.MatchEnded += _ => matchEnded = true;
 
             // Act
             client.PlayerConnected();
@@ -163,14 +165,14 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             }
 
             await UniTask.WhenAll(SendUnreliableTask(), SendReliableTask());
-
+            gameEngine.EndGame(null);
 
             clientClose.Invoke();
             await UniTask.Delay(100, DelayType.Realtime);
             connector.Dispose();
             signalingServerCts.Cancel();
 
-            await UniTask.Delay(1000, DelayType.Realtime);
+            await UniTask.Delay(500, DelayType.Realtime);
 
             // Assert
             Assert.IsTrue(playerConnected);
@@ -178,6 +180,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             Assert.AreEqual(unreliableDataNumberToSend, unreliableClientDataReceived);
             Assert.AreEqual(reliableDataNumberToSend, reliableServerDataReceived);
             Assert.AreEqual(reliableDataNumberToSend, reliableClientDataReceived);
+            Assert.IsTrue(matchEnded);
         }
     }
 }

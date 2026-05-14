@@ -43,7 +43,9 @@ namespace UnityConnectors.HalfRemote
         private readonly Dictionary<Guid, GameEngineProtoClient> _reliableClients;
         private readonly Dictionary<Guid, GameEngineProtoClient> _unreliableClients;
 
-        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint)
+        private readonly Action _onAfterGameEnded;
+
+        public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, Action onAfterGameEnded = null)
         {
             _reliableClients = new Dictionary<Guid, GameEngineProtoClient>();
             _unreliableClients = new Dictionary<Guid, GameEngineProtoClient>();
@@ -76,6 +78,7 @@ namespace UnityConnectors.HalfRemote
             _gameEngineAdapter = gameEngineAdapter;
             _gameEngineAdapter.InGameDataForPlayerOnReliableChannelGenerated += OnInGameDataForPlayerOnReliableChannelGenerated;
             _gameEngineAdapter.InGameDataForPlayerOnUnreliableChannelGenerated += OnInGameDataForPlayerOnUnreliableChannelGenerated;
+            _onAfterGameEnded = onAfterGameEnded ?? QuitAfterGameEnded;
             _gameEngineAdapter.GameEnded += OnGameEnded;
         }
 
@@ -103,11 +106,15 @@ namespace UnityConnectors.HalfRemote
                     client.Send(msg);
 
             DisconnectClients();
+            _onAfterGameEnded();
+        }
 
+        private static void QuitAfterGameEnded()
+        {
 #if UNITY_EDITOR
             EditorApplication.isPlaying = false;
 #else
-                Application.Quit();
+            Application.Quit();
 #endif
         }
 

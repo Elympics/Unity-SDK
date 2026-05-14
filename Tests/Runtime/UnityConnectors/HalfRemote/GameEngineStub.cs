@@ -14,57 +14,34 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
         public event Action<byte[], string> InGameDataFromPlayerReliableReceived;
         public event Action<byte[], string> InGameDataFromPlayerUnreliableReceived;
 
+        public event Action<ResultMatchUserDatas> GameEnded;
+
         public void GenerateInGameDataForPlayerOnReliableChannel(byte[] data, string userId) =>
             InGameDataForPlayerOnReliableChannelGenerated?.Invoke(data, userId);
 
         public void GenerateInGameDataForPlayerOnUnreliableChannel(byte[] data, string userId) =>
             InGameDataForPlayerOnUnreliableChannelGenerated?.Invoke(data, userId);
 
+        public void EndGame(ResultMatchUserDatas matchUserData) => GameEnded?.Invoke(matchUserData);
+
         #endregion
 
-        public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId)
-        {
-            InGameDataFromPlayerReliableReceived?.Invoke(data, userId);
-        }
+        public void OnInGameDataFromPlayerReliableReceived(byte[] data, string userId) => InGameDataFromPlayerReliableReceived?.Invoke(data, userId);
 
-        public void OnInGameDataFromPlayerUnreliableReceived(byte[] data, string userId)
-        {
-            InGameDataFromPlayerUnreliableReceived?.Invoke(data, userId);
-        }
+        public void OnInGameDataFromPlayerUnreliableReceived(byte[] data, string userId) => InGameDataFromPlayerUnreliableReceived?.Invoke(data, userId);
 
-        public void OnPlayerConnected(string userId)
-        {
-            PlayerConnected?.Invoke(userId);
-        }
+        public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(userId);
 
-        public void OnPlayerDisconnected(string userId)
-        {
-            throw new NotImplementedException();
-        }
+        public void OnPlayerDisconnected(string userId) => throw new NotImplementedException();
 
-        public void Init(IGameEngineLogger logger, InitialMatchData initialMatchData)
-        {
-            throw new NotImplementedException();
-        }
+        public void Init(IGameEngineLogger logger, InitialMatchData initialMatchData) => throw new NotImplementedException();
 
-        public void Tick(long tick)
-        {
-            throw new NotImplementedException();
-        }
+        public void Tick(long tick) => throw new NotImplementedException();
 
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;
 
-        public void Init2(InitialMatchUserDatas initialMatchUserDatas)
-        {
-            throw new NotImplementedException();
-        }
-
-        event Action<ResultMatchUserDatas> IGameEngine.GameEnded
-        {
-            add => throw new NotImplementedException();
-            remove => throw new NotImplementedException();
-        }
+        public void Init2(InitialMatchUserDatas initialMatchUserDatas) => throw new NotImplementedException();
 
         event Action<MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
         {

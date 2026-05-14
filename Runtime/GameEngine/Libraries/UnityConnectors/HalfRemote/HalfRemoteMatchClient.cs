@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Google.Protobuf;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
@@ -24,6 +25,8 @@ namespace UnityConnectors.HalfRemote
         public event Action ReliableReceivingEnded;
         public event Action<string> UnreliableReceivingError;
         public event Action UnreliableReceivingEnded;
+
+        public event Action<Guid> MatchEnded;
 
         private readonly string _userId;
         private readonly UnityGameEngineProtoClient _reliableClient;
@@ -68,7 +71,10 @@ namespace UnityConnectors.HalfRemote
         public void OnInGameDataForSpectatorsOnReliableChannelGenerated(InGameDataForSpectatorsOnReliableChannelGeneratedMsg message) => ThrowNotImplementedException();
         public void OnInGameDataForSpectatorsOnUnreliableChannelGenerated(InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg message) => ThrowNotImplementedException();
         public void Initialized() => ThrowNotImplementedException();
-        public void OnGameEnded(NullableGameEndedMsg message) => ThrowNotImplementedException();
+
+        public void OnGameEnded(NullableGameEndedMsg message) =>
+            MatchEnded?.Invoke(message.HasNull ? Guid.Empty : new Guid(message.Data.Data.First().UserId.Split('.')[0]));
+
         public void LogVerbose(LogVerboseMsg message) => ThrowNotImplementedException();
         public void LogDebug(LogDebugMsg message) => ThrowNotImplementedException();
         public void LogInfo(LogInfoMsg message) => ThrowNotImplementedException();

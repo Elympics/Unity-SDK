@@ -74,7 +74,6 @@ namespace Elympics
             };
             _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData);
 
-            _halfRemoteMatchClient.InGameDataUnreliableReceived += gameBotAdapter.OnInGameDataUnreliableReceived;
             gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
             gameBotAdapter.InGameDataForUnreliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, false);
 

@@ -19,7 +19,7 @@ namespace Elympics
         public event Action<TimeSynchronizationData> Synchronized;
         public event Action<ElympicsSnapshot> SnapshotReceived;
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
-        public event Action<byte[]> InGameDataUnreliableReceived;
+        public event Action<Guid> MatchEnded;
 
         private readonly RingBufferElympicsDataWithTick<ElympicsInput> _input;
         private readonly ElympicsInput[] _inputsBuffer;
@@ -60,12 +60,15 @@ namespace Elympics
             _client.NtpReceived += OnNtpReceived;
             _client.InGameDataForPlayerOnReliableChannelGenerated += OnReliableInGameDataReceived;
             _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
+            _client.MatchEnded += OnMatchEnded;
 
             ElympicsLogger.Log("Connected to a half remote server.");
             connectedCallback?.Invoke(true);
 
             return Synchronization();
         }
+
+        private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
 
         public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
 
@@ -107,7 +110,6 @@ namespace Elympics
         {
             if (userId != _userId)
                 return;
-            InGameDataUnreliableReceived?.Invoke(data);
             ProcessDataFromServer(data);
         }
 

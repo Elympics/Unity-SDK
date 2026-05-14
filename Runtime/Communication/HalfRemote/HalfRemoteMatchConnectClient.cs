@@ -39,8 +39,6 @@ namespace Elympics
         public event Action DisconnectedByServer;
         public event Action DisconnectedByClient;
 
-        private static readonly Guid MatchId = Guid.NewGuid();
-
         private readonly HalfRemoteMatchClientAdapter _halfRemoteMatchClientAdapter;
         private readonly string _ip;
         private readonly int _port;
@@ -68,7 +66,12 @@ namespace Elympics
                 var baseUri = new Uri($"http://{_ip}:{_port}");
                 _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
             }
+
+            halfRemoteMatchClientAdapter.MatchEnded += OnMatchEnded;
+            // TODO: implement OnDisconnectedByServer  ~dsygocki 2026-05-14
         }
+
+        private void OnMatchEnded(Guid matchId) => MatchEndedWithMatchId?.Invoke(matchId);
 
         public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
         {
@@ -84,7 +87,7 @@ namespace Elympics
                 _halfRemoteMatchClientAdapter.PlayerConnected();
                 ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
                 AuthenticatedUserMatchWithUserId?.Invoke(_userId);
-                MatchJoinedWithMatchId?.Invoke(MatchId);
+                MatchJoinedWithMatchId?.Invoke(Guid.Empty);  // TODO: implement MatchId ~dsygocki 2026-05-14
                 MatchJoinedWithMatchInitData?.Invoke(_halfRemoteMatchInitialData);
             }
         }

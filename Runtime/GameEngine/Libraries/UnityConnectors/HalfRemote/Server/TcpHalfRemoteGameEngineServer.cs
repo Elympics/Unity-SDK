@@ -90,6 +90,7 @@ namespace UnityConnectors.HalfRemote.Server
         {
             if (!_running)
                 return;
+            _running = false;
             _listener.Stop();
             _listener = null;
         }

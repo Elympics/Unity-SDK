@@ -122,7 +122,7 @@ const LibraryWebRtc = {
             this.reliableDc.onopen = _ => {
                 onChannel("reliable", "opened");
                 this.reliableOpened();
-            }
+            };
             this.reliableDc.onmessage = message => this.reliableReceived(new Uint8Array(message.data));
             this.reliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;
@@ -147,7 +147,7 @@ const LibraryWebRtc = {
             this.unreliableDc.onopen = _ => {
                 onChannel("unreliable", "opened");
                 this.unreliableOpened();
-            }
+            };
             this.unreliableDc.onmessage = message => this.unreliableReceived(new Uint8Array(message.data));
             this.unreliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;

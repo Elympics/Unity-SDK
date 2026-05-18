@@ -53,7 +53,7 @@ namespace UnityConnectors.HalfRemote.Server
                 while (!ct.IsCancellationRequested)
                 {
                     var tcpClient = await _listener.AcceptTcpClientAsync();
-                    ct.Register(tcpClient.Close);
+                    _ = ct.Register(tcpClient.Close);
                     var protoNetworkClient = new ProtoNetworkStreamClient(tcpClient.GetStream());
                     var clientId = Guid.NewGuid();
                     var client = new GameEngineProtoClient(protoNetworkClient, _gameEngineProtoReceiver, _serverNtpReceiver);

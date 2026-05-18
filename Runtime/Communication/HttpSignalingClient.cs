@@ -89,7 +89,7 @@ namespace Elympics
                 return new WebSignalingClientResponse
                 {
                     IsError = true,
-                    Text = e.Message,
+                    Text = e.Message + '\n' + e.StackTrace,
                     Code = 500
                 };
             }

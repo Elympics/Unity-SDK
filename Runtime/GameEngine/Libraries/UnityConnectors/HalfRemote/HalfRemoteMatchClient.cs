@@ -19,7 +19,6 @@ namespace UnityConnectors.HalfRemote
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;
         public event Action<NtpData> NtpReceived;
-        public event Action WebRtcUpgraded;
 
         public event Action<string> ReliableReceivingError;
         public event Action ReliableReceivingEnded;

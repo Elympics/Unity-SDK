@@ -20,6 +20,7 @@ namespace Elympics
         public event Action<ElympicsSnapshot> SnapshotReceived;
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
         public event Action<Guid> MatchEnded;
+        public event Action Disconnected;
 
         private readonly RingBufferElympicsDataWithTick<ElympicsInput> _input;
         private readonly ElympicsInput[] _inputsBuffer;
@@ -51,12 +52,15 @@ namespace Elympics
             _client.ReliableReceivingError += ElympicsLogger.LogError;
             _client.ReliableReceivingEnded += () =>
             {
-                _playerDisconnected = true;
                 ElympicsLogger.Log("Reliable receiving ended.");
+                OnReceivingEnded();
             };
             _client.UnreliableReceivingError += ElympicsLogger.LogError;
-            _client.UnreliableReceivingEnded += () => ElympicsLogger.Log("Unreliable receiving ended.");
-            _client.WebRtcUpgraded += () => ElympicsLogger.Log("Upgraded connection to WebRTC.");
+            _client.UnreliableReceivingEnded += () =>
+            {
+                ElympicsLogger.Log("Unreliable receiving ended.");
+                OnReceivingEnded();
+            };
             _client.NtpReceived += OnNtpReceived;
             _client.InGameDataForPlayerOnReliableChannelGenerated += OnReliableInGameDataReceived;
             _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
@@ -69,6 +73,14 @@ namespace Elympics
         }
 
         private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
+
+        private void OnReceivingEnded()
+        {
+            var hasBeenAlreadyDisconnected = _playerDisconnected;
+            _playerDisconnected = true;
+            if (!hasBeenAlreadyDisconnected)
+                Disconnected?.Invoke();
+        }
 
         public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
 

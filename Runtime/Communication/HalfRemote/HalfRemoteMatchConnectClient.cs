@@ -68,10 +68,20 @@ namespace Elympics
             }
 
             halfRemoteMatchClientAdapter.MatchEnded += OnMatchEnded;
-            // TODO: implement OnDisconnectedByServer  ~dsygocki 2026-05-14
+            halfRemoteMatchClientAdapter.Disconnected += OnDisconnected;
         }
 
-        private void OnMatchEnded(Guid matchId) => MatchEndedWithMatchId?.Invoke(matchId);
+        private void OnMatchEnded(Guid matchId)
+        {
+            ElympicsLogger.Log($"Match {matchId} has ended!");
+            MatchEndedWithMatchId?.Invoke(matchId);
+        }
+
+        private void OnDisconnected()
+        {
+            ElympicsLogger.Log("Disconnected by server!");
+            DisconnectedByServer?.Invoke();
+        }
 
         public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
         {
@@ -244,6 +254,7 @@ namespace Elympics
             _halfRemoteMatchClientAdapter.PlayerDisconnected();
             _tcpClient?.Dispose();
             _webRtcClient?.Dispose();
+            ElympicsLogger.Log("Disconnected by client!");
             DisconnectedByClient?.Invoke();
         }
 

@@ -113,7 +113,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var logger = _logger.WithMethodName();
             try
             {
-                ReliableReceivingError?.Invoke(error.ToString());
+                ReliableReceivingError?.Invoke($"{error.errorType}: {error.message}");
             }
             catch (Exception e)
             {
@@ -126,7 +126,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var logger = _logger.WithMethodName();
             try
             {
-                UnreliableReceivingError?.Invoke(error.ToString());
+                UnreliableReceivingError?.Invoke($"{error.errorType}: {error.message}");
             }
             catch (Exception e)
             {

@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
 using UnityConnectors.HalfRemote.Server;
@@ -26,26 +26,41 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             _listener.Prefixes.Add(_uri);
         }
 
-        public void RunAsync(CancellationToken ct)
+        public async void RunAsync(CancellationToken ct)
         {
-            if (_uri.Contains("*"))
-                ElympicsLogger.LogWarning("Signaling server listening on all hosts. "
-                    + "If it throws \"HttpListenerException: Access Denied.\", run Unity as administrator "
-                    + "before starting Half Remote server.");
+            try
+            {
+                if (_uri.Contains("*"))
+                    ElympicsLogger.LogWarning("Signaling server listening on all hosts. "
+                        + "If it throws \"HttpListenerException: Access Denied.\", run Unity as administrator "
+                        + "before starting Half Remote server.");
 
-            _listener.Start();
-            ElympicsLogger.Log($"Started listening on {_uri}");
-            _ = ct.Register(() => _listener.Stop());
+                _listener.Start();
+                ElympicsLogger.Log($"Started listening on {_uri}");
+                _ = ct.RegisterWithoutCaptureExecutionContext(() => _listener.Stop());
 
-            _ = Task.Factory.StartNew(async () => await HandleConnections(ct)
-                .ContinueWith(_ => ElympicsLogger.Log("Signaling server stopped.")), TaskCreationOptions.LongRunning);
+                while (!ct.IsCancellationRequested && _listener.IsListening)
+                    await HandleRequest(ct);
+            }
+            catch (ObjectDisposedException)
+            { }
+            catch (OperationCanceledException)
+            { }
+            catch (Exception e)
+            {
+                _ = ElympicsLogger.LogException(e);
+            }
+            finally
+            {
+                ElympicsLogger.Log("Signaling server stopped.");
+            }
         }
 
-        private async Task HandleConnections(CancellationToken ct)
+        private async UniTask HandleRequest(CancellationToken ct)
         {
-            while (!ct.IsCancellationRequested)
+            try
             {
-                var ctx = await _listener.GetContextAsync();
+                var ctx = await _listener.GetContextAsync().AsUniTask().AttachExternalCancellation(ct);
 
                 var request = ctx.Request;
                 var response = ctx.Response;
@@ -76,6 +91,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                             response.AddHeader("Content-Type", "application/json");
                             using var writeStream = new StreamWriter(response.OutputStream, Encoding.ASCII);
                             await writeStream.WriteAsync(responseJson);
+                            Debug.Log($"Answered {request.HttpMethod} request at path {request.Url.AbsolutePath}:\n{responseJson}");
                         }
 
                         break;
@@ -93,6 +109,10 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                 }
 
                 response.Close();
+            }
+            catch (IOException e)
+            {
+                _ = ElympicsLogger.LogException(e);
             }
         }
     }

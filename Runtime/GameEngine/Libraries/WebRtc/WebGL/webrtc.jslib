@@ -6,9 +6,11 @@ const LibraryWebRtc = {
         logToConsole: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
+        onReliableOpened: null,
         onReliableReceived: null,
         onReliableError: null,
         onReliableEnded: null,
+        onUnreliableOpened: null,
         onUnreliableReceived: null,
         onUnreliableError: null,
         onUnreliableEnded: null,
@@ -27,9 +29,11 @@ const LibraryWebRtc = {
         webRtcState.logToConsole(`Allocating client #${id}`);
 
         function WebRtcClient(
+            reliableOpened,
             reliableReceived,
             reliableError,
             reliableEnded,
+            unreliableOpened,
             unreliableReceived,
             unreliableError,
             unreliableEnded,
@@ -46,6 +50,7 @@ const LibraryWebRtc = {
             this.pc = new RTCPeerConnection(this.rtcConfig);
 
             this.reliableDc = this.pc.createDataChannel("reliable");
+            this.reliableOpened = reliableOpened;
             this.reliableReceived = reliableReceived;
             this.reliableError = reliableError;
             this.reliableEnded = reliableEnded;
@@ -114,7 +119,10 @@ const LibraryWebRtc = {
                 return message;
             };
 
-            this.reliableDc.onopen = _ => onChannel("reliable", "opened");
+            this.reliableDc.onopen = _ => {
+                onChannel("reliable", "opened");
+                this.reliableOpened();
+            };
             this.reliableDc.onmessage = message => this.reliableReceived(new Uint8Array(message.data));
             this.reliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;
@@ -136,7 +144,10 @@ const LibraryWebRtc = {
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;
 
-            this.unreliableDc.onopen = _ => onChannel("unreliable", "opened");
+            this.unreliableDc.onopen = _ => {
+                onChannel("unreliable", "opened");
+                this.unreliableOpened();
+            };
             this.unreliableDc.onmessage = message => this.unreliableReceived(new Uint8Array(message.data));
             this.unreliableDc.addEventListener("error", (ev) => {
                 const err = ev.error || ev;
@@ -269,6 +280,12 @@ const LibraryWebRtc = {
             };
         }
 
+        const WebRtcReliableOpened = () => {
+            if (webRtcState.onReliableOpened === null) return;
+
+            Module.dynCall_vi(webRtcState.onReliableOpened, id);
+        };
+
         const WebRtcReliableReceived = msg => {
             if (webRtcState.onReliableReceived === null) return;
 
@@ -305,6 +322,12 @@ const LibraryWebRtc = {
             if (webRtcState.onReliableEnded === null) return;
 
             Module.dynCall_vi(webRtcState.onReliableEnded, id);
+        };
+
+        const WebRtcUnreliableOpened = () => {
+            if (webRtcState.onUnreliableOpened === null) return;
+
+            Module.dynCall_vi(webRtcState.onUnreliableOpened, id);
         };
 
         const WebRtcUnreliableReceived = msg => {
@@ -473,9 +496,11 @@ const LibraryWebRtc = {
         webRtcState.logToConsole("Receiving callbacks created");
 
         webRtcState.instances[id] = new WebRtcClient(
+            WebRtcReliableOpened,
             WebRtcReliableReceived,
             WebRtcReliableError,
             WebRtcReliableEnded,
+            WebRtcUnreliableOpened,
             WebRtcUnreliableReceived,
             WebRtcUnreliableError,
             WebRtcUnreliableEnded,
@@ -527,6 +552,10 @@ const LibraryWebRtc = {
         webRtcState.offerAnnouncingDelay = delayMs;
     },
 
+    WebRtcSetOnReliableOpened: function (callback) {
+        webRtcState.onReliableOpened = callback;
+    },
+
     WebRtcSetOnReliableReceived: function (callback) {
         webRtcState.onReliableReceived = callback;
     },
@@ -537,6 +566,10 @@ const LibraryWebRtc = {
 
     WebRtcSetOnReliableEnded: function (callback) {
         webRtcState.onReliableEnded = callback;
+    },
+
+    WebRtcSetOnUnreliableOpened: function (callback) {
+        webRtcState.onUnreliableOpened = callback;
     },
 
     WebRtcSetOnUnreliableReceived: function (callback) {

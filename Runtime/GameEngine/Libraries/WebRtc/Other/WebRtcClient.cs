@@ -26,10 +26,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private UniTaskCompletionSource? _offerResolver;
 
+        public event Action? ReliableChannelOpened;
         public event Action<byte[]>? ReliableReceived;
         public event Action<string>? ReliableReceivingError;
         public event Action? ReliableReceivingEnded;
 
+        public event Action? UnreliableChannelOpened;
         public event Action<byte[]>? UnreliableReceived;
         public event Action<string>? UnreliableReceivingError;
         public event Action? UnreliableReceivingEnded;
@@ -75,8 +77,33 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _peerConnection.OnConnectionStateChange += OnConnectionStateChanged;
         }
 
-        private void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
-        private void OnUnreliableOpen() => OnChannel(UnreliableChannelLabel, "opened");
+        private void OnReliableOpen()
+        {
+            var logger = _logger.WithMethodName();
+            OnChannel(logger, ReliableChannelLabel, "opened");
+            try
+            {
+                ReliableChannelOpened?.Invoke();
+            }
+            catch (Exception e)
+            {
+                logger.Exception(e);
+            }
+        }
+
+        private void OnUnreliableOpen()
+        {
+            var logger = _logger.WithMethodName();
+            OnChannel(logger, UnreliableChannelLabel, "opened");
+            try
+            {
+                UnreliableChannelOpened?.Invoke();
+            }
+            catch (Exception e)
+            {
+                logger.Exception(e);
+            }
+        }
 
         private void OnReliableReceived(byte[] bytes) => ReliableReceived?.Invoke(bytes);
         private void OnUnreliableReceived(byte[] bytes) => UnreliableReceived?.Invoke(bytes);
@@ -86,7 +113,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var logger = _logger.WithMethodName();
             try
             {
-                ReliableReceivingError?.Invoke(error.ToString());
+                ReliableReceivingError?.Invoke($"{error.errorType}: {error.message}");
             }
             catch (Exception e)
             {
@@ -99,7 +126,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var logger = _logger.WithMethodName();
             try
             {
-                UnreliableReceivingError?.Invoke(error.ToString());
+                UnreliableReceivingError?.Invoke($"{error.errorType}: {error.message}");
             }
             catch (Exception e)
             {
@@ -110,7 +137,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void OnReliableEnded()
         {
             var logger = _logger.WithMethodName();
-            OnChannel(ReliableChannelLabel, "closed");
+            OnChannel(logger, ReliableChannelLabel, "closed");
             try
             {
                 ReliableReceivingEnded?.Invoke();
@@ -124,7 +151,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void OnUnreliableEnded()
         {
             var logger = _logger.WithMethodName();
-            OnChannel(UnreliableChannelLabel, "closed");
+            OnChannel(logger, UnreliableChannelLabel, "closed");
             try
             {
                 UnreliableReceivingEnded?.Invoke();
@@ -135,12 +162,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
         }
 
-        private void OnChannel(string name, string eventType)
-        {
-            var logger = _logger.WithMethodName();
-            // TODO: log chosen candidates ~dsygocki 2026-04-10
+        private static void OnChannel(ElympicsLoggerContext logger, string name, string eventType) =>
             logger.Log($"[WebRTC] Channel '{name}' has {eventType}");
-        }
 
         public void SendReliable(byte[] data)
         {
@@ -202,7 +225,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _offerResolver = null;
 
             var updatedOffer = _peerConnection.LocalDescription;
-            // TODO: log chosen candidates ~dsygocki 2026-04-10
 
             var offerJson = JsonUtility.ToJson((SessionDescription)updatedOffer);
             logger.Log("[WebRTC] Offer created\n" + offerJson);

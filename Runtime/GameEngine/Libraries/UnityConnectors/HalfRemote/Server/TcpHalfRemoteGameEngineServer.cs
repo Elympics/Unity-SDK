@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
@@ -28,7 +29,7 @@ namespace UnityConnectors.HalfRemote.Server
         private readonly IServerNtpReceiver _serverNtpReceiver;
 
         private TcpListener _listener;
-        private bool _running;
+        private CancellationTokenSource _ctsRunning;
 
         public TcpHalfRemoteGameEngineServer(IPEndPoint listenEndpoint, IGameEngineProtoReceiver gameEngineProtoReceiver, IServerNtpReceiver serverNtpReceiver)
         {
@@ -41,17 +42,18 @@ namespace UnityConnectors.HalfRemote.Server
         {
             _listener = new TcpListener(_listenEndpoint);
             _listener.Start();
-            _running = true;
-            _ = Task.Factory.StartNew(Run, TaskCreationOptions.LongRunning);
+            _ctsRunning = new CancellationTokenSource();
+            _ = Task.Factory.StartNew(() => Run(_ctsRunning.Token), TaskCreationOptions.LongRunning);
         }
 
-        private async Task Run()
+        private async Task Run(CancellationToken ct = default)
         {
             try
             {
-                while (_running)
+                while (!ct.IsCancellationRequested)
                 {
                     var tcpClient = await _listener.AcceptTcpClientAsync();
+                    _ = ct.Register(tcpClient.Close);
                     var protoNetworkClient = new ProtoNetworkStreamClient(tcpClient.GetStream());
                     var clientId = Guid.NewGuid();
                     var client = new GameEngineProtoClient(protoNetworkClient, _gameEngineProtoReceiver, _serverNtpReceiver);
@@ -88,14 +90,14 @@ namespace UnityConnectors.HalfRemote.Server
 
         public void Stop()
         {
-            if (!_running)
+            if (_ctsRunning is null)
                 return;
+            _ctsRunning.Cancel();
+            _ctsRunning = null;
             _listener.Stop();
             _listener = null;
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() => Stop();
     }
 }

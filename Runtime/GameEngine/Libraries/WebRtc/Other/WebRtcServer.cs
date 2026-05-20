@@ -18,7 +18,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         { }
 
         public void Stop()
-        { }
+        {
+            foreach (var client in _clients)
+                client.Dispose();
+            _clients.Clear();
+        }
 
         public IWebRtcServerClient CreateClient()
         {
@@ -33,11 +37,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public void ReceiveUnreliableOnce()
         { }
 
-        public void Dispose()
-        {
-            foreach (var client in _clients)
-                client.Dispose();
-            _clients.Clear();
-        }
+        public void Dispose() => Stop();
     }
 }

@@ -29,9 +29,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private static void Initialize(int offerAnnounceDelayMs)
         {
             WebRtcSetOfferAnnouncingDelay(offerAnnounceDelayMs);
+            WebRtcSetOnReliableOpened(DelegateOnReliableOpened);
             WebRtcSetOnReliableReceived(DelegateOnReliableReceived);
             WebRtcSetOnReliableError(DelegateOnReliableError);
             WebRtcSetOnReliableEnded(DelegateOnReliableEnded);
+            WebRtcSetOnUnreliableOpened(DelegateOnUnreliableOpened);
             WebRtcSetOnUnreliableReceived(DelegateOnUnreliableReceived);
             WebRtcSetOnUnreliableError(DelegateOnUnreliableError);
             WebRtcSetOnUnreliableEnded(DelegateOnUnreliableEnded);
@@ -57,13 +59,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendUnreliable(byte[] data) => WebRtcSendUnreliable(_instanceId, data, data.Length);
 
+        public event Action ReliableChannelOpened;
         public event Action<byte[]> ReliableReceived;
         public event Action<string> ReliableReceivingError;
         public event Action ReliableReceivingEnded;
 
+        public event Action UnreliableChannelOpened;
         public event Action<byte[]> UnreliableReceived;
         public event Action<string> UnreliableReceivingError;
         public event Action UnreliableReceivingEnded;
+
         public event Action<string> IceConnectionStateChanged;
         public event Action<string> ConnectionStateChanged;
 
@@ -87,10 +92,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Close() => WebRtcClose(_instanceId);
 
+        private void OnReliableOpened() => ReliableChannelOpened?.Invoke();
         private void OnReliableReceived(byte[] data) => ReliableReceived?.Invoke(data);
         private void OnReliableError(string error) => ReliableReceivingError?.Invoke(error);
         private void OnReliableEnded() => ReliableReceivingEnded?.Invoke();
 
+        private void OnUnreliableOpened() => UnreliableChannelOpened?.Invoke();
         private void OnUnreliableReceived(byte[] data) => UnreliableReceived?.Invoke(data);
         private void OnUnreliableError(string error) => UnreliableReceivingError?.Invoke(error);
         private void OnUnreliableEnded() => UnreliableReceivingEnded?.Invoke();
@@ -135,6 +142,30 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern int WebRtcClose(int instanceId);
 
         #region Callbacks
+
+        public delegate void OnOpenedCallback(int instanceId);
+
+        [DllImport("__Internal")] public static extern void WebRtcSetOnReliableOpened(OnOpenedCallback callback);
+
+        [MonoPInvokeCallback(typeof(OnOpenedCallback))]
+        public static void DelegateOnReliableOpened(int instanceId)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            instanceRef.OnReliableOpened();
+        }
+
+        [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableOpened(OnOpenedCallback callback);
+
+        [MonoPInvokeCallback(typeof(OnOpenedCallback))]
+        public static void DelegateOnUnreliableOpened(int instanceId)
+        {
+            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+
+            instanceRef.OnUnreliableOpened();
+        }
 
         public delegate void OnReceivedCallback(int instanceId, IntPtr msgPtr, int msgSize);
 

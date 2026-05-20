@@ -1,33 +1,105 @@
+/** @typedef {(instanceId: number) => void} OnOpenedCallback */
+/** @typedef {(instanceId: number, msgPtr: number | null, msgSize: number) => void} OnReceivedCallback */
+/** @typedef {(instanceId: number, errorPtr: number | null) => void} OnReceivingErrorCallback */
+/** @typedef {(instanceId: number) => void} OnReceivingEndedCallback */
+/** @typedef {(instanceId: number, newState: number | null) => void} OnIceConnectionStateChangedCallback */
+/** @typedef {(instanceId: number, newState: number | null) => void} OnConnectionStateChangedCallback */
+/** @typedef {(instanceId: number, offer: number | null) => void} OnOfferCallback */
+/** @typedef {(instanceId: number, iceCandidate: number | null) => void} OnIceCandidateCallback */
+/** @typedef {(instanceId: number, localCandidateJsonPtr: number | null, remoteCandidateJsonPtr: number | null) => void} OnCandidatePairChosenCallback */
+/** @typedef {(instanceId: number, methodName: number | null, logMessage: number | null) => void} OnLogCallback */
+
+/**
+ * @typedef {{
+ *   WebRtcAllocate: () => number,
+ *   WebRtcFree: (id: number) => void,
+ *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: number | null) => void,
+ *   WebRtcSetOfferAnnouncingDelay: (delayMs: number) => void,
+ *   WebRtcSetOnReliableOpened: (id: number, callback: OnOpenedCallback) => void,
+ *   WebRtcSetOnReliableReceived: (id: number, callback: OnReceivedCallback) => void,
+ *   WebRtcSetOnReliableError: (id: number, callback: OnReceivingErrorCallback) => void,
+ *   WebRtcSetOnReliableEnded: (id: number, callback: OnReceivingEndedCallback) => void,
+ *   WebRtcSetOnUnreliableOpened: (id: number, callback: OnOpenedCallback) => void,
+ *   WebRtcSetOnUnreliableReceived: (id: number, callback: OnReceivedCallback) => void,
+ *   WebRtcSetOnUnreliableError: (id: number, callback: OnReceivingErrorCallback) => void,
+ *   WebRtcSetOnUnreliableEnded: (id: number, callback: OnReceivingEndedCallback) => void,
+ *   WebRtcSetOnOffer: (id: number, callback: OnOfferCallback) => void,
+ *   WebRtcSetOnIceCandidate: (id: number, callback: OnIceCandidateCallback) => void,
+ *   WebRtcSetOnIceConnectionStateChanged: (id: number, callback: OnIceConnectionStateChangedCallback) => void,
+ *   WebRtcSetOnConnectionStateChanged: (id: number, callback: OnConnectionStateChangedCallback) => void,
+ *   WebRtcSetOnCandidatePairChosen: (id: number, callback: OnCandidatePairChosenCallback) => void,
+ *   WebRtcSetOnLog: (id: number, callback: OnLogCallback) => void,
+ *   WebRtcSetOnLogWarning: (id: number, callback: OnLogCallback) => void,
+ *   WebRtcSetOnLogError: (id: number, callback: OnLogCallback) => void,
+ *   WebRtcCreateOffer: (id: number, iceRestart: boolean) => void,
+ *   WebRtcOnAnswer: (id: number, answer: number) => void,
+ *   WebRtcSendReliable: (id: number, bufferPtr: number, length: number) => void,
+ *   WebRtcSendUnreliable: (id: number, bufferPtr: number, length: number) => void,
+ *   WebRtcClose: (id: number) => void,
+ * }} LibraryWebRtc
+ */
+
+/*
+ * @typedef {{
+ *   rtcConfig: RTCConfiguration,
+ *   pc: RTCPeerConnection,
+ *   reliableDc: RTCDataChannel,
+ *   reliableOpened: () => void,
+ *   reliableReceived: (msg: Uint8Array) => void,
+ *   reliableError: (msg: string) => void,
+ *   reliableEnded: () => void,
+ *   unreliableDc: RTCDataChannel,
+ *   unreliableOpened: () => void,
+ *   unreliableReceived: (msg: Uint8Array) => void,
+ *   unreliableError: (msg: string) => void,
+ *   unreliableEnded: () => void,
+ *   pendingOfferResolvers: (() => void)[],
+ *   createOffer: (iceRestart: boolean) => Promise,
+ *   candidatePairCt: boolean[],
+ *   onAnswer: (answerJson: string) => Promise,
+ *   waitForCandidatePair: (ct: boolean[]) => Promise,
+ *   sendReliable: (message: Uint8Array) => void,
+ *   sendUnreliable: (message: Uint8Array) => void,
+ *   setIceServers: (iceServers: RTCIceServer[]) => void,
+ *   close: () => void,
+ *   onIceConnectionStateChanged: (state: string) => void,
+ *   onConnectionStateChanged: (state: string) => void,
+ * }} WebRtcClient
+ */
+
+/** @type {LibraryWebRtc} */
 const LibraryWebRtc = {
+    /** @alias webRtcState */
     $webRtcState: {
-        instances: {},
+        /* @type {{[key: number]: WebRtcClient}} */ instances: {},
         lastId: 0,
 
         logToConsole: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
-        onReliableOpened: null,
-        onReliableReceived: null,
-        onReliableError: null,
-        onReliableEnded: null,
-        onUnreliableOpened: null,
-        onUnreliableReceived: null,
-        onUnreliableError: null,
-        onUnreliableEnded: null,
-        onOffer: null,
-        onIceCandidate: null,
-        onCandidatePairChosen: null,
-        onIceConnectionStateChanged: null,
-        onConnectionStateChanged: null,
-        onLog: null,
-        onLogWarning: null,
-        onLogError: null
+        /** @type {OnOpenedCallback | null} */ onReliableOpened: null,
+        /** @type {OnReceivedCallback | null} */ onReliableReceived: null,
+        /** @type {OnReceivingErrorCallback | null} */ onReliableError: null,
+        /** @type {OnReceivingEndedCallback | null} */ onReliableEnded: null,
+        /** @type {OnOpenedCallback | null} */ onUnreliableOpened: null,
+        /** @type {OnReceivedCallback | null} */ onUnreliableReceived: null,
+        /** @type {OnReceivingErrorCallback | null} */ onUnreliableError: null,
+        /** @type {OnReceivingEndedCallback | null} */ onUnreliableEnded: null,
+        /** @type {OnOfferCallback | null} */ onOffer: null,
+        /** @type {OnIceCandidateCallback | null} */ onIceCandidate: null,
+        /** @type {OnCandidatePairChosenCallback | null} */ onCandidatePairChosen: null,
+        /** @type {OnIceConnectionStateChangedCallback | null} */ onIceConnectionStateChanged: null,
+        /** @type {OnConnectionStateChangedCallback | null} */ onConnectionStateChanged: null,
+        /** @type {OnLogCallback | null} */ onLog: null,
+        /** @type {OnLogCallback | null} */ onLogWarning: null,
+        /** @type {OnLogCallback | null} */ onLogError: null
     },
 
     WebRtcAllocate: function () {
         const id = webRtcState.lastId++;
         webRtcState.logToConsole(`Allocating client #${id}`);
 
+        /** @constructor */
         function WebRtcClient(
             reliableOpened,
             reliableReceived,
@@ -91,8 +163,8 @@ const LibraryWebRtc = {
                         break;
                     case "sctp-failure":
                         if (err.sctpCauseCode !== undefined) {
-                            if (typeof sctpCauseCodes !== 'undefined' && err.sctpCauseCode < sctpCauseCodes.length) {
-                                message += ` | SCTP failure: ${sctpCauseCodes[err.sctpCauseCode]}`;
+                            if (typeof err.sctpCauseCodes !== 'undefined' && err.sctpCauseCode < err.sctpCauseCodes.length) {
+                                message += ` | SCTP failure: ${err.sctpCauseCodes[err.sctpCauseCode]}`;
                             } else {
                                 message += ` | SCTP failure: cause code ${err.sctpCauseCode}`;
                             }
@@ -186,7 +258,9 @@ const LibraryWebRtc = {
                 }
 
                 const updatedOffer = this.pc.localDescription;
-                if (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
+                // noinspection JSUnresolvedReference
+                if (this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
+                    // noinspection JSUnresolvedReference
                     logCallback('createOffer', `Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
                 }
                 offerCallback(JSON.stringify(updatedOffer));
@@ -624,16 +698,14 @@ const LibraryWebRtc = {
             return;
         }
 
-        instance.createOffer(iceRestart);
+        instance.createOffer(iceRestart).catch(e => webRtcState.logToConsole(e.toString()));
     },
 
     WebRtcOnAnswer: function (id, answer) {
         const instance = webRtcState.instances[id];
         if (!instance) return;
 
-        let answerStr;
-        if (UTF8ToString !== undefined) answerStr = UTF8ToString(answer);
-        else answerStr = Pointer_stringify(answer);
+        const answerStr = UTF8ToString(answer);
         instance.onAnswer(answerStr);
     },
 

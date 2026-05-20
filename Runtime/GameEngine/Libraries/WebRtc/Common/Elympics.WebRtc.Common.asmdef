@@ -1,6 +1,6 @@
 {
     "name": "Elympics.WebRtc.Common",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

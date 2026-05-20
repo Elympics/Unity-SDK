@@ -1,6 +1,6 @@
 {
     "name": "Elympics.WebRtc.Other",
-    "rootNamespace": "",
+    "rootNamespace": "Elympics",
     "references": [
         "GUID:f12aafacab75a87499e7e45c873ffab8",
         "GUID:645313404a2d0c44abd9febb05cd1212",

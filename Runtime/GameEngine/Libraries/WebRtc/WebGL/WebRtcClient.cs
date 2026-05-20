@@ -123,23 +123,23 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
         }
 
-        [DllImport("__Internal")] public static extern int WebRtcAllocate();
+        [DllImport("__Internal")] private static extern int WebRtcAllocate();
 
-        [DllImport("__Internal")] public static extern void WebRtcFree(int instanceId);
+        [DllImport("__Internal")] private static extern void WebRtcFree(int instanceId);
 
-        [DllImport("__Internal")] public static extern void WebRtcSetIceServers(int instanceId, string iceServersJson);
+        [DllImport("__Internal")] private static extern void WebRtcSetIceServers(int instanceId, string iceServersJson);
 
-        [DllImport("__Internal")] public static extern void WebRtcSetOfferAnnouncingDelay(int delayMs);
+        [DllImport("__Internal")] private static extern void WebRtcSetOfferAnnouncingDelay(int delayMs);
 
-        [DllImport("__Internal")] public static extern void WebRtcCreateOffer(int instanceId, bool restart);
+        [DllImport("__Internal")] private static extern void WebRtcCreateOffer(int instanceId, bool restart);
 
-        [DllImport("__Internal")] public static extern void WebRtcOnAnswer(int instanceId, string answer);
+        [DllImport("__Internal")] private static extern void WebRtcOnAnswer(int instanceId, string answer);
 
-        [DllImport("__Internal")] public static extern int WebRtcSendReliable(int instanceId, byte[] dataPtr, int dataLength);
+        [DllImport("__Internal")] private static extern int WebRtcSendReliable(int instanceId, byte[] dataPtr, int dataLength);
 
-        [DllImport("__Internal")] public static extern int WebRtcSendUnreliable(int instanceId, byte[] dataPtr, int dataLength);
+        [DllImport("__Internal")] private static extern int WebRtcSendUnreliable(int instanceId, byte[] dataPtr, int dataLength);
 
-        [DllImport("__Internal")] public static extern int WebRtcClose(int instanceId);
+        [DllImport("__Internal")] private static extern int WebRtcClose(int instanceId);
 
         #region Callbacks
 

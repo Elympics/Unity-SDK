@@ -171,7 +171,9 @@ namespace MatchTcpClients
 
                     _candidates.Clear();
                     _stateCancellationTokenSource.Dispose();
+                    _stateCancellationTokenSource = null;
                     _linkedCts.Dispose();
+                    _linkedCts = null;
                     if (connected)
                         return true;
                     else
@@ -187,9 +189,10 @@ namespace MatchTcpClients
             }
             finally
             {
-
                 _stateCancellationTokenSource?.Dispose();
+                _stateCancellationTokenSource = null;
                 _linkedCts?.Dispose();
+                _linkedCts = null;
             }
 
             return false;
@@ -203,6 +206,7 @@ namespace MatchTcpClients
                 return;
             _stateCancellationTokenSource?.Cancel();
             _stateCancellationTokenSource?.Dispose();
+            _stateCancellationTokenSource = null;
         }
 
         private void OnIceConnectionStateChanged(string newState)

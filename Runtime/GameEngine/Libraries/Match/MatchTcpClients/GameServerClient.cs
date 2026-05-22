@@ -26,7 +26,7 @@ namespace MatchTcpClients
 
         private readonly IGameServerSerializer _serializer;
         private IClientSynchronizer _clientSynchronizer = null!;
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
 
         public event Action? Connected;
         public event Action<TimeSynchronizationData>? ConnectedAndSynchronized;
@@ -40,7 +40,7 @@ namespace MatchTcpClients
 
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config)
         {
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(GameServerClient));
+            _logger = ElympicsLogger.Config.WithClassName(nameof(GameServerClient));
             Config = config;
             _serializer = serializer;
         }
@@ -69,7 +69,7 @@ namespace MatchTcpClients
 
         public async UniTask ConnectAsync(CancellationToken ct = default)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             Disconnect();
             Initialize();
 
@@ -124,7 +124,7 @@ namespace MatchTcpClients
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
 
-        private static void InvokeSafely(Action? action, ApplicationState logger)
+        private static void InvokeSafely(Action? action, ElympicsLoggerConfig logger)
         {
             try
             {
@@ -136,7 +136,7 @@ namespace MatchTcpClients
             }
         }
 
-        private static void InvokeSafely<T>(Action<T>? action, T arg, ApplicationState logger)
+        private static void InvokeSafely<T>(Action<T>? action, T arg, ElympicsLoggerConfig logger)
         {
             try
             {
@@ -161,7 +161,7 @@ namespace MatchTcpClients
 
         private void OnTimeout()
         {
-            var log = _logger.WithMethodName();
+            var log = _logger.WithMehodName();
             log.LogError("Synchronize timed out, disconnecting...");
             Disconnect();
         }
@@ -172,7 +172,7 @@ namespace MatchTcpClients
             _clientDisconnectedCts = null;
             if (cts == null)
                 return;
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("Aborting connection.");
             cts.Cancel();
             cts.Dispose();
@@ -190,7 +190,7 @@ namespace MatchTcpClients
             }
             catch (Exception e)
             {
-                var log = _logger.WithMethodName();
+                var log = _logger.WithMehodName();
                 log.LogException(new ElympicsException($"Error in {GetType().Name} receiving a message using channel {label}", e));
             }
         }

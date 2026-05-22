@@ -32,7 +32,7 @@ namespace Elympics
                     + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                     + $"The list has only {playersList.Count} entries. "
                     + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}."));
-            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName);
+            _ = ElympicsLogger.ApplicationState.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData ?? Array.Empty<float>();
             var gameEngineData = playersList[playerIndex].GameEngineData ?? Array.Empty<byte>();

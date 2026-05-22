@@ -31,7 +31,7 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
-            _ = ElympicsLogger.CurrentContext.SetGameMode("online");
+            _ = ElympicsLogger.ApplicationState.SetGameMode("online");
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,

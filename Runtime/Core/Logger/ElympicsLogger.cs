@@ -1,11 +1,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
-using Elympics.AssemblyCommunicator;
-using Elympics.Events;
-using Debug = UnityEngine.Debug;
+using Elympics.Core.Logger.Builder;
 using Object = UnityEngine.Object;
 
 namespace Elympics.Core.Logger
@@ -13,137 +11,54 @@ namespace Elympics.Core.Logger
     internal static class ElympicsLogger
     {
         private static readonly Guid SessionId = Guid.NewGuid();
-        internal static ApplicationState CurrentContext = new(SessionId);
-
-        private const string LogStringFormat = "[{0,-28}] [{1}] {2}";
-        private const string AppPrefixFormat = "[{0}] ";
-        private const string DefaultApp = "ElympicsSdk";
-
-        private static readonly StringBuilder StringBuilder = new();
-
-        private static string PrependWithDetails(string message)
+        private static readonly List<ILogOutlet> RegisteredOutlets = new()
         {
-            lock (StringBuilder)
-                return StringBuilder.Clear()
-#if !UNITY_EDITOR
-                    .Append(TimeUtil.DateTimeNowAsString + " ")
-#endif
-                    .Append(string.Format(AppPrefixFormat, DefaultApp)).Append(message).ToString();
+            new PlainLogOutlet(),
+            new JsonLogOutlet(),
+        };
+
+        public static ApplicationState ApplicationState { get; } = new(ElympicsVersionRetriever.GetVersionStringFromAssembly());
+        public static ElympicsLoggerConfig Config { get; set; } = new();
+
+        private static void Log(LogCategory category, string message, ElympicsLoggerConfig config, string? stacktrace = null, Object? unityContext = null)
+        {
+            var time = DateTime.Now;
+            if (stacktrace is null && (category is LogCategory.Exception || config.StacktraceForEverything))
+                stacktrace = new StackTrace(2, true).ToString();
+            foreach (var outlet in RegisteredOutlets)
+                outlet.Log(category, time, message, stacktrace, ApplicationState, config);
         }
 
-        private static string PrependWithDetails(string message, string time, ApplicationState context)
-        {
-            lock (StringBuilder)
-                return StringBuilder.Clear().AppendFormat(LogStringFormat, time, context.App, message).AppendLine().AppendLine(context.ToString()).ToString();
-        }
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message, Object? context = null) => Log(LogCategory.Debug, message, Config, unityContext: context);
+        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(this ElympicsLoggerConfig config, string message, Object? context = null) => Log(LogCategory.Debug, message, config, unityContext: context);
 
-        private static void InformClients(string message, string time, ApplicationState context, LogLevel logLevel) =>
-            CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
-            {
-                Message = message,
-                Time = time,
-                Context = context,
-                LogLevel = logLevel,
-            });
 
-        #region Debug-only logs
+        [Conditional("ELYMPICS_TRACE")] public static void LogTrace(string message, Object? context = null) => Log(LogCategory.Trace, message, Config, unityContext: context);
+        [Conditional("ELYMPICS_TRACE")] public static void LogTrace(this ElympicsLoggerConfig config, string message, Object? context = null) => Log(LogCategory.Trace, message, config, unityContext: context);
 
-        [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message, Object? context = null) => Debug.Log(PrependWithDetails(message), context);
+        public static void LogInfo(string message, Object? context = null) => Log(LogCategory.Info, message, Config, unityContext: context);
+        public static void LogInfo(this ElympicsLoggerConfig config, string message, Object? context = null) => Log(LogCategory.Info, message, config, unityContext: context);
 
-        [Conditional("ELYMPICS_DEBUG")]
-        public static void LogDebug(this ApplicationState context, string message)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.Log(PrependWithDetails(message, time, context));
-            InformClients(message, time, context, LogLevel.Log);
-        }
+        public static void LogWarning(string message, Object? context = null) => Log(LogCategory.Warning, message, Config, unityContext: context);
+        public static void LogWarning(this ElympicsLoggerConfig config, string message, Object? context = null) => Log(LogCategory.Warning, message, config, unityContext: context);
 
-        #endregion
+        public static void LogError(string message, Object? context = null) => Log(LogCategory.Error, message, Config, unityContext: context);
+        public static void LogError(this ElympicsLoggerConfig config, string message, Object? context = null) => Log(LogCategory.Error, message, config, unityContext: context);
 
-        #region Trace-level debug logs
+        // TODO: inner exceptions ~dsygocki 2026-05-26
+        public static void LogException(Exception exception, Object? context = null) => Log(LogCategory.Exception, exception.Message, Config, exception.StackTrace, context);
+        public static void LogException(this ElympicsLoggerConfig config, Exception exception, Object? context = null) => Log(LogCategory.Exception, exception.Message, config, exception.StackTrace, context);
 
-        [Conditional("ELYMPICS_TRACE")] public static void LogTrace(string message, Object? context = null) => Debug.Log(PrependWithDetails(message), context);
-
-        [Conditional("ELYMPICS_TRACE")]
-        public static void LogTrace(this ApplicationState state, string message, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.Log(PrependWithDetails(message, time, state), context);
-            InformClients(message, time, state, LogLevel.Log);
-        }
-
-        #endregion
-
-        #region Logs
-
-        public static void LogInfo(string message, Object? context = null) => Debug.Log(PrependWithDetails(message), context);
-
-        public static void LogInfo(this ApplicationState state, string message, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.Log(PrependWithDetails(message, time, state), context);
-            InformClients(message, time, state, LogLevel.Log);
-        }
-
-        #endregion
-
-        #region Warnings
-
-        public static void LogWarning(string message, Object? context = null) => Debug.LogWarning(PrependWithDetails(message), context);
-
-        public static void LogWarning(this ApplicationState state, string message, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.LogWarning(PrependWithDetails(message, time, state), context);
-            InformClients(message, time, state, LogLevel.Warning);
-        }
-
-        #endregion
-
-        #region Errors
-
-        public static void LogError(string message, Object? context = null) => Debug.LogError(PrependWithDetails(message), context);
-
-        public static void LogError(this ApplicationState state, string message, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.LogError(PrependWithDetails(message, time, state), context);
-            InformClients(message, time, state, LogLevel.Error);
-        }
-
-        #endregion
-
-        #region Exceptions
-
+        // TODO: inner exceptions ~dsygocki 2026-05-26
         public static Exception LogExceptionAndReturn(Exception exception, Object? context = null)
         {
-            var wrappedException = exception is not ElympicsException ? new ElympicsException("Caught exception", exception) : exception;
-            Debug.LogException(wrappedException, context);
+            Log(LogCategory.Exception, exception.Message, Config, exception.StackTrace, context);
             return exception;
         }
-
-        public static void LogException(Exception exception, Object? context = null)
+        public static Exception LogExceptionAndReturn(this ElympicsLoggerConfig config, Exception exception, Object? context = null)
         {
-            var wrappedException = exception is not ElympicsException ? new ElympicsException("Caught exception", exception) : exception;
-            Debug.LogException(wrappedException, context);
+            Log(LogCategory.Exception, exception.Message, config, exception.StackTrace, context);
+            return exception;
         }
-
-        public static Exception LogExceptionAndReturn(this ApplicationState state, Exception exception, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            var wrappedException = exception is not ElympicsException ? new ElympicsException(exception.Message, exception) : exception;
-            Debug.LogException(exception, context);
-            InformClients(exception.Message, time, state, LogLevel.Exception);
-            return wrappedException;
-        }
-
-        public static void LogException(this ApplicationState state, Exception exception, Object? context = null)
-        {
-            var time = TimeUtil.DateTimeNowAsString;
-            Debug.LogException(exception, context);
-            InformClients(exception.Message, time, state, LogLevel.Exception);
-        }
-
-        #endregion
     }
 }

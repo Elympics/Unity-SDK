@@ -37,13 +37,13 @@ namespace Elympics
         private UniTaskCompletionSource _connectingTcs;
         private bool _connected;
 
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
 
         public RemoteMatchConnectClient(
             IGameServerClient gameServerClient,
             string userSecret)
         {
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(RemoteMatchConnectClient));
+            _logger = ElympicsLogger.Config.WithClassName(nameof(RemoteMatchConnectClient));
             _gameServerClient = gameServerClient;
             _userSecret = userSecret;
             _gameServerClient.Disconnected += OnDisconnectedByServer;
@@ -62,7 +62,7 @@ namespace Elympics
 
         public void Disconnect()
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             if (!_connected)
                 return;
             _connected = false;
@@ -114,7 +114,7 @@ namespace Elympics
 
         private async UniTask ConnectAndJoinAsync(Action setupCallbacks, Action unsetCallbacks, CancellationToken ct)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             if (_connectingTcs != null)
                 throw new InvalidOperationException("Already connecting");
             if (_connected)
@@ -145,7 +145,7 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("Connected and synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
@@ -153,7 +153,7 @@ namespace Elympics
 
         private void OnConnectedAndSynchronizedAsSpectator(TimeSynchronizationData timeSynchronizationData)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("Connected and synchronized as spectator.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _gameServerClient.AuthenticateAsSpectatorAsync();
@@ -161,7 +161,7 @@ namespace Elympics
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
                 logger.LogError($"Failed to authenticate user: {message.ErrorMessage}");
@@ -191,7 +191,7 @@ namespace Elympics
 
         private void OnMatchJoined(MatchJoinedMessage message)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             if (!string.IsNullOrEmpty(message.ErrorMessage))
             {
                 logger.LogError($"Can't join match {message.MatchId}.{Environment.NewLine}Error: {message.ErrorMessage}");
@@ -210,7 +210,7 @@ namespace Elympics
 
         private void OnMatchEnded(MatchEndedMessage message)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("Match ended.");
             MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
         }
@@ -220,7 +220,7 @@ namespace Elympics
 
         private void OnDisconnectedByServer()
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("Disconnected by server.");
             TryDisconnectByServerIfNotConnected();
         }

@@ -20,7 +20,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     internal class WebRtcClient : IWebRtcClient
     {
         private readonly WebRtcConfig _config;
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
 
         private readonly RTCPeerConnection _peerConnection;
 
@@ -37,7 +37,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public WebRtcClient(WebRtcConfig config)
         {
             _config = config;
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcClient));
+            _logger = ElympicsLogger.Config.WithClassName(nameof(WebRtcClient));
             var configuration = new RTCConfiguration
             {
                 iceServers = config.IceServers.Select(s => new RTCIceServer
@@ -69,7 +69,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private sealed class WebRtcDataChannel : IDataChannel
         {
             private readonly RTCDataChannel _dc;
-            private readonly ApplicationState _logger;
+            private readonly ElympicsLoggerConfig _logger;
 
             public string Label { get; }
 
@@ -91,7 +91,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             public event Action<byte[]>? DataReceived;
             public event Action<string>? Error;
 
-            public WebRtcDataChannel(string label, RTCDataChannel dc, ApplicationState logger)
+            public WebRtcDataChannel(string label, RTCDataChannel dc, ElympicsLoggerConfig logger)
             {
                 Label = label;
                 _dc = dc;
@@ -104,7 +104,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             private void OnOpen()
             {
-                _logger.WithMethodName().LogInfo($"[WebRTC] Channel '{Label}' has opened");
+                _logger.WithMehodName().LogInfo($"[WebRTC] Channel '{Label}' has opened");
                 IsConnected = true;
             }
 
@@ -112,7 +112,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             private void OnError(RTCError error)
             {
-                var logger = _logger.WithMethodName();
+                var logger = _logger.WithMehodName();
                 try
                 {
                     Error?.Invoke($"{error.errorType}: {error.message}");
@@ -125,7 +125,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             private void OnClose()
             {
-                _logger.WithMethodName().LogInfo($"[WebRTC] Channel '{Label}' has closed");
+                _logger.WithMehodName().LogInfo($"[WebRTC] Channel '{Label}' has closed");
                 IsConnected = false;
             }
 
@@ -169,7 +169,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public async UniTask<string> CreateOffer(bool restart)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var options = new RTCOfferAnswerOptions { iceRestart = restart };
             var offerOp = _peerConnection.CreateOffer(ref options);
             await offerOp;
@@ -197,7 +197,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public async UniTask OnAnswer(string answerJson)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo("[WebRTC] Answer received\n" + answerJson);
             var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
             var answer = (RTCSessionDescription)answerCustom;
@@ -230,11 +230,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void HandleCandidatePairChosen(RTCStatsReport statsReport, RTCIceCandidatePairStats candidatePairStats)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var localCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId]);
             var remoteCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId]);
             if (localCandidate.candidateType is "relay" || localCandidate.HasTurnUrl())
-                _ = _logger.SetUsesTurn();
+                ElympicsLogger.ApplicationState.SetUsesTurn();
             logger.LogInfo($"[WebRTC] Chosen candidate pair: {(JsonUtility.ToJson(localCandidate), JsonUtility.ToJson(remoteCandidate))}");
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
 
@@ -268,7 +268,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnIceConnectionStateChanged(RTCIceConnectionState newState)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var stringifiedState = newState.ToString().ToLower();
             logger.LogInfo($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
@@ -283,7 +283,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnConnectionStateChanged(RTCPeerConnectionState newState)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var stringifiedState = newState.ToString().ToLower();
             logger.LogInfo($"[WebRTC] Connection state changed: {stringifiedState}");
             try
@@ -299,12 +299,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void OnNegotiationNeeded()
         {
             // Beware: no renegotiation is supported (the signaling protocol is a single offer/answer exchange).
-            _logger.WithMethodName().LogInfo("[WebRTC] Negotiation needed");
+            _logger.WithMehodName().LogInfo("[WebRTC] Negotiation needed");
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var candidateJson = JsonUtility.ToJson(candidate.SdpMLineIndex.HasValue
                 ? new IceCandidateInitWithSdpMLineIndex(candidate)
                 : new IceCandidateInitWithoutSdpMLineIndex(candidate));

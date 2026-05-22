@@ -77,7 +77,7 @@ namespace Elympics
         private readonly IMatchLauncher _matchLauncher;
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
-        private readonly ApplicationState? _logger;
+        private readonly ElympicsLoggerConfig? _logger;
         private readonly RoomState _state;
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
@@ -90,10 +90,10 @@ namespace Elympics
             Guid roomId,
             RoomStateChangedDto initialState,
             bool isJoined = false,
-            ApplicationState? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
+            ElympicsLoggerConfig? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
         { }
 
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ApplicationState? logger = null)
+        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerConfig? logger = null)
             : this(matchLauncher, client, roomId, new RoomState(initialState), logger: logger)
         { }
 
@@ -104,7 +104,7 @@ namespace Elympics
             RoomState state,
             bool isJoined = false,
             bool isEphemeral = false,
-            ApplicationState? logger = null)
+            ElympicsLoggerConfig? logger = null)
         {
             _matchLauncher = matchLauncher;
             _client = client;
@@ -114,7 +114,7 @@ namespace Elympics
             _roomStateChangeMonitorCts.Cancel();
             _isJoined = isJoined;
             _isEphemeral = isEphemeral;
-            _logger = logger?.WithContext($"{nameof(Room)}");
+            _logger = logger?.WithClassName($"{nameof(Room)}");
         }
 
         void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
@@ -359,7 +359,7 @@ namespace Elympics
             if (await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow())
             {
                 ct.ThrowIfCancellationRequested();
-                var logger = _logger?.WithMethodName();
+                var logger = _logger?.WithMehodName();
                 var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
                 throw logger?.LogExceptionAndReturn(exception) ?? exception;
             }

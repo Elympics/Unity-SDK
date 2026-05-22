@@ -9,7 +9,7 @@ namespace Elympics.Communication.Mappers
 {
     internal static class Mappers
     {
-        internal static async UniTask<CoinInfo> ToCoinInfo(this RoomCoin coin, ApplicationState logger)
+        internal static async UniTask<CoinInfo> ToCoinInfo(this RoomCoin coin, ElympicsLoggerConfig logger)
         {
             var chainInfo = new ChainInfo
             {

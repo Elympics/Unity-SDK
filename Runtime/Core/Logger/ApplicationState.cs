@@ -1,168 +1,242 @@
 #nullable enable
 using System;
-using JetBrains.Annotations;
+using Elympics.Core.Logger.State;
 
 namespace Elympics.Core.Logger
 {
-    [PublicAPI]
-    internal struct ApplicationState
+    [Serializable]
+    internal class ApplicationState : IVisitableState
     {
-        public const string ElympicsContextApp = "ElympicsSdk";
-        public const string GameplayContextApp = "ElympicsGame";
-        public const string PlayPadContextApp = "PlayPadSdk";
-        public Guid SessionId;
-        public string App;
-        public ElympicsContext ElympicsContext;
-        public UserContext UserContext;
-        public ConnectionContext ConnectionContext;
-        public WebRtcContext WebRtcContext;
-        public RoomContext RoomContext;
-        public PlayPadContext PlayPadContext;
-        public string Context;
-        public string MethodName;
-        public string GameMode;
+        private SdkState _sdk;
+        private GameState? _game;
+        private UserState? _user;
+        private LobbyState? _lobby;
+        private PlayPadState? _playPad;
+        private RoomState? _room;
+        private GameServerState? _gameServer;
 
-        public ApplicationState(Guid sessionId)
+        public ApplicationState(string sdkVersion) => _sdk = new SdkState(sdkVersion);
+
+        public void Visit(IStateVisitor visitor)
         {
-            App = string.Empty;
-            SessionId = sessionId;
-            ElympicsContext = new ElympicsContext();
-            UserContext = new UserContext();
-            ConnectionContext = new ConnectionContext();
-            WebRtcContext = new WebRtcContext();
-            RoomContext = new RoomContext();
-            PlayPadContext = new PlayPadContext();
-            Context = string.Empty;
-            MethodName = string.Empty;
-            GameMode = string.Empty;
+            visitor.ProcessSubstate(nameof(SdkState));
+            _sdk.Visit(visitor);
+
+            if (_game is not null)
+            {
+                visitor.ProcessSubstate(nameof(GameState));
+                _game.Visit(visitor);
+            }
+
+            if (_user is not null)
+            {
+                visitor.ProcessSubstate(nameof(UserState));
+                _user.Visit(visitor);
+            }
+
+            if (_lobby is not null)
+            {
+                visitor.ProcessSubstate(nameof(LobbyState));
+                _lobby.Visit(visitor);
+            }
+
+            if (_playPad is not null)
+            {
+                visitor.ProcessSubstate(nameof(PlayPadState));
+                _playPad.Visit(visitor);
+            }
+
+            if (_room is not null)
+            {
+                visitor.ProcessSubstate(nameof(RoomState));
+                _room.Visit(visitor);
+            }
+
+            if (_gameServer is not null)
+            {
+                visitor.ProcessSubstate(nameof(GameServerState));
+                _gameServer.Visit(visitor);
+            }
         }
 
-        public ApplicationState Copy() => new()
+        public ApplicationState SetRegion(string region)
         {
-            SessionId = SessionId,
-            App = App,
-            ElympicsContext = ElympicsContext,
-            UserContext = UserContext,
-            ConnectionContext = ConnectionContext,
-            WebRtcContext = WebRtcContext,
-            RoomContext = RoomContext,
-            PlayPadContext = PlayPadContext,
-            Context = Context,
-            MethodName = MethodName,
-            GameMode = GameMode,
-        };
-
-        public override string ToString() =>
-            $"{nameof(Context)}: {Context} | "
-            + $"{nameof(MethodName)}: {MethodName} | "
-            + $"{Environment.NewLine}{ElympicsContext}"
-            + $"{Environment.NewLine}{UserContext}"
-            + $"{Environment.NewLine}{ConnectionContext}"
-            + $"{Environment.NewLine}{WebRtcContext}"
-            + $"{Environment.NewLine}{RoomContext}"
-            + $"{Environment.NewLine}{PlayPadContext}";
-    }
-
-    internal class ElympicsContext
-    {
-        public string SdkVersion = string.Empty;
-        public string GameId = string.Empty;
-        public string FleetName = string.Empty;
-        public string GameVersionId = string.Empty;
-
-        public void Clear()
-        {
-            SdkVersion = string.Empty;
-            GameId = string.Empty;
-            FleetName = string.Empty;
-            GameVersionId = string.Empty;
+            if (_lobby is null)
+                _lobby = new LobbyState(region);
+            else
+                _lobby.Region = region;
+            return this;
         }
 
-        public override string ToString() => $"{nameof(SdkVersion)}: {SdkVersion} | "
-            + $"{nameof(GameId)}: {GameId} | "
-            + $"{nameof(FleetName)}: {FleetName} | "
-            + $"{nameof(GameVersionId)}: {GameVersionId} | ";
-    }
-
-    internal class UserContext
-    {
-        public string UserId = string.Empty;
-        public string Nickname = string.Empty;
-        public string AuthType = string.Empty;
-        public string WalletAddress = string.Empty;
-
-        public void Clear()
+        public ApplicationState SetNoConnection()
         {
-            UserId = string.Empty;
-            Nickname = string.Empty;
-            AuthType = string.Empty;
-            WalletAddress = string.Empty;
+            _lobby = null;
+            return this;
         }
 
-        public override string ToString() =>
-            $"{nameof(UserId)}: {UserId} | "
-            + $"{nameof(Nickname)}: {Nickname} | "
-            + $"{nameof(AuthType)}: {AuthType} | "
-            + $"{nameof(WalletAddress)}: {WalletAddress} | ";
-    }
-
-    internal class ConnectionContext
-    {
-        public string Region = string.Empty;
-        public string LobbyUrl = string.Empty;
-
-        public void Clear() => Region = string.Empty;
-
-        public override string ToString() =>
-            $"{nameof(Region)}: {Region} | "
-            + $"{nameof(LobbyUrl)}: {LobbyUrl} | ";
-    }
-
-    internal class WebRtcContext
-    {
-        public bool UsesTurn;
-
-        public void Clear() => UsesTurn = false;
-
-        public override string ToString() =>
-            $"{nameof(UsesTurn)}: {UsesTurn} | ";
-    }
-
-    internal class RoomContext
-    {
-        public string RoomId = string.Empty;
-        public string QueueName = string.Empty;
-        public string MatchId = string.Empty;
-        public string TcpUdpServerAddress = string.Empty;
-        public string WebServerAddress = string.Empty;
-
-        public void Clear()
+        public ApplicationState SetUserId(string userId)
         {
-            RoomId = string.Empty;
-            QueueName = string.Empty;
-            MatchId = string.Empty;
-            TcpUdpServerAddress = string.Empty;
-            WebServerAddress = string.Empty;
+            if (_user is null)
+                _user = new UserState(userId);
+            else
+                _user.UserId = userId;
+            return this;
         }
-        public override string ToString() => $"{nameof(RoomId)}: {RoomId} | "
-            + $"{nameof(QueueName)}: {QueueName} | "
-            + $"{nameof(MatchId)}: {MatchId} | "
-            + $"{nameof(TcpUdpServerAddress)}: {TcpUdpServerAddress} | "
-            + $"{nameof(WebServerAddress)}: {WebServerAddress} | ";
-    }
 
-    internal class PlayPadContext
-    {
-        public string SdkVersion = string.Empty;
-        public string ProtocolVersion = string.Empty;
-        public string Capabilities = string.Empty;
-        public string TournamentId = string.Empty;
-        public string FeatureAccess = string.Empty;
+        public ApplicationState SetNickname(string nickname)
+        {
+            if (_user is null)
+                throw new InvalidOperationException("User state is not set");
+            _user.Nickname = nickname;
+            return this;
+        }
 
-        public override string ToString() => $"{nameof(Capabilities)}: {Capabilities} | "
-            + $"{nameof(TournamentId)}: {TournamentId} | "
-            + $"{nameof(FeatureAccess)}: {FeatureAccess} | "
-            + $"{nameof(SdkVersion)}: {SdkVersion} | "
-            + $"{nameof(ProtocolVersion)}: {ProtocolVersion} | ";
+        public ApplicationState SetAuthType(string authType)
+        {
+            if (_user is null)
+                throw new InvalidOperationException("User state is not set");
+            _user.AuthType = authType;
+            return this;
+        }
+
+        public ApplicationState SetWalletAddress(string walletAddress)
+        {
+            if (_user is null)
+                throw new InvalidOperationException("User state is not set");
+            _user.WalletAddress = walletAddress;
+            return this;
+        }
+
+        public ApplicationState SetNoUser()
+        {
+            _user = null;
+            return this;
+        }
+
+        public ApplicationState SetProtocolVersion(string protocolVersion)
+        {
+            if (_playPad is null)
+                _playPad = new PlayPadState(protocolVersion);
+            else
+                _playPad.ProtocolVersion = protocolVersion;
+            return this;
+        }
+
+        public ApplicationState SetCapabilities(string capabilities)
+        {
+            if (_playPad is null)
+                throw new InvalidOperationException("PlayPad state is not set");
+            _playPad.Capabilities = capabilities;
+            return this;
+        }
+
+        public ApplicationState SetFeatureAccess(string featureAccess)
+        {
+            if (_playPad is null)
+                throw new InvalidOperationException("PlayPad state is not set");
+            _playPad.FeatureAccess = featureAccess;
+            return this;
+        }
+
+        public ApplicationState SetTournamentId(string tournamentId)
+        {
+            if (_playPad is null)
+                throw new InvalidOperationException("PlayPad state is not set");
+            _playPad.TournamentId = tournamentId;
+            return this;
+        }
+
+        public ApplicationState SetRoomId(string roomId)
+        {
+            if (_room is null)
+                _room = new RoomState(roomId);
+            else
+               _room.RoomId = roomId;
+            return this;
+        }
+
+
+        public ApplicationState SetQueue(string queueName)
+        {
+            if (_room is null)
+                throw new InvalidOperationException("Room state is not set");
+            _room.QueueName = queueName;
+            return this;
+        }
+
+        public ApplicationState SetMatchId(string matchId)
+        {
+            if (_room is null)
+                throw new InvalidOperationException("Room state is not set");
+            _room.MatchId = matchId;
+            return this;
+        }
+
+        public ApplicationState SetNoRoom()
+        {
+            _room = null;
+            return this;
+        }
+
+        public ApplicationState SetTcpUdpServerAddress(string serverAddress)
+        {
+            if (_gameServer is not TcpUdpState)
+                _gameServer = new TcpUdpState(serverAddress);
+            else
+                _gameServer.ServerAddress = serverAddress;
+            return this;
+        }
+
+        public ApplicationState SetWebRtcServerAddress(string serverAddress)
+        {
+            if (_gameServer is not WebRtcState)
+                _gameServer = new WebRtcState(serverAddress);
+            else
+                _gameServer.ServerAddress = serverAddress;
+            return this;
+        }
+
+        public ApplicationState SetSdkConfiguration(string sdkVersion, string apiUrl, string gameServerUrl)
+        {
+            _sdk.SdkVersion = sdkVersion;
+            _sdk.ApiUrl = apiUrl;
+            _sdk.GameServerUrl = gameServerUrl;
+            return this;
+        }
+
+        public ApplicationState SetPlayPadSdkContext(string protocolVersion)
+        {
+            if (_playPad is null)
+                _playPad = new PlayPadState(protocolVersion);
+            else
+                _playPad.ProtocolVersion = protocolVersion;
+            return this;
+        }
+
+        public ApplicationState SetFleetName(string fleetName)
+        {
+            _game.FleetName = fleetName;
+            return this;
+        }
+
+        public ApplicationState SetGameVersionId(string gameVersionId)
+        {
+            _game.GameVersionId = gameVersionId;
+            return this;
+        }
+
+        public ApplicationState SetGameMode(string gameMode)
+        {
+            _game.GameMode = gameMode;
+            return this;
+        }
+
+        public ApplicationState SetUsesTurn(bool usesTurn = true)
+        {
+            if (_gameServer is not WebRtcState webRtcState)
+                throw new InvalidOperationException("WebRtc state is not set");
+            webRtcState.UsesTurn = usesTurn;
+            return this;
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
 
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
 
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
@@ -33,9 +33,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public WebRtcServerClient(ApplicationState logger)
+        public WebRtcServerClient(ElympicsLoggerConfig logger)
         {
-            _logger = logger.WithContext(nameof(WebRtcServerClient));
+            _logger = logger.WithClassName(nameof(WebRtcServerClient));
 
             _peerConnection = new RTCPeerConnection();
 
@@ -63,7 +63,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnDataChannel(RTCDataChannel channel)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             logger.LogInfo($"[WebRTC] Data channel created: {channel.Label}");
             if (channel.Label == ReliableChannelLabel)
             {
@@ -93,7 +93,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnReliableError(RTCError error)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             try
             {
                 ReliableReceivingError?.Invoke(error.ToString());
@@ -106,7 +106,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnUnreliableError(RTCError error)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             try
             {
                 UnreliableReceivingError?.Invoke(error.ToString());
@@ -119,7 +119,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnReliableEnded()
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             OnChannel(ReliableChannelLabel, "closed");
             try
             {
@@ -133,7 +133,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnUnreliableEnded()
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             OnChannel(UnreliableChannelLabel, "closed");
             try
             {
@@ -147,7 +147,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnChannel(string name, string eventType)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             // TODO: log chosen candidates ~dsygocki 2026-04-10
             logger.LogInfo($"[WebRTC] Channel '{name}' has {eventType}");
         }
@@ -168,7 +168,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private async UniTask<string> CreateAnswer(string offerJson)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var offerCustom = JsonUtility.FromJson<SessionDescription>(offerJson);
             var offer = (RTCSessionDescription)offerCustom;
             await _peerConnection.SetRemoteDescription(ref offer);
@@ -191,7 +191,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnIceConnectionStateChanged(RTCIceConnectionState newState)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var stringifiedState = newState.ToString().ToLower();
             logger.LogInfo($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
@@ -206,7 +206,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnConnectionStateChanged(RTCPeerConnectionState newState)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var stringifiedState = newState.ToString().ToLower();
             logger.LogInfo($"[WebRTC] Connection state changed: {stringifiedState}");
             try

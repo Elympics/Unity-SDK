@@ -12,7 +12,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly int _port;
         private readonly string? _publicIpOverride;
         private readonly int? _publicPortOverride;
-        private readonly ApplicationState _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcServer));
+        private readonly ElympicsLoggerConfig _logger = ElympicsLogger.Config.WithClassName(nameof(WebRtcServer));
 
         public void Start(bool withReceiveThread = true)
         { }

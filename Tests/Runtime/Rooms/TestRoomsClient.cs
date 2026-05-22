@@ -26,7 +26,7 @@ namespace Elympics.Tests.Rooms
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
-        private static readonly RoomsClient RoomsClient = new(new ApplicationState(Guid.Empty))
+        private static readonly RoomsClient RoomsClient = new(ElympicsLogger.Config)
         {
             Session = WsSessionMock,
         };

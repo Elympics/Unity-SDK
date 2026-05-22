@@ -11,8 +11,8 @@ namespace Elympics
     internal abstract class ConnectionStrategy
     {
         private readonly WebSocketSession _webSocketSession;
-        protected readonly ApplicationState Logger;
-        protected ConnectionStrategy(WebSocketSession webSocketSession, ApplicationState logger)
+        protected readonly ElympicsLoggerConfig Logger;
+        protected ConnectionStrategy(WebSocketSession webSocketSession, ElympicsLoggerConfig logger)
         {
             _webSocketSession = webSocketSession;
             Logger = logger;

@@ -21,12 +21,12 @@ namespace Elympics
 {
     internal class RoomsClient : IRoomsClient
     {
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
         public event Action<RoomStateChangedDto>? RoomStateChanged;
         public event Action<LeftRoomArgs>? LeftRoom;
         public event Action<RoomListChangedDto>? RoomListChanged;
 
-        public RoomsClient(ApplicationState logger) => _logger = logger.WithContext(nameof(RoomsClient));
+        public RoomsClient(ElympicsLoggerConfig logger) => _logger = logger.WithClassName(nameof(RoomsClient));
 
         public SessionConnectionDetails SessionConnectionDetails =>
             Session?.ConnectionDetails ?? throw new InvalidOperationException("Missing WebSocket session object.");
@@ -104,7 +104,7 @@ namespace Elympics
                         throw new ArgumentOutOfRangeException(nameof(competitivenessConfig.CompetitivenessType), competitivenessConfig.CompetitivenessType, "Unexpected competitiveness type.");
                 }
 
-            _logger.WithMethodName().LogInfo($"Create room {roomName}");
+            _logger.WithMehodName().LogInfo($"Create room {roomName}");
             return await ExecuteOperation<RoomOperationResultDto>(
                     new CreateRoomDto(roomName, isPrivate, isEphemeral, queueName, isSingleTeam, customRoomData, customMatchmakingData, null, betSlim, rollingTournamentBetConfigId, customPlayerData),
                     ct)
@@ -113,39 +113,39 @@ namespace Elympics
 
         public UniTask<Guid> JoinRoom(Guid roomId, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo($"Join room {roomId}");
+            _logger.WithMehodName().LogInfo($"Join room {roomId}");
             return ExecuteOperation<RoomOperationResultDto>(new JoinWithRoomIdDto(roomId, teamIndex, customPlayerData), ct)
                 .ContinueWith(result => result.RoomId);
         }
 
         public UniTask<Guid> JoinRoom(string joinCode, uint? teamIndex, IReadOnlyDictionary<string, string>? customPlayerData = null, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo("Join room using join code.");
+            _logger.WithMehodName().LogInfo("Join room using join code.");
             return ExecuteOperation<RoomOperationResultDto>(new JoinWithJoinCodeDto(joinCode, teamIndex, customPlayerData), ct)
                 .ContinueWith(result => result.RoomId);
         }
 
         public UniTask ChangeTeam(Guid roomId, uint? teamIndex, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo($"Set new team {teamIndex}.");
+            _logger.WithMehodName().LogInfo($"Set new team {teamIndex}.");
             return ExecuteOperation(new ChangeTeamDto(roomId, teamIndex), ct);
         }
 
         public UniTask SetReady(Guid roomId, byte[] gameEngineData, float[] matchmakerData, DateTime lastRoomUpdate, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo("Set ready.");
+            _logger.WithMehodName().LogInfo("Set ready.");
             return ExecuteOperation(new SetReadyDto(roomId, gameEngineData, matchmakerData, lastRoomUpdate), ct);
         }
 
         public UniTask SetUnready(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo("Set unready.");
+            _logger.WithMehodName().LogInfo("Set unready.");
             return ExecuteOperation(new SetUnreadyDto(roomId), ct);
         }
 
         public UniTask LeaveRoom(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo("Leave room.");
+            _logger.WithMehodName().LogInfo("Leave room.");
             return ExecuteOperation(new LeaveRoomDto(roomId), ct);
         }
 
@@ -188,13 +188,13 @@ namespace Elympics
 
         public UniTask StartMatchmaking(Guid roomId, Guid hostId)
         {
-            _logger.WithMethodName().LogInfo("Start matchmaking.");
+            _logger.WithMehodName().LogInfo("Start matchmaking.");
             return ExecuteOperationHostOnly(hostId, new StartMatchmakingDto(roomId));
         }
 
         public UniTask CancelMatchmaking(Guid roomId, CancellationToken ct = default)
         {
-            _logger.WithMethodName().LogInfo("Cancel matchmaking.");
+            _logger.WithMehodName().LogInfo("Cancel matchmaking.");
             return ExecuteOperation(new CancelMatchmakingDto(roomId), ct);
         }
 

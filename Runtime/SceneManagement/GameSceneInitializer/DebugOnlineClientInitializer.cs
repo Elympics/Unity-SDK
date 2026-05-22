@@ -19,6 +19,7 @@ namespace Elympics
         private IAuthClient _authClient;
         private MatchmakerClient _matchmakerClient;
 
+        private ElympicsConfig _elympicsConfig;
         private ElympicsGameConfig _elympicsGameConfig;
         private InitialMatchPlayerDataGuid _initialPlayerData;
 
@@ -26,11 +27,10 @@ namespace Elympics
         {
             _client = client;
             _elympicsGameConfig = elympicsGameConfig;
-            var elympicsConfig = ElympicsConfig.Load();
+            _elympicsConfig = ElympicsConfig.Load();
 
-            _authClient = new RemoteAuthClient(elympicsConfig.ElympicsAuthEndpoint);
-            var lobbyUrl = elympicsConfig.ElympicsLobbyEndpoint;
-            _ = ElympicsLogger.CurrentContext.SetLobbyUrl(lobbyUrl);
+            _authClient = new RemoteAuthClient(_elympicsConfig.ElympicsAuthEndpoint);
+            var lobbyUrl = _elympicsConfig.ElympicsLobbyEndpoint;
             _matchmakerClient = new WebSocketMatchmakerClient(lobbyUrl);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
             _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.LogInfo($"Match found: {matchId}.");
@@ -77,9 +77,9 @@ namespace Elympics
             }
 
             _initialPlayerData.UserId = result.Value.UserId;
-            ElympicsLogger.CurrentContext.SetUserId(result.Value.UserId.ToString())
-                .SetAuthType(result.Value.AuthType)
-                .LogInfo($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
+            ElympicsLogger.ApplicationState.SetUserId(result.Value.UserId.ToString())
+                .SetAuthType(result.Value.AuthType.ToString());
+            ElympicsLogger.LogInfo($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
 
             var cts = new CancellationTokenSource(MatchmakingTimeout);
             var testMatchData = _elympicsGameConfig.TestMatchData;
@@ -87,7 +87,7 @@ namespace Elympics
             var regionName = testMatchData.regionName;
             if (string.IsNullOrEmpty(regionName))
                 regionName = null;
-            _ = ElympicsLogger.CurrentContext.SetQueue(queueName)
+            _ = ElympicsLogger.ApplicationState.SetQueue(queueName)
                 .SetRegion(regionName);
 
             ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData, _initialPlayerData.GameEngineData, queueName, regionName, false);
@@ -109,17 +109,21 @@ namespace Elympics
         {
             const string gameModeName = "debug-online-client";
 
-            ElympicsLogger.CurrentContext.SetMatchId(matchData.MatchId.ToString())
-                .SetServerAddress(matchData.TcpUdpServerAddress, matchData.WebServerAddress)
-                .LogInfo("Matchmaking finished, connecting to the game server...");
+            ElympicsLogger.ApplicationState.SetMatchId(matchData.MatchId.ToString());
+            if (_elympicsGameConfig.UseWeb)
+                ElympicsLogger.ApplicationState.SetTcpUdpServerAddress(matchData.TcpUdpServerAddress);
+            else
+                ElympicsLogger.ApplicationState.SetWebRtcServerAddress(matchData.WebServerAddress);
+            ElympicsLogger.LogInfo("Matchmaking finished, connecting to the game server...");
             _initialPlayerData.Player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_initialPlayerData.UserId];
 
             var serializer = new GameServerJsonSerializer();
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
-            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName)
-                .SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
+            _ = ElympicsLogger.ApplicationState.SetSdkConfiguration(ElympicsConfig.SdkVersion, _elympicsConfig.ElympicsApiEndpoint, _elympicsConfig.ElympicsGameServersEndpoint)
+                // TODO: .SetGameId(_elympicsGameConfig.gameId)
+                .SetGameMode(gameModeName);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,

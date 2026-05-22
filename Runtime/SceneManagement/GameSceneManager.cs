@@ -21,27 +21,30 @@ namespace Elympics
             if (!ApplicationParameters.InitializeParameters())
                 ExitUtility.ExitGame();
 
+            var elympicsConfig = ElympicsConfig.Load();
             var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig()
                 ?? throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Game config not found"));
 
-            ElympicsLogger.CurrentContext = ElympicsLogger.CurrentContext
-                .WithApp(ApplicationState.GameplayContextApp)
-                .SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+            _ = ElympicsLogger.ApplicationState.SetSdkConfiguration(ElympicsConfig.SdkVersion, elympicsConfig.ElympicsApiEndpoint, elympicsConfig.ElympicsGameServersEndpoint)
+                // TODO: .SetGameId(elympicsGameConfig.gameId)
+                ;
+            var logger = ElympicsLogger.Config
+                .WithElympicsGameService();
 
             try
             {
                 // ElympicsWorld needed for all modes (client uses it for IsVisibleTo bitmask lookup)
                 ElympicsWorld.Current = new ElympicsWorld(elympicsGameConfig!.MaxPlayers);
-                ElympicsLogger.LogInfo($"Initializing Elympics v{ElympicsConfig.SdkVersion} game scene for {elympicsGameConfig.GameName} "
+                logger.LogInfo($"Initializing Elympics v{ElympicsConfig.SdkVersion} game scene for {elympicsGameConfig.GameName} "
                     + $"(ID: {elympicsGameConfig.GameId}), version {elympicsGameConfig.GameVersion}");
                 _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);
-                ElympicsLogger.LogInfo($"Created game scene initializer of type {_gameSceneInitializer.GetType().Name}");
+                logger.LogInfo($"Created game scene initializer of type {_gameSceneInitializer.GetType().Name}");
                 _gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsGameConfig, elympicsBehavioursManager);
-                ElympicsLogger.LogInfo("Elympics game scene initialized successfully.");
+                logger.LogInfo("Elympics game scene initialized successfully.");
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogException(e);
+                logger.LogException(e);
             }
         }
 

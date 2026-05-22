@@ -33,7 +33,7 @@ namespace Elympics.Lobby
         private bool _isDisposed;
 
         private readonly IAsyncEventsDispatcher _dispatcher;
-        private readonly ApplicationState _logger;
+        private readonly ElympicsLoggerConfig _logger;
         public delegate IWebSocket WebSocketFactory(string url, string? protocol = null);
         private readonly WebSocketFactory _wsFactory;
 
@@ -48,20 +48,20 @@ namespace Elympics.Lobby
         public WebSocketSession(
             IWebSocketSessionController controller,
             IAsyncEventsDispatcher dispatcher,
-            ApplicationState logger,
+            ElympicsLoggerConfig logger,
             WebSocketFactory? wsFactory = null,
             ILobbySerializer? serializer = null)
         {
             _controller = controller;
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-            _logger = logger.WithContext(nameof(WebSocketSession));
+            _logger = logger.WithClassName(nameof(WebSocketSession));
             _wsFactory = wsFactory ?? HybridWebSocket.WebSocketFactory.CreateInstance;
             _serializer = serializer ?? new MessagePackLobbySerializer();
         }
 
         public async UniTask<GameDataResponseDto> Connect(SessionConnectionDetails details, CancellationToken ct = default)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             var (wsUrl, authData, gameId, gameVersion, regionName) = details;
             if (_isDisposed)
                 throw logger.LogExceptionAndReturn(new ObjectDisposedException(GetType().FullName));
@@ -79,7 +79,8 @@ namespace Elympics.Lobby
                 await OpenWebSocket(_ws);
                 var gameData = await SendRequestInternal<GameDataResponseDto>(new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName), Token);
                 ConnectionDetails = details;
-                logger.SetRegion(regionName).SetLobbyUrl(wsUrl).LogInfo("Connection to lobby completed.");
+                ElympicsLogger.ApplicationState.SetRegion(regionName);
+                logger.LogInfo("Connection to lobby completed.");
                 SetConnectedState();
                 _timer = new Stopwatch();
                 _timer.Start();
@@ -264,7 +265,7 @@ namespace Elympics.Lobby
 
         private void HandleClose(WebSocketCloseCode code, string reason)
         {
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             _dispatcher.Enqueue(code != WebSocketCloseCode.Normal ? () => logger.LogError($"Connection closed abnormally [{code}] {reason}")
                 : () => logger.LogInfo($"Connection closed gracefully [{code}] {reason}"));
 
@@ -287,7 +288,7 @@ namespace Elympics.Lobby
                     if (!IsConnected)
                         return;
 
-                    var logger = _logger.WithMethodName();
+                    var logger = _logger.WithMehodName();
                     if (cancellationToken.IsCancellationRequested)
                         return;
 
@@ -374,7 +375,7 @@ namespace Elympics.Lobby
         {
             if (IsConnected)
                 return;
-            var logger = _logger.WithMethodName();
+            var logger = _logger.WithMehodName();
             throw logger.LogExceptionAndReturn(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
         }
 

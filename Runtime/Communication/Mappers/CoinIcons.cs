@@ -14,12 +14,12 @@ namespace Elympics.Communication.Mappers
     {
         private static readonly Dictionary<Guid, Texture2D> CachedIcons = new();
 
-        internal static async UniTask<Texture2D?> GetIconOrNull(Guid coinId, string iconUrl, ApplicationState logger)
+        internal static async UniTask<Texture2D?> GetIconOrNull(Guid coinId, string iconUrl, ElympicsLoggerConfig logger)
         {
             if (CachedIcons.TryGetValue(coinId, out var icon))
                 return icon;
 
-            logger = logger.WithMethodName();
+            logger = logger.WithMehodName();
 
             try
             {

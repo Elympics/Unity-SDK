@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Elympics.Core.Logger;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -23,7 +24,7 @@ namespace Elympics
                 downloadHandler = new DownloadHandlerBuffer(),
             };
 
-            var bodyString = string.Empty;
+            string bodyString = null;
             if (jsonBody != null)
             {
                 bodyString = SerializeJson(jsonBody);
@@ -38,10 +39,7 @@ namespace Elympics
             request.SetSdkVersionHeader();
             request.SetTestCertificateHandlerIfNeeded();
 
-#if ELYMPICS_DEBUG
-            var body = string.IsNullOrEmpty(bodyString) ? "No request body." : $"{bodyString}";
-            ElympicsLogger.Log($"Sending Web request: {method} {url}\n{body}");
-#endif
+            ElympicsLogger.LogDebug($"Sending Web request: {method} {url}\n{(string.IsNullOrEmpty(bodyString) ? "No request body." : bodyString)}");
             var asyncOperation = request.SendWebRequest();
             CallCallbackOnCompleted(asyncOperation, callback, ct);
         }
@@ -79,10 +77,8 @@ namespace Elympics
                     RunCallback(Result<T, Exception>.Failure(new OperationCanceledException()));
                     return;
                 }
-#if ELYMPICS_DEBUG
-                ElympicsLogger.Log($"Received response {requestOp.webRequest.responseCode} "
+                ElympicsLogger.LogDebug($"Received response {requestOp.webRequest.responseCode} "
                     + $"from {requestOp.webRequest.url}\n{requestOp.webRequest.downloadHandler.text}");
-#endif
                 if (requestOp.webRequest.responseCode != 200)
                 {
                     RunCallback(Result<T, Exception>.Failure(

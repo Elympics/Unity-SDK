@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using Elympics.Core.Logger;
+
 #nullable enable
 namespace Elympics
 {
@@ -14,11 +16,11 @@ namespace Elympics
             var serializedGeData = gameEngineData != null
                 ? Convert.ToBase64String(gameEngineData)
                 : "null";
-            ElympicsLogger.Log($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\n"
+            ElympicsLogger.LogInfo($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\n"
                 + $"Supplied matchmaker data: {serializedMmData}\n"
                 + $"Supplied game engine data: {serializedGeData}");
             if (loadGameplaySceneOnFinished)
-                ElympicsLogger.Log("Gameplay scene will be loaded after matchmaking succeeds.");
+                ElympicsLogger.LogInfo("Gameplay scene will be loaded after matchmaking succeeds.");
         }
     }
 

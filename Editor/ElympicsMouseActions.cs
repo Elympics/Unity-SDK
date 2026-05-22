@@ -1,3 +1,4 @@
+using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;

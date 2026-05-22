@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients;
 using MatchTcpLibrary;
@@ -20,7 +21,7 @@ namespace Elympics
 
         private readonly Uri _signalingUri;
         private readonly Uri _iceServersUri;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
         private readonly GameServerClientConfig _config;
 
         public HttpSignalingClient(Uri baseUri, Guid matchId, GameServerClientConfig config)
@@ -70,7 +71,7 @@ namespace Elympics
             if (response.Code == 502)
                 throw new GameServerClosedException();
             if (response.IsError || string.IsNullOrEmpty(response.Text))
-                throw logger.CaptureAndThrow(new ElympicsException($"No valid WebRTC answer has been received. Error: {response.Text} ({response.Code})"));
+                throw logger.LogExceptionAndReturn(new ElympicsException($"No valid WebRTC answer has been received. Error: {response.Text} ({response.Code})"));
 
             return JsonUtility.FromJson<SignalingResponse>(response.Text);
         }

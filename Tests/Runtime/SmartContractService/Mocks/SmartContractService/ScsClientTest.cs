@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Elympics;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 #nullable enable
@@ -86,7 +87,7 @@ namespace SCS.Tests
                         var depositAllowanceSignature = await _scs.SetAllowance(transactionToSign.From, transactionToSign.To, transactionToSign.Data);
                         Debug.Log($"[ScsClientTest] Deposit signature: {depositAllowanceSignature}");
                         Utils.ThrowIfAllowanceNotSigned(depositAllowanceSignature);
-                        ElympicsLogger.Log($"Signature of allowance: {depositAllowanceSignature}");
+                        ElympicsLogger.LogInfo($"Signature of allowance: {depositAllowanceSignature}");
                     }
                     catch (Exception e)
                     {

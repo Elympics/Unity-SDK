@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
 using HybridWebSocket;
@@ -563,7 +564,7 @@ namespace Elympics.Tests
         [TearDown]
         public void CleanUp()
         {
-            ElympicsLogger.Log($"{nameof(ElympicsLobbyClientTest)} Cleanup");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsLobbyClientTest)} Cleanup");
             if (_sut!.IsAuthenticated)
                 _sut.SignOut();
             _webSocketMock.ClearSubstitute();

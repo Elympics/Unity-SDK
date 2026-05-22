@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary;
 using MatchTcpLibrary.Ntp;
@@ -20,7 +21,7 @@ namespace MatchTcpClients.Synchronizer
         public event Action TimedOut;
 
         private readonly ClientSynchronizerConfig _config;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
         private DateTime? _lastReceivedPingDataTime;
         private NtpData _lastReceivedUnreliableNtpData;
         private bool _waitingForFirstUnreliablePing = true;
@@ -37,7 +38,7 @@ namespace MatchTcpClients.Synchronizer
         {
             ClearUnreliablePingFlagAfterTimeout(ct).Forget();
             var logger = _logger.WithMethodName();
-            logger.Log("Starting client synchronization...");
+            logger.LogInfo("Starting client synchronization...");
             var stopwatch = new Stopwatch();
             while (!ct.IsCancellationRequested)
             {
@@ -64,7 +65,7 @@ namespace MatchTcpClients.Synchronizer
                 if (timeToWait > TimeSpan.Zero)
                     _ = await UniTask.Delay(timeToWait, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }
-            logger.Log("Ending client synchronization.");
+            logger.LogInfo("Ending client synchronization.");
         }
 
         private async UniTaskVoid ClearUnreliablePingFlagAfterTimeout(CancellationToken ct)

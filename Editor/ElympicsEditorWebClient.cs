@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Elympics.Core.Logger;
 using ElympicsApiModels.ApiModels.Games;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -38,10 +39,8 @@ namespace Elympics
             request.SetSdkVersionHeader();
             request.SetTestCertificateHandlerIfNeeded();
 
-#if ELYMPICS_DEBUG
             if (!silent)
-                ElympicsLogger.Log($"Sending Web request: GET {url}");
-#endif
+                ElympicsLogger.LogDebug($"Sending Web request: GET {url}");
 
             var asyncOperation = request.SendWebRequest();
             AttachCompletedCallback(asyncOperation, completed);
@@ -66,9 +65,7 @@ namespace Elympics
             request.SetSdkVersionHeader();
             request.SetTestCertificateHandlerIfNeeded();
 
-#if ELYMPICS_DEBUG
-            ElympicsLogger.Log($"Sending Web request: POST {url}\n{bodyString}");
-#endif
+            ElympicsLogger.LogDebug($"Sending Web request: POST {url}\n{bodyString}");
 
             var asyncOperation = request.SendWebRequest();
             AttachCompletedCallback(asyncOperation, completed);

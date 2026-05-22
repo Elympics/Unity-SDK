@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 
@@ -30,7 +31,7 @@ namespace Elympics.Editor.Communication.UsageStatistics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
         }
 
@@ -42,7 +43,7 @@ namespace Elympics.Editor.Communication.UsageStatistics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
         }
     }

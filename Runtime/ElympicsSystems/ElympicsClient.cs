@@ -5,8 +5,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -63,7 +63,7 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        private readonly ElympicsLoggerContext _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ElympicsClient));
+        private readonly ApplicationState _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ElympicsClient));
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -103,16 +103,15 @@ namespace Elympics
             {
                 await UniTask.Yield();
                 await ConnectAndJoinAsPlayerAsync(CancellationToken.None);
-                logger.Log("Successfully connected to the game server.");
+                logger.LogInfo("Successfully connected to the game server.");
             }
             catch (OperationCanceledException)
             {
-                logger.Log("Connect and join was cancelled.");
+                logger.LogInfo("Connect and join was cancelled.");
             }
             catch (Exception e)
             {
-                logger.Error("Could not connect to the game server.");
-                _ = ElympicsLogger.LogException(e);
+                logger.LogException(new ElympicsException("Could not connect to the game server.", e));
             }
         }
 
@@ -242,7 +241,7 @@ namespace Elympics
         private void ResetForReconnect()
         {
             var log = _logger.WithMethodName();
-            log.Log("Resetting for reconnect...");
+            log.LogInfo("Resetting for reconnect...");
 
             ElympicsBehavioursManager.DestroyAllDynamicInstances();
             ElympicsBehavioursManager.ResetWorldAndReRegisterSceneObjects();
@@ -266,7 +265,7 @@ namespace Elympics
             ResetRpcQueues();
             ResetTimer();
 
-            log.Log("Reconnect reset complete.");
+            log.LogInfo("Reconnect reset complete.");
         }
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
@@ -369,7 +368,7 @@ namespace Elympics
             if (!((TickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
                 return;
 
-            ElympicsLogger.Log(_clientTickCalculator.Results.ToString());
+            ElympicsLogger.LogInfo(_clientTickCalculator.Results.ToString());
             _lastClientPrintNetworkConditions = TickStartUtc;
         }
 
@@ -433,7 +432,7 @@ namespace Elympics
             {
                 case false when !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot):
                     _logger.WithMethodName()
-                        .Warning(
+                        .LogWarning(
                             $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                     return ReconciliationResult.None;
                 case false
@@ -447,7 +446,7 @@ namespace Elympics
                     historySnapshot = receivedSnapshot;
                     newSnapshot = receivedSnapshot;
                     _previousTick = receivedSnapshot.Tick;
-                    _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
+                    _logger.WithMethodName().LogWarning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
                     break;
                 default:
                     newSnapshot = receivedSnapshot;

@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 
 namespace Elympics
 {
@@ -45,7 +46,7 @@ namespace Elympics
                 {
                     Results.WasTickJumpForced = true;
                     Results.TicksToCatchup = ticksToCatchup;
-                    ElympicsLogger.Log($"Reconciliation re-anchored client to tick {reconciliation.AnchoredTick}. Projecting forward {ticksToCatchup} ticks to {newTick}.");
+                    ElympicsLogger.LogInfo($"Reconciliation re-anchored client to tick {reconciliation.AnchoredTick}. Projecting forward {ticksToCatchup} ticks to {newTick}.");
                 }
             }
             else if (DoesClientNeedsToForceJumpToTheFuture(exactToExpectedTickDiff, previousTick, lastReceivedTick, out var ticksToCatchup))

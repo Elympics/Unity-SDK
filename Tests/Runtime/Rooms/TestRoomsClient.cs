@@ -8,6 +8,7 @@ using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
@@ -25,7 +26,7 @@ namespace Elympics.Tests.Rooms
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
-        private static readonly RoomsClient RoomsClient = new(new ElympicsLoggerContext(Guid.Empty))
+        private static readonly RoomsClient RoomsClient = new(new ApplicationState(Guid.Empty))
         {
             Session = WsSessionMock,
         };

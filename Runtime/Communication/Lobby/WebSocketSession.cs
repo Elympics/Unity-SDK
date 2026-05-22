@@ -7,6 +7,7 @@ using Elympics.Communication.Lobby.InternalModels;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
@@ -32,7 +33,7 @@ namespace Elympics.Lobby
         private bool _isDisposed;
 
         private readonly IAsyncEventsDispatcher _dispatcher;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
         public delegate IWebSocket WebSocketFactory(string url, string? protocol = null);
         private readonly WebSocketFactory _wsFactory;
 
@@ -47,7 +48,7 @@ namespace Elympics.Lobby
         public WebSocketSession(
             IWebSocketSessionController controller,
             IAsyncEventsDispatcher dispatcher,
-            ElympicsLoggerContext logger,
+            ApplicationState logger,
             WebSocketFactory? wsFactory = null,
             ILobbySerializer? serializer = null)
         {
@@ -63,9 +64,9 @@ namespace Elympics.Lobby
             var logger = _logger.WithMethodName();
             var (wsUrl, authData, gameId, gameVersion, regionName) = details;
             if (_isDisposed)
-                throw logger.CaptureAndThrow(new ObjectDisposedException(GetType().FullName));
+                throw logger.LogExceptionAndReturn(new ObjectDisposedException(GetType().FullName));
             if (_cts is not null)
-                throw logger.CaptureAndThrow(new InvalidOperationException("Connecting already in progress."));
+                throw logger.LogExceptionAndReturn(new InvalidOperationException("Connecting already in progress."));
             _cts = new CancellationTokenSource();
             var (url, protocol) = wsUrl.ToWebSocketAddress(authData.JwtToken);
             _ws = _wsFactory(url, protocol);
@@ -78,7 +79,7 @@ namespace Elympics.Lobby
                 await OpenWebSocket(_ws);
                 var gameData = await SendRequestInternal<GameDataResponseDto>(new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName), Token);
                 ConnectionDetails = details;
-                logger.SetRegion(regionName).SetLobbyUrl(wsUrl).Log("Connection to lobby completed.");
+                logger.SetRegion(regionName).SetLobbyUrl(wsUrl).LogInfo("Connection to lobby completed.");
                 SetConnectedState();
                 _timer = new Stopwatch();
                 _timer.Start();
@@ -88,7 +89,7 @@ namespace Elympics.Lobby
             catch (OperationCanceledException)
             {
                 if (!ct.IsCancellationRequested)
-                    throw _logger.CaptureAndThrow(new LobbyOperationException("Disconnected while trying to establish session"));
+                    throw _logger.LogExceptionAndReturn(new LobbyOperationException("Disconnected while trying to establish session"));
                 throw;
             }
         }
@@ -153,7 +154,7 @@ namespace Elympics.Lobby
                 }
                 catch (Exception exception)
                 {
-                    _ = ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
+                    ElympicsLogger.LogException(exception); //If there is an exception unrelated to cancellation, log it
                 }
 
                 throw; //Throw the exception that contains the result's error message
@@ -202,14 +203,14 @@ namespace Elympics.Lobby
                 {
                     var typeName = message.GetType().FullName;
                     if (_serializer.TryGetHumanReadableRepresentation(data, out var representation))
-                        ElympicsLogger.Log($"Sending WebSocket message: {typeName} to: {ConnectionDetails?.Url}\n{representation}");
+                        ElympicsLogger.LogDebug($"Sending WebSocket message: {typeName} to: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
                 _ws?.Send(data);
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogException(e);
+                ElympicsLogger.LogExceptionAndReturn(e);
             }
         }
 
@@ -223,7 +224,7 @@ namespace Elympics.Lobby
                 {
                     var typeName = message.GetType().FullName;
                     if (_serializer.TryGetHumanReadableRepresentation(data, out var representation))
-                        ElympicsLogger.Log($"Received WebSocket message: {typeName} from: {ConnectionDetails?.Url}\n{representation}");
+                        ElympicsLogger.LogDebug($"Received WebSocket message: {typeName} from: {ConnectionDetails?.Url}\n{representation}");
                 }
 #endif
                 if (message is PingDto)
@@ -252,7 +253,7 @@ namespace Elympics.Lobby
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogException(e);
+                ElympicsLogger.LogExceptionAndReturn(e);
             }
         }
         private void HandleError(string message)
@@ -264,8 +265,8 @@ namespace Elympics.Lobby
         private void HandleClose(WebSocketCloseCode code, string reason)
         {
             var logger = _logger.WithMethodName();
-            _dispatcher.Enqueue(code != WebSocketCloseCode.Normal ? () => logger.Error($"Connection closed abnormally [{code}] {reason}")
-                : () => logger.Log($"Connection closed gracefully [{code}] {reason}"));
+            _dispatcher.Enqueue(code != WebSocketCloseCode.Normal ? () => logger.LogError($"Connection closed abnormally [{code}] {reason}")
+                : () => logger.LogInfo($"Connection closed gracefully [{code}] {reason}"));
 
             DisconnectInternal(IsConnected && code == WebSocketCloseCode.Away ? DisconnectionReason.Timeout : DisconnectionReason.Closed);
         }
@@ -290,7 +291,7 @@ namespace Elympics.Lobby
                     if (cancellationToken.IsCancellationRequested)
                         return;
 
-                    logger.Error("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
+                    logger.LogError("We have not received a response from the server. You have been disconnected. Please check your internet connection and try reconnecting.");
                     DisconnectInternal(DisconnectionReason.Closed);
                     return;
                 }
@@ -374,7 +375,7 @@ namespace Elympics.Lobby
             if (IsConnected)
                 return;
             var logger = _logger.WithMethodName();
-            throw logger.CaptureAndThrow(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
+            throw logger.LogExceptionAndReturn(new InvalidOperationException("Cannot send message before establishing the WebSocket "));
         }
 
         private void DispatchWithCancellation(Action action) =>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elympics.Behaviour;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.Replication;
 using MatchTcpClients.Synchronizer;
 using UnityEditor;

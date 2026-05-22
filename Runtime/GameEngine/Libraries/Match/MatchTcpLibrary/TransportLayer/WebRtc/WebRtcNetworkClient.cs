@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
@@ -44,7 +45,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         private readonly GameServerClientConfig _config;
         private readonly IReadOnlyList<(string Label, bool Reliable)> _channelSpecs;
         private readonly List<string> _candidates = new();
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
 
         private IWebRtcClient? _client;
 
@@ -73,7 +74,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
             {
                 var channel = _client.CreateDataChannel(spec.Label, spec.Reliable);
                 channel.DataReceived += data => DataReceived?.Invoke(spec.Label, data);
-                channel.Error += error => _logger.WithMethodName().Error($"Channel '{spec.Label}' error: {error}");
+                channel.Error += error => _logger.WithMethodName().LogError($"Channel '{spec.Label}' error: {error}");
                 _channels[spec.Label] = channel;
             }
         }
@@ -102,15 +103,15 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
                     }
                     catch (TimeoutException)
                     {
-                        logger.Log($"Creating WebRTC offer timed out on attempt #{attempt + 1}, retrying...");
+                        logger.LogInfo($"Creating WebRTC offer timed out on attempt #{attempt + 1}, retrying...");
                         continue;
                     }
 
                     if (string.IsNullOrEmpty(offer))
-                        throw ElympicsLogger.LogException("Created WebRTC offer is null or empty.");
+                        throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Created WebRTC offer is null or empty."));
 
                     var response = await WaitForWebResponseAsync(offer, ct);
-                    logger.Log($"Answer:{Environment.NewLine}{response.answer}");
+                    logger.LogInfo($"Answer:{Environment.NewLine}{response.answer}");
                     await _client!.OnAnswer(response.answer);
 
                     _client!.ConnectionStateChanged += OnConnectionStateChanged;
@@ -131,10 +132,10 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
                 }
                 catch (Exception e)
                 {
-                    logger.Error($"Attempt #{attempt + 1} to establish a WebRTC connection failed: {e}");
+                    logger.LogError($"Attempt #{attempt + 1} to establish a WebRTC connection failed: {e}");
                 }
 
-            throw ElympicsLogger.LogException(new ElympicsException($"Could not establish a WebRTC connection after {_config.SessionConnectRetries} attempts"));
+            throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException($"Could not establish a WebRTC connection after {_config.SessionConnectRetries} attempts"));
         }
 
         private async UniTask<SignalingResponse> WaitForWebResponseAsync(string offer, CancellationToken ct)
@@ -146,7 +147,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
                 if (ct.IsCancellationRequested)
                     break;
 
-                logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
+                logger.LogInfo($"Posting created WebRTC offer.\nAttempt #{i + 1}");
 
                 var offerWithCandidates = new OfferWithCandidates
                 {
@@ -168,11 +169,11 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
                 }
                 catch (TimeoutException)
                 {
-                    logger.Warning("WebRTC answer timed out");
+                    logger.LogWarning("WebRTC answer timed out");
                 }
                 catch (Exception e)
                 {
-                    logger.Warning($"WebRTC answer error: {e}");
+                    logger.LogWarning($"WebRTC answer error: {e}");
                 }
                 _ = await UniTask.Delay(_config.OfferRetryDelay, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }

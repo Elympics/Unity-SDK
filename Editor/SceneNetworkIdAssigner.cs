@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;

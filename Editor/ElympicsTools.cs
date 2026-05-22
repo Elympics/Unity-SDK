@@ -1,4 +1,5 @@
 using System.IO;
+using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,7 +34,7 @@ namespace Elympics
         {
             if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
             {
-                ElympicsLogger.Log("Creating Elympics resources directory...");
+                ElympicsLogger.LogInfo("Creating Elympics resources directory...");
                 _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
             }
 

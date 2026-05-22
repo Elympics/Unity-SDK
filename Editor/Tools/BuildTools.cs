@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -111,7 +112,7 @@ namespace Elympics
         private static void LogBuildResult(BuildReport report)
         {
             if (report.summary.result == BuildResult.Succeeded)
-                ElympicsLogger.Log($"Server build succeeded on {report.summary.outputPath}");
+                ElympicsLogger.LogInfo($"Server build succeeded on {report.summary.outputPath}");
             else
             {
                 ElympicsLogger.LogError($"Server build failed with {report.summary.totalErrors} errors");

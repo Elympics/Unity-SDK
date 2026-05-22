@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Elympics.Core.Logger;
 using Elympics.Util;
 using JetBrains.Annotations;
 using UnityEngine;

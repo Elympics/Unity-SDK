@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
 using GameBotCore.V1._3;
 
@@ -25,10 +26,10 @@ namespace Elympics
             var customMatchmakingData = elympicsGameConfig.TestMatchData.customMatchmakingData;
 
             if (playersList.Count > playerIndex)
-                throw ElympicsLogger.LogException("Half Remote bot won't be initialized because "
+                throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Half Remote bot won't be initialized because "
                     + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                     + $"The list has only {playersList.Count} entries. "
-                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}."));
 
             var userId = playersList[playerIndex].UserId;
 

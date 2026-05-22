@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc.Other;
 using Unity.WebRTC;
 using UnityEngine;
@@ -16,7 +16,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
 
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
 
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
@@ -33,7 +33,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public WebRtcServerClient(ElympicsLoggerContext logger)
+        public WebRtcServerClient(ApplicationState logger)
         {
             _logger = logger.WithContext(nameof(WebRtcServerClient));
 
@@ -64,7 +64,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void OnDataChannel(RTCDataChannel channel)
         {
             var logger = _logger.WithMethodName();
-            logger.Log($"[WebRTC] Data channel created: {channel.Label}");
+            logger.LogInfo($"[WebRTC] Data channel created: {channel.Label}");
             if (channel.Label == ReliableChannelLabel)
             {
                 _reliableDc = channel;
@@ -82,7 +82,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                 _unreliableDc.OnError += OnUnreliableError;
             }
             else
-                logger.Warning($"[WebRTC] Unknown data channel: {channel.Label}");
+                logger.LogWarning($"[WebRTC] Unknown data channel: {channel.Label}");
         }
 
         private void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
@@ -100,7 +100,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -113,7 +113,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -127,7 +127,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -141,7 +141,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -149,7 +149,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             // TODO: log chosen candidates ~dsygocki 2026-04-10
-            logger.Log($"[WebRTC] Channel '{name}' has {eventType}");
+            logger.LogInfo($"[WebRTC] Channel '{name}' has {eventType}");
         }
 
         public void SendReliable(byte[] data)
@@ -177,7 +177,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var answer = answerOp.Desc;
             var answerCustom = (SessionDescription)answer;
             var answerJson = JsonUtility.ToJson(answerCustom);
-            logger.Log("[WebRTC] Created answer\n" + answerJson);
+            logger.LogInfo("[WebRTC] Created answer\n" + answerJson);
             await _peerConnection.SetLocalDescription(ref answer);
             return answerJson;
             // TODO: log chosen candidates ~dsygocki 2026-04-10
@@ -193,14 +193,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log($"[WebRTC] ICE connection state changed: {stringifiedState}");
+            logger.LogInfo($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -208,14 +208,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log($"[WebRTC] Connection state changed: {stringifiedState}");
+            logger.LogInfo($"[WebRTC] Connection state changed: {stringifiedState}");
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 

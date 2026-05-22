@@ -1,19 +1,20 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.Models.Matchmaking;
 
 namespace Elympics.ElympicsSystems.Internal
 {
     internal class ReconnectingState : ElympicsLobbyClientState
     {
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
 
         //TODO take this value from config with min value of 1.
         private const int ReconnectAttempts = 1;
         private bool _isReconnecting;
 
-        public ReconnectingState(ElympicsLobbyClient client, ElympicsLoggerContext logger) : base(client)
+        public ReconnectingState(ElympicsLobbyClient client, ApplicationState logger) : base(client)
         {
             State = ElympicsState.Reconnecting;
             _logger = logger.WithContext(nameof(ReconnectingState));
@@ -38,7 +39,7 @@ namespace Elympics.ElympicsSystems.Internal
                 {
                     try
                     {
-                        logger.Log($"Try to reconnect. Attempt: #{counter + 1}");
+                        logger.LogInfo($"Try to reconnect. Attempt: #{counter + 1}");
                         Client.CheckConnectionDataOrThrow(reconnectionData);
                         await Client.Authorize(reconnectionData);
                         var gameData = await Client.ConnectToLobby(reconnectionData);
@@ -50,7 +51,7 @@ namespace Elympics.ElympicsSystems.Internal
                     }
                     catch (Exception e)
                     {
-                        logger.Warning($"Failed to reconnect on attempt #{counter + 1}: {e.Message}");
+                        logger.LogWarning($"Failed to reconnect on attempt #{counter + 1}: {e.Message}");
                         ++counter;
                     }
                     finally
@@ -85,7 +86,7 @@ namespace Elympics.ElympicsSystems.Internal
 
             void OnFailure()
             {
-                logger.Error("Failed to reconnect to Elympics.");
+                logger.LogError("Failed to reconnect to Elympics.");
                 Client.SignOutInternal();
                 Client.SwitchState(ElympicsState.Disconnected);
             }

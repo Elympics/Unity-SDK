@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -25,7 +26,7 @@ namespace MatchTcpClients
 
         private readonly IGameServerSerializer _serializer;
         private IClientSynchronizer _clientSynchronizer = null!;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
 
         public event Action? Connected;
         public event Action<TimeSynchronizationData>? ConnectedAndSynchronized;
@@ -83,7 +84,7 @@ namespace MatchTcpClients
             catch (Exception e)
             {
                 Disconnect();
-                logger.Exception(new ElympicsException("Failed to connect", e));
+                logger.LogException(new ElympicsException("Failed to connect", e));
                 throw;
             }
             InvokeSafely(Connected, logger);
@@ -91,13 +92,13 @@ namespace MatchTcpClients
             ConnectedMessage connectedMessage;
             try
             {
-                logger.Log("Connecting to reliable channel...");
+                logger.LogInfo("Connecting to reliable channel...");
                 connectedMessage = await _sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, ct);
             }
             catch (Exception e)
             {
                 Disconnect();
-                logger.Exception(new ElympicsException("Failed to connect", e));
+                logger.LogException(new ElympicsException("Failed to connect", e));
                 throw;
             }
 
@@ -108,12 +109,12 @@ namespace MatchTcpClients
             {
                 Func<UniTask<TimeSynchronizationData>> func = () => _clientSynchronizer.SynchronizeOnce(sessionToken, ct);
                 synchronizationData = await func.WithRetry(Config.InitialSynchronizeMaxRetries,
-                    onRetry: i => logger.Log($"Could not perform initial synchronization, retrying... #{i}"), ct: linkedCts.Token);
+                    onRetry: i => logger.LogInfo($"Could not perform initial synchronization, retrying... #{i}"), ct: linkedCts.Token);
             }
             catch (Exception e)
             {
                 Disconnect();
-                logger.Exception(new ElympicsException("Failed to perform initial synchronization", e));
+                logger.LogException(new ElympicsException("Failed to perform initial synchronization", e));
                 throw;
             }
 
@@ -123,7 +124,7 @@ namespace MatchTcpClients
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
 
-        private static void InvokeSafely(Action? action, ElympicsLoggerContext logger)
+        private static void InvokeSafely(Action? action, ApplicationState logger)
         {
             try
             {
@@ -131,11 +132,11 @@ namespace MatchTcpClients
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
-        private static void InvokeSafely<T>(Action<T>? action, T arg, ElympicsLoggerContext logger)
+        private static void InvokeSafely<T>(Action<T>? action, T arg, ApplicationState logger)
         {
             try
             {
@@ -143,7 +144,7 @@ namespace MatchTcpClients
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -161,7 +162,7 @@ namespace MatchTcpClients
         private void OnTimeout()
         {
             var log = _logger.WithMethodName();
-            log.Error("Synchronize timed out, disconnecting...");
+            log.LogError("Synchronize timed out, disconnecting...");
             Disconnect();
         }
 
@@ -172,7 +173,7 @@ namespace MatchTcpClients
             if (cts == null)
                 return;
             var logger = _logger.WithMethodName();
-            logger.Log("Aborting connection.");
+            logger.LogInfo("Aborting connection.");
             cts.Cancel();
             cts.Dispose();
             _clientSynchronizer.TimedOut -= OnTimeout;
@@ -190,7 +191,7 @@ namespace MatchTcpClients
             catch (Exception e)
             {
                 var log = _logger.WithMethodName();
-                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using channel {label}", e));
+                log.LogException(new ElympicsException($"Error in {GetType().Name} receiving a message using channel {label}", e));
             }
         }
 

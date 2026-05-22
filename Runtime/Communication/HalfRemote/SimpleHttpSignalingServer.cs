@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
+using Elympics.Core.Logger;
 using UnityConnectors.HalfRemote.Server;
 using UnityEngine;
 
@@ -36,7 +37,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                         + "before starting Half Remote server.");
 
                 _listener.Start();
-                ElympicsLogger.Log($"Started listening on {_uri}");
+                ElympicsLogger.LogInfo($"Started listening on {_uri}");
                 _ = ct.RegisterWithoutCaptureExecutionContext(() => _listener.Stop());
 
                 while (!ct.IsCancellationRequested && _listener.IsListening)
@@ -48,11 +49,11 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             { }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
             finally
             {
-                ElympicsLogger.Log("Signaling server stopped.");
+                ElympicsLogger.LogInfo("Signaling server stopped.");
             }
         }
 
@@ -112,7 +113,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             }
             catch (IOException e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
         }
     }

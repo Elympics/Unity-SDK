@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elympics;
+using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEngine;
 
@@ -236,7 +237,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
 
                 ElympicsWebIntegration.GetGames(availableGamesOnline =>
                 {
-                    ElympicsLogger.Log($"Received {availableGamesOnline.Count} games: {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
+                    ElympicsLogger.LogInfo($"Received {availableGamesOnline.Count} games: {string.Join(", ", availableGamesOnline.Select(x => x.Name))}");
                     _accountGames = availableGamesOnline;
                 });
 
@@ -247,7 +248,7 @@ public class ManageGamesInElympicsWindow : EditorWindow
                     regionsResponse =>
                     {
                         _availableRegions = regionsResponse.Select(x => x.Name).ToList();
-                        ElympicsLogger.Log($"Received {regionsResponse.Count} regions: {string.Join(", ", _availableRegions)}");
+                        ElympicsLogger.LogInfo($"Received {regionsResponse.Count} regions: {string.Join(", ", _availableRegions)}");
                     },
                     () =>
                     {
@@ -309,9 +310,9 @@ public class ManageGamesInElympicsWindow : EditorWindow
             var config = CreateInstance<ElympicsGameConfig>();
             if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
             {
-                ElympicsLogger.Log("Creating Elympics Resources directory...");
+                ElympicsLogger.LogInfo("Creating Elympics Resources directory...");
                 _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
-                ElympicsLogger.Log("Elympics Resources directory created successfully.");
+                ElympicsLogger.LogInfo("Elympics Resources directory created successfully.");
             }
 
             AssetDatabase.CreateAsset(config, ElympicsConfig.ElympicsResourcesPath + "/ElympicsGameConfig.asset");

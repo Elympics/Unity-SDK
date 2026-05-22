@@ -8,6 +8,7 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
@@ -76,7 +77,7 @@ namespace Elympics
         private readonly IMatchLauncher _matchLauncher;
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
-        private readonly ElympicsLoggerContext? _logger;
+        private readonly ApplicationState? _logger;
         private readonly RoomState _state;
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
@@ -89,10 +90,10 @@ namespace Elympics
             Guid roomId,
             RoomStateChangedDto initialState,
             bool isJoined = false,
-            ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
+            ApplicationState? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
         { }
 
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerContext? logger = null)
+        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ApplicationState? logger = null)
             : this(matchLauncher, client, roomId, new RoomState(initialState), logger: logger)
         { }
 
@@ -103,7 +104,7 @@ namespace Elympics
             RoomState state,
             bool isJoined = false,
             bool isEphemeral = false,
-            ElympicsLoggerContext? logger = null)
+            ApplicationState? logger = null)
         {
             _matchLauncher = matchLauncher;
             _client = client;
@@ -360,7 +361,7 @@ namespace Elympics
                 ct.ThrowIfCancellationRequested();
                 var logger = _logger?.WithMethodName();
                 var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
-                throw logger?.CaptureAndThrow(exception) ?? exception;
+                throw logger?.LogExceptionAndReturn(exception) ?? exception;
             }
         }
     }

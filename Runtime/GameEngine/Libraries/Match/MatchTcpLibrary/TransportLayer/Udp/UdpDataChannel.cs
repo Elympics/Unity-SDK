@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Core.Logger;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Udp
@@ -81,10 +82,10 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             try
             {
                 if (CheckIfConnectingAndSet())
-                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
+                    throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
+                    throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else if (IsDisconnected() || IsConnectedToOther(remoteEndPoint))
                     RecreateSocket();
                 else if (IsConnectedTo(remoteEndPoint))
@@ -137,7 +138,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
         public void Send(byte[] payload)
         {
             if (!IsConnected)
-                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
+                throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException("Not connected"));
 
             try
             {
@@ -145,7 +146,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
+                ElympicsLogger.LogException(new ElympicsException("Error while sending data through the UDP socket", e));
                 throw;
             }
         }

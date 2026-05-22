@@ -21,6 +21,7 @@ using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Elympics;
+using Elympics.Core.Logger;
 using UnityEditor;
 
 // Provide simple value get/set methods for SerializedProperty.  Can be used with

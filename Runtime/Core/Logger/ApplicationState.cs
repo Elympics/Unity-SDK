@@ -2,10 +2,10 @@
 using System;
 using JetBrains.Annotations;
 
-namespace Elympics.ElympicsSystems.Internal
+namespace Elympics.Core.Logger
 {
     [PublicAPI]
-    internal struct ElympicsLoggerContext
+    internal struct ApplicationState
     {
         public const string ElympicsContextApp = "ElympicsSdk";
         public const string GameplayContextApp = "ElympicsGame";
@@ -22,7 +22,7 @@ namespace Elympics.ElympicsSystems.Internal
         public string MethodName;
         public string GameMode;
 
-        public ElympicsLoggerContext(Guid sessionId)
+        public ApplicationState(Guid sessionId)
         {
             App = string.Empty;
             SessionId = sessionId;
@@ -37,7 +37,7 @@ namespace Elympics.ElympicsSystems.Internal
             GameMode = string.Empty;
         }
 
-        public ElympicsLoggerContext Copy() => new()
+        public ApplicationState Copy() => new()
         {
             SessionId = SessionId,
             App = App,

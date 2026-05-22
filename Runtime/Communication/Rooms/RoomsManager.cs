@@ -8,6 +8,7 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
@@ -102,9 +103,9 @@ namespace Elympics
 
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
         private bool _initialized;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly ApplicationState _logger;
 
-        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, ElympicsLoggerContext logger, IRoomJoiner? roomJoiner = null)
+        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, ApplicationState logger, IRoomJoiner? roomJoiner = null)
         {
             _matchLauncher = matchLauncher;
             _client = roomsClient;
@@ -174,7 +175,7 @@ namespace Elympics
         private void HandleJoinedRoomUpdated(RoomStateChangedDto roomState)
         {
             var logger = _logger.WithMethodName();
-            logger.Log($"Handle room update.{Environment.NewLine}{roomState}");
+            logger.LogInfo($"Handle room update.{Environment.NewLine}{roomState}");
             var roomId = roomState.RoomId;
             if (_rooms.TryGetValue(roomId, out var room))
             {
@@ -205,7 +206,7 @@ namespace Elympics
                 _matchLauncher.MatchmakingCompleted();
 
             if (matchNotFound)
-                logger.Log($"Match not found. Reason: {_stateDiff.MatchDataArgs?.MatchData.FailReason}");
+                logger.LogInfo($"Match not found. Reason: {_stateDiff.MatchDataArgs?.MatchData.FailReason}");
 
             if (_initialized)
                 InvokeEventsBasedOnStateDiff(roomId, _stateDiff);
@@ -213,7 +214,7 @@ namespace Elympics
             if (matchFoundSuccessfully)
             {
                 logger.SetServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress, roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress)
-                    .Log("Matchmaking completed successfully.");
+                    .LogInfo("Matchmaking completed successfully.");
                 PlayAvailableMatchIfApplicable(roomId);
             }
             return;
@@ -442,14 +443,14 @@ namespace Elympics
             catch (Exception e)
             {
                 await LeaveAndCleanUp();
-                throw logger.CaptureAndThrow(e);
+                throw logger.LogExceptionAndReturn(e);
             }
 
             if (matchmakingFailedCt.IsCancellationRequested)
             {
                 var error = room.State.MatchmakingData?.MatchData?.FailReason;
                 await LeaveAndCleanUp();
-                throw logger.CaptureAndThrow(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
+                throw logger.LogExceptionAndReturn(new LobbyOperationException($"Failed to create quick match room. Error: {error}"));
             }
 
             // happy path
@@ -466,7 +467,7 @@ namespace Elympics
             }
             catch (LobbyOperationException e)
             {
-                logger.Warning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
+                logger.LogWarning($"Could not cancel quick match room matchmaking. Reason: {e.Message}");
                 if (e.Kind == ErrorKind.RoomAlreadyInMatchedState)
                 {
                     var timedOut = await UniTask.WaitUntil(() => !room.IsDisposed && room.IsEligibleToPlayMatch(), cancellationToken: timeoutCts.Token).SuppressCancellationThrow();
@@ -530,7 +531,7 @@ namespace Elympics
                 var matchRoomsJoined = gameDataResponse.JoinedMatchRooms;
                 if (matchRoomsJoined <= 0)
                 {
-                    logger.Log("No initial room state to fetch.");
+                    logger.LogInfo("No initial room state to fetch.");
                     _initialized = true;
                     return;
                 }
@@ -544,16 +545,16 @@ namespace Elympics
                         return;
                     }
                 }
-                logger.Log($"Waiting for {matchRoomsJoined} Room Updates...");
+                logger.LogInfo($"Waiting for {matchRoomsJoined} Room Updates...");
                 var canceled = await ResultUtils.WaitUntil(() => counter >= matchRoomsJoined, ElympicsTimeout.RoomStateChangeConfirmationTimeout, _cts.Token).SuppressCancellationThrow();
                 if (canceled)
-                    logger.Warning("Waiting for init room state timeout.");
+                    logger.LogWarning("Waiting for init room state timeout.");
                 else
-                    logger.Log("Initial room state fetch completed.");
+                    logger.LogInfo("Initial room state fetch completed.");
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
             finally
             {

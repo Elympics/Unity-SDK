@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
@@ -400,7 +401,7 @@ namespace Elympics
                     }
                     catch (Exception e) when (e is EndOfStreamException or ReadNotEnoughException)
                     {
-                        _ = ElympicsLogger.LogException("An exception occured when applying inputs", e);
+                        ElympicsLogger.LogException(new ElympicsException("An exception occured when applying inputs", e));
                     }
         }
 

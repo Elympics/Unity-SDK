@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Core.Logger;
 using JetBrains.Annotations;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -115,10 +116,10 @@ namespace Elympics
         private void ValidateGameIndex(int game)
         {
             if (availableGames.Count == 0)
-                throw ElympicsLogger.LogException(new InvalidOperationException(
+                throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException(
                     $"No game configs have been configured in {nameof(ElympicsConfig)}"));
             if (game < 0 || game >= availableGames.Count)
-                throw ElympicsLogger.LogException(new ArgumentOutOfRangeException(nameof(game)));
+                throw ElympicsLogger.LogExceptionAndReturn(new ArgumentOutOfRangeException(nameof(game)));
         }
 
 #if UNITY_EDITOR

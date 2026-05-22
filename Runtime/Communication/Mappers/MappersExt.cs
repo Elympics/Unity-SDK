@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Rooms.Models;
 
@@ -8,7 +9,7 @@ namespace Elympics.Communication.Mappers
 {
     internal static class Mappers
     {
-        internal static async UniTask<CoinInfo> ToCoinInfo(this RoomCoin coin, ElympicsLoggerContext logger)
+        internal static async UniTask<CoinInfo> ToCoinInfo(this RoomCoin coin, ApplicationState logger)
         {
             var chainInfo = new ChainInfo
             {

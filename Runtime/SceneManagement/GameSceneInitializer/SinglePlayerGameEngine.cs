@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 using GameEngineCore;
 using UnityEngine;
 
@@ -26,7 +27,7 @@ namespace Elympics
             _behavioursManager.OnMatchEnded(_matchId);
             _behavioursManager.OnDisconnectedByServer();
 
-            ElympicsLogger.Log("SinglePlayer game ended.");
+            ElympicsLogger.LogInfo("SinglePlayer game ended.");
 
             if (Application.isEditor)
                 return;
@@ -44,9 +45,9 @@ namespace Elympics
         private void Callback(Result<MatchEndedResponseDTO, Exception> obj)
         {
             if (obj.IsFailure)
-                _ = ElympicsLogger.LogException(obj.Error);
+                ElympicsLogger.LogException(obj.Error);
             else if (obj.IsSuccess)
-                ElympicsLogger.Log("End Results sent successfully.");
+                ElympicsLogger.LogInfo("End Results sent successfully.");
         }
         public void Dispose() => _gameEngine.GameEnded -= OnGameEnded;
     }

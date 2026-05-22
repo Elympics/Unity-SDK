@@ -7,6 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Elympics.Core.Logger;
 
 namespace Elympics
 {
@@ -223,9 +224,9 @@ namespace Elympics
                 catch (Exception e)
                 {
                     success = false;
-                    _ = ElympicsLogger.LogException("Error parsing the value of application parameter "
+                    ElympicsLogger.LogException(new ElympicsException("Error parsing the value of application parameter "
                         + $"{names[parameter]}. Source: {parameter.ValueSource}, priority: {parameter.Priority}, "
-                        + $"value: {parameter.GetRawValue()}", e);
+                        + $"value: {parameter.GetRawValue()}", e));
                 }
 
             return success;
@@ -236,7 +237,7 @@ namespace Elympics
             var sb = new StringBuilder("Processed application parameters:");
             foreach (var parameter in parameters)
                 _ = sb.Append($"\n{names[parameter]}: {parameter.GetValueAsString() ?? "null"} (priority {parameter.Priority})");
-            ElympicsLogger.Log(sb.ToString());
+            ElympicsLogger.LogInfo(sb.ToString());
         }
     }
 }

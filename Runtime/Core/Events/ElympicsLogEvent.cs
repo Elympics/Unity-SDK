@@ -1,4 +1,4 @@
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 
 namespace Elympics.Events
 {
@@ -6,7 +6,7 @@ namespace Elympics.Events
     {
         public string Message { get; init; }
         public string Time { get; init; }
-        public ElympicsLoggerContext Context { get; init; }
+        public ApplicationState Context { get; init; }
         public LogLevel LogLevel { get; init; }
     }
 }

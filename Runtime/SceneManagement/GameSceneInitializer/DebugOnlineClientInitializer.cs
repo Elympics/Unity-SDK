@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -32,7 +33,7 @@ namespace Elympics
             _ = ElympicsLogger.CurrentContext.SetLobbyUrl(lobbyUrl);
             _matchmakerClient = new WebSocketMatchmakerClient(lobbyUrl);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
-            _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.Log($"Match found: {matchId}.");
+            _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.LogInfo($"Match found: {matchId}.");
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
 
             var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
@@ -63,7 +64,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
         }
 
@@ -78,7 +79,7 @@ namespace Elympics
             _initialPlayerData.UserId = result.Value.UserId;
             ElympicsLogger.CurrentContext.SetUserId(result.Value.UserId.ToString())
                 .SetAuthType(result.Value.AuthType)
-                .Log($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
+                .LogInfo($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
 
             var cts = new CancellationTokenSource(MatchmakingTimeout);
             var testMatchData = _elympicsGameConfig.TestMatchData;
@@ -110,7 +111,7 @@ namespace Elympics
 
             ElympicsLogger.CurrentContext.SetMatchId(matchData.MatchId.ToString())
                 .SetServerAddress(matchData.TcpUdpServerAddress, matchData.WebServerAddress)
-                .Log("Matchmaking finished, connecting to the game server...");
+                .LogInfo("Matchmaking finished, connecting to the game server...");
             _initialPlayerData.Player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_initialPlayerData.UserId];
 
             var serializer = new GameServerJsonSerializer();

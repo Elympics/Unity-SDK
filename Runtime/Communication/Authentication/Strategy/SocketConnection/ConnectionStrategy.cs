@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 
@@ -10,8 +11,8 @@ namespace Elympics
     internal abstract class ConnectionStrategy
     {
         private readonly WebSocketSession _webSocketSession;
-        protected readonly ElympicsLoggerContext Logger;
-        protected ConnectionStrategy(WebSocketSession webSocketSession, ElympicsLoggerContext logger)
+        protected readonly ApplicationState Logger;
+        protected ConnectionStrategy(WebSocketSession webSocketSession, ApplicationState logger)
         {
             _webSocketSession = webSocketSession;
             Logger = logger;

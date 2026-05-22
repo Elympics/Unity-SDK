@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using Elympics.Core;
+using Elympics.Core.Logger;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -46,18 +47,18 @@ namespace Elympics
         protected void SetInitialized()
         {
             Initialized = true;
-            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
         }
 
         protected void SetDeInitialized()
         {
             Initialized = false;
-            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) DeInitialized for player ID: {Player}");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsBase)} ({GetType().Name}) DeInitialized for player ID: {Player}");
         }
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, ElympicsBehavioursManager elympicsBehavioursManager)
         {
-            ElympicsLogger.Log($"Initializing {nameof(ElympicsBase)} ({GetType().Name})...");
+            ElympicsLogger.LogInfo($"Initializing {nameof(ElympicsBase)} ({GetType().Name})...");
             ElympicsBehavioursManager = elympicsBehavioursManager;
             Config = elympicsGameConfig;
             ElympicsUpdateDuration = TickDuration;
@@ -298,12 +299,12 @@ namespace Elympics
             }
             catch (OperationCanceledException)
             {
-                ElympicsLogger.Log("Connect and join was cancelled.");
+                ElympicsLogger.LogInfo("Connect and join was cancelled.");
                 callback?.Invoke(false);
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
                 callback?.Invoke(false);
             }
         }

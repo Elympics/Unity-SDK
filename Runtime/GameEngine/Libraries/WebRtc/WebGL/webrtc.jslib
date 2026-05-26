@@ -140,6 +140,7 @@ const LibraryWebRtc = {
                 maxRetransmits: 0,
                 ordered: false
             });
+            this.unreliableOpened = unreliableOpened;
             this.unreliableReceived = unreliableReceived;
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;

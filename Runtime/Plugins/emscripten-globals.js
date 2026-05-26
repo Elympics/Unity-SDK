@@ -8,25 +8,28 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+/** @typedef {number} FunctionPointer */
+/** @typedef {number} Pointer */
+
 /**
  * @typedef {{
  *   dynCall_vi: (
- *     func: (arg1: number | null) => void,
+ *     func: FunctionPointer,
  *     arg1: number | null,
  *   ) => void,
  *   dynCall_vii: (
- *     func: (arg1: number | null, arg2: number | null) => void,
+ *     func: FunctionPointer,
  *     arg1: number | null,
  *     arg2: number | null,
  *   ) => void,
  *   dynCall_viii: (
- *     func: (arg1: number | null, arg2: number | null, arg3: number | null) => void,
+ *     func: FunctionPointer,
  *     arg1: number | null,
  *     arg2: number | null,
  *     arg3: number | null,
  *   ) => void,
  *   dynCall_viiii: (
- *     func: (arg1: number | null, arg2: number | null, arg3: number | null, arg4: number | null) => void,
+ *     func: FunctionPointer,
  *     arg1: number | null,
  *     arg2: number | null,
  *     arg3: number | null,

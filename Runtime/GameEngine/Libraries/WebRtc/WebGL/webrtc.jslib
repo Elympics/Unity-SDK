@@ -1,40 +1,29 @@
-/** @typedef {(instanceId: number) => void} OnOpenedCallback */
-/** @typedef {(instanceId: number, msgPtr: number | null, msgSize: number) => void} OnReceivedCallback */
-/** @typedef {(instanceId: number, errorPtr: number | null) => void} OnReceivingErrorCallback */
-/** @typedef {(instanceId: number) => void} OnReceivingEndedCallback */
-/** @typedef {(instanceId: number, newState: number | null) => void} OnIceConnectionStateChangedCallback */
-/** @typedef {(instanceId: number, newState: number | null) => void} OnConnectionStateChangedCallback */
-/** @typedef {(instanceId: number, offer: number | null) => void} OnOfferCallback */
-/** @typedef {(instanceId: number, iceCandidate: number | null) => void} OnIceCandidateCallback */
-/** @typedef {(instanceId: number, localCandidateJsonPtr: number | null, remoteCandidateJsonPtr: number | null) => void} OnCandidatePairChosenCallback */
-/** @typedef {(instanceId: number, methodName: number | null, logMessage: number | null) => void} OnLogCallback */
-
 /**
  * @typedef {{
  *   WebRtcAllocate: () => number,
  *   WebRtcFree: (id: number) => void,
- *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: number | null) => void,
+ *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: Pointer | null) => void,
  *   WebRtcSetOfferAnnouncingDelay: (delayMs: number) => void,
- *   WebRtcSetOnReliableOpened: (id: number, callback: OnOpenedCallback) => void,
- *   WebRtcSetOnReliableReceived: (id: number, callback: OnReceivedCallback) => void,
- *   WebRtcSetOnReliableError: (id: number, callback: OnReceivingErrorCallback) => void,
- *   WebRtcSetOnReliableEnded: (id: number, callback: OnReceivingEndedCallback) => void,
- *   WebRtcSetOnUnreliableOpened: (id: number, callback: OnOpenedCallback) => void,
- *   WebRtcSetOnUnreliableReceived: (id: number, callback: OnReceivedCallback) => void,
- *   WebRtcSetOnUnreliableError: (id: number, callback: OnReceivingErrorCallback) => void,
- *   WebRtcSetOnUnreliableEnded: (id: number, callback: OnReceivingEndedCallback) => void,
- *   WebRtcSetOnOffer: (id: number, callback: OnOfferCallback) => void,
- *   WebRtcSetOnIceCandidate: (id: number, callback: OnIceCandidateCallback) => void,
- *   WebRtcSetOnIceConnectionStateChanged: (id: number, callback: OnIceConnectionStateChangedCallback) => void,
- *   WebRtcSetOnConnectionStateChanged: (id: number, callback: OnConnectionStateChangedCallback) => void,
- *   WebRtcSetOnCandidatePairChosen: (id: number, callback: OnCandidatePairChosenCallback) => void,
- *   WebRtcSetOnLog: (id: number, callback: OnLogCallback) => void,
- *   WebRtcSetOnLogWarning: (id: number, callback: OnLogCallback) => void,
- *   WebRtcSetOnLogError: (id: number, callback: OnLogCallback) => void,
+ *   WebRtcSetOnReliableOpened: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableReceived: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableError: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableEnded: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableOpened: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableReceived: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableError: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableEnded: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnOffer: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnIceCandidate: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnIceConnectionStateChanged: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnConnectionStateChanged: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnCandidatePairChosen: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnLog: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnLogWarning: (id: number, callback: FunctionPointer) => void,
+ *   WebRtcSetOnLogError: (id: number, callback: FunctionPointer) => void,
  *   WebRtcCreateOffer: (id: number, iceRestart: boolean) => void,
- *   WebRtcOnAnswer: (id: number, answer: number) => void,
- *   WebRtcSendReliable: (id: number, bufferPtr: number, length: number) => void,
- *   WebRtcSendUnreliable: (id: number, bufferPtr: number, length: number) => void,
+ *   WebRtcOnAnswer: (id: number, answer: Pointer) => void,
+ *   WebRtcSendReliable: (id: number, bufferPtr: Pointer, length: number) => void,
+ *   WebRtcSendUnreliable: (id: number, bufferPtr: Pointer, length: number) => void,
  *   WebRtcClose: (id: number) => void,
  * }} LibraryWebRtc
  */
@@ -71,28 +60,28 @@
 const LibraryWebRtc = {
     /** @alias webRtcState */
     $webRtcState: {
-        /* @type {{[key: number]: WebRtcClient}} */ instances: {},
+        /** @type {{[key: number]: WebRtcClient}} */ instances: {},
         lastId: 0,
 
         logToConsole: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
-        /** @type {OnOpenedCallback | null} */ onReliableOpened: null,
-        /** @type {OnReceivedCallback | null} */ onReliableReceived: null,
-        /** @type {OnReceivingErrorCallback | null} */ onReliableError: null,
-        /** @type {OnReceivingEndedCallback | null} */ onReliableEnded: null,
-        /** @type {OnOpenedCallback | null} */ onUnreliableOpened: null,
-        /** @type {OnReceivedCallback | null} */ onUnreliableReceived: null,
-        /** @type {OnReceivingErrorCallback | null} */ onUnreliableError: null,
-        /** @type {OnReceivingEndedCallback | null} */ onUnreliableEnded: null,
-        /** @type {OnOfferCallback | null} */ onOffer: null,
-        /** @type {OnIceCandidateCallback | null} */ onIceCandidate: null,
-        /** @type {OnCandidatePairChosenCallback | null} */ onCandidatePairChosen: null,
-        /** @type {OnIceConnectionStateChangedCallback | null} */ onIceConnectionStateChanged: null,
-        /** @type {OnConnectionStateChangedCallback | null} */ onConnectionStateChanged: null,
-        /** @type {OnLogCallback | null} */ onLog: null,
-        /** @type {OnLogCallback | null} */ onLogWarning: null,
-        /** @type {OnLogCallback | null} */ onLogError: null
+        /** @type {FunctionPointer | null} */ onReliableOpened: null,
+        /** @type {FunctionPointer | null} */ onReliableReceived: null,
+        /** @type {FunctionPointer | null} */ onReliableError: null,
+        /** @type {FunctionPointer | null} */ onReliableEnded: null,
+        /** @type {FunctionPointer | null} */ onUnreliableOpened: null,
+        /** @type {FunctionPointer | null} */ onUnreliableReceived: null,
+        /** @type {FunctionPointer | null} */ onUnreliableError: null,
+        /** @type {FunctionPointer | null} */ onUnreliableEnded: null,
+        /** @type {FunctionPointer | null} */ onOffer: null,
+        /** @type {FunctionPointer | null} */ onIceCandidate: null,
+        /** @type {FunctionPointer | null} */ onCandidatePairChosen: null,
+        /** @type {FunctionPointer | null} */ onIceConnectionStateChanged: null,
+        /** @type {FunctionPointer | null} */ onConnectionStateChanged: null,
+        /** @type {FunctionPointer | null} */ onLog: null,
+        /** @type {FunctionPointer | null} */ onLogWarning: null,
+        /** @type {FunctionPointer | null} */ onLogError: null
     },
 
     WebRtcAllocate: function () {

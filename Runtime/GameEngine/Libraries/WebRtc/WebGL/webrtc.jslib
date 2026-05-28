@@ -28,7 +28,7 @@
  * }} LibraryWebRtc
  */
 
-/*
+/**
  * @typedef {{
  *   rtcConfig: RTCConfiguration,
  *   pc: RTCPeerConnection,
@@ -59,7 +59,7 @@
 /** @type {LibraryWebRtc} */
 const LibraryWebRtc = {
     /** @alias webRtcState */
-    $webRtcState: {
+    /*global webRtcState*/ $webRtcState: {
         /** @type {{[key: number]: WebRtcClient}} */ instances: {},
         lastId: 0,
 
@@ -201,7 +201,6 @@ const LibraryWebRtc = {
                 maxRetransmits: 0,
                 ordered: false
             });
-            this.unreliableOpened = unreliableOpened;
             this.unreliableReceived = unreliableReceived;
             this.unreliableError = unreliableError;
             this.unreliableEnded = unreliableEnded;

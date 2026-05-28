@@ -6,8 +6,6 @@
  * these symbols in *.jslib files without reporting "unresolved variable" errors.
  */
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 /** @typedef {number} FunctionPointer */
 /** @typedef {number} Pointer */
 
@@ -50,7 +48,7 @@ var HEAPU8;
  * @param {number} size Buffer size in bytes.
  * @returns {number} Pointer to the allocated buffer.
  */
-function _malloc(size) {}
+function _malloc(size) { return Number(); }
 
 /**
  * Frees an allocated buffer.
@@ -63,7 +61,7 @@ function _free(ptr) {}
  * @param {number} ptr A pointer to a null-terminated UTF8-encoded string in the Emscripten HEAP.
  * @returns {string} A JavaScript `String` object
  */
-function UTF8ToString(ptr) {}
+function UTF8ToString(ptr) { return String(); }
 
 /**
  * Copies the given JavaScript `String` object `str` to the Emscripten HEAP at address `outPtr`, null-terminated and encoded in UTF8 form.
@@ -80,14 +78,14 @@ function stringToUTF8(str, outPtr, maxBytesToWrite) {}
  * @param {string} str The string to encode.
  * @returns {number} The number of bytes needed to encode the string.
  */
-function lengthBytesUTF8(str) {}
+function lengthBytesUTF8(str) { return Number(); }
 
 /**
  * Converts a function pointer to a callable JS function.
  * @param {number} functionPtr Function pointer.
  * @returns {function} Callable JS function.
  */
-function getWasmTableEntry(functionPtr) {}
+function getWasmTableEntry(functionPtr) { return Function(); }
 
 /**
  * Registers the dependency identified by `dependencyName` within the function library.

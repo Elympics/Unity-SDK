@@ -10,6 +10,8 @@
  * With modifications licensed to Elympics Sp. z o.o.
  */
 
+// @ts-nocheck
+
 const LibraryWebSocket = {
     /** @alias webSocketState */
     /*global webSocketState*/ $webSocketState: {

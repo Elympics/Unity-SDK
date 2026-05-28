@@ -18,8 +18,8 @@
   },
   "include": [
     "./**/*.js",
-    "./**/*.jslib",
-    "./**/*.jspre"
+    "./DoNotTryPuttingPatternsForOtherExtensionsLikeJslibHereAsTheyWillNotBeSupportedWhatsoever.js"
   ],
+  "exclude": [".scripts"],
   "verbose": true
 }

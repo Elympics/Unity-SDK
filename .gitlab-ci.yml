@@ -155,6 +155,17 @@ check-commits:
   script:
     - ./.scripts/ci/check_for_tmp_commits.sh
 
+verify-js:
+  extends:
+    - .node_image
+  stage: check
+  needs: []
+  variables:
+    GIT_DEPTH: 1
+    NODE_VERSION: "20"
+  script:
+    - ./.scripts/ci/check_js.sh
+
 create-testing-project:
   extends:
     - .unity_image

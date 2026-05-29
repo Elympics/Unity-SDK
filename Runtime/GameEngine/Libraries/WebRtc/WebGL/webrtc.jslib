@@ -1,33 +1,144 @@
+/**
+ * @typedef {{
+ *   $webRtcState: WebRtcState,
+ *   WebRtcAllocate: () => number,
+ *   WebRtcFree: (id: number) => void,
+ *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: Pointer | null) => void,
+ *   WebRtcSetOfferAnnouncingDelay: (delayMs: number) => void,
+ *   WebRtcSetOnReliableOpened: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableReceived: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableError: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnReliableEnded: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableOpened: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableReceived: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableError: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnUnreliableEnded: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnOffer: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnIceCandidate: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnIceConnectionStateChanged: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnConnectionStateChanged: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnCandidatePairChosen: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnLog: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnLogWarning: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnLogError: (callback: FunctionPointer) => void,
+ *   WebRtcCreateOffer: (id: number, iceRestart: boolean) => void,
+ *   WebRtcOnAnswer: (id: number, answer: Pointer) => void,
+ *   WebRtcSendReliable: (id: number, bufferPtr: Pointer, length: number) => void,
+ *   WebRtcSendUnreliable: (id: number, bufferPtr: Pointer, length: number) => void,
+ *   WebRtcClose: (id: number) => void,
+ * }} LibraryWebRtc
+ */
+
+/**
+ * @typedef {{
+ *   rtcConfig: RTCConfiguration,
+ *   pc: RTCPeerConnection,
+ *   reliableDc: RTCDataChannel,
+ *   reliableOpened: () => void,
+ *   reliableReceived: (msg: Uint8Array) => void,
+ *   reliableError: (msg: string) => void,
+ *   reliableEnded: () => void,
+ *   unreliableDc: RTCDataChannel,
+ *   unreliableOpened: () => void,
+ *   unreliableReceived: (msg: Uint8Array) => void,
+ *   unreliableError: (msg: string) => void,
+ *   unreliableEnded: () => void,
+ *   pendingOfferResolvers: (() => void)[],
+ *   createOffer: (iceRestart: boolean) => Promise<void>,
+ *   candidatePairCt: boolean[],
+ *   onAnswer: (answerJson: string) => Promise<void>,
+ *   waitForCandidatePair: (ct: boolean[]) => Promise<void>,
+ *   sendReliable: (message: ArrayBuffer) => void,
+ *   sendUnreliable: (message: ArrayBuffer) => void,
+ *   setIceServers: (iceServers: RTCIceServer[]) => void,
+ *   close: () => void,
+ *   onIceConnectionStateChanged: (state: string) => void,
+ *   onConnectionStateChanged: (state: string) => void,
+ * }} WebRtcClient
+ */
+
+/**
+ * @typedef {{
+ *   instances: {[key: number]: WebRtcClient},
+ *   lastId: number,
+ *   logToConsole: (message: string) => void,
+ *   offerAnnouncingDelay: number,
+ *   onReliableOpened: FunctionPointer | null,
+ *   onReliableReceived: FunctionPointer | null,
+ *   onReliableError: FunctionPointer | null,
+ *   onReliableEnded: FunctionPointer | null,
+ *   onUnreliableOpened: FunctionPointer | null,
+ *   onUnreliableReceived: FunctionPointer | null,
+ *   onUnreliableError: FunctionPointer | null,
+ *   onUnreliableEnded: FunctionPointer | null,
+ *   onOffer: FunctionPointer | null,
+ *   onIceCandidate: FunctionPointer | null,
+ *   onCandidatePairChosen: FunctionPointer | null,
+ *   onIceConnectionStateChanged: FunctionPointer | null,
+ *   onConnectionStateChanged: FunctionPointer | null,
+ *   onLog: FunctionPointer | null,
+ *   onLogWarning: FunctionPointer | null,
+ *   onLogError: FunctionPointer | null,
+ * }} WebRtcState
+ */
+
+// Unity mergeInto aliases $webRtcState as webRtcState at build time.
+/* eslint-disable no-unassigned-vars */
+// noinspection ES6ConvertVarToLetConst
+/** @type {WebRtcState} */ var webRtcState;
+/* eslint-enable no-unassigned-vars */
+
+/** @type {LibraryWebRtc} */
 const LibraryWebRtc = {
-    $webRtcState: {
-        instances: {},
+    /** @alias webRtcState */
+    /** @type {WebRtcState} */ $webRtcState: {
+        /** @type {{[key: number]: WebRtcClient}} */ instances: {},
         lastId: 0,
 
-        logToConsole: message => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
+        logToConsole: (/** @type {string} */ message) => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
-        onReliableOpened: null,
-        onReliableReceived: null,
-        onReliableError: null,
-        onReliableEnded: null,
-        onUnreliableOpened: null,
-        onUnreliableReceived: null,
-        onUnreliableError: null,
-        onUnreliableEnded: null,
-        onOffer: null,
-        onIceCandidate: null,
-        onCandidatePairChosen: null,
-        onIceConnectionStateChanged: null,
-        onConnectionStateChanged: null,
-        onLog: null,
-        onLogWarning: null,
-        onLogError: null
+        /** @type {FunctionPointer | null} */ onReliableOpened: null,
+        /** @type {FunctionPointer | null} */ onReliableReceived: null,
+        /** @type {FunctionPointer | null} */ onReliableError: null,
+        /** @type {FunctionPointer | null} */ onReliableEnded: null,
+        /** @type {FunctionPointer | null} */ onUnreliableOpened: null,
+        /** @type {FunctionPointer | null} */ onUnreliableReceived: null,
+        /** @type {FunctionPointer | null} */ onUnreliableError: null,
+        /** @type {FunctionPointer | null} */ onUnreliableEnded: null,
+        /** @type {FunctionPointer | null} */ onOffer: null,
+        /** @type {FunctionPointer | null} */ onIceCandidate: null,
+        /** @type {FunctionPointer | null} */ onCandidatePairChosen: null,
+        /** @type {FunctionPointer | null} */ onIceConnectionStateChanged: null,
+        /** @type {FunctionPointer | null} */ onConnectionStateChanged: null,
+        /** @type {FunctionPointer | null} */ onLog: null,
+        /** @type {FunctionPointer | null} */ onLogWarning: null,
+        /** @type {FunctionPointer | null} */ onLogError: null
     },
 
     WebRtcAllocate: function () {
         const id = webRtcState.lastId++;
         webRtcState.logToConsole(`Allocating client #${id}`);
 
+        /**
+         * @constructor
+         * @param {() => void} reliableOpened
+         * @param {(msg: Uint8Array) => void} reliableReceived
+         * @param {(msg: string) => void} reliableError
+         * @param {() => void} reliableEnded
+         * @param {() => void} unreliableOpened
+         * @param {(msg: Uint8Array) => void} unreliableReceived
+         * @param {(msg: string) => void} unreliableError
+         * @param {() => void} unreliableEnded
+         * @param {(state: string) => void} iceConnectionStateChanged
+         * @param {(state: string) => void} connectionStateChanged
+         * @param {(candidateJson: string | null) => void} iceCandidateCallback
+         * @param {(offerJson: string) => void} offerCallback
+         * @param {(localCandidate: string, remoteCandidate: string) => void} candidatePairChosenCallback
+         * @param {(methodName: string, message: string) => void} logCallback
+         * @param {(methodName: string, message: string) => void} logWarningCallback
+         * @param {(methodName: string, message: string) => void} logErrorCallback
+         */
         function WebRtcClient(
             reliableOpened,
             reliableReceived,
@@ -46,7 +157,7 @@ const LibraryWebRtc = {
             logWarningCallback,
             logErrorCallback
         ) {
-            this.rtcConfig = {};
+            this.rtcConfig = /** @type {RTCConfiguration} */ ({});
             this.pc = new RTCPeerConnection(this.rtcConfig);
 
             this.reliableDc = this.pc.createDataChannel("reliable");
@@ -55,7 +166,7 @@ const LibraryWebRtc = {
             this.reliableError = reliableError;
             this.reliableEnded = reliableEnded;
 
-            const onChannel = (name, eventType) => {
+            const onChannel = (/** @type {string} */ name, /** @type {string} */ eventType) => {
                 const selectedPair = (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getSelectedCandidatePair === 'function')
                     ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()
                     : null;
@@ -66,7 +177,7 @@ const LibraryWebRtc = {
                 logCallback('onChannel', message + selectedPairJson);
             };
 
-            const buildErrorMessage = (err, details, baseMessage) => {
+            const buildErrorMessage = (/** @type {any} */ err, /** @type {string | undefined} */ details, /** @type {string} */ baseMessage) => {
                 let message = baseMessage;
 
                 // Add details if available
@@ -91,8 +202,8 @@ const LibraryWebRtc = {
                         break;
                     case "sctp-failure":
                         if (err.sctpCauseCode !== undefined) {
-                            if (typeof sctpCauseCodes !== 'undefined' && err.sctpCauseCode < sctpCauseCodes.length) {
-                                message += ` | SCTP failure: ${sctpCauseCodes[err.sctpCauseCode]}`;
+                            if (typeof err.sctpCauseCodes !== 'undefined' && err.sctpCauseCode < err.sctpCauseCodes.length) {
+                                message += ` | SCTP failure: ${err.sctpCauseCodes[err.sctpCauseCode]}`;
                             } else {
                                 message += ` | SCTP failure: cause code ${err.sctpCauseCode}`;
                             }
@@ -163,14 +274,15 @@ const LibraryWebRtc = {
                 this.unreliableEnded();
             };
 
+            /** @type {Array<() => void>} */
             this.pendingOfferResolvers = [];
 
-            this.createOffer = async iceRestart => {
+            this.createOffer = async (/** @type {boolean} */ iceRestart) => {
                 const offer = await this.pc.createOffer({iceRestart});
                 logCallback('createOffer', `Created offer\n${JSON.stringify(offer)}`);
                 await this.pc.setLocalDescription(offer);
 
-                let resolver;
+                /** @type {() => void} */ let resolver = () => {};
                 logCallback('createOffer', `Gathering ICE candidates...`);
                 const reason = await Promise.race([
                     new Promise(r => setTimeout(() => r('timeout'), webRtcState.offerAnnouncingDelay)),
@@ -186,15 +298,18 @@ const LibraryWebRtc = {
                 }
 
                 const updatedOffer = this.pc.localDescription;
-                if (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getLocalCandidates === 'function') {
-                    logCallback('createOffer', `Local candidates\n${JSON.stringify(this.pc.sctp.transport.iceTransport.getLocalCandidates())}`);
+                const sctp = /** @type {RTCSctpTransport} */ (this.pc.sctp);
+                /** @type {RTCIceTransport & { getLocalCandidates?: () => RTCIceCandidate[] }} */
+                const iceTransport = /** @type {any} */ (sctp.transport.iceTransport);
+                if (iceTransport && typeof iceTransport.getLocalCandidates === 'function') {
+                    logCallback('createOffer', `Local candidates\n${JSON.stringify(iceTransport.getLocalCandidates())}`);
                 }
                 offerCallback(JSON.stringify(updatedOffer));
             };
 
             this.candidatePairCt = [false];
 
-            this.onAnswer = async answerJson => {
+            this.onAnswer = async (/** @type {string} */ answerJson) => {
                 logCallback('onAnswer', `Answer received\n${answerJson}`);
                 const answer = JSON.parse(answerJson);
                 await this.pc.setRemoteDescription(answer);
@@ -203,7 +318,7 @@ const LibraryWebRtc = {
                 await this.waitForCandidatePair(this.candidatePairCt);
             };
 
-            this.waitForCandidatePair = async ct => {
+            this.waitForCandidatePair = async (/** @type {boolean[]} */ ct) => {
                 while (!ct[0]) {
                     const stats = await this.pc.getStats();
                     const nominatedPair = Array.from(stats.values()).find(s => s.type === "candidate-pair" && s.nominated);
@@ -218,17 +333,17 @@ const LibraryWebRtc = {
                 }
             };
 
-            this.sendReliable = message => {
+            this.sendReliable = (/** @type {ArrayBuffer} */ message) => {
                 if (this.reliableDc.readyState !== "open") return;
                 this.reliableDc.send(message);
             };
 
-            this.sendUnreliable = message => {
+            this.sendUnreliable = (/** @type {ArrayBuffer} */ message) => {
                 if (this.unreliableDc.readyState !== "open") return;
                 this.unreliableDc.send(message);
             };
 
-            this.setIceServers = iceServers => {
+            this.setIceServers = (/** @type {RTCIceServer[]} */ iceServers) => {
                 this.rtcConfig.iceServers = iceServers;
                 logCallback('setIceServers', "Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
                 this.pc.setConfiguration(this.rtcConfig);
@@ -248,11 +363,11 @@ const LibraryWebRtc = {
                     iceCandidateCallback(candidateJson);
                 } else {
                     logCallback('pc.onicecandidate', "End of candidates");
-                    while (this.pendingOfferResolvers.length > 0) {
-                        const resolver = this.pendingOfferResolvers.pop();
+                    let resolver;
+                    while ((resolver = this.pendingOfferResolvers.pop()) !== undefined) {
                         resolver();
                     }
-                    iceCandidateCallback(candidate);
+                    iceCandidateCallback(null);
                 }
             };
 
@@ -269,7 +384,8 @@ const LibraryWebRtc = {
                 this.onConnectionStateChanged(this.pc.connectionState);
             };
 
-            this.pc.onicegatheringstatechange = ({target: connection}) => {
+            this.pc.onicegatheringstatechange = ({target}) => {
+                const connection = /** @type {RTCPeerConnection} */ (target);
                 logCallback('pc.onicegatheringstatechange', `ICE gathering state changed\n${connection.iceGatheringState}`);
                 if (connection.iceConnectionState === "failed") {
                     logErrorCallback('pc.oniceconnectionstatechange', `ICE connection failed, restart`);
@@ -282,13 +398,17 @@ const LibraryWebRtc = {
         }
 
         const WebRtcReliableOpened = () => {
-            if (webRtcState.onReliableOpened === null) return;
+            if (webRtcState.onReliableOpened === null) {
+                return;
+            }
 
             Module.dynCall_vi(webRtcState.onReliableOpened, id);
         };
 
-        const WebRtcReliableReceived = msg => {
-            if (webRtcState.onReliableReceived === null) return;
+        const WebRtcReliableReceived = (/** @type {Uint8Array} */ msg) => {
+            if (webRtcState.onReliableReceived === null) {
+                return;
+            }
 
             const buffer = _malloc(msg.length);
             HEAPU8.set(msg, buffer);
@@ -305,34 +425,43 @@ const LibraryWebRtc = {
             }
         };
 
-        const WebRtcReliableError = msg => {
-            if (webRtcState.onReliableError === null) return;
+        const WebRtcReliableError = (/** @type {string} */ msg) => {
+            const callback = webRtcState.onReliableError;
+            if (callback === null) {
+                return;
+            }
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(webRtcState.onReliableError, id, msgBuffer);
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
         const WebRtcReliableEnded = () => {
-            if (webRtcState.onReliableEnded === null) return;
+            if (webRtcState.onReliableEnded === null) {
+                return;
+            }
 
             Module.dynCall_vi(webRtcState.onReliableEnded, id);
         };
 
         const WebRtcUnreliableOpened = () => {
-            if (webRtcState.onUnreliableOpened === null) return;
+            if (webRtcState.onUnreliableOpened === null) {
+                return;
+            }
 
             Module.dynCall_vi(webRtcState.onUnreliableOpened, id);
         };
 
-        const WebRtcUnreliableReceived = msg => {
-            if (webRtcState.onUnreliableReceived === null) return;
+        const WebRtcUnreliableReceived = (/** @type {Uint8Array} */ msg) => {
+            if (webRtcState.onUnreliableReceived === null) {
+                return;
+            }
 
             const buffer = _malloc(msg.length);
             HEAPU8.set(msg, buffer);
@@ -349,47 +478,56 @@ const LibraryWebRtc = {
             }
         };
 
-        const WebRtcUnreliableError = msg => {
-            if (webRtcState.onUnreliableError === null) return;
+        const WebRtcUnreliableError = (/** @type {string} */ msg) => {
+            const callback = webRtcState.onUnreliableError;
+            if (callback === null) {
+                return;
+            }
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(webRtcState.onUnreliableError, id, msgBuffer);
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
         const WebRtcUnreliableEnded = () => {
-            if (webRtcState.onUnreliableEnded === null) return;
+            if (webRtcState.onUnreliableEnded === null) {
+                return;
+            }
 
             Module.dynCall_vi(webRtcState.onUnreliableEnded, id);
         };
 
-        const WebRtcOfferCallback = msg => {
-            if (webRtcState.onOffer === null) return;
+        const WebRtcOfferCallback = (/** @type {string} */ msg) => {
+            const callback = webRtcState.onOffer;
+            if (callback === null) {
+                return;
+            }
 
             const msgBytes = lengthBytesUTF8(msg) + 1;
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(webRtcState.onOffer, id, msgBuffer);
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
-        const WebRtcIceCandidateCallback = msg => {
-            if (webRtcState.onIceCandidate === null) {
-                WebRtcLogCallback('WebRtcIceCandidateCallback', "onIceCandidate callback is not set");
+        const WebRtcIceCandidateCallback = (/** @type {string | null} */ msg) => {
+            const callback = webRtcState.onIceCandidate;
+            if (callback === null) {
+                WebRtcLogInfoCallback('WebRtcIceCandidateCallback', "onIceCandidate callback is not set");
                 return;
             }
             if (!msg) {
-                Module.dynCall_vii(webRtcState.onIceCandidate, id, null);
+                Module.dynCall_vii(callback, id, null);
                 return;
             }
 
@@ -398,13 +536,17 @@ const LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(webRtcState.onIceCandidate, id, msgBuffer);
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
-        const WebRtcCandidatePairChosenCallback = (localCandidate, remoteCandidate) => {
+        const WebRtcCandidatePairChosenCallback = (/** @type {string} */ localCandidate, /** @type {string} */ remoteCandidate) => {
+            const callback = webRtcState.onCandidatePairChosen;
+            if (callback === null) {
+                return;
+            }
             const localCandidateBytes = lengthBytesUTF8(localCandidate) + 1;
             const localCandidateBuffer = _malloc(localCandidateBytes);
             stringToUTF8(localCandidate, localCandidateBuffer, localCandidateBytes);
@@ -413,40 +555,47 @@ const LibraryWebRtc = {
             stringToUTF8(remoteCandidate, remoteCandidateBuffer, remoteCandidateBytes);
 
             try {
-                Module.dynCall_viii(webRtcState.onCandidatePairChosen, id, localCandidateBuffer, remoteCandidateBuffer);
+                Module.dynCall_viii(callback, id, localCandidateBuffer, remoteCandidateBuffer);
             } finally {
                 _free(localCandidateBuffer);
                 _free(remoteCandidateBuffer);
             }
         };
 
-        const IceConnectionStateChanged = (state) => {
+        const IceConnectionStateChanged = (/** @type {string} */ state) => {
+            const callback = webRtcState.onIceConnectionStateChanged;
+            if (callback === null) {
+                return;
+            }
             const msgBytes = lengthBytesUTF8(state) + 1;
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
-                Module.dynCall_vii(
-                    webRtcState.onIceConnectionStateChanged,
-                    id,
-                    msgBuffer
-                );
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
-        const ConnectionStateChanged = (state) => {
+        const ConnectionStateChanged = (/** @type {string} */ state) => {
+            const callback = webRtcState.onConnectionStateChanged;
+            if (callback === null) {
+                return;
+            }
             const msgBytes = lengthBytesUTF8(state) + 1;
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
-                Module.dynCall_vii(webRtcState.onConnectionStateChanged, id, msgBuffer);
+                Module.dynCall_vii(callback, id, msgBuffer);
             } finally {
                 _free(msgBuffer);
             }
         };
 
-        const WebRtcLogCallback = (methodName, logMessage) => {
+        const WebRtcLogCallback = (/** @type {FunctionPointer | null} */ callback, /** @type {string} */ methodName, /** @type {string} */ logMessage) => {
+            if (callback === null) {
+                return;
+            }
             const methodNameBytes = lengthBytesUTF8(methodName) + 1;
             const methodNameBuffer = _malloc(methodNameBytes);
             stringToUTF8(methodName, methodNameBuffer, methodNameBytes);
@@ -455,44 +604,16 @@ const LibraryWebRtc = {
             stringToUTF8(logMessage, logMessageBuffer, logMessageBytes);
 
             try {
-                Module.dynCall_viii(webRtcState.onLog, id, methodNameBuffer, logMessageBuffer);
+                Module.dynCall_viii(callback, id, methodNameBuffer, logMessageBuffer);
             } finally {
                 _free(methodNameBuffer);
                 _free(logMessageBuffer);
             }
         };
 
-        const WebRtcLogWarningCallback = (methodName, logMessage) => {
-            const methodNameBytes = lengthBytesUTF8(methodName) + 1;
-            const methodNameBuffer = _malloc(methodNameBytes);
-            stringToUTF8(methodName, methodNameBuffer, methodNameBytes);
-            const logMessageBytes = lengthBytesUTF8(logMessage) + 1;
-            const logMessageBuffer = _malloc(logMessageBytes);
-            stringToUTF8(logMessage, logMessageBuffer, logMessageBytes);
-
-            try {
-                Module.dynCall_viii(webRtcState.onLogWarning, id, methodNameBuffer, logMessageBuffer);
-            } finally {
-                _free(methodNameBuffer);
-                _free(logMessageBuffer);
-            }
-        };
-
-        const WebRtcLogErrorCallback = (methodName, logMessage) => {
-            const methodNameBytes = lengthBytesUTF8(methodName) + 1;
-            const methodNameBuffer = _malloc(methodNameBytes);
-            stringToUTF8(methodName, methodNameBuffer, methodNameBytes);
-            const logMessageBytes = lengthBytesUTF8(logMessage) + 1;
-            const logMessageBuffer = _malloc(logMessageBytes);
-            stringToUTF8(logMessage, logMessageBuffer, logMessageBytes);
-
-            try {
-                Module.dynCall_viii(webRtcState.onLogError, id, methodNameBuffer, logMessageBuffer);
-            } finally {
-                _free(methodNameBuffer);
-                _free(logMessageBuffer);
-            }
-        };
+        const WebRtcLogInfoCallback = (/** @type {string} */ methodName, /** @type {string} */ logMessage) => WebRtcLogCallback(webRtcState.onLog, methodName, logMessage);
+        const WebRtcLogWarningCallback = (/** @type {string} */ methodName, /** @type {string} */ logMessage) => WebRtcLogCallback(webRtcState.onLogWarning, methodName, logMessage);
+        const WebRtcLogErrorCallback = (/** @type {string} */ methodName, /** @type {string} */ logMessage) => WebRtcLogCallback(webRtcState.onLogError, methodName, logMessage);
 
         webRtcState.logToConsole("Receiving callbacks created");
 
@@ -510,7 +631,7 @@ const LibraryWebRtc = {
             WebRtcIceCandidateCallback,
             WebRtcOfferCallback,
             WebRtcCandidatePairChosenCallback,
-            WebRtcLogCallback,
+            WebRtcLogInfoCallback,
             WebRtcLogWarningCallback,
             WebRtcLogErrorCallback
         );
@@ -522,7 +643,9 @@ const LibraryWebRtc = {
 
     WebRtcFree: function (id) {
         const instance = webRtcState.instances[id];
-        if (!instance) return;
+        if (!instance) {
+            return;
+        }
 
         delete webRtcState.instances[id];
         instance.close();
@@ -624,36 +747,40 @@ const LibraryWebRtc = {
             return;
         }
 
-        instance.createOffer(iceRestart);
+        instance.createOffer(iceRestart).catch((/** @type {any} */ e) => webRtcState.logToConsole(e.toString()));
     },
 
     WebRtcOnAnswer: function (id, answer) {
         const instance = webRtcState.instances[id];
-        if (!instance) return;
+        if (!instance) {
+            return;
+        }
 
-        let answerStr;
-        if (UTF8ToString !== undefined) answerStr = UTF8ToString(answer);
-        else answerStr = Pointer_stringify(answer);
-        instance.onAnswer(answerStr);
+        const answerStr = UTF8ToString(answer);
+        instance.onAnswer(answerStr).catch((/** @type {any} */ e) => webRtcState.logToConsole(e.toString()));
     },
 
     WebRtcSendReliable: function (id, bufferPtr, length) {
         const instance = webRtcState.instances[id];
-        if (!instance) return;
+        if (!instance) {
+            return;
+        }
 
-        instance.sendReliable(HEAPU8.buffer.slice(bufferPtr, bufferPtr + length));
+        instance.sendReliable(/** @type {ArrayBuffer} */ (HEAPU8.buffer.slice(bufferPtr, bufferPtr + length)));
     },
 
     WebRtcSendUnreliable: function (id, bufferPtr, length) {
         const instance = webRtcState.instances[id];
         if (!instance) return;
 
-        instance.sendUnreliable(HEAPU8.buffer.slice(bufferPtr, bufferPtr + length));
+        instance.sendUnreliable(/** @type {ArrayBuffer} */ (HEAPU8.buffer.slice(bufferPtr, bufferPtr + length)));
     },
 
     WebRtcClose: function (id) {
         const instance = webRtcState.instances[id];
-        if (!instance) return;
+        if (!instance) {
+            return;
+        }
 
         instance.close();
     }

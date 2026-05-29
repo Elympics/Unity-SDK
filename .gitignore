@@ -574,3 +574,5 @@ Runtime/WeaverLockingProblemTest.*
 # Track additional compiler settings
 !*.rsp
 
+# Local Claude settings
+.claude/

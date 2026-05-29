@@ -7,11 +7,14 @@
  */
 
 /*
- * With modifications licensed to Elympics Sp. z o.o. w organizacji
+ * With modifications licensed to Elympics Sp. z o.o.
  */
 
-var LibraryWebSocket = {
-	$webSocketState: {
+// @ts-nocheck
+
+const LibraryWebSocket = {
+    /** @alias webSocketState */
+    /*global webSocketState*/ $webSocketState: {
 		/*
 		 * Map of instances
 		 *
@@ -257,7 +260,7 @@ var LibraryWebSocket = {
 
 		try {
 			instance.ws.close(code, reason);
-		} catch(err) {
+		} catch (_err) {
 			return -7;
 		}
 

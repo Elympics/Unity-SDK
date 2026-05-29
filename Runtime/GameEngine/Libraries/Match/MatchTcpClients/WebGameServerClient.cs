@@ -255,7 +255,7 @@ namespace MatchTcpClients
                 if (result?.Code == 499)
                 {
                     logger.Warning($"WebRTC answer error: {result.Text}");
-                    try { await UniTask.Delay(Config.OfferRetryDelay, DelayType.Realtime, cancellationToken: ct); } catch (OperationCanceledException) { }
+                    _ = await UniTask.Delay(Config.OfferRetryDelay, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
                 }
                 else
                     return result;

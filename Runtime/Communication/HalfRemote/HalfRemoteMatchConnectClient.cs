@@ -144,7 +144,12 @@ namespace Elympics
 
             string offer = null;
             var offerSet = false;
-            void OnOfferCreated(string s) { offer = s; offerSet = true; }
+
+            void OnOfferCreated(string s)
+            {
+                offer = s;
+                offerSet = true;
+            }
             _webRtcClient.OfferCreated += OnOfferCreated;
             _webRtcClient.CreateOffer(false);
 

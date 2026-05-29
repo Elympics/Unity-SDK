@@ -36,7 +36,7 @@ namespace Elympics
         private void InitializeWriteToFile()
         {
 #if UNITY_EDITOR
-            _folderPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, LogDirectoryName);
+            _folderPath = Path.Combine(Directory.GetParent(Application.dataPath)!.FullName, LogDirectoryName);
 #else
 			_folderPath = Path.Combine(Application.persistentDataPath, LogDirectoryName);
 #endif
@@ -56,20 +56,18 @@ namespace Elympics
 
                     var anythingToSend = false;
                     lock (_textToFileQueue)
-                    {
                         if (_textToFileQueue.Count > 0)
                         {
-                            _sb.Clear();
+                            _ = _sb.Clear();
                             for (var i = 0; i < _textToFileQueue.Count; i++)
                             {
                                 var text = _textToFileQueue.Dequeue();
-                                _sb.AppendLine(text);
-                                _sb.AppendLine();
+                                _ = _sb.AppendLine(text)
+                                    .AppendLine();
                             }
 
                             anythingToSend = true;
                         }
-                    }
 
                     if (anythingToSend)
                         await WriteToFile(_sb.ToString(), ct);

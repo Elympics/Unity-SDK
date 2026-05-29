@@ -232,7 +232,7 @@ namespace Elympics
             logger.Log($"Match joined.");
             MatchJoinedWithMatchInitData?.Invoke(matchInitData);
             _connected = true;
-            _connectAndJoinTcs?.TrySetResult();
+            _ = _connectAndJoinTcs?.TrySetResult();
         }
 
         private void OnMatchEnded(MatchEndedMessage message)
@@ -242,10 +242,8 @@ namespace Elympics
             MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
         }
 
-        private void OnDisconnectedWhileConnectingAndJoining()
-        {
-            _connectAndJoinTcs?.TrySetException(new ElympicsException("Disconnected while connecting and joining"));
-        }
+        private void OnDisconnectedWhileConnectingAndJoining() =>
+            _ = _connectAndJoinTcs?.TrySetException(new ElympicsException("Disconnected while connecting and joining"));
 
         private void OnDisconnectedByServer()
         {

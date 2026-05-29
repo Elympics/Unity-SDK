@@ -116,7 +116,7 @@ namespace MatchTcpClients
             {
                 logger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
-                sessionConnectedTcs.TrySetResult(true);
+                _ = sessionConnectedTcs.TrySetResult(true);
             }
 
             SessionConnected += OnSessionConnected;

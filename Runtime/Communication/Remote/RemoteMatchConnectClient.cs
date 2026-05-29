@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
@@ -41,8 +40,7 @@ namespace Elympics
         private bool _connecting;
         private bool _connected;
 
-        private Action _disconnectedCallback;
-        private Action _matchJoinedCallback;
+        private UniTaskCompletionSource _connectAndJoinTcs;
 
         private readonly ElympicsLoggerContext _logger;
 
@@ -63,10 +61,12 @@ namespace Elympics
             _gameServerClient.MatchEnded += OnMatchEnded;
         }
 
-        public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
+        public async UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct)
         {
             CheckAddress();
-            return !string.IsNullOrEmpty(_userSecret) ? ConnectAndJoin(connectedCallback, SetupCallbacksForJoiningAsPlayer, UnsetCallbacksForJoiningAsPlayer, ct) : throw new ArgumentNullException(nameof(_userSecret));
+            if (string.IsNullOrEmpty(_userSecret))
+                throw new ArgumentNullException(nameof(_userSecret));
+            await ConnectAndJoinAsync(SetupCallbacksForJoiningAsPlayer, UnsetCallbacksForJoiningAsPlayer, ct);
         }
 
         private void CheckAddress()
@@ -83,10 +83,10 @@ namespace Elympics
             }
         }
 
-        public IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct)
+        public async UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct)
         {
             CheckAddress();
-            return ConnectAndJoin(connectedCallback, SetupCallbacksForJoiningAsSpectator, UnsetCallbacksForJoiningAsSpectator, ct);
+            await ConnectAndJoinAsync(SetupCallbacksForJoiningAsSpectator, UnsetCallbacksForJoiningAsSpectator, ct);
         }
 
         public void Disconnect()
@@ -133,54 +133,35 @@ namespace Elympics
             _gameServerClient.Disconnected -= OnDisconnectedWhileConnectingAndJoining;
         }
 
-        private IEnumerator ConnectAndJoin(Action<bool> connectedCallback, Action setupCallbacks, Action unsetCallbacks, CancellationToken ct = default)
+        private async UniTask ConnectAndJoinAsync(Action setupCallbacks, Action unsetCallbacks, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
             if (_connecting)
-            {
-                connectedCallback.Invoke(false);
-                yield break;
-            }
+                throw new InvalidOperationException("Already connecting");
+            if (_connected)
+                throw new InvalidOperationException("Already connected");
 
             _connecting = true;
-
-            if (_connected)
-            {
-                connectedCallback.Invoke(false);
-                yield break;
-            }
-
+            _connectAndJoinTcs = new UniTaskCompletionSource();
             setupCallbacks();
 
-            void ConnectedCallback(bool connected)
+            logger.Log(_useWeb ? "Connecting to game server by WebSocket/WebRTC" : "Connecting to game server by TCP/UDP");
+
+            try
             {
-                // Connect callback handled by setupCallbacks()
-                if (connected)
-                    return;
+                var connected = await _gameServerClient.ConnectAsync(ct);
+                if (!connected)
+                {
+                    ConnectingFailed?.Invoke();
+                    throw new ElympicsException("Failed to connect to game server");
+                }
 
-                ConnectingFailed?.Invoke();
-                connectedCallback?.Invoke(false);
+                await _connectAndJoinTcs.Task.AttachExternalCancellation(ct);
             }
-
-            void DisconnectedCallback()
+            finally
             {
                 FinishConnecting(unsetCallbacks);
-                connectedCallback.Invoke(false);
             }
-
-            void MatchJoinedCallback()
-            {
-                _connected = true;
-                FinishConnecting(unsetCallbacks);
-                connectedCallback.Invoke(true);
-            }
-
-            _disconnectedCallback = DisconnectedCallback;
-            _matchJoinedCallback = MatchJoinedCallback;
-
-            logger.Log(_useWeb ? $"Connecting to game server by WebSocket/WebRTC" : $"Connecting to game server by TCP/UDP");
-
-            yield return UniTask.ToCoroutine(() => _gameServerClient.ConnectAsync(ct).AsUniTask().ContinueWith(ConnectedCallback));
         }
 
         private void FinishConnecting(Action unsetCallbacks)
@@ -188,8 +169,7 @@ namespace Elympics
             _connecting = false;
             TryDisconnectByServerIfNotConnected();
             unsetCallbacks();
-            _disconnectedCallback = null;
-            _matchJoinedCallback = null;
+            _connectAndJoinTcs = null;
         }
 
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
@@ -197,13 +177,13 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.Log("Connected And Synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _ = _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
+            _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret).Forget();
         }
 
         private void OnConnectedAndSynchronizedAsSpectator(TimeSynchronizationData timeSynchronizationData)
         {
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _ = _gameServerClient.AuthenticateAsSpectatorAsync();
+            _gameServerClient.AuthenticateAsSpectatorAsync().Forget();
         }
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
@@ -219,7 +199,7 @@ namespace Elympics
             logger.Log("User Authenticated.");
             AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
-            _ = _gameServerClient.JoinMatchAsync();
+            _gameServerClient.JoinMatchAsync().Forget();
         }
 
         private void OnAuthenticatedAsSpectator(AuthenticatedAsSpectatorMessage message)
@@ -233,7 +213,7 @@ namespace Elympics
 
             AuthenticatedAsSpectator?.Invoke();
 
-            _ = _gameServerClient.JoinMatchAsync();
+            _gameServerClient.JoinMatchAsync().Forget();
         }
 
         private void OnMatchJoined(MatchJoinedMessage message)
@@ -251,7 +231,8 @@ namespace Elympics
 
             logger.Log($"Match joined.");
             MatchJoinedWithMatchInitData?.Invoke(matchInitData);
-            _matchJoinedCallback?.Invoke();
+            _connected = true;
+            _connectAndJoinTcs?.TrySetResult();
         }
 
         private void OnMatchEnded(MatchEndedMessage message)
@@ -263,7 +244,7 @@ namespace Elympics
 
         private void OnDisconnectedWhileConnectingAndJoining()
         {
-            _disconnectedCallback?.Invoke();
+            _connectAndJoinTcs?.TrySetException(new ElympicsException("Disconnected while connecting and joining"));
         }
 
         private void OnDisconnectedByServer()

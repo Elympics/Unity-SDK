@@ -81,9 +81,7 @@ namespace Elympics
             _matchClient = matchClient;
             elympicsBehavioursManager.InitializeInternal(this, maxPlayerCount);
             _roundTripTimeCalculator = new RoundTripTimeCalculator();
-#if ELYMPICS_DEBUG
             _logToFile = new ClientTickCalculatorNetworkDetailsToFile();
-#endif
             _clientTickCalculator = new ClientTickCalculator(_roundTripTimeCalculator, elympicsGameConfig);
             _predictionBuffer = new PredictionBuffer(elympicsGameConfig);
             _snapshotTracker = new ElympicsBehaviourFirstSnapshotTracker(elympicsBehavioursManager);
@@ -101,21 +99,20 @@ namespace Elympics
 
         private async void RunConnectAndJoinAsPlayer()
         {
+            var logger = _logger.WithMethodName();
             try
             {
                 await UniTask.Yield();
-                await ConnectAndJoinAsPlayer(success =>
-                    {
-                        var log = _logger.WithMethodName();
-                        if (success)
-                            log.Log("Successfully connected to the game server.");
-                        else
-                            log.Error("Could not connect to the game server.");
-                    },
-                    CancellationToken.None);
+                await ConnectAndJoinAsPlayerAsync(CancellationToken.None);
+                logger.Log("Successfully connected to the game server.");
+            }
+            catch (OperationCanceledException)
+            {
+                logger.Log("Connect and join was cancelled.");
             }
             catch (Exception e)
             {
+                logger.Error("Could not connect to the game server.");
                 _ = ElympicsLogger.LogException(e);
             }
         }
@@ -188,7 +185,7 @@ namespace Elympics
                 _matchClient.Dispose();
             }
 
-            _logToFile?.DeInit();
+            _logToFile.DeInit();
         }
 
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
@@ -334,7 +331,7 @@ namespace Elympics
             if (Config.DetailedNetworkLog)
             {
                 LogNetworkConditionsInInterval();
-                _logToFile?.LogNetworkDetailsToFile(_clientTickCalculator.Results);
+                _logToFile.LogNetworkDetailsToFile(_clientTickCalculator.Results);
             }
         }
 
@@ -404,10 +401,10 @@ namespace Elympics
 
         private void AddInputToSendBuffer(ElympicsInput input) => _matchClient.AddInputToSendBuffer(input);
 
-        private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
+        private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick).Forget();
 
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            _matchClient.SendRpcMessageList(rpcMessageList, reliable);
+            _matchClient.SendRpcMessageList(rpcMessageList, reliable).Forget();
 
         private void ApplyPredictedInput()
         {
@@ -512,8 +509,8 @@ namespace Elympics
 
         #region IElympics
 
-        public override IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsPlayer(connectedCallback, ct);
-        public override IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsSpectator(connectedCallback, ct);
+        public override UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsPlayerAsync(ct);
+        public override UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct) => MatchConnectClient.ConnectAndJoinAsSpectatorAsync(ct);
         public override void Disconnect() => MatchConnectClient.Disconnect();
 
         #endregion

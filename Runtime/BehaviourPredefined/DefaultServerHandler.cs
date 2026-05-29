@@ -1,8 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Elympics
@@ -26,7 +27,7 @@ namespace Elympics
 
         private TimeSpan _startGameTimeout;
         private DateTime _waitToStartFinishTime;
-        private readonly WaitForSeconds _checkInterval = new(5);
+        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(5);
 
         public virtual void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
         {
@@ -60,20 +61,20 @@ namespace Elympics
                 return;
 
             _startGameTimeout = TimeSpan.FromSeconds(startGameTimeoutSeconds);
-            _ = StartCoroutine(WaitForGameStartOrEnd());
+            WaitForGameStartOrEndAsync(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
-        private IEnumerator WaitForGameStartOrEnd()
+        private async UniTaskVoid WaitForGameStartOrEndAsync(CancellationToken ct)
         {
             _waitToStartFinishTime = DateTime.Now + _startGameTimeout;
 
-            while (DateTime.Now < _waitToStartFinishTime)
+            while (!ct.IsCancellationRequested && DateTime.Now < _waitToStartFinishTime)
             {
                 if (GameStarted)
-                    yield break;
+                    return;
 
                 ElympicsLogger.Log("Not all players connected yet...");
-                yield return _checkInterval;
+                _ = await UniTask.Delay(_checkInterval, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }
             ElympicsLogger.LogWarning(
                 $"Forcing game server to quit because conditions for {nameof(TerminationOption)}.{autoTerminationOnLeft} were met.");

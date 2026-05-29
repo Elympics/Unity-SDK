@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
@@ -49,7 +49,7 @@ namespace MatchTcpClients
             Config = config;
         }
 
-        public async Task<bool> ConnectAsync(CancellationToken ct = default)
+        public async UniTask<bool> ConnectAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
             Disconnect();
@@ -76,7 +76,7 @@ namespace MatchTcpClients
             }
 
             ConnectedAndSynchronized?.Invoke(synchronizationData);
-            _ = _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token).ConfigureAwait(false);
+            _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token).Forget();
             return true;
         }
 
@@ -103,21 +103,20 @@ namespace MatchTcpClients
             InitUnreliableClient();
         }
 
-        protected abstract Task<bool> ConnectInternalAsync(CancellationToken ct = default);
+        protected abstract UniTask<bool> ConnectInternalAsync(CancellationToken ct = default);
 
-        protected abstract Task<bool> TryInitializeSessionAsync(CancellationToken ct = default);
+        protected abstract UniTask<bool> TryInitializeSessionAsync(CancellationToken ct = default);
 
-        private protected async Task<bool> TryConnectSessionAsync(CancellationToken ct = default)
+        private protected async UniTask<bool> TryConnectSessionAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
-            var sessionConnectedCompletionSource = new TaskCompletionSource<bool>();
+            var sessionConnectedTcs = new UniTaskCompletionSource<bool>();
 
             void OnSessionConnected(ConnectedMessage message)
             {
                 logger.Log("Connected using reliable channel.");
                 SessionToken = message.SessionToken;
-                //_clientSynchronizer.SetUnreliableSessionToken(message.SessionToken);
-                sessionConnectedCompletionSource.SetResult(true);
+                sessionConnectedTcs.TrySetResult(true);
             }
 
             SessionConnected += OnSessionConnected;
@@ -127,12 +126,12 @@ namespace MatchTcpClients
                 if (!await TryInitializeSessionAsync(ct))
                     return false;
 
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var sessionConnectedCompletionTask = sessionConnectedCompletionSource.Task;
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var timeoutTask = UniTask.Delay(Config.SessionConnectTimeout, DelayType.Realtime, cancellationToken: cts.Token).SuppressCancellationThrow();
                 logger.Log("Connecting to reliable channel...");
-                var timeoutTask = TaskUtil.Delay(Config.SessionConnectTimeout, cts.Token).CatchOperationCanceledException();
 
-                if (await Task.WhenAny(sessionConnectedCompletionTask, timeoutTask) != timeoutTask)
+                var (winIndex, _, _) = await UniTask.WhenAny(sessionConnectedTcs.Task, timeoutTask);
+                if (winIndex == 0)
                 {
                     cts.Cancel();
                     return true;
@@ -145,7 +144,7 @@ namespace MatchTcpClients
             }
         }
 
-        private async Task<TimeSynchronizationData> TryInitialSynchronizeAsync(CancellationToken ct = default)
+        private async UniTask<TimeSynchronizationData> TryInitialSynchronizeAsync(CancellationToken ct = default)
         {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, ClientDisconnectedCts.Token);
 
@@ -209,7 +208,7 @@ namespace MatchTcpClients
             SessionToken = null;
         }
 
-        private async Task SendReliableCommand(Command command)
+        private async UniTask SendReliableCommand(Command command)
         {
             _ = await ReliableClient.SendAsync(_serializer.Serialize(command));
         }
@@ -280,22 +279,22 @@ namespace MatchTcpClients
             return message;
         }
 
-        public async Task AuthenticateMatchUserSecretAsync(string userSecret) =>
+        public async UniTask AuthenticateMatchUserSecretAsync(string userSecret) =>
             await SendReliableCommand(new AuthenticateMatchUserSecretCommand { UserSecret = userSecret });
 
-        public async Task AuthenticateAsSpectatorAsync() =>
+        public async UniTask AuthenticateAsSpectatorAsync() =>
             await SendReliableCommand(new AuthenticateAsSpectatorCommand());
 
-        public async Task JoinMatchAsync() =>
+        public async UniTask JoinMatchAsync() =>
             await SendReliableCommand(new JoinMatchCommand());
 
-        public async Task SendInGameDataReliableAsync(byte[] data) =>
+        public async UniTask SendInGameDataReliableAsync(byte[] data) =>
             await SendReliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
 
-        public async Task SendInGameDataUnreliableAsync(byte[] data) =>
+        public async UniTask SendInGameDataUnreliableAsync(byte[] data) =>
             await SendUnreliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
 
-        private async Task SendUnreliableCommand(object command) =>
+        private async UniTask SendUnreliableCommand(object command) =>
             await UnreliableClient.SendAsync(_serializer.Serialize(command));
 
         private void OnUnreliableMessageDataReceived(byte[] data)

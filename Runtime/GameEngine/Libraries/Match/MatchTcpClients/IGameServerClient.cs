@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
 
@@ -23,12 +23,12 @@ namespace MatchTcpClients
         event Action<InGameDataMessage> InGameDataReliableReceived;
         event Action<InGameDataMessage> InGameDataUnreliableReceived;
 
-        Task<bool> ConnectAsync(CancellationToken ct = default);
+        UniTask<bool> ConnectAsync(CancellationToken ct = default);
         void Disconnect();
-        Task AuthenticateMatchUserSecretAsync(string userSecret);
-        Task AuthenticateAsSpectatorAsync();
-        Task JoinMatchAsync();
-        Task SendInGameDataReliableAsync(byte[] data);
-        Task SendInGameDataUnreliableAsync(byte[] data);
+        UniTask AuthenticateMatchUserSecretAsync(string userSecret);
+        UniTask AuthenticateAsSpectatorAsync();
+        UniTask JoinMatchAsync();
+        UniTask SendInGameDataReliableAsync(byte[] data);
+        UniTask SendInGameDataUnreliableAsync(byte[] data);
     }
 }

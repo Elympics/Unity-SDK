@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Core;
 
 namespace Elympics
@@ -43,6 +44,8 @@ namespace Elympics
 
         #region Client
 
+        UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct = default);
+        UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct = default);
         IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback = null, CancellationToken ct = default);
         IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback = null, CancellationToken ct = default);
         void Disconnect();

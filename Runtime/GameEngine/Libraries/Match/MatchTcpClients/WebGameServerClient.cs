@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Communication.Models;
@@ -105,7 +104,7 @@ namespace MatchTcpClients
             logger.Error($"Reliable Channel error: {error}");
         }
 
-        protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
+        protected override async UniTask<bool> ConnectInternalAsync(CancellationToken ct = default)
         {
             if (_webRtcClient is null)
                 throw new InvalidOperationException("WebRTC client not initialized");
@@ -223,17 +222,17 @@ namespace MatchTcpClients
                 _candidates.Add(newCandidate);
         }
 
-        protected override Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
+        protected override UniTask<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
             if (_webRtcClient is null)
                 throw new InvalidOperationException("WebRTC client not initialized");
             if (_answer is null)
                 throw new InvalidOperationException("WebRTC answer not set");
             _webRtcClient.OnAnswer(_answer);
-            return Task.FromResult(true);
+            return UniTask.FromResult(true);
         }
 
-        private async Task<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
+        private async UniTask<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
         {
             var logger = _logger.WithMethodName();
 
@@ -256,7 +255,7 @@ namespace MatchTcpClients
                 if (result?.Code == 499)
                 {
                     logger.Warning($"WebRTC answer error: {result.Text}");
-                    await TaskUtil.Delay(Config.OfferRetryDelay, ct).CatchOperationCanceledException();
+                    try { await UniTask.Delay(Config.OfferRetryDelay, DelayType.Realtime, cancellationToken: ct); } catch (OperationCanceledException) { }
                 }
                 else
                     return result;

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
@@ -71,7 +71,7 @@ namespace Elympics
 
         public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
 
-        public async Task SendBufferInput(long tick)
+        public async UniTask SendBufferInput(long tick)
         {
             if (_input.Count() > 0)
             {
@@ -80,13 +80,13 @@ namespace Elympics
             }
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+        public async UniTask SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             await SendDataToServer(rpcMessageList, reliable);
 
-        private async Task SendDataToServer(IToServer data, bool reliable)
+        private async UniTask SendDataToServer(IToServer data, bool reliable)
         {
             var dataSerialized = MessagePackSerializer.Serialize(data);
-            Func<byte[], Task> sendDataAsync = reliable ? _gameServerClient.SendInGameDataReliableAsync : _gameServerClient.SendInGameDataUnreliableAsync;
+            Func<byte[], UniTask> sendDataAsync = reliable ? _gameServerClient.SendInGameDataReliableAsync : _gameServerClient.SendInGameDataUnreliableAsync;
             await sendDataAsync(dataSerialized);
         }
         public void Dispose() => _input?.Dispose();

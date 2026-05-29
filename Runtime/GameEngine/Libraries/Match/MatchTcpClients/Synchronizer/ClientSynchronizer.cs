@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.ElympicsSystems.Internal;
 using MatchTcpLibrary.Ntp;
@@ -34,14 +34,9 @@ namespace MatchTcpClients.Synchronizer
             _config = config;
         }
 
-        public async Task StartContinuousSynchronizingAsync(CancellationToken ct)
+        public async UniTask StartContinuousSynchronizingAsync(CancellationToken ct)
         {
-            _ = Task.Run(async () =>
-                {
-                    await TaskUtil.Delay(_config.UnreliablePingTimeoutInMilliseconds, ct);
-                    _waitingForFirstUnreliablePing = false;
-                },
-                ct);
+            ClearUnreliablePingFlagAfterTimeout(ct).Forget();
             var logger = _logger.WithMethodName();
             logger.Log("Starting client synchronization...");
             var stopwatch = new Stopwatch();
@@ -63,39 +58,48 @@ namespace MatchTcpClients.Synchronizer
                     stopwatch.Reset();
 
                     if (timeToWait > TimeSpan.Zero)
-                        await TaskUtil.Delay(timeToWait, ct).CatchOperationCanceledException();
+                    {
+                        try
+                        {
+                            await UniTask.Delay(timeToWait, DelayType.Realtime, cancellationToken: ct);
+                        }
+                        catch (OperationCanceledException) { }
+                    }
                 }
             }
             logger.Log("Ending client synchronization.");
         }
 
-        public async Task<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
+        private async UniTaskVoid ClearUnreliablePingFlagAfterTimeout(CancellationToken ct)
+        {
+            try
+            {
+                await UniTask.Delay(_config.UnreliablePingTimeoutInMilliseconds, DelayType.Realtime, cancellationToken: ct);
+                _waitingForFirstUnreliablePing = false;
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        public async UniTask<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
         {
             if (_pingResponseCallback != null)
                 throw new InvalidOperationException("Cannot synchronize when there is other synchronization running");
 
-            var pingCompletionSource = new TaskCompletionSource<PingClientResponseMessage>();
+            var pingCompletionSource = new UniTaskCompletionSource<PingClientResponseMessage>();
             _pingResponseCallback = response => pingCompletionSource?.TrySetResult(response);
 
             SendSynchronizeRequest();
 
             var pingCompletionTask = pingCompletionSource.Task;
-            var timeoutTask = TaskUtil.Delay(_config.TimeoutTime, ct).CatchOperationCanceledException();
+            var timeoutTask = UniTask.Delay(_config.TimeoutTime, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
 
-            var firstFinishedTask = await Task.WhenAny(pingCompletionTask, timeoutTask);
+            var (winIndex, pingResult, _) = await UniTask.WhenAny(pingCompletionTask, timeoutTask);
             _pingResponseCallback = null;
             pingCompletionSource = null;
 
-            if (ct.IsCancellationRequested)
+            if (ct.IsCancellationRequested || winIndex != 0)
                 return null;
 
-            if (firstFinishedTask == timeoutTask)
-                return null;
-
-            var pingResult = await pingCompletionTask;
-
-            if (ct.IsCancellationRequested)
-                return null;
             return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
         }
 

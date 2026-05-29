@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
@@ -80,24 +80,24 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             IsConnected = _udpClient?.Client.Connected ?? false;
         }
 
-        public Task<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint)
         {
             try
             {
                 if (CheckIfConnectingAndSet())
-                    return Task.FromResult(false);
+                    return UniTask.FromResult(false);
 
                 if (NotCreated())
                     throw ElympicsLogger.LogException(new NullReferenceException("CreateAndBind has not been called before connecting."));
                 else if (IsDisconnected() || IsConnectedToOther(remoteEndPoint))
                     RecreateSocket();
                 else if (IsConnectedTo(remoteEndPoint))
-                    return Task.FromResult(true);
+                    return UniTask.FromResult(true);
 
                 _udpClient.Connect(remoteEndPoint);
                 IsConnected = true;
 
-                return Task.FromResult(IsConnected);
+                return UniTask.FromResult(IsConnected);
             }
             finally
             {
@@ -153,14 +153,14 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             DataReceivedWithSource?.Invoke(data, sourceEndPoint);
         }
 
-        public async Task<bool> SendAsync(byte[] payload)
+        public async UniTask<bool> SendAsync(byte[] payload)
         {
             if (!IsConnected)
                 return false;
 
             try
             {
-                _ = await _udpClient.SendAsync(payload, payload.Length);
+                _ = await _udpClient.SendAsync(payload, payload.Length).AsUniTask();
             }
             catch (Exception e)
             {
@@ -171,14 +171,14 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             return true;
         }
 
-        public async Task<bool> SendToAsync(byte[] payload, IPEndPoint destination)
+        public async UniTask<bool> SendToAsync(byte[] payload, IPEndPoint destination)
         {
             if (IsConnected)
                 return false;
 
             try
             {
-                _ = await _udpClient.Client.SendToAsync(new ArraySegment<byte>(payload, 0, payload.Length), SocketFlags.None, destination);
+                _ = await _udpClient.Client.SendToAsync(new ArraySegment<byte>(payload, 0, payload.Length), SocketFlags.None, destination).AsUniTask();
             }
             catch (Exception e)
             {

@@ -1,13 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using MessagePack;
 using UnityConnectors.HalfRemote;
 using UnityConnectors.HalfRemote.Ntp;
-using UnityEngine;
 using Random = System.Random;
 
 namespace Elympics
@@ -26,7 +24,6 @@ namespace Elympics
         private readonly ElympicsInput[] _inputsBuffer;
         private readonly List<ElympicsInput> _inputsToSend;
 
-        private readonly WaitForSeconds _synchronizationDelay;
         private readonly HalfRemoteLagConfig _lagConfig;
         private readonly Random _lagRandom;
 
@@ -44,7 +41,7 @@ namespace Elympics
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
         }
 
-        internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
+        internal void ConnectToServer(string userId, HalfRemoteMatchClient client)
         {
             _userId = userId;
 
@@ -67,10 +64,9 @@ namespace Elympics
             _client.MatchEnded += OnMatchEnded;
 
             ElympicsLogger.Log("Connected to a half remote server.");
-            connectedCallback?.Invoke(true);
-
-            return Synchronization();
         }
+
+        internal void StartSynchronization(CancellationToken ct = default) => SynchronizationAsync(ct).Forget();
 
         private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
 
@@ -88,7 +84,7 @@ namespace Elympics
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
         public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
-        public async Task SendBufferInput(long tick)
+        public async UniTask SendBufferInput(long tick)
         {
             if (_input.Count() > 0)
             {
@@ -108,10 +104,10 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+        public async UniTask SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
-        public async Task SendRawDataToServer(byte[] rawData, bool reliable)
+        public async UniTask SendRawDataToServer(byte[] rawData, bool reliable)
         {
             Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;
 
@@ -180,13 +176,17 @@ namespace Elympics
             return mean + stdDev * randStdNormal;
         }
 
-        private IEnumerator Synchronization()
+        private async UniTaskVoid SynchronizationAsync(CancellationToken ct)
         {
-            while (NotDisconnected())
+            try
             {
-                _client.SendNtp();
-                yield return _synchronizationDelay;
+                while (NotDisconnected())
+                {
+                    _client.SendNtp();
+                    await UniTask.Yield(ct);
+                }
             }
+            catch (OperationCanceledException) { }
         }
 
         private void OnNtpReceived(NtpData ntpData)

@@ -1,5 +1,5 @@
 using System;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 
 namespace Elympics
@@ -11,8 +11,8 @@ namespace Elympics
         event Action<ElympicsRpcMessageList> RpcMessageListReceived;
 
         void AddInputToSendBuffer(ElympicsInput input);
-        Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable);
-        Task SendBufferInput(long tick);
+        UniTask SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable);
+        UniTask SendBufferInput(long tick);
         void SetLastReceivedSnapshot(long tick);
     }
 }

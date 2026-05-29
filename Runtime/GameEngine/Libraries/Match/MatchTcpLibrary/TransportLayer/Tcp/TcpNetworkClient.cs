@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
@@ -65,15 +65,9 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 SetupUnderlyingTcpClient();
         }
 
-        public void CreateAndBind()
-        {
-            CreateAndBind(_anyEndPoint);
-        }
+        public void CreateAndBind() => CreateAndBind(_anyEndPoint);
 
-        public void CreateAndBind(int port)
-        {
-            CreateAndBind(new IPEndPoint(IPAddress.Any, port));
-        }
+        public void CreateAndBind(int port) => CreateAndBind(new IPEndPoint(IPAddress.Any, port));
 
         public void CreateAndBind(IPEndPoint localEndPoint)
         {
@@ -123,12 +117,9 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             Disconnect();
         }
 
-        private void StartReceiving()
-        {
-            _ = Task.Run(_tcpReceiver.StartReceiving);
-        }
+        private void StartReceiving() => _tcpReceiver.StartReceiving().AsUniTask().Forget();
 
-        public async Task<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public async UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint)
         {
             try
             {
@@ -170,22 +161,13 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 _connecting = false;
         }
 
-        private bool IsDisconnected()
-        {
-            return _tcpClient == null && _previousLocalEndPoint != null;
-        }
+        private bool IsDisconnected() => _tcpClient == null && _previousLocalEndPoint != null;
 
-        private bool NotCreated()
-        {
-            return _tcpClient == null && _previousLocalEndPoint == null;
-        }
+        private bool NotCreated() => _tcpClient == null && _previousLocalEndPoint == null;
 
-        private void RecreateSocket()
-        {
-            CreateAndBind(_previousLocalEndPoint);
-        }
+        private void RecreateSocket() => CreateAndBind(_previousLocalEndPoint);
 
-        private async Task TryConnectAsync(IPEndPoint endpoint)
+        private async UniTask TryConnectAsync(IPEndPoint endpoint)
         {
             _connectingTokenSource = new CancellationTokenSource();
             for (var i = 0; i < _tcpProtocolConfig.MaxConnectionAttempts; i++)
@@ -215,18 +197,18 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
                 ElympicsLogger.Log($"Connection attempt no. {i} failed on {endpoint}, reason {result}, retrying...");
 
-                await TaskUtil.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
-                    _connectingTokenSource.Token);
+                await UniTask.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
+                    DelayType.Realtime, cancellationToken: _connectingTokenSource.Token);
             }
 
             IsConnected = _tcpClient.Connected;
         }
 
-        private async Task<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationTokenSource cts)
+        private async UniTask<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationTokenSource cts)
         {
             try
             {
-                await _tcpClient.ConnectAsync(endPoint.Address, endPoint.Port)
+                await _tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).AsUniTask()
                     .WithTimeout(TimeSpan.FromMilliseconds(_tcpProtocolConfig.ConnectTimeoutMs), cts);
                 return ConnectResult.Connected;
             }
@@ -250,7 +232,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             OtherException
         }
 
-        public async Task<bool> SendAsync(byte[] dataToSend)
+        public async UniTask<bool> SendAsync(byte[] dataToSend)
         {
             if (!IsConnected)
                 return false;
@@ -258,7 +240,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             var bytes = _messageEncoder.EncodePayload(dataToSend);
             try
             {
-                await _tcpClient.GetStream().WriteAsync(bytes, 0, bytes.Length);
+                await _tcpClient.GetStream().WriteAsync(bytes, 0, bytes.Length).AsUniTask();
                 return true;
             }
             catch

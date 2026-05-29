@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -31,7 +31,7 @@ namespace MatchTcpClients
             UnreliableClient = CreateUdpNetworkClient();
         }
 
-        protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
+        protected override async UniTask<bool> ConnectInternalAsync(CancellationToken ct = default)
         {
             ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
             if (!await TryConnectSessionAsync(ct))
@@ -48,7 +48,7 @@ namespace MatchTcpClients
             return false;
         }
 
-        protected override async Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
+        protected override async UniTask<bool> TryInitializeSessionAsync(CancellationToken ct = default)
         {
             try
             {

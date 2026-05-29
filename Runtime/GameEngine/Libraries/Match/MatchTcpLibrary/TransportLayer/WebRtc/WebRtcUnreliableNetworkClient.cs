@@ -1,6 +1,6 @@
 using System;
 using System.Net;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using WebRtcWrapper;
@@ -43,13 +43,13 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public void CreateAndBind(int port) => throw new NotImplementedException();
         public void CreateAndBind(IPEndPoint localEndPoint) => throw new NotImplementedException();
-        public Task<bool> ConnectAsync(IPEndPoint remoteEndPoint) => throw new NotImplementedException();
+        public UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint) => throw new NotImplementedException();
 
-        public Task<bool> SendAsync(byte[] payload)
+        public UniTask<bool> SendAsync(byte[] payload)
         {
             if (IsConnected)
                 _webRtcClient.SendUnreliable(payload);
-            return Task.FromResult(IsConnected);
+            return UniTask.FromResult(IsConnected);
         }
 
         public void Disconnect()
@@ -59,7 +59,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
-        public Task<bool> SendToAsync(byte[] payload, IPEndPoint destination) => throw new NotImplementedException();
+        public UniTask<bool> SendToAsync(byte[] payload, IPEndPoint destination) => throw new NotImplementedException();
         public void Dispose()
         {
             _webRtcClient.UnreliableReceivingEnded -= OnWebRtcClientOnUnreliableReceivingEnded;

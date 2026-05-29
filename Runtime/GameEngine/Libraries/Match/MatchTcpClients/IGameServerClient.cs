@@ -23,7 +23,7 @@ namespace MatchTcpClients
         event Action<InGameDataMessage> InGameDataReliableReceived;
         event Action<InGameDataMessage> InGameDataUnreliableReceived;
 
-        UniTask<bool> ConnectAsync(CancellationToken ct = default);
+        UniTask ConnectAsync(CancellationToken ct = default);
         void Disconnect();
         UniTask AuthenticateMatchUserSecretAsync(string userSecret);
         UniTask AuthenticateAsSpectatorAsync();

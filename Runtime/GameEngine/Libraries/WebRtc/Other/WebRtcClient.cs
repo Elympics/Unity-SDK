@@ -10,6 +10,9 @@ using WebRtcWrapper;
 
 #nullable enable
 
+// The goal here is to have two interchangeable types with the same full name.
+// Using Platforms and Define Constraints in .asmdef, they are used in alternation.
+// ReSharper disable once CheckNamespace
 namespace Elympics.GameEngine.Libraries.WebRtc
 {
     internal class WebRtcClient : IWebRtcClient
@@ -39,7 +42,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public event Action<string>? IceConnectionStateChanged;
         public event Action<string>? ConnectionStateChanged;
 
-        public event Action<string>? OfferCreated;
         public event Action<string>? IceCandidateCreated;
         public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)>? CandidatePairChosen;
 
@@ -194,17 +196,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _peerConnection.Dispose();
         }
 
-        #region Unused
-
-        public void ReceiveWithThread()
-        { }
-
-        public bool ReceiveReliableOnce() => true;
-        public bool ReceiveUnreliableOnce() => true;
-
-        #endregion
-
-        private async UniTask CreateOfferAsync(bool restart)
+        public async UniTask<string> CreateOffer(bool restart)
         {
             var logger = _logger.WithMethodName();
             var options = new RTCOfferAnswerOptions { iceRestart = restart };
@@ -228,36 +220,24 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             var offerJson = JsonUtility.ToJson((SessionDescription)updatedOffer);
             logger.Log("[WebRTC] Offer created\n" + offerJson);
-            OfferCreated?.Invoke(offerJson);
+
+            return offerJson;
         }
 
-        public async void CreateOffer(bool restart)
-        {
-            var logger = _logger.WithMethodName();
-            // TODO: handle async ~dsygocki 2026-04-10
-            try
-            {
-                await CreateOfferAsync(restart);
-            }
-            catch (Exception e)
-            {
-                logger.Exception(e);
-            }
-        }
-
-        public void OnAnswer(string answerJson)
+        public async UniTask OnAnswer(string answerJson)
         {
             var logger = _logger.WithMethodName();
             logger.Log("[WebRTC] Answer received\n" + answerJson);
             var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
             var answer = (RTCSessionDescription)answerCustom;
-            _ = _peerConnection.SetRemoteDescription(ref answer); // TODO: handle async ~dsygocki 2026-04-10
+            var asyncOp = _peerConnection.SetRemoteDescription(ref answer);
+            await asyncOp;
             _candidatePairCts?.Cancel();
             _candidatePairCts = new CancellationTokenSource();
             WaitForCandidatePair(_candidatePairCts.Token).Forget();
         }
 
-        private async UniTask WaitForCandidatePair(CancellationToken ct = default)
+        private async UniTaskVoid WaitForCandidatePair(CancellationToken ct = default)
         {
             while (!ct.IsCancellationRequested)
             {

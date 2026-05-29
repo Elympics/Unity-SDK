@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -51,15 +52,9 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
         }
 
-        public void CreateAndBind()
-        {
-            CreateAndBind(_anyEndPoint);
-        }
+        public void CreateAndBind() => CreateAndBind(_anyEndPoint);
 
-        public void CreateAndBind(int port)
-        {
-            CreateAndBind(new IPEndPoint(IPAddress.Any, port));
-        }
+        public void CreateAndBind(int port) => CreateAndBind(new IPEndPoint(IPAddress.Any, port));
 
         public void CreateAndBind(IPEndPoint localEndPoint)
         {
@@ -80,24 +75,24 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             IsConnected = _udpClient?.Client.Connected ?? false;
         }
 
-        public UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default)
         {
             try
             {
                 if (CheckIfConnectingAndSet())
-                    return UniTask.FromResult(false);
+                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new NullReferenceException("CreateAndBind has not been called before connecting."));
+                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else if (IsDisconnected() || IsConnectedToOther(remoteEndPoint))
                     RecreateSocket();
                 else if (IsConnectedTo(remoteEndPoint))
-                    return UniTask.FromResult(true);
+                    return UniTask.CompletedTask;
 
                 _udpClient.Connect(remoteEndPoint);
                 IsConnected = true;
 
-                return UniTask.FromResult(IsConnected);
+                return UniTask.CompletedTask;
             }
             finally
             {
@@ -122,30 +117,15 @@ namespace MatchTcpLibrary.TransportLayer.Udp
                 _connecting = false;
         }
 
-        private bool NotCreated()
-        {
-            return _udpClient == null && _previousLocalEndPoint == null;
-        }
+        private bool NotCreated() => _udpClient == null && _previousLocalEndPoint == null;
 
-        private bool IsDisconnected()
-        {
-            return _udpClient == null && _previousLocalEndPoint != null;
-        }
+        private bool IsDisconnected() => _udpClient == null && _previousLocalEndPoint != null;
 
-        private bool IsConnectedTo(IPEndPoint remoteEndPoint)
-        {
-            return IsConnected && remoteEndPoint.Equals(RemoteEndpoint);
-        }
+        private bool IsConnectedTo(IPEndPoint remoteEndPoint) => IsConnected && remoteEndPoint.Equals(RemoteEndpoint);
 
-        private bool IsConnectedToOther(IPEndPoint remoteEndPoint)
-        {
-            return IsConnected && !remoteEndPoint.Equals(RemoteEndpoint);
-        }
+        private bool IsConnectedToOther(IPEndPoint remoteEndPoint) => IsConnected && !remoteEndPoint.Equals(RemoteEndpoint);
 
-        private void RecreateSocket()
-        {
-            CreateAndBind(_previousLocalEndPoint);
-        }
+        private void RecreateSocket() => CreateAndBind(_previousLocalEndPoint);
 
         private void OnDataReceived(byte[] data, IPEndPoint sourceEndPoint, DateTime _)
         {
@@ -153,10 +133,10 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             DataReceivedWithSource?.Invoke(data, sourceEndPoint);
         }
 
-        public async UniTask<bool> SendAsync(byte[] payload)
+        public async UniTask SendAsync(byte[] payload)
         {
             if (!IsConnected)
-                return false;
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
 
             try
             {
@@ -165,16 +145,14 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             catch (Exception e)
             {
                 _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
-                return false;
+                throw;
             }
-
-            return true;
         }
 
-        public async UniTask<bool> SendToAsync(byte[] payload, IPEndPoint destination)
+        public async UniTask SendToAsync(byte[] payload, IPEndPoint destination)
         {
             if (IsConnected)
-                return false;
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
 
             try
             {
@@ -183,10 +161,8 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             catch (Exception e)
             {
                 _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
-                return false;
+                throw;
             }
-
-            return true;
         }
 
         public void Disconnect()

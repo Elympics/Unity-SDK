@@ -22,7 +22,6 @@ namespace Elympics
         public event Action<string> AuthenticatedAsSpectatorWithError;
 
         public event Action<string> MatchJoinedWithError;
-        public event Action<Guid> MatchJoinedWithMatchId;
         public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
 
         public event Action<Guid> MatchEndedWithMatchId;
@@ -149,14 +148,13 @@ namespace Elympics
 
             try
             {
-                var connected = await _gameServerClient.ConnectAsync(ct);
-                if (!connected)
-                {
-                    ConnectingFailed?.Invoke();
-                    throw new ElympicsException("Failed to connect to game server");
-                }
-
+                await _gameServerClient.ConnectAsync(ct);
                 await _connectAndJoinTcs.Task.AttachExternalCancellation(ct);
+            }
+            catch
+            {
+                ConnectingFailed?.Invoke();
+                throw;
             }
             finally
             {

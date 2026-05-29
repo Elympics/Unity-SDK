@@ -104,7 +104,7 @@ namespace MatchTcpClients
             logger.Error($"Reliable Channel error: {error}");
         }
 
-        protected override async UniTask<bool> ConnectInternalAsync(CancellationToken ct = default)
+        protected override async UniTask ConnectInternalAsync(CancellationToken ct = default)
         {
             if (_webRtcClient is null)
                 throw new InvalidOperationException("WebRTC client not initialized");
@@ -125,61 +125,59 @@ namespace MatchTcpClients
                 }
             }
 
-            _webRtcClient.ReceiveWithThread();
             _answer = null;
             try
             {
                 for (var i = 0; i < Config.SessionConnectRetries; i++)
-                {
-                    if (i > 0)
+                    try
                     {
-                        Initialize();
-                        if (_iceServersJson != null)
-                            _webRtcClient!.SetIceServers(_iceServersJson);
+                        if (i > 0)
+                        {
+                            Initialize();
+                            if (_iceServersJson != null)
+                                _webRtcClient!.SetIceServers(_iceServersJson);
+                        }
+
+                        SubscribeToWebConnectionStatus();
+                        _stateCancellationTokenSource = new CancellationTokenSource();
+                        _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
+
+                        logger.Log($"Establish the connection attempt #{i + 1}");
+                        string offer;
+                        try
+                        {
+                            offer = await _webRtcClient.CreateOffer(false).WithTimeout(Config.OfferTimeout, ct);
+                        }
+                        catch (TimeoutException)
+                        {
+                            continue;
+                        }
+
+                        if (string.IsNullOrEmpty(offer))
+                            throw ElympicsLogger.LogException("Created WebRTC offer is null or empty.");
+
+                        var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
+                        if (response == null || response.IsError || string.IsNullOrEmpty(response.Text))
+                            throw ElympicsLogger.LogException($"No valid WebRTC answer has been received. Error: {response?.Text}");
+
+                        var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
+
+                        _answer = deserialized.answer;
+                        logger.Log($"Answer:{Environment.NewLine}{_answer}");
+                        await ConnectSessionAsync(_linkedCts.Token);
+
+                        _candidates.Clear();
+                        _stateCancellationTokenSource.Dispose();
+                        _stateCancellationTokenSource = null;
+                        _linkedCts.Dispose();
+                        _linkedCts = null;
+                        break;
                     }
-
-                    SubscribeToWebConnectionStatus();
-                    _stateCancellationTokenSource = new CancellationTokenSource();
-                    _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
-
-                    logger.Log($"Establish the connection attempt #{i + 1}");
-                    var (offer, offerSet) = await TryCreateOfferAsync(false);
-                    if (!offerSet)
-                        logger.Error("Error creating WebRTC offer.");
-                    if (string.IsNullOrEmpty(offer))
-                        logger.Error("Created WebRTC offer is null or empty.");
-                    if (!offerSet || string.IsNullOrEmpty(offer))
+                    catch
                     {
+                        logger.Error("Failed to establish WebRtc connection.");
                         Disconnect();
-                        return false;
                     }
-
-                    var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
-                    if (response == null || response.IsError || string.IsNullOrEmpty(response.Text))
-                    {
-                        logger.Error($"No valid WebRTC answer has been received. Error: {response?.Text}");
-                        Disconnect();
-                        return false;
-                    }
-
-                    var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
-
-                    _answer = deserialized.answer;
-                    logger.Log($"Answer:{Environment.NewLine}{_answer}");
-                    var connected = await TryConnectSessionAsync(_linkedCts.Token);
-
-                    _candidates.Clear();
-                    _stateCancellationTokenSource.Dispose();
-                    _stateCancellationTokenSource = null;
-                    _linkedCts.Dispose();
-                    _linkedCts = null;
-                    if (connected)
-                        return true;
-                    else
-                        logger.Warning("Could not establish the connection.");
-                }
-
-                logger.Error("Failed to establish WebRtc connection.");
             }
             catch
             {
@@ -193,8 +191,6 @@ namespace MatchTcpClients
                 _linkedCts?.Dispose();
                 _linkedCts = null;
             }
-
-            return false;
         }
 
         private void OnConnectionStateChanged(string newState)
@@ -222,14 +218,13 @@ namespace MatchTcpClients
                 _candidates.Add(newCandidate);
         }
 
-        protected override UniTask<bool> TryInitializeSessionAsync(CancellationToken ct = default)
+        protected override async UniTask InitializeSessionAsync(CancellationToken ct = default)
         {
             if (_webRtcClient is null)
                 throw new InvalidOperationException("WebRTC client not initialized");
             if (_answer is null)
                 throw new InvalidOperationException("WebRTC answer not set");
-            _webRtcClient.OnAnswer(_answer);
-            return UniTask.FromResult(true);
+            await _webRtcClient.OnAnswer(_answer);
         }
 
         private async UniTask<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
@@ -261,30 +256,6 @@ namespace MatchTcpClients
                     return result;
             }
             return null;
-        }
-
-        private async UniTask<(string offer, bool offerSet)> TryCreateOfferAsync(bool restart)
-        {
-            if (_webRtcClient is null)
-                throw new InvalidOperationException("WebRTC client not initialized");
-
-            string? offer = null;
-            var offerSet = false;
-            var cts = new CancellationTokenSource();
-
-            void OnOfferCreated(string s)
-            {
-                _webRtcClient.OfferCreated -= OnOfferCreated;
-                offer = s;
-                offerSet = true;
-                cts.Cancel();
-            }
-
-            _webRtcClient.OfferCreated += OnOfferCreated;
-            _webRtcClient.CreateOffer(restart);
-            _ = await UniTask.Delay(Config.OfferTimeout, DelayType.Realtime, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow();
-            _webRtcClient.OfferCreated -= OnOfferCreated;
-            return (offer!, offerSet);
         }
 
         protected override void InitializeNetworkClients()

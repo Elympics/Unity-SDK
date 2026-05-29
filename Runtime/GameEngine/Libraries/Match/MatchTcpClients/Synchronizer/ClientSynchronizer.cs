@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.ElympicsSystems.Internal;
+using MatchTcpLibrary;
 using MatchTcpLibrary.Ntp;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
@@ -43,41 +44,36 @@ namespace MatchTcpClients.Synchronizer
             while (!ct.IsCancellationRequested)
             {
                 stopwatch.Start();
-                var synchronizationData = await SynchronizeOnce(ct);
+                TimeSynchronizationData synchronizationData;
+                try
+                {
+                    synchronizationData = await SynchronizeOnce(ct);
+                }
+                catch (TimeoutException)
+                {
+                    TimedOut?.Invoke();
+                    continue;
+                }
                 stopwatch.Stop();
                 if (ct.IsCancellationRequested)
                     break;
 
-                if (synchronizationData == null)
-                    TimedOut?.Invoke();
-                else
-                {
-                    Synchronized?.Invoke(synchronizationData);
+                Synchronized?.Invoke(synchronizationData);
 
-                    var timeToWait = _config.ContinuousSynchronizationMinimumInterval - stopwatch.Elapsed;
-                    stopwatch.Reset();
+                var timeToWait = _config.ContinuousSynchronizationMinimumInterval - stopwatch.Elapsed;
+                stopwatch.Reset();
 
-                    if (timeToWait > TimeSpan.Zero)
-                    {
-                        try
-                        {
-                            await UniTask.Delay(timeToWait, DelayType.Realtime, cancellationToken: ct);
-                        }
-                        catch (OperationCanceledException) { }
-                    }
-                }
+                if (timeToWait > TimeSpan.Zero)
+                    _ = await UniTask.Delay(timeToWait, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }
             logger.Log("Ending client synchronization.");
         }
 
         private async UniTaskVoid ClearUnreliablePingFlagAfterTimeout(CancellationToken ct)
         {
-            try
-            {
-                await UniTask.Delay(_config.UnreliablePingTimeoutInMilliseconds, DelayType.Realtime, cancellationToken: ct);
-                _waitingForFirstUnreliablePing = false;
-            }
-            catch (OperationCanceledException) { }
+            if (await UniTask.Delay(_config.UnreliablePingTimeoutInMilliseconds, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow())
+                return;
+            _waitingForFirstUnreliablePing = false;
         }
 
         public async UniTask<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
@@ -86,19 +82,12 @@ namespace MatchTcpClients.Synchronizer
                 throw new InvalidOperationException("Cannot synchronize when there is other synchronization running");
 
             var pingCompletionSource = new UniTaskCompletionSource<PingClientResponseMessage>();
-            _pingResponseCallback = response => pingCompletionSource?.TrySetResult(response);
+            _pingResponseCallback = response => pingCompletionSource.TrySetResult(response);
 
             SendSynchronizeRequest();
 
-            var pingCompletionTask = pingCompletionSource.Task;
-            var timeoutTask = UniTask.Delay(_config.TimeoutTime, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
-
-            var (winIndex, pingResult, _) = await UniTask.WhenAny(pingCompletionTask, timeoutTask);
+            var pingResult = await pingCompletionSource.Task.WithTimeout(_config.TimeoutTime, ct);
             _pingResponseCallback = null;
-            pingCompletionSource = null;
-
-            if (ct.IsCancellationRequested || winIndex != 0)
-                return null;
 
             return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
         }
@@ -131,10 +120,7 @@ namespace MatchTcpClients.Synchronizer
             return timeSynchronizationData;
         }
 
-        public void ReliablePingReceived(PingClientResponseMessage message)
-        {
-            _pingResponseCallback?.Invoke(message);
-        }
+        public void ReliablePingReceived(PingClientResponseMessage message) => _pingResponseCallback?.Invoke(message);
 
         public void UnreliablePingReceived(PingClientResponseMessage message)
         {

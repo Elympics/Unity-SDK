@@ -55,9 +55,7 @@ namespace UnityConnectors.HalfRemote
             : this(userId,
                 new ProtoNetworkDatagramClient(webRtcClient.AsReliableDatagramCommunication()),
                 new ProtoNetworkDatagramClient(webRtcClient.AsUnreliableDatagramCommunication()))
-        {
-            webRtcClient.ReceiveWithThread();
-        }
+        { }
 
         public void PlayerConnected() => _reliableClient.Send(new PlayerConnectedMsg { UserId = _userId });
         public void PlayerDisconnected() => _reliableClient.Send(new PlayerDisconnectedMsg { UserId = _userId });

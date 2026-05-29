@@ -119,24 +119,24 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
         private void StartReceiving() => _tcpReceiver.StartReceiving().AsUniTask().Forget();
 
-        public async UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public async UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default)
         {
             try
             {
                 if (CheckIfConnectingAndSet())
-                    return false;
+                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new NullReferenceException($"{nameof(CreateAndBind)} has not been called before connecting"));
+                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else if (IsDisconnected() || IsConnected)
                     RecreateSocket();
 
-                await TryConnectAsync(remoteEndPoint);
+                await TryConnectAsync(remoteEndPoint, ct);
 
-                if (IsConnected)
-                    StartReceiving();
+                if (!IsConnected)
+                    throw ElympicsLogger.LogException(new ElympicsException("Could not connect"));
 
-                return IsConnected;
+                StartReceiving();
             }
             finally
             {
@@ -167,12 +167,12 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
         private void RecreateSocket() => CreateAndBind(_previousLocalEndPoint);
 
-        private async UniTask TryConnectAsync(IPEndPoint endpoint)
+        private async UniTask TryConnectAsync(IPEndPoint endpoint, CancellationToken ct = default)
         {
-            _connectingTokenSource = new CancellationTokenSource();
+            _connectingTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
             for (var i = 0; i < _tcpProtocolConfig.MaxConnectionAttempts; i++)
             {
-                var result = await ConnectSingleAsync(endpoint, _connectingTokenSource);
+                var result = await ConnectSingleAsync(endpoint, _connectingTokenSource.Token);
                 switch (result)
                 {
                     case ConnectResult.Connected:
@@ -204,17 +204,17 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             IsConnected = _tcpClient.Connected;
         }
 
-        private async UniTask<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationTokenSource cts)
+        private async UniTask<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationToken ct = default)
         {
             try
             {
                 await _tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).AsUniTask()
-                    .WithTimeout(TimeSpan.FromMilliseconds(_tcpProtocolConfig.ConnectTimeoutMs), cts);
+                    .WithTimeout(TimeSpan.FromMilliseconds(_tcpProtocolConfig.ConnectTimeoutMs), ct);
                 return ConnectResult.Connected;
             }
             catch (TimeoutException)
             {
-                // It sometimes happens (from time to time), fix when microsoft adds cts handling in ConnectAsync ~pprzestrzelski 20.01.2020
+                // It sometimes happens (from time to time), fix when Microsoft adds cts handling in ConnectAsync ~pprzestrzelski 20.01.2020
                 return _tcpClient.Connected ? ConnectResult.TimedOutButConnectedError : ConnectResult.TimedOut;
             }
             catch (Exception e)
@@ -232,24 +232,22 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             OtherException
         }
 
-        public async UniTask<bool> SendAsync(byte[] dataToSend)
+        public async UniTask SendAsync(byte[] dataToSend)
         {
             if (!IsConnected)
-                return false;
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
 
             var bytes = _messageEncoder.EncodePayload(dataToSend);
             try
             {
                 await _tcpClient.GetStream().WriteAsync(bytes, 0, bytes.Length).AsUniTask();
-                return true;
             }
             catch
             {
-                ElympicsLogger.Log($"{GetType().Name} failed to send a message, disconnecting...");
+                ElympicsLogger.LogError($"{GetType().Name} failed to send a message, disconnecting...");
                 Disconnect();
+                throw;
             }
-
-            return false;
         }
 
         public void Disconnect()

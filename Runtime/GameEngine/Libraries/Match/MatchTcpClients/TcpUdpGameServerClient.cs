@@ -18,10 +18,8 @@ namespace MatchTcpClients
         public TcpUdpGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
-            IPEndPoint endpoint) : base(serializer, config)
-        {
+            IPEndPoint endpoint) : base(serializer, config) =>
             _endpoint = endpoint;
-        }
 
         protected override void CreateNetworkClients()
         {
@@ -31,33 +29,33 @@ namespace MatchTcpClients
             UnreliableClient = CreateUdpNetworkClient();
         }
 
-        protected override async UniTask<bool> ConnectInternalAsync(CancellationToken ct = default)
-        {
-            ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
-            if (!await TryConnectSessionAsync(ct))
-            {
-                ElympicsLogger.LogError("Could not establish the reliable connection.");
-                return false;
-            }
-
-            ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
-            if (await UnreliableClient.ConnectAsync(_endpoint))
-                return true;
-
-            Disconnect();
-            return false;
-        }
-
-        protected override async UniTask<bool> TryInitializeSessionAsync(CancellationToken ct = default)
+        protected override async UniTask ConnectInternalAsync(CancellationToken ct = default)
         {
             try
             {
-                return await ReliableClient.ConnectAsync(_endpoint);
+                ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
+                await ConnectSessionAsync(ct);
+
+                ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
+                await UnreliableClient.ConnectAsync(_endpoint, ct);
+            }
+            catch
+            {
+                Disconnect();
+                throw;
+            }
+        }
+
+        protected override async UniTask InitializeSessionAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                await ReliableClient.ConnectAsync(_endpoint, ct);
             }
             catch (SocketException e)
             {
                 _ = ElympicsLogger.LogException("Couldn't connect to the server", e);
-                return false;
+                throw;
             }
         }
 

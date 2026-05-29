@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace MatchTcpLibrary.TransportLayer.Interfaces
@@ -16,8 +17,8 @@ namespace MatchTcpLibrary.TransportLayer.Interfaces
         void CreateAndBind();
         void CreateAndBind(int port);
         void CreateAndBind(IPEndPoint localEndPoint);
-        UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint);
-        UniTask<bool> SendAsync(byte[] payload);
+        UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default);
+        UniTask SendAsync(byte[] payload);
         void Disconnect();
     }
 }

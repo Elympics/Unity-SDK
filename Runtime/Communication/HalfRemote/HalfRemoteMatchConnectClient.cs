@@ -111,14 +111,10 @@ namespace Elympics
                 var tcpClient = new TcpClient();
                 try
                 {
-                    var timeoutTask = UniTask.Delay(ServerReachingTimeout, DelayType.Realtime, cancellationToken: ct);
-                    if (await UniTask.WhenAny(tcpClient.ConnectAsync(_ip, _port).AsUniTask(), timeoutTask) == 0)
-                    {
-                        ElympicsLogger.Log($"TCP client successfully connected to {_ip}:{_port}");
-                        _tcpClient = tcpClient;
-                        return new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(tcpClient.GetStream()));
-                    }
-                    ElympicsLogger.LogError($"TCP client could not connect to {_ip}:{_port}");
+                    await tcpClient.ConnectAsync(_ip, _port).AsUniTask().WithTimeout(ServerReachingTimeout, ct);
+                    ElympicsLogger.Log($"TCP client successfully connected to {_ip}:{_port}");
+                    _tcpClient = tcpClient;
+                    return new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(tcpClient.GetStream()));
                 }
                 catch (OperationCanceledException)
                 {
@@ -127,6 +123,7 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
+                    ElympicsLogger.LogError($"TCP client could not connect to {_ip}:{_port}");
                     _ = ElympicsLogger.LogException(e);
                 }
                 tcpClient.Dispose();
@@ -142,26 +139,10 @@ namespace Elympics
                 OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
             });
 
-            string offer = null;
-            var offerSet = false;
+            var offer = await _webRtcClient.CreateOffer(false).WithTimeout(TimeSpan.FromSeconds(MaxOfferWaitingIntervals), ct);
 
-            void OnOfferCreated(string s)
-            {
-                offer = s;
-                offerSet = true;
-            }
-            _webRtcClient.OfferCreated += OnOfferCreated;
-            _webRtcClient.CreateOffer(false);
-
-            for (var i = 0; i < MaxOfferWaitingIntervals && !offerSet; i++)
-                await UniTask.Delay(TimeSpan.FromSeconds(1), DelayType.Realtime, cancellationToken: ct);
-
-            _webRtcClient.OfferCreated -= OnOfferCreated;
-
-            if (!offerSet)
-                throw new ElympicsException("Offer not received from WebRTC client.");
             if (string.IsNullOrEmpty(offer))
-                throw new ElympicsException("WebRTC offer is null or empty.");
+                throw new ElympicsException("Offer not received from WebRTC client.");
 
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
@@ -175,7 +156,7 @@ namespace Elympics
                     ElympicsLogger.Log("Retrying...\nSending the offer to the signaling server...");
                 }
 
-                WebSignalingClientResponse result = null;
+                WebSignalingClientResponse result;
                 try
                 {
                     result = await _signalingClient.PostOfferAsync(offer, ServerReachingTimeout, ct);
@@ -186,9 +167,7 @@ namespace Elympics
                     result = new WebSignalingClientResponse { IsError = true, Text = e.Message + '\n' + e.StackTrace };
                 }
 
-                if (result is null)
-                    ElympicsLogger.LogError("No answer received from the signaling server.");
-                else if (result.IsError)
+                if (result.IsError)
                     ElympicsLogger.LogError("Error occurred while awaiting an answer from the signaling server: " + result.Text);
                 else
                     try
@@ -211,22 +190,20 @@ namespace Elympics
 
             void OnChannelOpened() => channelOpenedTcs.TrySetResult();
             _webRtcClient.UnreliableChannelOpened += OnChannelOpened;
-            _webRtcClient.OnAnswer(answer);
+            await _webRtcClient.OnAnswer(answer);
 
-            int winIndex;
             try
             {
-                winIndex = await UniTask.WhenAny(
-                    channelOpenedTcs.Task,
-                    UniTask.Delay(TimeSpan.FromSeconds(ConnectMaxRetries * WaitTimeToRetryConnectInSeconds), DelayType.Realtime, cancellationToken: ct));
+                await channelOpenedTcs.Task.WithTimeout(TimeSpan.FromSeconds(ConnectMaxRetries * WaitTimeToRetryConnectInSeconds), ct);
+            }
+            catch (TimeoutException)
+            {
+                throw new ElympicsException($"WebRTC channel not open after {ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
             }
             finally
             {
                 _webRtcClient.UnreliableChannelOpened -= OnChannelOpened;
             }
-
-            if (winIndex != 0)
-                throw new ElympicsException($"WebRTC channel not open after {ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
 
             ElympicsLogger.Log("WebRTC received channel opened.");
             return client;

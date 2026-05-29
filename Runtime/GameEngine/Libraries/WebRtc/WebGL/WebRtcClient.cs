@@ -1,11 +1,16 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AOT;
+using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 using WebRtcWrapper;
 
+// The goal here is to have two interchangeable types with the same full name.
+// Using Platforms and Define Constraints in .asmdef, they are used in alternation.
+// ReSharper disable once CheckNamespace
 namespace Elympics.GameEngine.Libraries.WebRtc
 {
     internal class WebRtcClient : IWebRtcClient
@@ -59,36 +64,45 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendUnreliable(byte[] data) => WebRtcSendUnreliable(_instanceId, data, data.Length);
 
-        public event Action ReliableChannelOpened;
-        public event Action<byte[]> ReliableReceived;
-        public event Action<string> ReliableReceivingError;
-        public event Action ReliableReceivingEnded;
+        public event Action? ReliableChannelOpened;
+        public event Action<byte[]>? ReliableReceived;
+        public event Action<string>? ReliableReceivingError;
+        public event Action? ReliableReceivingEnded;
 
-        public event Action UnreliableChannelOpened;
-        public event Action<byte[]> UnreliableReceived;
-        public event Action<string> UnreliableReceivingError;
-        public event Action UnreliableReceivingEnded;
+        public event Action? UnreliableChannelOpened;
+        public event Action<byte[]>? UnreliableReceived;
+        public event Action<string>? UnreliableReceivingError;
+        public event Action? UnreliableReceivingEnded;
 
-        public event Action<string> IceConnectionStateChanged;
-        public event Action<string> ConnectionStateChanged;
+        public event Action<string>? IceConnectionStateChanged;
+        public event Action<string>? ConnectionStateChanged;
 
-        public event Action<string> OfferCreated;
-        public event Action<string> IceCandidateCreated;
-        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)> CandidatePairChosen;
+        public event Action<string>? IceCandidateCreated;
+        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)>? CandidatePairChosen;
 
         public void Dispose() => HandleInstanceDestroy(_instanceId);
 
         public void SetIceServers(string iceServersJson) => WebRtcSetIceServers(_instanceId, iceServersJson);
 
-        public void CreateOffer(bool restart) => WebRtcCreateOffer(_instanceId, restart);
+        private UniTaskCompletionSource<string>? _offerTcs;
+        public UniTask<string> CreateOffer(bool restart)
+        {
+            _offerTcs = new UniTaskCompletionSource<string>();
+            WebRtcCreateOffer(_instanceId, restart);
+            return _offerTcs.Task;
+        }
 
-        public void OnAnswer(string answerJson) => WebRtcOnAnswer(_instanceId, answerJson);
+        private void OnOffer(string offerJson)
+        {
+            _offerTcs?.TrySetResult(offerJson);
+            _offerTcs = null;
+        }
 
-        public void ReceiveWithThread()
-        { }
-
-        public bool ReceiveReliableOnce() => true;
-        public bool ReceiveUnreliableOnce() => true;
+        public UniTask OnAnswer(string answerJson)
+        {
+            WebRtcOnAnswer(_instanceId, answerJson);
+            return UniTask.CompletedTask;
+        }
 
         public void Close() => WebRtcClose(_instanceId);
 
@@ -105,8 +119,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private void OnIceConnectionStateChanged(string newState) => IceConnectionStateChanged?.Invoke(newState);
 
         private void OnConnectionStateChanged(string newState) => ConnectionStateChanged?.Invoke(newState);
-
-        private void OnOffer(string offerJson) => OfferCreated?.Invoke(offerJson);
 
         private void OnIceCandidate(string candidateJson) => IceCandidateCreated?.Invoke(candidateJson);
 
@@ -208,7 +220,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                 return;
 
             var errorMsg = Marshal.PtrToStringAuto(errorPtr);
-            instanceRef.OnReliableError(errorMsg);
+            instanceRef.OnReliableError(errorMsg ?? "");
         }
 
         [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableError(OnReceivingErrorCallback callback);
@@ -220,7 +232,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                 return;
 
             var errorMsg = Marshal.PtrToStringAuto(errorPtr);
-            instanceRef.OnUnreliableError(errorMsg);
+            instanceRef.OnUnreliableError(errorMsg ?? "");
         }
 
         public delegate void OnReceivingEndedCallback(int instanceId);
@@ -252,13 +264,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern void WebRtcSetOnIceConnectionStateChanged(OnIceConnectionStateChangedCallback callback);
 
         [MonoPInvokeCallback(typeof(OnIceConnectionStateChangedCallback))]
-        public static void DelegateOnIceConnectionStateChanged(int instanceId, IntPtr newState)
+        public static void DelegateOnIceConnectionStateChanged(int instanceId, IntPtr newStatePtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var errorMsg = Marshal.PtrToStringAuto(newState);
-            instanceRef.OnIceConnectionStateChanged(errorMsg);
+            var newState = Marshal.PtrToStringAuto(newStatePtr);
+            instanceRef.OnIceConnectionStateChanged(newState ?? "");
         }
 
         public delegate void OnConnectionStateChangedCallback(int instanceId, IntPtr newState);
@@ -266,13 +278,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern void WebRtcSetOnConnectionStateChanged(OnConnectionStateChangedCallback callback);
 
         [MonoPInvokeCallback(typeof(OnConnectionStateChangedCallback))]
-        public static void DelegateOnConnectionStateChanged(int instanceId, IntPtr newState)
+        public static void DelegateOnConnectionStateChanged(int instanceId, IntPtr newStatePtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var errorMsg = Marshal.PtrToStringAuto(newState);
-            instanceRef.OnConnectionStateChanged(errorMsg);
+            var newState = Marshal.PtrToStringAuto(newStatePtr);
+            instanceRef.OnConnectionStateChanged(newState ?? "");
         }
 
         public delegate void OnOfferCallback(int instanceId, IntPtr offer);
@@ -280,13 +292,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern void WebRtcSetOnOffer(OnOfferCallback callback);
 
         [MonoPInvokeCallback(typeof(OnOfferCallback))]
-        public static void DelegateOnOffer(int instanceId, IntPtr offerPtr)
+        public static void DelegateOnOffer(int instanceId, IntPtr offerJsonPtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var offerJson = Marshal.PtrToStringAuto(offerPtr);
-            instanceRef.OnOffer(offerJson);
+            var offerJson = Marshal.PtrToStringAuto(offerJsonPtr);
+            instanceRef.OnOffer(offerJson ?? "");
         }
 
         public delegate void OnIceCandidateCallback(int instanceId, IntPtr iceCandidate);
@@ -294,13 +306,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern void WebRtcSetOnIceCandidate(OnIceCandidateCallback callback);
 
         [MonoPInvokeCallback(typeof(OnIceCandidateCallback))]
-        public static void DelegateOnIceCandidate(int instanceId, IntPtr candidatePtr)
+        public static void DelegateOnIceCandidate(int instanceId, IntPtr candidateJsonPtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var candidateJson = Marshal.PtrToStringAuto(candidatePtr);
-            instanceRef.OnIceCandidate(candidateJson);
+            var candidateJson = Marshal.PtrToStringAuto(candidateJsonPtr);
+            instanceRef.OnIceCandidate(candidateJson ?? "");
         }
 
         public delegate void OnCandidatePairChosenCallback(int instanceId, IntPtr localCandidateJsonPtr, IntPtr remoteCandidateJsonPtr);
@@ -315,7 +327,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             var localCandidateJson = Marshal.PtrToStringAuto(localCandidateJsonPtr);
             var remoteCandidateJson = Marshal.PtrToStringAuto(remoteCandidateJsonPtr);
-            instanceRef.OnCandidatePairChosen(localCandidateJson, remoteCandidateJson);
+            instanceRef.OnCandidatePairChosen(localCandidateJson ?? "", remoteCandidateJson ?? "");
         }
 
         public delegate void OnLogCallback(int instanceId, IntPtr methodName, IntPtr logMessage);
@@ -323,40 +335,40 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] public static extern void WebRtcSetOnLog(OnLogCallback callback);
 
         [MonoPInvokeCallback(typeof(OnLogCallback))]
-        public static void DelegateOnLog(int instanceId, IntPtr methodName, IntPtr logMessage)
+        public static void DelegateOnLog(int instanceId, IntPtr methodNamePtr, IntPtr logMessagePtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodNameString = Marshal.PtrToStringAuto(methodName);
-            var logMessageString = Marshal.PtrToStringAuto(logMessage);
-            instanceRef.OnLog(methodNameString, logMessageString);
+            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
+            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            instanceRef.OnLog(methodName ?? "", logMessage ?? "");
         }
 
         [DllImport("__Internal")] public static extern void WebRtcSetOnLogWarning(OnLogCallback callback);
 
         [MonoPInvokeCallback(typeof(OnLogCallback))]
-        public static void DelegateOnLogWarning(int instanceId, IntPtr methodName, IntPtr logMessage)
+        public static void DelegateOnLogWarning(int instanceId, IntPtr methodNamePtr, IntPtr logMessagePtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodNameString = Marshal.PtrToStringAuto(methodName);
-            var logMessageString = Marshal.PtrToStringAuto(logMessage);
-            instanceRef.OnLogWarning(methodNameString, logMessageString);
+            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
+            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            instanceRef.OnLogWarning(methodName ?? "", logMessage ?? "");
         }
 
         [DllImport("__Internal")] public static extern void WebRtcSetOnLogError(OnLogCallback callback);
 
         [MonoPInvokeCallback(typeof(OnLogCallback))]
-        public static void DelegateOnLogError(int instanceId, IntPtr methodName, IntPtr logMessage)
+        public static void DelegateOnLogError(int instanceId, IntPtr methodNamePtr, IntPtr logMessagePtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodNameString = Marshal.PtrToStringAuto(methodName);
-            var logMessageString = Marshal.PtrToStringAuto(logMessage);
-            instanceRef.OnLogError(methodNameString, logMessageString);
+            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
+            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            instanceRef.OnLogError(methodName ?? "", logMessage ?? "");
         }
 
         #endregion

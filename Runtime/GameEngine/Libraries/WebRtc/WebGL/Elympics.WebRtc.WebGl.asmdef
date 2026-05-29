@@ -3,7 +3,8 @@
     "rootNamespace": "Elympics",
     "references": [
         "GUID:645313404a2d0c44abd9febb05cd1212",
-        "GUID:e2a0cb92652b07d409c674525eba884a"
+        "GUID:e2a0cb92652b07d409c674525eba884a",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [
         "WebGL"

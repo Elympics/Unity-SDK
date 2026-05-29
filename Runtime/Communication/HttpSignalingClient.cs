@@ -60,19 +60,10 @@ namespace Elympics
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 _ = request.SendWebRequest();
-                var timeoutTask = UniTask.Delay(timeout, DelayType.Realtime, cancellationToken: cts.Token);
-                var webRequestTask = UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token);
-                var winnerIndex = await UniTask.WhenAny(timeoutTask, webRequestTask);
+                await UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token).WithTimeout(timeout, cts.Token);
                 cts.Cancel();
                 if (!request.isDone)
                     request.Abort();
-                if (winnerIndex == 0)
-                    return new WebSignalingClientResponse
-                    {
-                        IsError = true,
-                        Code = 408,
-                        Text = "Request timeout"
-                    };
                 return HandleCompleted(request);
             }
             catch (OperationCanceledException)
@@ -82,6 +73,15 @@ namespace Elympics
                     IsError = true,
                     Code = 499,
                     Text = "Operation canceled"
+                };
+            }
+            catch (TimeoutException)
+            {
+                return new WebSignalingClientResponse
+                {
+                    IsError = true,
+                    Code = 408,
+                    Text = "Request timeout"
                 };
             }
             catch (Exception e)

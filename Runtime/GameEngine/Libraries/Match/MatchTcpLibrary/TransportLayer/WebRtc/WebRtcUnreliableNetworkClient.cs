@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -22,10 +23,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public IPEndPoint RemoteEndpoint => throw new NotImplementedException();
 
-        public WebRtcUnreliableNetworkClient(IWebRtcClient webRtcClient)
-        {
-            _webRtcClient = webRtcClient;
-        }
+        public WebRtcUnreliableNetworkClient(IWebRtcClient webRtcClient) => _webRtcClient = webRtcClient;
 
         public void CreateAndBind()
         {
@@ -43,23 +41,22 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         public void CreateAndBind(int port) => throw new NotImplementedException();
         public void CreateAndBind(IPEndPoint localEndPoint) => throw new NotImplementedException();
-        public UniTask<bool> ConnectAsync(IPEndPoint remoteEndPoint) => throw new NotImplementedException();
+        public UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default) => throw new NotImplementedException();
 
-        public UniTask<bool> SendAsync(byte[] payload)
+        public UniTask SendAsync(byte[] payload)
         {
-            if (IsConnected)
-                _webRtcClient.SendUnreliable(payload);
-            return UniTask.FromResult(IsConnected);
+            if (!IsConnected)
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
+            _webRtcClient.SendUnreliable(payload);
+            return UniTask.CompletedTask;
         }
 
-        public void Disconnect()
-        {
-            IsConnected = false;
-        }
+        public void Disconnect() => IsConnected = false;
 
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
-        public UniTask<bool> SendToAsync(byte[] payload, IPEndPoint destination) => throw new NotImplementedException();
+        public UniTask SendToAsync(byte[] payload, IPEndPoint destination) => throw new NotImplementedException();
+
         public void Dispose()
         {
             _webRtcClient.UnreliableReceivingEnded -= OnWebRtcClientOnUnreliableReceivingEnded;

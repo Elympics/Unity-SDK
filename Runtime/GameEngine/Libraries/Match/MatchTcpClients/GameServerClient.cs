@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -13,168 +14,170 @@ namespace MatchTcpClients
 {
     internal abstract class GameServerClient : IGameServerClient
     {
-        private protected readonly GameServerClientConfig Config;
-
-        private readonly IGameServerSerializer _serializer;
+        protected readonly GameServerClientConfig Config;
 
         public bool IsConnected => ReliableClient?.IsConnected ?? false;
-        public bool IsUnreliableConnected => UnreliableClient?.IsConnected ?? false;
-        public string SessionToken { get; private set; }
 
-        private protected IReliableNetworkClient ReliableClient;
-        private protected IUnreliableNetworkClient UnreliableClient;
-        private protected CancellationTokenSource ClientDisconnectedCts;
+        protected CancellationTokenSource? ClientDisconnectedCts;
+        protected IReliableNetworkClient? ReliableClient;
+        protected IUnreliableNetworkClient? UnreliableClient;
 
-        private IClientSynchronizer _clientSynchronizer;
+        private UniTaskCompletionSource<ConnectedMessage>? _sessionConnectedTcs;
 
-        public event Action Connected;
-        public event Action<TimeSynchronizationData> ConnectedAndSynchronized;
-        public event Action<TimeSynchronizationData> Synchronized;
-        public event Action Disconnected;
-        public event Action<UserMatchAuthenticatedMessage> UserMatchAuthenticated;
-        public event Action<AuthenticatedAsSpectatorMessage> AuthenticatedAsSpectator;
-        public event Action<MatchJoinedMessage> MatchJoined;
-        public event Action<MatchEndedMessage> MatchEnded;
-        public event Action<InGameDataMessage> InGameDataReliableReceived;
-        public event Action<InGameDataMessage> InGameDataUnreliableReceived;
-
-        private protected event Action<ConnectedMessage> SessionConnected;
-
+        private readonly IGameServerSerializer _serializer;
+        private readonly IClientSynchronizer _clientSynchronizer;
         private readonly ElympicsLoggerContext _logger;
+
+        public event Action? Connected;
+        public event Action<TimeSynchronizationData>? ConnectedAndSynchronized;
+        public event Action<TimeSynchronizationData>? Synchronized;
+        public event Action? Disconnected;
+        public event Action<UserMatchAuthenticatedMessage>? UserMatchAuthenticated;
+        public event Action<AuthenticatedAsSpectatorMessage>? AuthenticatedAsSpectator;
+        public event Action<MatchJoinedMessage>? MatchJoined;
+        public event Action<MatchEndedMessage>? MatchEnded;
+        public event Action<InGameDataMessage>? InGameDataReliableReceived;
+        public event Action<InGameDataMessage>? InGameDataUnreliableReceived;
 
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config)
         {
             _logger = ElympicsLogger.CurrentContext.WithContext(nameof(GameServerClient));
-            _serializer = serializer;
             Config = config;
+            _serializer = serializer;
+            _clientSynchronizer = new ClientSynchronizer(config.ClientSynchronizerConfig);
+            _clientSynchronizer.ReliablePingGenerated += command => SendReliableCommand(command).Forget();
+            _clientSynchronizer.UnreliablePingGenerated += command => SendUnreliableCommand(command).Forget();
+            _clientSynchronizer.AuthenticateUnreliableGenerated += command => SendUnreliableCommand(command).Forget();
+            _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
+            _clientSynchronizer.TimedOut += OnTimeout;
+        }
+
+        protected void Initialize()
+        {
+            ReliableClient?.Dispose();
+            ReliableClient = null;
+            UnreliableClient?.Dispose();
+            UnreliableClient = null;
+            (ReliableClient, UnreliableClient) = CreateNetworkClients();
+
+            ClientDisconnectedCts?.Cancel();
+            ClientDisconnectedCts?.Dispose();
+            ClientDisconnectedCts = new CancellationTokenSource();
+            _ = ClientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
+
+            InitializeNetworkClients(ReliableClient, UnreliableClient);
+            ReliableClient.CreateAndBind();
+            UnreliableClient.CreateAndBind();
         }
 
         public async UniTask ConnectAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
             Disconnect();
-
-            Initialize();
-
-            await ConnectInternalAsync(ct);
-
-            Connected?.Invoke();
-            if (!IsConnected)
-            {
-                Disconnect();
-                throw logger.CaptureAndThrow(new InvalidOperationException("Not connected"));
-            }
-
-            InitClientSynchronizer();
-            var synchronizationData = await TryInitialSynchronizeAsync(ct);
-            if (synchronizationData == null)
-            {
-                Disconnect();
-                throw logger.CaptureAndThrow(new ElympicsException("Failed to perform initial synchronization."));
-            }
-
-            ConnectedAndSynchronized?.Invoke(synchronizationData);
-            _clientSynchronizer.StartContinuousSynchronizingAsync(ClientDisconnectedCts.Token).Forget();
-        }
-
-        protected void Initialize()
-        {
-            CreateNetworkClients();
-
-            ClientDisconnectedCts?.Cancel();
-            ClientDisconnectedCts?.Dispose();
             ClientDisconnectedCts = new CancellationTokenSource();
 
-            InitClientDisconnectedCts();
-            InitializeNetworkClients();
+            try
+            {
+                await ConnectInternalAsync(ct);
+            }
+            catch (Exception e)
+            {
+                Disconnect();
+                logger.Exception(new ElympicsException("Failed to connect", e));
+                throw;
+            }
+            InvokeSafely(Connected, logger);
 
-            ReliableClient.CreateAndBind();
-            UnreliableClient.CreateAndBind();
-        }
+            ConnectedMessage connectedMessage;
+            try
+            {
+                connectedMessage = await ConnectSessionAsync(ct);
+            }
+            catch (Exception e)
+            {
+                Disconnect();
+                logger.Exception(new ElympicsException("Failed to connect", e));
+                throw;
+            }
 
-        protected abstract void CreateNetworkClients();
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, ClientDisconnectedCts.Token);
+            var sessionToken = connectedMessage.SessionToken ?? "";
+            TimeSynchronizationData synchronizationData;
+            try
+            {
+                Func<UniTask<TimeSynchronizationData>> func = () => _clientSynchronizer.SynchronizeOnce(sessionToken, ct);
+                synchronizationData = await func.WithRetry(Config.InitialSynchronizeMaxRetries,
+                    onRetry: i => logger.Log($"Could not perform initial synchronization, retrying... #{i}"), ct: linkedCts.Token);
+            }
+            catch (Exception e)
+            {
+                Disconnect();
+                logger.Exception(new ElympicsException("Failed to perform initial synchronization", e));
+                throw;
+            }
 
-        protected virtual void InitializeNetworkClients()
-        {
-            InitReliableClient();
-            InitUnreliableClient();
+            InvokeSafely(ConnectedAndSynchronized, synchronizationData, logger);
+            _clientSynchronizer.StartContinuousSynchronizingAsync(sessionToken, ClientDisconnectedCts.Token).Forget();
         }
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
 
-        protected abstract UniTask InitializeSessionAsync(CancellationToken ct = default);
-
-        private protected async UniTask ConnectSessionAsync(CancellationToken ct = default)
+        protected async UniTask<ConnectedMessage> ConnectSessionAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
-            var sessionConnectedTcs = new UniTaskCompletionSource();
-
-            void OnSessionConnected(ConnectedMessage message)
-            {
-                logger.Log("Connected using reliable channel.");
-                SessionToken = message.SessionToken;
-                _ = sessionConnectedTcs.TrySetResult();
-            }
-
-            SessionConnected += OnSessionConnected;
+            _sessionConnectedTcs = new UniTaskCompletionSource<ConnectedMessage>();
 
             try
             {
                 await InitializeSessionAsync(ct);
-
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                logger.Log("Connecting to reliable channel...");
-
-                await sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, cts.Token);
             }
-            finally
+            catch
             {
-                SessionConnected -= OnSessionConnected;
+                _sessionConnectedTcs = null;
+                throw;
             }
+
+            logger.Log("Connecting to reliable channel...");
+            return await _sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, ct);
         }
 
-        private async UniTask<TimeSynchronizationData> TryInitialSynchronizeAsync(CancellationToken ct = default)
-        {
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, ClientDisconnectedCts.Token);
+        protected abstract UniTask InitializeSessionAsync(CancellationToken ct = default);
 
-            TimeSynchronizationData data = null;
-            for (var i = 0; i < Config.InitialSynchronizeMaxRetries; i++)
+        private static void InvokeSafely(Action? action, ElympicsLoggerContext logger)
+        {
+            try
             {
-                data = await _clientSynchronizer.SynchronizeOnce(linkedCts.Token);
-                if (data == null)
-                    return null;
+                action?.Invoke();
             }
-
-            return data;
+            catch (Exception e)
+            {
+                logger.Exception(e);
+            }
         }
 
-        private void InitReliableClient()
+        private static void InvokeSafely<T>(Action<T>? action, T arg, ElympicsLoggerContext logger)
         {
-            ReliableClient.DataReceived += OnReliableMessageDataReceived;
-            _ = ClientDisconnectedCts.Token.Register(ReliableClient.Disconnect);
+            try
+            {
+                action?.Invoke(arg);
+            }
+            catch (Exception e)
+            {
+                logger.Exception(e);
+            }
         }
 
-        private void InitUnreliableClient()
-        {
-            UnreliableClient.DataReceived += OnUnreliableMessageDataReceived;
-            _ = ClientDisconnectedCts.Token.Register(UnreliableClient.Disconnect);
-        }
+        protected abstract (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients();
 
-        private void InitClientDisconnectedCts()
+        protected virtual void InitializeNetworkClients(IReliableNetworkClient reliable, IUnreliableNetworkClient unreliable)
         {
-            _ = ClientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
-
-            ReliableClient.Disconnected += Disconnect;
-        }
-
-        private void InitClientSynchronizer()
-        {
-            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig, SessionToken, _logger);
-            _clientSynchronizer.ReliablePingGenerated += async command => await SendReliableCommand(command);
-            _clientSynchronizer.UnreliablePingGenerated += async command => await SendUnreliableCommand(command);
-            _clientSynchronizer.AuthenticateUnreliableGenerated += async command => await SendUnreliableCommand(command);
-            _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
-            _clientSynchronizer.TimedOut += OnTimeout;
+            if (ClientDisconnectedCts == null)
+                throw new InvalidOperationException();
+            reliable.DataReceived += OnReliableMessageDataReceived;
+            reliable.Disconnected += Disconnect;
+            _ = ClientDisconnectedCts.Token.Register(reliable.Disconnect);
+            unreliable.DataReceived += OnUnreliableMessageDataReceived;
+            _ = ClientDisconnectedCts.Token.Register(unreliable.Disconnect);
         }
 
         private void OnTimeout()
@@ -194,7 +197,6 @@ namespace MatchTcpClients
             ClientDisconnectedCts.Dispose();
             ClientDisconnectedCts = null;
             _clientSynchronizer.TimedOut -= OnTimeout;
-            SessionToken = null;
         }
 
         private async UniTask SendReliableCommand(Command command) => await ReliableClient.SendAsync(_serializer.Serialize(command));
@@ -218,7 +220,7 @@ namespace MatchTcpClients
             switch (type)
             {
                 case MessageType.Connected:
-                    _ = InvokeReceivedMessageEvent(data, SessionConnected);
+                    _ = InvokeReceivedMessageEvent<ConnectedMessage>(data, OnSessionConnected);
                     break;
                 case MessageType.PingServer:
                     RespondForPing();
@@ -249,11 +251,16 @@ namespace MatchTcpClients
                 default:
                     break;
             }
+
+            void OnSessionConnected(ConnectedMessage message)
+            {
+                _ = _sessionConnectedTcs?.TrySetResult(message);
+            }
         }
 
         private void RespondForPing() => _ = SendReliableCommand(new PingServerResponseCommand());
 
-        private T InvokeReceivedMessageEvent<T>(byte[] data, Action<T> action)
+        private T InvokeReceivedMessageEvent<T>(byte[] data, Action<T>? action)
         {
             var message = _serializer.Deserialize<T>(data);
             if (message != null)
@@ -309,15 +316,10 @@ namespace MatchTcpClients
                     ElympicsLogger.LogError(_serializer.Deserialize<UnknownCommandMessage>(data).ErrorMessage);
                     break;
                 case MessageType.Connected:
-                    break;
                 case MessageType.PingServer:
-                    break;
                 case MessageType.MatchJoined:
-                    break;
                 case MessageType.UserMatchAuthenticatedMessage:
-                    break;
                 case MessageType.MatchEnded:
-                    break;
                 case MessageType.AuthenticateAsSpectator:
                 default:
                     break;

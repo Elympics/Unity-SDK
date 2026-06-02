@@ -41,7 +41,7 @@ namespace Elympics
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
         }
 
-        internal void ConnectToServer(string userId, HalfRemoteMatchClient client)
+        internal void SetupClientCallbacks(string userId, HalfRemoteMatchClient client)
         {
             _userId = userId;
 
@@ -66,7 +66,18 @@ namespace Elympics
             ElympicsLogger.Log("Connected to a half remote server.");
         }
 
-        internal void StartSynchronization(CancellationToken ct = default) => SynchronizationAsync(ct).Forget();
+        internal async UniTaskVoid StartSynchronization(CancellationToken ct = default)
+        {
+            try
+            {
+                while (NotDisconnected())
+                {
+                    _client.SendNtp();
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException) { }
+        }
 
         private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
 
@@ -174,19 +185,6 @@ namespace Elympics
             var u2 = 1.0 - _lagRandom.NextDouble();
             var randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
             return mean + stdDev * randStdNormal;
-        }
-
-        private async UniTaskVoid SynchronizationAsync(CancellationToken ct)
-        {
-            try
-            {
-                while (NotDisconnected())
-                {
-                    _client.SendNtp();
-                    await UniTask.Yield(ct);
-                }
-            }
-            catch (OperationCanceledException) { }
         }
 
         private void OnNtpReceived(NtpData ntpData)

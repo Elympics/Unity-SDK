@@ -33,11 +33,11 @@ namespace Elympics
         private bool _isReplay;
 
         private bool _endGameRequested;
-        private ResultMatchPlayerDatas _matchResult;
-        private GameEngineAdapter _gameEngineAdapter;
-        private InitialMatchPlayerDatasGuid _playerData;
+        private ResultMatchPlayerDatas? _matchResult;
+        private GameEngineAdapter? _gameEngineAdapter;
+        private InitialMatchPlayerDatasGuid? _playerData;
 
-        private List<ElympicsInput> _inputList;
+        private List<ElympicsInput>? _inputList;
 
         private SnapshotAnalysisCollector _snapshotCollector = null!;
         private IServerPlayerHandler _serverPlayerHandler = null!;
@@ -134,7 +134,7 @@ namespace Elympics
             _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
 
 
-        //TODO refactor this....
+        //TODO refactor this.... ~kpieta 2025-02-27
         internal void SwitchBehaviourToServer()
         {
             _currentPlayer = ServerPlayer;
@@ -176,7 +176,7 @@ namespace Elympics
 
         #region IElympics
 
-        public override void EndGame(ResultMatchPlayerDatas result = null)
+        public override void EndGame(ResultMatchPlayerDatas? result = null)
         {
             _endGameRequested = true;
             _matchResult = result;

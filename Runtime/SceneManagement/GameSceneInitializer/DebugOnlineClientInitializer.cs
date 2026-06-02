@@ -125,14 +125,9 @@ namespace Elympics
                 ? new WebGameServerClient(serializer,
                     config,
                     new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    WebRtcFactory.CreateClient,
-                    iceServersUri)
+                    iceServersUri: iceServersUri)
                 : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
-            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                matchData.TcpUdpServerAddress,
-                matchData.WebServerAddress,
-                matchData.UserSecret,
-                _elympicsGameConfig.UseWeb);
+            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.UserSecret);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
             var matchPlayerCount = matchData.MatchedPlayers.Length;
             if (matchPlayerCount > _elympicsGameConfig.MaxPlayers)

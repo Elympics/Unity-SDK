@@ -20,7 +20,6 @@ namespace MatchTcpClients.Synchronizer
         public event Action TimedOut;
 
         private readonly ClientSynchronizerConfig _config;
-        private string _sessionToken;
         private readonly ElympicsLoggerContext _logger;
         private DateTime? _lastReceivedPingDataTime;
         private NtpData _lastReceivedUnreliableNtpData;
@@ -28,14 +27,13 @@ namespace MatchTcpClients.Synchronizer
 
         private Action<PingClientResponseMessage> _pingResponseCallback;
 
-        public ClientSynchronizer(ClientSynchronizerConfig config, string sessionToken, ElympicsLoggerContext logger)
+        public ClientSynchronizer(ClientSynchronizerConfig config)
         {
-            _sessionToken = sessionToken;
-            _logger = logger.WithContext(nameof(ClientSynchronizer));
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ClientSynchronizer));
             _config = config;
         }
 
-        public async UniTask StartContinuousSynchronizingAsync(CancellationToken ct)
+        public async UniTask StartContinuousSynchronizingAsync(string sessionToken, CancellationToken ct)
         {
             ClearUnreliablePingFlagAfterTimeout(ct).Forget();
             var logger = _logger.WithMethodName();
@@ -47,7 +45,7 @@ namespace MatchTcpClients.Synchronizer
                 TimeSynchronizationData synchronizationData;
                 try
                 {
-                    synchronizationData = await SynchronizeOnce(ct);
+                    synchronizationData = await SynchronizeOnce(sessionToken, ct);
                 }
                 catch (TimeoutException)
                 {
@@ -76,7 +74,7 @@ namespace MatchTcpClients.Synchronizer
             _waitingForFirstUnreliablePing = false;
         }
 
-        public async UniTask<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct)
+        public async UniTask<TimeSynchronizationData> SynchronizeOnce(string sessionToken, CancellationToken ct)
         {
             if (_pingResponseCallback != null)
                 throw new InvalidOperationException("Cannot synchronize when there is other synchronization running");
@@ -84,7 +82,7 @@ namespace MatchTcpClients.Synchronizer
             var pingCompletionSource = new UniTaskCompletionSource<PingClientResponseMessage>();
             _pingResponseCallback = response => pingCompletionSource.TrySetResult(response);
 
-            SendSynchronizeRequest();
+            SendSynchronizeRequest(sessionToken);
 
             var pingResult = await pingCompletionSource.Task.WithTimeout(_config.TimeoutTime, ct);
             _pingResponseCallback = null;
@@ -92,24 +90,19 @@ namespace MatchTcpClients.Synchronizer
             return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
         }
 
-        private void SendSynchronizeRequest()
+        private void SendSynchronizeRequest(string sessionToken)
         {
             var ntpRequest = new NtpData { TransmitTimestamp = DateTime.UtcNow };
             var pingCommand = new PingClientCommand { NtpData = Convert.ToBase64String(ntpRequest.Data) };
-            var authCommand = new AuthenticateUnreliableSessionTokenCommand { SessionToken = _sessionToken };
+            var authCommand = new AuthenticateUnreliableSessionTokenCommand { SessionToken = sessionToken };
             ReliablePingGenerated?.Invoke(pingCommand);
             UnreliablePingGenerated?.Invoke(pingCommand);
             AuthenticateUnreliableGenerated?.Invoke(authCommand);
         }
 
-        private TimeSynchronizationData CreateSynchronizeResponse(PingClientResponseMessage pingResult)
-        {
-            var ntpResponse = CreateNtpDataFromBytes(Convert.FromBase64String(pingResult.NtpData));
-
-            var timeSynchronizationData = new TimeSynchronizationData
+        private TimeSynchronizationData CreateSynchronizeResponse(PingClientResponseMessage pingResult) =>
+            new(CreateNtpDataFromBytes(Convert.FromBase64String(pingResult.NtpData)))
             {
-                LocalClockOffset = ntpResponse.LocalClockOffset,
-                RoundTripDelay = ntpResponse.RoundTripDelay,
                 UnreliableReceivedAnyPing = _lastReceivedPingDataTime != null,
                 UnreliableLastReceivedPingDateTime = _lastReceivedPingDataTime,
                 UnreliableReceivedPingLately = _lastReceivedPingDataTime.HasValue && _lastReceivedPingDataTime.Value.AddSeconds(_config.UnreliablePingTimeoutInMilliseconds.Seconds) > DateTime.Now,
@@ -117,8 +110,6 @@ namespace MatchTcpClients.Synchronizer
                 UnreliableLocalClockOffset = _lastReceivedUnreliableNtpData?.LocalClockOffset,
                 UnreliableRoundTripDelay = _lastReceivedUnreliableNtpData?.RoundTripDelay,
             };
-            return timeSynchronizationData;
-        }
 
         public void ReliablePingReceived(PingClientResponseMessage message) => _pingResponseCallback?.Invoke(message);
 
@@ -130,9 +121,7 @@ namespace MatchTcpClients.Synchronizer
             _lastReceivedUnreliableNtpData = ntpResponse;
         }
 
-        public void SetUnreliableSessionToken(string sessionToken) => _sessionToken = sessionToken;
-
-        private NtpData CreateNtpDataFromBytes(byte[] data)
+        private static NtpData CreateNtpDataFromBytes(byte[] data)
         {
             var ntpResponse = new NtpData();
             ntpResponse.SetFromBytes(data);

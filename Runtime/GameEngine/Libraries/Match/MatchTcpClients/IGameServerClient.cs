@@ -9,8 +9,6 @@ namespace MatchTcpClients
     public interface IGameServerClient
     {
         bool IsConnected { get; }
-        bool IsUnreliableConnected { get; }
-        string SessionToken { get; }
 
         event Action Connected;
         event Action<TimeSynchronizationData> ConnectedAndSynchronized;

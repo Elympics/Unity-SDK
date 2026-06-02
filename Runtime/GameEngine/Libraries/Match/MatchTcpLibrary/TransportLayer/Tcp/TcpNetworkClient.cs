@@ -117,7 +117,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             Disconnect();
         }
 
-        private void StartReceiving() => _tcpReceiver.StartReceiving().AsUniTask().Forget();
+        private void StartReceiving() => _tcpReceiver.StartReceiving().Forget();
 
         public async UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default)
         {

@@ -4,7 +4,7 @@ using Cysharp.Threading.Tasks;
 
 namespace MatchTcpLibrary
 {
-    public static class UniTaskTimeoutExtensions
+    internal static class UniTaskTimeoutExtensions
     {
         public static async UniTask<T> WithTimeout<T>(this UniTask<T> task, TimeSpan timeout, CancellationToken ct = default)
         {

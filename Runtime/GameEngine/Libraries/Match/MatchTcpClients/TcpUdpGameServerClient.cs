@@ -21,13 +21,8 @@ namespace MatchTcpClients
             IPEndPoint endpoint) : base(serializer, config) =>
             _endpoint = endpoint;
 
-        protected override void CreateNetworkClients()
-        {
-            ReliableClient?.Dispose();
-            ReliableClient = CreateTcpNetworkClient();
-            UnreliableClient?.Dispose();
-            UnreliableClient = CreateUdpNetworkClient();
-        }
+        protected override (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients() =>
+            (CreateTcpNetworkClient(), CreateUdpNetworkClient());
 
         protected override async UniTask ConnectInternalAsync(CancellationToken ct = default)
         {

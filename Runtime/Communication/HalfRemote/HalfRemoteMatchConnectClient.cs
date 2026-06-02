@@ -21,6 +21,8 @@ namespace Elympics
         private const int ConnectMaxRetries = 50;
         private const int WaitTimeToRetryConnectInSeconds = 1;
         private static readonly TimeSpan ServerReachingTimeout = TimeSpan.FromSeconds(1);
+
+        private static readonly TimeSpan OfferWaitingInterval = TimeSpan.FromSeconds(1);
         private const int MaxOfferWaitingIntervals = 5;
 
         public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
@@ -30,7 +32,6 @@ namespace Elympics
         public event Action AuthenticatedAsSpectator;
         public event Action<string> AuthenticatedAsSpectatorWithError;
         public event Action<string> MatchJoinedWithError;
-        public event Action<Guid> MatchJoinedWithMatchId;
         public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
         public event Action<Guid> MatchEndedWithMatchId;
         public event Action DisconnectedByServer;
@@ -84,15 +85,14 @@ namespace Elympics
         {
             var client = _useWeb ? await ConnectWebAsync(ct) : await ConnectTcpAsync(ct);
 
-            _halfRemoteMatchClientAdapter.ConnectToServer(_userId.ToString(), client);
+            _halfRemoteMatchClientAdapter.SetupClientCallbacks(_userId.ToString(), client);
 
             _halfRemoteMatchClientAdapter.PlayerConnected();
             ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
             AuthenticatedUserMatchWithUserId?.Invoke(_userId);
-            MatchJoinedWithMatchId?.Invoke(Guid.Empty);
             MatchJoinedWithMatchInitData?.Invoke(_halfRemoteMatchInitialData);
 
-            _halfRemoteMatchClientAdapter.StartSynchronization(ct);
+            _halfRemoteMatchClientAdapter.StartSynchronization(ct).Forget();
         }
 
         private async UniTask<HalfRemoteMatchClient> ConnectTcpAsync(CancellationToken ct)
@@ -139,7 +139,7 @@ namespace Elympics
                 OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
             });
 
-            var offer = await _webRtcClient.CreateOffer(false).WithTimeout(TimeSpan.FromSeconds(MaxOfferWaitingIntervals), ct);
+            var offer = await _webRtcClient.CreateOffer(false).WithTimeout(MaxOfferWaitingIntervals * OfferWaitingInterval, ct);
 
             if (string.IsNullOrEmpty(offer))
                 throw new ElympicsException("Offer not received from WebRTC client.");

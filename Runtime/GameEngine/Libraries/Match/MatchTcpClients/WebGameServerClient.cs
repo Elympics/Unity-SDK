@@ -8,6 +8,7 @@ using Elympics.Communication.Utils;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.WebRtc;
 using UnityEngine;
 using WebRtcWrapper;
@@ -58,7 +59,7 @@ namespace MatchTcpClients
             return uriBuilder.Uri;
         }
 
-        protected override void CreateNetworkClients()
+        protected override (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients()
         {
             if (_webRtcClient != null)
             {
@@ -66,11 +67,9 @@ namespace MatchTcpClients
                 UnsubscribeFromWebConnectionStatus();
             }
             _webRtcClient = _webRtcFactory(new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay });
-            ReliableClient?.Dispose();
-            ReliableClient = new WebRtcReliableNetworkClient(_webRtcClient);
-            UnreliableClient?.Dispose();
-            UnreliableClient = new WebRtcUnreliableNetworkClient(_webRtcClient);
+            return (new WebRtcReliableNetworkClient(_webRtcClient), new WebRtcUnreliableNetworkClient(_webRtcClient));
         }
+
         private void UnsubscribeFromWebConnectionStatus()
         {
             if (_webRtcClient == null)
@@ -258,10 +257,10 @@ namespace MatchTcpClients
             return null;
         }
 
-        protected override void InitializeNetworkClients()
+        protected override void InitializeNetworkClients(IReliableNetworkClient reliable, IUnreliableNetworkClient unreliable)
         {
             InitWebRtcClient();
-            base.InitializeNetworkClients();
+            base.InitializeNetworkClients(reliable, unreliable);
         }
 
         private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(() => _webRtcClient?.Dispose());

@@ -70,7 +70,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
 
             _udpReceiver = new UdpReceiver(_udpClient);
             _udpReceiver.DataReceived += OnDataReceived;
-            _udpReceiver.StartReceiving();
+            _udpReceiver.StartReceiving().Forget();
 
             IsConnected = _udpClient?.Client.Connected ?? false;
         }

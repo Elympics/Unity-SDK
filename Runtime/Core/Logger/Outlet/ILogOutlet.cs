@@ -11,6 +11,6 @@ namespace Elympics.Core.Logger.Builder
             string message,
             string? stacktrace,
             ApplicationState state,
-            ElympicsLoggerConfig config);
+            LoggerConfig config);
     }
 }

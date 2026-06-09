@@ -5,13 +5,25 @@ using UnityEngine;
 
 namespace Elympics.Core.Logger
 {
-    internal class ElympicsLoggerConfig
+    internal struct LoggerConfig
     {
-        public bool MonitoringEnabled { get; set; }
-        public bool StacktraceForEverything { get; set; }
-        public LogContext Context { get; set; } = new();
+        public bool MonitoringEnabled { get; private set; }
+        public bool StacktraceForEverything { get; private set; }
+        public LogContext Context { get; private set; }
 
-        public class LogContext : IVisitableState
+        public static LoggerConfig New() => new()
+        {
+            Context = new LogContext(),
+        };
+
+        private LoggerConfig Clone() => new()
+        {
+            MonitoringEnabled = MonitoringEnabled,
+            StacktraceForEverything = StacktraceForEverything,
+            Context = Context,
+        };
+
+        public struct LogContext : IVisitableState
         {
             public Object? LinkedObject;  // for Unity Debug.Log with context
             public string? MethodName;  // from CallerMemberInfo
@@ -31,36 +43,47 @@ namespace Elympics.Core.Logger
             }
         }
 
-        public ElympicsLoggerConfig WithMonitoringEnabled()
+        public LoggerConfig WithMonitoringEnabled()
         {
-            MonitoringEnabled = true;
-            return this;
+            var clone = Clone();
+            clone.MonitoringEnabled = true;
+            return clone;
         }
 
-        public ElympicsLoggerConfig WithStacktraceForEverything()
+        public LoggerConfig WithStacktraceForEverything()
         {
-            StacktraceForEverything = true;
-            return this;
+            var clone = Clone();
+            clone.StacktraceForEverything = true;
+            return clone;
         }
 
-        public ElympicsLoggerConfig WithUnityContext(Object context)
+        public LoggerConfig WithUnityContext(Object unityContext)
         {
-            Context.LinkedObject = context;
-            return this;
+            var clone = Clone();
+            var context = clone.Context;
+            context.LinkedObject = unityContext;
+            clone.Context = context;
+            return clone;
         }
 
-        public ElympicsLoggerConfig WithMehodName([CallerMemberName] string methodName = "")
+        public LoggerConfig WithMehodName([CallerMemberName] string methodName = "")
         {
-            Context.MethodName = methodName;
-            return this;
+            var clone = Clone();
+            var context = clone.Context;
+            context.MethodName = methodName;
+            clone.Context = context;
+            return clone;
         }
 
         /// <param name="className">Should be full class name with namespace included.</param>
         /// <returns>Current instance.</returns>
-        public ElympicsLoggerConfig WithClassName(string className)
+        public LoggerConfig WithClassName(string className)
         {
-            Context.ClassName = className;
-            return this;
+            var clone = Clone();
+            var context = clone.Context;
+            context.ClassName = className;
+            clone.Context = context;
+            return clone;
         }
 
         /// <summary>
@@ -70,10 +93,13 @@ namespace Elympics.Core.Logger
         /// </summary>
         /// <param name="serviceName">Source service name.</param>
         /// <returns>Current instance.</returns>
-        public ElympicsLoggerConfig WithServiceName(string serviceName)
+        public LoggerConfig WithServiceName(string serviceName)
         {
-            Context.ServiceName = serviceName;
-            return this;
+            var clone = Clone();
+            var context = clone.Context;
+            context.ServiceName = serviceName;
+            clone.Context = context;
+            return clone;
         }
 
         /// <summary>
@@ -82,11 +108,7 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithPlayPadSdkService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public ElympicsLoggerConfig WithElympicsSdkService()
-        {
-            Context.ServiceName = "ElympicsSdk";
-            return this;
-        }
+        public LoggerConfig WithElympicsSdkService() => WithServiceName("ElympicsSdk");
 
         /// <summary>
         /// <seealso cref="WithServiceName"/>
@@ -94,11 +116,7 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithPlayPadSdkService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public ElympicsLoggerConfig WithElympicsGameService()
-        {
-            Context.ServiceName = "ElympicsGame";
-            return this;
-        }
+        public LoggerConfig WithElympicsGameService() => WithServiceName("ElympicsGame");
 
         /// <summary>
         /// <seealso cref="WithServiceName"/>
@@ -106,10 +124,6 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithElympicsGameService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public ElympicsLoggerConfig WithPlayPadSdkService()
-        {
-            Context.ServiceName = "PlayPadSdk";
-            return this;
-        }
+        public LoggerConfig WithPlayPadSdkService() => WithServiceName("PlayPadSdk");
     }
 }

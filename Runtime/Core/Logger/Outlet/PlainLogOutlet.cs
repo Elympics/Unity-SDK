@@ -27,7 +27,7 @@ namespace Elympics.Core.Logger.Builder
             string message,
             string? stacktrace,
             ApplicationState state,
-            ElympicsLoggerConfig config)
+            LoggerConfig config)
         {
             var context = config.Context;
             _ = _stringBuilder.Clear()
@@ -67,7 +67,7 @@ namespace Elympics.Core.Logger.Builder
             }
         }
 
-        private void AppendContextAndState(ElympicsLoggerConfig.LogContext context, ApplicationState state)
+        private void AppendContextAndState(LoggerConfig.LogContext context, ApplicationState state)
         {
             _ = _stringBuilder.Append("\n\n");
             context.Visit(_stateVisitor);

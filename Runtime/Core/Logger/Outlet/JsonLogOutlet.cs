@@ -26,9 +26,9 @@ namespace Elympics.Core.Logger.Builder
             string message,
             string? stacktrace,
             ApplicationState state,
-            ElympicsLoggerConfig config)
+            LoggerConfig config)
         {
-            if (config.MonitoringEnabled)
+            if (!config.MonitoringEnabled)
                 return;
 
             _ = _stringBuilder.Clear();

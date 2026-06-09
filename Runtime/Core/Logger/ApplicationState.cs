@@ -7,7 +7,7 @@ namespace Elympics.Core.Logger
     [Serializable]
     internal class ApplicationState : IVisitableState
     {
-        private SdkState _sdk;
+        private readonly SdkState _sdk;
         private GameState? _game;
         private UserState? _user;
         private LobbyState? _lobby;
@@ -215,18 +215,24 @@ namespace Elympics.Core.Logger
 
         public ApplicationState SetFleetName(string fleetName)
         {
+            if (_game is null)
+                throw new InvalidOperationException("Game state is not set");
             _game.FleetName = fleetName;
             return this;
         }
 
         public ApplicationState SetGameVersionId(string gameVersionId)
         {
+            if (_game is null)
+                throw new InvalidOperationException("Game state is not set");
             _game.GameVersionId = gameVersionId;
             return this;
         }
 
         public ApplicationState SetGameMode(string gameMode)
         {
+            if (_game is null)
+                throw new InvalidOperationException("Game state is not set");
             _game.GameMode = gameMode;
             return this;
         }

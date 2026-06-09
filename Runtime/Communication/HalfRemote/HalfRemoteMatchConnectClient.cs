@@ -7,8 +7,10 @@ using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
 using Elympics.GameEngine.Libraries.WebRtc;
+using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
@@ -62,7 +64,7 @@ namespace Elympics
             if (_useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
-                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
+                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty, _connectionConfig.GameServerClientConfig);
             }
 
             halfRemoteMatchClientAdapter.MatchEnded += OnMatchEnded;
@@ -139,6 +141,9 @@ namespace Elympics
                 OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
             });
 
+            var reliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
+            var unreliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
+
             var offer = await _webRtcClient.CreateOffer(false).WithTimeout(MaxOfferWaitingIntervals * OfferWaitingInterval, ct);
 
             if (string.IsNullOrEmpty(offer))
@@ -156,56 +161,26 @@ namespace Elympics
                     ElympicsLogger.Log("Retrying...\nSending the offer to the signaling server...");
                 }
 
-                WebSignalingClientResponse result;
                 try
                 {
-                    result = await _signalingClient.PostOfferAsync(offer, ServerReachingTimeout, ct);
+                    var signalingResponse = await _signalingClient.PostOfferAsync(new OfferWithCandidates { offer = offer }, ServerReachingTimeout, ct);
+                    answer = signalingResponse.answer;
+                    break;
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception e)
                 {
-                    result = new WebSignalingClientResponse { IsError = true, Text = e.Message + '\n' + e.StackTrace };
+                    ElympicsLogger.LogError("Error occurred while awaiting an answer from the signaling server: " + e);
                 }
-
-                if (result.IsError)
-                    ElympicsLogger.LogError("Error occurred while awaiting an answer from the signaling server: " + result.Text);
-                else
-                    try
-                    {
-                        var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
-                        answer = signalingResponse.answer;
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        ElympicsLogger.LogError($"Failed to deserialize the answer from the signaling server: {ex.Message}\n{result.Text}");
-                    }
             }
 
             if (string.IsNullOrEmpty(answer))
                 throw new ElympicsException("WebRTC answer is empty because of a connection error or an issue with signaling server.");
 
-            var channelOpenedTcs = new UniTaskCompletionSource();
-            var client = new HalfRemoteMatchClient(_userId.ToString(), _webRtcClient);
-
-            void OnChannelOpened() => channelOpenedTcs.TrySetResult();
-            _webRtcClient.UnreliableChannelOpened += OnChannelOpened;
+            var client = new HalfRemoteMatchClient(_userId.ToString(), reliableChannel, unreliableChannel);
             await _webRtcClient.OnAnswer(answer);
 
-            try
-            {
-                await channelOpenedTcs.Task.WithTimeout(TimeSpan.FromSeconds(ConnectMaxRetries * WaitTimeToRetryConnectInSeconds), ct);
-            }
-            catch (TimeoutException)
-            {
-                throw new ElympicsException($"WebRTC channel not open after {ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
-            }
-            finally
-            {
-                _webRtcClient.UnreliableChannelOpened -= OnChannelOpened;
-            }
-
-            ElympicsLogger.Log("WebRTC received channel opened.");
+            ElympicsLogger.Log("WebRTC answer applied.");
             return client;
         }
 

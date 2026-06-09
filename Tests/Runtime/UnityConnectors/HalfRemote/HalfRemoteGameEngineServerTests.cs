@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using NUnit.Framework;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
@@ -45,6 +46,9 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/doSignaling"));
             var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default);
 
+            var reliableChannel = webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
+            var unreliableChannel = webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
+
             async UniTask<HalfRemoteMatchClient> ConnectWebRtc()
             {
                 var offer = await webRtcClient.CreateOffer(false);
@@ -57,7 +61,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
                 await webRtcClient.OnAnswer(answer);
 
-                return new HalfRemoteMatchClient(UserId, webRtcClient);
+                return new HalfRemoteMatchClient(UserId, reliableChannel, unreliableChannel);
             }
 
             void CloseWebSocket() => webRtcClient.Close();

@@ -5,14 +5,13 @@
  *   WebRtcFree: (id: number) => void,
  *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: Pointer | null) => void,
  *   WebRtcSetOfferAnnouncingDelay: (delayMs: number) => void,
- *   WebRtcSetOnReliableOpened: (callback: FunctionPointer) => void,
- *   WebRtcSetOnReliableReceived: (callback: FunctionPointer) => void,
- *   WebRtcSetOnReliableError: (callback: FunctionPointer) => void,
- *   WebRtcSetOnReliableEnded: (callback: FunctionPointer) => void,
- *   WebRtcSetOnUnreliableOpened: (callback: FunctionPointer) => void,
- *   WebRtcSetOnUnreliableReceived: (callback: FunctionPointer) => void,
- *   WebRtcSetOnUnreliableError: (callback: FunctionPointer) => void,
- *   WebRtcSetOnUnreliableEnded: (callback: FunctionPointer) => void,
+ *   WebRtcCreateDataChannel: (id: number, labelPtr: Pointer, reliable: boolean) => number,
+ *   WebRtcSendOnChannel: (id: number, channelId: number, bufferPtr: Pointer, length: number) => void,
+ *   WebRtcCloseChannel: (id: number, channelId: number) => void,
+ *   WebRtcSetOnChannelOpened: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnChannelReceived: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnChannelError: (callback: FunctionPointer) => void,
+ *   WebRtcSetOnChannelEnded: (callback: FunctionPointer) => void,
  *   WebRtcSetOnOffer: (callback: FunctionPointer) => void,
  *   WebRtcSetOnIceCandidate: (callback: FunctionPointer) => void,
  *   WebRtcSetOnIceConnectionStateChanged: (callback: FunctionPointer) => void,
@@ -23,33 +22,31 @@
  *   WebRtcSetOnLogError: (callback: FunctionPointer) => void,
  *   WebRtcCreateOffer: (id: number, iceRestart: boolean) => void,
  *   WebRtcOnAnswer: (id: number, answer: Pointer) => void,
- *   WebRtcSendReliable: (id: number, bufferPtr: Pointer, length: number) => void,
- *   WebRtcSendUnreliable: (id: number, bufferPtr: Pointer, length: number) => void,
  *   WebRtcClose: (id: number) => void,
  * }} LibraryWebRtc
  */
 
 /**
  * @typedef {{
+ *   dc: RTCDataChannel,
+ *   label: string,
+ * }} WebRtcDataChannelEntry
+ */
+
+/**
+ * @typedef {{
  *   rtcConfig: RTCConfiguration,
  *   pc: RTCPeerConnection,
- *   reliableDc: RTCDataChannel,
- *   reliableOpened: () => void,
- *   reliableReceived: (msg: Uint8Array) => void,
- *   reliableError: (msg: string) => void,
- *   reliableEnded: () => void,
- *   unreliableDc: RTCDataChannel,
- *   unreliableOpened: () => void,
- *   unreliableReceived: (msg: Uint8Array) => void,
- *   unreliableError: (msg: string) => void,
- *   unreliableEnded: () => void,
+ *   channels: {[channelId: number]: WebRtcDataChannelEntry},
+ *   nextChannelId: number,
+ *   createDataChannel: (label: string, reliable: boolean) => number,
+ *   sendOnChannel: (channelId: number, message: ArrayBuffer) => void,
+ *   closeChannel: (channelId: number) => void,
  *   pendingOfferResolvers: (() => void)[],
  *   createOffer: (iceRestart: boolean) => Promise<void>,
  *   candidatePairCt: boolean[],
  *   onAnswer: (answerJson: string) => Promise<void>,
  *   waitForCandidatePair: (ct: boolean[]) => Promise<void>,
- *   sendReliable: (message: ArrayBuffer) => void,
- *   sendUnreliable: (message: ArrayBuffer) => void,
  *   setIceServers: (iceServers: RTCIceServer[]) => void,
  *   close: () => void,
  *   onIceConnectionStateChanged: (state: string) => void,
@@ -63,14 +60,10 @@
  *   lastId: number,
  *   logToConsole: (message: string) => void,
  *   offerAnnouncingDelay: number,
- *   onReliableOpened: FunctionPointer | null,
- *   onReliableReceived: FunctionPointer | null,
- *   onReliableError: FunctionPointer | null,
- *   onReliableEnded: FunctionPointer | null,
- *   onUnreliableOpened: FunctionPointer | null,
- *   onUnreliableReceived: FunctionPointer | null,
- *   onUnreliableError: FunctionPointer | null,
- *   onUnreliableEnded: FunctionPointer | null,
+ *   onChannelOpened: FunctionPointer | null,
+ *   onChannelReceived: FunctionPointer | null,
+ *   onChannelError: FunctionPointer | null,
+ *   onChannelEnded: FunctionPointer | null,
  *   onOffer: FunctionPointer | null,
  *   onIceCandidate: FunctionPointer | null,
  *   onCandidatePairChosen: FunctionPointer | null,
@@ -98,14 +91,10 @@ const LibraryWebRtc = {
         logToConsole: (/** @type {string} */ message) => console.log(`[${new Date().toISOString()}] [WebRTC] ${message}`),
 
         offerAnnouncingDelay: 1000,
-        /** @type {FunctionPointer | null} */ onReliableOpened: null,
-        /** @type {FunctionPointer | null} */ onReliableReceived: null,
-        /** @type {FunctionPointer | null} */ onReliableError: null,
-        /** @type {FunctionPointer | null} */ onReliableEnded: null,
-        /** @type {FunctionPointer | null} */ onUnreliableOpened: null,
-        /** @type {FunctionPointer | null} */ onUnreliableReceived: null,
-        /** @type {FunctionPointer | null} */ onUnreliableError: null,
-        /** @type {FunctionPointer | null} */ onUnreliableEnded: null,
+        /** @type {FunctionPointer | null} */ onChannelOpened: null,
+        /** @type {FunctionPointer | null} */ onChannelReceived: null,
+        /** @type {FunctionPointer | null} */ onChannelError: null,
+        /** @type {FunctionPointer | null} */ onChannelEnded: null,
         /** @type {FunctionPointer | null} */ onOffer: null,
         /** @type {FunctionPointer | null} */ onIceCandidate: null,
         /** @type {FunctionPointer | null} */ onCandidatePairChosen: null,
@@ -122,14 +111,10 @@ const LibraryWebRtc = {
 
         /**
          * @constructor
-         * @param {() => void} reliableOpened
-         * @param {(msg: Uint8Array) => void} reliableReceived
-         * @param {(msg: string) => void} reliableError
-         * @param {() => void} reliableEnded
-         * @param {() => void} unreliableOpened
-         * @param {(msg: Uint8Array) => void} unreliableReceived
-         * @param {(msg: string) => void} unreliableError
-         * @param {() => void} unreliableEnded
+         * @param {(channelId: number) => void} channelOpened
+         * @param {(channelId: number, msg: Uint8Array) => void} channelReceived
+         * @param {(channelId: number, msg: string) => void} channelError
+         * @param {(channelId: number) => void} channelEnded
          * @param {(state: string) => void} iceConnectionStateChanged
          * @param {(state: string) => void} connectionStateChanged
          * @param {(candidateJson: string | null) => void} iceCandidateCallback
@@ -140,14 +125,10 @@ const LibraryWebRtc = {
          * @param {(methodName: string, message: string) => void} logErrorCallback
          */
         function WebRtcClient(
-            reliableOpened,
-            reliableReceived,
-            reliableError,
-            reliableEnded,
-            unreliableOpened,
-            unreliableReceived,
-            unreliableError,
-            unreliableEnded,
+            channelOpened,
+            channelReceived,
+            channelError,
+            channelEnded,
             iceConnectionStateChanged,
             connectionStateChanged,
             iceCandidateCallback,
@@ -160,20 +141,14 @@ const LibraryWebRtc = {
             this.rtcConfig = /** @type {RTCConfiguration} */ ({});
             this.pc = new RTCPeerConnection(this.rtcConfig);
 
-            this.reliableDc = this.pc.createDataChannel("reliable");
-            this.reliableOpened = reliableOpened;
-            this.reliableReceived = reliableReceived;
-            this.reliableError = reliableError;
-            this.reliableEnded = reliableEnded;
-
-            const onChannel = (/** @type {string} */ name, /** @type {string} */ eventType) => {
+            const onChannel = (/** @type {string} */ label, /** @type {string} */ eventType) => {
                 const selectedPair = (this.pc.sctp && this.pc.sctp.transport && this.pc.sctp.transport.iceTransport && typeof this.pc.sctp.transport.iceTransport.getSelectedCandidatePair === 'function')
                     ? this.pc.sctp.transport.iceTransport.getSelectedCandidatePair()
                     : null;
                 const selectedPairJson = selectedPair
                     ? `, selected candidate pair: ${JSON.stringify(selectedPair)}`
                     : "";
-                const message = (name[0].toUpperCase() + name.slice(1)) + " data channel " + eventType;
+                const message = `Data channel '${label}' ${eventType}`;
                 logCallback('onChannel', message + selectedPairJson);
             };
 
@@ -230,48 +205,50 @@ const LibraryWebRtc = {
                 return message;
             };
 
-            this.reliableDc.onopen = _ => {
-                onChannel("reliable", "opened");
-                this.reliableOpened();
-            };
-            this.reliableDc.onmessage = message => this.reliableReceived(new Uint8Array(message.data));
-            this.reliableDc.addEventListener("error", (ev) => {
-                const err = ev.error || ev;
-                const errorMessage = err.message || err.toString() || 'Unknown error';
-                logErrorCallback('reliableDc.onerror', `Reliable Error: \n${errorMessage}`);
-                const message = buildErrorMessage(err, err.errorDetail, errorMessage);
-                this.reliableError(message);
-            });
-            this.reliableDc.onclose = _ => {
-                onChannel("reliable", "closed");
-                this.reliableEnded();
+            /** @type {{[channelId: number]: WebRtcDataChannelEntry}} */
+            this.channels = {};
+            this.nextChannelId = 0;
+
+            this.createDataChannel = (/** @type {string} */ label, /** @type {boolean} */ reliable) => {
+                const channelId = this.nextChannelId++;
+                const dc = reliable
+                    ? this.pc.createDataChannel(label)
+                    : this.pc.createDataChannel(label, { maxRetransmits: 0, ordered: false });
+                this.channels[channelId] = { dc, label };
+
+                dc.onopen = _ => {
+                    // Notify first: onChannel's candidate-pair lookup can throw if pc.sctp is already
+                    // gone by the time this fires (e.g. late event during teardown), which must not
+                    // prevent the C# side from learning about the state change.
+                    channelOpened(channelId);
+                    onChannel(label, "opened");
+                };
+                dc.onmessage = message => channelReceived(channelId, new Uint8Array(message.data));
+                dc.addEventListener("error", (ev) => {
+                    const err = ev.error || ev;
+                    const errorMessage = err.message || err.toString() || 'Unknown error';
+                    logErrorCallback('dc.onerror', `Data channel '${label}' error: \n${errorMessage}`);
+                    const message = buildErrorMessage(err, err.errorDetail, errorMessage);
+                    channelError(channelId, message);
+                });
+                dc.onclose = _ => {
+                    channelEnded(channelId);
+                    onChannel(label, "closed");
+                };
+
+                return channelId;
             };
 
-            this.unreliableDc = this.pc.createDataChannel("unreliable", {
-                maxRetransmits: 0,
-                ordered: false
-            });
-            this.unreliableOpened = unreliableOpened;
-            this.unreliableReceived = unreliableReceived;
-            this.unreliableError = unreliableError;
-            this.unreliableEnded = unreliableEnded;
-
-            this.unreliableDc.onopen = _ => {
-                onChannel("unreliable", "opened");
-                this.unreliableOpened();
+            this.sendOnChannel = (/** @type {number} */ channelId, /** @type {ArrayBuffer} */ message) => {
+                const channel = this.channels[channelId];
+                if (!channel || channel.dc.readyState !== "open") return;
+                channel.dc.send(message);
             };
-            this.unreliableDc.onmessage = message => this.unreliableReceived(new Uint8Array(message.data));
-            this.unreliableDc.addEventListener("error", (ev) => {
-                const err = ev.error || ev;
-                const errorMessage = err.message || err.toString() || 'Unknown error';
-                logErrorCallback('unreliableDc.onerror', `Unreliable Error: \n${errorMessage}`);
-                const message = buildErrorMessage(err, err.errorDetail, errorMessage);
-                this.unreliableError(message);
-            });
 
-            this.unreliableDc.onclose = _ => {
-                onChannel("unreliable", "closed");
-                this.unreliableEnded();
+            this.closeChannel = (/** @type {number} */ channelId) => {
+                const channel = this.channels[channelId];
+                if (!channel) return;
+                channel.dc.close();
             };
 
             /** @type {Array<() => void>} */
@@ -333,16 +310,6 @@ const LibraryWebRtc = {
                 }
             };
 
-            this.sendReliable = (/** @type {ArrayBuffer} */ message) => {
-                if (this.reliableDc.readyState !== "open") return;
-                this.reliableDc.send(message);
-            };
-
-            this.sendUnreliable = (/** @type {ArrayBuffer} */ message) => {
-                if (this.unreliableDc.readyState !== "open") return;
-                this.unreliableDc.send(message);
-            };
-
             this.setIceServers = (/** @type {RTCIceServer[]} */ iceServers) => {
                 this.rtcConfig.iceServers = iceServers;
                 logCallback('setIceServers', "Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
@@ -351,8 +318,7 @@ const LibraryWebRtc = {
 
             this.close = () => {
                 this.candidatePairCt[0] = true;
-                this.reliableDc.close();
-                this.unreliableDc.close();
+                Object.values(this.channels).forEach(channel => channel.dc.close());
                 this.pc.close();
             };
 
@@ -397,20 +363,20 @@ const LibraryWebRtc = {
             };
         }
 
-        const WebRtcReliableOpened = () => {
-            if (webRtcState.onReliableOpened === null) {
+        const WebRtcChannelOpened = (/** @type {number} */ channelId) => {
+            if (webRtcState.onChannelOpened === null) {
                 return;
             }
 
-            try{
-                Module.dynCall_vi(webRtcState.onReliableOpened, id);
+            try {
+                Module.dynCall_vii(webRtcState.onChannelOpened, id, channelId);
             } catch (e) {
-                WebRtcLogErrorCallback('WebRtcReliableOpened', `${e}`);
+                WebRtcLogErrorCallback('WebRtcChannelOpened', `${e}`);
             }
         };
 
-        const WebRtcReliableReceived = (/** @type {Uint8Array} */ msg) => {
-            if (webRtcState.onReliableReceived === null) {
+        const WebRtcChannelReceived = (/** @type {number} */ channelId, /** @type {Uint8Array} */ msg) => {
+            if (webRtcState.onChannelReceived === null) {
                 return;
             }
 
@@ -418,21 +384,22 @@ const LibraryWebRtc = {
             HEAPU8.set(msg, buffer);
 
             try {
-                Module.dynCall_viii(
-                    webRtcState.onReliableReceived,
+                Module.dynCall_viiii(
+                    webRtcState.onChannelReceived,
                     id,
+                    channelId,
                     buffer,
                     msg.length
                 );
             } catch (e) {
-                WebRtcLogErrorCallback('WebRtcReliableReceived', `${e}`);
+                WebRtcLogErrorCallback('WebRtcChannelReceived', `${e}`);
             } finally {
                 _free(buffer);
             }
         };
 
-        const WebRtcReliableError = (/** @type {string} */ msg) => {
-            const callback = webRtcState.onReliableError;
+        const WebRtcChannelError = (/** @type {number} */ channelId, /** @type {string} */ msg) => {
+            const callback = webRtcState.onChannelError;
             if (callback === null) {
                 return;
             }
@@ -442,88 +409,23 @@ const LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(callback, id, msgBuffer);
+                Module.dynCall_viii(callback, id, channelId, msgBuffer);
             } catch (e) {
-                WebRtcLogErrorCallback('WebRtcReliableError', `${e}`);
+                WebRtcLogErrorCallback('WebRtcChannelError', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
         };
 
-        const WebRtcReliableEnded = () => {
-            if (webRtcState.onReliableEnded === null) {
+        const WebRtcChannelEnded = (/** @type {number} */ channelId) => {
+            if (webRtcState.onChannelEnded === null) {
                 return;
             }
 
             try {
-                Module.dynCall_vi(webRtcState.onReliableEnded, id);
+                Module.dynCall_vii(webRtcState.onChannelEnded, id, channelId);
             } catch (e) {
-                WebRtcLogErrorCallback('WebRtcReliableEnded', `${e}`);
-            }
-        };
-
-        const WebRtcUnreliableOpened = () => {
-            if (webRtcState.onUnreliableOpened === null) {
-                return;
-            }
-
-            try {
-                Module.dynCall_vi(webRtcState.onUnreliableOpened, id);
-            } catch (e) {
-                WebRtcLogErrorCallback('WebRtcUnreliableOpened', `${e}`);
-            }
-        };
-
-        const WebRtcUnreliableReceived = (/** @type {Uint8Array} */ msg) => {
-            if (webRtcState.onUnreliableReceived === null) {
-                return;
-            }
-
-            const buffer = _malloc(msg.length);
-            HEAPU8.set(msg, buffer);
-
-            try {
-                Module.dynCall_viii(
-                    webRtcState.onUnreliableReceived,
-                    id,
-                    buffer,
-                    msg.length
-                );
-            } catch (e) {
-                WebRtcLogErrorCallback('WebRtcUnreliableReceived', `${e}`);
-            } finally {
-                _free(buffer);
-            }
-        };
-
-        const WebRtcUnreliableError = (/** @type {string} */ msg) => {
-            const callback = webRtcState.onUnreliableError;
-            if (callback === null) {
-                return;
-            }
-
-            const msgBytes = lengthBytesUTF8(msg) + 1;
-            const msgBuffer = _malloc(msgBytes);
-            stringToUTF8(msg, msgBuffer, msgBytes);
-
-            try {
-                Module.dynCall_vii(callback, id, msgBuffer);
-            } catch (e) {
-                WebRtcLogErrorCallback('WebRtcUnreliableError', `${e}`);
-            } finally {
-                _free(msgBuffer);
-            }
-        };
-
-        const WebRtcUnreliableEnded = () => {
-            if (webRtcState.onUnreliableEnded === null) {
-                return;
-            }
-
-            try {
-                Module.dynCall_vi(webRtcState.onUnreliableEnded, id);
-            } catch (e) {
-                WebRtcLogErrorCallback('WebRtcUnreliableEnded', `${e}`);
+                WebRtcLogErrorCallback('WebRtcChannelEnded', `${e}`);
             }
         };
 
@@ -658,14 +560,10 @@ const LibraryWebRtc = {
         webRtcState.logToConsole("Receiving callbacks created");
 
         webRtcState.instances[id] = new WebRtcClient(
-            WebRtcReliableOpened,
-            WebRtcReliableReceived,
-            WebRtcReliableError,
-            WebRtcReliableEnded,
-            WebRtcUnreliableOpened,
-            WebRtcUnreliableReceived,
-            WebRtcUnreliableError,
-            WebRtcUnreliableEnded,
+            WebRtcChannelOpened,
+            WebRtcChannelReceived,
+            WebRtcChannelError,
+            WebRtcChannelEnded,
             IceConnectionStateChanged,
             ConnectionStateChanged,
             WebRtcIceCandidateCallback,
@@ -716,36 +614,49 @@ const LibraryWebRtc = {
         webRtcState.offerAnnouncingDelay = delayMs;
     },
 
-    WebRtcSetOnReliableOpened: function (callback) {
-        webRtcState.onReliableOpened = callback;
+    WebRtcCreateDataChannel: function (id, labelPtr, reliable) {
+        const instance = webRtcState.instances[id];
+        if (!instance) {
+            webRtcState.logToConsole(`Instance not found for ID: ${id}`);
+            return -1;
+        }
+
+        const label = UTF8ToString(labelPtr);
+        return instance.createDataChannel(label, !!reliable);
     },
 
-    WebRtcSetOnReliableReceived: function (callback) {
-        webRtcState.onReliableReceived = callback;
+    WebRtcSendOnChannel: function (id, channelId, bufferPtr, length) {
+        const instance = webRtcState.instances[id];
+        if (!instance) {
+            return;
+        }
+
+        instance.sendOnChannel(channelId, /** @type {ArrayBuffer} */ (HEAPU8.buffer.slice(bufferPtr, bufferPtr + length)));
     },
 
-    WebRtcSetOnReliableError: function (callback) {
-        webRtcState.onReliableError = callback;
+    WebRtcCloseChannel: function (id, channelId) {
+        const instance = webRtcState.instances[id];
+        if (!instance) {
+            return;
+        }
+
+        instance.closeChannel(channelId);
     },
 
-    WebRtcSetOnReliableEnded: function (callback) {
-        webRtcState.onReliableEnded = callback;
+    WebRtcSetOnChannelOpened: function (callback) {
+        webRtcState.onChannelOpened = callback;
     },
 
-    WebRtcSetOnUnreliableOpened: function (callback) {
-        webRtcState.onUnreliableOpened = callback;
+    WebRtcSetOnChannelReceived: function (callback) {
+        webRtcState.onChannelReceived = callback;
     },
 
-    WebRtcSetOnUnreliableReceived: function (callback) {
-        webRtcState.onUnreliableReceived = callback;
+    WebRtcSetOnChannelError: function (callback) {
+        webRtcState.onChannelError = callback;
     },
 
-    WebRtcSetOnUnreliableError: function (callback) {
-        webRtcState.onUnreliableError = callback;
-    },
-
-    WebRtcSetOnUnreliableEnded: function (callback) {
-        webRtcState.onUnreliableEnded = callback;
+    WebRtcSetOnChannelEnded: function (callback) {
+        webRtcState.onChannelEnded = callback;
     },
 
     WebRtcSetOnOffer: function (callback) {
@@ -798,22 +709,6 @@ const LibraryWebRtc = {
 
         const answerStr = UTF8ToString(answer);
         instance.onAnswer(answerStr).catch((/** @type {any} */ e) => webRtcState.logToConsole(e.toString()));
-    },
-
-    WebRtcSendReliable: function (id, bufferPtr, length) {
-        const instance = webRtcState.instances[id];
-        if (!instance) {
-            return;
-        }
-
-        instance.sendReliable(/** @type {ArrayBuffer} */ (HEAPU8.buffer.slice(bufferPtr, bufferPtr + length)));
-    },
-
-    WebRtcSendUnreliable: function (id, bufferPtr, length) {
-        const instance = webRtcState.instances[id];
-        if (!instance) return;
-
-        instance.sendUnreliable(/** @type {ArrayBuffer} */ (HEAPU8.buffer.slice(bufferPtr, bufferPtr + length)));
     },
 
     WebRtcClose: function (id) {

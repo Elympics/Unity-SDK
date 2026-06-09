@@ -95,14 +95,13 @@ namespace Elympics
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
         public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
-        public async UniTask SendBufferInput(long tick)
+        public void SendBufferInput(long tick)
         {
-            if (_input.Count() > 0)
-            {
-                GetInputCollectionToSend();
-                var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
-                await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
-            }
+            if (_input.Count() <= 0)
+                return;
+            GetInputCollectionToSend();
+            var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
         }
 
         private void GetInputCollectionToSend()
@@ -115,14 +114,14 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
-        public async UniTask SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
+        public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
-        public async UniTask SendRawDataToServer(byte[] rawData, bool reliable)
+        public void SendRawDataToServer(byte[] rawData, bool reliable)
         {
             Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;
 
-            await RunWithLag(() => sendDataAsync(rawData));
+            RunWithLag(() => sendDataAsync(rawData)).Forget();
         }
 
         private void OnUnreliableInGameDataReceived(byte[] data, string userId)
@@ -160,7 +159,7 @@ namespace Elympics
             }
         }
 
-        private async UniTask RunWithLag(Action action)
+        private async UniTaskVoid RunWithLag(Action action)
         {
             GetNewLag(out var lost, out var lagMs);
             if (lost)

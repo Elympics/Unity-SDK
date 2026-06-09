@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -10,23 +11,22 @@ namespace MatchTcpClients
     {
         bool IsConnected { get; }
 
-        event Action Connected;
-        event Action<TimeSynchronizationData> ConnectedAndSynchronized;
-        event Action<TimeSynchronizationData> Synchronized;
-        event Action Disconnected;
-        event Action<UserMatchAuthenticatedMessage> UserMatchAuthenticated;
-        event Action<AuthenticatedAsSpectatorMessage> AuthenticatedAsSpectator;
-        event Action<MatchJoinedMessage> MatchJoined;
-        event Action<MatchEndedMessage> MatchEnded;
-        event Action<InGameDataMessage> InGameDataReliableReceived;
-        event Action<InGameDataMessage> InGameDataUnreliableReceived;
+        event Action? Connected;
+        event Action<TimeSynchronizationData>? ConnectedAndSynchronized;
+        event Action<TimeSynchronizationData>? Synchronized;
+        event Action? Disconnected;
+        event Action<UserMatchAuthenticatedMessage>? UserMatchAuthenticated;
+        event Action<AuthenticatedAsSpectatorMessage>? AuthenticatedAsSpectator;
+        event Action<MatchJoinedMessage>? MatchJoined;
+        event Action<MatchEndedMessage>? MatchEnded;
+        event Action<string, InGameDataMessage>? InGameDataReceived;
 
         UniTask ConnectAsync(CancellationToken ct = default);
         void Disconnect();
-        UniTask AuthenticateMatchUserSecretAsync(string userSecret);
-        UniTask AuthenticateAsSpectatorAsync();
-        UniTask JoinMatchAsync();
-        UniTask SendInGameDataReliableAsync(byte[] data);
-        UniTask SendInGameDataUnreliableAsync(byte[] data);
+        void AuthenticateMatchUserSecretAsync(string userSecret);
+        void AuthenticateAsSpectatorAsync();
+        void JoinMatchAsync();
+        void SendInGameDataReliable(byte[] data);
+        void SendInGameDataUnreliable(byte[] data);
     }
 }

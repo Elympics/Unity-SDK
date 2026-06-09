@@ -1,24 +1,29 @@
+#nullable enable
 using System;
-using System.Net;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace MatchTcpLibrary.TransportLayer.Interfaces
 {
-    public interface INetworkClient
+    internal interface INetworkClient : IDisposable
     {
-        bool IsConnected { get; }
-        event Action Disconnected;
-        event Action<byte[]> DataReceived;
+        const string ReliableLabel = "reliable";
+        const string UnreliableLabel = "unreliable";
 
-        IPEndPoint LocalEndPoint { get; }
-        IPEndPoint RemoteEndpoint { get; }
+        event Action? Connected;
+        event Action<string>? ChannelOpened;
+        event Action<string, byte[]>? DataReceived;
+        event Action? Disconnected;
+
+        bool IsConnected { get; }
+        IReadOnlyDictionary<string, IDataChannel> Channels { get; }
+
+        IDataChannel ReliableChannel => Channels[ReliableLabel];
+        IDataChannel UnreliableChannel => Channels[UnreliableLabel];
 
         void CreateAndBind();
-        void CreateAndBind(int port);
-        void CreateAndBind(IPEndPoint localEndPoint);
-        UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default);
-        UniTask SendAsync(byte[] payload);
+        UniTask Connect(CancellationToken ct = default);
         void Disconnect();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Elympics
+namespace Elympics
 {
     public class GameServerClosedException : ElympicsException
     {

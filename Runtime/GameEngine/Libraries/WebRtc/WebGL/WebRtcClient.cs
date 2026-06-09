@@ -1,10 +1,13 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
 using AOT;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using UnityEngine;
 using WebRtcWrapper;
 
@@ -19,6 +22,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private readonly int _instanceId;
         private readonly ElympicsLoggerContext _logger;
+        private readonly Dictionary<int, WebGLDataChannel> _channels = new();
 
         public WebRtcClient(WebRtcConfig config)
         {
@@ -34,14 +38,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private static void Initialize(int offerAnnounceDelayMs)
         {
             WebRtcSetOfferAnnouncingDelay(offerAnnounceDelayMs);
-            WebRtcSetOnReliableOpened(DelegateOnReliableOpened);
-            WebRtcSetOnReliableReceived(DelegateOnReliableReceived);
-            WebRtcSetOnReliableError(DelegateOnReliableError);
-            WebRtcSetOnReliableEnded(DelegateOnReliableEnded);
-            WebRtcSetOnUnreliableOpened(DelegateOnUnreliableOpened);
-            WebRtcSetOnUnreliableReceived(DelegateOnUnreliableReceived);
-            WebRtcSetOnUnreliableError(DelegateOnUnreliableError);
-            WebRtcSetOnUnreliableEnded(DelegateOnUnreliableEnded);
+            WebRtcSetOnChannelOpened(DelegateOnChannelOpened);
+            WebRtcSetOnChannelReceived(DelegateOnChannelReceived);
+            WebRtcSetOnChannelError(DelegateOnChannelError);
+            WebRtcSetOnChannelEnded(DelegateOnChannelEnded);
             WebRtcSetOnIceConnectionStateChanged(DelegateOnIceConnectionStateChanged);
             WebRtcSetOnConnectionStateChanged(DelegateOnConnectionStateChanged);
             WebRtcSetOnOffer(DelegateOnOffer);
@@ -60,25 +60,69 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             WebRtcFree(instanceId);
         }
 
-        public void SendReliable(byte[] data) => WebRtcSendReliable(_instanceId, data, data.Length);
+        public IDataChannel CreateDataChannel(string label, bool reliable)
+        {
+            var channelId = WebRtcCreateDataChannel(_instanceId, label, reliable);
+            var channel = new WebGLDataChannel(label, _instanceId, channelId);
+            _channels.Add(channelId, channel);
+            return channel;
+        }
 
-        public void SendUnreliable(byte[] data) => WebRtcSendUnreliable(_instanceId, data, data.Length);
+        private sealed class WebGLDataChannel : IDataChannel
+        {
+            private readonly int _instanceId;
+            private readonly int _channelId;
 
-        public event Action? ReliableChannelOpened;
-        public event Action<byte[]>? ReliableReceived;
-        public event Action<string>? ReliableReceivingError;
-        public event Action? ReliableReceivingEnded;
+            public string Label { get; }
 
-        public event Action? UnreliableChannelOpened;
-        public event Action<byte[]>? UnreliableReceived;
-        public event Action<string>? UnreliableReceivingError;
-        public event Action? UnreliableReceivingEnded;
+            private bool _isConnected;
+            public bool IsConnected
+            {
+                get => _isConnected;
+                private set
+                {
+                    if (_isConnected == value)
+                        return;
+                    _isConnected = value;
+                    if (!value)
+                        Disconnected?.Invoke();
+                }
+            }
 
-        public event Action<string>? IceConnectionStateChanged;
-        public event Action<string>? ConnectionStateChanged;
+            public event Action? Disconnected;
+            public event Action<byte[]>? DataReceived;
+            public event Action<string>? Error;
 
-        public event Action<string>? IceCandidateCreated;
-        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)>? CandidatePairChosen;
+            public WebGLDataChannel(string label, int instanceId, int channelId)
+            {
+                Label = label;
+                _instanceId = instanceId;
+                _channelId = channelId;
+            }
+
+            public void OnOpened() => IsConnected = true;
+            public void OnReceived(byte[] data) => DataReceived?.Invoke(data);
+            public void OnError(string error) => Error?.Invoke(error);
+            public void OnEnded() => IsConnected = false;
+
+            // All channels are created before the offer/answer exchange completes.
+            // There is no per-channel connect step.
+            public void CreateAndBind()
+            { }
+
+            public UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default) => UniTask.CompletedTask;
+
+            public void Send(byte[] payload) => WebRtcSendOnChannel(_instanceId, _channelId, payload, payload.Length);
+
+            public void Disconnect()
+            {
+                WebRtcCloseChannel(_instanceId, _channelId);
+                IsConnected = false;
+            }
+
+            public void Dispose()
+            { }
+        }
 
         public void Dispose() => HandleInstanceDestroy(_instanceId);
 
@@ -106,15 +150,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Close() => WebRtcClose(_instanceId);
 
-        private void OnReliableOpened() => ReliableChannelOpened?.Invoke();
-        private void OnReliableReceived(byte[] data) => ReliableReceived?.Invoke(data);
-        private void OnReliableError(string error) => ReliableReceivingError?.Invoke(error);
-        private void OnReliableEnded() => ReliableReceivingEnded?.Invoke();
+        public event Action<string>? IceConnectionStateChanged;
+        public event Action<string>? ConnectionStateChanged;
 
-        private void OnUnreliableOpened() => UnreliableChannelOpened?.Invoke();
-        private void OnUnreliableReceived(byte[] data) => UnreliableReceived?.Invoke(data);
-        private void OnUnreliableError(string error) => UnreliableReceivingError?.Invoke(error);
-        private void OnUnreliableEnded() => UnreliableReceivingEnded?.Invoke();
+        public event Action<string>? IceCandidateCreated;
+        public event Action<(IceCandidateStats LocalCandidate, IceCandidateStats RemoteCandidate)>? CandidatePairChosen;
 
         private void OnIceConnectionStateChanged(string newState) => IceConnectionStateChanged?.Invoke(newState);
 
@@ -147,116 +187,76 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         [DllImport("__Internal")] private static extern void WebRtcOnAnswer(int instanceId, string answer);
 
-        [DllImport("__Internal")] private static extern int WebRtcSendReliable(int instanceId, byte[] dataPtr, int dataLength);
+        [DllImport("__Internal")] private static extern int WebRtcCreateDataChannel(int instanceId, string label, bool reliable);
 
-        [DllImport("__Internal")] private static extern int WebRtcSendUnreliable(int instanceId, byte[] dataPtr, int dataLength);
+        [DllImport("__Internal")] private static extern int WebRtcSendOnChannel(int instanceId, int channelId, byte[] dataPtr, int dataLength);
+
+        [DllImport("__Internal")] private static extern void WebRtcCloseChannel(int instanceId, int channelId);
 
         [DllImport("__Internal")] private static extern int WebRtcClose(int instanceId);
 
         #region Callbacks
 
-        public delegate void OnOpenedCallback(int instanceId);
+        public delegate void OnChannelCallback(int instanceId, int channelId);
 
-        [DllImport("__Internal")] public static extern void WebRtcSetOnReliableOpened(OnOpenedCallback callback);
+        [DllImport("__Internal")] public static extern void WebRtcSetOnChannelOpened(OnChannelCallback callback);
 
-        [MonoPInvokeCallback(typeof(OnOpenedCallback))]
-        public static void DelegateOnReliableOpened(int instanceId)
+        [MonoPInvokeCallback(typeof(OnChannelCallback))]
+        public static void DelegateOnChannelOpened(int instanceId, int channelId)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
+            if (!instanceRef._channels.TryGetValue(channelId, out var channel))
+                return;
 
-            instanceRef.OnReliableOpened();
+            channel.OnOpened();
         }
 
-        [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableOpened(OnOpenedCallback callback);
+        [DllImport("__Internal")] public static extern void WebRtcSetOnChannelEnded(OnChannelCallback callback);
 
-        [MonoPInvokeCallback(typeof(OnOpenedCallback))]
-        public static void DelegateOnUnreliableOpened(int instanceId)
+        [MonoPInvokeCallback(typeof(OnChannelCallback))]
+        public static void DelegateOnChannelEnded(int instanceId, int channelId)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
+            if (!instanceRef._channels.TryGetValue(channelId, out var channel))
+                return;
 
-            instanceRef.OnUnreliableOpened();
+            channel.OnEnded();
         }
 
-        public delegate void OnReceivedCallback(int instanceId, IntPtr msgPtr, int msgSize);
+        public delegate void OnChannelReceivedCallback(int instanceId, int channelId, IntPtr msgPtr, int msgSize);
 
-        [DllImport("__Internal")] public static extern void WebRtcSetOnReliableReceived(OnReceivedCallback callback);
+        [DllImport("__Internal")] public static extern void WebRtcSetOnChannelReceived(OnChannelReceivedCallback callback);
 
-        [MonoPInvokeCallback(typeof(OnReceivedCallback))]
-        public static void DelegateOnReliableReceived(int instanceId, IntPtr msgPtr, int msgSize)
+        [MonoPInvokeCallback(typeof(OnChannelReceivedCallback))]
+        public static void DelegateOnChannelReceived(int instanceId, int channelId, IntPtr msgPtr, int msgSize)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
+                return;
+            if (!instanceRef._channels.TryGetValue(channelId, out var channel))
                 return;
 
             var msg = new byte[msgSize];
             Marshal.Copy(msgPtr, msg, 0, msgSize);
 
-            instanceRef.OnReliableReceived(msg);
+            channel.OnReceived(msg);
         }
 
-        [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableReceived(OnReceivedCallback callback);
+        public delegate void OnChannelErrorCallback(int instanceId, int channelId, IntPtr errorPtr);
 
-        [MonoPInvokeCallback(typeof(OnReceivedCallback))]
-        public static void DelegateOnUnreliableReceived(int instanceId, IntPtr msgPtr, int msgSize)
+        [DllImport("__Internal")] public static extern void WebRtcSetOnChannelError(OnChannelErrorCallback callback);
+
+        [MonoPInvokeCallback(typeof(OnChannelErrorCallback))]
+        public static void DelegateOnChannelError(int instanceId, int channelId, IntPtr errorPtr)
         {
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
-
-            var msg = new byte[msgSize];
-            Marshal.Copy(msgPtr, msg, 0, msgSize);
-
-            instanceRef.OnUnreliableReceived(msg);
-        }
-
-        public delegate void OnReceivingErrorCallback(int instanceId, IntPtr errorPtr);
-
-        [DllImport("__Internal")] public static extern void WebRtcSetOnReliableError(OnReceivingErrorCallback callback);
-
-        [MonoPInvokeCallback(typeof(OnReceivingErrorCallback))]
-        public static void DelegateOnReliableError(int instanceId, IntPtr errorPtr)
-        {
-            if (!Instances.TryGetValue(instanceId, out var instanceRef))
+            if (!instanceRef._channels.TryGetValue(channelId, out var channel))
                 return;
 
             var errorMsg = Marshal.PtrToStringAuto(errorPtr);
-            instanceRef.OnReliableError(errorMsg ?? "");
-        }
-
-        [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableError(OnReceivingErrorCallback callback);
-
-        [MonoPInvokeCallback(typeof(OnReceivingErrorCallback))]
-        public static void DelegateOnUnreliableError(int instanceId, IntPtr errorPtr)
-        {
-            if (!Instances.TryGetValue(instanceId, out var instanceRef))
-                return;
-
-            var errorMsg = Marshal.PtrToStringAuto(errorPtr);
-            instanceRef.OnUnreliableError(errorMsg ?? "");
-        }
-
-        public delegate void OnReceivingEndedCallback(int instanceId);
-
-        [DllImport("__Internal")] public static extern void WebRtcSetOnReliableEnded(OnReceivingEndedCallback callback);
-
-        [MonoPInvokeCallback(typeof(OnReceivingEndedCallback))]
-        public static void DelegateOnReliableEnded(int instanceId)
-        {
-            if (!Instances.TryGetValue(instanceId, out var instanceRef))
-                return;
-
-            instanceRef.OnReliableEnded();
-        }
-
-        [DllImport("__Internal")] public static extern void WebRtcSetOnUnreliableEnded(OnReceivingEndedCallback callback);
-
-        [MonoPInvokeCallback(typeof(OnReceivingEndedCallback))]
-        public static void DelegateOnUnreliableEnded(int instanceId)
-        {
-            if (!Instances.TryGetValue(instanceId, out var instanceRef))
-                return;
-
-            instanceRef.OnUnreliableEnded();
+            channel.OnError(errorMsg ?? "");
         }
 
         public delegate void OnIceConnectionStateChangedCallback(int instanceId, IntPtr newState);

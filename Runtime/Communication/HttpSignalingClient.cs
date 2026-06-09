@@ -2,6 +2,9 @@ using System;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models;
+using Elympics.ElympicsSystems.Internal;
+using MatchTcpClients;
 using MatchTcpLibrary;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -16,87 +19,61 @@ namespace Elympics
         private const string IceServersRoute = "iceServers";
 
         private readonly Uri _signalingUri;
+        private readonly Uri _iceServersUri;
+        private readonly ElympicsLoggerContext _logger;
+        private readonly GameServerClientConfig _config;
 
-        public HttpSignalingClient(Uri baseUri, Guid matchId) =>
-            _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
-
-        internal static async UniTask<IceServer[]> FetchIceServersAsync(Uri iceServersUri, TimeSpan timeout, CancellationToken ct = default)
+        public HttpSignalingClient(Uri baseUri, Guid matchId, GameServerClientConfig config)
         {
-            try
-            {
-                using var request = UnityWebRequest.Get(iceServersUri);
-                request.timeout = (int)Math.Ceiling(timeout.TotalSeconds);
-                request.SetTestCertificateHandlerIfNeeded();
-
-                var result = await request.SendWebRequest().ToUniTask(null, PlayerLoopTiming.Update, ct);
-                if (result.IsConnectionError() || result.IsProtocolError())
-                {
-                    Debug.LogWarning($"[Elympics] Failed to fetch ICE servers from {iceServersUri}: {result.error ?? "cancelled"}. Proceeding without TURN.");
-                    return Array.Empty<IceServer>();
-                }
-
-                var response = JsonUtility.FromJson<IceServersResponse>(result.downloadHandler.text);
-                return response.iceServers ?? Array.Empty<IceServer>();
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Elympics] Failed to fetch ICE servers: {e.Message}. Proceeding without TURN.");
-                return Array.Empty<IceServer>();
-            }
+            _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
+            _iceServersUri = baseUri.AppendPathSegments(IceServersRoute, matchId.ToString());
+            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(HttpSignalingClient));
+            _config = config;
         }
 
-        internal static Uri BuildIceServersUri(Uri baseUri, Guid matchId) =>
-            baseUri.AppendPathSegments(IceServersRoute, matchId.ToString());
-
-        public async UniTask<WebSignalingClientResponse> PostOfferAsync(string offer, TimeSpan timeout, CancellationToken ct = default)
+        public async UniTask<IceServer[]> FetchIceServersAsync(TimeSpan timeout, CancellationToken ct = default)
         {
-            var rawOffer = Encoding.UTF8.GetBytes(offer);
+            using var request = UnityWebRequest.Get(_iceServersUri);
+            request.SetTestCertificateHandlerIfNeeded();
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            _ = request.SendWebRequest();
+            await UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token).WithTimeout(timeout, cts.Token);
+            cts.Cancel();
+            if (!request.isDone)
+                request.Abort();
+            var response = HandleCompleted(request);
+            if (response.IsError || string.IsNullOrEmpty(response.Text))
+            {
+                Debug.LogWarning($"[Elympics] Failed to fetch ICE servers from {_iceServersUri}: {response.Code} {response.Text ?? "cancelled"}. Proceeding without TURN.");
+                return Array.Empty<IceServer>();
+            }
+            return JsonUtility.FromJson<IceServersResponse>(response.Text).iceServers ?? Array.Empty<IceServer>();
+        }
+
+        public async UniTask<SignalingResponse> PostOfferAsync(OfferWithCandidates offer, TimeSpan timeout, CancellationToken ct = default)
+        {
+            var logger = _logger.WithMethodName();
+            var rawOffer = Encoding.UTF8.GetBytes(JsonUtility.ToJson(offer));
             using var request = new UnityWebRequest(_signalingUri, UnityWebRequest.kHttpVerbPOST);
             request.uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" };
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetTestCertificateHandlerIfNeeded();
 
-            try
-            {
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                _ = request.SendWebRequest();
-                await UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token).WithTimeout(timeout, cts.Token);
-                cts.Cancel();
-                if (!request.isDone)
-                    request.Abort();
-                return HandleCompleted(request);
-            }
-            catch (OperationCanceledException)
-            {
-                return new WebSignalingClientResponse
-                {
-                    IsError = true,
-                    Code = 499,
-                    Text = "Operation canceled"
-                };
-            }
-            catch (TimeoutException)
-            {
-                return new WebSignalingClientResponse
-                {
-                    IsError = true,
-                    Code = 408,
-                    Text = "Request timeout"
-                };
-            }
-            catch (Exception e)
-            {
-                return new WebSignalingClientResponse
-                {
-                    IsError = true,
-                    Text = e.Message + '\n' + e.StackTrace,
-                    Code = 500
-                };
-            }
-        }
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            _ = request.SendWebRequest();
+            await UniTask.WaitUntil(() => request.isDone, cancellationToken: cts.Token).WithTimeout(timeout, cts.Token);
+            cts.Cancel();
+            if (!request.isDone)
+                request.Abort();
+            var response = HandleCompleted(request);
+            if (response.Code == 502)
+                throw new GameServerClosedException();
+            if (response.IsError || string.IsNullOrEmpty(response.Text))
+                throw ElympicsLogger.LogException($"No valid WebRTC answer has been received. Error: {response.Text}");
 
-        public UniTask<WebSignalingClientResponse> OnIceCandidateCreated(string iceCandidate, TimeSpan timeout, string peerId, CancellationToken ct = default) =>
-            throw new NotImplementedException();
+            return JsonUtility.FromJson<SignalingResponse>(response.Text);
+        }
 
         private static WebSignalingClientResponse HandleCompleted(UnityWebRequest webRequest)
         {
@@ -111,6 +88,13 @@ namespace Elympics
                 Text = text,
                 Code = code
             };
+        }
+
+        private struct WebSignalingClientResponse
+        {
+            public bool IsError;
+            public string? Text;
+            public long Code;
         }
     }
 }

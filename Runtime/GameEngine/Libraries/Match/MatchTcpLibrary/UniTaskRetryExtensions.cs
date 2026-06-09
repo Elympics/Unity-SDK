@@ -25,7 +25,7 @@ namespace MatchTcpLibrary
                 {
                     onRetry?.Invoke(i);
                     if (delay.HasValue)
-                      await UniTask.Delay(delay.Value, DelayType.Realtime, cancellationToken: ct);
+                        await UniTask.Delay(delay.Value, DelayType.Realtime, cancellationToken: ct);
                 }
 
                 try
@@ -77,7 +77,7 @@ namespace MatchTcpLibrary
                 {
                     onRetry?.Invoke(i);
                     if (delay.HasValue)
-                      await UniTask.Delay(delay.Value, DelayType.Realtime, cancellationToken: ct);
+                        await UniTask.Delay(delay.Value, DelayType.Realtime, cancellationToken: ct);
                 }
 
                 try

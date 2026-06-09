@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Google.Protobuf;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
 using Proto.ProtoClient.Receivers;
@@ -9,8 +10,6 @@ using ProtoLog;
 using ProtoNtp;
 using ProtoUnityGameEngine;
 using UnityConnectors.HalfRemote.Ntp;
-using UnityConnectors.HalfRemote.Server;
-using WebRtcWrapper;
 
 namespace UnityConnectors.HalfRemote
 {
@@ -51,10 +50,10 @@ namespace UnityConnectors.HalfRemote
                 _unreliableClient.Receive();
         }
 
-        public HalfRemoteMatchClient(string userId, IWebRtcClient webRtcClient)
+        public HalfRemoteMatchClient(string userId, IDataChannel reliableChannel, IDataChannel unreliableChannel)
             : this(userId,
-                new ProtoNetworkDatagramClient(webRtcClient.AsReliableDatagramCommunication()),
-                new ProtoNetworkDatagramClient(webRtcClient.AsUnreliableDatagramCommunication()))
+                new ProtoNetworkDatagramClient(new DataChannelDatagramAdapter(reliableChannel)),
+                new ProtoNetworkDatagramClient(new DataChannelDatagramAdapter(unreliableChannel)))
         { }
 
         public void PlayerConnected() => _reliableClient.Send(new PlayerConnectedMsg { UserId = _userId });

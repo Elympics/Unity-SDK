@@ -1,12 +1,12 @@
+using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.SimpleMessageEncoder;
 using MatchTcpLibrary.TransportLayer.Tcp;
+using MatchTcpLibrary.TransportLayer.TcpUdp;
 using MatchTcpLibrary.TransportLayer.Udp;
 
 namespace MatchTcpClients
@@ -21,47 +21,23 @@ namespace MatchTcpClients
             IPEndPoint endpoint) : base(serializer, config) =>
             _endpoint = endpoint;
 
-        protected override (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients() =>
-            (CreateTcpNetworkClient(), CreateUdpNetworkClient());
-
-        protected override async UniTask ConnectInternalAsync(CancellationToken ct = default)
-        {
-            try
+        protected override INetworkClient CreateNetworkClient() =>
+            new TcpUdpNetworkClient(_endpoint, new (string, Func<IDataChannel>)[]
             {
-                ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
-                await ConnectSessionAsync(ct);
+                (INetworkClient.ReliableLabel, CreateTcpNetworkClient),
+                (INetworkClient.UnreliableLabel, CreateUdpNetworkClient),
+            });
 
-                ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
-                await UnreliableClient.ConnectAsync(_endpoint, ct);
-            }
-            catch
-            {
-                Disconnect();
-                throw;
-            }
-        }
+        protected override UniTask ConnectInternalAsync(CancellationToken ct = default) => NetworkClient.Connect(ct);
 
-        protected override async UniTask InitializeSessionAsync(CancellationToken ct = default)
-        {
-            try
-            {
-                await ReliableClient.ConnectAsync(_endpoint, ct);
-            }
-            catch (SocketException e)
-            {
-                _ = ElympicsLogger.LogException("Couldn't connect to the server", e);
-                throw;
-            }
-        }
-
-        private IReliableNetworkClient CreateTcpNetworkClient()
+        private static IDataChannel CreateTcpNetworkClient()
         {
             var encoder = new SimpleDelimiterEncoder(SimpleMessageEncoderConfig.Default);
-            var client = new TcpNetworkClient(encoder, TcpProtocolConfig.Default);
+            var client = new TcpDataChannel(INetworkClient.ReliableLabel, encoder, TcpProtocolConfig.Default);
             return client;
         }
 
-        private IUnreliableNetworkClient CreateUdpNetworkClient() =>
-            new UdpNetworkClient();
+        private static IDataChannel CreateUdpNetworkClient() =>
+            new UdpDataChannel(INetworkClient.UnreliableLabel);
     }
 }

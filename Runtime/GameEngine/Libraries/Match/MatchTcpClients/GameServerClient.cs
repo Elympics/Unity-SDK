@@ -16,11 +16,10 @@ namespace MatchTcpClients
     {
         protected readonly GameServerClientConfig Config;
 
-        public bool IsConnected => ReliableClient?.IsConnected ?? false;
+        public bool IsConnected => NetworkClient?.IsConnected ?? false;
 
         protected CancellationTokenSource? ClientDisconnectedCts;
-        protected IReliableNetworkClient? ReliableClient;
-        protected IUnreliableNetworkClient? UnreliableClient;
+        protected INetworkClient? NetworkClient;
 
         private UniTaskCompletionSource<ConnectedMessage>? _sessionConnectedTcs;
 
@@ -36,8 +35,7 @@ namespace MatchTcpClients
         public event Action<AuthenticatedAsSpectatorMessage>? AuthenticatedAsSpectator;
         public event Action<MatchJoinedMessage>? MatchJoined;
         public event Action<MatchEndedMessage>? MatchEnded;
-        public event Action<InGameDataMessage>? InGameDataReliableReceived;
-        public event Action<InGameDataMessage>? InGameDataUnreliableReceived;
+        public event Action<string, InGameDataMessage>? InGameDataReceived;
 
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config)
         {
@@ -45,36 +43,33 @@ namespace MatchTcpClients
             Config = config;
             _serializer = serializer;
             _clientSynchronizer = new ClientSynchronizer(config.ClientSynchronizerConfig);
-            _clientSynchronizer.ReliablePingGenerated += command => SendReliableCommand(command).Forget();
-            _clientSynchronizer.UnreliablePingGenerated += command => SendUnreliableCommand(command).Forget();
-            _clientSynchronizer.AuthenticateUnreliableGenerated += command => SendUnreliableCommand(command).Forget();
+            _clientSynchronizer.ReliablePingGenerated += SendReliableCommand;
+            _clientSynchronizer.UnreliablePingGenerated += SendUnreliableCommand;
+            _clientSynchronizer.AuthenticateUnreliableGenerated += SendUnreliableCommand;
             _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
             _clientSynchronizer.TimedOut += OnTimeout;
         }
 
         protected void Initialize()
         {
-            ReliableClient?.Dispose();
-            ReliableClient = null;
-            UnreliableClient?.Dispose();
-            UnreliableClient = null;
-            (ReliableClient, UnreliableClient) = CreateNetworkClients();
+            NetworkClient?.Dispose();
+            NetworkClient = null;
+            NetworkClient = CreateNetworkClient();
 
             ClientDisconnectedCts?.Cancel();
             ClientDisconnectedCts?.Dispose();
             ClientDisconnectedCts = new CancellationTokenSource();
             _ = ClientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
 
-            InitializeNetworkClients(ReliableClient, UnreliableClient);
-            ReliableClient.CreateAndBind();
-            UnreliableClient.CreateAndBind();
+            InitializeNetworkClient(NetworkClient);
+            NetworkClient.CreateAndBind();
         }
 
         public async UniTask ConnectAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
             Disconnect();
-            ClientDisconnectedCts = new CancellationTokenSource();
+            Initialize();
 
             try
             {
@@ -141,7 +136,8 @@ namespace MatchTcpClients
             return await _sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, ct);
         }
 
-        protected abstract UniTask InitializeSessionAsync(CancellationToken ct = default);
+        // No-op by default: NetworkClient.Connect() already fully connects the transport before this runs.
+        protected virtual UniTask InitializeSessionAsync(CancellationToken ct = default) => UniTask.CompletedTask;
 
         private static void InvokeSafely(Action? action, ElympicsLoggerContext logger)
         {
@@ -167,17 +163,15 @@ namespace MatchTcpClients
             }
         }
 
-        protected abstract (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients();
+        protected abstract INetworkClient CreateNetworkClient();
 
-        protected virtual void InitializeNetworkClients(IReliableNetworkClient reliable, IUnreliableNetworkClient unreliable)
+        protected virtual void InitializeNetworkClient(INetworkClient networkClient)
         {
             if (ClientDisconnectedCts == null)
                 throw new InvalidOperationException();
-            reliable.DataReceived += OnReliableMessageDataReceived;
-            reliable.Disconnected += Disconnect;
-            _ = ClientDisconnectedCts.Token.Register(reliable.Disconnect);
-            unreliable.DataReceived += OnUnreliableMessageDataReceived;
-            _ = ClientDisconnectedCts.Token.Register(unreliable.Disconnect);
+            networkClient.DataReceived += OnInGameDataReceived;
+            networkClient.Disconnected += Disconnect;
+            _ = ClientDisconnectedCts.Token.Register(networkClient.Disconnect);
         }
 
         private void OnTimeout()
@@ -199,23 +193,23 @@ namespace MatchTcpClients
             _clientSynchronizer.TimedOut -= OnTimeout;
         }
 
-        private async UniTask SendReliableCommand(Command command) => await ReliableClient.SendAsync(_serializer.Serialize(command));
+        private void SendReliableCommand(Command command) => NetworkClient?.ReliableChannel.Send(_serializer.Serialize(command));
 
-        private void OnReliableMessageDataReceived(byte[] data)
+        private void OnInGameDataReceived(string label, byte[] data)
         {
             try
             {
                 var message = _serializer.Deserialize<Message>(data);
-                OnReliableMessageDataReceived(data, message.Type);
+                OnMessageDataReceived(label, data, message.Type);
             }
             catch (Exception e)
             {
                 var log = _logger.WithMethodName();
-                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using reliable channel", e));
+                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using channel {label}", e));
             }
         }
 
-        private void OnReliableMessageDataReceived(byte[] data, MessageType type)
+        private void OnMessageDataReceived(string label, byte[] data, MessageType type)
         {
             switch (type)
             {
@@ -225,8 +219,14 @@ namespace MatchTcpClients
                 case MessageType.PingServer:
                     RespondForPing();
                     break;
+                case MessageType.PingClientResponse when label == INetworkClient.ReliableLabel:
+                    _clientSynchronizer.ReliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
+                    break;
+                case MessageType.PingClientResponse when label == INetworkClient.UnreliableLabel:
+                    _clientSynchronizer.UnreliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
+                    break;
                 case MessageType.InGameData:
-                    _ = InvokeReceivedMessageEvent(data, InGameDataReliableReceived);
+                    _ = InvokeReceivedMessageEvent<InGameDataMessage>(data, InvokeDataReceived);
                     break;
                 case MessageType.UserMatchAuthenticatedMessage:
                     _ = InvokeReceivedMessageEvent(data, UserMatchAuthenticated);
@@ -240,16 +240,18 @@ namespace MatchTcpClients
                 case MessageType.MatchEnded:
                     _ = InvokeReceivedMessageEvent(data, MatchEnded);
                     break;
-                case MessageType.PingClientResponse:
-                    var pingClientResponseMessage = _serializer.Deserialize<PingClientResponseMessage>(data);
-                    _clientSynchronizer.ReliablePingReceived(pingClientResponseMessage);
-                    break;
                 case MessageType.UnknownCommandMessage:
                     ElympicsLogger.LogError(_serializer.Deserialize<UnknownCommandMessage>(data).ErrorMessage);
                     break;
+                case MessageType.PingClientResponse:
                 case MessageType.None:
                 default:
                     break;
+            }
+
+            void InvokeDataReceived(InGameDataMessage dataMessage)
+            {
+                InGameDataReceived?.Invoke(label, dataMessage);
             }
 
             void OnSessionConnected(ConnectedMessage message)
@@ -258,7 +260,7 @@ namespace MatchTcpClients
             }
         }
 
-        private void RespondForPing() => _ = SendReliableCommand(new PingServerResponseCommand());
+        private void RespondForPing() => SendReliableCommand(new PingServerResponseCommand());
 
         private T InvokeReceivedMessageEvent<T>(byte[] data, Action<T>? action)
         {
@@ -268,62 +270,22 @@ namespace MatchTcpClients
             return message;
         }
 
-        public async UniTask AuthenticateMatchUserSecretAsync(string userSecret) =>
-            await SendReliableCommand(new AuthenticateMatchUserSecretCommand { UserSecret = userSecret });
+        public void AuthenticateMatchUserSecretAsync(string userSecret) =>
+            SendReliableCommand(new AuthenticateMatchUserSecretCommand { UserSecret = userSecret });
 
-        public async UniTask AuthenticateAsSpectatorAsync() =>
-            await SendReliableCommand(new AuthenticateAsSpectatorCommand());
+        public void AuthenticateAsSpectatorAsync() =>
+            SendReliableCommand(new AuthenticateAsSpectatorCommand());
 
-        public async UniTask JoinMatchAsync() =>
-            await SendReliableCommand(new JoinMatchCommand());
+        public void JoinMatchAsync() =>
+            SendReliableCommand(new JoinMatchCommand());
 
-        public async UniTask SendInGameDataReliableAsync(byte[] data) =>
-            await SendReliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
+        public void SendInGameDataReliable(byte[] data) =>
+            SendReliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
 
-        public async UniTask SendInGameDataUnreliableAsync(byte[] data) =>
-            await SendUnreliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
+        public void SendInGameDataUnreliable(byte[] data) =>
+            SendUnreliableCommand(new InGameDataCommand { Data = Convert.ToBase64String(data) });
 
-        private async UniTask SendUnreliableCommand(object command) =>
-            await UnreliableClient.SendAsync(_serializer.Serialize(command));
-
-        private void OnUnreliableMessageDataReceived(byte[] data)
-        {
-            try
-            {
-                var message = _serializer.Deserialize<Message>(data);
-                OnUnreliableMessageDataReceived(data, message.Type);
-            }
-            catch (Exception e)
-            {
-                var log = _logger.WithMethodName();
-                log.Exception(new ElympicsException($"Error in {GetType().Name} receiving a message using unreliable channel", e));
-            }
-        }
-
-        private void OnUnreliableMessageDataReceived(byte[] data, MessageType type)
-        {
-            switch (type)
-            {
-                case MessageType.InGameData:
-                    _ = InvokeReceivedMessageEvent(data, InGameDataUnreliableReceived);
-                    break;
-                case MessageType.PingClientResponse:
-                    _clientSynchronizer.UnreliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
-                    break;
-                case MessageType.None:
-                    break;
-                case MessageType.UnknownCommandMessage:
-                    ElympicsLogger.LogError(_serializer.Deserialize<UnknownCommandMessage>(data).ErrorMessage);
-                    break;
-                case MessageType.Connected:
-                case MessageType.PingServer:
-                case MessageType.MatchJoined:
-                case MessageType.UserMatchAuthenticatedMessage:
-                case MessageType.MatchEnded:
-                case MessageType.AuthenticateAsSpectator:
-                default:
-                    break;
-            }
-        }
+        private void SendUnreliableCommand(object command) =>
+            NetworkClient?.UnreliableChannel.Send(_serializer.Serialize(command));
     }
 }

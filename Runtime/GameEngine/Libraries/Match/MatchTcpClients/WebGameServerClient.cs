@@ -1,17 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics;
-using Elympics.Communication.Models;
-using Elympics.Communication.Utils;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.WebRtc;
-using UnityEngine;
-using WebRtcWrapper;
 
 #nullable enable
 
@@ -20,30 +13,13 @@ namespace MatchTcpClients
     internal sealed class WebGameServerClient : GameServerClient
     {
         private readonly IGameServerWebSignalingClient _signalingClient;
-        private readonly Func<WebRtcConfig, IWebRtcClient> _webRtcFactory;
-        private readonly Uri? _iceServersUri;
-
-        private IWebRtcClient? _webRtcClient;
-        private string? _answer;
-        private string? _iceServersJson;
-        private readonly ElympicsLoggerContext _logger;
-        private CancellationTokenSource? _stateCancellationTokenSource;
-        private CancellationTokenSource? _linkedCts;
-        private readonly List<string> _candidates = new();
         private const string RouteVersion = "v2";
 
         public WebGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
-            IGameServerWebSignalingClient signalingClient,
-            Func<WebRtcConfig, IWebRtcClient>? customWebRtcFactory = null,
-            Uri? iceServersUri = null) : base(serializer, config)
-        {
+            IGameServerWebSignalingClient signalingClient) : base(serializer, config) =>
             _signalingClient = signalingClient;
-            _webRtcFactory = customWebRtcFactory ?? WebRtcFactory.CreateClient;
-            _iceServersUri = iceServersUri;
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebGameServerClient));
-        }
 
         public static Uri GetSignalingServerBaseAddress(string gsEndpoint, string publicWebEndpoint, string? regionName)
         {
@@ -59,216 +35,14 @@ namespace MatchTcpClients
             return uriBuilder.Uri;
         }
 
-        protected override (IReliableNetworkClient, IUnreliableNetworkClient) CreateNetworkClients()
-        {
-            if (_webRtcClient != null)
-            {
-                _webRtcClient.Dispose();
-                UnsubscribeFromWebConnectionStatus();
-            }
-            _webRtcClient = _webRtcFactory(new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay });
-            return (new WebRtcReliableNetworkClient(_webRtcClient), new WebRtcUnreliableNetworkClient(_webRtcClient));
-        }
-
-        private void UnsubscribeFromWebConnectionStatus()
-        {
-            if (_webRtcClient == null)
-                return;
-            _webRtcClient.IceCandidateCreated -= OnIceCandidateCreated;
-            _webRtcClient.ReliableReceivingError -= OnReliableChannelError;
-            _webRtcClient.UnreliableReceivingError -= OnUnReliableChannelError;
-            _webRtcClient.IceConnectionStateChanged -= OnIceConnectionStateChanged;
-            _webRtcClient.ConnectionStateChanged -= OnConnectionStateChanged;
-        }
-
-        private void SubscribeToWebConnectionStatus()
-        {
-            if (_webRtcClient == null)
-                return;
-
-            _webRtcClient.IceCandidateCreated += OnIceCandidateCreated;
-            _webRtcClient.ReliableReceivingError += OnReliableChannelError;
-            _webRtcClient.UnreliableReceivingError += OnUnReliableChannelError;
-            _webRtcClient.IceConnectionStateChanged += OnIceConnectionStateChanged;
-            _webRtcClient.ConnectionStateChanged += OnConnectionStateChanged;
-        }
-        private void OnUnReliableChannelError(string error)
-        {
-            var logger = _logger.WithMethodName();
-            logger.Error($"UnReliable Channel error: {error}");
-        }
-        private void OnReliableChannelError(string error)
-        {
-            var logger = _logger.WithMethodName();
-            logger.Error($"Reliable Channel error: {error}");
-        }
-
-        protected override async UniTask ConnectInternalAsync(CancellationToken ct = default)
-        {
-            if (_webRtcClient is null)
-                throw new InvalidOperationException("WebRTC client not initialized");
-
-            var logger = _logger.WithMethodName();
-
-            if (_iceServersUri != null)
-            {
-                var iceServers = await HttpSignalingClient.FetchIceServersAsync(
-                    _iceServersUri, ElympicsTimeout.IceServersTimeout, ct);
-                _iceServersJson = iceServers.Length > 0
-                    ? JsonUtility.ToJson(new IceServersResponse { iceServers = iceServers })
-                    : null;
-                if (_iceServersJson != null)
+        protected override INetworkClient CreateNetworkClient() =>
+            new WebRtcNetworkClient(_signalingClient, new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay }, Config,
+                new (string, bool)[]
                 {
-                    logger.Log($"Fetched ICE servers: {_iceServersJson}");
-                    _webRtcClient!.SetIceServers(_iceServersJson);
-                }
-            }
+                    (INetworkClient.ReliableLabel, true),
+                    (INetworkClient.UnreliableLabel, false),
+                });
 
-            _answer = null;
-            try
-            {
-                for (var i = 0; i < Config.SessionConnectRetries; i++)
-                    try
-                    {
-                        if (i > 0)
-                        {
-                            Initialize();
-                            if (_iceServersJson != null)
-                                _webRtcClient!.SetIceServers(_iceServersJson);
-                        }
-
-                        SubscribeToWebConnectionStatus();
-                        _stateCancellationTokenSource = new CancellationTokenSource();
-                        _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _stateCancellationTokenSource.Token);
-
-                        logger.Log($"Establish the connection attempt #{i + 1}");
-                        string offer;
-                        try
-                        {
-                            offer = await _webRtcClient.CreateOffer(false).WithTimeout(Config.OfferTimeout, ct);
-                        }
-                        catch (TimeoutException)
-                        {
-                            continue;
-                        }
-
-                        if (string.IsNullOrEmpty(offer))
-                            throw ElympicsLogger.LogException("Created WebRTC offer is null or empty.");
-
-                        var response = await WaitForWebResponseAsync(_signalingClient, offer, _linkedCts.Token);
-                        if (response == null || response.IsError || string.IsNullOrEmpty(response.Text))
-                            throw ElympicsLogger.LogException($"No valid WebRTC answer has been received. Error: {response?.Text}");
-
-                        var deserialized = JsonUtility.FromJson<SignalingResponse>(response.Text);
-
-                        _answer = deserialized.answer;
-                        logger.Log($"Answer:{Environment.NewLine}{_answer}");
-                        await ConnectSessionAsync(_linkedCts.Token);
-
-                        _candidates.Clear();
-                        _stateCancellationTokenSource.Dispose();
-                        _stateCancellationTokenSource = null;
-                        _linkedCts.Dispose();
-                        _linkedCts = null;
-                        break;
-                    }
-                    catch (GameServerClosedException)
-                    {
-                        throw;
-                    }
-                    catch
-                    {
-                        logger.Error("Failed to establish WebRtc connection.");
-                        Disconnect();
-                    }
-            }
-            catch
-            {
-                UnsubscribeFromWebConnectionStatus();
-                throw;
-            }
-            finally
-            {
-                _stateCancellationTokenSource?.Dispose();
-                _stateCancellationTokenSource = null;
-                _linkedCts?.Dispose();
-                _linkedCts = null;
-            }
-        }
-
-        private void OnConnectionStateChanged(string newState)
-        {
-            var logger = _logger.WithMethodName();
-            logger.Log($"New RtcPeer connection state: {newState}");
-            if (newState is not RtcPeerConnectionStates.Failed)
-                return;
-            _stateCancellationTokenSource?.Cancel();
-            _stateCancellationTokenSource?.Dispose();
-            _stateCancellationTokenSource = null;
-        }
-
-        private void OnIceConnectionStateChanged(string newState)
-        {
-            var logger = _logger.WithMethodName();
-            logger.Log($"New Ice connection state: {newState}");
-        }
-
-        private void OnIceCandidateCreated(string? newCandidate)
-        {
-            var logger = _logger.WithMethodName();
-            logger.Log(newCandidate != null ? $"### New IceCandidate created.{Environment.NewLine}{newCandidate}" : "### No more ICE candidates.");
-            if (!string.IsNullOrEmpty(newCandidate))
-                _candidates.Add(newCandidate);
-        }
-
-        protected override async UniTask InitializeSessionAsync(CancellationToken ct = default)
-        {
-            if (_webRtcClient is null)
-                throw new InvalidOperationException("WebRTC client not initialized");
-            if (_answer is null)
-                throw new InvalidOperationException("WebRTC answer not set");
-            await _webRtcClient.OnAnswer(_answer);
-        }
-
-        private async UniTask<WebSignalingClientResponse?> WaitForWebResponseAsync(IGameServerWebSignalingClient signalingClient, string offer, CancellationToken ct)
-        {
-            var logger = _logger.WithMethodName();
-
-            for (var i = 0; i < Config.OfferMaxRetries; i++)
-            {
-                if (ct.IsCancellationRequested)
-                    break;
-
-                logger.Log($"Posting created WebRTC offer.\nAttempt #{i + 1}");
-
-                logger.Log($"Sending offer:{Environment.NewLine}{offer}");
-                var offerWithCandidates = new OfferWithCandidates
-                {
-                    offer = offer,
-                    candidates = _candidates.ToArray(),
-                };
-
-                var result = await signalingClient.PostOfferAsync(JsonUtility.ToJson(offerWithCandidates), TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
-
-                if (result?.Code == 502)
-                    throw new GameServerClosedException();
-                if (result?.Code == 499)
-                {
-                    logger.Warning($"WebRTC answer error: {result.Text}");
-                    _ = await UniTask.Delay(Config.OfferRetryDelay, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
-                }
-                else
-                    return result;
-            }
-            return null;
-        }
-
-        protected override void InitializeNetworkClients(IReliableNetworkClient reliable, IUnreliableNetworkClient unreliable)
-        {
-            InitWebRtcClient();
-            base.InitializeNetworkClients(reliable, unreliable);
-        }
-
-        private void InitWebRtcClient() => _ = ClientDisconnectedCts.Token.Register(() => _webRtcClient?.Dispose());
+        protected override UniTask ConnectInternalAsync(CancellationToken ct = default) => NetworkClient!.Connect(ct);
     }
 }

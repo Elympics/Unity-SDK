@@ -8,13 +8,16 @@ using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Udp
 {
-    public class UdpNetworkClient : IUnreliableNetworkClient
+    public class UdpDataChannel : IDataChannel
     {
         public event Action Disconnected;
         public event Action<byte[]> DataReceived;
+        public event Action<string> Error;
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
-        private readonly IPEndPoint _anyEndPoint = new(IPAddress.Any, 0);
+        private static readonly IPEndPoint AnyEndPoint = new(IPAddress.Any, 0);
+
+        public string Label { get; }
 
         public IPEndPoint LocalEndPoint => _udpClient?.Client?.IsBound ?? false
             ? _udpClient?.Client?.LocalEndPoint as IPEndPoint
@@ -52,15 +55,13 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
         }
 
-        public void CreateAndBind() => CreateAndBind(_anyEndPoint);
+        public UdpDataChannel(string label) => Label = label;
 
-        public void CreateAndBind(int port) => CreateAndBind(new IPEndPoint(IPAddress.Any, port));
-
-        public void CreateAndBind(IPEndPoint localEndPoint)
+        public void CreateAndBind()
         {
             Disconnect();
             _udpClient = new UdpClient();
-            _udpClient.Client.Bind(localEndPoint);
+            _udpClient.Client.Bind(AnyEndPoint);
             SetupUnderlyingUdpClient();
         }
 
@@ -125,7 +126,7 @@ namespace MatchTcpLibrary.TransportLayer.Udp
 
         private bool IsConnectedToOther(IPEndPoint remoteEndPoint) => IsConnected && !remoteEndPoint.Equals(RemoteEndpoint);
 
-        private void RecreateSocket() => CreateAndBind(_previousLocalEndPoint);
+        private void RecreateSocket() => CreateAndBind();
 
         private void OnDataReceived(byte[] data, IPEndPoint sourceEndPoint, DateTime _)
         {
@@ -133,30 +134,14 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             DataReceivedWithSource?.Invoke(data, sourceEndPoint);
         }
 
-        public async UniTask SendAsync(byte[] payload)
+        public void Send(byte[] payload)
         {
             if (!IsConnected)
                 throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
 
             try
             {
-                _ = await _udpClient.SendAsync(payload, payload.Length).AsUniTask();
-            }
-            catch (Exception e)
-            {
-                _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
-                throw;
-            }
-        }
-
-        public async UniTask SendToAsync(byte[] payload, IPEndPoint destination)
-        {
-            if (IsConnected)
-                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
-
-            try
-            {
-                _ = await _udpClient.Client.SendToAsync(new ArraySegment<byte>(payload, 0, payload.Length), SocketFlags.None, destination).AsUniTask();
+                _ = _udpClient.Send(payload, payload.Length);
             }
             catch (Exception e)
             {
@@ -169,10 +154,9 @@ namespace MatchTcpLibrary.TransportLayer.Udp
         {
             IsConnected = false;
             _udpClient?.Close();
-            // If UdpClient is closed UdpReceived should close either
             _udpClient = null;
         }
-        public void Dispose()
-        { }
+
+        public void Dispose() => Disconnect();
     }
 }

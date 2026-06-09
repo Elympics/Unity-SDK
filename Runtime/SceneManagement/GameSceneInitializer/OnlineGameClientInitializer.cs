@@ -1,5 +1,4 @@
 using Elympics.ElympicsSystems.Internal;
-using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
 
 namespace Elympics
@@ -32,12 +31,10 @@ namespace Elympics
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
             _ = ElympicsLogger.CurrentContext.SetGameMode("online");
-            var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
-                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    iceServersUri: iceServersUri)
+                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId, config))
                 : new TcpUdpGameServerClient(serializer,
                     config,
                     IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));

@@ -147,7 +147,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.Log("Connected and synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret).Forget();
+            _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
 
         private void OnConnectedAndSynchronizedAsSpectator(TimeSynchronizationData timeSynchronizationData)
@@ -155,7 +155,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.Log("Connected and synchronized as spectator.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _gameServerClient.AuthenticateAsSpectatorAsync().Forget();
+            _gameServerClient.AuthenticateAsSpectatorAsync();
         }
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)
@@ -171,7 +171,7 @@ namespace Elympics
             logger.Log("User authenticated.");
             AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
-            _gameServerClient.JoinMatchAsync().Forget();
+            _gameServerClient.JoinMatchAsync();
         }
 
         private void OnAuthenticatedAsSpectator(AuthenticatedAsSpectatorMessage message)
@@ -185,7 +185,7 @@ namespace Elympics
 
             AuthenticatedAsSpectator?.Invoke();
 
-            _gameServerClient.JoinMatchAsync().Forget();
+            _gameServerClient.JoinMatchAsync();
         }
 
         private void OnMatchJoined(MatchJoinedMessage message)

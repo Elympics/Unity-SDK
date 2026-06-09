@@ -21,7 +21,7 @@ namespace MatchTcpClients.Synchronizer
         public event Action TimedOut;
 
         private readonly ClientSynchronizerConfig _config;
-        private readonly ElympicsLoggerConfig _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClassName(nameof(ClientSynchronizer));
         private DateTime? _lastReceivedPingDataTime;
         private NtpData _lastReceivedUnreliableNtpData;
         private bool _waitingForFirstUnreliablePing = true;
@@ -30,14 +30,13 @@ namespace MatchTcpClients.Synchronizer
 
         public ClientSynchronizer(ClientSynchronizerConfig config)
         {
-            _logger = ElympicsLogger.Config.WithClassName(nameof(ClientSynchronizer));
             _config = config;
         }
 
         public async UniTask StartContinuousSynchronizingAsync(string sessionToken, CancellationToken ct)
         {
             ClearUnreliablePingFlagAfterTimeout(ct).Forget();
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             logger.LogInfo("Starting client synchronization...");
             var stopwatch = new Stopwatch();
             while (!ct.IsCancellationRequested)

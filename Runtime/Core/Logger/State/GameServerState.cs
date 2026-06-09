@@ -4,10 +4,11 @@ namespace Elympics.Core.Logger.State
 {
     internal abstract class GameServerState : IVisitableState
     {
-        public string ConnectionType;
-        public string ServerAddress;
+        public readonly string ConnectionType;
+        public readonly string ServerAddress;
 
-        public GameServerState(string connectionType, string serverAddress) => (ConnectionType, ServerAddress) = (connectionType, serverAddress);
+        protected GameServerState(string connectionType, string serverAddress) =>
+            (ConnectionType, ServerAddress) = (connectionType, serverAddress);
 
         public virtual void Visit(IStateVisitor visitor)
         {

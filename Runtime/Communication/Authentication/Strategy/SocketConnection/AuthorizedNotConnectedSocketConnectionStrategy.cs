@@ -11,7 +11,7 @@ namespace Elympics
 {
     internal class AuthorizedNotConnectedStrategy : ConnectionStrategy
     {
-        public AuthorizedNotConnectedStrategy(WebSocketSession socketSession, ElympicsLoggerConfig logger) : base(socketSession, logger)
+        public AuthorizedNotConnectedStrategy(WebSocketSession socketSession) : base(socketSession)
         { }
 
         public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)
@@ -22,7 +22,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                var logger = Logger.WithClassName($"{nameof(AuthorizedNotConnectedStrategy)}").WithMehodName();
+                var logger = Logger.WithClassName(nameof(AuthorizedNotConnectedStrategy)).WithMethodName();
                 throw logger.LogExceptionAndReturn(e);
             }
         }

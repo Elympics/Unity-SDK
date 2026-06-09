@@ -8,16 +8,15 @@ namespace Elympics.ElympicsSystems.Internal
 {
     internal class ReconnectingState : ElympicsLobbyClientState
     {
-        private readonly ElympicsLoggerConfig _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClassName(nameof(ReconnectingState));
 
         //TODO take this value from config with min value of 1.
         private const int ReconnectAttempts = 1;
         private bool _isReconnecting;
 
-        public ReconnectingState(ElympicsLobbyClient client, ElympicsLoggerConfig logger) : base(client)
+        public ReconnectingState(ElympicsLobbyClient client) : base(client)
         {
             State = ElympicsState.Reconnecting;
-            _logger = logger.WithClassName(nameof(ReconnectingState));
         }
 
         public override UniTask Connect(ConnectionData data)
@@ -32,7 +31,7 @@ namespace Elympics.ElympicsSystems.Internal
                 return;
 
             _isReconnecting = true;
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             var isSuccess = false;
             for (var counter = 0; counter < ReconnectAttempts; counter++)
             {

@@ -1,4 +1,5 @@
 #nullable enable
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Elympics.Core.Logger.State;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace Elympics.Core.Logger
             Context = new LogContext(),
         };
 
-        private LoggerConfig Clone() => new()
+        [Pure] private LoggerConfig Clone() => new()
         {
             MonitoringEnabled = MonitoringEnabled,
             StacktraceForEverything = StacktraceForEverything,
@@ -43,21 +44,21 @@ namespace Elympics.Core.Logger
             }
         }
 
-        public LoggerConfig WithMonitoringEnabled()
+        [Pure] public LoggerConfig WithMonitoringEnabled()
         {
             var clone = Clone();
             clone.MonitoringEnabled = true;
             return clone;
         }
 
-        public LoggerConfig WithStacktraceForEverything()
+        [Pure] public LoggerConfig WithStacktraceForEverything()
         {
             var clone = Clone();
             clone.StacktraceForEverything = true;
             return clone;
         }
 
-        public LoggerConfig WithUnityContext(Object unityContext)
+        [Pure] public LoggerConfig WithUnityContext(Object unityContext)
         {
             var clone = Clone();
             var context = clone.Context;
@@ -66,7 +67,7 @@ namespace Elympics.Core.Logger
             return clone;
         }
 
-        public LoggerConfig WithMehodName([CallerMemberName] string methodName = "")
+        [Pure] public LoggerConfig WithMethodName([CallerMemberName] string methodName = "")
         {
             var clone = Clone();
             var context = clone.Context;
@@ -77,7 +78,7 @@ namespace Elympics.Core.Logger
 
         /// <param name="className">Should be full class name with namespace included.</param>
         /// <returns>Current instance.</returns>
-        public LoggerConfig WithClassName(string className)
+        [Pure] public LoggerConfig WithClassName(string className)
         {
             var clone = Clone();
             var context = clone.Context;
@@ -93,7 +94,7 @@ namespace Elympics.Core.Logger
         /// </summary>
         /// <param name="serviceName">Source service name.</param>
         /// <returns>Current instance.</returns>
-        public LoggerConfig WithServiceName(string serviceName)
+        [Pure] public LoggerConfig WithServiceName(string serviceName)
         {
             var clone = Clone();
             var context = clone.Context;
@@ -108,7 +109,7 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithPlayPadSdkService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public LoggerConfig WithElympicsSdkService() => WithServiceName("ElympicsSdk");
+        [Pure] public LoggerConfig WithElympicsSdkService() => WithServiceName("ElympicsSdk");
 
         /// <summary>
         /// <seealso cref="WithServiceName"/>
@@ -116,7 +117,7 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithPlayPadSdkService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public LoggerConfig WithElympicsGameService() => WithServiceName("ElympicsGame");
+        [Pure] public LoggerConfig WithElympicsGameService() => WithServiceName("ElympicsGame");
 
         /// <summary>
         /// <seealso cref="WithServiceName"/>
@@ -124,6 +125,6 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithElympicsGameService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        public LoggerConfig WithPlayPadSdkService() => WithServiceName("PlayPadSdk");
+        [Pure] public LoggerConfig WithPlayPadSdkService() => WithServiceName("PlayPadSdk");
     }
 }

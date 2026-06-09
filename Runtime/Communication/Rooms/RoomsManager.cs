@@ -103,13 +103,12 @@ namespace Elympics
 
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
         private bool _initialized;
-        private readonly ElympicsLoggerConfig _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClassName(nameof(RoomsManager));
 
-        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, ElympicsLoggerConfig logger, IRoomJoiner? roomJoiner = null)
+        public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiner? roomJoiner = null)
         {
             _matchLauncher = matchLauncher;
             _client = roomsClient;
-            _logger = logger.WithClassName(nameof(RoomsManager));
             _roomJoiner = roomJoiner ?? new RoomJoiner(_client);
             SubscribeClient();
         }
@@ -174,7 +173,7 @@ namespace Elympics
 
         private void HandleJoinedRoomUpdated(RoomStateChangedDto roomState)
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             logger.LogInfo($"Handle room update.{Environment.NewLine}{roomState}");
             var roomId = roomState.RoomId;
             if (_rooms.TryGetValue(roomId, out var room))
@@ -189,8 +188,8 @@ namespace Elympics
             else
             {
                 var newRoom = CreateRoom(roomId, state: roomState);
-                _ = ElympicsLogger.ApplicationState.SetQueue(roomState.MatchmakingData?.QueueName)
-                    .SetRoomId(roomState.RoomId.ToString());
+                _ = ElympicsLogger.ApplicationState.SetRoomId(roomState.RoomId.ToString())
+                    .SetQueue(roomState.MatchmakingData?.QueueName);
                 CurrentRoom = newRoom;
                 AddRoomToDictionary(newRoom);
                 SetStateDiffToInitializeState();
@@ -213,9 +212,9 @@ namespace Elympics
 
             if (matchFoundSuccessfully)
             {
-                // TODO:
-                ElympicsLogger.ApplicationState.SetTcpUdpServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress)
-                    .SetWebRtcServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress);
+                _ = ElympicsLogger.ApplicationState
+                    .SetTcpUdpServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.TcpUdpServerAddress ?? string.Empty)
+                    .SetWebRtcServerAddress(roomState.MatchmakingData?.MatchData?.MatchDetails?.WebServerAddress ?? string.Empty);
                 logger.LogInfo("Matchmaking completed successfully.");
                 PlayAvailableMatchIfApplicable(roomId);
             }
@@ -234,8 +233,8 @@ namespace Elympics
             if (state is null && publicState is null)
                 throw new ArgumentNullException($"One of the following arguments must be not null: {nameof(publicState)}, {nameof(state)}");
             return state is not null
-                ? new Room(_matchLauncher, _client, id, state, false, _logger)
-                : new Room(_matchLauncher, _client, id, publicState!, _logger);
+                ? new Room(_matchLauncher, _client, id, state, false)
+                : new Room(_matchLauncher, _client, id, publicState!);
         }
 
         private void AddRoomToDictionary(IRoom room)
@@ -311,7 +310,7 @@ namespace Elympics
             if (CurrentRoom?.RoomId == args.RoomId)
                 CurrentRoom = null;
 
-            ElympicsLogger.ApplicationState.SetNoRoom();
+            _ = ElympicsLogger.ApplicationState.SetNoRoom();
             if (args.Reason == LeavingReason.RoomClosed && _rooms.Remove(args.RoomId, out var removedRoom))
                 removedRoom.Dispose();
             LeftRoom?.Invoke(args);
@@ -406,7 +405,7 @@ namespace Elympics
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default)
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             if (queueName == null)
                 throw new ArgumentNullException(nameof(queueName));
             gameEngineData ??= Array.Empty<byte>();
@@ -419,8 +418,8 @@ namespace Elympics
             var roomId = await _roomJoiner.CreateAndJoinRoom(RoomUtil.QuickMatchRoomName, queueName, true, true, true, customRoomData, customMatchmakingData, customPlayerData, competitivenessConfig);
             using var roomLeftCts = new CancellationTokenSource();
             _client.LeftRoom += OnQuickRoomLeft;
-            _ = ElympicsLogger.ApplicationState.SetRoomId(roomId.ToString())
-                .SetQueue(queueName);
+            _ = ElympicsLogger.ApplicationState.SetRoomId(roomId.ToString());
+            _ = ElympicsLogger.ApplicationState.SetQueue(queueName);
 
             var room = _rooms[roomId];
             var matchmakingCancelledCt = UniTask
@@ -497,7 +496,7 @@ namespace Elympics
                     _client.LeftRoom -= OnQuickRoomLeft;
                     return;
                 }
-                ElympicsLogger.ApplicationState.SetNoRoom();
+                _ = ElympicsLogger.ApplicationState.SetNoRoom();
                 if (args.RoomId != roomId)
                     return;
                 _client.LeftRoom -= OnQuickRoomLeft;
@@ -508,7 +507,7 @@ namespace Elympics
             {
                 if (room is { IsDisposed: false } && room == CurrentRoom)
                     await room.Leave();
-                ElympicsLogger.ApplicationState.SetNoRoom();
+                _ = ElympicsLogger.ApplicationState.SetNoRoom();
             }
         }
 
@@ -524,7 +523,7 @@ namespace Elympics
             if (_initialized)
                 return;
 
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             var counter = 0;
             try
             {

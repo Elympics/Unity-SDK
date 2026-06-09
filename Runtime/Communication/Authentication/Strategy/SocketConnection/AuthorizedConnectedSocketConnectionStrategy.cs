@@ -12,7 +12,7 @@ namespace Elympics
     {
         private readonly SessionConnectionDetails _currentSession;
 
-        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerConfig logger) : base(webSocketSession, logger) =>
+        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession) : base(webSocketSession) =>
             _currentSession = currentSession;
 
         public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)

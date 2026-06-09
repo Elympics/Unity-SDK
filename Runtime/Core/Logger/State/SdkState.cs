@@ -6,8 +6,8 @@ namespace Elympics.Core.Logger.State
 {
     internal class SdkState : IVisitableState
     {
-        public string SessionId;
-        public string SdkVersion;
+        public readonly string SessionId;
+        public readonly string SdkVersion;
         public string? ApiUrl;
         public string? GameServerUrl;
 

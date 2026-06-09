@@ -415,7 +415,7 @@ namespace Elympics.Tests.Rooms
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
-            var roomsManager = new RoomsManager(null!, roomClientMock, ElympicsLogger.Config, null);
+            var roomsManager = new RoomsManager(null!, roomClientMock, null);
             var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
             await room.Leave();
             Assert.IsFalse(room.IsJoined);
@@ -444,7 +444,7 @@ namespace Elympics.Tests.Rooms
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
-            var roomsManager = new RoomsManager(null!, roomClientMock, ElympicsLogger.Config, null);
+            var roomsManager = new RoomsManager(null!, roomClientMock, null);
             var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
             await room.Leave();
             Assert.IsTrue(room.IsDisposed);

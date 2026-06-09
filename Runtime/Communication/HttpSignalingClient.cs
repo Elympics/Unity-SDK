@@ -21,14 +21,14 @@ namespace Elympics
 
         private readonly Uri _signalingUri;
         private readonly Uri _iceServersUri;
-        private readonly ElympicsLoggerConfig _logger;
+        private readonly LoggerConfig _logger;
         private readonly GameServerClientConfig _config;
 
         public HttpSignalingClient(Uri baseUri, Guid matchId, GameServerClientConfig config)
         {
             _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
             _iceServersUri = baseUri.AppendPathSegments(IceServersRoute, matchId.ToString());
-            _logger = ElympicsLogger.Config.WithClassName(nameof(HttpSignalingClient));
+            _logger = ElympicsLogger.WithClassName(nameof(HttpSignalingClient));
             _config = config;
         }
 
@@ -54,7 +54,7 @@ namespace Elympics
 
         public async UniTask<SignalingResponse> PostOfferAsync(OfferWithCandidates offer, TimeSpan timeout, CancellationToken ct = default)
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             var rawOffer = Encoding.UTF8.GetBytes(JsonUtility.ToJson(offer));
             using var request = new UnityWebRequest(_signalingUri, UnityWebRequest.kHttpVerbPOST);
             request.uploadHandler = new UploadHandlerRaw(rawOffer) { contentType = "application/json" };

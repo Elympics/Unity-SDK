@@ -48,17 +48,17 @@ namespace Elympics
                 var networkId = elympicsBehaviour.NetworkId;
                 if (networkId < 0) // there is no upper limit
                 {
-                    ElympicsLogger.LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
-                        + "Network ID must not be negative.",
-                        elympicsBehaviour);
+                    ElympicsLogger.WithUnityContext(elympicsBehaviour)
+                        .LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
+                            + "Network ID must not be negative.");
                     return;
                 }
 
                 if (_elympicsBehaviours.Contains(networkId))
                 {
-                    ElympicsLogger.LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
-                        + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object",
-                        elympicsBehaviour);
+                    ElympicsLogger.WithUnityContext(elympicsBehaviour)
+                        .LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
+                            + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object");
                     return;
                 }
 

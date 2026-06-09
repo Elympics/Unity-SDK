@@ -4,7 +4,7 @@ namespace Elympics.Core.Logger.State
 {
     internal sealed class RoomState : IVisitableState
     {
-        public string RoomId;
+        public readonly string RoomId;
         public string? QueueName;
         public string? MatchId;
         public string? TcpUdpServerAddress;

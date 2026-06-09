@@ -18,9 +18,9 @@ namespace Elympics.Core.Logger
         };
 
         public static ApplicationState ApplicationState { get; } = new(ElympicsVersionRetriever.GetVersionStringFromAssembly());
-        public static LoggerConfig Config { get; set; } = new();
+        private static LoggerConfig Config { get; } = LoggerConfig.New();
 
-        private static void Log(LogCategory category, string message, LoggerConfig config, string? stacktrace = null, Object? unityContext = null)
+        private static void Log(LogCategory category, string message, LoggerConfig config, string? stacktrace = null)
         {
             var time = DateTime.Now;
             if (stacktrace is null && (category is LogCategory.Exception || config.StacktraceForEverything))
@@ -64,7 +64,7 @@ namespace Elympics.Core.Logger
         public static LoggerConfig WithMonitoringEnabled() => Config.WithMonitoringEnabled();
         public static LoggerConfig WithStacktraceForEverything() => Config.WithStacktraceForEverything();
         public static LoggerConfig WithUnityContext(Object context) => Config.WithUnityContext(context);
-        public static LoggerConfig WithMethodName([CallerMemberName] string methodName = "") => Config.WithMehodName(methodName);
+        public static LoggerConfig WithMethodName([CallerMemberName] string methodName = "") => Config.WithMethodName(methodName);
         public static LoggerConfig WithClassName(string className) => Config.WithClassName(className);
         public static LoggerConfig WithServiceName(string serviceName) => Config.WithServiceName(serviceName);
         public static LoggerConfig WithElympicsSdkService() => Config.WithElympicsSdkService();

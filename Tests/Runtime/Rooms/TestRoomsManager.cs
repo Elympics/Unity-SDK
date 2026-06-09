@@ -42,12 +42,11 @@ namespace Elympics.Tests.Rooms
         {
             MatchLauncherMock = Substitute.For<IMatchLauncher>();
             RoomsClientMock = Substitute.For<IRoomsClient>();
-            var logger = ElympicsLogger.Config;
             RoomJoiner = new RoomJoiner(RoomsClientMock)
             {
                 OperationTimeout = TimeSpan.FromSeconds(1),
             };
-            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, logger, RoomJoiner);
+            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, RoomJoiner);
             ElympicsTimeout.RoomStateChangeConfirmationTimeout = TimeSpan.FromSeconds(1);
             EventRegister = new EventObserver<IRoomsManager>(RoomsManager);
 

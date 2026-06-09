@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using UnityEngine;
 
@@ -13,7 +12,6 @@ namespace Elympics
     {
         private readonly string _gameVersion;
         private readonly string _jwt;
-        private readonly ApplicationState _logger;
         private const string LogSuffix = "LogFile.txt";
         private readonly string _logFilePath;
         private readonly string _logName;

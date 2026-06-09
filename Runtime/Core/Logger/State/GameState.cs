@@ -4,8 +4,8 @@ namespace Elympics.Core.Logger.State
 {
     internal sealed class GameState : IVisitableState
     {
-        public string GameId;
-        public string VersionName;
+        public readonly string GameId;
+        public readonly string VersionName;
         public string? GameName;
         public string? GameMode;
         public string? GameVersionId;

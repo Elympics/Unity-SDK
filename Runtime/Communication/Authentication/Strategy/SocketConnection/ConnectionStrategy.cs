@@ -11,12 +11,8 @@ namespace Elympics
     internal abstract class ConnectionStrategy
     {
         private readonly WebSocketSession _webSocketSession;
-        protected readonly ElympicsLoggerConfig Logger;
-        protected ConnectionStrategy(WebSocketSession webSocketSession, ElympicsLoggerConfig logger)
-        {
-            _webSocketSession = webSocketSession;
-            Logger = logger;
-        }
+        protected readonly LoggerConfig Logger = ElympicsLogger.WithElympicsSdkService();
+        protected ConnectionStrategy(WebSocketSession webSocketSession) => _webSocketSession = webSocketSession;
 
         /// <summary>
         /// Connects to lobby services, performing a handshake for exchanging client-side and server-side game details.

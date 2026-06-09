@@ -19,11 +19,9 @@ namespace Elympics
         {
             if (instance != null && instance != this)
             {
-                ElympicsLogger.LogError("You can't use more than 1 instance of "
-                    + $"{nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
-                    + $"Previously detected on object: {instance.gameObject.name}, "
-                    + $"current object: {gameObject.name}",
-                    gameObject);
+                ElympicsLogger.WithUnityContext(gameObject)
+                    .LogError("You can't use more than 1 instance of {nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
+                        + $"Previously detected on object: {instance.gameObject.name}, current object: {gameObject.name}");
                 return;
             }
             instance = this;
@@ -44,7 +42,8 @@ namespace Elympics
                 return;
             if (_currentPhysicsScene == null || _currentPhysicsScene2D == null)
             {
-                ElympicsLogger.LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!", gameObject);
+                ElympicsLogger.WithUnityContext(gameObject)
+                    .LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!");
                 return;
             }
             _currentPhysicsScene?.Simulate(deltaTime);

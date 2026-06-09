@@ -10,7 +10,7 @@ namespace Elympics
 {
     internal class UnauthorizedSocketConnectionStrategy : ConnectionStrategy
     {
-        public UnauthorizedSocketConnectionStrategy(WebSocketSession socketSession, ElympicsLoggerConfig logger) : base(socketSession, logger)
+        public UnauthorizedSocketConnectionStrategy(WebSocketSession socketSession) : base(socketSession)
         { }
 
         public override UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails) =>

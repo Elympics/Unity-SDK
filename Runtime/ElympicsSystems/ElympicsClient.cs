@@ -63,7 +63,7 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        private readonly ElympicsLoggerConfig _logger = ElympicsLogger.Config.WithClassName(nameof(ElympicsClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClassName(nameof(ElympicsClient));
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -98,7 +98,7 @@ namespace Elympics
 
         private async void RunConnectAndJoinAsPlayer()
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             try
             {
                 await UniTask.Yield();
@@ -240,7 +240,7 @@ namespace Elympics
 
         private void ResetForReconnect()
         {
-            var log = _logger.WithMehodName();
+            var log = _logger.WithMethodName();
             log.LogInfo("Resetting for reconnect...");
 
             ElympicsBehavioursManager.DestroyAllDynamicInstances();
@@ -431,7 +431,7 @@ namespace Elympics
             switch (clientWasBehind)
             {
                 case false when !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot):
-                    _logger.WithMehodName()
+                    _logger.WithMethodName()
                         .LogWarning(
                             $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                     return ReconciliationResult.None;
@@ -446,7 +446,7 @@ namespace Elympics
                     historySnapshot = receivedSnapshot;
                     newSnapshot = receivedSnapshot;
                     _previousTick = receivedSnapshot.Tick;
-                    _logger.WithMehodName().LogWarning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
+                    _logger.WithMethodName().LogWarning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
                     break;
                 default:
                     newSnapshot = receivedSnapshot;

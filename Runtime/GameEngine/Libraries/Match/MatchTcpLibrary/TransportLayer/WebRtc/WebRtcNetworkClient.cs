@@ -45,7 +45,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         private readonly GameServerClientConfig _config;
         private readonly IReadOnlyList<(string Label, bool Reliable)> _channelSpecs;
         private readonly List<string> _candidates = new();
-        private readonly ElympicsLoggerConfig _logger;
+        private readonly LoggerConfig _logger;
 
         private IWebRtcClient? _client;
 
@@ -59,7 +59,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
             _webRtcConfig = webRtcConfig;
             _config = config;
             _channelSpecs = channelSpecs;
-            _logger = ElympicsLogger.Config.WithClassName(nameof(WebRtcNetworkClient));
+            _logger = ElympicsLogger.WithClassName(nameof(WebRtcNetworkClient));
         }
 
         public void CreateAndBind()
@@ -74,14 +74,14 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
             {
                 var channel = _client.CreateDataChannel(spec.Label, spec.Reliable);
                 channel.DataReceived += data => DataReceived?.Invoke(spec.Label, data);
-                channel.Error += error => _logger.WithMehodName().LogError($"Channel '{spec.Label}' error: {error}");
+                channel.Error += error => _logger.WithMethodName().LogError($"Channel '{spec.Label}' error: {error}");
                 _channels[spec.Label] = channel;
             }
         }
 
         public async UniTask Connect(CancellationToken ct = default)
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
             if (_client is null)
                 throw new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting");
 
@@ -140,7 +140,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         private async UniTask<SignalingResponse> WaitForWebResponseAsync(string offer, CancellationToken ct)
         {
-            var logger = _logger.WithMehodName();
+            var logger = _logger.WithMethodName();
 
             for (var i = 0; i < _config.OfferMaxRetries; i++)
             {

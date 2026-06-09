@@ -348,9 +348,10 @@ namespace Elympics
                     {
 #if !ELYMPICS_PRODUCTION
                         if (!ElympicsBase.IsServer)
-                            ElympicsLogger.LogWarning(
-                                $"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.",
-                                this);
+                            ElympicsLogger.WithUnityContext(this)
+                                .LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component "
+                                    + $"attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. "
+                                    + $"Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.");
 #endif
                         areEqual = false;
                         break;

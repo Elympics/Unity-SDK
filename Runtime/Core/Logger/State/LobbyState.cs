@@ -4,7 +4,7 @@ namespace Elympics.Core.Logger.State
 {
     internal sealed class LobbyState : IVisitableState
     {
-        public string Region;
+        public readonly string Region;
 
         public LobbyState(string region) => Region = region;
 

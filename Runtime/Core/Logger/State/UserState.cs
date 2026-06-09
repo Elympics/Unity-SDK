@@ -4,7 +4,7 @@ namespace Elympics.Core.Logger.State
 {
     internal sealed class UserState : IVisitableState
     {
-        public string UserId;
+        public readonly string UserId;
         public string? Nickname;
         public string? AuthType;
         public string? WalletAddress;

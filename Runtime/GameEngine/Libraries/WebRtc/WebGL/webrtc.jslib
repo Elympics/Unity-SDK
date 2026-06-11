@@ -402,7 +402,11 @@ const LibraryWebRtc = {
                 return;
             }
 
-            Module.dynCall_vi(webRtcState.onReliableOpened, id);
+            try{
+                Module.dynCall_vi(webRtcState.onReliableOpened, id);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcReliableOpened', `${e}`);
+            }
         };
 
         const WebRtcReliableReceived = (/** @type {Uint8Array} */ msg) => {
@@ -420,6 +424,8 @@ const LibraryWebRtc = {
                     buffer,
                     msg.length
                 );
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcReliableReceived', `${e}`);
             } finally {
                 _free(buffer);
             }
@@ -437,6 +443,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcReliableError', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -447,7 +455,11 @@ const LibraryWebRtc = {
                 return;
             }
 
-            Module.dynCall_vi(webRtcState.onReliableEnded, id);
+            try {
+                Module.dynCall_vi(webRtcState.onReliableEnded, id);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcReliableEnded', `${e}`);
+            }
         };
 
         const WebRtcUnreliableOpened = () => {
@@ -455,7 +467,11 @@ const LibraryWebRtc = {
                 return;
             }
 
-            Module.dynCall_vi(webRtcState.onUnreliableOpened, id);
+            try {
+                Module.dynCall_vi(webRtcState.onUnreliableOpened, id);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcUnreliableOpened', `${e}`);
+            }
         };
 
         const WebRtcUnreliableReceived = (/** @type {Uint8Array} */ msg) => {
@@ -473,6 +489,8 @@ const LibraryWebRtc = {
                     buffer,
                     msg.length
                 );
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcUnreliableReceived', `${e}`);
             } finally {
                 _free(buffer);
             }
@@ -490,6 +508,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcUnreliableError', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -500,7 +520,11 @@ const LibraryWebRtc = {
                 return;
             }
 
-            Module.dynCall_vi(webRtcState.onUnreliableEnded, id);
+            try {
+                Module.dynCall_vi(webRtcState.onUnreliableEnded, id);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcUnreliableEnded', `${e}`);
+            }
         };
 
         const WebRtcOfferCallback = (/** @type {string} */ msg) => {
@@ -515,6 +539,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcOfferCallback', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -527,7 +553,11 @@ const LibraryWebRtc = {
                 return;
             }
             if (!msg) {
-                Module.dynCall_vii(callback, id, null);
+                try {
+                    Module.dynCall_vii(callback, id, null);
+                } catch (e) {
+                    WebRtcLogErrorCallback('WebRtcIceCandidateCallback', `${e}`);
+                }
                 return;
             }
 
@@ -537,6 +567,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcIceCandidateCallback', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -556,6 +588,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_viii(callback, id, localCandidateBuffer, remoteCandidateBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('WebRtcCandidatePairChosenCallback', `${e}`);
             } finally {
                 _free(localCandidateBuffer);
                 _free(remoteCandidateBuffer);
@@ -572,6 +606,8 @@ const LibraryWebRtc = {
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('IceConnectionStateChanged', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -587,6 +623,8 @@ const LibraryWebRtc = {
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
                 Module.dynCall_vii(callback, id, msgBuffer);
+            } catch (e) {
+                WebRtcLogErrorCallback('ConnectionStateChanged', `${e}`);
             } finally {
                 _free(msgBuffer);
             }
@@ -605,6 +643,8 @@ const LibraryWebRtc = {
 
             try {
                 Module.dynCall_viii(callback, id, methodNameBuffer, logMessageBuffer);
+            } catch (e) {
+                webRtcState.logToConsole(`WebRtcLogCallback failed to log from ${methodName}: ${logMessage}`);
             } finally {
                 _free(methodNameBuffer);
                 _free(logMessageBuffer);

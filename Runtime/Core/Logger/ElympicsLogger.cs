@@ -32,7 +32,6 @@ namespace Elympics.Core.Logger
         [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message) => Log(LogCategory.Debug, message, Config);
         [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(this LoggerConfig config, string message) => Log(LogCategory.Debug, message, config);
 
-
         [Conditional("ELYMPICS_TRACE")] public static void LogTrace(string message) => Log(LogCategory.Trace, message, Config);
         [Conditional("ELYMPICS_TRACE")] public static void LogTrace(this LoggerConfig config, string message) => Log(LogCategory.Trace, message, config);
 
@@ -45,19 +44,17 @@ namespace Elympics.Core.Logger
         public static void LogError(string message) => Log(LogCategory.Error, message, Config);
         public static void LogError(this LoggerConfig config, string message) => Log(LogCategory.Error, message, config);
 
-        // TODO: inner exceptions ~dsygocki 2026-05-26
-        public static void LogException(Exception exception) => Log(LogCategory.Exception, exception.Message, Config, exception.StackTrace);
-        public static void LogException(this LoggerConfig config, Exception exception) => Log(LogCategory.Exception, exception.Message, config, exception.StackTrace);
+        public static void LogException(Exception exception) => Log(LogCategory.Exception, exception.ToString(), Config, exception.StackTrace);
+        public static void LogException(this LoggerConfig config, Exception exception) => Log(LogCategory.Exception, exception.ToString(), config, exception.StackTrace);
 
-        // TODO: inner exceptions ~dsygocki 2026-05-26
         public static Exception LogExceptionAndReturn(Exception exception)
         {
-            Log(LogCategory.Exception, exception.Message, Config, exception.StackTrace);
+            Log(LogCategory.Exception, exception.ToString(), Config, exception.StackTrace);
             return exception;
         }
         public static Exception LogExceptionAndReturn(this LoggerConfig config, Exception exception)
         {
-            Log(LogCategory.Exception, exception.Message, config, exception.StackTrace);
+            Log(LogCategory.Exception, exception.ToString(), config, exception.StackTrace);
             return exception;
         }
 
@@ -65,7 +62,7 @@ namespace Elympics.Core.Logger
         public static LoggerConfig WithStacktraceForEverything() => Config.WithStacktraceForEverything();
         public static LoggerConfig WithUnityContext(Object context) => Config.WithUnityContext(context);
         public static LoggerConfig WithMethodName([CallerMemberName] string methodName = "") => Config.WithMethodName(methodName);
-        public static LoggerConfig WithClassName(string className) => Config.WithClassName(className);
+        public static LoggerConfig WithClass(Type type) => Config.WithClass(type);
         public static LoggerConfig WithServiceName(string serviceName) => Config.WithServiceName(serviceName);
         public static LoggerConfig WithElympicsSdkService() => Config.WithElympicsSdkService();
         public static LoggerConfig WithElympicsGameService() => Config.WithElympicsGameService();

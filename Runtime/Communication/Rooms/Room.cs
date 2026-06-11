@@ -76,7 +76,7 @@ namespace Elympics
         private readonly IMatchLauncher _matchLauncher;
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClassName(nameof(Room));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClass(typeof(Room));
         private readonly RoomState _state;
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;

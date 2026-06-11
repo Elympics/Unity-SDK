@@ -28,7 +28,7 @@ namespace Elympics
         {
             _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
             _iceServersUri = baseUri.AppendPathSegments(IceServersRoute, matchId.ToString());
-            _logger = ElympicsLogger.WithClassName(nameof(HttpSignalingClient));
+            _logger = ElympicsLogger.WithClass(typeof(HttpSignalingClient));
             _config = config;
         }
 

@@ -59,7 +59,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
             _webRtcConfig = webRtcConfig;
             _config = config;
             _channelSpecs = channelSpecs;
-            _logger = ElympicsLogger.WithClassName(nameof(WebRtcNetworkClient));
+            _logger = ElympicsLogger.WithClass(typeof(WebRtcNetworkClient));
         }
 
         public void CreateAndBind()

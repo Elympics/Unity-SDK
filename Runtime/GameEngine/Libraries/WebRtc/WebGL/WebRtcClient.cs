@@ -20,7 +20,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private static readonly Dictionary<int, WebRtcClient> Instances = new();
 
         private readonly int _instanceId;
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClassName(nameof(WebRtcClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(WebRtcClient).FullName ?? nameof(WebRtcClient));
         private readonly Dictionary<int, WebGLDataChannel> _channels = new();
 
         public WebRtcClient(WebRtcConfig config)

@@ -1,8 +1,9 @@
 #nullable enable
+using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Elympics.Core.Logger.State;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Elympics.Core.Logger
 {
@@ -81,14 +82,14 @@ namespace Elympics.Core.Logger
             return clone;
         }
 
-        /// <param name="className">Should be full class name with namespace included.</param>
+        /// <param name="type">Class type.</param>
         /// <returns>Current instance.</returns>
         [Pure]
-        public LoggerConfig WithClassName(string className)
+        public LoggerConfig WithClass(Type type)
         {
             var clone = Clone();
             var context = clone.Context;
-            context.ClassName = className;
+            context.ClassName = type.FullName ?? type.Name;
             clone.Context = context;
             return clone;
         }

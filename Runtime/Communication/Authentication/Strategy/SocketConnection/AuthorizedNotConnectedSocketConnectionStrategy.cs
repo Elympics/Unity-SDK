@@ -21,7 +21,8 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                var logger = Logger.WithClassName(nameof(AuthorizedNotConnectedStrategy)).WithMethodName();
+                var logger = Logger.WithClass(typeof(AuthorizedConnectedSocketConnectionStrategy))
+                    .WithMethodName();
                 throw logger.LogExceptionAndReturn(e);
             }
         }

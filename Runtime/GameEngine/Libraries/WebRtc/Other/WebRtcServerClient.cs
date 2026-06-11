@@ -16,7 +16,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private const string ReliableChannelLabel = "reliable";
         private const string UnreliableChannelLabel = "unreliable";
 
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClassName(nameof(WebRtcServerClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(WebRtcServerClient));
 
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;

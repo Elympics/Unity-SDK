@@ -63,7 +63,7 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClassName(nameof(ElympicsClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClass(typeof(ElympicsClient));
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,

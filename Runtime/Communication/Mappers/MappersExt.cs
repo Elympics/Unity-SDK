@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Rooms.Models;
 
 #nullable enable

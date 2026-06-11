@@ -8,8 +8,6 @@ using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
-using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;

@@ -1,5 +1,4 @@
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients;
 
 namespace Elympics
@@ -31,7 +30,7 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
-            _ = ElympicsLogger.ApplicationState.SetGameMode("online");
+            ElympicsLogger.State.SetGameMode("online");
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,

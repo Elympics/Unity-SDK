@@ -40,7 +40,7 @@ namespace MatchTcpClients
             var webRtcConfig = WebRtcConfig.Default;
             webRtcConfig.OfferAnnounceDelay = Config.OfferAnnounceDelay;
             return new WebRtcNetworkClient(_signalingClient, webRtcConfig, Config,
-                new (string, bool)[]
+                new[]
                 {
                     (INetworkClient.ReliableLabel, true),
                     (INetworkClient.UnreliableLabel, false),

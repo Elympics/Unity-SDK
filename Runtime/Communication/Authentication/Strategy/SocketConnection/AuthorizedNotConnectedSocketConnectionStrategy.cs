@@ -2,7 +2,6 @@ using System;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 
 #nullable enable

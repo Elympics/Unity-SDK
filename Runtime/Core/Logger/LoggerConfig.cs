@@ -17,7 +17,8 @@ namespace Elympics.Core.Logger
             Context = new LogContext(),
         };
 
-        [Pure] private LoggerConfig Clone() => new()
+        [Pure]
+        private LoggerConfig Clone() => new()
         {
             MonitoringEnabled = MonitoringEnabled,
             StacktraceForEverything = StacktraceForEverything,
@@ -44,21 +45,24 @@ namespace Elympics.Core.Logger
             }
         }
 
-        [Pure] public LoggerConfig WithMonitoringEnabled()
+        [Pure]
+        public LoggerConfig WithMonitoringEnabled()
         {
             var clone = Clone();
             clone.MonitoringEnabled = true;
             return clone;
         }
 
-        [Pure] public LoggerConfig WithStacktraceForEverything()
+        [Pure]
+        public LoggerConfig WithStacktraceForEverything()
         {
             var clone = Clone();
             clone.StacktraceForEverything = true;
             return clone;
         }
 
-        [Pure] public LoggerConfig WithUnityContext(Object unityContext)
+        [Pure]
+        public LoggerConfig WithUnityContext(Object unityContext)
         {
             var clone = Clone();
             var context = clone.Context;
@@ -67,7 +71,8 @@ namespace Elympics.Core.Logger
             return clone;
         }
 
-        [Pure] public LoggerConfig WithMethodName([CallerMemberName] string methodName = "")
+        [Pure]
+        public LoggerConfig WithMethodName([CallerMemberName] string methodName = "")
         {
             var clone = Clone();
             var context = clone.Context;
@@ -78,7 +83,8 @@ namespace Elympics.Core.Logger
 
         /// <param name="className">Should be full class name with namespace included.</param>
         /// <returns>Current instance.</returns>
-        [Pure] public LoggerConfig WithClassName(string className)
+        [Pure]
+        public LoggerConfig WithClassName(string className)
         {
             var clone = Clone();
             var context = clone.Context;
@@ -94,7 +100,8 @@ namespace Elympics.Core.Logger
         /// </summary>
         /// <param name="serviceName">Source service name.</param>
         /// <returns>Current instance.</returns>
-        [Pure] public LoggerConfig WithServiceName(string serviceName)
+        [Pure]
+        public LoggerConfig WithServiceName(string serviceName)
         {
             var clone = Clone();
             var context = clone.Context;

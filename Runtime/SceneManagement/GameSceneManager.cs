@@ -1,6 +1,5 @@
 using System;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Replication;
 using UnityEngine;
 
@@ -23,10 +22,6 @@ namespace Elympics
 
             var elympicsGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig()
                 ?? throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Game config not found"));
-            _ = ElympicsLogger.ApplicationState
-                .SetGame(Guid.TryParse(elympicsGameConfig.GameId, out var parsedId) ? parsedId : Guid.NewGuid(),
-                    elympicsGameConfig.GameVersion)
-                .SetGameName(elympicsGameConfig.GameName);
 
             try
             {

@@ -17,8 +17,8 @@ namespace Elympics.Core.Logger
             new JsonLogOutlet(),
         };
 
-        public static ApplicationState ApplicationState { get; } = new(ElympicsVersionRetriever.GetVersionStringFromAssembly());
-        private static LoggerConfig Config { get; } = LoggerConfig.New();
+        public static ApplicationState State { get; } = new(ElympicsVersionRetriever.GetVersionStringFromAssembly());
+        private static readonly LoggerConfig Config = LoggerConfig.New();
 
         private static void Log(LogCategory category, string message, LoggerConfig config, string? stacktrace = null)
         {
@@ -26,7 +26,7 @@ namespace Elympics.Core.Logger
             if (stacktrace is null && (category is LogCategory.Exception || config.StacktraceForEverything))
                 stacktrace = new StackTrace(2, true).ToString();
             foreach (var outlet in RegisteredOutlets)
-                outlet.Log(category, time, message, stacktrace, ApplicationState, config);
+                outlet.Log(category, time, message, stacktrace, State, config);
         }
 
         [Conditional("ELYMPICS_DEBUG")] public static void LogDebug(string message) => Log(LogCategory.Debug, message, Config);

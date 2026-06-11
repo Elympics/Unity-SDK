@@ -12,7 +12,6 @@ using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
 using Elympics.Communication.Utils;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Lobby.Serializers;
 using Elympics.Models.Authentication;

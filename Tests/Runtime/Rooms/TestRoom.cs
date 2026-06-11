@@ -11,8 +11,6 @@ using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
-using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;

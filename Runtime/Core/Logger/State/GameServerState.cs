@@ -5,10 +5,9 @@ namespace Elympics.Core.Logger.State
     internal abstract class GameServerState : IVisitableState
     {
         public readonly string ConnectionType;
-        public readonly string ServerAddress;
+        public string? ServerAddress;
 
-        protected GameServerState(string connectionType, string serverAddress) =>
-            (ConnectionType, ServerAddress) = (connectionType, serverAddress);
+        protected GameServerState(string connectionType) => ConnectionType = connectionType;
 
         public virtual void Visit(IStateVisitor visitor)
         {
@@ -21,7 +20,7 @@ namespace Elympics.Core.Logger.State
     {
         public bool UsesTurn;
 
-        public WebRtcState(string serverAddress) : base("WebRTC", serverAddress) { }
+        public WebRtcState() : base("WebRTC") { }
 
         public override void Visit(IStateVisitor visitor)
         {
@@ -32,6 +31,6 @@ namespace Elympics.Core.Logger.State
 
     internal sealed class TcpUdpState : GameServerState
     {
-        public TcpUdpState(string serverAddress) : base("TCP/UDP", serverAddress) { }
+        public TcpUdpState() : base("TCP/UDP") { }
     }
 }

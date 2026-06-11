@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Models.Public;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Mappers;
 
 namespace Elympics
@@ -32,7 +31,7 @@ namespace Elympics
                     + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                     + $"The list has only {playersList.Count} entries. "
                     + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}."));
-            _ = ElympicsLogger.ApplicationState.SetGameMode(gameModeName);
+            ElympicsLogger.State.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData ?? Array.Empty<float>();
             var gameEngineData = playersList[playerIndex].GameEngineData ?? Array.Empty<byte>();

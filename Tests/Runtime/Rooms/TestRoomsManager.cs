@@ -5,8 +5,6 @@ using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Utils;
-using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;

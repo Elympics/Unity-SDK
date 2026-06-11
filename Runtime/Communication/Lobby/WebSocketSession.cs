@@ -8,7 +8,6 @@ using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Utils;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
 
@@ -77,7 +76,7 @@ namespace Elympics.Lobby
                 await OpenWebSocket(_ws);
                 var gameData = await SendRequestInternal<GameDataResponseDto>(new JoinLobbyDto(ElympicsConfig.SdkVersion, gameId, gameVersion, regionName), Token);
                 ConnectionDetails = details;
-                _ = ElympicsLogger.ApplicationState.SetRegion(regionName);
+                ElympicsLogger.State.SetRegion(regionName);
                 logger.LogInfo("Connection to lobby completed.");
                 SetConnectedState();
                 _timer = new Stopwatch();

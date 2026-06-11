@@ -4,7 +4,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;

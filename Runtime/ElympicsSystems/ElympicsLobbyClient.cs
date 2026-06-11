@@ -38,8 +38,6 @@ namespace Elympics
     [RequireComponent(typeof(AsyncEventsDispatcher))]
     public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, ILobby, IWebSocketSessionController
     {
-        private const string NoGameModeName = "None";
-
         private static readonly MatchmakingFinishedData SinglePlayerMatchmakingFinishedData = new(Guid.Empty,
             new MatchDetails(
                 new[] { Guid.Empty },
@@ -188,9 +186,8 @@ namespace Elympics
             _config.CurrentGameSwitched += UniTask.Action(async () => await UpdateGameConfig());
             _gameConfig = _config.GetCurrentGameConfig()
                 ?? throw awakeLogger.LogExceptionAndReturn(new InvalidOperationException($"No {nameof(ElympicsGameConfig)} instance found. Make sure {nameof(ElympicsConfig)} is set up correctly."));
-            _ = ElympicsLogger.ApplicationState
-                .SetCloudUrls(_config.ElympicsAuthEndpoint, _config.ElympicsWebSocketUrl)
-                .SetGameMode(NoGameModeName);
+            ElympicsLogger.State.SetCloudUrls(_config.ElympicsApiEndpoint, _config.ElympicsGameServersEndpoint);
+            ElympicsLogger.State.SetGameMode(null);
             _regionRetriever = new DefaultRegionRetriever();
 
             Instance = this;
@@ -321,9 +318,8 @@ namespace Elympics
                     if (result.Value != null)
                     {
                         AuthData = result.Value;
-                        _ = ElympicsLogger.ApplicationState
-                            .SetUserId(result.Value.UserId)
-                            .SetAuthType(result.Value.AuthType);
+                        ElympicsLogger.State.SetUserId(result.Value.UserId);
+                        ElympicsLogger.State.SetAuthType(result.Value.AuthType);
                         logger.LogInfo("Authentication completed.");
                         eventName = nameof(AuthenticationSucceeded);
                         AuthenticationSucceeded?.Invoke(AuthData);
@@ -501,7 +497,7 @@ namespace Elympics
         {
             CurrentState.FinishMatch().ContinueWith(UpdateLoggerContext).Forget(HandleException);
 
-            void UpdateLoggerContext() => ElympicsLogger.ApplicationState.SetGameMode(NoGameModeName);
+            void UpdateLoggerContext() => ElympicsLogger.State.SetGameMode(null);
 
             void HandleException(Exception e)
             {
@@ -547,7 +543,9 @@ namespace Elympics
             ClearAuthData();
             DisconnectFromLobby();
             logger.LogInfo("User sign out.");
-            _ = ElympicsLogger.ApplicationState.SetNoUser().SetNoConnection().SetNoRoom();
+            ElympicsLogger.State.ClearUser();
+            ElympicsLogger.State.ClearLobby();
+            ElympicsLogger.State.ClearRoom();
         }
 
         internal void ClearAuthData()
@@ -639,8 +637,8 @@ namespace Elympics
 
         internal async UniTask InitializeBasedOnGameData(GameDataResponseDto gameDataResponse)
         {
-            _ = ElympicsLogger.ApplicationState.SetFleetName(gameDataResponse.FleetName)
-                .SetGameVersionId(gameDataResponse.GameVersionId);
+            ElympicsLogger.State.SetFleetName(gameDataResponse.FleetName);
+            ElympicsLogger.State.SetGameVersionId(gameDataResponse.GameVersionId);
             var coins = new List<CoinInfo>(gameDataResponse.CoinData.Count);
 
             foreach (var coin in gameDataResponse.CoinData)
@@ -662,7 +660,7 @@ namespace Elympics
             logger.LogInfo("Start fetching user data...");
             var response = await _webSocketSession.Value.SendRequest<ShowAuthResponseDto>(new ShowAuthDto());
             ElympicsUser = response.User.ToPublicModel();
-            _ = ElympicsLogger.ApplicationState.SetNickname(ElympicsUser.Value.Nickname);
+            ElympicsLogger.State.SetNickname(ElympicsUser.Value.Nickname);
             logger.LogInfo("User data retrieved.");
 
         }

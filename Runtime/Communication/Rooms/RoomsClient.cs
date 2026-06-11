@@ -11,7 +11,6 @@ using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Util;
 

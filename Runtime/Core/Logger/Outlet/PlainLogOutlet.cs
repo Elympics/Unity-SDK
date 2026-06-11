@@ -42,29 +42,14 @@ namespace Elympics.Core.Logger.Builder
             AppendContextAndState(config.Context, state);
             var finalMessage = _stringBuilder.ToString();
 
-            switch (category)
+            var logType = category switch
             {
-                case LogCategory.Exception:
-                case LogCategory.Error:
-                {
-                    Debug.LogError(finalMessage, context.LinkedObject);
-                    break;
-                }
-                case LogCategory.Warning:
-                {
-                    Debug.LogWarning(finalMessage, context.LinkedObject);
-                    break;
-                }
-                case LogCategory.Debug:
-                case LogCategory.Info:
-                case LogCategory.Trace:
-                {
-                    Debug.Log(finalMessage, context.LinkedObject);
-                    break;
-                }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(category), category, null);
-            }
+                LogCategory.Exception or LogCategory.Error => LogType.Error,
+                LogCategory.Warning => LogType.Warning,
+                LogCategory.Debug or LogCategory.Info or LogCategory.Trace => LogType.Log,
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
+            };
+            Debug.LogFormat(logType, LogOption.NoStacktrace, context.LinkedObject, "{0}", finalMessage);
         }
 
         private void AppendContextAndState(LoggerConfig.LogContext context, ApplicationState state)

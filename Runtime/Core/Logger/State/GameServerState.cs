@@ -9,10 +9,11 @@ namespace Elympics.Core.Logger.State
 
         protected GameServerState(string connectionType) => ConnectionType = connectionType;
 
-        public virtual void Visit(IStateVisitor visitor)
+        public virtual bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(ConnectionType), ConnectionType);
             visitor.ProcessProperty(nameof(ServerAddress), ServerAddress);
+            return true;
         }
     }
 
@@ -22,10 +23,11 @@ namespace Elympics.Core.Logger.State
 
         public WebRtcState() : base("WebRTC") { }
 
-        public override void Visit(IStateVisitor visitor)
+        public override bool Visit(IStateVisitor visitor)
         {
             base.Visit(visitor);
             visitor.ProcessProperty(nameof(UsesTurn), UsesTurn.ToString());
+            return true;
         }
     }
 

@@ -13,7 +13,7 @@ namespace Elympics.Core.Logger.State
 
         public GameState(string gameId, string versionName) => (GameId, VersionName) = (gameId, versionName);
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(GameId), GameId);
             visitor.ProcessProperty(nameof(VersionName), VersionName);
@@ -25,6 +25,7 @@ namespace Elympics.Core.Logger.State
                 visitor.ProcessProperty(nameof(GameVersionId), GameVersionId);
             if (!string.IsNullOrEmpty(FleetName))
                 visitor.ProcessProperty(nameof(FleetName), FleetName);
+            return true;
         }
     }
 }

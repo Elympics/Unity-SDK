@@ -11,7 +11,7 @@ namespace Elympics.Core.Logger.State
 
         public PlayPadState(string protocolVersion) => ProtocolVersion = protocolVersion;
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(ProtocolVersion), ProtocolVersion);
             if (!string.IsNullOrEmpty(Capabilities))
@@ -20,6 +20,7 @@ namespace Elympics.Core.Logger.State
                 visitor.ProcessProperty(nameof(FeatureAccess), FeatureAccess);
             if (!string.IsNullOrEmpty(TournamentId))
                 visitor.ProcessProperty(nameof(TournamentId), TournamentId);
+            return true;
         }
     }
 }

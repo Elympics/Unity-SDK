@@ -33,16 +33,34 @@ namespace Elympics.Core.Logger
             public string? ClassName;  // set manually - expected full name
             public string? ServiceName;  // is logging from game or lobby?
 
-            public void Visit(IStateVisitor visitor)
+            public bool Visit(IStateVisitor visitor)
             {
+                var visitedAnything = false;
                 if (ServiceName is not null)
+                {
                     visitor.ProcessProperty(nameof(ServiceName), ServiceName);
+                    visitedAnything = true;
+                }
+
                 if (ClassName is not null)
+                {
                     visitor.ProcessProperty(nameof(ClassName), ClassName);
+                    visitedAnything = true;
+                }
+
                 if (MethodName is not null)
+                {
                     visitor.ProcessProperty(nameof(MethodName), MethodName);
+                    visitedAnything = true;
+                }
+
                 if (LinkedObject is not null)
+                {
                     visitor.ProcessProperty(nameof(LinkedObject), $"{LinkedObject.GetType().FullName} {LinkedObject.name} ({LinkedObject.GetInstanceID()})");
+                    visitedAnything = true;
+                }
+
+                return visitedAnything;
             }
         }
 

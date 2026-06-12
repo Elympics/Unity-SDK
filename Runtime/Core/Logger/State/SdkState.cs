@@ -17,7 +17,7 @@ namespace Elympics.Core.Logger.State
             SdkVersion = sdkVersion;
         }
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(SessionId), SessionId);
             visitor.ProcessProperty(nameof(SdkVersion), SdkVersion);
@@ -25,6 +25,7 @@ namespace Elympics.Core.Logger.State
                 visitor.ProcessProperty(nameof(ApiUrl), ApiUrl);
             if (!string.IsNullOrEmpty(GameServerUrl))
                 visitor.ProcessProperty(nameof(GameServerUrl), GameServerUrl);
+            return true;
         }
     }
 }

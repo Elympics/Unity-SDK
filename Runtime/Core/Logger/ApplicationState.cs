@@ -184,46 +184,48 @@ namespace Elympics.Core.Logger
 
         public void ClearGameServer() => _gameServer = null;
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessSubstate(nameof(SdkState));
-            _sdk.Visit(visitor);
+            _ = _sdk.Visit(visitor);
 
             if (_game is not null)
             {
                 visitor.ProcessSubstate(nameof(GameState));
-                _game.Visit(visitor);
+                _ = _game.Visit(visitor);
             }
 
             if (_user is not null)
             {
                 visitor.ProcessSubstate(nameof(UserState));
-                _user.Visit(visitor);
+                _ = _user.Visit(visitor);
             }
 
             if (_lobby is not null)
             {
                 visitor.ProcessSubstate(nameof(LobbyState));
-                _lobby.Visit(visitor);
+                _ = _lobby.Visit(visitor);
             }
 
             if (_playPad is not null)
             {
                 visitor.ProcessSubstate(nameof(PlayPadState));
-                _playPad.Visit(visitor);
+                _ = _playPad.Visit(visitor);
             }
 
             if (_room is not null)
             {
                 visitor.ProcessSubstate(nameof(RoomState));
-                _room.Visit(visitor);
+                _ = _room.Visit(visitor);
             }
 
             if (_gameServer is not null)
             {
                 visitor.ProcessSubstate(nameof(GameServerState));
-                _gameServer.Visit(visitor);
+                _ = _gameServer.Visit(visitor);
             }
+
+            return true;
         }
     }
 }

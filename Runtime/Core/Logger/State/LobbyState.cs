@@ -8,9 +8,10 @@ namespace Elympics.Core.Logger.State
 
         public LobbyState(string region) => Region = region;
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(Region), Region);
+            return true;
         }
     }
 }

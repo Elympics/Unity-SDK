@@ -11,6 +11,7 @@ namespace Elympics.Core.Logger.Builder
 {
     internal class JsonLogOutlet : ILogOutlet
     {
+        private static readonly object StringBuilderLock = new();
         private readonly StringBuilder _stringBuilder;
         private readonly JsonStateVisitor _stateVisitor;
 
@@ -31,15 +32,19 @@ namespace Elympics.Core.Logger.Builder
             if (!config.MonitoringEnabled)
                 return;
 
-            _ = _stringBuilder.Clear();
             var stringifiedTime = TimeUtil.DateTimeToString(time);
-            AppendProperty(_stringBuilder, nameof(time), stringifiedTime, isFirst: true);
-            AppendProperty(_stringBuilder, nameof(message), message);
-            if (stacktrace is not null)
+            string finalMessage;
+            lock (StringBuilderLock)
+            {
+                _ = _stringBuilder.Clear();
+                AppendProperty(_stringBuilder, nameof(time), stringifiedTime, isFirst: true);
                 AppendProperty(_stringBuilder, nameof(message), message);
-            config.Context.Visit(_stateVisitor);
-            state.Visit(_stateVisitor);
-            var finalMessage = _stringBuilder.ToString();
+                if (stacktrace is not null)
+                    AppendProperty(_stringBuilder, nameof(message), message);
+                _ = config.Context.Visit(_stateVisitor);
+                _ = state.Visit(_stateVisitor);
+                finalMessage = _stringBuilder.ToString();
+            }
 
             CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
             {

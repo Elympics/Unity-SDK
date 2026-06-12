@@ -12,7 +12,7 @@ namespace Elympics.Core.Logger.State
 
         public RoomState(string roomId) => RoomId = roomId;
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(RoomId), RoomId);
             if (!string.IsNullOrEmpty(QueueName))
@@ -23,6 +23,7 @@ namespace Elympics.Core.Logger.State
                 visitor.ProcessProperty(nameof(TcpUdpServerAddress), TcpUdpServerAddress);
             if (!string.IsNullOrEmpty(WebServerAddress))
                 visitor.ProcessProperty(nameof(WebServerAddress), WebServerAddress);
+            return true;
         }
     }
 }

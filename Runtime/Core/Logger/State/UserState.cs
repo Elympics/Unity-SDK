@@ -11,7 +11,7 @@ namespace Elympics.Core.Logger.State
 
         public UserState(string userId) => UserId = userId;
 
-        public void Visit(IStateVisitor visitor)
+        public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(UserId), UserId);
             if (!string.IsNullOrEmpty(Nickname))
@@ -20,6 +20,7 @@ namespace Elympics.Core.Logger.State
                 visitor.ProcessProperty(nameof(AuthType), AuthType);
             if (!string.IsNullOrEmpty(WalletAddress))
                 visitor.ProcessProperty(nameof(WalletAddress), WalletAddress);
+            return true;
         }
     }
 }

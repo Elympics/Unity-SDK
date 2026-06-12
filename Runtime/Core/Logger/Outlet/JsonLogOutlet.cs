@@ -36,14 +36,16 @@ namespace Elympics.Core.Logger.Builder
             string finalMessage;
             lock (StringBuilderLock)
             {
-                _ = _stringBuilder.Clear();
+                _ = _stringBuilder.Clear()
+                    .Append('{');
                 AppendProperty(_stringBuilder, nameof(time), stringifiedTime, isFirst: true);
                 AppendProperty(_stringBuilder, nameof(message), message);
                 if (stacktrace is not null)
                     AppendProperty(_stringBuilder, nameof(stacktrace), stacktrace);
                 _ = config.Context.Visit(_stateVisitor);
                 _ = state.Visit(_stateVisitor);
-                finalMessage = _stringBuilder.ToString();
+                finalMessage = _stringBuilder.Append('}')
+                    .ToString();
             }
 
             CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent

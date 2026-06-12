@@ -7,8 +7,6 @@ namespace Elympics.Core.Logger.State
         public readonly string RoomId;
         public string? QueueName;
         public string? MatchId;
-        public string? TcpUdpServerAddress;
-        public string? WebServerAddress;
 
         public RoomState(string roomId) => RoomId = roomId;
 
@@ -17,8 +15,6 @@ namespace Elympics.Core.Logger.State
             visitor.ProcessProperty(nameof(RoomId), RoomId);
             visitor.ProcessOptionalProperty(nameof(QueueName), QueueName);
             visitor.ProcessOptionalProperty(nameof(MatchId), MatchId);
-            visitor.ProcessOptionalProperty(nameof(TcpUdpServerAddress), TcpUdpServerAddress);
-            visitor.ProcessOptionalProperty(nameof(WebServerAddress), WebServerAddress);
             return true;
         }
     }

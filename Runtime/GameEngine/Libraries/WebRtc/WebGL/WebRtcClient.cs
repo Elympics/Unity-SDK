@@ -170,7 +170,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var localCandidate = JsonUtility.FromJson<IceCandidateStats>(localCandidateStatsJson);
             var remoteCandidate = JsonUtility.FromJson<IceCandidateStats>(remoteCandidateStatsJson);
             if (localCandidate.candidateType == "relay" || localCandidate.HasTurnUrl())
-                _ = ElympicsLogger.State.SetUsesTurn();
+                ElympicsLogger.State.SetUsesTurn();
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
         }
 

@@ -1,4 +1,5 @@
 using Elympics.Public;
+
 namespace Elympics.Mappers
 {
     public static class ClientTickCalculatorNetworkDetailsToNetworkDetailsMapper

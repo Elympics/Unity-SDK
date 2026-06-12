@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using Elympics.SnapshotAnalysis.Retrievers;
-
-#nullable enable
 
 namespace Elympics
 {

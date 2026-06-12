@@ -1,11 +1,11 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
-
-#nullable enable
 
 namespace Elympics
 {

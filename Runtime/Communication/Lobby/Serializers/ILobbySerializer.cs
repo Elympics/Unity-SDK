@@ -1,7 +1,7 @@
+#nullable enable
+
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Lobby.InternalModels.ToLobby;
-
-#nullable enable
 
 namespace Elympics.Lobby.Serializers
 {

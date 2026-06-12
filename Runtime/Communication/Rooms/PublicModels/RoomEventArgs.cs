@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Rooms.Models;
 using JetBrains.Annotations;
-
-#nullable enable
 
 namespace Elympics
 {

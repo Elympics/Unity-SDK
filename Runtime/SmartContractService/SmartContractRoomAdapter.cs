@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -7,8 +9,6 @@ using Elympics;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
-
-#nullable enable
 
 namespace SCS
 {

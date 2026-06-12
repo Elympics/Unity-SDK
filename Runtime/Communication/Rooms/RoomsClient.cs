@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -13,8 +15,6 @@ using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Core.Logger;
 using Elympics.Lobby;
 using Elympics.Util;
-
-#nullable enable
 
 namespace Elympics
 {

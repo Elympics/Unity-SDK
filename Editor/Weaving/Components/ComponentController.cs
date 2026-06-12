@@ -1,10 +1,11 @@
+using System;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 
 namespace Elympics.Editor.Weaving.Components
 {
-    [System.Serializable]
+    [Serializable]
     internal class ComponentController
     {
         public int TotalTypesVisited { get; private set; }

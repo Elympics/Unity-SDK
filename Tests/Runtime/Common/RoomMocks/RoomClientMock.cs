@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,8 +10,6 @@ using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Lobby;
 using Elympics.Rooms.Models;
-
-#nullable enable
 
 internal class RoomClientMock : IRoomsClient
 {

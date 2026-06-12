@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -7,8 +9,6 @@ using Elympics;
 using Elympics.Core.Logger;
 using SCS.InternalModels.Player;
 using UnityEngine;
-
-#nullable enable
 
 namespace SCS
 {

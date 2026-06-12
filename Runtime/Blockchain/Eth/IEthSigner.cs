@@ -1,8 +1,8 @@
+#nullable enable
+
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-
-#nullable enable
 
 namespace Elympics
 {

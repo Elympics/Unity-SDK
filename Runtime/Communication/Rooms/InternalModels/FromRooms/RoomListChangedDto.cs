@@ -1,9 +1,9 @@
+#nullable enable
+
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Communication.Rooms.InternalModels.FromRooms
 {

@@ -1,9 +1,10 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using Elympics.Models.Matchmaking.LongPolling;
 using Elympics.Rooms.Models;
-
-#nullable enable
+using MatchData = Elympics.Models.Matchmaking.WebSocket.MatchData;
 
 namespace Elympics.Models.Matchmaking
 {
@@ -34,7 +35,7 @@ namespace Elympics.Models.Matchmaking
             MatchedPlayers = matchedPlayers;
         }
 
-        internal MatchmakingFinishedData(WebSocket.MatchData matchData)
+        internal MatchmakingFinishedData(MatchData matchData)
         {
             MatchId = matchData.MatchId;
             UserSecret = matchData.UserSecret;

@@ -1,6 +1,6 @@
-using System.Numerics;
-
 #nullable enable
+
+using System.Numerics;
 
 namespace SCS
 {

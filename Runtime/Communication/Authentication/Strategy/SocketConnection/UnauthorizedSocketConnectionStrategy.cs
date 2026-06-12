@@ -1,8 +1,8 @@
+#nullable enable
+
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Lobby;
-
-#nullable enable
 
 namespace Elympics
 {

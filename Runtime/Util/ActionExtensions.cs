@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using System.Threading;
-
-#nullable enable
 
 namespace Elympics
 {

@@ -1,9 +1,9 @@
+#nullable enable
 using System;
 using System.Globalization;
 using System.Linq;
 using Elympics.Core.Logger;
 
-#nullable enable
 namespace Elympics
 {
     internal static class ElympicsLogTemplates

@@ -1,9 +1,9 @@
+#nullable enable
+
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Compilation;
-
-#nullable enable
 
 namespace Elympics.Editor.Weaving
 {

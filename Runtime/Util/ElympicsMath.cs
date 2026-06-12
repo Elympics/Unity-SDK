@@ -1,6 +1,5 @@
 using System;
 
-
 namespace Elympics
 {
     internal static class ElympicsMath

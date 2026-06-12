@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Core.Logger;
+using Elympics.Replication;
 using GameEngineCore;
 using MessagePack;
 using UnityEngine.Assertions;
@@ -59,7 +60,7 @@ namespace Elympics
             foreach (var userId in userIds)
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             Assert.IsNotNull(world);
             if (world != null)
                 for (var i = 0; i < UserCount; i++)
@@ -104,7 +105,7 @@ namespace Elympics
         {
             var playerIndex = (int)player;
             // Enqueue update for thread-safe drain at tick start
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
 
             foreach (var value in inputList.Values)
@@ -131,7 +132,7 @@ namespace Elympics
         public void OnPlayerConnected(string userId)
         {
             var player = _userIdsToPlayers[new Guid(userId)];
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             world?.ActivatePlayer((int)player);
             PlayerConnected?.Invoke(player);
         }
@@ -140,7 +141,7 @@ namespace Elympics
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             world?.DeactivatePlayer((int)player);
         }
 

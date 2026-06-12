@@ -1,9 +1,10 @@
+#nullable enable
+
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
 using UnityEngine;
-
-#nullable enable
 
 namespace Elympics.Tests.Common.RoomMocks
 {
@@ -15,7 +16,7 @@ namespace Elympics.Tests.Common.RoomMocks
         public MatchmakingFinishedData? MatchDataGuid { get; set; }
 
         public void PlayMatch(MatchmakingFinishedData matchData) => PlayMatchCalledArgs = matchData;
-        public void WatchReplay() => throw new System.NotImplementedException();
+        public void WatchReplay() => throw new NotImplementedException();
         public UniTask StartMatchmaking(IRoom room)
         {
             Debug.Log($"[{nameof(MatchLauncherMock)}] Start matchmaking");

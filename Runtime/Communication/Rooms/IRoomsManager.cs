@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -5,8 +7,6 @@ using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Rooms.PublicModels;
 using JetBrains.Annotations;
-
-#nullable enable
 
 namespace Elympics
 {

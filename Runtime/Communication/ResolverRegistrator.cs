@@ -1,6 +1,7 @@
 using Elympics.Resolvers;
 using MessagePack;
 using MessagePack.Resolvers;
+using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
@@ -30,7 +31,7 @@ namespace Elympics
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.InitializeOnLoadMethod]
+        [InitializeOnLoadMethod]
         private static void EditorInitialize() => Initialize();
 #endif
     }

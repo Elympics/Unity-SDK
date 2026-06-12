@@ -1,6 +1,8 @@
+using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Elympics
 {
@@ -27,7 +29,7 @@ namespace Elympics
         private bool _verifyGameScenePath;
         private SerializedProperty _matchInitData;
 
-        public event System.Action DataChanged;
+        public event Action DataChanged;
 
         private const string GameIdInvalidFormatErrorMessage = "Game Id is required to be in a Guid format!";
 
@@ -90,7 +92,7 @@ namespace Elympics
 
             _gameName.stringValue = _customInspectorDrawer.DrawStringField("Name", _gameName.stringValue, 0.25f, true);
             _gameId.stringValue = _customInspectorDrawer.DrawStringField("Game Id", _gameId.stringValue, 0.25f, true);
-            if (!System.Guid.TryParse(_gameId.stringValue, out _))
+            if (!Guid.TryParse(_gameId.stringValue, out _))
                 _customInspectorDrawer.DrawHelpBox(GameIdInvalidFormatErrorMessage, 40, MessageType.Error);
 
             _gameVersion.stringValue = _customInspectorDrawer.DrawStringField("Version", _gameVersion.stringValue, 0.25f, true);

@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using Elympics.Models.Authentication;
-
-#nullable enable
 
 namespace Elympics.Lobby
 {

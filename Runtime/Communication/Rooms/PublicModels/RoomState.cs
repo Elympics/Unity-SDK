@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,8 +7,6 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Core.Logger;
 using Elympics.Rooms.Models;
-
-#nullable enable
 
 namespace Elympics
 {

@@ -1,13 +1,12 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Elympics.Editor.Weaving.Extensions;
 using Elympics.Weaving;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-
-#nullable enable
 
 namespace Elympics.Editor.Weaving.Components.Elympics
 {

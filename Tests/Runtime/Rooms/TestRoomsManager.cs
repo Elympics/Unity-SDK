@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Reflection;
 using System.Threading;
@@ -9,8 +11,6 @@ using Elympics.Core.Logger;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {

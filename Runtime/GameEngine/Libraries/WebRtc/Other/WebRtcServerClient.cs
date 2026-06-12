@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -6,8 +8,6 @@ using Elympics.GameEngine.Libraries.WebRtc.Other;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
-
-#nullable enable
 
 namespace Elympics.GameEngine.Libraries.WebRtc
 {

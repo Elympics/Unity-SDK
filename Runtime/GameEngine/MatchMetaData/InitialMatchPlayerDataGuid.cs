@@ -1,11 +1,11 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Elympics.Communication.Authentication.Models;
 using Elympics.Mappers;
 using GameEngineCore;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics
 {

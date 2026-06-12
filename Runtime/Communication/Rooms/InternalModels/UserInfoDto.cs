@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Authentication.Models.Internal;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Communication.Rooms.InternalModels
 {

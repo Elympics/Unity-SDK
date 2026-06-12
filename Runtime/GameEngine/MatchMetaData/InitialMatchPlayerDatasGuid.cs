@@ -1,9 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameEngineCore;
-
-#nullable enable
 
 namespace Elympics
 {

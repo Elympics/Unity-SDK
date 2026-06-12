@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using NSubstitute;
 using NSubstitute.Core;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {

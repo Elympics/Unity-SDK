@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using System.Numerics;
 using Elympics;
 using Elympics.Core.Logger;
 using UnityEngine;
-
-#nullable enable
 
 namespace SCS.Tests
 {

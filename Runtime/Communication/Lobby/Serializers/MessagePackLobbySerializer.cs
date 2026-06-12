@@ -1,9 +1,9 @@
+#nullable enable
+
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Core.Logger;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Lobby.Serializers
 {

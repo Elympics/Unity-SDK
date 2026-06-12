@@ -1,7 +1,7 @@
+#nullable enable
+
 using UnityEditor;
 using UnityEngine;
-
-#nullable enable
 
 namespace SCS.Tests.Editor
 {

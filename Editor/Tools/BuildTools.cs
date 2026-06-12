@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Elympics.Core.Logger;
 using UnityEditor;
@@ -43,7 +44,7 @@ namespace Elympics
         private static bool? IsLinuxModuleInstalled()
         {
             var moduleManager = Type.GetType("UnityEditor.Modules.ModuleManager,UnityEditor.dll");
-            var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", BindingFlags.Static | BindingFlags.NonPublic);
             return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
         }
 

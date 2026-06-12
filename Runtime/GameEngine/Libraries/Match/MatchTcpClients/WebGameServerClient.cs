@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -5,8 +7,6 @@ using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.WebRtc;
-
-#nullable enable
 
 namespace MatchTcpClients
 {

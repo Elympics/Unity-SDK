@@ -6,6 +6,7 @@ using System.Reflection;
 using Elympics.Communication.Models.Public;
 using Elympics.Core.Logger;
 using Elympics.Mappers;
+using Elympics.Replication;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -172,7 +173,7 @@ namespace Elympics
                 return true;
 
             // If replication world is initialized and entity is registered, use bitmask
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             if (world != null)
             {
                 var playerIdx = (int)player;

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Text;
 using System.Threading;
@@ -9,8 +11,6 @@ using MatchTcpClients;
 using MatchTcpLibrary;
 using UnityEngine;
 using UnityEngine.Networking;
-
-#nullable enable
 
 namespace Elympics
 {

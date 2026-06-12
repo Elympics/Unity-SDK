@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -10,8 +12,6 @@ using Elympics.Communication.Utils;
 using Elympics.Core.Logger;
 using Elympics.Lobby.Serializers;
 using HybridWebSocket;
-
-#nullable enable
 
 namespace Elympics.Lobby
 {

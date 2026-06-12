@@ -1,4 +1,5 @@
 using Elympics.Models.Authentication;
+
 namespace Elympics.ElympicsSystems
 {
     public readonly struct ElympicsConnectionData

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +9,6 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {

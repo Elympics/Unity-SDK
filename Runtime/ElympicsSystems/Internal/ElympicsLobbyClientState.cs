@@ -1,8 +1,8 @@
+#nullable enable
+
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
-
-#nullable enable
 
 namespace Elympics.ElympicsSystems.Internal
 {

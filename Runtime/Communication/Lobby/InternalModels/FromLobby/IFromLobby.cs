@@ -1,7 +1,7 @@
+#nullable enable
+
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {

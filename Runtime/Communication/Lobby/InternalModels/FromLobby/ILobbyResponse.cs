@@ -1,6 +1,6 @@
-using System;
-
 #nullable enable
+
+using System;
 
 namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {

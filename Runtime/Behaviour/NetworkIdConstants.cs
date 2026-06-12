@@ -1,3 +1,5 @@
+using System;
+
 namespace Elympics
 {
     /// <summary>
@@ -106,7 +108,7 @@ namespace Elympics
             if (playerIndex >= 0)
                 return playerIndex + spawnableSpecialPlayerIndices.Length;
 
-            throw new System.ArgumentException(
+            throw new ArgumentException(
                 $"Player index {playerIndex} is not valid for NetworkId allocation. " +
                 $"Must be a spawnable special player or >= 0.");
         }

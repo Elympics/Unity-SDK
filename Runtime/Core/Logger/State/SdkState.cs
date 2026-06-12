@@ -21,10 +21,8 @@ namespace Elympics.Core.Logger.State
         {
             visitor.ProcessProperty(nameof(SessionId), SessionId);
             visitor.ProcessProperty(nameof(SdkVersion), SdkVersion);
-            if (!string.IsNullOrEmpty(ApiUrl))
-                visitor.ProcessProperty(nameof(ApiUrl), ApiUrl);
-            if (!string.IsNullOrEmpty(GameServerUrl))
-                visitor.ProcessProperty(nameof(GameServerUrl), GameServerUrl);
+            visitor.ProcessOptionalProperty(nameof(ApiUrl), ApiUrl);
+            visitor.ProcessOptionalProperty(nameof(GameServerUrl), GameServerUrl);
             return true;
         }
     }

@@ -14,12 +14,9 @@ namespace Elympics.Core.Logger.State
         public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(ProtocolVersion), ProtocolVersion);
-            if (!string.IsNullOrEmpty(Capabilities))
-                visitor.ProcessProperty(nameof(Capabilities), Capabilities);
-            if (!string.IsNullOrEmpty(FeatureAccess))
-                visitor.ProcessProperty(nameof(FeatureAccess), FeatureAccess);
-            if (!string.IsNullOrEmpty(TournamentId))
-                visitor.ProcessProperty(nameof(TournamentId), TournamentId);
+            visitor.ProcessOptionalProperty(nameof(Capabilities), Capabilities);
+            visitor.ProcessOptionalProperty(nameof(FeatureAccess), FeatureAccess);
+            visitor.ProcessOptionalProperty(nameof(TournamentId), TournamentId);
             return true;
         }
     }

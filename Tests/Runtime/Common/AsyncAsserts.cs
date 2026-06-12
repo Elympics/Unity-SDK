@@ -1,7 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
-using UnityEngine;
 
 #nullable enable
 

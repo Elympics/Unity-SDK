@@ -20,7 +20,7 @@ namespace Elympics
             if (instance != null && instance != this)
             {
                 ElympicsLogger.WithUnityContext(gameObject)
-                    .LogError("You can't use more than 1 instance of {nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
+                    .LogError($"You can't use more than 1 instance of {nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
                         + $"Previously detected on object: {instance.gameObject.name}, current object: {gameObject.name}");
                 return;
             }

@@ -17,14 +17,10 @@ namespace Elympics.Core.Logger.State
         {
             visitor.ProcessProperty(nameof(GameId), GameId);
             visitor.ProcessProperty(nameof(VersionName), VersionName);
-            if (!string.IsNullOrEmpty(GameName))
-                visitor.ProcessProperty(nameof(GameName), GameName);
-            if (!string.IsNullOrEmpty(GameMode))
-                visitor.ProcessProperty(nameof(GameMode), GameMode);
-            if (!string.IsNullOrEmpty(GameVersionId))
-                visitor.ProcessProperty(nameof(GameVersionId), GameVersionId);
-            if (!string.IsNullOrEmpty(FleetName))
-                visitor.ProcessProperty(nameof(FleetName), FleetName);
+            visitor.ProcessOptionalProperty(nameof(GameName), GameName);
+            visitor.ProcessOptionalProperty(nameof(GameMode), GameMode);
+            visitor.ProcessOptionalProperty(nameof(GameVersionId), GameVersionId);
+            visitor.ProcessOptionalProperty(nameof(FleetName), FleetName);
             return true;
         }
     }

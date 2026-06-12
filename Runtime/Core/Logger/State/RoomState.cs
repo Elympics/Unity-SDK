@@ -15,14 +15,10 @@ namespace Elympics.Core.Logger.State
         public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(RoomId), RoomId);
-            if (!string.IsNullOrEmpty(QueueName))
-                visitor.ProcessProperty(nameof(QueueName), QueueName);
-            if (!string.IsNullOrEmpty(MatchId))
-                visitor.ProcessProperty(nameof(MatchId), MatchId);
-            if (!string.IsNullOrEmpty(TcpUdpServerAddress))
-                visitor.ProcessProperty(nameof(TcpUdpServerAddress), TcpUdpServerAddress);
-            if (!string.IsNullOrEmpty(WebServerAddress))
-                visitor.ProcessProperty(nameof(WebServerAddress), WebServerAddress);
+            visitor.ProcessOptionalProperty(nameof(QueueName), QueueName);
+            visitor.ProcessOptionalProperty(nameof(MatchId), MatchId);
+            visitor.ProcessOptionalProperty(nameof(TcpUdpServerAddress), TcpUdpServerAddress);
+            visitor.ProcessOptionalProperty(nameof(WebServerAddress), WebServerAddress);
             return true;
         }
     }

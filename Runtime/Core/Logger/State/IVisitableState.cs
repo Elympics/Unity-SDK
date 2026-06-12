@@ -1,4 +1,4 @@
-﻿namespace Elympics.Core.Logger.State
+namespace Elympics.Core.Logger.State
 {
     internal interface IVisitableState
     {

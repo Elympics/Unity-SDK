@@ -25,7 +25,7 @@ namespace Elympics.Core.Logger.State
 
         public override bool Visit(IStateVisitor visitor)
         {
-            base.Visit(visitor);
+            _ = base.Visit(visitor);
             visitor.ProcessProperty(nameof(UsesTurn), UsesTurn.ToString());
             return true;
         }

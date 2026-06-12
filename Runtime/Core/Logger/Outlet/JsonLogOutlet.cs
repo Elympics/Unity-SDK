@@ -40,7 +40,7 @@ namespace Elympics.Core.Logger.Builder
                 AppendProperty(_stringBuilder, nameof(time), stringifiedTime, isFirst: true);
                 AppendProperty(_stringBuilder, nameof(message), message);
                 if (stacktrace is not null)
-                    AppendProperty(_stringBuilder, nameof(message), message);
+                    AppendProperty(_stringBuilder, nameof(stacktrace), stacktrace);
                 _ = config.Context.Visit(_stateVisitor);
                 _ = state.Visit(_stateVisitor);
                 finalMessage = _stringBuilder.ToString();
@@ -48,8 +48,10 @@ namespace Elympics.Core.Logger.Builder
 
             CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
             {
-                LogLevel = category switch {
-                    LogCategory.Exception or LogCategory.Error => LogLevel.Error,
+                LogLevel = category switch
+                {
+                    LogCategory.Exception => LogLevel.Exception,
+                    LogCategory.Error => LogLevel.Error,
                     LogCategory.Warning => LogLevel.Warning,
                     LogCategory.Info or LogCategory.Debug or LogCategory.Trace => LogLevel.Log,
                     _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)

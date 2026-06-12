@@ -2,7 +2,6 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Elympics;
 using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;

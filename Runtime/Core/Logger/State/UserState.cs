@@ -14,12 +14,9 @@ namespace Elympics.Core.Logger.State
         public bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(UserId), UserId);
-            if (!string.IsNullOrEmpty(Nickname))
-                visitor.ProcessProperty(nameof(Nickname), Nickname);
-            if (!string.IsNullOrEmpty(AuthType))
-                visitor.ProcessProperty(nameof(AuthType), AuthType);
-            if (!string.IsNullOrEmpty(WalletAddress))
-                visitor.ProcessProperty(nameof(WalletAddress), WalletAddress);
+            visitor.ProcessOptionalProperty(nameof(Nickname), Nickname);
+            visitor.ProcessOptionalProperty(nameof(AuthType), AuthType);
+            visitor.ProcessOptionalProperty(nameof(WalletAddress), WalletAddress);
             return true;
         }
     }

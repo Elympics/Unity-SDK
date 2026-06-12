@@ -208,7 +208,7 @@ namespace Elympics.Lobby
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogExceptionAndReturn(e);
+                ElympicsLogger.LogException(e);
             }
         }
 
@@ -251,7 +251,7 @@ namespace Elympics.Lobby
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogExceptionAndReturn(e);
+                ElympicsLogger.LogException(e);
             }
         }
         private void HandleError(string message)

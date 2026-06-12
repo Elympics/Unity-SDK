@@ -21,7 +21,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private readonly int _instanceId;
         private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
-            .WithClass(typeof(WebRtcClient).FullName ?? nameof(WebRtcClient));
+            .WithClass(typeof(WebRtcClient));
         private readonly Dictionary<int, WebGLDataChannel> _channels = new();
 
         public WebRtcClient(WebRtcConfig config)
@@ -170,7 +170,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var localCandidate = JsonUtility.FromJson<IceCandidateStats>(localCandidateStatsJson);
             var remoteCandidate = JsonUtility.FromJson<IceCandidateStats>(remoteCandidateStatsJson);
             if (localCandidate.candidateType == "relay" || localCandidate.HasTurnUrl())
-                _ = ElympicsLogger.ApplicationState.SetUsesTurn();
+                _ = ElympicsLogger.State.SetUsesTurn();
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
         }
 

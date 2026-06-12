@@ -342,7 +342,7 @@ namespace Elympics
                 logger.LogException(new ElympicsException($"Exception occured in one of listeners of {nameof(ElympicsLobbyClient)}.{eventName}", e));
             }
             if (result.IsFailure)
-                throw logger.LogExceptionAndReturn(new ElympicsException($"Authentication failed {result.Error}"));
+                throw new ElympicsException($"Authentication failed {result.Error}");
         }
         private void DisconnectFromLobby()
         {
@@ -520,7 +520,7 @@ namespace Elympics
                 && data.AuthType is null
                 && data.Region == null)
                 // ReSharper disable once NotResolvedInText
-                throw new ArgumentNullException("All data parameters are null");
+                throw new ArgumentNullException(nameof(data), "All data parameters are null");
         }
 
         internal async UniTask FetchAvailableRegions()

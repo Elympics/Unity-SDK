@@ -87,7 +87,7 @@ namespace Elympics.Lobby
             catch (OperationCanceledException)
             {
                 if (!ct.IsCancellationRequested)
-                    throw _logger.LogExceptionAndReturn(new LobbyOperationException("Disconnected while trying to establish session"));
+                    throw new LobbyOperationException("Disconnected while trying to establish session");
                 throw;
             }
         }

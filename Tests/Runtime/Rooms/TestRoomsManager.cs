@@ -5,6 +5,7 @@ using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;
@@ -38,6 +39,7 @@ namespace Elympics.Tests.Rooms
 
         protected TestRoomsManager()
         {
+            ElympicsLogger.State.SetTcpUdp();
             MatchLauncherMock = Substitute.For<IMatchLauncher>();
             RoomsClientMock = Substitute.For<IRoomsClient>();
             RoomJoiner = new RoomJoiner(RoomsClientMock)

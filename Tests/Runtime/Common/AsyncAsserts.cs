@@ -19,10 +19,9 @@ namespace Elympics.Tests.Common
             }
             catch (Exception exception)
             {
-                Debug.Log(exception.ToString());
                 caughtException = exception;
             }
-            Assert.IsInstanceOf<T>(caughtException);
+            Assert.IsInstanceOf<T>(caughtException, caughtException?.ToString() ?? "No exception was caught");
             return (T)caughtException!;
         }
 

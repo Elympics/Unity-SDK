@@ -294,7 +294,8 @@ namespace Elympics.Tests
             using var session = CreateDefaultWebSocketSession();
             var operation = new UnknownOperation();
             WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(x => Assert.Fail("Operation has been sent."));
-            _ = await AssertThrowsAsync<ElympicsException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
+            LogAssert.Expect(LogType.Exception, new Regex("Cannot send message before establishing"));
+            _ = await AssertThrowsAsync<InvalidOperationException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
         });
 
         [UnityTest]
@@ -372,8 +373,9 @@ namespace Elympics.Tests
 
             session.Dispose();
 
+            LogAssert.Expect(LogType.Exception, new Regex("disposed object"));
             Assert.False(session.IsConnected);
-            _ = await AssertThrowsAsync<ElympicsException>(async () => await session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<ObjectDisposedException>(async () => await session.Connect(ConnectionDetails));
             _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoomDto(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
@@ -76,11 +77,12 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_Twice() => UniTask.ToCoroutine(async () =>
         {
-            _sut.ConnectToElympicsAsync(new ConnectionData()
+            _sut.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = AuthType.ClientSecret
             }).Forget();
 
+            LogAssert.Expect(LogType.Exception, new Regex("Already connecting"));
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 Region = new RegionData(ElympicsRegions.Warsaw)

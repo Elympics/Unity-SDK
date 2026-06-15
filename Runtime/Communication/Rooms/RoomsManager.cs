@@ -102,7 +102,9 @@ namespace Elympics
 
         private readonly List<Func<IRoom, IRoom>> _roomDecorators = new();
         private bool _initialized;
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClass(typeof(RoomsManager));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService()
+            .WithClass(typeof(RoomsManager))
+            .WithMonitoringEnabled();
 
         public RoomsManager(IMatchLauncher matchLauncher, IRoomsClient roomsClient, IRoomJoiner? roomJoiner = null)
         {

@@ -10,7 +10,8 @@ namespace Elympics
     internal abstract class ConnectionStrategy
     {
         private readonly WebSocketSession _webSocketSession;
-        protected readonly LoggerConfig Logger = ElympicsLogger.WithElympicsSdkService();
+        protected readonly LoggerConfig Logger = ElympicsLogger.WithElympicsSdkService()
+            .WithMonitoringEnabled();
         protected ConnectionStrategy(WebSocketSession webSocketSession) => _webSocketSession = webSocketSession;
 
         /// <summary>

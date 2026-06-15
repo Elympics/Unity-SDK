@@ -20,7 +20,9 @@ namespace Elympics
 {
     internal class RoomsClient : IRoomsClient
     {
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClass(typeof(RoomsClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService()
+            .WithClass(typeof(RoomsClient))
+            .WithMonitoringEnabled();
         public event Action<RoomStateChangedDto>? RoomStateChanged;
         public event Action<LeftRoomArgs>? LeftRoom;
         public event Action<RoomListChangedDto>? RoomListChanged;

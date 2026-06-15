@@ -156,7 +156,8 @@ namespace Elympics
         private ElympicsGameConfig _gameConfig = null!;
 
         private readonly LoggerConfig _loggerContext = ElympicsLogger.WithElympicsSdkService()
-            .WithClass(typeof(ElympicsLobbyClient));
+            .WithClass(typeof(ElympicsLobbyClient))
+            .WithMonitoringEnabled();
         SnapshotAnalysisRetriever? ILobby.SnapshotAnalysisRetriever => _snapshotAnalysisRetriever;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

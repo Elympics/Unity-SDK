@@ -36,7 +36,9 @@ namespace MatchTcpClients
         public event Action<MatchEndedMessage>? MatchEnded;
         public event Action<string, InGameDataMessage>? InGameDataReceived;
 
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClass(typeof(GameServerClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(GameServerClient))
+            .WithMonitoringEnabled();
 
         protected GameServerClient(IGameServerSerializer serializer, GameServerClientConfig config)
         {

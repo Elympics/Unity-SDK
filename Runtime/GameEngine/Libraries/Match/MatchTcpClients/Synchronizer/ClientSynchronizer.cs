@@ -19,7 +19,9 @@ namespace MatchTcpClients.Synchronizer
         public event Action TimedOut;
 
         private readonly ClientSynchronizerConfig _config;
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClass(typeof(ClientSynchronizer));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(ClientSynchronizer))
+            .WithMonitoringEnabled();
         private DateTime? _lastReceivedPingDataTime;
         private NtpData _lastReceivedUnreliableNtpData;
         private bool _waitingForFirstUnreliablePing = true;

@@ -8,7 +8,9 @@ namespace Elympics.ElympicsSystems.Internal
 {
     internal class ReconnectingState : ElympicsLobbyClientState
     {
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService().WithClass(typeof(ReconnectingState));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService()
+            .WithClass(typeof(ReconnectingState))
+            .WithMonitoringEnabled();
 
         //TODO take this value from config with min value of 1.
         private const int ReconnectAttempts = 1;

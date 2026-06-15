@@ -23,7 +23,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     {
         private readonly WebRtcConfig _config;
         private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
-            .WithClass(typeof(WebRtcClient));
+            .WithClass(typeof(WebRtcClient))
+            .WithMonitoringEnabled();
 
         private readonly RTCPeerConnection _peerConnection;
 

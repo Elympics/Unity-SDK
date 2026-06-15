@@ -36,7 +36,9 @@ namespace Elympics
         private UniTaskCompletionSource _connectingTcs;
         private bool _connected;
 
-        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService().WithClass(typeof(RemoteMatchConnectClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(RemoteMatchConnectClient))
+            .WithMonitoringEnabled();
 
         public RemoteMatchConnectClient(
             IGameServerClient gameServerClient,

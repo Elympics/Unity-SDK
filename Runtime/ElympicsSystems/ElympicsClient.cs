@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
@@ -347,7 +348,8 @@ namespace Elympics
             {
                 if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
                 {
-                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. "
+                        + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
                     PredictionStateChanged(false, _clientTickCalculator.Results);
                 }
 
@@ -358,20 +360,25 @@ namespace Elympics
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 
-            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
+                + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
             PredictionStateChanged(true, _clientTickCalculator.Results);
         }
 
         private void LogNetworkConditionsInInterval()
         {
-            if (!_lastClientPrintNetworkConditions.HasValue)
-                _lastClientPrintNetworkConditions = TickStartUtc;
-
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
+            _lastClientPrintNetworkConditions ??= TickStartUtc;
             if (!((TickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
                 return;
-
-            ElympicsLogger.LogInfo(_clientTickCalculator.Results.ToString());
+            var message = _clientTickCalculator.Results.ToString();
             _lastClientPrintNetworkConditions = TickStartUtc;
+            ElympicsLogger.WithMonitoringEnabled()
+                .WithConsoleDisabled()
+                .LogDebug(message);
+            if (Config.DetailedNetworkLog)
+                ElympicsLogger.LogInfo(message);
         }
 
         private void ProcessSnapshot(long predictionTick)

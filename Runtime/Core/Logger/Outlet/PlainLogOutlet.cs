@@ -30,6 +30,8 @@ namespace Elympics.Core.Logger.Builder
             ApplicationState state,
             LoggerConfig config)
         {
+            if (config.ConsoleDisabled)
+                return;
             var context = config.Context;
             var shouldLogStacktrace = category is LogCategory.Exception || config.StacktraceForEverything;
             var logCategoryPrefix = category switch

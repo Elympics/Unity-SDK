@@ -9,6 +9,7 @@ namespace Elympics.Core.Logger
 {
     internal struct LoggerConfig
     {
+        public bool ConsoleDisabled { get; private set; }
         public bool MonitoringEnabled { get; private set; }
         public bool StacktraceForEverything { get; private set; }
         public LogContext Context { get; private set; }
@@ -62,6 +63,14 @@ namespace Elympics.Core.Logger
 
                 return visitedAnything;
             }
+        }
+
+        [Pure]
+        public LoggerConfig WithConsoleDisabled()
+        {
+            var clone = Clone();
+            clone.ConsoleDisabled = true;
+            return clone;
         }
 
         [Pure]

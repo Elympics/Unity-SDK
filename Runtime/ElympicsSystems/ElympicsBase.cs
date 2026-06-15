@@ -88,8 +88,7 @@ namespace Elympics
                 _timer -= ElympicsUpdateDuration;
 
                 _elympicsUpdateStopwatch.Stop();
-                if (Config.DetailedNetworkLog)
-                    LogFixedUpdateThrottle();
+                LogFixedUpdateThrottle();
                 _elympicsUpdateStopwatch.Reset();
                 _elympicsUpdateStopwatch.Start();
 
@@ -99,8 +98,7 @@ namespace Elympics
 
                 _elympicsUpdateStopwatch.Stop();
                 TickEndUtc = TickStartUtc + _elympicsUpdateStopwatch.Elapsed;
-                if (Config.DetailedNetworkLog)
-                    LogElympicsTickThrottle();
+                LogElympicsTickThrottle();
 
                 ElympicsLateFixedUpdate();
                 elympicsUpdateCalled = true;
@@ -165,10 +163,26 @@ namespace Elympics
 
         private void LogFixedUpdateThrottle()
         {
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
             if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
-                ElympicsLogger.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
+            {
+                var message = GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190);
+                if (Config.DetailedNetworkLog)
+                    ElympicsLogger.LogError(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .LogDebug(message);
+            }
             else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
-                ElympicsLogger.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
+            {
+                var message = GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120);
+                if (Config.DetailedNetworkLog)
+                    ElympicsLogger.LogWarning(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .LogDebug(message);
+            }
         }
 
         private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) =>
@@ -176,10 +190,24 @@ namespace Elympics
 
         private void LogElympicsTickThrottle()
         {
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
             if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
-                ElympicsLogger.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
+            {
+                var message = GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100);
+                ElympicsLogger.LogError(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .LogDebug(message);
+            }
             else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
-                ElympicsLogger.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
+            {
+                var message = GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66);
+                ElympicsLogger.LogWarning(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .LogDebug(message);
+            }
         }
 
         private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) =>

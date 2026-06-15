@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -545,7 +544,7 @@ namespace Elympics
             DisconnectFromLobby();
             logger.LogInfo("User sign out.");
             ElympicsLogger.State.ClearUser();
-            ElympicsLogger.State.ClearLobby();
+            ElympicsLogger.State.SetRegion(null);
             ElympicsLogger.State.ClearRoom();
         }
 
@@ -679,21 +678,6 @@ namespace Elympics
             ElympicsLogger.LogInfo($"Switch state from {_previousState.State} to {CurrentState.State}");
         }
 
-        internal static void LogJoiningMatchmaker(
-            Guid userId,
-            float[]? matchmakerData,
-            byte[]? gameEngineData,
-            string? queueName,
-            string? regionName,
-            bool loadGameplaySceneOnFinished)
-        {
-            var serializedMmData = matchmakerData != null ? "[" + string.Join(", ", matchmakerData.Select(x => x.ToString(CultureInfo.InvariantCulture))) + "]" : "null";
-            var serializedGeData = gameEngineData != null ? Convert.ToBase64String(gameEngineData) : "null";
-            ElympicsLogger.LogInfo($"Starting matchmaking process for user: {userId}, region: {regionName}, queue: {queueName}\nSupplied matchmaker data: {serializedMmData}\n"
-                + $"Supplied game engine data: {serializedGeData}");
-            if (loadGameplaySceneOnFinished)
-                ElympicsLogger.LogInfo("Gameplay scene will be loaded after matchmaking succeeds.");
-        }
         internal static string GetOrCreateClientSecret()
         {
             var parameterValue = ApplicationParameters.Parameters.ClientSecret.GetValue();

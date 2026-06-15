@@ -4,7 +4,7 @@ namespace Elympics.Core.Logger.State
 {
     internal sealed class PlayPadState : IVisitableState
     {
-        public string ProtocolVersion;
+        public readonly string ProtocolVersion;
         public string? Capabilities;
         public string? FeatureAccess;
         public string? TournamentId;

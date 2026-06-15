@@ -11,10 +11,9 @@ namespace Elympics.Core.Logger
         private readonly SdkState _sdk;
         private GameState? _game;
         private UserState? _user;
-        private LobbyState? _lobby;
-        private PlayPadState? _playPad;
-        private RoomState? _room;
+        private MatchState? _match;
         private GameServerState? _gameServer;
+        private PlayPadState? _playPad;
 
         public ApplicationState(string sdkVersion) => _sdk = new SdkState(sdkVersion);
 
@@ -91,33 +90,14 @@ namespace Elympics.Core.Logger
 
         public void ClearUser() => _user = null;
 
-        public void SetRegion(string region)
-        {
-            if (_lobby?.Region != region)
-                _lobby = new LobbyState(region);
-        }
+        public void SetRegion(string? region) => _sdk.Region = region;
 
-        public void ClearLobby() => _lobby = null;
-
-        public void SetPlayPadVersion(string protocolVersion)
-        {
-            if (_playPad?.ProtocolVersion != protocolVersion)
-                _playPad = new PlayPadState(protocolVersion);
-        }
-
-        public void SetCapabilities(string? capabilities)
-        {
-            if (_playPad is null)
-                throw new InvalidOperationException("PlayPad state is not set");
-            _playPad.Capabilities = capabilities;
-        }
-
-        public void SetFeatureAccess(string? featureAccess)
-        {
-            if (_playPad is null)
-                throw new InvalidOperationException("PlayPad state is not set");
-            _playPad.FeatureAccess = featureAccess;
-        }
+        public void SetPlayPad(string protocolVersion, string? capabilities = null, string? featureAccess = null) =>
+            _playPad = new PlayPadState(protocolVersion)
+            {
+                Capabilities = capabilities,
+                FeatureAccess = featureAccess
+            };
 
         public void SetTournamentId(string? tournamentId)
         {
@@ -128,27 +108,13 @@ namespace Elympics.Core.Logger
 
         public void ClearPlayPad() => _playPad = null;
 
-        public void SetRoomId(string roomId)
-        {
-            if (_room?.RoomId != roomId)
-                _room = new RoomState(roomId);
-        }
+        public void SetRoomId(string? roomId) => (_match ??= new MatchState()).RoomId = roomId;
 
-        public void SetQueue(string? queueName)
-        {
-            if (_room is null)
-                throw new InvalidOperationException("Room state is not set");
-            _room.QueueName = queueName;
-        }
+        public void SetQueue(string? queueName) => (_match ??= new MatchState()).QueueName = queueName;
 
-        public void SetMatchId(string? matchId)
-        {
-            if (_room is null)
-                throw new InvalidOperationException("Room state is not set");
-            _room.MatchId = matchId;
-        }
+        public void SetMatchId(string? matchId) => (_match ??= new MatchState()).MatchId = matchId;
 
-        public void ClearRoom() => _room = null;
+        public void ClearRoom() => _match = null;
 
         public void SetTcpUdp()
         {
@@ -201,28 +167,22 @@ namespace Elympics.Core.Logger
                 _ = _user.Visit(visitor);
             }
 
-            if (_lobby is not null)
+            if (_match is not null)
             {
-                visitor.ProcessSubstate(nameof(LobbyState));
-                _ = _lobby.Visit(visitor);
-            }
-
-            if (_playPad is not null)
-            {
-                visitor.ProcessSubstate(nameof(PlayPadState));
-                _ = _playPad.Visit(visitor);
-            }
-
-            if (_room is not null)
-            {
-                visitor.ProcessSubstate(nameof(RoomState));
-                _ = _room.Visit(visitor);
+                visitor.ProcessSubstate(nameof(MatchState));
+                _ = _match.Visit(visitor);
             }
 
             if (_gameServer is not null)
             {
                 visitor.ProcessSubstate(nameof(GameServerState));
                 _ = _gameServer.Visit(visitor);
+            }
+
+            if (_playPad is not null)
+            {
+                visitor.ProcessSubstate(nameof(PlayPadState));
+                _ = _playPad.Visit(visitor);
             }
 
             return true;

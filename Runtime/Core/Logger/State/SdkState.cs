@@ -10,6 +10,7 @@ namespace Elympics.Core.Logger.State
         public readonly string SdkVersion;
         public string? ApiUrl;
         public string? GameServerUrl;
+        public string? Region;
 
         public SdkState(string sdkVersion)
         {
@@ -23,6 +24,7 @@ namespace Elympics.Core.Logger.State
             visitor.ProcessProperty(nameof(SdkVersion), SdkVersion);
             visitor.ProcessOptionalProperty(nameof(ApiUrl), ApiUrl);
             visitor.ProcessOptionalProperty(nameof(GameServerUrl), GameServerUrl);
+            visitor.ProcessOptionalProperty(nameof(Region), Region);
             return true;
         }
     }

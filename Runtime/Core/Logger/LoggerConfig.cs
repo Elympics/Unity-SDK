@@ -9,6 +9,8 @@ namespace Elympics.Core.Logger
 {
     internal struct LoggerConfig
     {
+        public const string DefaultServiceName = "ElympicsSdk";
+
         public bool ConsoleDisabled { get; private set; }
         public bool MonitoringEnabled { get; private set; }
         public bool StacktraceForEverything { get; private set; }
@@ -144,7 +146,7 @@ namespace Elympics.Core.Logger
         /// <seealso cref="WithPlayPadSdkService"/>
         /// </summary>
         /// <returns>Current instance.</returns>
-        [Pure] public LoggerConfig WithElympicsSdkService() => WithServiceName("ElympicsSdk");
+        [Pure] public LoggerConfig WithElympicsSdkService() => WithServiceName(DefaultServiceName);
 
         /// <summary>
         /// <seealso cref="WithServiceName"/>

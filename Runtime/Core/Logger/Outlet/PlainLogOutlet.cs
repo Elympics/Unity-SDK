@@ -9,7 +9,6 @@ namespace Elympics.Core.Logger.Builder
     internal class PlainLogOutlet : ILogOutlet
     {
         private const string StringPrefixFormat = "[{0}] ";
-        private const string DefaultServiceName = "ElympicsSdk";
         private const string StateHeader = "=== Current application state ===\n";
 
         private static readonly object StringBuilderLock = new();
@@ -52,7 +51,7 @@ namespace Elympics.Core.Logger.Builder
                     .AppendFormat(StringPrefixFormat, time)
 #endif
                     .AppendFormat(StringPrefixFormat, logCategoryPrefix)
-                    .AppendFormat(StringPrefixFormat, !string.IsNullOrEmpty(context.ServiceName) ? context.ServiceName : DefaultServiceName)
+                    .AppendFormat(StringPrefixFormat, !string.IsNullOrEmpty(context.ServiceName) ? context.ServiceName : LoggerConfig.DefaultServiceName)
                     .Append(message);
                 AppendContextAndState(config.Context, state);
 #if !UNITY_EDITOR
@@ -65,14 +64,7 @@ namespace Elympics.Core.Logger.Builder
                 finalMessage = _stringBuilder.AppendLine().ToString();
             }
 
-            var logType = category switch
-            {
-                LogCategory.Exception => LogType.Exception,
-                LogCategory.Error => LogType.Error,
-                LogCategory.Warning => LogType.Warning,
-                LogCategory.Debug or LogCategory.Info or LogCategory.Trace => LogType.Log,
-                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
-            };
+            var logType = category.ToLogType();
             Debug.LogFormat(logType, shouldLogStacktrace ? LogOption.None : LogOption.NoStacktrace, context.LinkedObject, "{0}", finalMessage);
         }
 

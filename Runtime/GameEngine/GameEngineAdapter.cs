@@ -53,6 +53,9 @@ namespace Elympics
         public void Initialize(InitialMatchData initialMatchData, bool isReplay)
         {
             _initialMatchData = initialMatchData;
+            ElympicsLogger.State.SetMatchId(initialMatchData.MatchId.ToString());
+            ElympicsLogger.State.SetRegion(initialMatchData.RegionName);
+            ElympicsLogger.State.SetQueue(initialMatchData.QueueName);
 
             var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
             _userIdsToPlayers = ElympicsPlayerAssociations.GetUserIdsToPlayers(userIds);

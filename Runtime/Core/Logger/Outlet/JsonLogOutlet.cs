@@ -1,11 +1,9 @@
 #nullable enable
 using System;
 using System.Text;
-using System.Text.RegularExpressions;
 using Elympics.AssemblyCommunicator;
 using Elympics.Core.Logger.State;
 using Elympics.Events;
-using UnityEngine;
 
 namespace Elympics.Core.Logger.Builder
 {
@@ -50,14 +48,7 @@ namespace Elympics.Core.Logger.Builder
 
             CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
             {
-                LogLevel = category switch
-                {
-                    LogCategory.Exception => LogLevel.Exception,
-                    LogCategory.Error => LogLevel.Error,
-                    LogCategory.Warning => LogLevel.Warning,
-                    LogCategory.Info or LogCategory.Debug or LogCategory.Trace => LogLevel.Log,
-                    _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
-                },
+                LogLevel = category.ToLogLevel(),
                 Time = stringifiedTime,
                 Message = finalMessage,
             });
@@ -75,22 +66,41 @@ namespace Elympics.Core.Logger.Builder
             public void ProcessProperty(string name, string value) => AppendProperty(_stringBuilder, name, value);
         }
 
-        private static void AppendProperty(StringBuilder sb, string key, string value, bool isFirst = false)
+        private static void AppendProperty(StringBuilder sb, string key, string? value, bool isFirst = false)
         {
             if (!isFirst)
                 _ = sb.Append(',');
-            _ = sb.Append(StringValue.ToJson(key))
-                .Append(':')
-                .Append(StringValue.ToJson(value));
+            AppendEscaped(sb, key);
+            _ = sb.Append(':');
+            AppendEscaped(sb, value);
         }
 
-        [Serializable]
-        private struct StringValue
+        private static void AppendEscaped(StringBuilder sb, string? value)
         {
-            private static readonly Regex ValueRegex = new(@"^\s*\{\s*""" + nameof(v) + @"""\s*:\s*("".*"")\s*\}\s*$", RegexOptions.Compiled);
-            [SerializeField] private string v;
-            private StringValue(string value) => v = value;
-            public static string ToJson(string value) => ValueRegex.Match(JsonUtility.ToJson(new StringValue(value))).Groups[1].Value;
+            if (value is null)
+            {
+                _ = sb.Append("null");
+                return;
+            }
+
+            _ = sb.Append('"');
+            foreach (var c in value)
+                if (c is '"' or '\\' or '\n' or '\r' or '\t' or '\b' or '\f' or < ' ')
+                    _ = sb.Append(c switch
+                    {
+                        '"' => @"\""",
+                        '\\' => @"\\",
+                        '\n' => @"\n",
+                        '\r' => @"\r",
+                        '\t' => @"\t",
+                        '\b' => @"\b",
+                        '\f' => @"\f",
+                        _ => $"\\u{(int)c:x4}",
+                    });
+                else
+                    _ = sb.Append(c);
+
+            _ = sb.Append('"');
         }
     }
 }

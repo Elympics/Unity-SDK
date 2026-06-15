@@ -177,6 +177,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.LogInfo($"Handle room update.{Environment.NewLine}{roomState}");
             var roomId = roomState.RoomId;
+            ElympicsLogger.State.SetRoomId(roomId.ToString());
             if (_rooms.TryGetValue(roomId, out var room))
             {
                 room.UpdateState(roomState, _stateDiff);

@@ -29,12 +29,12 @@ namespace Elympics
         public override long Tick => _tick;
 
         /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
-        public static event Action<TimeSynchronizationData, long> TimeSynchronized;
+        public static event Action<TimeSynchronizationData, long>? TimeSynchronized;
 
         private volatile bool _started;
         private volatile bool _wasEverStarted;
         private volatile bool _reconnectResetPending;
-        private Action _onAuthenticatedAsSpectator;
+        private Action? _onAuthenticatedAsSpectator;
         private ClientTickCalculatorNetworkDetailsToFile _logToFile;
         internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
@@ -46,7 +46,8 @@ namespace Elympics
         private PredictionBuffer _predictionBuffer;
 
         private static readonly object LastReceivedSnapshotLock = new();
-        private ElympicsSnapshot _lastReceivedSnapshot;
+        private ElympicsSnapshot? _lastReceivedSnapshot;
+        private long _receivedSnapshotCount;
         private long _latestReconciliationBaseSnapshotTick;
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
@@ -139,6 +140,7 @@ namespace Elympics
         {
             _roundTripTimeCalculator.OnSynchronized(data);
             RaiseRttReceived(data);
+            RaiseReceivedStatsUpdated();
             OnConnected(data);
         }
 
@@ -146,10 +148,21 @@ namespace Elympics
         {
             OnSynchronized(data);
             RaiseRttReceived(data);
+            RaiseReceivedStatsUpdated();
             TimeSynchronized?.Invoke(data, Tick);
         }
 
-        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived() { rtt = (float)data.RoundTripDelay.TotalMilliseconds, tick = Tick });
+        private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived
+        {
+            rtt = (float)data.RoundTripDelay.TotalMilliseconds,
+            tick = Tick,
+        });
+
+        private void RaiseReceivedStatsUpdated() => CrossAssemblyEventBroadcaster.RaiseEvent(new ReceivedStatsUpdated
+        {
+            received = _receivedSnapshotCount,
+            total = _lastReceivedSnapshot?.Tick ?? 0,
+        });
 
         private void OnDestroy()
         {
@@ -183,33 +196,30 @@ namespace Elympics
         {
             lock (LastReceivedSnapshotLock)
             {
+                _receivedSnapshotCount++;
                 if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
                 {
                     _lastReceivedSnapshot = elympicsSnapshot;
                     _matchClient.SetLastReceivedSnapshot(elympicsSnapshot.Tick);
                 }
-
-                if (!_started && !_reconnectResetPending)
+                if (_started || _reconnectResetPending)
+                    return;
+                if (_wasEverStarted)
                 {
-                    if (_wasEverStarted)
+                    _reconnectResetPending = true;
+                    Enqueue(() =>
                     {
-                        _reconnectResetPending = true;
-                        Enqueue(() =>
-                        {
-                            if (this == null)
-                                return; // MonoBehaviour destroyed during scene unload
-                            _reconnectResetPending = false;
-                            if (_started)
-                                return;
-                            ResetForReconnect();
-                            StartClient();
-                        });
-                    }
-                    else
-                    {
+                        if (this == null)
+                            return; // MonoBehaviour destroyed during scene unload
+                        _reconnectResetPending = false;
+                        if (_started)
+                            return;
+                        ResetForReconnect();
                         StartClient();
-                    }
+                    });
                 }
+                else
+                    StartClient();
             }
         }
 
@@ -243,6 +253,7 @@ namespace Elympics
 
             _tick = -1;
             _lastReceivedSnapshot = null;
+            _receivedSnapshotCount = 0;
             _latestReconciliationBaseSnapshotTick = -1;
             _serverWorldState.ResetToEmpty();
             _currentTicksWithoutPrediction = 0;

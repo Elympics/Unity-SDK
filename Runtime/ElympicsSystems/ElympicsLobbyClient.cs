@@ -193,6 +193,8 @@ namespace Elympics
             _regionRetriever = new DefaultRegionRetriever();
 
             Instance = this;
+            if (transform.parent != null)
+                transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
             _clientSecret = GetOrCreateClientSecret();
 

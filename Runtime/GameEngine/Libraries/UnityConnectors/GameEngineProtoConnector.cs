@@ -56,8 +56,8 @@ namespace UnityConnectors
             return _client;
         }
 
-        private void OnIntermediateScoreSubmitted((Guid UserId, float[] Score, DateTimeOffset Time) arg) =>
-            _client.Send(new SubmitScoreMsg { Score = arg.Score[0], UserId = arg.UserId.ToString(), Timestamp = arg.Time.ToUnixTimeSeconds() });
+        private void OnIntermediateScoreSubmitted((Guid UserId, float Score, DateTimeOffset Time) arg) =>
+            _client.Send(new SubmitScoreMsg { Score = arg.Score, UserId = arg.UserId.ToString(), Timestamp = arg.Time.ToUnixTimeSeconds() });
 
         private void OnSnapshotReplayInitialized(ArraySegment<byte> data)
         {

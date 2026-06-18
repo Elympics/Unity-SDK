@@ -56,7 +56,7 @@ namespace Elympics
             bool handlingBotsOverride = false,
             bool handlingClientsOverride = false)
         {
-            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers, elympicsGameConfig.ScoreWidth, elympicsGameConfig.LogScoreOverTime);
+            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers, elympicsGameConfig.LogScoreOverTime);
             _serverPlayerHandler = playerHandler;
             _snapshotCollector = snapshotAnalysisCollector;
             _serverElympicsUpdate = serverElympicsUpdate;
@@ -127,7 +127,7 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
-        private void SubmitIntermediateScore((int PlayerIndex, float[] Score) arg) =>
+        private void SubmitIntermediateScore((int PlayerIndex, float Score) arg) =>
             _gameEngineAdapter.SubmitIntermediateScore(arg.Score, ElympicsPlayer.FromIndex(arg.PlayerIndex));
 
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
@@ -176,16 +176,11 @@ namespace Elympics
 
         #region IElympics
 
-        public override void EndGame() => EndGame(_score);
-
-        public override void EndGame(ResultMatchPlayerDatas result)
+        public override void EndGame(ResultMatchPlayerDatas result = null)
         {
             _endGameRequested = true;
             _matchResult = result;
         }
-
-        public override void EndGame(ElympicsScore score) =>
-            EndGame(new ResultMatchPlayerDatas(score.Select(p => new ResultMatchPlayerData { MatchmakerData = p.ToArray() }).ToList()));
 
         public override ElympicsScore Score => _score;
 

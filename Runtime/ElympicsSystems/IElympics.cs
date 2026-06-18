@@ -53,11 +53,7 @@ namespace Elympics
 
         ElympicsScore Score { get; }
 
-        [Obsolete("Method's behavior changed: to end game without a result call " + nameof(EndGame) + "((ResultMatchPlayerDatas)null)")]
-        void EndGame();
-
-        void EndGame(ResultMatchPlayerDatas result);
-        void EndGame(ElympicsScore score);
+        void EndGame(ResultMatchPlayerDatas result = null);
 
         #endregion
     }

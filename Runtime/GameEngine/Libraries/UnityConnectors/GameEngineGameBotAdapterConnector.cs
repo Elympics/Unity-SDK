@@ -1,6 +1,6 @@
 using System;
 using GameBotCore.V1._1;
-using GameEngineCore.V1._1;
+using GameEngineCore;
 
 namespace UnityConnectors
 {

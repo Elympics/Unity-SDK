@@ -4,8 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using GameEngineCore.V1._3;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Proto.ProtoClient;
@@ -13,8 +12,6 @@ using Proto.ProtoClient.NetworkClient;
 using Proto.ProtoClient.Receivers;
 using ProtoGameEngine;
 using ProtoUnityGameEngine;
-using IGameEngine = GameEngineCore.V2._0.IGameEngine;
-using InitialMatchUserData = GameEngineCore.V1._4.InitialMatchUserData;
 
 namespace UnityConnectors
 {

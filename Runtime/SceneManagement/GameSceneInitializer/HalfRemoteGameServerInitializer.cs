@@ -3,7 +3,7 @@ using System.Threading;
 using Elympics.ElympicsSystems;
 using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 using UnityConnectors.HalfRemote;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Elympics.Replication;
 using Elympics.Tests.RpcMocks;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 using MessagePack;
 using NUnit.Framework;
 using UnityEngine;

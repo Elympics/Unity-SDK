@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GameEngineCore.V1._4
+namespace GameEngineCore
 {
     public class InitialMatchUserData
     {

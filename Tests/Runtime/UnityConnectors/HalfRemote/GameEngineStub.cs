@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using GameEngineCore.V1._1;
-using GameEngineCore.V1._3;
-using IGameEngine = GameEngineCore.V1._3.IGameEngine;
+using GameEngineCore;
 
 namespace Elympics.Tests.UnityConnectors.HalfRemote
 {
@@ -15,6 +12,13 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
         public event Action<byte[], string> InGameDataFromPlayerUnreliableReceived;
 
         public event Action<ResultMatchUserDatas> GameEnded;
+        public event Action Initialized;
+
+        public void Initialize(InitialMatchData initialMatchData) => throw new NotImplementedException();
+        public void Initialize(InitialMatchData initialMatchData, bool isReplay) => throw new NotImplementedException();
+
+        public event Action<ArraySegment<byte>> SnapshotDataForReplayGenerated;
+        public event Action<ArraySegment<byte>> SnapshotReplayInitialized;
 
         public void GenerateInGameDataForPlayerOnReliableChannel(byte[] data, string userId) =>
             InGameDataForPlayerOnReliableChannelGenerated?.Invoke(data, userId);
@@ -41,16 +45,6 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;
 
-        public void Init2(InitialMatchUserDatas initialMatchUserDatas) => throw new NotImplementedException();
-
-        event Action<MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
-        {
-            add => throw new NotImplementedException();
-            remove => throw new NotImplementedException();
-        }
-
-        public event Action GameStarted;
-        public event Action<List<GameEvent>> GameEventsGathered;
         public event Action<byte[]> InGameDataForSpectatorsOnReliableChannelGenerated;
         public event Action<byte[]> InGameDataForSpectatorsOnUnreliableChannelGenerated;
     }

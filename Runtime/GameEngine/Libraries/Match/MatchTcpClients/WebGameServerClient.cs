@@ -172,6 +172,10 @@ namespace MatchTcpClients
                         _linkedCts = null;
                         break;
                     }
+                    catch (GameServerClosedException)
+                    {
+                        throw;
+                    }
                     catch
                     {
                         logger.Error("Failed to establish WebRtc connection.");
@@ -246,6 +250,8 @@ namespace MatchTcpClients
 
                 var result = await signalingClient.PostOfferAsync(JsonUtility.ToJson(offerWithCandidates), TimeSpan.FromSeconds(Config.OfferTimeout.TotalSeconds), ct);
 
+                if (result?.Code == 502)
+                    throw new GameServerClosedException();
                 if (result?.Code == 499)
                 {
                     logger.Warning($"WebRTC answer error: {result.Text}");

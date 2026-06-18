@@ -42,6 +42,8 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
         public void Tick(long tick) => throw new NotImplementedException();
 
+        public event Action<(Guid UserId, float[] Score, DateTimeOffset Time)> IntermediateScoreSubmitted;
+
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;
 

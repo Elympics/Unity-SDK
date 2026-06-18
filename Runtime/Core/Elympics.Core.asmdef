@@ -1,6 +1,6 @@
 {
     "name": "Elympics.Core",
-    "rootNamespace": "Elympics.Core",
+    "rootNamespace": "Elympics",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using Elympics.Core;
 
 namespace Elympics
 {
@@ -50,7 +51,13 @@ namespace Elympics
 
         #region Server
 
-        void EndGame(ResultMatchPlayerDatas result = null);
+        ElympicsScore Score { get; }
+
+        [Obsolete("Method's behavior changed: to end game without a result call " + nameof(EndGame) + "((ResultMatchPlayerDatas)null)")]
+        void EndGame();
+
+        void EndGame(ResultMatchPlayerDatas result);
+        void EndGame(ElympicsScore score);
 
         #endregion
     }

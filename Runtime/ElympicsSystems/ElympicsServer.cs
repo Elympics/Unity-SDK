@@ -1,5 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
+using Elympics.Core;
 using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Serialization;
@@ -42,6 +44,7 @@ namespace Elympics
         private IServerElympicsUpdateLoop _serverElympicsUpdate = null!;
         private ElympicsSnapshotWithMetadata _currentSnapshot = null!;
         private ElympicsSnapshotWithMetadata? _previousSnapshot;
+        private ElympicsScore _score = null!;
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -53,6 +56,7 @@ namespace Elympics
             bool handlingBotsOverride = false,
             bool handlingClientsOverride = false)
         {
+            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers, elympicsGameConfig.ScoreWidth, elympicsGameConfig.LogScoreOverTime);
             _serverPlayerHandler = playerHandler;
             _snapshotCollector = snapshotAnalysisCollector;
             _serverElympicsUpdate = serverElympicsUpdate;
@@ -69,6 +73,7 @@ namespace Elympics
 
         private void SetupCallbacks()
         {
+            _score.PlayerScoreUpdated += SubmitIntermediateScore;
             _gameEngineAdapter.PlayerConnected += OnPlayerConnected;
             _gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
             _gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
@@ -122,6 +127,9 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
+        private void SubmitIntermediateScore((int PlayerIndex, float[] Score) arg) =>
+            _gameEngineAdapter.SubmitIntermediateScore(arg.Score, ElympicsPlayer.FromIndex(arg.PlayerIndex));
+
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
 
@@ -168,11 +176,18 @@ namespace Elympics
 
         #region IElympics
 
-        public override void EndGame(ResultMatchPlayerDatas result = null)
+        public override void EndGame() => EndGame(_score);
+
+        public override void EndGame(ResultMatchPlayerDatas result)
         {
             _endGameRequested = true;
             _matchResult = result;
         }
+
+        public override void EndGame(ElympicsScore score) =>
+            EndGame(new ResultMatchPlayerDatas(score.Select(p => new ResultMatchPlayerData { MatchmakerData = p.ToArray() }).ToList()));
+
+        public override ElympicsScore Score => _score;
 
         #endregion
 

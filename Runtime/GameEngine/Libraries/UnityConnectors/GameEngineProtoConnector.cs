@@ -46,6 +46,7 @@ namespace UnityConnectors
             _gameEngine.InGameDataForPlayerOnUnreliableChannelGenerated += OnInGameDataForPlayerOnUnreliableChannelGenerated;
             _gameEngine.InGameDataForSpectatorsOnReliableChannelGenerated += OnInGameDataForSpectatorsOnReliableChannelGenerated;
             _gameEngine.InGameDataForSpectatorsOnUnreliableChannelGenerated += OnInGameDataForSpectatorsOnUnreliableChannelGenerated;
+            _gameEngine.IntermediateScoreSubmitted += OnIntermediateScoreSubmitted;
             _gameEngine.SnapshotReplayInitialized += OnSnapshotReplayInitialized;
             _gameEngine.SnapshotDataForReplayGenerated += OnSnapshotDataFroReplayGenerated;
             _gameEngine.GameEnded += OnGameEnded;
@@ -54,6 +55,9 @@ namespace UnityConnectors
             _client.Receive();
             return _client;
         }
+
+        private void OnIntermediateScoreSubmitted((Guid UserId, float[] Score, DateTimeOffset Time) arg) =>
+            _client.Send(new SubmitScoreMsg { Score = arg.Score[0], UserId = arg.UserId.ToString(), Timestamp = arg.Time.ToUnixTimeSeconds() });
 
         private void OnSnapshotReplayInitialized(ArraySegment<byte> data)
         {

@@ -147,6 +147,8 @@ namespace Elympics
             /* Using Unity Update instead. */
         }
 
+        public event Action<(Guid UserId, float[] Score, DateTimeOffset Time)>? IntermediateScoreSubmitted;
+
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
         {
             LatestSimulatedTickInput[player] = elympicsInput;
@@ -180,6 +182,12 @@ namespace Elympics
             var userId = _initialMatchData.UserData[(int)player].UserId;
             var serializedData = MessagePackSerializer.Serialize(data);
             sendData?.Invoke(serializedData, userId.ToString());
+        }
+
+        internal void SubmitIntermediateScore(float[] score, ElympicsPlayer player)
+        {
+            var userId = _initialMatchData.UserData[(int)player].UserId;
+            IntermediateScoreSubmitted?.Invoke((userId, score, DateTime.UtcNow));
         }
 
         internal void EndGame(ResultMatchPlayerDatas? result = null)

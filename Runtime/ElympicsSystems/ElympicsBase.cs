@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Elympics.Communication.Models.Public;
+using Elympics.Core;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -286,7 +287,10 @@ namespace Elympics
 
         #region Server
 
-        public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new SupportedOnlyByServerException();
+        public virtual ElympicsScore Score => throw new SupportedOnlyByServerException();
+        public virtual void EndGame() => throw new SupportedOnlyByServerException();
+        public virtual void EndGame(ResultMatchPlayerDatas result) => throw new SupportedOnlyByServerException();
+        public virtual void EndGame(ElympicsScore score) => throw new SupportedOnlyByServerException();
 
         #endregion
 

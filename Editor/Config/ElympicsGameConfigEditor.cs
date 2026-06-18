@@ -31,6 +31,9 @@ namespace Elympics.Editor
 
             var gameConfig = (ElympicsGameConfig)serializedObject.targetObject;
 
+            var scoreOverTimeToggle = inspectorTree.Q<Toggle>("score-over-time-toggle");
+            var scoreWidth = inspectorTree.Q<SliderInt>("score-width");
+
             var scenePath = inspectorTree.Q<TextField>("scene-path");
             var sceneAsset = inspectorTree.Q<ObjectField>("scene-object");
             var openScene = inspectorTree.Q<Button>("open-scene-button");
@@ -74,6 +77,8 @@ namespace Elympics.Editor
                 isCurrentGameVersionUploaded = inProgress ? null : CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded;
             CurrentGameVersionUploadedToTheCloudStatus.Initialize(gameConfig);
 
+            scoreOverTimeToggle.RegisterValueChangedCallback(_ => UpdateScoreOverTime());
+
             _ = sceneAsset.RegisterValueChangedCallback(evt =>
             {
                 var asset = (SceneAsset)evt.newValue;
@@ -112,6 +117,7 @@ namespace Elympics.Editor
                     _ = EditorSceneManager.OpenScene(path);
             };
 
+            UpdateScoreOverTime();
             UpdateSceneButton();
             UpdateTicksPerSecondLabel();
             UpdateTotalPredictionLimitLabel();
@@ -121,6 +127,11 @@ namespace Elympics.Editor
             UpdateInputLagHighValue();
 
             return inspectorTree;
+
+            void UpdateScoreOverTime()
+            {
+                scoreWidth.style.display = scoreOverTimeToggle.value ? DisplayStyle.Flex : DisplayStyle.None;
+            }
 
             void UpdateSceneButton()
             {

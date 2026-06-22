@@ -6,7 +6,7 @@ namespace GameEngineCore
 {
     public class InitialMatchData
     {
-        public IReadOnlyList<InitialMatchUserData>? UserData { get; set; }
+        public IReadOnlyList<InitialMatchUserData> UserData { get; set; } = null!;
         public Guid? MatchId { get; set; }
         public string? QueueName { get; set; }
         public string? RegionName { get; set; }

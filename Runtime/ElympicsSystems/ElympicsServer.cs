@@ -1,6 +1,6 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using Elympics.Core;
 using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
@@ -56,7 +56,7 @@ namespace Elympics
             bool handlingBotsOverride = false,
             bool handlingClientsOverride = false)
         {
-            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers, elympicsGameConfig.LogScoreOverTime);
+            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers);
             _serverPlayerHandler = playerHandler;
             _snapshotCollector = snapshotAnalysisCollector;
             _serverElympicsUpdate = serverElympicsUpdate;
@@ -127,8 +127,8 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
-        private void SubmitIntermediateScore((int PlayerIndex, float Score) arg) =>
-            _gameEngineAdapter.SubmitIntermediateScore(arg.Score, ElympicsPlayer.FromIndex(arg.PlayerIndex));
+        private void SubmitIntermediateScore(int playerIndex, float score, DateTime utcTime, TimeSpan gameplayTime) =>
+            _gameEngineAdapter.SubmitIntermediateScore(score, ElympicsPlayer.FromIndex(playerIndex), utcTime, gameplayTime);
 
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
@@ -157,9 +157,9 @@ namespace Elympics
         {
             if (!Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
                 ElympicsLogger.LogError("Development Mode is set to Half Remote "
-                    + "but PlayerSettings \"Run In Background\" option is false, "
-                    + "hence network simulation will not be performed in out-of-focus windows. "
-                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
+                                        + "but PlayerSettings \"Run In Background\" option is false, "
+                                        + "hence network simulation will not be performed in out-of-focus windows. "
+                                        + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
         }
 
         private void OnApplicationPause(bool pauseStatus)

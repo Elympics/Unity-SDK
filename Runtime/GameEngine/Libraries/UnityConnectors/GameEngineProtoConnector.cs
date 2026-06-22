@@ -56,30 +56,39 @@ namespace UnityConnectors
             return _client;
         }
 
-        private void OnIntermediateScoreSubmitted((Guid UserId, float Score, DateTimeOffset Time) arg) =>
-            _client.Send(new SubmitScoreMsg { Score = arg.Score, UserId = arg.UserId.ToString(), Timestamp = arg.Time.ToUnixTimeSeconds() });
+        private void OnIntermediateScoreSubmitted((Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime) arg) =>
+            _client.Send(new SubmitScoreMsg
+            {
+                Score = arg.Score,
+                UserId = arg.UserId.ToString(),
+                Timestamp = arg.UtcTime.ToUnixTimeSeconds(),
+                GameplayTime = (long)arg.GameplayTime.TotalMilliseconds,
+            });
+
 
         private void OnSnapshotReplayInitialized(ArraySegment<byte> data)
         {
             _client.Send(new InitializeReplaySystemMsg { Data = ByteString.CopyFrom(data.Array, data.Offset, data.Count) });
         }
+
         private void OnSnapshotDataFroReplayGenerated(ArraySegment<byte> data)
         {
             _client.Send(new SnapshotDataForReplayGeneratedMsg { Data = ByteString.CopyFrom(data.Array, data.Offset, data.Count) });
         }
+
         public void Connect() => _protoConnector.Connect();
 
         private void OnInGameDataForPlayerOnReliableChannelGenerated(byte[] data, string userId) =>
-          _client.Send(new InGameDataForPlayerOnReliableChannelGeneratedMsg { UserId = userId, Data = ByteString.CopyFrom(data) });
+            _client.Send(new InGameDataForPlayerOnReliableChannelGeneratedMsg { UserId = userId, Data = ByteString.CopyFrom(data) });
 
         private void OnInGameDataForPlayerOnUnreliableChannelGenerated(byte[] data, string userId) =>
-          _client.Send(new InGameDataForPlayerOnUnreliableChannelGeneratedMsg { UserId = userId, Data = ByteString.CopyFrom(data) });
+            _client.Send(new InGameDataForPlayerOnUnreliableChannelGeneratedMsg { UserId = userId, Data = ByteString.CopyFrom(data) });
 
         private void OnInGameDataForSpectatorsOnReliableChannelGenerated(byte[] data) =>
-          _client.Send(new InGameDataForSpectatorsOnReliableChannelGeneratedMsg { Data = ByteString.CopyFrom(data) });
+            _client.Send(new InGameDataForSpectatorsOnReliableChannelGeneratedMsg { Data = ByteString.CopyFrom(data) });
 
         private void OnInGameDataForSpectatorsOnUnreliableChannelGenerated(byte[] data) =>
-          _client.Send(new InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg { Data = ByteString.CopyFrom(data) });
+            _client.Send(new InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg { Data = ByteString.CopyFrom(data) });
 
         private void OnGameEnded(ResultMatchUserDatas? result)
         {
@@ -90,14 +99,14 @@ namespace UnityConnectors
                 msg.Data = new UserDatas
                 {
                     Data =
-          {
-            result.Select(x => new UserDatas.Types.UserData
-            {
-              UserId = x.UserId,
-              MatchmakerData = { x.MatchmakerData ?? Array.Empty<float>() },
-              GameEngineData = x.GameEngineData == null ? ByteString.Empty : ByteString.CopyFrom(x.GameEngineData),
-            }),
-          },
+                    {
+                        result.Select(x => new UserDatas.Types.UserData
+                        {
+                            UserId = x.UserId,
+                            MatchmakerData = { x.MatchmakerData ?? Array.Empty<float>() },
+                            GameEngineData = x.GameEngineData == null ? ByteString.Empty : ByteString.CopyFrom(x.GameEngineData),
+                        }),
+                    },
                 };
 
             _client.Send(msg);
@@ -151,15 +160,15 @@ namespace UnityConnectors
                         NicknameType = x.NicknameType,
                         CustomData = x.CustomData.ToDictionary(kv => kv.Key, kv => kv.Value),
                     })
-                    .ToList(),
+                        .ToList(),
                     MatchId = OptionalFrom(request.HasMatchId, request.MatchId, nameof(request.MatchId)),
                     QueueName = request.QueueName,
                     RegionName = request.RegionName,
                     CustomRoomData = request.CustomRoomDatas.ToDictionary(
-                    kv1 => ParseWithFancyException(kv1.Key, "CustomRoomDatas.RoomId"),
-                    kv1 => (IReadOnlyDictionary<string, string>)kv1.Value.CustomRoomData_.ToDictionary(
-                      kv2 => kv2.Key,
-                      kv2 => kv2.Value)),
+                        kv1 => ParseWithFancyException(kv1.Key, "CustomRoomDatas.RoomId"),
+                        kv1 => (IReadOnlyDictionary<string, string>)kv1.Value.CustomRoomData_.ToDictionary(
+                            kv2 => kv2.Key,
+                            kv2 => kv2.Value)),
                     CustomMatchmakingData = request.CustomMatchmakingData.ToDictionary(kv => kv.Key, kv => kv.Value),
                     ExternalGameData = request.ExternalGameData.ToByteArray(),
                 };

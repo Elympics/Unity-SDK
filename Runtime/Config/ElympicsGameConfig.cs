@@ -21,7 +21,6 @@ namespace Elympics
         [SerializeField] internal string gameId = "fe9b83a9-7d50-4299-859a-93fd313f420b";
         [SerializeField] internal string gameVersion = "1";
         [SerializeField] internal int maxPlayers = 2;
-        [SerializeField] private bool logScoreOverTime = true;
         [SerializeField] internal string gameplayScene = "";
 #if UNITY_EDITOR
         [SerializeField] internal SceneAsset? gameplaySceneAsset;
@@ -75,7 +74,6 @@ namespace Elympics
         public const int MaxPlayersAllowed = 32;
 
         public int MaxPlayers => Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
-        internal bool LogScoreOverTime => logScoreOverTime;
         public string GameplayScene => gameplayScene;
 
         public bool BotsInServer => botsInServer;

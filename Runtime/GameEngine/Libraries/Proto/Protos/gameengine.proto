@@ -37,6 +37,7 @@ message SubmitScoreMsg {
   string userId = 1;
   float score = 2;
   int64 timestamp = 3;
+  int64 gameplayTime = 4;
 }
 
 

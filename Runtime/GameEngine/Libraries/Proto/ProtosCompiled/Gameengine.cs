@@ -34,15 +34,15 @@ namespace ProtoGameEngine {
             "IkYKNkluR2FtZURhdGFGb3JTcGVjdGF0b3JzT25VbnJlbGlhYmxlQ2hhbm5l",
             "bEdlbmVyYXRlZE1zZxIMCgRkYXRhGAEgASgMIikKGUluaXRpYWxpemVSZXBs",
             "YXlTeXN0ZW1Nc2cSDAoEZGF0YRgBIAEoDCIxCiFTbmFwc2hvdERhdGFGb3JS",
-            "ZXBsYXlHZW5lcmF0ZWRNc2cSDAoEZGF0YRgBIAEoDCJCCg5TdWJtaXRTY29y",
+            "ZXBsYXlHZW5lcmF0ZWRNc2cSDAoEZGF0YRgBIAEoDCJYCg5TdWJtaXRTY29y",
             "ZU1zZxIOCgZ1c2VySWQYASABKAkSDQoFc2NvcmUYAiABKAISEQoJdGltZXN0",
-            "YW1wGAMgASgDInIKFE51bGxhYmxlR2FtZUVuZGVkTXNnEioKBG51bGwYASAB",
-            "KA4yGi5nb29nbGUucHJvdG9idWYuTnVsbFZhbHVlSAASJgoEZGF0YRgCIAEo",
-            "CzIWLmdycGNfc2VydmVyLlVzZXJEYXRhc0gAQgYKBGtpbmQihgEKCVVzZXJE",
-            "YXRhcxItCgRkYXRhGAEgAygLMh8uZ3JwY19zZXJ2ZXIuVXNlckRhdGFzLlVz",
-            "ZXJEYXRhGkoKCFVzZXJEYXRhEg4KBnVzZXJJZBgBIAEoCRIWCg5tYXRjaG1h",
-            "a2VyRGF0YRgCIAMoAhIWCg5nYW1lRW5naW5lRGF0YRgDIAEoDEISqgIPUHJv",
-            "dG9HYW1lRW5naW5lYgZwcm90bzM="));
+            "YW1wGAMgASgDEhQKDGdhbWVwbGF5VGltZRgEIAEoAyJyChROdWxsYWJsZUdh",
+            "bWVFbmRlZE1zZxIqCgRudWxsGAEgASgOMhouZ29vZ2xlLnByb3RvYnVmLk51",
+            "bGxWYWx1ZUgAEiYKBGRhdGEYAiABKAsyFi5ncnBjX3NlcnZlci5Vc2VyRGF0",
+            "YXNIAEIGCgRraW5kIoYBCglVc2VyRGF0YXMSLQoEZGF0YRgBIAMoCzIfLmdy",
+            "cGNfc2VydmVyLlVzZXJEYXRhcy5Vc2VyRGF0YRpKCghVc2VyRGF0YRIOCgZ1",
+            "c2VySWQYASABKAkSFgoObWF0Y2htYWtlckRhdGEYAiADKAISFgoOZ2FtZUVu",
+            "Z2luZURhdGEYAyABKAxCEqoCD1Byb3RvR2FtZUVuZ2luZWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.StructReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -53,7 +53,7 @@ namespace ProtoGameEngine {
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg), global::ProtoGameEngine.InGameDataForSpectatorsOnUnreliableChannelGeneratedMsg.Parser, new[]{ "Data" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.InitializeReplaySystemMsg), global::ProtoGameEngine.InitializeReplaySystemMsg.Parser, new[]{ "Data" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.SnapshotDataForReplayGeneratedMsg), global::ProtoGameEngine.SnapshotDataForReplayGeneratedMsg.Parser, new[]{ "Data" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.SubmitScoreMsg), global::ProtoGameEngine.SubmitScoreMsg.Parser, new[]{ "UserId", "Score", "Timestamp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.SubmitScoreMsg), global::ProtoGameEngine.SubmitScoreMsg.Parser, new[]{ "UserId", "Score", "Timestamp", "GameplayTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.NullableGameEndedMsg), global::ProtoGameEngine.NullableGameEndedMsg.Parser, new[]{ "Null", "Data" }, new[]{ "Kind" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.UserDatas), global::ProtoGameEngine.UserDatas.Parser, new[]{ "Data" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtoGameEngine.UserDatas.Types.UserData), global::ProtoGameEngine.UserDatas.Types.UserData.Parser, new[]{ "UserId", "MatchmakerData", "GameEngineData" }, null, null, null, null)})
           }));
@@ -1523,6 +1523,7 @@ namespace ProtoGameEngine {
       userId_ = other.userId_;
       score_ = other.score_;
       timestamp_ = other.timestamp_;
+      gameplayTime_ = other.gameplayTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1568,6 +1569,18 @@ namespace ProtoGameEngine {
       }
     }
 
+    /// <summary>Field number for the "gameplayTime" field.</summary>
+    public const int GameplayTimeFieldNumber = 4;
+    private long gameplayTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long GameplayTime {
+      get { return gameplayTime_; }
+      set {
+        gameplayTime_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1586,6 +1599,7 @@ namespace ProtoGameEngine {
       if (UserId != other.UserId) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Score, other.Score)) return false;
       if (Timestamp != other.Timestamp) return false;
+      if (GameplayTime != other.GameplayTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1596,6 +1610,7 @@ namespace ProtoGameEngine {
       if (UserId.Length != 0) hash ^= UserId.GetHashCode();
       if (Score != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Score);
       if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
+      if (GameplayTime != 0L) hash ^= GameplayTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1626,6 +1641,10 @@ namespace ProtoGameEngine {
         output.WriteRawTag(24);
         output.WriteInt64(Timestamp);
       }
+      if (GameplayTime != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(GameplayTime);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1648,6 +1667,10 @@ namespace ProtoGameEngine {
         output.WriteRawTag(24);
         output.WriteInt64(Timestamp);
       }
+      if (GameplayTime != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(GameplayTime);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1666,6 +1689,9 @@ namespace ProtoGameEngine {
       }
       if (Timestamp != 0L) {
         size += 1 + pb::CodedOutputStream.ComputeInt64Size(Timestamp);
+      }
+      if (GameplayTime != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(GameplayTime);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1687,6 +1713,9 @@ namespace ProtoGameEngine {
       }
       if (other.Timestamp != 0L) {
         Timestamp = other.Timestamp;
+      }
+      if (other.GameplayTime != 0L) {
+        GameplayTime = other.GameplayTime;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1719,6 +1748,10 @@ namespace ProtoGameEngine {
             Timestamp = input.ReadInt64();
             break;
           }
+          case 32: {
+            GameplayTime = input.ReadInt64();
+            break;
+          }
         }
       }
     #endif
@@ -1748,6 +1781,10 @@ namespace ProtoGameEngine {
           }
           case 24: {
             Timestamp = input.ReadInt64();
+            break;
+          }
+          case 32: {
+            GameplayTime = input.ReadInt64();
             break;
           }
         }

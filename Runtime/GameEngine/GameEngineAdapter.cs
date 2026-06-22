@@ -90,9 +90,10 @@ namespace Elympics
                     {
                         rpcMessageList.RemoveAt(i);
                         ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_initialMatchData.UserData[sender].UserId}"
-                            + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
+                                                  + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
                     }
                 }
+
                 if (rpcMessageList.Count > 0)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
             }
@@ -147,7 +148,7 @@ namespace Elympics
             /* Using Unity Update instead. */
         }
 
-        public event Action<(Guid UserId, float Score, DateTimeOffset Time)>? IntermediateScoreSubmitted;
+        public event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
 
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
         {
@@ -184,10 +185,10 @@ namespace Elympics
             sendData?.Invoke(serializedData, userId.ToString());
         }
 
-        internal void SubmitIntermediateScore(float score, ElympicsPlayer player)
+        internal void SubmitIntermediateScore(float score, ElympicsPlayer player, DateTime utcTime, TimeSpan gameplayTime)
         {
             var userId = _initialMatchData.UserData[(int)player].UserId;
-            IntermediateScoreSubmitted?.Invoke((userId, score, DateTime.UtcNow));
+            IntermediateScoreSubmitted?.Invoke((userId, score, utcTime, gameplayTime));
         }
 
         internal void EndGame(ResultMatchPlayerDatas? result = null)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
@@ -47,7 +48,6 @@ namespace Elympics
 
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot? _lastReceivedSnapshot;
-        private long _receivedSnapshotCount;
         private long _latestReconciliationBaseSnapshotTick;
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
@@ -59,6 +59,9 @@ namespace Elympics
         private List<ElympicsInput> _inputList;
 
         private ElympicsBehaviourFirstSnapshotTracker _snapshotTracker;
+
+        private static readonly TimeSpan RxSnapshotTicksWindow = TimeSpan.FromSeconds(5);
+        private readonly HashSet<long> _rxSnapshotTicks = new();
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
@@ -72,7 +75,8 @@ namespace Elympics
             ElympicsBehavioursManager elympicsBehavioursManager,
             int maxPlayerCount)
         {
-            InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
+            InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);;
+            _rxSnapshotTicks.EnsureCapacity((int)(elympicsGameConfig.TicksPerSecond * RxSnapshotTicksWindow.TotalSeconds));
             _player = initialMatchPlayerData.Player;
             _matchConnectClient = matchConnectClient;
             _matchClient = matchClient;
@@ -158,10 +162,16 @@ namespace Elympics
             tick = Tick,
         });
 
+        private void AppendRxSnapshotTicks(long tick)
+        {
+            _rxSnapshotTicks.Add(tick);
+            _rxSnapshotTicks.RemoveWhere(t => tick - t >= RxSnapshotTicksWindow.TotalSeconds * Config.TicksPerSecond);
+        }
+
         private void RaiseReceivedStatsUpdated() => CrossAssemblyEventBroadcaster.RaiseEvent(new ReceivedStatsUpdated
         {
-            received = _receivedSnapshotCount,
-            total = _lastReceivedSnapshot?.Tick ?? 0,
+            received = _rxSnapshotTicks.Count,
+            total = _rxSnapshotTicks.Max() - _rxSnapshotTicks.Min(),
         });
 
         private void OnDestroy()
@@ -196,7 +206,7 @@ namespace Elympics
         {
             lock (LastReceivedSnapshotLock)
             {
-                _receivedSnapshotCount++;
+                AppendRxSnapshotTicks(elympicsSnapshot.Tick);
                 if (_lastReceivedSnapshot == null || _lastReceivedSnapshot.Tick < elympicsSnapshot.Tick)
                 {
                     _lastReceivedSnapshot = elympicsSnapshot;
@@ -253,7 +263,7 @@ namespace Elympics
 
             _tick = -1;
             _lastReceivedSnapshot = null;
-            _receivedSnapshotCount = 0;
+            _rxSnapshotTicks.Clear();
             _latestReconciliationBaseSnapshotTick = -1;
             _serverWorldState.ResetToEmpty();
             _currentTicksWithoutPrediction = 0;

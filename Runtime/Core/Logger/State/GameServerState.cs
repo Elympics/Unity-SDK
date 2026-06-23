@@ -12,7 +12,7 @@ namespace Elympics.Core.Logger.State
         public virtual bool Visit(IStateVisitor visitor)
         {
             visitor.ProcessProperty(nameof(ConnectionType), ConnectionType);
-            visitor.ProcessProperty(nameof(ServerAddress), ServerAddress);
+            visitor.ProcessOptionalProperty(nameof(ServerAddress), ServerAddress);
             return true;
         }
     }

@@ -36,8 +36,9 @@ namespace Elympics.Core.Logger.Builder
             {
                 _ = _stringBuilder.Clear()
                     .Append('{');
-                AppendProperty(_stringBuilder, nameof(time), stringifiedTime, isFirst: true);
-                AppendProperty(_stringBuilder, nameof(message), message);
+                AppendProperty(_stringBuilder, "time", stringifiedTime, isFirst: true);
+                AppendProperty(_stringBuilder, "level", category.ToString());
+                AppendProperty(_stringBuilder, "message", message);
                 if (stacktrace is not null)
                     AppendProperty(_stringBuilder, nameof(stacktrace), stacktrace);
                 _ = config.Context.Visit(_stateVisitor);
@@ -50,7 +51,7 @@ namespace Elympics.Core.Logger.Builder
             {
                 LogLevel = category.ToLogLevel(),
                 Time = stringifiedTime,
-                Message = finalMessage,
+                Json = finalMessage,
             });
         }
 
@@ -63,7 +64,11 @@ namespace Elympics.Core.Logger.Builder
 
             public void ProcessSubstate(string name) { }
 
-            public void ProcessProperty(string name, string value) => AppendProperty(_stringBuilder, name, value);
+            public void ProcessProperty(string name, string value) => AppendProperty(_stringBuilder, StartingWithLowercase(name), value);
+
+            private static string StartingWithLowercase(string source) => source.Length > 0 && char.IsUpper(source[0])
+                ? source[..1].ToLower() + source[1..]
+                : source;
         }
 
         private static void AppendProperty(StringBuilder sb, string key, string? value, bool isFirst = false)

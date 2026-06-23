@@ -4,6 +4,6 @@ namespace Elympics.Events
     {
         public LogLevel LogLevel { get; init; }
         public string Time { get; init; }
-        public string Message { get; init; }
+        public string Json { get; init; }
     }
 }

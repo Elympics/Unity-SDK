@@ -30,6 +30,8 @@ namespace Elympics.Core
         {
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
+
+            _enabled = true;
         }
 
         [PublicAPI] public DateTime? GetStartingScoreUtcTime(int playerIndex) => _startingScoreUtcTime[playerIndex];

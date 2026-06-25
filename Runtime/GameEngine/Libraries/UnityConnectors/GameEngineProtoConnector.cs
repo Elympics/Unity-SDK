@@ -61,7 +61,7 @@ namespace UnityConnectors
             {
                 Score = arg.Score,
                 UserId = arg.UserId.ToString(),
-                Timestamp = arg.UtcTime.ToUnixTimeSeconds(),
+                Timestamp = arg.UtcTime.ToUnixTimeMilliseconds(),
                 GameplayTime = (long)arg.GameplayTime.TotalMilliseconds,
             });
 

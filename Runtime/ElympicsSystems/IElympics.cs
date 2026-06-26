@@ -51,6 +51,12 @@ namespace Elympics
 
         #region Server
 
+        /// <summary>
+        /// Server-only live tracker of the current score.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ElympicsScore.Enable"/> must be called before setting/retrieving any score.
+        /// </remarks>
         ElympicsScore Score { get; }
 
         void EndGame(ResultMatchPlayerDatas result = null);

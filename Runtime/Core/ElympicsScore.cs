@@ -25,6 +25,15 @@ namespace Elympics.Core
             _getGameplayTime = GetGameplayTimeDefault;
         }
 
+        /// <summary>
+        /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score.
+        /// </summary>
+        /// <remarks>Each score update must be registered manually using the <see cref="this[int]"/> setter.</remarks>
+        /// <param name="getGameplayTime">
+        /// Function for calculating the gameplay time of each score.
+        /// The gameplay time should start with the beginning of a game or match and then be steadily increased,
+        /// possibly except for times when a player was disconnected.
+        /// </param>
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null)
         {
@@ -34,14 +43,26 @@ namespace Elympics.Core
             _enabled = true;
         }
 
+        /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
+        /// <returns>UTC time of the first score registered for a player.</returns>
         [PublicAPI] public DateTime? GetStartingScoreUtcTime(int playerIndex) => _startingScoreUtcTime[playerIndex];
+
+        /// <param name="playerIndex">0-based index of a player for whom the score is retrieved.</param>
+        /// <returns>The current (last) score registered for a player.</returns>
         [PublicAPI] public DateTime GetCurrentScoreUtcTime(int playerIndex) => _score[playerIndex].UtcTime;
+
+        /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
+        /// <returns>Gameplay time (see <see cref="Enable"/>) of the first score registered for a player.</returns>
         [PublicAPI] public TimeSpan GetCurrentScoreGameplayTime(int playerIndex) => _score[playerIndex].GameplayTime;
 
         /// <summary>
-        /// Return score for player index
+        /// Returns score for player index.
+        /// The first call to the setter saves starting score time which can be accessed using <see cref="GetStartingScoreUtcTime"/>.
         /// </summary>
-        /// <param name="playerIndex"></param>
+        /// <remarks>
+        /// <see cref="Enable"/> must be called before getting/setting any score values.
+        /// </remarks>
+        /// <param name="playerIndex">0-based index of a player for whom the score is accessed.</param>
         [PublicAPI]
         public float this[int playerIndex]
         {

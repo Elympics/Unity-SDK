@@ -1,7 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-namespace GameEngineCore.V1._3
+namespace GameEngineCore
 {
     public class InitialMatchUserDatas : List<InitialMatchUserData>
     {

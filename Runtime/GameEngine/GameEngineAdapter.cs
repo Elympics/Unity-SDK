@@ -2,12 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using GameEngineCore.V1._1;
-using GameEngineCore.V1._3;
+using GameEngineCore;
 using MessagePack;
 using UnityEngine.Assertions;
-using IGameEngine = GameEngineCore.V2._0.IGameEngine;
-using InitialMatchData = GameEngineCore.V1._4.InitialMatchData;
 
 #pragma warning disable CS0618
 #pragma warning disable CS0067
@@ -46,12 +43,8 @@ namespace Elympics
         internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new();
         internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } = new();
 
-
         internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig) =>
             _playerInputBufferSize = elympicsGameConfig.PredictionBufferSize;
-
-        public void Init(IGameEngineLogger logger, GameEngineCore.V1._1.InitialMatchData initialMatchData) => throw new NotSupportedException();
-        public void Init2(InitialMatchUserDatas initialMatchData) => throw new NotSupportedException();
 
         public void Initialize(InitialMatchData initialMatchData) => Initialize(initialMatchData, false);
 
@@ -97,9 +90,10 @@ namespace Elympics
                     {
                         rpcMessageList.RemoveAt(i);
                         ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_initialMatchData.UserData[sender].UserId}"
-                            + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
+                                                  + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
                     }
                 }
+
                 if (rpcMessageList.Count > 0)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
             }
@@ -154,6 +148,8 @@ namespace Elympics
             /* Using Unity Update instead. */
         }
 
+        public event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
+
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
         {
             LatestSimulatedTickInput[player] = elympicsInput;
@@ -189,6 +185,12 @@ namespace Elympics
             sendData?.Invoke(serializedData, userId.ToString());
         }
 
+        internal void SubmitIntermediateScore(float score, ElympicsPlayer player, DateTime utcTime, TimeSpan gameplayTime)
+        {
+            var userId = _initialMatchData.UserData[(int)player].UserId;
+            IntermediateScoreSubmitted?.Invoke((userId, score, utcTime, gameplayTime));
+        }
+
         internal void EndGame(ResultMatchPlayerDatas? result = null)
         {
             if (result == null)
@@ -217,15 +219,6 @@ namespace Elympics
             }
 
             GameEnded?.Invoke(matchResult);
-        }
-
-        public event Action? GameStarted;
-        public event Action<List<GameEvent>>? GameEventsGathered;
-
-        event Action<MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
-        {
-            add => throw new NotImplementedException();
-            remove => throw new NotImplementedException();
         }
     }
 }

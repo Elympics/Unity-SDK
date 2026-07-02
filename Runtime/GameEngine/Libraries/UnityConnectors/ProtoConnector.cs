@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using GameBotCore.V1._1;
-using GameEngineCore.V1._1;
+using GameEngineCore;
 using Proto.ProtoClient;
 using ProtoLog;
 

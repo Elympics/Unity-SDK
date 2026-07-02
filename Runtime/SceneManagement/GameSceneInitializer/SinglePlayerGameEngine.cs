@@ -1,7 +1,6 @@
 using System;
-using GameEngineCore.V1._3;
+using GameEngineCore;
 using UnityEngine;
-using IGameEngine = GameEngineCore.V1._4.IGameEngine;
 
 namespace Elympics
 {

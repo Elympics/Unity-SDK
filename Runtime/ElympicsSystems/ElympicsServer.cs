@@ -1,5 +1,7 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using Elympics.Core;
 using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Serialization;
@@ -42,6 +44,7 @@ namespace Elympics
         private IServerElympicsUpdateLoop _serverElympicsUpdate = null!;
         private ElympicsSnapshotWithMetadata _currentSnapshot = null!;
         private ElympicsSnapshotWithMetadata? _previousSnapshot;
+        private ElympicsScore _score = null!;
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -53,6 +56,7 @@ namespace Elympics
             bool handlingBotsOverride = false,
             bool handlingClientsOverride = false)
         {
+            _score = new ElympicsScore(elympicsGameConfig.MaxPlayers);
             _serverPlayerHandler = playerHandler;
             _snapshotCollector = snapshotAnalysisCollector;
             _serverElympicsUpdate = serverElympicsUpdate;
@@ -69,6 +73,7 @@ namespace Elympics
 
         private void SetupCallbacks()
         {
+            _score.PlayerScoreUpdated += SubmitIntermediateScore;
             _gameEngineAdapter.PlayerConnected += OnPlayerConnected;
             _gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
             _gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
@@ -122,6 +127,9 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
+        private void SubmitIntermediateScore(int playerIndex, float score, DateTime utcTime, TimeSpan gameplayTime) =>
+            _gameEngineAdapter.SubmitIntermediateScore(score, ElympicsPlayer.FromIndex(playerIndex), utcTime, gameplayTime);
+
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
 
@@ -149,9 +157,9 @@ namespace Elympics
         {
             if (!Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
                 ElympicsLogger.LogError("Development Mode is set to Half Remote "
-                    + "but PlayerSettings \"Run In Background\" option is false, "
-                    + "hence network simulation will not be performed in out-of-focus windows. "
-                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
+                                        + "but PlayerSettings \"Run In Background\" option is false, "
+                                        + "hence network simulation will not be performed in out-of-focus windows. "
+                                        + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -173,6 +181,8 @@ namespace Elympics
             _endGameRequested = true;
             _matchResult = result;
         }
+
+        public override ElympicsScore Score => _score;
 
         #endregion
 

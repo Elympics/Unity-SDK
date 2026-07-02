@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Elympics.Communication.Authentication.Models;
 using Elympics.Mappers;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 using MessagePack;
 
 #nullable enable

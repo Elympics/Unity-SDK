@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using GameEngineCore.V1._3;
+using GameEngineCore;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Proto.ProtoClient;

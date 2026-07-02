@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 
-namespace GameEngineCore.V1._1
+namespace GameEngineCore
 {
     public interface IGameEngineLogger
     {

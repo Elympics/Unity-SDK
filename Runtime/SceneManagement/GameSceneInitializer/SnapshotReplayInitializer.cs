@@ -5,7 +5,7 @@ using System.Linq;
 using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Retrievers;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 
 namespace Elympics
 {

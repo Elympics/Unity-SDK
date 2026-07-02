@@ -13,8 +13,8 @@ namespace Elympics.Core.Logger
     {
         private static readonly List<ILogOutlet> RegisteredOutlets = new()
         {
-            new PlainLogOutlet(),
-            new JsonLogOutlet(),
+            new UnityConsoleOutlet(),
+            new PlaypadBreadcrumbOutlet(),
         };
 
         public static ApplicationState State { get; } = new(ElympicsVersionRetriever.GetVersionStringFromAssembly());

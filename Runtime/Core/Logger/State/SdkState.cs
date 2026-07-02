@@ -6,25 +6,36 @@ namespace Elympics.Core.Logger.State
 {
     internal class SdkState : IVisitableState
     {
-        public readonly string SessionId;
-        public readonly string SdkVersion;
+        internal string SessionId { get; }
+
+        private readonly string _sdkVersion;
         public string? ApiUrl;
         public string? GameServerUrl;
         public string? Region;
 
+        private static class Names
+        {
+            public const string SessionId = "sessionId";
+            public const string SdkVersion = "sdkVersion";
+            public const string ApiUrl = "apiUrl";
+            public const string ApiUrlLegacy = "lobbyUrl";
+            public const string GameServerUrl = "gameServerUrl";
+            public const string Region = "region";
+        }
+
         public SdkState(string sdkVersion)
         {
             SessionId = Guid.NewGuid().ToString();
-            SdkVersion = sdkVersion;
+            _sdkVersion = sdkVersion;
         }
 
         public bool Visit(IStateVisitor visitor)
         {
-            visitor.ProcessProperty(nameof(SessionId), SessionId);
-            visitor.ProcessProperty(nameof(SdkVersion), SdkVersion);
-            visitor.ProcessOptionalProperty(nameof(ApiUrl), ApiUrl);
-            visitor.ProcessOptionalProperty(nameof(GameServerUrl), GameServerUrl);
-            visitor.ProcessOptionalProperty(nameof(Region), Region);
+            visitor.ProcessProperty(Names.SessionId, SessionId);
+            visitor.ProcessProperty(Names.SdkVersion, _sdkVersion);
+            _ = visitor.ProcessOptionalProperty(Names.ApiUrl, ApiUrl, legacyName: Names.ApiUrlLegacy);
+            _ = visitor.ProcessOptionalProperty(Names.GameServerUrl, GameServerUrl);
+            _ = visitor.ProcessOptionalProperty(Names.Region, Region);
             return true;
         }
     }

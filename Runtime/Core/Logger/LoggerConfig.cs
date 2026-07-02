@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Elympics.Core.Logger.State;
@@ -31,38 +32,42 @@ namespace Elympics.Core.Logger
 
         public struct LogContext : IVisitableState
         {
-            public Object? LinkedObject;  // for Unity Debug.Log with context
+            public Object? UnityContext  // for Unity Debug.Log with context
+            {
+                get => _unityContext?.Original;
+                set => _unityContext = value is not null
+                    ? (value, $"{value.GetType().FullName} {value.name} ({value.GetInstanceID()})")
+                    : null;
+            }
+            private (Object Original, string Stringified)? _unityContext;  // for Unity Debug.Log with context
             public string? MethodName;  // from CallerMemberInfo
             public string? ClassName;  // set manually - expected full name
             public string? ServiceName;  // is logging from game or lobby?
+            public IReadOnlyDictionary<string, string>? ExtraContext;
+
+            private static class Names
+            {
+                public const string UnityContext = "unityContext";
+                public const string MethodName = "methodName";
+                public const string ClassName = "className";
+                public const string ClassNameLegacy = "context";
+                public const string ServiceName = "serviceName";
+                public const string ServiceNameLegacy = "app";
+            }
 
             public bool Visit(IStateVisitor visitor)
             {
                 var visitedAnything = false;
-                if (ServiceName is not null)
+                visitedAnything |= visitor.ProcessOptionalProperty(Names.ServiceName, ServiceName, legacyName: Names.ServiceNameLegacy);
+                visitedAnything |= visitor.ProcessOptionalProperty(Names.ClassName, ClassName, legacyName: Names.ClassNameLegacy);
+                visitedAnything |= visitor.ProcessOptionalProperty(Names.MethodName, MethodName);
+                visitedAnything |= visitor.ProcessOptionalProperty(Names.UnityContext, _unityContext?.Stringified);
+                if (ExtraContext is not null && ExtraContext.Count > 0)
                 {
-                    visitor.ProcessProperty(nameof(ServiceName), ServiceName);
                     visitedAnything = true;
+                    foreach (var kvp in ExtraContext)
+                        visitor.ProcessProperty(kvp.Key, kvp.Value);
                 }
-
-                if (ClassName is not null)
-                {
-                    visitor.ProcessProperty(nameof(ClassName), ClassName);
-                    visitedAnything = true;
-                }
-
-                if (MethodName is not null)
-                {
-                    visitor.ProcessProperty(nameof(MethodName), MethodName);
-                    visitedAnything = true;
-                }
-
-                if (LinkedObject is not null)
-                {
-                    visitor.ProcessProperty(nameof(LinkedObject), $"{LinkedObject.GetType().FullName} {LinkedObject.name} ({LinkedObject.GetInstanceID()})");
-                    visitedAnything = true;
-                }
-
                 return visitedAnything;
             }
         }
@@ -96,7 +101,7 @@ namespace Elympics.Core.Logger
         {
             var clone = Clone();
             var context = clone.Context;
-            context.LinkedObject = unityContext;
+            context.UnityContext = unityContext;
             clone.Context = context;
             return clone;
         }
@@ -163,5 +168,17 @@ namespace Elympics.Core.Logger
         /// </summary>
         /// <returns>Current instance.</returns>
         [Pure] public LoggerConfig WithPlayPadSdkService() => WithServiceName("PlayPadSdk");
+
+        /// <param name="extraContext">Additional logger context entries.</param>
+        /// <returns>Current instance.</returns>
+        [Pure]
+        public LoggerConfig WithExtraContext(IReadOnlyDictionary<string, string> extraContext)
+        {
+            var clone = Clone();
+            var context = clone.Context;
+            context.ExtraContext = extraContext;
+            clone.Context = context;
+            return clone;
+        }
     }
 }

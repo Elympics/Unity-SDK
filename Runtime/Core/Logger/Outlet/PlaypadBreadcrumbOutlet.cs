@@ -7,16 +7,20 @@ using Elympics.Events;
 
 namespace Elympics.Core.Logger.Builder
 {
-    internal class JsonLogOutlet : ILogOutlet
+    internal class PlaypadBreadcrumbOutlet : ILogOutlet
     {
         private static readonly object StringBuilderLock = new();
         private readonly StringBuilder _stringBuilder;
         private readonly JsonStateVisitor _stateVisitor;
+        private readonly OutputLogger _outputLogger;
 
-        public JsonLogOutlet()
+        public delegate void OutputLogger(LogLevel logLevel, string isoTimestamp, string messageJson);
+
+        public PlaypadBreadcrumbOutlet(OutputLogger? outputLogger = null)
         {
             _stringBuilder = new StringBuilder();
             _stateVisitor = new JsonStateVisitor(_stringBuilder);
+            _outputLogger = outputLogger ?? BroadcastLogEvent;
         }
 
         public void Log(
@@ -30,31 +34,37 @@ namespace Elympics.Core.Logger.Builder
             if (!config.MonitoringEnabled)
                 return;
 
-            var stringifiedTime = TimeUtil.DateTimeToString(time);
+            var logLevel = category.ToLogLevel();
+            var isoTimestamp = TimeUtil.DateTimeToString(time);
             string finalMessage;
             lock (StringBuilderLock)
             {
                 _ = _stringBuilder.Clear()
                     .Append('{');
-                AppendProperty(_stringBuilder, "time", stringifiedTime, isFirst: true);
-                AppendProperty(_stringBuilder, "level", category.ToString());
+                AppendProperty(_stringBuilder, "level", (int)logLevel, isFirst: true);
                 AppendProperty(_stringBuilder, "message", message);
                 if (stacktrace is not null)
                     AppendProperty(_stringBuilder, nameof(stacktrace), stacktrace);
+                _ = _stringBuilder.Append(",\"data\":{");
+                AppendProperty(_stringBuilder, "time", isoTimestamp, isFirst: true);
                 _ = config.Context.Visit(_stateVisitor);
                 _ = state.Visit(_stateVisitor);
                 finalMessage = _stringBuilder.Append('}')
+                    .Append('}')
                     .ToString();
             }
-
-            CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
-            {
-                LogLevel = category.ToLogLevel(),
-                Time = stringifiedTime,
-                Json = finalMessage,
-            });
+            _outputLogger.Invoke(logLevel, isoTimestamp, finalMessage);
         }
 
+        private static void BroadcastLogEvent(LogLevel logLevel, string isoTimestamp, string messageJson)
+        {
+            CrossAssemblyEventBroadcaster.RaiseEvent(new ElympicsLogEvent
+            {
+                LogLevel = logLevel,
+                Time = isoTimestamp,
+                Json = messageJson,
+            });
+        }
 
         private class JsonStateVisitor : IStateVisitor
         {
@@ -62,13 +72,14 @@ namespace Elympics.Core.Logger.Builder
 
             public JsonStateVisitor(StringBuilder stringBuilder) => _stringBuilder = stringBuilder;
 
-            public void ProcessSubstate(string name) { }
+            public void ProcessSubstate(string name, string? legacyName = null) { }
 
-            public void ProcessProperty(string name, string value) => AppendProperty(_stringBuilder, StartingWithLowercase(name), value);
-
-            private static string StartingWithLowercase(string source) => source.Length > 0 && char.IsUpper(source[0])
-                ? source[..1].ToLower() + source[1..]
-                : source;
+            public void ProcessProperty(string name, string value, string? legacyName = null)
+            {
+                AppendProperty(_stringBuilder, name, value);
+                if (legacyName is not null)
+                    AppendProperty(_stringBuilder, legacyName, value);
+            }
         }
 
         private static void AppendProperty(StringBuilder sb, string key, string? value, bool isFirst = false)
@@ -78,6 +89,15 @@ namespace Elympics.Core.Logger.Builder
             AppendEscaped(sb, key);
             _ = sb.Append(':');
             AppendEscaped(sb, value);
+        }
+
+        private static void AppendProperty(StringBuilder sb, string key, int value, bool isFirst = false)
+        {
+            if (!isFirst)
+                _ = sb.Append(',');
+            AppendEscaped(sb, key);
+            _ = sb.Append(':')
+                .Append(value.ToString());
         }
 
         private static void AppendEscaped(StringBuilder sb, string? value)

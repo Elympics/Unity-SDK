@@ -3,10 +3,11 @@ using System;
 using System.Text;
 using Elympics.Core.Logger.State;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Elympics.Core.Logger.Builder
 {
-    internal class PlainLogOutlet : ILogOutlet
+    internal class UnityConsoleOutlet : ILogOutlet
     {
         private const string StringPrefixFormat = "[{0}] ";
         private const string StateHeader = "=== Current application state ===\n";
@@ -14,11 +15,25 @@ namespace Elympics.Core.Logger.Builder
         private static readonly object StringBuilderLock = new();
         private readonly StringBuilder _stringBuilder;
         private readonly PlainStateVisitor _stateVisitor;
+        private readonly OutputLogger _outputLogger;
 
-        public PlainLogOutlet()
+        /// <param name="format">A composite format string.</param>
+        /// <param name="args">Format arguments.</param>
+        /// <param name="context">Object to which the message applies.</param>
+        /// <param name="logType">Type of message e.g. warn or error etc.</param>
+        /// <param name="logOptions">Option flags to treat the log message special.</param>
+        public delegate void OutputLogger(
+            LogType logType,
+            LogOption logOptions,
+            Object? context,
+            string format,
+            params object[] args);
+
+        public UnityConsoleOutlet(OutputLogger? outputLogger = null)
         {
             _stringBuilder = new StringBuilder();
             _stateVisitor = new PlainStateVisitor(_stringBuilder);
+            _outputLogger = outputLogger ?? Debug.LogFormat;
         }
 
         public void Log(
@@ -57,15 +72,15 @@ namespace Elympics.Core.Logger.Builder
 #if !UNITY_EDITOR
                 if (!string.IsNullOrEmpty(stacktrace))
                 {
-                    _ = _stringBuilder.AppendLine().Append(stacktrace);
+                    _ = _stringBuilder.Append('\n').Append(stacktrace);
                     shouldLogStacktrace = false;
                 }
 #endif
-                finalMessage = _stringBuilder.AppendLine().ToString();
+                finalMessage = _stringBuilder.Append('\n').ToString();
             }
 
             var logType = category.ToLogType();
-            Debug.LogFormat(logType, shouldLogStacktrace ? LogOption.None : LogOption.NoStacktrace, context.LinkedObject, "{0}", finalMessage);
+            _outputLogger.Invoke(logType, shouldLogStacktrace ? LogOption.None : LogOption.NoStacktrace, context.UnityContext, "{0}", finalMessage);
         }
 
         private void AppendContextAndState(LoggerConfig.LogContext context, ApplicationState state)
@@ -91,7 +106,7 @@ namespace Elympics.Core.Logger.Builder
 
             public PlainStateVisitor(StringBuilder stringBuilder) => _stringBuilder = stringBuilder;
 
-            public void ProcessSubstate(string name)
+            public void ProcessSubstate(string name, string? legacyName = null)
             {
                 if (_currentSubstate == name)
                     return;
@@ -103,7 +118,7 @@ namespace Elympics.Core.Logger.Builder
                 _ = _stringBuilder.AppendFormat(SubstateFormat, name);
             }
 
-            public void ProcessProperty(string name, string value)
+            public void ProcessProperty(string name, string value, string? legacyName = null)
             {
                 if (_requiresPropertySeparator)
                     _ = _stringBuilder.Append(PropertySeparator);

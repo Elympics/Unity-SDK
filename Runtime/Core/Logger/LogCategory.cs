@@ -20,7 +20,9 @@ namespace Elympics.Core.Logger
             LogCategory.Exception => LogLevel.Exception,
             LogCategory.Error => LogLevel.Error,
             LogCategory.Warning => LogLevel.Warning,
-            LogCategory.Info or LogCategory.Debug or LogCategory.Trace => LogLevel.Log,
+            LogCategory.Info => LogLevel.Info,
+            LogCategory.Debug => LogLevel.Debug,
+            LogCategory.Trace => LogLevel.Trace,
             _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
         };
 

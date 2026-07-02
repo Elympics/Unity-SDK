@@ -2,9 +2,12 @@ namespace Elympics
 {
     public enum LogLevel
     {
-        Log = 0,
-        Warning = 1,
-        Error = 2,
-        Exception = 3,
+        // the playpad logger takes these in as numbers - watch out when changing the order
+        Info,
+        Warning,
+        Error,
+        Exception,
+        Debug,
+        Trace,
     }
 }

@@ -8,12 +8,20 @@ namespace Elympics.Core.Logger.State
         public string? QueueName;
         public string? MatchId;
 
+        private static class Names
+        {
+            public const string RoomId = "roomId";
+            public const string QueueName = "queueName";
+            public const string MatchId = "matchId";
+        }
+
         public bool Visit(IStateVisitor visitor)
         {
-            visitor.ProcessOptionalProperty(nameof(RoomId), RoomId);
-            visitor.ProcessOptionalProperty(nameof(QueueName), QueueName);
-            visitor.ProcessOptionalProperty(nameof(MatchId), MatchId);
-            return true;
+            var visited = false;
+            visited |= visitor.ProcessOptionalProperty(Names.RoomId, RoomId);
+            visited |= visitor.ProcessOptionalProperty(Names.QueueName, QueueName);
+            visited |= visitor.ProcessOptionalProperty(Names.MatchId, MatchId);
+            return visited;
         }
     }
 }

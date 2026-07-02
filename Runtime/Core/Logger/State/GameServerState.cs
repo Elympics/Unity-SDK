@@ -2,37 +2,29 @@
 
 namespace Elympics.Core.Logger.State
 {
-    internal abstract class GameServerState : IVisitableState
+    internal class GameServerState : IVisitableState
     {
-        public readonly string ConnectionType;
-        public string? ServerAddress;
+        public string? ConnectionType;
+        public string? TcpUdpServerAddress;
+        public string? WebServerAddress;
+        public bool? UsesTurn;
 
-        protected GameServerState(string connectionType) => ConnectionType = connectionType;
+        private static class Names
+        {
+            public const string ConnectionType = "connectionType";
+            public const string TcpUdpServerAddress = "tcpUdpServerAddress";
+            public const string WebServerAddress = "webServerAddress";
+            public const string UsesTurn = "usesTurn";
+        }
 
         public virtual bool Visit(IStateVisitor visitor)
         {
-            visitor.ProcessProperty(nameof(ConnectionType), ConnectionType);
-            visitor.ProcessOptionalProperty(nameof(ServerAddress), ServerAddress);
-            return true;
+            var visited = false;
+            visited |= visitor.ProcessOptionalProperty(Names.ConnectionType, ConnectionType);
+            visited |= visitor.ProcessOptionalProperty(Names.TcpUdpServerAddress, TcpUdpServerAddress);
+            visited |= visitor.ProcessOptionalProperty(Names.WebServerAddress, WebServerAddress);
+            visited |= visitor.ProcessOptionalProperty(Names.UsesTurn, UsesTurn?.ToString());
+            return visited;
         }
-    }
-
-    internal sealed class WebRtcState : GameServerState
-    {
-        public bool UsesTurn;
-
-        public WebRtcState() : base("WebRTC") { }
-
-        public override bool Visit(IStateVisitor visitor)
-        {
-            _ = base.Visit(visitor);
-            visitor.ProcessProperty(nameof(UsesTurn), UsesTurn.ToString());
-            return true;
-        }
-    }
-
-    internal sealed class TcpUdpState : GameServerState
-    {
-        public TcpUdpState() : base("TCP/UDP") { }
     }
 }

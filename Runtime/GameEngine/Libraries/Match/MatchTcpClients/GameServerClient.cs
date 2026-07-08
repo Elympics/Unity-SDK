@@ -166,13 +166,14 @@ namespace MatchTcpClients
 
         public void Disconnect()
         {
-            if (ClientDisconnectedCts == null)
+            var cts = ClientDisconnectedCts;
+            ClientDisconnectedCts = null;
+            if (cts == null)
                 return;
             var logger = _logger.WithMethodName();
             logger.Log("Aborting connection.");
-            ClientDisconnectedCts.Cancel();
-            ClientDisconnectedCts.Dispose();
-            ClientDisconnectedCts = null;
+            cts.Cancel();
+            cts.Dispose();
             _clientSynchronizer.TimedOut -= OnTimeout;
         }
 

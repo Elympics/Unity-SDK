@@ -71,6 +71,10 @@ namespace MatchTcpClients
             Disconnect();
             Initialize();
 
+            // Must exist before the transport connects: the server can send its Connected message
+            // as soon as the socket/channel is up, which can race ahead of a TCS created afterward.
+            _sessionConnectedTcs = new UniTaskCompletionSource<ConnectedMessage>();
+
             try
             {
                 await ConnectInternalAsync(ct);
@@ -86,7 +90,8 @@ namespace MatchTcpClients
             ConnectedMessage connectedMessage;
             try
             {
-                connectedMessage = await ConnectSessionAsync(ct);
+                logger.Log("Connecting to reliable channel...");
+                connectedMessage = await _sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, ct);
             }
             catch (Exception e)
             {
@@ -116,28 +121,6 @@ namespace MatchTcpClients
         }
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
-
-        protected async UniTask<ConnectedMessage> ConnectSessionAsync(CancellationToken ct = default)
-        {
-            var logger = _logger.WithMethodName();
-            _sessionConnectedTcs = new UniTaskCompletionSource<ConnectedMessage>();
-
-            try
-            {
-                await InitializeSessionAsync(ct);
-            }
-            catch
-            {
-                _sessionConnectedTcs = null;
-                throw;
-            }
-
-            logger.Log("Connecting to reliable channel...");
-            return await _sessionConnectedTcs.Task.WithTimeout(Config.SessionConnectTimeout, ct);
-        }
-
-        // No-op by default: NetworkClient.Connect() already fully connects the transport before this runs.
-        protected virtual UniTask InitializeSessionAsync(CancellationToken ct = default) => UniTask.CompletedTask;
 
         private static void InvokeSafely(Action? action, ElympicsLoggerContext logger)
         {

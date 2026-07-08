@@ -7,7 +7,6 @@ using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
 using Elympics.GameEngine.Libraries.WebRtc;
-using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
@@ -136,10 +135,9 @@ namespace Elympics
 
         private async UniTask<HalfRemoteMatchClient> ConnectWebAsync(CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateClient(new WebRtcConfig
-            {
-                OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay),
-            });
+            var webRtcConfig = WebRtcConfig.Default;
+            webRtcConfig.OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay);
+            _webRtcClient = WebRtcFactory.CreateClient(webRtcConfig);
 
             var reliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
             var unreliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);

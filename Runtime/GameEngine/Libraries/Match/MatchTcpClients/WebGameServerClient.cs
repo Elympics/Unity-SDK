@@ -35,13 +35,17 @@ namespace MatchTcpClients
             return uriBuilder.Uri;
         }
 
-        protected override INetworkClient CreateNetworkClient() =>
-            new WebRtcNetworkClient(_signalingClient, new WebRtcConfig { OfferAnnounceDelay = Config.OfferAnnounceDelay }, Config,
+        protected override INetworkClient CreateNetworkClient()
+        {
+            var webRtcConfig = WebRtcConfig.Default;
+            webRtcConfig.OfferAnnounceDelay = Config.OfferAnnounceDelay;
+            return new WebRtcNetworkClient(_signalingClient, webRtcConfig, Config,
                 new (string, bool)[]
                 {
                     (INetworkClient.ReliableLabel, true),
                     (INetworkClient.UnreliableLabel, false),
                 });
+        }
 
         protected override UniTask ConnectInternalAsync(CancellationToken ct = default) => NetworkClient!.Connect(ct);
     }

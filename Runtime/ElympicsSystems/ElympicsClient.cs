@@ -372,9 +372,11 @@ namespace Elympics
             if (!((TickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
                 return;
             var message = _clientTickCalculator.Results.ToString();
+            var networkConditions = _clientTickCalculator.Results.ToJson();
             _lastClientPrintNetworkConditions = TickStartUtc;
             ElympicsLogger.WithMonitoringEnabled()
                 .WithConsoleDisabled()
+                .WithExtraContextEntry(nameof(networkConditions), networkConditions)
                 .LogDebug(message);
             if (Config.DetailedNetworkLog)
                 ElympicsLogger.LogInfo(message);

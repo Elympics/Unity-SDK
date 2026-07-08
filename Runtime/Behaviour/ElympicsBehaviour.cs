@@ -427,7 +427,7 @@ namespace Elympics
             _isReconciling = false;
         }
 
-        public void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        internal void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
         {
             var networkCondition = results.MapToNetworkNetworkCondition();
             foreach (var reconciliationHandler in _componentsContainer.Updatables)

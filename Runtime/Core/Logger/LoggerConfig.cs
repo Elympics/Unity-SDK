@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Elympics.Core.Logger.State;
 using Object = UnityEngine.Object;
@@ -169,14 +170,18 @@ namespace Elympics.Core.Logger
         /// <returns>Current instance.</returns>
         [Pure] public LoggerConfig WithPlayPadSdkService() => WithServiceName("PlayPadSdk");
 
-        /// <param name="extraContext">Additional logger context entries.</param>
+        /// <param name="key">Additional logger context entry key.</param>
+        /// <param name="value">Additional logger context entry value.</param>
         /// <returns>Current instance.</returns>
         [Pure]
-        public LoggerConfig WithExtraContext(IReadOnlyDictionary<string, string> extraContext)
+        public LoggerConfig WithExtraContextEntry(string key, string value)
         {
             var clone = Clone();
             var context = clone.Context;
-            context.ExtraContext = extraContext;
+            var pair = new KeyValuePair<string, string>(key, value);
+            context.ExtraContext = context.ExtraContext is null
+                ? new Dictionary<string, string> { { key, value } }
+                : context.ExtraContext.Append(pair).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             clone.Context = context;
             return clone;
         }

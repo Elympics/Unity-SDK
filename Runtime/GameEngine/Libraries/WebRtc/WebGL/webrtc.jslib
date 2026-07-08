@@ -322,6 +322,10 @@ const LibraryWebRtc = {
                 this.pc.close();
             };
 
+            this.pc.onnegotiationneeded = _ => {
+                logCallback('pc.onnegotiationneeded', 'Negotiation needed');
+            };
+
             this.pc.onicecandidate = ({candidate}) => {
                 if (candidate !== null) {
                     const candidateJson = JSON.stringify(candidate.toJSON());

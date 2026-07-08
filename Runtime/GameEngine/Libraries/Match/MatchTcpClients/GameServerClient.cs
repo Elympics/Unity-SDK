@@ -18,13 +18,13 @@ namespace MatchTcpClients
 
         public bool IsConnected => NetworkClient?.IsConnected ?? false;
 
-        protected CancellationTokenSource? ClientDisconnectedCts;
+        private CancellationTokenSource? _clientDisconnectedCts;
         protected INetworkClient? NetworkClient;
 
         private UniTaskCompletionSource<ConnectedMessage>? _sessionConnectedTcs;
 
         private readonly IGameServerSerializer _serializer;
-        private readonly IClientSynchronizer _clientSynchronizer;
+        private IClientSynchronizer _clientSynchronizer = null!;
         private readonly ElympicsLoggerContext _logger;
 
         public event Action? Connected;
@@ -42,27 +42,28 @@ namespace MatchTcpClients
             _logger = ElympicsLogger.CurrentContext.WithContext(nameof(GameServerClient));
             Config = config;
             _serializer = serializer;
-            _clientSynchronizer = new ClientSynchronizer(config.ClientSynchronizerConfig);
-            _clientSynchronizer.ReliablePingGenerated += SendReliableCommand;
-            _clientSynchronizer.UnreliablePingGenerated += SendUnreliableCommand;
-            _clientSynchronizer.AuthenticateUnreliableGenerated += SendUnreliableCommand;
-            _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
-            _clientSynchronizer.TimedOut += OnTimeout;
         }
 
-        protected void Initialize()
+        private void Initialize()
         {
             NetworkClient?.Dispose();
             NetworkClient = null;
             NetworkClient = CreateNetworkClient();
 
-            ClientDisconnectedCts?.Cancel();
-            ClientDisconnectedCts?.Dispose();
-            ClientDisconnectedCts = new CancellationTokenSource();
-            _ = ClientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
+            _clientDisconnectedCts?.Cancel();
+            _clientDisconnectedCts?.Dispose();
+            _clientDisconnectedCts = new CancellationTokenSource();
+            _ = _clientDisconnectedCts.Token.Register(() => Disconnected?.Invoke());
 
             InitializeNetworkClient(NetworkClient);
             NetworkClient.CreateAndBind();
+
+            _clientSynchronizer = new ClientSynchronizer(Config.ClientSynchronizerConfig);
+            _clientSynchronizer.ReliablePingGenerated += SendReliableCommand;
+            _clientSynchronizer.UnreliablePingGenerated += SendUnreliableCommand;
+            _clientSynchronizer.AuthenticateUnreliableGenerated += SendUnreliableCommand;
+            _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
+            _clientSynchronizer.TimedOut += OnTimeout;
         }
 
         public async UniTask ConnectAsync(CancellationToken ct = default)
@@ -100,7 +101,7 @@ namespace MatchTcpClients
                 throw;
             }
 
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, ClientDisconnectedCts.Token);
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _clientDisconnectedCts!.Token);
             var sessionToken = connectedMessage.SessionToken ?? "";
             TimeSynchronizationData synchronizationData;
             try
@@ -117,7 +118,7 @@ namespace MatchTcpClients
             }
 
             InvokeSafely(ConnectedAndSynchronized, synchronizationData, logger);
-            _clientSynchronizer.StartContinuousSynchronizingAsync(sessionToken, ClientDisconnectedCts.Token).Forget();
+            _clientSynchronizer.StartContinuousSynchronizingAsync(sessionToken, _clientDisconnectedCts.Token).Forget();
         }
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
@@ -148,13 +149,13 @@ namespace MatchTcpClients
 
         protected abstract INetworkClient CreateNetworkClient();
 
-        protected virtual void InitializeNetworkClient(INetworkClient networkClient)
+        private void InitializeNetworkClient(INetworkClient networkClient)
         {
-            if (ClientDisconnectedCts == null)
+            if (_clientDisconnectedCts == null)
                 throw new InvalidOperationException();
             networkClient.DataReceived += OnInGameDataReceived;
             networkClient.Disconnected += Disconnect;
-            _ = ClientDisconnectedCts.Token.Register(networkClient.Disconnect);
+            _ = _clientDisconnectedCts.Token.Register(networkClient.Disconnect);
         }
 
         private void OnTimeout()
@@ -166,8 +167,8 @@ namespace MatchTcpClients
 
         public void Disconnect()
         {
-            var cts = ClientDisconnectedCts;
-            ClientDisconnectedCts = null;
+            var cts = _clientDisconnectedCts;
+            _clientDisconnectedCts = null;
             if (cts == null)
                 return;
             var logger = _logger.WithMethodName();

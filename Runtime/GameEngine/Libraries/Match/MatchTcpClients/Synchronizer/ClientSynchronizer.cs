@@ -82,12 +82,17 @@ namespace MatchTcpClients.Synchronizer
             var pingCompletionSource = new UniTaskCompletionSource<PingClientResponseMessage>();
             _pingResponseCallback = response => pingCompletionSource.TrySetResult(response);
 
-            SendSynchronizeRequest(sessionToken);
+            try
+            {
+                SendSynchronizeRequest(sessionToken);
 
-            var pingResult = await pingCompletionSource.Task.WithTimeout(_config.TimeoutTime, ct);
-            _pingResponseCallback = null;
-
-            return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
+                var pingResult = await pingCompletionSource.Task.WithTimeout(_config.TimeoutTime, ct);
+                return pingResult == null ? null : CreateSynchronizeResponse(pingResult);
+            }
+            finally
+            {
+                _pingResponseCallback = null;
+            }
         }
 
         private void SendSynchronizeRequest(string sessionToken)

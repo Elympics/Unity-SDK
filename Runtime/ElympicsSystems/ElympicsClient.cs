@@ -145,6 +145,7 @@ namespace Elympics
 
         private void OnMatchClientSynchronized(TimeSynchronizationData data)
         {
+            _roundTripTimeCalculator.OnSynchronized(data);
             OnSynchronized(data);
             RaiseRttReceived(data);
             RaiseReceivedStatsUpdated();

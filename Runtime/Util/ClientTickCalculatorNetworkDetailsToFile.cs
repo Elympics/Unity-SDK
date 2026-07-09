@@ -94,7 +94,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogException(new ElympicsException("Something went wrong while writing log to file at path: {combinedPath}", e));
+                ElympicsLogger.LogException(new ElympicsException($"Something went wrong while writing log to file at path: {combinedPath}", e));
             }
         }
 

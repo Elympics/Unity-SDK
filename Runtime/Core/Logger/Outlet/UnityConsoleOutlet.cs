@@ -106,7 +106,7 @@ namespace Elympics.Core.Logger.Builder
 
             public PlainStateVisitor(StringBuilder stringBuilder) => _stringBuilder = stringBuilder;
 
-            public void ProcessSubstate(string name, string? legacyName = null)
+            public void ProcessSubstate(string name)
             {
                 if (_currentSubstate == name)
                     return;

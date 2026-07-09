@@ -1,8 +1,6 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Elympics.Core.Logger.State;
 using Object = UnityEngine.Object;
@@ -26,6 +24,7 @@ namespace Elympics.Core.Logger
         [Pure]
         private LoggerConfig Clone() => new()
         {
+            ConsoleDisabled = ConsoleDisabled,
             MonitoringEnabled = MonitoringEnabled,
             StacktraceForEverything = StacktraceForEverything,
             Context = Context,
@@ -44,7 +43,7 @@ namespace Elympics.Core.Logger
             public string? MethodName;  // from CallerMemberInfo
             public string? ClassName;  // set manually - expected full name
             public string? ServiceName;  // is logging from game or lobby?
-            public IReadOnlyDictionary<string, string>? ExtraContext;
+            public (string Key, string Value)? ExtraContext;
 
             private static class Names
             {
@@ -63,11 +62,10 @@ namespace Elympics.Core.Logger
                 visitedAnything |= visitor.ProcessOptionalProperty(Names.ClassName, ClassName, legacyName: Names.ClassNameLegacy);
                 visitedAnything |= visitor.ProcessOptionalProperty(Names.MethodName, MethodName);
                 visitedAnything |= visitor.ProcessOptionalProperty(Names.UnityContext, _unityContext?.Stringified);
-                if (ExtraContext is not null && ExtraContext.Count > 0)
+                if (ExtraContext is not null)
                 {
                     visitedAnything = true;
-                    foreach (var kvp in ExtraContext)
-                        visitor.ProcessProperty(kvp.Key, kvp.Value);
+                    visitor.ProcessProperty(ExtraContext.Value.Key, ExtraContext.Value.Value);
                 }
                 return visitedAnything;
             }
@@ -178,10 +176,7 @@ namespace Elympics.Core.Logger
         {
             var clone = Clone();
             var context = clone.Context;
-            var pair = new KeyValuePair<string, string>(key, value);
-            context.ExtraContext = context.ExtraContext is null
-                ? new Dictionary<string, string> { { key, value } }
-                : context.ExtraContext.Append(pair).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            context.ExtraContext = (key, value);
             clone.Context = context;
             return clone;
         }

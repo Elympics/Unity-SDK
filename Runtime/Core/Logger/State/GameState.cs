@@ -25,12 +25,12 @@ namespace Elympics.Core.Logger.State
         public bool Visit(IStateVisitor visitor)
         {
             var visited = false;
-            visited |= visitor.ProcessOptionalProperty(nameof(GameId), GameId);
-            visited |= visitor.ProcessOptionalProperty(nameof(VersionName), VersionName, legacyName: Names.VersionNameLegacy);
-            visited |= visitor.ProcessOptionalProperty(nameof(GameName), GameName);
-            visited |= visitor.ProcessOptionalProperty(nameof(GameMode), GameMode);
-            visited |= visitor.ProcessOptionalProperty(nameof(GameVersionId), GameVersionId);
-            visited |= visitor.ProcessOptionalProperty(nameof(FleetName), FleetName);
+            visited |= visitor.ProcessOptionalProperty(Names.GameId, GameId);
+            visited |= visitor.ProcessOptionalProperty(Names.VersionName, VersionName, legacyName: Names.VersionNameLegacy);
+            visited |= visitor.ProcessOptionalProperty(Names.GameName, GameName);
+            visited |= visitor.ProcessOptionalProperty(Names.GameMode, GameMode);
+            visited |= visitor.ProcessOptionalProperty(Names.GameVersionId, GameVersionId);
+            visited |= visitor.ProcessOptionalProperty(Names.FleetName, FleetName);
             return visited;
         }
     }

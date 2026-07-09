@@ -72,7 +72,7 @@ namespace Elympics.Core.Logger.Builder
 
             public JsonStateVisitor(StringBuilder stringBuilder) => _stringBuilder = stringBuilder;
 
-            public void ProcessSubstate(string name, string? legacyName = null) { }
+            public void ProcessSubstate(string name) { }
 
             public void ProcessProperty(string name, string value, string? legacyName = null)
             {

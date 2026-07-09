@@ -35,7 +35,7 @@ namespace Elympics
         private volatile bool _wasEverStarted;
         private volatile bool _reconnectResetPending;
         private Action? _onAuthenticatedAsSpectator;
-        private ClientTickCalculatorNetworkDetailsToFile _logToFile;
+        private ClientTickCalculatorNetworkDetailsToFile? _logToFile;
         internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
         private IMatchClient _matchClient;
@@ -186,7 +186,7 @@ namespace Elympics
                 _matchClient.Dispose();
             }
 
-            _logToFile.DeInit();
+            _logToFile?.DeInit();
         }
 
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
@@ -329,11 +329,9 @@ namespace Elympics
 
             SendQueuedRpcMessages();
 
+            LogNetworkConditionsInInterval();
             if (Config.DetailedNetworkLog)
-            {
-                LogNetworkConditionsInInterval();
-                _logToFile.LogNetworkDetailsToFile(_clientTickCalculator.Results);
-            }
+                _logToFile?.LogNetworkDetailsToFile(_clientTickCalculator.Results);
         }
 
         protected override void ElympicsRenderUpdate(in RenderData renderData) => ElympicsBehavioursManager.Render(renderData);

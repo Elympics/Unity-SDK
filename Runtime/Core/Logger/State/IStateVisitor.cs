@@ -4,7 +4,7 @@ namespace Elympics.Core.Logger.State
 {
     internal interface IStateVisitor
     {
-        void ProcessSubstate(string name, string? legacyName = null);
+        void ProcessSubstate(string name);
         void ProcessProperty(string name, string value, string? legacyName = null);
     }
 
@@ -23,7 +23,7 @@ namespace Elympics.Core.Logger.State
     {
         public static readonly PassthroughVisitor Instance = new();
 
-        public void ProcessSubstate(string name, string? legacyName = null)
+        public void ProcessSubstate(string name)
         { }
         public void ProcessProperty(string name, string value, string? legacyName = null)
         { }

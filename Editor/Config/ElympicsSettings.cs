@@ -46,7 +46,9 @@ namespace Elympics.Editor.Config
                 _ = toggle.RegisterValueChangedCallback(_ =>
                 {
                     PlayerSettings.GetScriptingDefineSymbols(GetActiveNamedBuildTarget(), out var currentDefines);
-                    PlayerSettings.SetScriptingDefineSymbols(GetActiveNamedBuildTarget(), currentDefines.Append(name).ToArray());
+                    PlayerSettings.SetScriptingDefineSymbols(GetActiveNamedBuildTarget(), toggle.value
+                        ? currentDefines.Append(name).ToArray()
+                        : currentDefines.Where(s => s != name).ToArray());
                 });
             }
 

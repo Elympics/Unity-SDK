@@ -70,7 +70,7 @@ namespace Elympics
             if (response.Code == 502)
                 throw new GameServerClosedException();
             if (response.IsError || string.IsNullOrEmpty(response.Text))
-                throw ElympicsLogger.LogException($"No valid WebRTC answer has been received. Error: {response.Text}");
+                throw logger.CaptureAndThrow(new ElympicsException($"No valid WebRTC answer has been received. Error: {response.Text} ({response.Code})"));
 
             return JsonUtility.FromJson<SignalingResponse>(response.Text);
         }

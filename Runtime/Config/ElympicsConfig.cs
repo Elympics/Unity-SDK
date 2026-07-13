@@ -19,7 +19,7 @@ namespace Elympics
         public const string PathInResources = "Elympics/ElympicsConfig";
 
         [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
-        [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.cc";
+        [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.ai";
 
         [SerializeField] private int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames = new();

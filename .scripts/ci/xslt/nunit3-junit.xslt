@@ -30,7 +30,7 @@
       <xsl:if test="@runstate = 'Skipped' or @runstate = 'Ignored'">
         <skipped/>
       </xsl:if>
-      
+
       <xsl:apply-templates/>
     </testcase>
   </xsl:template>
@@ -49,8 +49,8 @@
   </xsl:template>
 
   <xsl:template match="test-case/failure">
-    <failure message="{./message}">
-      <xsl:value-of select="./stack-trace"/>
+    <failure>
+      <xsl:value-of select="concat(./message, ./stack-trace, '&#xa;&#xa;System out:&#xa;', ./system-out, ./system-error)"/>
     </failure>
   </xsl:template>
 
@@ -61,7 +61,7 @@
       <skipped message="{./message}"/>
     </xsl:if>
   </xsl:template>
-  
+
   <xsl:template match="test-case/assertions">
   </xsl:template>
 

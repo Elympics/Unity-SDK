@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using Elympics.Core;
 using MatchTcpClients.Synchronizer;
@@ -279,8 +280,34 @@ namespace Elympics
 
         #region Client
 
-        public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
-        public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) => throw new SupportedOnlyByClientException();
+        public virtual UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct) => throw new SupportedOnlyByClientException();
+        public virtual UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct) => throw new SupportedOnlyByClientException();
+
+        public virtual IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct) =>
+            WrapConnectTask(ConnectAndJoinAsPlayerAsync(ct), connectedCallback).ToCoroutine();
+
+        public virtual IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct) =>
+            WrapConnectTask(ConnectAndJoinAsSpectatorAsync(ct), connectedCallback).ToCoroutine();
+
+        private static async UniTask WrapConnectTask(UniTask connectTask, Action<bool> callback)
+        {
+            try
+            {
+                await connectTask;
+                callback?.Invoke(true);
+            }
+            catch (OperationCanceledException)
+            {
+                ElympicsLogger.Log("Connect and join was cancelled.");
+                callback?.Invoke(false);
+            }
+            catch (Exception e)
+            {
+                _ = ElympicsLogger.LogException(e);
+                callback?.Invoke(false);
+            }
+        }
+
         public virtual void Disconnect() => throw new SupportedOnlyByClientException();
 
         #endregion

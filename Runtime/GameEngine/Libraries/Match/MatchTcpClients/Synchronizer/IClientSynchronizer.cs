@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MatchTcpModels.Commands;
 using MatchTcpModels.Messages;
 
@@ -16,21 +16,22 @@ namespace MatchTcpClients.Synchronizer
         event Action TimedOut;
 
         /// <summary>
-        /// Starts synchronizing with IEnumerator
+        /// Performs a single synchronization (request-response).
         /// </summary>
-        /// <param name="ct"></param>
+        /// <param name="sessionToken">The ID of the game server connection received after the session is established.</param>
+        /// <param name="ct">Cancellation token.</param>
         /// <returns>Delay to wait for next run in seconds</returns>
-        Task StartContinuousSynchronizingAsync(CancellationToken ct);
+        UniTask<TimeSynchronizationData> SynchronizeOnce(string sessionToken, CancellationToken ct);
 
         /// <summary>
-        /// Method to synchronize times once with timeout
+        /// Performs continuous synchronization (multiple request-response).
         /// </summary>
-        /// <param name="ct">Cancellation token to stop synchronizing</param>
-        /// <returns>Correct synchronization data or null if cancelled or timed out</returns>
-        Task<TimeSynchronizationData> SynchronizeOnce(CancellationToken ct);
+        /// <param name="sessionToken">The ID of the game server connection received after the session is established.</param>
+        /// <param name="ct">Cancellation token to stop the synchronization.</param>
+        /// <returns>Correct synchronization data or null if canceled or timed out</returns>
+        UniTask StartContinuousSynchronizingAsync(string sessionToken, CancellationToken ct);
 
         void ReliablePingReceived(PingClientResponseMessage message);
         void UnreliablePingReceived(PingClientResponseMessage message);
-        void SetUnreliableSessionToken(string sessionToken);
     }
 }

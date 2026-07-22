@@ -7,7 +7,7 @@ namespace Elympics.Core
 {
     public class ElympicsScore
     {
-        public delegate TimeSpan GetGameplayTimeDelegate(int playerIndex);
+        public delegate TimeSpan GetGameplayTimeDelegate(int playerIndex, DateTime currentTime);
 
         internal delegate void PlayerScoreUpdatedDelegate(int playerIndex, float score, DateTime utcTime, TimeSpan gameplayTime);
         internal event PlayerScoreUpdatedDelegate? PlayerScoreUpdated;
@@ -76,17 +76,17 @@ namespace Elympics.Core
                 var score = value;
                 var utcTime = DateTime.UtcNow;
                 _startingScoreUtcTime[playerIndex] ??= utcTime;
-                var gameplayTime = _getGameplayTime(playerIndex);
+                var gameplayTime = _getGameplayTime(playerIndex, utcTime);
                 _score[playerIndex] = (score, utcTime, gameplayTime);
                 PlayerScoreUpdated?.Invoke(playerIndex, score, utcTime, gameplayTime);
             }
         }
 
-        private TimeSpan GetGameplayTimeDefault(int playerIndex)
+        private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime)
         {
             if (!_startingScoreUtcTime[playerIndex].HasValue)
                 throw new InvalidOperationException($"The score of player {playerIndex} has not been initialized yet");
-            return DateTime.UtcNow - _startingScoreUtcTime[playerIndex]!.Value;
+            return currentTime - _startingScoreUtcTime[playerIndex]!.Value;
         }
     }
 }

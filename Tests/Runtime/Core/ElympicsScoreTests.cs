@@ -97,7 +97,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(1);
             var expectedGameplayTime = TimeSpan.FromSeconds(10);
-            score.Enable(_ => expectedGameplayTime);
+            score.Enable((_, _) => expectedGameplayTime);
 
             score[0] = 100f;
 

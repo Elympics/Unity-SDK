@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.ElympicsSystems.Internal;
-using Elympics.GameEngine.Libraries.WebRtc;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using MatchTcpClients;
@@ -120,19 +119,12 @@ namespace Elympics
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
             _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName)
                 .SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
-            var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
-                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    WebRtcFactory.CreateClient,
-                    iceServersUri)
+                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId, config))
                 : new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
-            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                matchData.TcpUdpServerAddress,
-                matchData.WebServerAddress,
-                matchData.UserSecret,
-                _elympicsGameConfig.UseWeb);
+            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.UserSecret);
             var matchClient = new RemoteMatchClient(gameServerClient, _elympicsGameConfig);
             var matchPlayerCount = matchData.MatchedPlayers.Length;
             if (matchPlayerCount > _elympicsGameConfig.MaxPlayers)

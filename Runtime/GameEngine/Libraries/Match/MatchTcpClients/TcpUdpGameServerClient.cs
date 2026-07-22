@@ -1,12 +1,12 @@
+using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
-using Elympics;
+using Cysharp.Threading.Tasks;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using MatchTcpLibrary.TransportLayer.SimpleMessageEncoder;
 using MatchTcpLibrary.TransportLayer.Tcp;
+using MatchTcpLibrary.TransportLayer.TcpUdp;
 using MatchTcpLibrary.TransportLayer.Udp;
 
 namespace MatchTcpClients
@@ -18,57 +18,26 @@ namespace MatchTcpClients
         public TcpUdpGameServerClient(
             IGameServerSerializer serializer,
             GameServerClientConfig config,
-            IPEndPoint endpoint) : base(serializer, config)
-        {
+            IPEndPoint endpoint) : base(serializer, config) =>
             _endpoint = endpoint;
-        }
 
-        protected override void CreateNetworkClients()
-        {
-            ReliableClient?.Dispose();
-            ReliableClient = CreateTcpNetworkClient();
-            UnreliableClient?.Dispose();
-            UnreliableClient = CreateUdpNetworkClient();
-        }
-
-        protected override async Task<bool> ConnectInternalAsync(CancellationToken ct = default)
-        {
-            ElympicsLogger.Log($"Connecting reliable to {_endpoint}");
-            if (!await TryConnectSessionAsync(ct))
+        protected override INetworkClient CreateNetworkClient() =>
+            new TcpUdpNetworkClient(_endpoint, new (string, Func<IDataChannel>)[]
             {
-                ElympicsLogger.LogError("Could not establish the reliable connection.");
-                return false;
-            }
+                (INetworkClient.ReliableLabel, CreateTcpNetworkClient),
+                (INetworkClient.UnreliableLabel, CreateUdpNetworkClient),
+            });
 
-            ElympicsLogger.Log($"Connecting unreliable to {_endpoint}");
-            if (await UnreliableClient.ConnectAsync(_endpoint))
-                return true;
+        protected override UniTask ConnectInternalAsync(CancellationToken ct = default) => NetworkClient.Connect(ct);
 
-            Disconnect();
-            return false;
-        }
-
-        protected override async Task<bool> TryInitializeSessionAsync(CancellationToken ct = default)
-        {
-            try
-            {
-                return await ReliableClient.ConnectAsync(_endpoint);
-            }
-            catch (SocketException e)
-            {
-                _ = ElympicsLogger.LogException("Couldn't connect to the server", e);
-                return false;
-            }
-        }
-
-        private IReliableNetworkClient CreateTcpNetworkClient()
+        private static IDataChannel CreateTcpNetworkClient()
         {
             var encoder = new SimpleDelimiterEncoder(SimpleMessageEncoderConfig.Default);
-            var client = new TcpNetworkClient(encoder, TcpProtocolConfig.Default);
+            var client = new TcpDataChannel(INetworkClient.ReliableLabel, encoder, TcpProtocolConfig.Default);
             return client;
         }
 
-        private IUnreliableNetworkClient CreateUdpNetworkClient() =>
-            new UdpNetworkClient();
+        private static IDataChannel CreateUdpNetworkClient() =>
+            new UdpDataChannel(INetworkClient.UnreliableLabel);
     }
 }

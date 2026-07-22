@@ -1,5 +1,4 @@
 using Elympics.ElympicsSystems.Internal;
-using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
 
 namespace Elympics
@@ -32,21 +31,14 @@ namespace Elympics
             var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, matchData.RegionName);
             _ = ElympicsLogger.CurrentContext.SetGameMode("online");
-            var iceServersUri = HttpSignalingClient.BuildIceServersUri(webSignalingEndpoint, matchData.MatchId);
             GameServerClient gameServerClient = elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,
-                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId),
-                    WebRtcFactory.CreateClient,
-                    iceServersUri)
+                    new HttpSignalingClient(webSignalingEndpoint, matchData.MatchId, config))
                 : new TcpUdpGameServerClient(serializer,
                     config,
                     IPEndPointExtensions.Parse(matchData.TcpUdpServerAddress));
-            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient,
-                matchData.TcpUdpServerAddress,
-                matchData.WebServerAddress,
-                matchData.UserSecret,
-                elympicsGameConfig.UseWeb);
+            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, matchData.UserSecret);
             var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
             var matchPlayerCount = matchData.MatchedPlayers.Length;
             if (matchPlayerCount > elympicsGameConfig.MaxPlayers)

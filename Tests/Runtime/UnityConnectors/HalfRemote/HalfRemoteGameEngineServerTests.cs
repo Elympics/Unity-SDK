@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using NUnit.Framework;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
@@ -45,19 +46,12 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/doSignaling"));
             var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default);
 
+            var reliableChannel = webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
+            var unreliableChannel = webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
+
             async UniTask<HalfRemoteMatchClient> ConnectWebRtc()
             {
-                var tcs = new UniTaskCompletionSource<object>();
-
-                string offer = null;
-                webRtcClient.OfferCreated += s =>
-                {
-                    offer = s;
-                    _ = tcs.TrySetResult(null);
-                };
-                webRtcClient.CreateOffer(false);
-                _ = await tcs.Task;
-
+                var offer = await webRtcClient.CreateOffer(false);
                 if (string.IsNullOrEmpty(offer))
                     throw new ArgumentException("Offer is empty");
 
@@ -65,9 +59,9 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                 var answer = await httpClient.PostOfferAsync(offer);
                 Debug.Log(answer);
 
-                webRtcClient.OnAnswer(answer);
+                await webRtcClient.OnAnswer(answer);
 
-                return new HalfRemoteMatchClient(UserId, webRtcClient);
+                return new HalfRemoteMatchClient(UserId, reliableChannel, unreliableChannel);
             }
 
             void CloseWebSocket() => webRtcClient.Close();
@@ -75,7 +69,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             await ConnectionTest(ConnectWebRtc, CloseWebSocket, new IPEndPoint(IPAddress.Loopback, tcpPort), new IPEndPoint(IPAddress.Loopback, webPort));
         });
 
-        private async UniTask ConnectionTest(Func<UniTask<HalfRemoteMatchClient>> clientConnect, Action clientClose, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint)
+        private async UniTask ConnectionTest(Func<UniTask<HalfRemoteMatchClient>> clientConnect, Action clientClose, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, CancellationToken ct = default)
         {
             // Arrange
             var playerConnected = false;
@@ -118,12 +112,12 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             connector.ListeningEnded += (source) => Debug.Log($"{source} Listening ended");
             connector.Listen();
 
-            await UniTask.Delay(1000, DelayType.Realtime);
+            await UniTask.Delay(1000, DelayType.Realtime, cancellationToken: ct);
 
             // CLIENT
             var client = await clientConnect.Invoke();
 
-            await UniTask.Delay(1000, DelayType.Realtime);
+            await UniTask.Delay(1000, DelayType.Realtime, cancellationToken: ct);
             client.InGameDataForPlayerOnReliableChannelGenerated += (data, userId) =>
             {
                 reliableClientDataReceived++;
@@ -149,7 +143,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                     gameEngine.GenerateInGameDataForPlayerOnUnreliableChannel(new byte[10], UserId);
                     client.SendInputUnreliable(new byte[10]);
 
-                    await UniTask.Delay(10, DelayType.Realtime);
+                    await UniTask.Delay(10, DelayType.Realtime, cancellationToken: ct);
                 }
             }
 
@@ -160,7 +154,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                     gameEngine.GenerateInGameDataForPlayerOnReliableChannel(new byte[10], UserId);
                     client.SendInputReliable(new byte[10]);
 
-                    await UniTask.Delay(10, DelayType.Realtime);
+                    await UniTask.Delay(10, DelayType.Realtime, cancellationToken: ct);
                 }
             }
 
@@ -168,11 +162,11 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             gameEngine.EndGame(null);
 
             clientClose.Invoke();
-            await UniTask.Delay(100, DelayType.Realtime);
+            await UniTask.Delay(100, DelayType.Realtime, cancellationToken: ct);
             connector.Dispose();
             signalingServerCts.Cancel();
 
-            await UniTask.Delay(500, DelayType.Realtime);
+            await UniTask.Delay(500, DelayType.Realtime, cancellationToken: ct);
 
             // Assert
             Assert.IsTrue(playerConnected);

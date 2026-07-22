@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using Elympics.Mappers;
 using GameBotCore.V1._3;
@@ -12,6 +13,7 @@ namespace Elympics
     {
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
+        private readonly CancellationTokenSource _connectCts = new();
 
         protected override void InitializeBot(ElympicsBot bot, ElympicsGameConfig elympicsGameConfig, GameBotAdapter gameBotAdapter)
         {
@@ -74,16 +76,21 @@ namespace Elympics
             };
             _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, matchInitData);
 
-            gameBotAdapter.InGameDataForReliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, true);
-            gameBotAdapter.InGameDataForUnreliableChannelGenerated += async data => await _halfRemoteMatchClient.SendRawDataToServer(data, false);
+            gameBotAdapter.InGameDataForReliableChannelGenerated += data => _halfRemoteMatchClient.SendRawDataToServer(data, true);
+            gameBotAdapter.InGameDataForUnreliableChannelGenerated += data => _halfRemoteMatchClient.SendRawDataToServer(data, false);
 
             gameBotAdapter.Init(null, null);
             gameBotAdapter.Init2(null);
             gameBotAdapter.Init3(botConfiguration);
 
-            _ = _halfRemoteMatchConnectClient.ConnectAndJoinAsPlayer(_ => { }, CancellationToken.None);
+            _halfRemoteMatchConnectClient.ConnectAndJoinAsPlayerAsync(_connectCts.Token).Forget();
         }
 
-        public override void Dispose() => _halfRemoteMatchConnectClient?.Dispose();
+        public override void Dispose()
+        {
+            _connectCts.Cancel();
+            _connectCts.Dispose();
+            _halfRemoteMatchConnectClient?.Dispose();
+        }
     }
 }

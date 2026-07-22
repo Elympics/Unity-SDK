@@ -1,13 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using MessagePack;
 using UnityConnectors.HalfRemote;
 using UnityConnectors.HalfRemote.Ntp;
-using UnityEngine;
 using Random = System.Random;
 
 namespace Elympics
@@ -26,7 +24,6 @@ namespace Elympics
         private readonly ElympicsInput[] _inputsBuffer;
         private readonly List<ElympicsInput> _inputsToSend;
 
-        private readonly WaitForSeconds _synchronizationDelay;
         private readonly HalfRemoteLagConfig _lagConfig;
         private readonly Random _lagRandom;
 
@@ -44,7 +41,7 @@ namespace Elympics
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
         }
 
-        internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
+        internal void SetupClientCallbacks(string userId, HalfRemoteMatchClient client)
         {
             _userId = userId;
 
@@ -67,9 +64,19 @@ namespace Elympics
             _client.MatchEnded += OnMatchEnded;
 
             ElympicsLogger.Log("Connected to a half remote server.");
-            connectedCallback?.Invoke(true);
+        }
 
-            return Synchronization();
+        internal async UniTaskVoid StartSynchronization(CancellationToken ct = default)
+        {
+            try
+            {
+                while (NotDisconnected())
+                {
+                    _client.SendNtp();
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException) { }
         }
 
         private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
@@ -88,14 +95,13 @@ namespace Elympics
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
         public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
-        public async Task SendBufferInput(long tick)
+        public void SendBufferInput(long tick)
         {
-            if (_input.Count() > 0)
-            {
-                GetInputCollectionToSend();
-                var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
-                await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
-            }
+            if (_input.Count() <= 0)
+                return;
+            GetInputCollectionToSend();
+            var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
         }
 
         private void GetInputCollectionToSend()
@@ -108,14 +114,14 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
+        public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
-        public async Task SendRawDataToServer(byte[] rawData, bool reliable)
+        public void SendRawDataToServer(byte[] rawData, bool reliable)
         {
             Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;
 
-            await RunWithLag(() => sendDataAsync(rawData));
+            RunWithLag(() => sendDataAsync(rawData)).Forget();
         }
 
         private void OnUnreliableInGameDataReceived(byte[] data, string userId)
@@ -153,7 +159,7 @@ namespace Elympics
             }
         }
 
-        private async UniTask RunWithLag(Action action)
+        private async UniTaskVoid RunWithLag(Action action)
         {
             GetNewLag(out var lost, out var lagMs);
             if (lost)
@@ -178,15 +184,6 @@ namespace Elympics
             var u2 = 1.0 - _lagRandom.NextDouble();
             var randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
             return mean + stdDev * randStdNormal;
-        }
-
-        private IEnumerator Synchronization()
-        {
-            while (NotDisconnected())
-            {
-                _client.SendNtp();
-                yield return _synchronizationDelay;
-            }
         }
 
         private void OnNtpReceived(NtpData ntpData)

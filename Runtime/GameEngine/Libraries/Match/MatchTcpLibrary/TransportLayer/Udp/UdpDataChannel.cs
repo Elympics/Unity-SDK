@@ -1,19 +1,23 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 namespace MatchTcpLibrary.TransportLayer.Udp
 {
-    public class UdpNetworkClient : IUnreliableNetworkClient
+    public class UdpDataChannel : IDataChannel
     {
         public event Action Disconnected;
         public event Action<byte[]> DataReceived;
+        public event Action<string> Error;
         public event Action<byte[], IPEndPoint> DataReceivedWithSource;
 
-        private readonly IPEndPoint _anyEndPoint = new(IPAddress.Any, 0);
+        private static readonly IPEndPoint AnyEndPoint = new(IPAddress.Any, 0);
+
+        public string Label { get; }
 
         public IPEndPoint LocalEndPoint => _udpClient?.Client?.IsBound ?? false
             ? _udpClient?.Client?.LocalEndPoint as IPEndPoint
@@ -51,21 +55,13 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             }
         }
 
+        public UdpDataChannel(string label) => Label = label;
+
         public void CreateAndBind()
-        {
-            CreateAndBind(_anyEndPoint);
-        }
-
-        public void CreateAndBind(int port)
-        {
-            CreateAndBind(new IPEndPoint(IPAddress.Any, port));
-        }
-
-        public void CreateAndBind(IPEndPoint localEndPoint)
         {
             Disconnect();
             _udpClient = new UdpClient();
-            _udpClient.Client.Bind(localEndPoint);
+            _udpClient.Client.Bind(AnyEndPoint);
             SetupUnderlyingUdpClient();
         }
 
@@ -75,29 +71,29 @@ namespace MatchTcpLibrary.TransportLayer.Udp
 
             _udpReceiver = new UdpReceiver(_udpClient);
             _udpReceiver.DataReceived += OnDataReceived;
-            _udpReceiver.StartReceiving();
+            _udpReceiver.StartReceiving().Forget();
 
             IsConnected = _udpClient?.Client.Connected ?? false;
         }
 
-        public Task<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default)
         {
             try
             {
                 if (CheckIfConnectingAndSet())
-                    return Task.FromResult(false);
+                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new NullReferenceException("CreateAndBind has not been called before connecting."));
+                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else if (IsDisconnected() || IsConnectedToOther(remoteEndPoint))
                     RecreateSocket();
                 else if (IsConnectedTo(remoteEndPoint))
-                    return Task.FromResult(true);
+                    return UniTask.CompletedTask;
 
                 _udpClient.Connect(remoteEndPoint);
                 IsConnected = true;
 
-                return Task.FromResult(IsConnected);
+                return UniTask.CompletedTask;
             }
             finally
             {
@@ -122,30 +118,15 @@ namespace MatchTcpLibrary.TransportLayer.Udp
                 _connecting = false;
         }
 
-        private bool NotCreated()
-        {
-            return _udpClient == null && _previousLocalEndPoint == null;
-        }
+        private bool NotCreated() => _udpClient == null && _previousLocalEndPoint == null;
 
-        private bool IsDisconnected()
-        {
-            return _udpClient == null && _previousLocalEndPoint != null;
-        }
+        private bool IsDisconnected() => _udpClient == null && _previousLocalEndPoint != null;
 
-        private bool IsConnectedTo(IPEndPoint remoteEndPoint)
-        {
-            return IsConnected && remoteEndPoint.Equals(RemoteEndpoint);
-        }
+        private bool IsConnectedTo(IPEndPoint remoteEndPoint) => IsConnected && remoteEndPoint.Equals(RemoteEndpoint);
 
-        private bool IsConnectedToOther(IPEndPoint remoteEndPoint)
-        {
-            return IsConnected && !remoteEndPoint.Equals(RemoteEndpoint);
-        }
+        private bool IsConnectedToOther(IPEndPoint remoteEndPoint) => IsConnected && !remoteEndPoint.Equals(RemoteEndpoint);
 
-        private void RecreateSocket()
-        {
-            CreateAndBind(_previousLocalEndPoint);
-        }
+        private void RecreateSocket() => CreateAndBind();
 
         private void OnDataReceived(byte[] data, IPEndPoint sourceEndPoint, DateTime _)
         {
@@ -153,50 +134,29 @@ namespace MatchTcpLibrary.TransportLayer.Udp
             DataReceivedWithSource?.Invoke(data, sourceEndPoint);
         }
 
-        public async Task<bool> SendAsync(byte[] payload)
+        public void Send(byte[] payload)
         {
             if (!IsConnected)
-                return false;
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
 
             try
             {
-                _ = await _udpClient.SendAsync(payload, payload.Length);
+                _ = _udpClient.Send(payload, payload.Length);
             }
             catch (Exception e)
             {
                 _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
-                return false;
+                throw;
             }
-
-            return true;
-        }
-
-        public async Task<bool> SendToAsync(byte[] payload, IPEndPoint destination)
-        {
-            if (IsConnected)
-                return false;
-
-            try
-            {
-                _ = await _udpClient.Client.SendToAsync(new ArraySegment<byte>(payload, 0, payload.Length), SocketFlags.None, destination);
-            }
-            catch (Exception e)
-            {
-                _ = ElympicsLogger.LogException("Error while sending data through the UDP socket", e);
-                return false;
-            }
-
-            return true;
         }
 
         public void Disconnect()
         {
             IsConnected = false;
             _udpClient?.Close();
-            // If UdpClient is closed UdpReceived should close either
             _udpClient = null;
         }
-        public void Dispose()
-        { }
+
+        public void Dispose() => Disconnect();
     }
 }

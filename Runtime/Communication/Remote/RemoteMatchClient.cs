@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
@@ -30,13 +29,12 @@ namespace Elympics
             _inputsToSend = new List<ElympicsInput>(config.InputsToSendBufferSize);
 
             gameServerClient.Synchronized += OnSynchronized;
-            gameServerClient.InGameDataReliableReceived += ProcessReceivedInGameData;
-            gameServerClient.InGameDataUnreliableReceived += ProcessReceivedInGameData;
+            gameServerClient.InGameDataReceived += ProcessReceivedInGameData;
         }
 
         private void OnSynchronized(TimeSynchronizationData data) => Synchronized?.Invoke(data);
 
-        private void ProcessReceivedInGameData(InGameDataMessage message)
+        private void ProcessReceivedInGameData(string label, InGameDataMessage message)
         {
             var deserializedData = MessagePackSerializer.Deserialize<IFromServer>(Convert.FromBase64String(message.Data));
             switch (deserializedData)
@@ -71,23 +69,22 @@ namespace Elympics
 
         public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
 
-        public async Task SendBufferInput(long tick)
+        public void SendBufferInput(long tick)
         {
-            if (_input.Count() > 0)
-            {
-                GetInputCollectionToSend();
-                await SendDataToServer(new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick }, false);
-            }
+            if (_input.Count() <= 0)
+                return;
+            GetInputCollectionToSend();
+            SendDataToServer(new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick }, false);
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            await SendDataToServer(rpcMessageList, reliable);
+        public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            SendDataToServer(rpcMessageList, reliable);
 
-        private async Task SendDataToServer(IToServer data, bool reliable)
+        private void SendDataToServer(IToServer data, bool reliable)
         {
             var dataSerialized = MessagePackSerializer.Serialize(data);
-            Func<byte[], Task> sendDataAsync = reliable ? _gameServerClient.SendInGameDataReliableAsync : _gameServerClient.SendInGameDataUnreliableAsync;
-            await sendDataAsync(dataSerialized);
+            Action<byte[]> sendDataAsync = reliable ? _gameServerClient.SendInGameDataReliable : _gameServerClient.SendInGameDataUnreliable;
+            sendDataAsync(dataSerialized);
         }
         public void Dispose() => _input?.Dispose();
     }

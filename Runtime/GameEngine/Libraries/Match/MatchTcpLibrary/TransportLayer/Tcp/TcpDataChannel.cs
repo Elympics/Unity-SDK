@@ -1,32 +1,34 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
+#pragma warning disable CS0067 // Error is part of IDataChannel for WebRTC channels; TCP surfaces failures via exceptions instead
+
 namespace MatchTcpLibrary.TransportLayer.Tcp
 {
-    public class TcpNetworkClient : IReliableNetworkClient
+    public class TcpDataChannel : IDataChannel
     {
-        public event Action Disconnected;
-        public event Action<byte[]> DataReceived;
+        public event Action? Disconnected;
+        public event Action<byte[]>? DataReceived;
+        public event Action<string>? Error;
 
-        private readonly IPEndPoint _anyEndPoint = new(IPAddress.Any, 0);
-        public IPEndPoint LocalEndPoint => _tcpClient?.Client?.LocalEndPoint as IPEndPoint;
-        public IPEndPoint RemoteEndpoint => _tcpClient?.Client?.RemoteEndPoint as IPEndPoint;
+        public string Label { get; }
+        private static readonly IPEndPoint AnyEndPoint = new(IPAddress.Any, 0);
 
         private readonly IMessageEncoder _messageEncoder;
 
         private readonly TcpProtocolConfig _tcpProtocolConfig;
-        private CancellationTokenSource _connectingTokenSource;
+        private CancellationTokenSource? _connectingTokenSource;
 
-        private TcpClient _tcpClient;
-        private TcpReceiver _tcpReceiver;
+        private TcpClient? _tcpClient;
+        private TcpReceiver? _tcpReceiver;
         private readonly List<byte> _receivedBytes;
-        private IPEndPoint _previousLocalEndPoint;
 
         private readonly object _connectingLock = new();
         private bool _connecting;
@@ -52,9 +54,9 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
         }
 
-        public TcpNetworkClient(IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig,
-            TcpClient client = null)
+        public TcpDataChannel(string label, IMessageEncoder messageEncoder, TcpProtocolConfig tcpProtocolConfig, TcpClient? client = null)
         {
+            Label = label;
             _messageEncoder = messageEncoder;
             _tcpProtocolConfig = tcpProtocolConfig;
             _connectingTokenSource = new CancellationTokenSource();
@@ -62,37 +64,25 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             _receivedBytes = new List<byte>();
 
             if (_tcpClient != null)
-                SetupUnderlyingTcpClient();
+                SetupTcpClient(_tcpClient);
         }
 
         public void CreateAndBind()
         {
-            CreateAndBind(_anyEndPoint);
-        }
-
-        public void CreateAndBind(int port)
-        {
-            CreateAndBind(new IPEndPoint(IPAddress.Any, port));
-        }
-
-        public void CreateAndBind(IPEndPoint localEndPoint)
-        {
             Disconnect();
             _tcpClient = new TcpClient();
             _tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _tcpClient.Client.Bind(localEndPoint);
-            SetupUnderlyingTcpClient();
+            _tcpClient.Client.Bind(AnyEndPoint);
+            SetupTcpClient(_tcpClient);
         }
 
-        private void SetupUnderlyingTcpClient()
+        private void SetupTcpClient(TcpClient tcpClient)
         {
-            _previousLocalEndPoint = (IPEndPoint)_tcpClient.Client.LocalEndPoint;
-
-            _tcpReceiver = new TcpReceiver(_tcpClient, _tcpProtocolConfig);
+            _tcpReceiver = new TcpReceiver(tcpClient, _tcpProtocolConfig);
             _tcpReceiver.DataReceived += OnDataReceived;
             _tcpReceiver.ReceivingStopped += OnReceivingStopped;
 
-            IsConnected = _tcpClient.Connected;
+            IsConnected = tcpClient.Connected;
             if (IsConnected)
                 StartReceiving();
         }
@@ -106,7 +96,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"{nameof(TcpNetworkClient)} failed to process a message", e);
+                _ = ElympicsLogger.LogException($"{nameof(TcpDataChannel)} failed to process a message", e);
             }
         }
 
@@ -125,27 +115,29 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
         private void StartReceiving()
         {
-            _ = Task.Run(_tcpReceiver.StartReceiving);
+            if (_tcpReceiver is null)
+                throw new InvalidOperationException("TCP receiver has not been created");
+            _tcpReceiver.StartReceiving().Forget();
         }
 
-        public async Task<bool> ConnectAsync(IPEndPoint remoteEndPoint)
+        public async UniTask ConnectAsync(IPEndPoint remoteEndPoint, CancellationToken ct = default)
         {
             try
             {
                 if (CheckIfConnectingAndSet())
-                    return false;
+                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new NullReferenceException($"{nameof(CreateAndBind)} has not been called before connecting"));
-                else if (IsDisconnected() || IsConnected)
+                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
+                else
                     RecreateSocket();
 
-                await TryConnectAsync(remoteEndPoint);
+                await TryConnectAsync(remoteEndPoint, ct);
 
-                if (IsConnected)
-                    StartReceiving();
+                if (!IsConnected)
+                    throw ElympicsLogger.LogException(new ElympicsException("Could not connect"));
 
-                return IsConnected;
+                StartReceiving();
             }
             finally
             {
@@ -170,27 +162,19 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 _connecting = false;
         }
 
-        private bool IsDisconnected()
-        {
-            return _tcpClient == null && _previousLocalEndPoint != null;
-        }
 
-        private bool NotCreated()
-        {
-            return _tcpClient == null && _previousLocalEndPoint == null;
-        }
+        private bool NotCreated() => _tcpClient == null;
 
-        private void RecreateSocket()
-        {
-            CreateAndBind(_previousLocalEndPoint);
-        }
+        private void RecreateSocket() => CreateAndBind();
 
-        private async Task TryConnectAsync(IPEndPoint endpoint)
+        private async UniTask TryConnectAsync(IPEndPoint endpoint, CancellationToken ct = default)
         {
-            _connectingTokenSource = new CancellationTokenSource();
+            if (_tcpClient is null)
+                throw new InvalidOperationException("TCP client has not been created");
+            _connectingTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
             for (var i = 0; i < _tcpProtocolConfig.MaxConnectionAttempts; i++)
             {
-                var result = await ConnectSingleAsync(endpoint, _connectingTokenSource);
+                var result = await ConnectSingleAsync(endpoint, _connectingTokenSource.Token);
                 switch (result)
                 {
                     case ConnectResult.Connected:
@@ -215,29 +199,31 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
                 ElympicsLogger.Log($"Connection attempt no. {i} failed on {endpoint}, reason {result}, retrying...");
 
-                await TaskUtil.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
-                    _connectingTokenSource.Token);
+                await UniTask.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
+                    DelayType.Realtime, cancellationToken: _connectingTokenSource.Token);
             }
 
             IsConnected = _tcpClient.Connected;
         }
 
-        private async Task<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationTokenSource cts)
+        private async UniTask<ConnectResult> ConnectSingleAsync(IPEndPoint endPoint, CancellationToken ct = default)
         {
+            if (_tcpClient is null)
+                throw new InvalidOperationException("TCP client has not been created");
             try
             {
-                await _tcpClient.ConnectAsync(endPoint.Address, endPoint.Port)
-                    .WithTimeout(TimeSpan.FromMilliseconds(_tcpProtocolConfig.ConnectTimeoutMs), cts);
+                await _tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).AsUniTask()
+                    .WithTimeout(TimeSpan.FromMilliseconds(_tcpProtocolConfig.ConnectTimeoutMs), ct);
                 return ConnectResult.Connected;
             }
             catch (TimeoutException)
             {
-                // It sometimes happens (from time to time), fix when microsoft adds cts handling in ConnectAsync ~pprzestrzelski 20.01.2020
+                // It sometimes happens (from time to time), fix when Microsoft adds cts handling in ConnectAsync ~pprzestrzelski 20.01.2020
                 return _tcpClient.Connected ? ConnectResult.TimedOutButConnectedError : ConnectResult.TimedOut;
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"{nameof(TcpNetworkClient)} connection exception", e);
+                _ = ElympicsLogger.LogException($"{nameof(TcpDataChannel)} connection exception", e);
                 return ConnectResult.OtherException;
             }
         }
@@ -250,35 +236,37 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             OtherException
         }
 
-        public async Task<bool> SendAsync(byte[] dataToSend)
+        public void Send(byte[] dataToSend)
         {
             if (!IsConnected)
-                return false;
+                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
+            if (_tcpClient is null)
+                throw new InvalidOperationException("TCP client has not been created");
 
             var bytes = _messageEncoder.EncodePayload(dataToSend);
             try
             {
-                await _tcpClient.GetStream().WriteAsync(bytes, 0, bytes.Length);
-                return true;
+                _tcpClient.GetStream().Write(bytes, 0, bytes.Length);
             }
             catch
             {
-                ElympicsLogger.Log($"{GetType().Name} failed to send a message, disconnecting...");
+                ElympicsLogger.LogError($"{GetType().Name} failed to send a message, disconnecting...");
                 Disconnect();
+                throw;
             }
-
-            return false;
         }
 
         public void Disconnect()
         {
             _connectingTokenSource?.Cancel();
+            _connectingTokenSource = null;
             _tcpClient?.Close();
-            _tcpReceiver?.StopReceiving();
-            IsConnected = false;
             _tcpClient = null;
+            _tcpReceiver?.StopReceiving();
+            _tcpReceiver = null;
+            IsConnected = false;
         }
-        public void Dispose()
-        { }
+
+        public void Dispose() => Disconnect();
     }
 }

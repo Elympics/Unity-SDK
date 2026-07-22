@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Elympics
@@ -20,64 +22,61 @@ namespace Elympics
         private string _fileName;
 
         private string _folderPath;
-#if ELYMPICS_DEBUG
-        internal ClientTickCalculatorNetworkDetailsToFile()
-        {
-            InitializeWriteToFile();
-        }
-#endif
 
+        internal ClientTickCalculatorNetworkDetailsToFile() => InitializeWriteToFile();
+
+        [Conditional("ELYMPICS_DEBUG")]
         public void LogNetworkDetailsToFile(ClientTickCalculatorNetworkDetails details)
         {
-#if ELYMPICS_DEBUG
             lock (_textToFileQueue)
-            {
                 _textToFileQueue.Enqueue($"[{DateTime.UtcNow:HH:mm:ss.fff}] {details}");
-            }
-#endif
         }
 
+        [Conditional("ELYMPICS_DEBUG")]
         private void InitializeWriteToFile()
         {
 #if UNITY_EDITOR
-            _folderPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, LogDirectoryName);
-#elif ELYMPICS_DEBUG
+            _folderPath = Path.Combine(Directory.GetParent(Application.dataPath)!.FullName, LogDirectoryName);
+#else
 			_folderPath = Path.Combine(Application.persistentDataPath, LogDirectoryName);
 #endif
             _fileName = $"DetailedNetworkLogs_{DateTime.Now:yyyy_MM_dd___HH_mm_ss}.txt";
 
             _cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(async () =>
+            WriteToFileLooped(_cancellationTokenSource.Token).Forget();
+        }
+
+        private async UniTaskVoid WriteToFileLooped(CancellationToken ct)
+        {
+            try
             {
                 while (true)
                 {
-                    _cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                    ct.ThrowIfCancellationRequested();
 
                     var anythingToSend = false;
                     lock (_textToFileQueue)
-                    {
                         if (_textToFileQueue.Count > 0)
                         {
-                            _sb.Clear();
+                            _ = _sb.Clear();
                             for (var i = 0; i < _textToFileQueue.Count; i++)
                             {
                                 var text = _textToFileQueue.Dequeue();
-                                _sb.AppendLine(text);
-                                _sb.AppendLine();
+                                _ = _sb.AppendLine(text)
+                                    .AppendLine();
                             }
 
                             anythingToSend = true;
                         }
-                    }
 
                     if (anythingToSend)
-                        await WriteToFile(_sb.ToString(), _cancellationTokenSource.Token);
+                        await WriteToFile(_sb.ToString(), ct);
 
-                    await TaskUtil.Delay(DelayInMs, _cancellationTokenSource.Token);
+                    await UniTask.Delay(DelayInMs, DelayType.Realtime, cancellationToken: ct);
                 }
-            }, _cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
         }
-
 
         private async Task WriteToFile(string text, CancellationToken ct)
         {
@@ -99,9 +98,6 @@ namespace Elympics
             }
         }
 
-        public void DeInit()
-        {
-            _cancellationTokenSource?.Cancel();
-        }
+        public void DeInit() => _cancellationTokenSource?.Cancel();
     }
 }

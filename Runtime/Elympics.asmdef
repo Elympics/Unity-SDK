@@ -13,7 +13,8 @@
         "GameEngineCore",
         "GameBotCore",
         "UnityConnectors",
-        "Elympics.WebRtc.Common"
+        "Elympics.WebRtc.Common",
+        "Elympics.MatchConnection"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

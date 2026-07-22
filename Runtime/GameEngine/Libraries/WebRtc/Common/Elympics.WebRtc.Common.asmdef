@@ -1,7 +1,10 @@
 {
     "name": "Elympics.WebRtc.Common",
     "rootNamespace": "Elympics",
-    "references": [],
+    "references": [
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:86d779950baf55b4783b8ef7d9337d73"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

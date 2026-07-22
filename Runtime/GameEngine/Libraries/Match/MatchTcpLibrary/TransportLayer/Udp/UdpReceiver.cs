@@ -1,47 +1,40 @@
+#nullable enable
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace MatchTcpLibrary.TransportLayer.Udp
 {
     public class UdpReceiver
     {
+        private CancellationTokenSource? _cts;
         private readonly UdpClient _udpClient;
-        private readonly Thread _readThread;
 
-        public event Action OnReceivingStopped;
-        public event Action<byte[], IPEndPoint, DateTime> DataReceived;
+        public event Action? ReceivingStopped;
+        public event Action<byte[], IPEndPoint, DateTime>? DataReceived;
 
-        public UdpReceiver(UdpClient udpClient)
+        public UdpReceiver(UdpClient udpClient) => _udpClient = udpClient;
+
+        public async UniTaskVoid StartReceiving()
         {
-            _udpClient = udpClient;
-            _readThread = new Thread(Receive);
-        }
-
-        public void StartReceiving()
-        {
-            _readThread.Start();
-        }
-
-        private void Receive()
-        {
-            while (true)
-            {
+            _cts = new CancellationTokenSource();
+            while (!_cts.IsCancellationRequested)
                 try
                 {
-                    IPEndPoint remoteEndPoint = null;
-                    var buffer = _udpClient.Receive(ref remoteEndPoint);
+                    var result = await _udpClient.ReceiveAsync().AsUniTask();
                     var receiveTime = DateTime.UtcNow;
-                    DataReceived?.Invoke(buffer, remoteEndPoint, receiveTime);
+                    DataReceived?.Invoke(result.Buffer, result.RemoteEndPoint, receiveTime);
                 }
                 catch (Exception)
                 {
                     break;
                 }
-            }
 
-            OnReceivingStopped?.Invoke();
+            ReceivingStopped?.Invoke();
         }
+
+        public void StopReceiving() => _cts.Cancel();
     }
 }

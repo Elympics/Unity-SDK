@@ -11,7 +11,8 @@
         "GameEngineCore",
         "UnityConnectors",
         "Elympics.Core",
-        "Elympics.WebRtc.Common"
+        "Elympics.WebRtc.Common",
+        "Elympics.MatchConnection"
     ],
     "includePlatforms": [],
     "excludePlatforms": [

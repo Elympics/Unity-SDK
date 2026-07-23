@@ -1,6 +1,8 @@
 using System;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
+
 namespace Elympics
 {
     internal abstract class AuthorizationStrategy
@@ -24,7 +26,7 @@ namespace Elympics
                 throw new ArgumentException($"{nameof(data)} cannot be null.");
 
             var cachedData = data.Value.CachedData;
-            ElympicsLogger.Log($"Starting cached {cachedData.AuthType} authentication...");
+            ElympicsLogger.LogInfo($"Starting cached {cachedData.AuthType} authentication...");
 
             try
             {

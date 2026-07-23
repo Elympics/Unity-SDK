@@ -1,21 +1,18 @@
+#nullable enable
+
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Lobby;
-
-#nullable enable
 
 namespace Elympics
 {
     internal abstract class ConnectionStrategy
     {
         private readonly WebSocketSession _webSocketSession;
-        protected readonly ElympicsLoggerContext Logger;
-        protected ConnectionStrategy(WebSocketSession webSocketSession, ElympicsLoggerContext logger)
-        {
-            _webSocketSession = webSocketSession;
-            Logger = logger;
-        }
+        protected readonly LoggerConfig Logger = ElympicsLogger.WithElympicsSdkService()
+            .WithMonitoringEnabled();
+        protected ConnectionStrategy(WebSocketSession webSocketSession) => _webSocketSession = webSocketSession;
 
         /// <summary>
         /// Connects to lobby services, performing a handshake for exchanging client-side and server-side game details.

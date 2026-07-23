@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -15,7 +16,7 @@ namespace Elympics.Tests.Runtime.Snapshots
             var inputData = new Dictionary<int, TickToPlayerInput> { { 0, default } };
             var snapshot = new ElympicsSnapshot(
                 tick: 42,
-                tickStartUtc: System.DateTime.UtcNow,
+                tickStartUtc: DateTime.UtcNow,
                 factory: new FactoryState(new Dictionary<int, FactoryPartState>
                 {
                     { 0, new FactoryPartState(0, new DynamicElympicsBehaviourInstancesDataState(0, new Dictionary<int, DynamicElympicsBehaviourInstanceData>())) }
@@ -28,7 +29,7 @@ namespace Elympics.Tests.Runtime.Snapshots
 
             // Assert
             Assert.That(snapshot.Tick, Is.EqualTo(-1));
-            Assert.That(snapshot.TickStartUtc, Is.EqualTo(default(System.DateTime)));
+            Assert.That(snapshot.TickStartUtc, Is.EqualTo(default(DateTime)));
             Assert.That(snapshot.Data.Count, Is.EqualTo(0));
             Assert.That(snapshot.Factory.Parts.Count, Is.EqualTo(0));
             Assert.That(snapshot.TickToPlayersInputData.Count, Is.EqualTo(0));
@@ -40,7 +41,7 @@ namespace Elympics.Tests.Runtime.Snapshots
             // Arrange
             var snapshot = new ElympicsSnapshot(
                 tick: 10,
-                tickStartUtc: System.DateTime.UtcNow,
+                tickStartUtc: DateTime.UtcNow,
                 factory: new FactoryState(new Dictionary<int, FactoryPartState>()),
                 data: null,
                 tickToPlayersInputData: null);

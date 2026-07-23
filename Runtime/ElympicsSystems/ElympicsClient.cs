@@ -5,8 +5,8 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.AssemblyCommunicator;
 using Elympics.AssemblyCommunicator.Events;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -35,7 +35,7 @@ namespace Elympics
         private volatile bool _wasEverStarted;
         private volatile bool _reconnectResetPending;
         private Action? _onAuthenticatedAsSpectator;
-        private ClientTickCalculatorNetworkDetailsToFile _logToFile;
+        private ClientTickCalculatorNetworkDetailsToFile? _logToFile;
         internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
         private IMatchClient _matchClient;
@@ -63,7 +63,9 @@ namespace Elympics
 
         protected override double MaxUpdateTimeWarningThreshold => 1 / Config.MaxTickRate;
 
-        private readonly ElympicsLoggerContext _logger = ElympicsLogger.CurrentContext.WithContext(nameof(ElympicsClient));
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(ElympicsClient))
+            .WithMonitoringEnabled();
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -103,16 +105,15 @@ namespace Elympics
             {
                 await UniTask.Yield();
                 await ConnectAndJoinAsPlayerAsync(CancellationToken.None);
-                logger.Log("Successfully connected to the game server.");
+                logger.LogInfo("Successfully connected to the game server.");
             }
             catch (OperationCanceledException)
             {
-                logger.Log("Connect and join was cancelled.");
+                logger.LogInfo("Connect and join was cancelled.");
             }
             catch (Exception e)
             {
-                logger.Error("Could not connect to the game server.");
-                _ = ElympicsLogger.LogException(e);
+                logger.LogException(new ElympicsException("Could not connect to the game server.", e));
             }
         }
 
@@ -185,7 +186,7 @@ namespace Elympics
                 _matchClient.Dispose();
             }
 
-            _logToFile.DeInit();
+            _logToFile?.DeInit();
         }
 
         private void OnSnapshotReceived(ElympicsSnapshot elympicsSnapshot)
@@ -242,7 +243,7 @@ namespace Elympics
         private void ResetForReconnect()
         {
             var log = _logger.WithMethodName();
-            log.Log("Resetting for reconnect...");
+            log.LogInfo("Resetting for reconnect...");
 
             ElympicsBehavioursManager.DestroyAllDynamicInstances();
             ElympicsBehavioursManager.ResetWorldAndReRegisterSceneObjects();
@@ -266,7 +267,7 @@ namespace Elympics
             ResetRpcQueues();
             ResetTimer();
 
-            log.Log("Reconnect reset complete.");
+            log.LogInfo("Reconnect reset complete.");
         }
 
         protected override bool ShouldDoElympicsUpdate() => Initialized && _started;
@@ -328,11 +329,9 @@ namespace Elympics
 
             SendQueuedRpcMessages();
 
+            LogNetworkConditionsInInterval();
             if (Config.DetailedNetworkLog)
-            {
-                LogNetworkConditionsInInterval();
-                _logToFile.LogNetworkDetailsToFile(_clientTickCalculator.Results);
-            }
+                _logToFile?.LogNetworkDetailsToFile(_clientTickCalculator.Results);
         }
 
         protected override void ElympicsRenderUpdate(in RenderData renderData) => ElympicsBehavioursManager.Render(renderData);
@@ -346,7 +345,8 @@ namespace Elympics
             {
                 if (_currentTicksWithoutPrediction >= PredictionBlockedThreshold)
                 {
-                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+                    ElympicsLogger.LogWarning($"Prediction unblocked after {_currentTicksWithoutPrediction} ticks. "
+                        + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
                     PredictionStateChanged(false, _clientTickCalculator.Results);
                 }
 
@@ -357,20 +357,27 @@ namespace Elympics
             if (++_currentTicksWithoutPrediction != PredictionBlockedThreshold)
                 return;
 
-            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. " + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
+            ElympicsLogger.LogWarning("Prediction is blocked, probably due to a lag spike. "
+                + $"Check your Internet connection. Current RTT: {rttMs} ms, LCO: {lcoMs} ms");
             PredictionStateChanged(true, _clientTickCalculator.Results);
         }
 
         private void LogNetworkConditionsInInterval()
         {
-            if (!_lastClientPrintNetworkConditions.HasValue)
-                _lastClientPrintNetworkConditions = TickStartUtc;
-
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
+            _lastClientPrintNetworkConditions ??= TickStartUtc;
             if (!((TickStartUtc - _lastClientPrintNetworkConditions.Value).TotalSeconds > networkConditionsLogInterval))
                 return;
-
-            ElympicsLogger.Log(_clientTickCalculator.Results.ToString());
+            var message = _clientTickCalculator.Results.ToString();
+            var networkConditions = _clientTickCalculator.Results.ToJson();
             _lastClientPrintNetworkConditions = TickStartUtc;
+            ElympicsLogger.WithMonitoringEnabled()
+                .WithConsoleDisabled()
+                .WithExtraContextEntry(nameof(networkConditions), networkConditions)
+                .LogDebug(message);
+            if (Config.DetailedNetworkLog)
+                ElympicsLogger.LogInfo(message);
         }
 
         private void ProcessSnapshot(long predictionTick)
@@ -433,7 +440,7 @@ namespace Elympics
             {
                 case false when !_predictionBuffer.TryGetSnapshotFromBuffer(receivedSnapshot.Tick, out historySnapshot):
                     _logger.WithMethodName()
-                        .Warning(
+                        .LogWarning(
                             $"Snapshot for {receivedSnapshot.Tick} was already dropped from the prediction buffer. Skipping reconciliation check.\nPrediction buffer size: {Config.PredictionBufferSize}\nTotal prediction limit: {Config.TotalPredictionLimitInTicks}.");
                     return ReconciliationResult.None;
                 case false
@@ -447,7 +454,7 @@ namespace Elympics
                     historySnapshot = receivedSnapshot;
                     newSnapshot = receivedSnapshot;
                     _previousTick = receivedSnapshot.Tick;
-                    _logger.WithMethodName().Warning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
+                    _logger.WithMethodName().LogWarning($"Forcing reconciliation to tick {receivedSnapshot.Tick} as it is higher than current tick {Tick}.");
                     break;
                 default:
                     newSnapshot = receivedSnapshot;

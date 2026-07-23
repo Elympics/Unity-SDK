@@ -11,7 +11,6 @@ using Elympics.Communication.Authentication.Models.Internal;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
@@ -414,7 +413,7 @@ namespace Elympics.Tests.Rooms
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
-            var roomsManager = new RoomsManager(null!, roomClientMock, new ElympicsLoggerContext(Guid.Empty), null);
+            var roomsManager = new RoomsManager(null!, roomClientMock, null);
             var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
             await room.Leave();
             Assert.IsFalse(room.IsJoined);
@@ -443,7 +442,7 @@ namespace Elympics.Tests.Rooms
                 }).Forget();
                 return UniTask.FromResult(RoomId);
             });
-            var roomsManager = new RoomsManager(null!, roomClientMock, new ElympicsLoggerContext(Guid.Empty), null);
+            var roomsManager = new RoomsManager(null!, roomClientMock, null);
             var room = await roomsManager.CreateAndJoinRoom("roonMane", "testQueue", true, false);
             await room.Leave();
             Assert.IsTrue(room.IsDisposed);

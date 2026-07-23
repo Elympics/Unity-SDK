@@ -1,4 +1,5 @@
 using Elympics.Public;
+
 namespace Elympics
 {
     public interface IUpdatable : IObservable

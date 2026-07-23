@@ -13,6 +13,7 @@ using Elympics.Communication.Lobby.InternalModels.ToLobby;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
+using Elympics.Core.Logger;
 using Elympics.Rooms.Models;
 using HybridWebSocket;
 using MessagePack;
@@ -46,7 +47,7 @@ namespace Elympics
             {
                 var data = (byte[])x[0];
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
-                ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                ElympicsLogger.LogInfo($"[MOCK] Received message type {msg.GetType().Name}");
                 try
                 {
 #pragma warning disable IDE0010
@@ -210,7 +211,7 @@ namespace Elympics
                             }
                             catch (OperationCanceledException)
                             {
-                                ElympicsLogger.Log($"[MOCK] Canceled matchmaking.");
+                                ElympicsLogger.LogInfo($"[MOCK] Canceled matchmaking.");
                             }
 
                             break;
@@ -292,7 +293,7 @@ namespace Elympics
                 {
                     case ShowAuthDto showAuth:
                     {
-                        ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                        ElympicsLogger.LogInfo($"[MOCK] Received message type {msg.GetType().Name}");
                         SendSuccessResponse(ws, showAuth);
                         SendResponseInternal(ws, new ShowAuthResponseDto(string.Empty, string.Empty, showAuth.OperationId, new ElympicsUserDTO(userId.ToString(), nickname, nameof(NicknameType.Common), avatarUrl)));
                         break;
@@ -318,7 +319,7 @@ namespace Elympics
             {
                 var data = (byte[])x[0];
                 var msg = MessagePackSerializer.Deserialize<IToLobby>(data);
-                ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                ElympicsLogger.LogInfo($"[MOCK] Received message type {msg.GetType().Name}");
                 try
                 {
                     switch (msg)
@@ -373,7 +374,7 @@ namespace Elympics
                     {
                         case JoinLobbyDto joinLobby:
                         {
-                            ElympicsLogger.Log($"[MOCK] Received message type {msg.GetType().Name}");
+                            ElympicsLogger.LogInfo($"[MOCK] Received message type {msg.GetType().Name}");
                             SendSuccessResponse(webSocket, joinLobby);
                             var gameResponse = new GameDataResponseDto(createInitialRoom ? 1 : 0, new List<RoomCoinDto>(), string.Empty, string.Empty, joinLobby.OperationId);
                             SendResponse(webSocket, gameResponse);
@@ -470,10 +471,10 @@ namespace Elympics
 
         public static IWebSocket SetupErrorOnConnectBehaviour(this IWebSocket webSocket, string errorMsg)
         {
-            ElympicsLogger.Log("Register SetupErrorOnConnectBehaviour");
+            ElympicsLogger.LogInfo("Register SetupErrorOnConnectBehaviour");
             webSocket.When(x => x.Connect()).Do(async _ =>
             {
-                ElympicsLogger.Log("[MOCK] Error Connect called");
+                ElympicsLogger.LogInfo("[MOCK] Error Connect called");
                 webSocket.OnError += Raise.Event<WebSocketErrorEventHandler>(errorMsg);
             });
             ws = webSocket;
@@ -484,7 +485,7 @@ namespace Elympics
         {
             webSocket.When(x => x.Connect()).Do(async _ =>
             {
-                ElympicsLogger.Log("[MOCK] Close Connect called");
+                ElympicsLogger.LogInfo("[MOCK] Close Connect called");
                 ws.OnClose += Raise.Event<WebSocketCloseEventHandler>(WebSocketCloseCode.Abnormal, errorMsg);
             });
             ws = webSocket;
@@ -493,10 +494,10 @@ namespace Elympics
 
         public static IWebSocket SetupOpenCloseDefaultBehaviour(this IWebSocket webSocket)
         {
-            ElympicsLogger.Log("Register OpenCloseDefaultBehaviour");
+            ElympicsLogger.LogInfo("Register OpenCloseDefaultBehaviour");
             webSocket.When(x => x.Connect()).Do(async _ =>
             {
-                ElympicsLogger.Log("[MOCK] Connect called");
+                ElympicsLogger.LogInfo("[MOCK] Connect called");
                 await UniTask.Delay(TimeSpan.FromSeconds(0.5), DelayType.Realtime);
                 webSocket.OnOpen += Raise.Event<WebSocketOpenEventHandler>();
             });
@@ -505,7 +506,7 @@ namespace Elympics
             {
                 var reason = (WebSocketCloseCode)info.Args()[0];
                 var details = (string)info.Args()[1];
-                ElympicsLogger.Log("[MOCK] Closed called");
+                ElympicsLogger.LogInfo("[MOCK] Closed called");
                 webSocket.OnClose += Raise.Event<WebSocketCloseEventHandler>(reason, details);
                 pingCts?.Cancel();
             });
@@ -622,13 +623,13 @@ namespace Elympics
             }
             catch (OperationCanceledException)
             {
-                ElympicsLogger.Log("[MOCK] Cancelling matchmaking simulation.");
+                ElympicsLogger.LogInfo("[MOCK] Cancelling matchmaking simulation.");
             }
         }
 
         private static void SetMatchmakingState(ref RoomStateChangedDto room, MatchmakingState newState)
         {
-            ElympicsLogger.Log($"[MOCK] Matchmaking state set to <color=green>{newState}</color>");
+            ElympicsLogger.LogInfo($"[MOCK] Matchmaking state set to <color=green>{newState}</color>");
             room = room with
             {
                 MatchmakingData = room.MatchmakingData! with
@@ -772,7 +773,7 @@ namespace Elympics
 
         private static void SendSuccessResponse(IWebSocket ws, LobbyOperation lobbyOperation, Guid? roomId = null)
         {
-            ElympicsLogger.Log($"[MOCK] Sending response success on {lobbyOperation.GetType().Name} OperationId: {lobbyOperation.OperationId}");
+            ElympicsLogger.LogInfo($"[MOCK] Sending response success on {lobbyOperation.GetType().Name} OperationId: {lobbyOperation.OperationId}");
             if (lobbyOperation is CreateRoomDto or JoinWithJoinCodeDto or JoinWithRoomIdDto)
                 SendResponseInternal(ws, new RoomOperationResultDto(lobbyOperation.OperationId, roomId!.Value));
             else
@@ -787,7 +788,7 @@ namespace Elympics
             Guid? roomId = null,
             string? details = null)
         {
-            ElympicsLogger.Log($"[MOCK] Sending response fail on {lobbyOperation.GetType().Name} with {blame}, {kind}, {details}");
+            ElympicsLogger.LogInfo($"[MOCK] Sending response fail on {lobbyOperation.GetType().Name} with {blame}, {kind}, {details}");
             if (lobbyOperation is CreateRoomDto or JoinWithJoinCodeDto or JoinWithRoomIdDto)
                 SendResponseInternal(ws, new RoomOperationResultDto(lobbyOperation.OperationId, blame.Map(), kind.Map(), details, roomId!.Value));
             else
@@ -796,7 +797,7 @@ namespace Elympics
 
         private static void SendResponse(IWebSocket ws, IFromLobby fromLobby)
         {
-            ElympicsLogger.Log($"[MOCK] Sending {fromLobby.GetType().Name}");
+            ElympicsLogger.LogInfo($"[MOCK] Sending {fromLobby.GetType().Name}");
             SendResponseInternal(ws, fromLobby);
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.ElympicsSystems.Internal;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
@@ -114,9 +115,9 @@ namespace Elympics
         [Obsolete]
         public void RejoinLastOnlineMatch(bool loadGameplaySceneOnFinished = true, CancellationToken ct = default)
         {
-            ElympicsLogger.Log("Rejoining last Online game...");
+            ElympicsLogger.LogInfo("Rejoining last Online game...");
             if (loadGameplaySceneOnFinished)
-                ElympicsLogger.Log("Gameplay scene will be loaded after rejoining succeeds.");
+                ElympicsLogger.LogInfo("Gameplay scene will be loaded after rejoining succeeds.");
 
             if (!CanJoinMatch())
                 return;
@@ -183,18 +184,18 @@ namespace Elympics
 
         private void HandleMatchmakingSucceeded(MatchmakingFinishedData matchData)
         {
-            ElympicsLogger.Log("Matchmaking finished successfully.");
+            ElympicsLogger.LogInfo("Matchmaking finished successfully.");
             MatchDataGuid = matchData;
             CleanUpAfterMatchmaking();
             if (ShouldLoadGameplaySceneAfterMatchmaking)
                 LoadGameplayScene();
         }
 
-        private static void HandleMatchIdReceived(Guid matchId) => ElympicsLogger.Log($"Received match ID: {matchId}.");
+        private static void HandleMatchIdReceived(Guid matchId) => ElympicsLogger.LogInfo($"Received match ID: {matchId}.");
 
         private void HandleMatchmakingCancelled(Guid _)
         {
-            ElympicsLogger.Log("Matchmaking cancelled.");
+            ElympicsLogger.LogInfo("Matchmaking cancelled.");
             CleanUpAfterMatchmaking();
         }
 

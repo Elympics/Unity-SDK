@@ -11,7 +11,7 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
 using Elympics.Communication.Utils;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Lobby;
 using Elympics.Lobby.Serializers;
 using Elympics.Models.Authentication;
@@ -74,7 +74,7 @@ namespace Elympics.Tests
         private static WebSocketSession CreateDefaultWebSocketSession()
         {
             _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, AuthData.UserId, AuthData.Nickname, null);
-            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
             return session;
         }
 
@@ -121,7 +121,7 @@ namespace Elympics.Tests
             using var cts = new CancellationTokenSource();
             WebSocketMock.ClearSubstitute();
             WebSocketMock.When(x => x.Connect()).Do(_ => cts.Cancel());
-            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
             var canceled = await session.Connect(ConnectionDetails, cts.Token).SuppressCancellationThrow();
 
             Assert.True(canceled.IsCanceled);
@@ -134,7 +134,7 @@ namespace Elympics.Tests
             using var cts = new CancellationTokenSource();
             _ = WebSocketMock.SetupOpenCloseDefaultBehaviour();
             WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(_ => cts.Cancel());
-            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
             _ = await AssertThrowsAsync<OperationCanceledException>(async () => await session.Connect(ConnectionDetails, cts.Token));
 
             Assert.False(session.IsConnected);
@@ -145,7 +145,7 @@ namespace Elympics.Tests
         {
             const string errorMessage = "test error message";
             _ = WebSocketMock.SetupErrorOnConnectBehaviour(errorMessage).SetupJoinLobby(false, AuthData.UserId, AuthData.Nickname, null);
-            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
 
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
@@ -157,7 +157,7 @@ namespace Elympics.Tests
         {
             const string errorMessage = "test error message";
             _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupOnErrorJoinLobby(errorMessage);
-            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
 
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
@@ -181,7 +181,7 @@ namespace Elympics.Tests
         {
             const string errorMessage = "test error message";
             _ = WebSocketMock.SetupCloseOnConnectBehaviour(errorMessage);
-            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
             Assert.False(session.IsConnected);
@@ -192,7 +192,7 @@ namespace Elympics.Tests
         {
             const string errorMessage = "test error message";
             _ = WebSocketMock.SetupOpenCloseDefaultBehaviour().SetupOnCloseJoinLobby(errorMessage);
-            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, new ElympicsLoggerContext(Guid.Empty), (_, _) => WebSocketMock, LobbySerializer);
+            using var session = new WebSocketSession(Substitute.For<IWebSocketSessionController>(), Dispatcher, (_, _) => WebSocketMock, LobbySerializer);
 
             _ = await AssertThrowsAsync<LobbyOperationException>(async () => await session.Connect(ConnectionDetails).SuppressCancellationThrow());
             LogAssert.Expect(LogType.Error, new Regex($".*{errorMessage}.*"));
@@ -294,7 +294,8 @@ namespace Elympics.Tests
             using var session = CreateDefaultWebSocketSession();
             var operation = new UnknownOperation();
             WebSocketMock.When(x => x.Send(Arg.Any<byte[]>())).Do(x => Assert.Fail("Operation has been sent."));
-            _ = await AssertThrowsAsync<ElympicsException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
+            LogAssert.Expect(LogType.Exception, new Regex("Cannot send message before establishing"));
+            _ = await AssertThrowsAsync<InvalidOperationException>(UniTask.Create(async () => await session.ExecuteOperation(operation)));
         });
 
         [UnityTest]
@@ -372,8 +373,9 @@ namespace Elympics.Tests
 
             session.Dispose();
 
+            LogAssert.Expect(LogType.Exception, new Regex("disposed object"));
             Assert.False(session.IsConnected);
-            _ = await AssertThrowsAsync<ElympicsException>(async () => await session.Connect(ConnectionDetails));
+            _ = await AssertThrowsAsync<ObjectDisposedException>(async () => await session.Connect(ConnectionDetails));
             _ = Assert.Throws<ObjectDisposedException>(() => session.Disconnect(DisconnectionReason.ApplicationShutdown));
             _ = await AssertThrowsAsync<ObjectDisposedException>(UniTask.Create(async () => await session.ExecuteOperation(new LeaveRoomDto(new Guid(1, 2, 3, Enumerable.Repeat<byte>(0, 8).ToArray())))));
         });
@@ -444,7 +446,7 @@ namespace Elympics.Tests
         [TearDown]
         public void CleanUp()
         {
-            ElympicsLogger.Log($"{nameof(TestWebSocketSession)} Cleanup");
+            ElympicsLogger.LogInfo($"{nameof(TestWebSocketSession)} Cleanup");
             WebSocketMock.ClearSubstitute();
             cts.Cancel();
             ElympicsTimeout.WebSocketOpeningTimeout = DefaultOpeningTimeout;

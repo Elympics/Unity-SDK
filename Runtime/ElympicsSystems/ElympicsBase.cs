@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using Elympics.Core;
+using Elympics.Core.Logger;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 
@@ -46,18 +47,18 @@ namespace Elympics
         protected void SetInitialized()
         {
             Initialized = true;
-            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsBase)} ({GetType().Name}) initialized successfully for player ID: {Player}");
         }
 
         protected void SetDeInitialized()
         {
             Initialized = false;
-            ElympicsLogger.Log($"{nameof(ElympicsBase)} ({GetType().Name}) DeInitialized for player ID: {Player}");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsBase)} ({GetType().Name}) DeInitialized for player ID: {Player}");
         }
 
         internal void InitializeInternal(ElympicsGameConfig elympicsGameConfig, ElympicsBehavioursManager elympicsBehavioursManager)
         {
-            ElympicsLogger.Log($"Initializing {nameof(ElympicsBase)} ({GetType().Name})...");
+            ElympicsLogger.LogInfo($"Initializing {nameof(ElympicsBase)} ({GetType().Name})...");
             ElympicsBehavioursManager = elympicsBehavioursManager;
             Config = elympicsGameConfig;
             ElympicsUpdateDuration = TickDuration;
@@ -81,31 +82,31 @@ namespace Elympics
 
             var currentUtc = DateTime.UtcNow;
             _timer += CalculateDeltaBasedOnUtcNow(currentUtc);
+
+            _elympicsUpdateStopwatch.Stop();
+            LogFixedUpdateThrottle();
+
             var elympicsUpdateCalled = false;
             while (_timer >= ElympicsUpdateDuration)
             {
                 _timer -= ElympicsUpdateDuration;
 
-                _elympicsUpdateStopwatch.Stop();
-                if (Config.DetailedNetworkLog)
-                    LogFixedUpdateThrottle();
                 _elympicsUpdateStopwatch.Reset();
                 _elympicsUpdateStopwatch.Start();
 
-                // Calculate ideal tick start time based on whats left in timer
+                // Calculate ideal tick start time based on what's left in timer
                 TickStartUtc = currentUtc.Subtract(TimeSpan.FromSeconds(_timer));
                 ElympicsFixedUpdate();
 
                 _elympicsUpdateStopwatch.Stop();
                 TickEndUtc = TickStartUtc + _elympicsUpdateStopwatch.Elapsed;
-                if (Config.DetailedNetworkLog)
-                    LogElympicsTickThrottle();
+                LogElympicsTickThrottle();
 
                 ElympicsLateFixedUpdate();
                 elympicsUpdateCalled = true;
             }
             var alpha = _timer / ElympicsUpdateDuration;
-            var renderData = new RenderData()
+            var renderData = new RenderData
             {
                 Alpha = Convert.ToSingle(alpha),
                 FirstFrame = elympicsUpdateCalled
@@ -162,27 +163,109 @@ namespace Elympics
             }
         }
 
-        private void LogFixedUpdateThrottle()
+        [Serializable]
+        private struct FixedUpdateThrottle
         {
-            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
-                ElympicsLogger.LogError(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190));
-            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
-                ElympicsLogger.LogWarning(GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120));
+            public long tick;
+            public float tickDurationMs;
+            public float dynamicTickDurationMs;
+            public float totalFixedUpdateMs;
+            public float totalFixedUpdatePercent;
+            public int percentThreshold;
         }
 
-        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent) =>
-            $"Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private void LogFixedUpdateThrottle()
+        {
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
+            if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.9)
+            {
+                var message = GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 190, out var fixedUpdateThrottle);
+                if (Config.DetailedNetworkLog)
+                    ElympicsLogger.LogError(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .WithExtraContextEntry(nameof(fixedUpdateThrottle), JsonUtility.ToJson(fixedUpdateThrottle))
+                    .LogDebug(message);
+            }
+            else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 1.2)
+            {
+                var message = GetFixedUpdateThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 120, out var fixedUpdateThrottle);
+                if (Config.DetailedNetworkLog)
+                    ElympicsLogger.LogWarning(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .WithExtraContextEntry(nameof(fixedUpdateThrottle), JsonUtility.ToJson(fixedUpdateThrottle))
+                    .LogDebug(message);
+            }
+        }
+
+        private string GetFixedUpdateThrottleMessage(double elapsedMs, int percent, out FixedUpdateThrottle fixedUpdateThrottle)
+        {
+            var tickDurationMs = Config.TickDuration * 1000;
+            var dynamicTickDurationMs = (float)MaxUpdateTimeWarningThreshold * 1000;
+            fixedUpdateThrottle = new FixedUpdateThrottle
+            {
+                tick = Tick,
+                tickDurationMs = tickDurationMs,
+                dynamicTickDurationMs = dynamicTickDurationMs,
+                totalFixedUpdateMs = (float)elapsedMs,
+                totalFixedUpdatePercent = (float)(elapsedMs / dynamicTickDurationMs),
+                percentThreshold = percent,
+            };
+            return $"Throttle on tick {Tick}! Total fixed update time {elapsedMs:F} ms, more than {percent}% time of {tickDurationMs:F} ms tick";
+        }
+
+        [Serializable]
+        private struct TickThrottle
+        {
+            public long tick;
+            public float tickDurationMs;
+            public float dynamicTickDurationMs;
+            public float actualTickDurationMs;
+            public float actualTickDurationPercent;
+            public int percentThreshold;
+        }
 
         private void LogElympicsTickThrottle()
         {
+            if (!ScriptingSymbols.IsElympicsDebug && !Config.DetailedNetworkLog)
+                return;
             if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold)
-                ElympicsLogger.LogError(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100));
+            {
+                var message = GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 100, out var tickThrottle);
+                ElympicsLogger.LogError(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .WithExtraContextEntry(nameof(tickThrottle), JsonUtility.ToJson(tickThrottle))
+                    .LogDebug(message);
+            }
             else if (_elympicsUpdateStopwatch.Elapsed.TotalSeconds > MaxUpdateTimeWarningThreshold * 0.66)
-                ElympicsLogger.LogWarning(GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66));
+            {
+                var message = GetElympicsTickThrottleMessage(_elympicsUpdateStopwatch.Elapsed.TotalMilliseconds, 66, out var tickThrottle);
+                ElympicsLogger.LogWarning(message);
+                ElympicsLogger.WithMonitoringEnabled()
+                    .WithConsoleDisabled()
+                    .WithExtraContextEntry(nameof(tickThrottle), JsonUtility.ToJson(tickThrottle))
+                    .LogDebug(message);
+            }
         }
 
-        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent) =>
-            $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {Config.TickDuration * 1000:F} ms tick";
+        private string GetElympicsTickThrottleMessage(double elapsedMs, int percent, out TickThrottle tickThrottle)
+        {
+            var tickDurationMs = Config.TickDuration * 1000;
+            var dynamicTickDurationMs = (float)MaxUpdateTimeWarningThreshold * 1000;
+            tickThrottle = new TickThrottle
+            {
+                tick = Tick,
+                tickDurationMs = tickDurationMs,
+                dynamicTickDurationMs = dynamicTickDurationMs,
+                actualTickDurationMs = (float)elapsedMs,
+                actualTickDurationPercent = (float)(elapsedMs / dynamicTickDurationMs),
+                percentThreshold = percent,
+            };
+            return $"Throttle on tick {Tick}! Total elympics tick time {elapsedMs:F} ms, more than {percent}% time of {tickDurationMs:F} ms tick";
+        }
 
         public bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour) =>
             ElympicsBehavioursManager.TryGetBehaviour(networkId, out elympicsBehaviour);
@@ -298,12 +381,12 @@ namespace Elympics
             }
             catch (OperationCanceledException)
             {
-                ElympicsLogger.Log("Connect and join was cancelled.");
+                ElympicsLogger.LogInfo("Connect and join was cancelled.");
                 callback?.Invoke(false);
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
                 callback?.Invoke(false);
             }
         }

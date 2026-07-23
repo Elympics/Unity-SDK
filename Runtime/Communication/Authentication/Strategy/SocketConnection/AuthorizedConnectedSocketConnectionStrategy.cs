@@ -1,9 +1,9 @@
+#nullable enable
+
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Lobby;
-
-#nullable enable
 
 namespace Elympics
 {
@@ -11,7 +11,7 @@ namespace Elympics
     {
         private readonly SessionConnectionDetails _currentSession;
 
-        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession, ElympicsLoggerContext logger) : base(webSocketSession, logger) =>
+        public AuthorizedConnectedSocketConnectionStrategy(WebSocketSession webSocketSession, SessionConnectionDetails currentSession) : base(webSocketSession) =>
             _currentSession = currentSession;
 
         public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)

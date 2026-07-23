@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Elympics.Core.Logger;
 using Elympics.Editor;
 using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
@@ -129,7 +130,7 @@ namespace Elympics
 
         private static UnityWebRequestAsyncOperation Login(string username, string password, Action<UnityWebRequest> completed = null)
         {
-            ElympicsLogger.Log($"Logging in as {username}");
+            ElympicsLogger.LogInfo($"Logging in as {username}");
 
             var model = new LoginModel
             {
@@ -144,14 +145,14 @@ namespace Elympics
 
         private static void LoginHandler(UnityWebRequest webRequest)
         {
-            ElympicsLogger.Log($"Received authentication token.\nResponse code: {webRequest.responseCode}.");
+            ElympicsLogger.LogInfo($"Received authentication token.\nResponse code: {webRequest.responseCode}.");
             if (TryDeserializeResponse(webRequest, "Login", out LoggedInTokenResponseModel responseModel))
             {
                 try
                 {
                     var authToken = responseModel.AuthToken;
 
-                    ElympicsLogger.Log($"Logged to ElympicsWeb as {responseModel.UserName}.");
+                    ElympicsLogger.LogInfo($"Logged to ElympicsWeb as {responseModel.UserName}.");
                     ElympicsConfig.AuthToken = authToken;
                     ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
                     ElympicsConfig.RefreshToken = responseModel.RefreshToken;
@@ -159,7 +160,7 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
-                    _ = ElympicsLogger.LogException(e);
+                    ElympicsLogger.LogException(e);
                 }
             }
         }
@@ -176,7 +177,7 @@ namespace Elympics
 
         internal static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
         {
-            ElympicsLogger.Log("Getting available regions...");
+            ElympicsLogger.LogInfo("Getting available regions...");
 
             var uri = string.IsNullOrEmpty(gameId) ? Config.ElympicsAvailableRegionsUrl : Config.GameAvailableRegionsUrl(gameId);
 
@@ -242,7 +243,7 @@ namespace Elympics
 
         public static void GetGames(Action<List<GameResponseModel>> updateProperty)
         {
-            ElympicsLogger.Log("Getting available games...");
+            ElympicsLogger.LogInfo("Getting available games...");
 
             CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
 
@@ -263,7 +264,7 @@ namespace Elympics
 
         private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
         {
-            ElympicsLogger.Log($"Received available games.\nResponse code: {webRequest.responseCode}.");
+            ElympicsLogger.LogInfo($"Received available games.\nResponse code: {webRequest.responseCode}.");
             if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
                 return;
 
@@ -272,7 +273,7 @@ namespace Elympics
 
         private static void GetAvailableRegionsHandler(Action<List<RegionResponseModel>> updateProperty, UnityWebRequest webRequest, Action onFailure)
         {
-            ElympicsLogger.Log($"Received available regions.\nResponse code: {webRequest.responseCode}.");
+            ElympicsLogger.LogInfo($"Received available regions.\nResponse code: {webRequest.responseCode}.");
             if (TryDeserializeResponse(webRequest, "GetAvailableRegions", out AvailableRegionsResponseModel availableRegions))
             {
                 updateProperty?.Invoke(availableRegions.Regions.ToList());
@@ -299,7 +300,7 @@ namespace Elympics
                     if (TryDeserializeResponse(webRequest, "Get Elympics Endpoints", out ElympicsEndpointsModel endpoints))
                     {
                         updateProperty.Invoke(endpoints);
-                        ElympicsLogger.Log($"Elympics endpoints have been set to: {endpoints.Lobby}, {endpoints.GameServers}.");
+                        ElympicsLogger.LogInfo($"Elympics endpoints have been set to: {endpoints.Lobby}, {endpoints.GameServers}.");
                     }
                 }
             }
@@ -490,7 +491,7 @@ namespace Elympics
 
                 _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, true);
 
-                ElympicsLogger.Log("Client build uploaded successfully.");
+                ElympicsLogger.LogInfo("Client build uploaded successfully.");
                 EditorUtility.ClearProgressBar();
             }
 
@@ -505,7 +506,7 @@ namespace Elympics
             void FailWithException(Exception exception)
             {
                 EditorUtility.ClearProgressBar();
-                _ = ElympicsLogger.LogException(exception);
+                ElympicsLogger.LogException(exception);
                 if (!Application.isBatchMode)
                     _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{exception.Message}", "OK");
             }
@@ -551,7 +552,7 @@ namespace Elympics
             if (completeOp.webRequest.IsConnectionError() || completeOp.webRequest.IsProtocolError())
                 throw new ElympicsException($"Failed to complete client build upload: {completeOp.webRequest.error}");
 
-            ElympicsLogger.Log("Client build uploaded successfully.");
+            ElympicsLogger.LogInfo("Client build uploaded successfully.");
         }
 
         private static void HandleUploadResults(ElympicsGameConfig currentGameConfig, UnityWebRequest webRequest)
@@ -564,7 +565,7 @@ namespace Elympics
                 throw new ElympicsException(errorMessage);
             }
 
-            ElympicsLogger.Log($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}.");
+            ElympicsLogger.LogInfo($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}.");
         }
 
         [UsedImplicitly]
@@ -634,7 +635,7 @@ namespace Elympics
             _ = Directory.CreateDirectory(destinationDirectoryPath);
             try
             {
-                ElympicsLogger.Log($"Trying to pack {targetSubdirectory}...");
+                ElympicsLogger.LogInfo($"Trying to pack {targetSubdirectory}...");
                 if (File.Exists(destinationFilePath))
                     File.Delete(destinationFilePath);
                 _ = Directory.CreateDirectory(buildPath);
@@ -655,7 +656,7 @@ namespace Elympics
             if (string.IsNullOrEmpty(authTokenExpStr))
             {
                 SetAsLoggedOut();
-                _ = ElympicsLogger.LogException(new ElympicsException("Can't check auth token expiration time. Are you logged in?"));
+                ElympicsLogger.LogException(new ElympicsException("Can't check auth token expiration time. Are you logged in?"));
                 return;
             }
 
@@ -667,7 +668,7 @@ namespace Elympics
                 return;
             }
 
-            ElympicsLogger.Log("Auth token expired. Refreshing using refresh token...");
+            ElympicsLogger.LogInfo("Auth token expired. Refreshing using refresh token...");
             var refreshToken = ElympicsConfig.RefreshToken;
             _ = ElympicsEditorWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel { RefreshToken = refreshToken }, OnCompleted, false);
 
@@ -713,7 +714,7 @@ namespace Elympics
                 catch (JsonException e)
                 {
                     if (!silent)
-                        _ = ElympicsLogger.LogException(e);
+                        ElympicsLogger.LogException(e);
                     return false;
                 }
 
@@ -735,7 +736,7 @@ namespace Elympics
             catch (JsonException e)
             {
                 if (!silent)
-                    _ = ElympicsLogger.LogException(e);
+                    ElympicsLogger.LogException(e);
             }
 
             if (errorModel?.Errors == null

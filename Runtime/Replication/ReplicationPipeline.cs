@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 
 namespace Elympics.Replication
 {

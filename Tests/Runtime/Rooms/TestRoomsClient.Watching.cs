@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -8,8 +10,6 @@ using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;
 using UnityEngine.TestTools;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {

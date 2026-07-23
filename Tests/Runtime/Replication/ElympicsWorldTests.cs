@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Elympics.Replication;
 using NUnit.Framework;
@@ -36,14 +37,14 @@ namespace Elympics.Tests.Runtime.Replication
 
         private static ElympicsSnapshot CreateSnapshot(long tick, int entityCount)
         {
-            var data = new System.Collections.Generic.Dictionary<int, byte[]>();
+            var data = new Dictionary<int, byte[]>();
             for (var i = 0; i < entityCount; i++)
                 data[i] = new[] { (byte)i };
 
             return new ElympicsSnapshot(
                 tick,
                 DateTime.UtcNow,
-                new FactoryState(new System.Collections.Generic.Dictionary<int, FactoryPartState>()),
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
                 data,
                 null);
         }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Specialized;
 using System.Web;
-
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System.Runtime.InteropServices;
 #endif

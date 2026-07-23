@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Elympics.Core.Logger;
 using Elympics.Util;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace Elympics
                     return _elympicsBehaviour;
 
                 var missingComponentMessage = $"{GetType().Name} has no {nameof(ElympicsBehaviour)} component.";
-                ElympicsLogger.LogError(missingComponentMessage, this);
+                ElympicsLogger.WithUnityContext(this).LogError(missingComponentMessage);
                 throw new MissingComponentException(missingComponentMessage);
             }
         }
@@ -45,7 +46,7 @@ namespace Elympics
 
                 var elympicsBaseNullReferenceMessage = $"{nameof(ElympicsBehaviour)} in {gameObject.name} object "
                     + "has not been initialized yet. Check Script Execution Order!";
-                ElympicsLogger.LogError(elympicsBaseNullReferenceMessage, this);
+                ElympicsLogger.WithUnityContext(this).LogError(elympicsBaseNullReferenceMessage);
                 throw new UnassignedReferenceException(elympicsBaseNullReferenceMessage);
             }
         }

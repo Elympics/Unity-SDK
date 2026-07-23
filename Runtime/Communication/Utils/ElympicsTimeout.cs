@@ -1,4 +1,5 @@
 using System;
+
 namespace Elympics.Communication.Utils
 {
     internal static class ElympicsTimeout

@@ -8,7 +8,7 @@ using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.PublicModels;
 using Elympics.Communication.Utils;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Lobby;
 using Elympics.Models.Matchmaking;
 using Elympics.Rooms.Models;
@@ -76,7 +76,9 @@ namespace Elympics
         private readonly IMatchLauncher _matchLauncher;
         private readonly IRoomsClient _client;
         private readonly Guid _roomId;
-        private readonly ElympicsLoggerContext? _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsSdkService()
+            .WithClass(typeof(Room))
+            .WithMonitoringEnabled();
         private readonly RoomState _state;
         private readonly bool _isEphemeral;
         private Guid? LocalUserId => _client.SessionConnectionDetails.AuthData?.UserId;
@@ -88,12 +90,11 @@ namespace Elympics
             IRoomsClient client,
             Guid roomId,
             RoomStateChangedDto initialState,
-            bool isJoined = false,
-            ElympicsLoggerContext? logger = null) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral, logger)
+            bool isJoined = false) : this(matchLauncher, client, roomId, new RoomState(initialState), isJoined, initialState.IsEphemeral)
         { }
 
-        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState, ElympicsLoggerContext? logger = null)
-            : this(matchLauncher, client, roomId, new RoomState(initialState), logger: logger)
+        public Room(IMatchLauncher matchLauncher, IRoomsClient client, Guid roomId, PublicRoomState initialState)
+            : this(matchLauncher, client, roomId, new RoomState(initialState))
         { }
 
         private Room(
@@ -102,8 +103,7 @@ namespace Elympics
             Guid roomId,
             RoomState state,
             bool isJoined = false,
-            bool isEphemeral = false,
-            ElympicsLoggerContext? logger = null)
+            bool isEphemeral = false)
         {
             _matchLauncher = matchLauncher;
             _client = client;
@@ -113,7 +113,6 @@ namespace Elympics
             _roomStateChangeMonitorCts.Cancel();
             _isJoined = isJoined;
             _isEphemeral = isEphemeral;
-            _logger = logger?.WithContext($"{nameof(Room)}");
         }
 
         void IRoom.UpdateState(RoomStateChangedDto roomState, in RoomStateDiff stateDiff)
@@ -358,9 +357,9 @@ namespace Elympics
             if (await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, cts.Token).SuppressCancellationThrow())
             {
                 ct.ThrowIfCancellationRequested();
-                var logger = _logger?.WithMethodName();
+                var logger = _logger.WithMethodName();
                 var exception = new TimeoutException($"Room state has not been updated in time after {callerName} has been issued");
-                throw logger?.CaptureAndThrow(exception) ?? exception;
+                throw logger.LogExceptionAndReturn(exception);
             }
         }
     }

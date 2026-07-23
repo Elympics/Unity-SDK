@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using MatchTcpClients.Synchronizer;
 using MessagePack;
 using UnityConnectors.HalfRemote;
@@ -46,16 +47,16 @@ namespace Elympics
             _userId = userId;
 
             _client = client;
-            _client.ReliableReceivingError += ElympicsLogger.LogError;
+            _client.ReliableReceivingError += message => ElympicsLogger.LogError(message);
             _client.ReliableReceivingEnded += () =>
             {
-                ElympicsLogger.Log("Reliable receiving ended.");
+                ElympicsLogger.LogInfo("Reliable receiving ended.");
                 OnReceivingEnded();
             };
-            _client.UnreliableReceivingError += ElympicsLogger.LogError;
+            _client.UnreliableReceivingError += message => ElympicsLogger.LogError(message);
             _client.UnreliableReceivingEnded += () =>
             {
-                ElympicsLogger.Log("Unreliable receiving ended.");
+                ElympicsLogger.LogInfo("Unreliable receiving ended.");
                 OnReceivingEnded();
             };
             _client.NtpReceived += OnNtpReceived;
@@ -63,7 +64,7 @@ namespace Elympics
             _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
             _client.MatchEnded += OnMatchEnded;
 
-            ElympicsLogger.Log("Connected to a half remote server.");
+            ElympicsLogger.LogInfo("Connected to a half remote server.");
         }
 
         internal async UniTaskVoid StartSynchronization(CancellationToken ct = default)

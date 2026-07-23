@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 namespace Elympics
 {
     internal interface IRegionValidator

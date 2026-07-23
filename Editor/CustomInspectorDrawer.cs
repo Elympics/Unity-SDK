@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Elympics
 {
@@ -198,7 +199,7 @@ namespace Elympics
             return result;
         }
 
-        public UnityEngine.Object DrawSceneFieldWithOpenSceneButton(string header, UnityEngine.Object scene, float headerWidthPercentage01, float openSceneButtonWidthPercentage01, out bool sceneFieldChanged, out bool openSceneButtonPressed)
+        public Object DrawSceneFieldWithOpenSceneButton(string header, Object scene, float headerWidthPercentage01, float openSceneButtonWidthPercentage01, out bool sceneFieldChanged, out bool openSceneButtonPressed)
         {
             headerWidthPercentage01 = Mathf.Clamp(headerWidthPercentage01, 0.0f, 1.0f);
             var headerWidth = position.width * headerWidthPercentage01;

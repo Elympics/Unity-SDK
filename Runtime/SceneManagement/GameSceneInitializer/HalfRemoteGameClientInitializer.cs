@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Models.Public;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
 
 namespace Elympics
@@ -27,11 +27,11 @@ namespace Elympics
                 throw new ElympicsException($"Current player amount {playersList.Count} is greater than maximum player amount {elympicsGameConfig.MaxPlayers} ");
 
             if (playersList.Count <= playerIndex)
-                throw ElympicsLogger.LogException("Half Remote client won't be initialized because "
-                                                  + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
-                                                  + $"The list has only {playersList.Count} entries. "
-                                                  + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName);
+                throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Half Remote client won't be initialized because "
+                    + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
+                    + $"The list has only {playersList.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}."));
+            ElympicsLogger.State.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
             var matchmakerData = playersList[playerIndex].MatchmakerData ?? Array.Empty<float>();
             var gameEngineData = playersList[playerIndex].GameEngineData ?? Array.Empty<byte>();

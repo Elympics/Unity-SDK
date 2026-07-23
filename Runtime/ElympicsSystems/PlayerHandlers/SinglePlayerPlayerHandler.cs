@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Models.Public;
@@ -37,7 +38,7 @@ namespace Elympics.ElympicsSystems
             _elympicsBehavioursManager.OnAuthenticated(dataOfClients[0].UserId);
             var matchInitialData = new MatchInitialData
             {
-                MatchId = initialData.MatchId ?? System.Guid.Empty,
+                MatchId = initialData.MatchId ?? Guid.Empty,
                 IsReplay = false,
                 PlayerInitialDatas = initialData.ToList().Select(x => new PlayerInitialData()
                 {
@@ -48,7 +49,7 @@ namespace Elympics.ElympicsSystems
                     GameEngineData = x.GameEngineData,
                 }).ToList(),
                 CustomMatchmakingData = initialData.CustomMatchmakingData ?? new Dictionary<string, string>(),
-                CustomRoomData = initialData.CustomRoomData ?? new Dictionary<System.Guid, IReadOnlyDictionary<string, string>>(),
+                CustomRoomData = initialData.CustomRoomData ?? new Dictionary<Guid, IReadOnlyDictionary<string, string>>(),
                 ExternalGameData = initialData.ExternalGameData,
                 QueueName = initialData.QueueName ?? string.Empty,
                 RegionName = initialData.RegionName ?? string.Empty,

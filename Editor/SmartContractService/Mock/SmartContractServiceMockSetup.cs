@@ -1,11 +1,11 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Cysharp.Threading.Tasks;
 using NSubstitute;
 using SCS.InternalModels.Player;
-
-#nullable enable
 
 namespace SCS
 {

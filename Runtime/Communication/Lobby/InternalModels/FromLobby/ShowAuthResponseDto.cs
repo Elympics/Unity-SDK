@@ -1,8 +1,8 @@
+#nullable enable
+
 using System;
 using Elympics.Communication.Authentication.Models.Internal;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {

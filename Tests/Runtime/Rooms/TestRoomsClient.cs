@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,15 +10,12 @@ using Elympics.Communication.Lobby.InternalModels.FromLobby;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Rooms.InternalModels.ToRooms;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.Lobby;
 using Elympics.Models.Authentication;
 using Elympics.Rooms.Models;
 using Elympics.Tests.Common.RoomMocks;
 using NUnit.Framework;
 using UnityEngine.TestTools;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {
@@ -25,7 +24,7 @@ namespace Elympics.Tests.Rooms
     {
         private static readonly WebSocketSessionMock WsSessionMock = new();
 
-        private static readonly RoomsClient RoomsClient = new(new ElympicsLoggerContext(Guid.Empty))
+        private static readonly RoomsClient RoomsClient = new()
         {
             Session = WsSessionMock,
         };

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using AOT;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using UnityEngine;
 using WebRtcWrapper;
@@ -21,14 +21,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private static readonly Dictionary<int, WebRtcClient> Instances = new();
 
         private readonly int _instanceId;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(WebRtcClient));
         private readonly Dictionary<int, WebGLDataChannel> _channels = new();
 
         public WebRtcClient(WebRtcConfig config)
         {
             if (!isInitialized)
                 Initialize((int)config.OfferAnnounceDelay.TotalMilliseconds);
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcClient));
             _instanceId = WebRtcAllocate();
             Instances.Add(_instanceId, this);
         }
@@ -162,16 +162,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnIceCandidate(string candidateJson) => IceCandidateCreated?.Invoke(candidateJson);
 
-        private void OnLog(string methodName, string logMessage) => _logger.WithMethodName(methodName).Log(logMessage);
-        private void OnLogWarning(string methodName, string logMessage) => _logger.WithMethodName(methodName).Warning(logMessage);
-        private void OnLogError(string methodName, string logMessage) => _logger.WithMethodName(methodName).Error(logMessage);
+        private void OnLog(string methodName, string logMessage) => _logger.WithMethodName(methodName).LogInfo(logMessage);
+        private void OnLogWarning(string methodName, string logMessage) => _logger.WithMethodName(methodName).LogWarning(logMessage);
+        private void OnLogError(string methodName, string logMessage) => _logger.WithMethodName(methodName).LogError(logMessage);
 
         private void OnCandidatePairChosen(string localCandidateStatsJson, string remoteCandidateStatsJson)
         {
             var localCandidate = JsonUtility.FromJson<IceCandidateStats>(localCandidateStatsJson);
             var remoteCandidate = JsonUtility.FromJson<IceCandidateStats>(remoteCandidateStatsJson);
             if (localCandidate.candidateType == "relay" || localCandidate.HasTurnUrl())
-                _logger.WebRtcContext.UsesTurn = true;
+                ElympicsLogger.State.SetUsesTurn();
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
         }
 

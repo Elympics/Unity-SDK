@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Utils;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
 using HybridWebSocket;
@@ -53,7 +54,9 @@ namespace Elympics.Tests
             yield return new WaitUntil(() => ElympicsLobbyClient.Instance != null);
             _sut = ElympicsLobbyClient.Instance;
             Assert.NotNull(_sut);
-            _ = _sut!.InjectMockIAuthClient(_authClientMock).InjectMockIWebSocket(_webSocketMock).InjectRegionIAvailableRegionRetriever(_regionRetrieverMock);
+            _ = _sut!.InjectMockIAuthClient(_authClientMock)
+                .InjectMockIWebSocket(_webSocketMock)
+                .InjectRegionIAvailableRegionRetriever(_regionRetrieverMock);
             _ = _authClientMock.CreateSuccessIAuthClient(UserId, Nickname);
             _ = _regionRetrieverMock.GetAvailableRegions()
                 .Returns(UniTask.FromResult(new List<string> { ElympicsRegions.Warsaw, ElympicsRegions.Mumbai, ElympicsRegions.Tokyo, ElympicsRegions.Dallas }));
@@ -79,7 +82,8 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_NoConnectionDataProvided_ThrowException() => UniTask.ToCoroutine(async () =>
         {
             _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
-            _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
+            LogAssert.Expect(LogType.Exception, new Regex("All data parameters are null"));
+            _ = await AsyncAsserts.AssertThrowsAsync<ArgumentNullException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = null,
                 Region = null,
@@ -92,8 +96,10 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_NoRoomsJoined([ValueSource(nameof(connectTestValue))] AuthType type) => UniTask.ToCoroutine(async () =>
         {
-            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
-            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour()
+                .SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
+                .SetShowAuthMessage(UserId, Nickname, AvatarUrl);
+            await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = type
             });
@@ -175,6 +181,7 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_WIth_Selected_Not_Valid_Region() => UniTask.ToCoroutine(async () =>
         {
             _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
+            LogAssert.Expect(LogType.Exception, new Regex("The specified region \"WrongRegion\" must be one of the available regions"));
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 AuthType = AuthType.ClientSecret,
@@ -264,9 +271,9 @@ namespace Elympics.Tests
             Assert.NotNull(cachedData);
             _sut.SignOut();
             Assert.AreEqual((int)ElympicsState.Disconnected, (int)_sut.CurrentState.State);
-            await _sut.ConnectToElympicsAsync(new ConnectionData()
+            await _sut.ConnectToElympicsAsync(new ConnectionData
             {
-                AuthFromCacheData = new CachedAuthData()
+                AuthFromCacheData = new CachedAuthData
                 {
                     CachedData = new AuthData(cachedData!.UserId, ExpiredClientAuthJwt, cachedData.Nickname, cachedData.AuthType),
                     AutoRetryIfExpired = true,
@@ -286,9 +293,10 @@ namespace Elympics.Tests
         public IEnumerator ConnectToElympics_UseCachedData_Expired() => UniTask.ToCoroutine(async () =>
         {
             _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
+            LogAssert.Expect(LogType.Exception, new Regex("JWT Token has expired"));
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
-                AuthFromCacheData = new CachedAuthData()
+                AuthFromCacheData = new CachedAuthData
                 {
                     CachedData = new AuthData(Guid.Empty, ExpiredClientAuthJwt, CachedNickname, AuthType.ClientSecret),
                     AutoRetryIfExpired = false,
@@ -409,7 +417,7 @@ namespace Elympics.Tests
 
             List<(ElympicsState, ElympicsState)> statesCalled = new();
             _sut.StateChanged += (oldState, newState) => statesCalled.Add((oldState, newState));
-            await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = AuthType.ClientSecret
             });
@@ -526,14 +534,17 @@ namespace Elympics.Tests
         [Timeout(TestsTimeoutMs)]
         public IEnumerator ConnectToElympics_No_Auth_Data_Only_Region() => UniTask.ToCoroutine(async () =>
         {
-            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour().SetupJoinLobby(false, UserId, Nickname, AvatarUrl).SetShowAuthMessage(UserId, Nickname, AvatarUrl);
+            _ = _webSocketMock.SetupOpenCloseDefaultBehaviour()
+                .SetupJoinLobby(false, UserId, Nickname, AvatarUrl)
+                .SetShowAuthMessage(UserId, Nickname, AvatarUrl);
             var authenticationCalled = false;
             var connectedCalled = false;
 
-            _sut!.AuthenticationSucceeded += (_) => authenticationCalled = true;
+            _sut!.AuthenticationSucceeded += _ => authenticationCalled = true;
             _sut.WebSocketSession.Connected += () => connectedCalled = true;
 
-            _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
+            LogAssert.Expect(LogType.Exception, new Regex("No data for authentication"));
+            _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData
             {
                 Region = new RegionData(ElympicsRegions.Warsaw)
             }));
@@ -563,7 +574,7 @@ namespace Elympics.Tests
         [TearDown]
         public void CleanUp()
         {
-            ElympicsLogger.Log($"{nameof(ElympicsLobbyClientTest)} Cleanup");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsLobbyClientTest)} Cleanup");
             if (_sut!.IsAuthenticated)
                 _sut.SignOut();
             _webSocketMock.ClearSubstitute();

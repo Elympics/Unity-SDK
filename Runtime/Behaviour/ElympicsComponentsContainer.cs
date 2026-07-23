@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
@@ -39,9 +40,10 @@ namespace Elympics
                     {
                         var inputHandler = inputHandlers[i];
                         var componentIndex = Array.IndexOf(allComponents, inputHandler);
-                        ElympicsLogger.LogError($"More than one {nameof(IInputHandler)} component found on "
-                            + $"{elympicsBehaviour.gameObject.name}! Ignoring component no. {componentIndex} of type "
-                            + $"{inputHandler.GetType().Name}", allComponents[componentIndex]);
+                        ElympicsLogger.WithUnityContext(allComponents[componentIndex])
+                            .LogError($"More than one {nameof(IInputHandler)} component found on "
+                                + $"{elympicsBehaviour.gameObject.name}! Ignoring component no. {componentIndex} of type "
+                                + $"{inputHandler.GetType().Name}");
                     }
                 }
             }

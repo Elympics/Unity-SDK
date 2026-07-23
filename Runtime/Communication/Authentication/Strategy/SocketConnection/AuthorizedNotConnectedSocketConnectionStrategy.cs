@@ -1,16 +1,16 @@
+#nullable enable
+
 using System;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Lobby;
-
-#nullable enable
 
 namespace Elympics
 {
     internal class AuthorizedNotConnectedStrategy : ConnectionStrategy
     {
-        public AuthorizedNotConnectedStrategy(WebSocketSession socketSession, ElympicsLoggerContext logger) : base(socketSession, logger)
+        public AuthorizedNotConnectedStrategy(WebSocketSession socketSession) : base(socketSession)
         { }
 
         public override async UniTask<GameDataResponseDto?> Connect(SessionConnectionDetails newConnectionDetails)
@@ -21,8 +21,9 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                var logger = Logger.WithContext($"{nameof(AuthorizedNotConnectedStrategy)}").WithMethodName();
-                throw logger.CaptureAndThrow(e);
+                var logger = Logger.WithClass(typeof(AuthorizedNotConnectedStrategy))
+                    .WithMethodName();
+                throw logger.LogExceptionAndReturn(e);
             }
         }
     }

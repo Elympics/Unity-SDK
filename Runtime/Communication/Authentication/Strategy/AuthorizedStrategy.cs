@@ -1,5 +1,7 @@
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
+
 namespace Elympics
 {
     internal class AuthorizedStrategy : AuthorizationStrategy

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.Models.Matchmaking;
 
 namespace Elympics.ElympicsSystems.Internal

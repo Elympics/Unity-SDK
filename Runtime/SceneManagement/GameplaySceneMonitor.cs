@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using UnityEngine.SceneManagement;
-
-#nullable enable
 
 namespace Elympics
 {

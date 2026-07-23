@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -88,7 +89,7 @@ namespace Elympics.Editor.Replay
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"Error applying tick {snapshot.Tick}.", e);
+                ElympicsLogger.LogException(new ElympicsException($"Error applying tick {snapshot.Tick}.", e));
             }
         }
 

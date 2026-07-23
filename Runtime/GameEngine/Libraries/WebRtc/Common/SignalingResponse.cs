@@ -1,4 +1,5 @@
 using System;
+
 namespace Elympics.Communication.Models
 {
     [Serializable]

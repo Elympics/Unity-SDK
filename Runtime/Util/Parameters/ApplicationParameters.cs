@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics

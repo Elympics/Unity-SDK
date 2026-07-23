@@ -1,9 +1,9 @@
+#nullable enable
+
 using System;
 using Cysharp.Threading.Tasks;
 using Elympics.Models.Authentication;
 using JetBrains.Annotations;
-
-#nullable enable
 
 namespace Elympics
 {

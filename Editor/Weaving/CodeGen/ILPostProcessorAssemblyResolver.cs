@@ -1,11 +1,11 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using Elympics.Editor.Weaving.Components;
 using Mono.Cecil;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
-
-#nullable enable
 
 namespace Elympics.Editor.CodeGen
 {

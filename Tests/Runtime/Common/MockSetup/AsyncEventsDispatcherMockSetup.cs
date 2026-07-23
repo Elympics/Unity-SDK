@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
+
 namespace Elympics
 {
     internal static class AsyncEventsDispatcherMockSetup

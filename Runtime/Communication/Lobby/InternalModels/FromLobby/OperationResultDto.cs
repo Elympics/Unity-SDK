@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Communication.Lobby.InternalModels.FromLobby
 {

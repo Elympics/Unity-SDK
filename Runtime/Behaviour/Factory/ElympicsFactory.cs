@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
@@ -58,7 +59,7 @@ namespace Elympics
             {
                 const string message = "Trying to destroy an object not instantiated by Elympics. "
                     + "This may also be a result of using an incorrectly cached reference after reconciliation or trying to destroy the same object more than once.";
-                ElympicsLogger.LogError(message, go);
+                ElympicsLogger.WithUnityContext(go).LogError(message);
                 throw new ArgumentException(message, nameof(go));
             }
 

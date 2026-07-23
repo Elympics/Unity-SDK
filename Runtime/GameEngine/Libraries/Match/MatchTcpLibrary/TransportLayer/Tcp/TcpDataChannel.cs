@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Core.Logger;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 
 #pragma warning disable CS0067 // Error is part of IDataChannel for WebRTC channels; TCP surfaces failures via exceptions instead
@@ -96,7 +97,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"{nameof(TcpDataChannel)} failed to process a message", e);
+                ElympicsLogger.LogException(new ElympicsException($"{nameof(TcpDataChannel)} failed to process a message", e));
             }
         }
 
@@ -109,7 +110,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
 
         private void OnReceivingStopped()
         {
-            ElympicsLogger.Log($"{GetType().Name} stopped receiving, disconnecting...");
+            ElympicsLogger.LogInfo($"{GetType().Name} stopped receiving, disconnecting...");
             Disconnect();
         }
 
@@ -125,17 +126,17 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             try
             {
                 if (CheckIfConnectingAndSet())
-                    throw ElympicsLogger.LogException(new InvalidOperationException("Connection already in progress"));
+                    throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException("Connection already in progress"));
 
                 if (NotCreated())
-                    throw ElympicsLogger.LogException(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
+                    throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException($"{nameof(CreateAndBind)} has not been called before connecting"));
                 else
                     RecreateSocket();
 
                 await TryConnectAsync(remoteEndPoint, ct);
 
                 if (!IsConnected)
-                    throw ElympicsLogger.LogException(new ElympicsException("Could not connect"));
+                    throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Could not connect"));
 
                 StartReceiving();
             }
@@ -197,7 +198,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
                 if (IsConnected || _connectingTokenSource.IsCancellationRequested)
                     break;
 
-                ElympicsLogger.Log($"Connection attempt no. {i} failed on {endpoint}, reason {result}, retrying...");
+                ElympicsLogger.LogInfo($"Connection attempt no. {i} failed on {endpoint}, reason {result}, retrying...");
 
                 await UniTask.Delay(_tcpProtocolConfig.IntervalBetweenConnectionAttemptsInMs,
                     DelayType.Realtime, cancellationToken: _connectingTokenSource.Token);
@@ -223,7 +224,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"{nameof(TcpDataChannel)} connection exception", e);
+                ElympicsLogger.LogException(new ElympicsException($"{nameof(TcpDataChannel)} connection exception", e));
                 return ConnectResult.OtherException;
             }
         }
@@ -239,7 +240,7 @@ namespace MatchTcpLibrary.TransportLayer.Tcp
         public void Send(byte[] dataToSend)
         {
             if (!IsConnected)
-                throw ElympicsLogger.LogException(new InvalidOperationException("Not connected"));
+                throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException("Not connected"));
             if (_tcpClient is null)
                 throw new InvalidOperationException("TCP client has not been created");
 

@@ -1,16 +1,16 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc.Other;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
-
-#nullable enable
 
 // The goal here is to have two interchangeable types with the same full name.
 // Using Platforms and Define Constraints in .asmdef, they are used in alternation.
@@ -20,7 +20,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     internal class WebRtcClient : IWebRtcClient
     {
         private readonly WebRtcConfig _config;
-        private readonly ElympicsLoggerContext _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(WebRtcClient))
+            .WithMonitoringEnabled();
 
         private readonly RTCPeerConnection _peerConnection;
 
@@ -37,7 +39,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public WebRtcClient(WebRtcConfig config)
         {
             _config = config;
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcClient));
             var configuration = new RTCConfiguration
             {
                 iceServers = config.IceServers.Select(s => new RTCIceServer
@@ -69,7 +70,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private sealed class WebRtcDataChannel : IDataChannel
         {
             private readonly RTCDataChannel _dc;
-            private readonly ElympicsLoggerContext _logger;
+            private readonly LoggerConfig _logger;
 
             public string Label { get; }
 
@@ -91,7 +92,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             public event Action<byte[]>? DataReceived;
             public event Action<string>? Error;
 
-            public WebRtcDataChannel(string label, RTCDataChannel dc, ElympicsLoggerContext logger)
+            public WebRtcDataChannel(string label, RTCDataChannel dc, LoggerConfig logger)
             {
                 Label = label;
                 _dc = dc;
@@ -104,7 +105,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             private void OnOpen()
             {
-                _logger.WithMethodName().Log($"[WebRTC] Channel '{Label}' has opened");
+                _logger.WithMethodName().LogInfo($"[WebRTC] Channel '{Label}' has opened");
                 IsConnected = true;
             }
 
@@ -119,13 +120,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                 }
                 catch (Exception e)
                 {
-                    logger.Exception(e);
+                    logger.LogException(e);
                 }
             }
 
             private void OnClose()
             {
-                _logger.WithMethodName().Log($"[WebRTC] Channel '{Label}' has closed");
+                _logger.WithMethodName().LogInfo($"[WebRTC] Channel '{Label}' has closed");
                 IsConnected = false;
             }
 
@@ -174,15 +175,15 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var offerOp = _peerConnection.CreateOffer(ref options);
             await offerOp;
             var offer = offerOp.Desc;
-            logger.Log("[WebRTC] Created offer\n" + JsonUtility.ToJson((SessionDescription)offer));
+            logger.LogInfo("[WebRTC] Created offer\n" + JsonUtility.ToJson((SessionDescription)offer));
             await _peerConnection.SetLocalDescription(ref offer);
-            logger.Log("[WebRTC] Gathering ICE candidates...");
+            logger.LogInfo("[WebRTC] Gathering ICE candidates...");
 
             _offerResolver = new UniTaskCompletionSource();
             var receivedCandidate = await UniTask.Delay(_config.OfferAnnounceDelay,
                 DelayType.Realtime,
                 cancellationToken: _offerResolver.Task.ToCancellationToken()).SuppressCancellationThrow();
-            logger.Log(receivedCandidate
+            logger.LogInfo(receivedCandidate
                 ? "[WebRTC] ICE candidates gathering ended successfully."
                 : "[WebRTC] ICE candidates gathering timed out.");
             _offerResolver = null;
@@ -190,7 +191,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var updatedOffer = _peerConnection.LocalDescription;
 
             var offerJson = JsonUtility.ToJson((SessionDescription)updatedOffer);
-            logger.Log("[WebRTC] Offer created\n" + offerJson);
+            logger.LogInfo("[WebRTC] Offer created\n" + offerJson);
 
             return offerJson;
         }
@@ -198,7 +199,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public async UniTask OnAnswer(string answerJson)
         {
             var logger = _logger.WithMethodName();
-            logger.Log("[WebRTC] Answer received\n" + answerJson);
+            logger.LogInfo("[WebRTC] Answer received\n" + answerJson);
             var answerCustom = JsonUtility.FromJson<SessionDescription>(answerJson);
             var answer = (RTCSessionDescription)answerCustom;
             var asyncOp = _peerConnection.SetRemoteDescription(ref answer);
@@ -234,8 +235,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var localCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.localCandidateId]);
             var remoteCandidate = Cast((RTCIceCandidateStats)statsReport.Stats[candidatePairStats.remoteCandidateId]);
             if (localCandidate.candidateType is "relay" || localCandidate.HasTurnUrl())
-                _ = _logger.SetUsesTurn();
-            logger.Log($"[WebRTC] Chosen candidate pair: {(JsonUtility.ToJson(localCandidate), JsonUtility.ToJson(remoteCandidate))}");
+                ElympicsLogger.State.SetUsesTurn();
+            logger.LogInfo($"[WebRTC] Chosen candidate pair: {(JsonUtility.ToJson(localCandidate), JsonUtility.ToJson(remoteCandidate))}");
             CandidatePairChosen?.Invoke((localCandidate, remoteCandidate));
 
             static IceCandidateStats Cast(RTCIceCandidateStats candidate) =>
@@ -270,14 +271,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log($"[WebRTC] ICE connection state changed: {stringifiedState}");
+            logger.LogInfo($"[WebRTC] ICE connection state changed: {stringifiedState}");
             try
             {
                 IceConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
@@ -285,21 +286,21 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             var logger = _logger.WithMethodName();
             var stringifiedState = newState.ToString().ToLower();
-            logger.Log($"[WebRTC] Connection state changed: {stringifiedState}");
+            logger.LogInfo($"[WebRTC] Connection state changed: {stringifiedState}");
             try
             {
                 ConnectionStateChanged?.Invoke(stringifiedState);
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
         }
 
         private void OnNegotiationNeeded()
         {
             // Beware: no renegotiation is supported (the signaling protocol is a single offer/answer exchange).
-            _logger.WithMethodName().Log("[WebRTC] Negotiation needed");
+            _logger.WithMethodName().LogInfo("[WebRTC] Negotiation needed");
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)
@@ -308,14 +309,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var candidateJson = JsonUtility.ToJson(candidate.SdpMLineIndex.HasValue
                 ? new IceCandidateInitWithSdpMLineIndex(candidate)
                 : new IceCandidateInitWithoutSdpMLineIndex(candidate));
-            logger.Log("[WebRTC] Candidate received\n" + candidateJson);
+            logger.LogInfo("[WebRTC] Candidate received\n" + candidateJson);
             try
             {
                 IceCandidateCreated?.Invoke(candidateJson);
             }
             catch (Exception e)
             {
-                logger.Exception(e);
+                logger.LogException(e);
             }
 
             _ = _offerResolver?.TrySetResult();

@@ -1,6 +1,6 @@
-using MessagePack;
-
 #nullable enable
+
+using MessagePack;
 
 namespace Elympics.Communication.Rooms.InternalModels
 {

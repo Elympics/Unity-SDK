@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Lobby.InternalModels;
+using Elympics.Core.Logger;
 using JetBrains.Annotations;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -26,7 +27,7 @@ namespace Elympics
 
         [SerializeField] private bool migratedActiveGame;
 
-        private static string sdkVersion;
+        private static string sdkVersion = "";
 
         internal static string SdkVersion
         {
@@ -100,7 +101,13 @@ namespace Elympics
             throw new ElympicsException($"Couldn't load ElympicsConfig from {PathInResources}");
         }
 
-        public ElympicsGameConfig? GetCurrentGameConfig() => availableGames.FirstOrDefault(gameConfig => gameConfig != null);
+        public ElympicsGameConfig? GetCurrentGameConfig()
+        {
+            var gameConfig = availableGames.FirstOrDefault(gameConfig => gameConfig != null);
+            if (gameConfig != null)
+                UpdateLoggerState(gameConfig);
+            return gameConfig;
+        }
 
         public void SwitchGame(int game)
         {
@@ -109,16 +116,29 @@ namespace Elympics
             var activeGame = availableGames[game];
             availableGames.RemoveAt(game);
             availableGames.Insert(0, activeGame);
+            UpdateLoggerState(activeGame);
             CurrentGameSwitched?.Invoke();
         }
 
         private void ValidateGameIndex(int game)
         {
             if (availableGames.Count == 0)
-                throw ElympicsLogger.LogException(new InvalidOperationException(
+                throw ElympicsLogger.LogExceptionAndReturn(new InvalidOperationException(
                     $"No game configs have been configured in {nameof(ElympicsConfig)}"));
             if (game < 0 || game >= availableGames.Count)
-                throw ElympicsLogger.LogException(new ArgumentOutOfRangeException(nameof(game)));
+                throw ElympicsLogger.LogExceptionAndReturn(new ArgumentOutOfRangeException(nameof(game)));
+        }
+
+        private static void UpdateLoggerState(ElympicsGameConfig gameConfig)
+        {
+            var gameId = Guid.TryParse(gameConfig.GameId, out var parsedId) ? parsedId : Guid.NewGuid();
+            ElympicsLogger.State.SetGame(gameId, gameConfig.GameVersion);
+            ElympicsLogger.State.SetGameName(gameConfig.GameName);
+            ElympicsLogger.State.SetGameMode(gameConfig.GameplaySceneDebugMode.ToString());
+            if (gameConfig.UseWeb)
+                ElympicsLogger.State.SetWebRtc();
+            else
+                ElympicsLogger.State.SetTcpUdp();
         }
 
 #if UNITY_EDITOR

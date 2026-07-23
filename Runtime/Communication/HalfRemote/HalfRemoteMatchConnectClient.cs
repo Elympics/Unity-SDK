@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
@@ -72,13 +73,13 @@ namespace Elympics
 
         private void OnMatchEnded(Guid matchId)
         {
-            ElympicsLogger.Log($"Match {matchId} has ended!");
+            ElympicsLogger.LogInfo($"Match {matchId} has ended!");
             MatchEndedWithMatchId?.Invoke(matchId);
         }
 
         private void OnDisconnected()
         {
-            ElympicsLogger.Log("Disconnected by server!");
+            ElympicsLogger.LogInfo("Disconnected by server!");
             DisconnectedByServer?.Invoke();
         }
 
@@ -106,14 +107,14 @@ namespace Elympics
                 if (i > 0)
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(WaitTimeToRetryConnectInSeconds), DelayType.Realtime, cancellationToken: ct);
-                    ElympicsLogger.Log($"Retrying...\nConnecting to TCP server {_ip}:{_port}...");
+                    ElympicsLogger.LogInfo($"Retrying...\nConnecting to TCP server {_ip}:{_port}...");
                 }
 
                 var tcpClient = new TcpClient();
                 try
                 {
                     await tcpClient.ConnectAsync(_ip, _port).AsUniTask().WithTimeout(ServerReachingTimeout, ct);
-                    ElympicsLogger.Log($"TCP client successfully connected to {_ip}:{_port}");
+                    ElympicsLogger.LogInfo($"TCP client successfully connected to {_ip}:{_port}");
                     _tcpClient = tcpClient;
                     return new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(tcpClient.GetStream()));
                 }
@@ -124,8 +125,7 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
-                    ElympicsLogger.LogError($"TCP client could not connect to {_ip}:{_port}");
-                    _ = ElympicsLogger.LogException(e);
+                    ElympicsLogger.LogException(new ElympicsException($"TCP client could not connect to {_ip}:{_port}", e));
                 }
                 tcpClient.Dispose();
             }
@@ -156,7 +156,7 @@ namespace Elympics
                 if (i > 0)
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(WaitTimeToRetryConnectInSeconds), DelayType.Realtime, cancellationToken: ct);
-                    ElympicsLogger.Log("Retrying...\nSending the offer to the signaling server...");
+                    ElympicsLogger.LogInfo("Retrying...\nSending the offer to the signaling server...");
                 }
 
                 try
@@ -178,7 +178,7 @@ namespace Elympics
             var client = new HalfRemoteMatchClient(_userId.ToString(), reliableChannel, unreliableChannel);
             await _webRtcClient.OnAnswer(answer);
 
-            ElympicsLogger.Log("WebRTC answer applied.");
+            ElympicsLogger.LogInfo("WebRTC answer applied.");
             return client;
         }
 
@@ -190,7 +190,7 @@ namespace Elympics
             _halfRemoteMatchClientAdapter.PlayerDisconnected();
             _tcpClient?.Dispose();
             _webRtcClient?.Dispose();
-            ElympicsLogger.Log("Disconnected by client!");
+            ElympicsLogger.LogInfo("Disconnected by client!");
             DisconnectedByClient?.Invoke();
         }
 

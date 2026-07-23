@@ -1,13 +1,14 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics;
+using Elympics.Core.Logger;
 using SCS.InternalModels.Player;
 using UnityEngine;
-
-#nullable enable
 
 namespace SCS
 {
@@ -82,7 +83,7 @@ namespace SCS
             }
             catch (ElympicsException exception)
             {
-                _ = ElympicsLogger.LogException(exception);
+                ElympicsLogger.LogException(exception);
             }
             finally
             {

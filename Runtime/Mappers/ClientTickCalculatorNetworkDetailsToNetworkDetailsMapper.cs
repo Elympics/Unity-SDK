@@ -1,11 +1,12 @@
 using Elympics.Public;
+
 namespace Elympics.Mappers
 {
-    public static class ClientTickCalculatorNetworkDetailsToNetworkDetailsMapper
+    internal static class ClientTickCalculatorNetworkDetailsToNetworkDetailsMapper
     {
         public static NetworkCondition MapToNetworkNetworkCondition(this ClientTickCalculatorNetworkDetails source)
         {
-            return new NetworkCondition()
+            return new NetworkCondition
             {
                 ElympicsUpdateTickRate = source.ElympicsUpdateTickRate,
                 ExactTickCalculated = source.ExactTickCalculated,

@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
 using Elympics.Tests.Common;
 using HybridWebSocket;
@@ -75,11 +77,12 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator ConnectToElympics_Twice() => UniTask.ToCoroutine(async () =>
         {
-            _sut.ConnectToElympicsAsync(new ConnectionData()
+            _sut.ConnectToElympicsAsync(new ConnectionData
             {
                 AuthType = AuthType.ClientSecret
             }).Forget();
 
+            LogAssert.Expect(LogType.Exception, new Regex("Already connecting"));
             _ = await AsyncAsserts.AssertThrowsAsync<ElympicsException>(async () => await _sut!.ConnectToElympicsAsync(new ConnectionData()
             {
                 Region = new RegionData(ElympicsRegions.Warsaw)
@@ -113,7 +116,7 @@ namespace Elympics.Tests
         [TearDown]
         public void CleanUp()
         {
-            ElympicsLogger.Log($"{nameof(ElympicsLobbyClientTest)} Cleanup");
+            ElympicsLogger.LogInfo($"{nameof(ElympicsLobbyClientTest)} Cleanup");
             if (_sut.IsAuthenticated)
             {
                 _sut.SwitchState(ElympicsState.Connected);

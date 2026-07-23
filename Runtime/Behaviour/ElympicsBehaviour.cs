@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
+using Elympics.Replication;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
@@ -171,7 +173,7 @@ namespace Elympics
                 return true;
 
             // If replication world is initialized and entity is registered, use bitmask
-            var world = Replication.ElympicsWorld.Current;
+            var world = ElympicsWorld.Current;
             if (world != null)
             {
                 var playerIdx = (int)player;
@@ -347,9 +349,10 @@ namespace Elympics
                     {
 #if !ELYMPICS_PRODUCTION
                         if (!ElympicsBase.IsServer)
-                            ElympicsLogger.LogWarning(
-                                $"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.",
-                                this);
+                            ElympicsLogger.WithUnityContext(this)
+                                .LogWarning($"State not equal on field {_backingFieldsNames[backingField]} of {componentName} component "
+                                    + $"attached to {gameObject.name} game object with network ID: {networkId} in history tick {tick}. "
+                                    + $"Last simulated tick: {Elympics.Tick}. State in history: '{difference1}' received state: '{difference2}'.");
 #endif
                         areEqual = false;
                         break;
@@ -400,7 +403,7 @@ namespace Elympics
                     }
                     catch (Exception e) when (e is EndOfStreamException or ReadNotEnoughException)
                     {
-                        _ = ElympicsLogger.LogException("An exception occured when applying inputs", e);
+                        ElympicsLogger.LogException(new ElympicsException("An exception occured when applying inputs", e));
                     }
         }
 
@@ -424,7 +427,7 @@ namespace Elympics
             _isReconciling = false;
         }
 
-        public void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
+        internal void OnPredictionStatsChanged(bool isBlocked, ClientTickCalculatorNetworkDetails results)
         {
             var networkCondition = results.MapToNetworkNetworkCondition();
             foreach (var reconciliationHandler in _componentsContainer.Updatables)

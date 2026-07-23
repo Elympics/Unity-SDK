@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
@@ -24,7 +25,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             const int tcpPort = 7890;
             const int webPort = 7891;
 
-            var tcpClient = new System.Net.Sockets.TcpClient();
+            var tcpClient = new TcpClient();
 
             UniTask<HalfRemoteMatchClient> ConnectTcpClient()
             {

@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using Elympics.Communication.Lobby.InternalModels.FromLobby;
-
-#nullable enable
 
 namespace Elympics
 {

@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;
@@ -36,13 +36,14 @@ namespace Elympics
         private UniTaskCompletionSource _connectingTcs;
         private bool _connected;
 
-        private readonly ElympicsLoggerContext _logger;
+        private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
+            .WithClass(typeof(RemoteMatchConnectClient))
+            .WithMonitoringEnabled();
 
         public RemoteMatchConnectClient(
             IGameServerClient gameServerClient,
             string userSecret)
         {
-            _logger = ElympicsLogger.CurrentContext.WithContext(nameof(RemoteMatchConnectClient));
             _gameServerClient = gameServerClient;
             _userSecret = userSecret;
             _gameServerClient.Disconnected += OnDisconnectedByServer;
@@ -65,7 +66,7 @@ namespace Elympics
             if (!_connected)
                 return;
             _connected = false;
-            logger.Log("Disconnected by client.");
+            logger.LogInfo("Disconnected by client.");
 
             DisconnectedByClient?.Invoke();
             _gameServerClient.Disconnect();
@@ -122,7 +123,7 @@ namespace Elympics
             _connectingTcs = new UniTaskCompletionSource();
             setupCallbacks();
 
-            logger.Log("Connecting to game server...");
+            logger.LogInfo("Connecting to game server...");
 
             try
             {
@@ -145,7 +146,7 @@ namespace Elympics
         private void OnConnectedAndSynchronizedAsPlayer(TimeSynchronizationData timeSynchronizationData)
         {
             var logger = _logger.WithMethodName();
-            logger.Log("Connected and synchronized as player.");
+            logger.LogInfo("Connected and synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
         }
@@ -153,7 +154,7 @@ namespace Elympics
         private void OnConnectedAndSynchronizedAsSpectator(TimeSynchronizationData timeSynchronizationData)
         {
             var logger = _logger.WithMethodName();
-            logger.Log("Connected and synchronized as spectator.");
+            logger.LogInfo("Connected and synchronized as spectator.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
             _gameServerClient.AuthenticateAsSpectatorAsync();
         }
@@ -163,12 +164,12 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             if (!message.AuthenticatedSuccessfully || !string.IsNullOrEmpty(message.ErrorMessage))
             {
-                logger.Error($"Failed to authenticate user: {message.ErrorMessage}");
+                logger.LogError($"Failed to authenticate user: {message.ErrorMessage}");
                 AuthenticatedUserMatchFailedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
                 return;
             }
-            logger.Log("User authenticated.");
+            logger.LogInfo("User authenticated.");
             AuthenticatedUserMatchWithUserId?.Invoke(message.UserId != null ? new Guid(message.UserId) : Guid.Empty);
 
             _gameServerClient.JoinMatchAsync();
@@ -193,7 +194,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             if (!string.IsNullOrEmpty(message.ErrorMessage))
             {
-                logger.Error($"Can't join match {message.MatchId}.{Environment.NewLine}Error: {message.ErrorMessage}");
+                logger.LogError($"Can't join match {message.MatchId}.{Environment.NewLine}Error: {message.ErrorMessage}");
                 MatchJoinedWithError?.Invoke(message.ErrorMessage);
                 _gameServerClient.Disconnect();
                 return;
@@ -201,7 +202,7 @@ namespace Elympics
 
             var matchInitData = message.Map();
 
-            logger.Log("Match joined.");
+            logger.LogInfo("Match joined.");
             MatchJoinedWithMatchInitData?.Invoke(matchInitData);
             _connected = true;
             _ = _connectingTcs?.TrySetResult();
@@ -210,7 +211,7 @@ namespace Elympics
         private void OnMatchEnded(MatchEndedMessage message)
         {
             var logger = _logger.WithMethodName();
-            logger.Log("Match ended.");
+            logger.LogInfo("Match ended.");
             MatchEndedWithMatchId?.Invoke(new Guid(message.MatchId));
         }
 
@@ -220,7 +221,7 @@ namespace Elympics
         private void OnDisconnectedByServer()
         {
             var logger = _logger.WithMethodName();
-            logger.Log("Disconnected by server.");
+            logger.LogInfo("Disconnected by server.");
             TryDisconnectByServerIfNotConnected();
         }
 

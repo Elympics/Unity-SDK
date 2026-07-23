@@ -1,8 +1,8 @@
+#nullable enable
+
 using System;
 using Elympics.Util;
 using MessagePack;
-
-#nullable enable
 
 namespace Elympics.Rooms.Models
 {

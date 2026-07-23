@@ -1,14 +1,15 @@
+#nullable enable
+
 using System;
 using System.Globalization;
 using System.IO;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-
-#nullable enable
 
 namespace Elympics.Editor
 {

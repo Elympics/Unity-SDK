@@ -1,3 +1,5 @@
+using Elympics.Core.Logger;
+
 namespace Elympics
 {
     internal class FactoryNetworkIdEnumerator

@@ -1,6 +1,6 @@
-using Cysharp.Threading.Tasks;
-
 #nullable enable
+
+using Cysharp.Threading.Tasks;
 
 namespace SCS
 {

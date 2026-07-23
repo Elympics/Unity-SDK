@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
@@ -93,8 +94,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException("Something went wrong while writing log to file "
-                    + $"at path: {combinedPath}", e);
+                ElympicsLogger.LogException(new ElympicsException($"Something went wrong while writing log to file at path: {combinedPath}", e));
             }
         }
 

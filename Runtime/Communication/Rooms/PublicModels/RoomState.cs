@@ -1,11 +1,12 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Rooms.InternalModels;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
+using Elympics.Core.Logger;
 using Elympics.Rooms.Models;
-
-#nullable enable
 
 namespace Elympics
 {
@@ -34,7 +35,7 @@ namespace Elympics
             stateDiff.Reset();
             if (stateUpdate.LastUpdate <= LastRoomUpdate)
             {
-                ElympicsLogger.Log($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}"
+                ElympicsLogger.LogInfo($"[{nameof(RoomState)}]New Room Update is outdated.{Environment.NewLine}"
                     + $"Local Last Update {LastRoomUpdate:HH:mm:ss.ffff}"
                     + $"RoomStateUpdate Last Update {stateUpdate.LastUpdate:HH:mm:ss.ffff}");
                 return;

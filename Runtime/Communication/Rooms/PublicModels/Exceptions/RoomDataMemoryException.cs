@@ -1,6 +1,6 @@
-using Elympics.Rooms.Models;
-
 #nullable enable
+
+using Elympics.Rooms.Models;
 
 namespace Elympics
 {

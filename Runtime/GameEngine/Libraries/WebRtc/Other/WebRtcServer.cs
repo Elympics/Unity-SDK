@@ -1,6 +1,5 @@
 #nullable enable
 using System.Collections.Generic;
-using Elympics.ElympicsSystems.Internal;
 using WebRtcWrapper;
 
 namespace Elympics.GameEngine.Libraries.WebRtc
@@ -12,7 +11,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly int _port;
         private readonly string? _publicIpOverride;
         private readonly int? _publicPortOverride;
-        private readonly ElympicsLoggerContext _logger = ElympicsLogger.CurrentContext.WithContext(nameof(WebRtcServer));
 
         public void Start(bool withReceiveThread = true)
         { }
@@ -26,7 +24,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public IWebRtcServerClient CreateClient()
         {
-            var client = new WebRtcServerClient(_logger);
+            var client = new WebRtcServerClient();
             _clients.Add(client);
             return client;
         }

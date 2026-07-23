@@ -2,7 +2,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Elympics;
+using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;
 using Proto.ProtoClient.NetworkClient;
@@ -91,7 +91,7 @@ namespace UnityConnectors.HalfRemote.Server
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
                 webRtcServerClient.Close();
                 ClientConnectingError?.Invoke(clientId, e.InnerException?.ToString() ?? "");
             }

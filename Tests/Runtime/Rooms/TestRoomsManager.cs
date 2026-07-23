@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Reflection;
 using System.Threading;
@@ -5,12 +7,10 @@ using Castle.Core.Internal;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Rooms.InternalModels.FromRooms;
 using Elympics.Communication.Utils;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using NUnit.Framework;
-
-#nullable enable
 
 namespace Elympics.Tests.Rooms
 {
@@ -39,14 +39,14 @@ namespace Elympics.Tests.Rooms
 
         protected TestRoomsManager()
         {
+            ElympicsLogger.State.SetTcpUdp();
             MatchLauncherMock = Substitute.For<IMatchLauncher>();
             RoomsClientMock = Substitute.For<IRoomsClient>();
-            var logger = new ElympicsLoggerContext(Guid.Empty);
             RoomJoiner = new RoomJoiner(RoomsClientMock)
             {
                 OperationTimeout = TimeSpan.FromSeconds(1),
             };
-            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, logger, RoomJoiner);
+            RoomsManager = new RoomsManager(MatchLauncherMock, RoomsClientMock, RoomJoiner);
             ElympicsTimeout.RoomStateChangeConfirmationTimeout = TimeSpan.FromSeconds(1);
             EventRegister = new EventObserver<IRoomsManager>(RoomsManager);
 

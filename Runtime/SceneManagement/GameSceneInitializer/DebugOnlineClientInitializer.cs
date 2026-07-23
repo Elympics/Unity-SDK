@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Models.Authentication;
 using Elympics.Models.Matchmaking;
 using MatchTcpClients;
@@ -18,6 +18,7 @@ namespace Elympics
         private IAuthClient _authClient;
         private MatchmakerClient _matchmakerClient;
 
+        private ElympicsConfig _elympicsConfig;
         private ElympicsGameConfig _elympicsGameConfig;
         private InitialMatchPlayerDataGuid _initialPlayerData;
 
@@ -25,14 +26,13 @@ namespace Elympics
         {
             _client = client;
             _elympicsGameConfig = elympicsGameConfig;
-            var elympicsConfig = ElympicsConfig.Load();
+            _elympicsConfig = ElympicsConfig.Load();
 
-            _authClient = new RemoteAuthClient(elympicsConfig.ElympicsAuthEndpoint);
-            var lobbyUrl = elympicsConfig.ElympicsLobbyEndpoint;
-            _ = ElympicsLogger.CurrentContext.SetLobbyUrl(lobbyUrl);
+            _authClient = new RemoteAuthClient(_elympicsConfig.ElympicsAuthEndpoint);
+            var lobbyUrl = _elympicsConfig.ElympicsLobbyEndpoint;
             _matchmakerClient = new WebSocketMatchmakerClient(lobbyUrl);
             _matchmakerClient.MatchmakingSucceeded += OnMatchmakingSucceeded;
-            _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.Log($"Match found: {matchId}.");
+            _matchmakerClient.MatchmakingMatchFound += matchId => ElympicsLogger.LogInfo($"Match found: {matchId}.");
             _matchmakerClient.MatchmakingFailed += args => ElympicsLogger.LogError($"Matchmaking error: {args.Error}");
 
             var playerIndex = ElympicsClonesManager.IsClone() ? ElympicsClonesManager.GetCloneNumber() + 1 : 0;
@@ -63,7 +63,7 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException(e);
+                ElympicsLogger.LogException(e);
             }
         }
 
@@ -76,9 +76,9 @@ namespace Elympics
             }
 
             _initialPlayerData.UserId = result.Value.UserId;
-            ElympicsLogger.CurrentContext.SetUserId(result.Value.UserId.ToString())
-                .SetAuthType(result.Value.AuthType)
-                .Log($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
+            ElympicsLogger.State.SetUserId(result.Value.UserId);
+            ElympicsLogger.State.SetAuthType(result.Value.AuthType);
+            ElympicsLogger.LogInfo($"{AuthType.ClientSecret} authentication successful with user id: {_initialPlayerData.UserId}.");
 
             var cts = new CancellationTokenSource(MatchmakingTimeout);
             var testMatchData = _elympicsGameConfig.TestMatchData;
@@ -86,8 +86,8 @@ namespace Elympics
             var regionName = testMatchData.regionName;
             if (string.IsNullOrEmpty(regionName))
                 regionName = null;
-            _ = ElympicsLogger.CurrentContext.SetQueue(queueName)
-                .SetRegion(regionName);
+            ElympicsLogger.State.SetQueue(queueName);
+            ElympicsLogger.State.SetRegion(regionName);
 
             ElympicsLogTemplates.LogJoiningMatchmaker(_initialPlayerData.UserId, _initialPlayerData.MatchmakerData, _initialPlayerData.GameEngineData, queueName, regionName, false);
 
@@ -108,17 +108,15 @@ namespace Elympics
         {
             const string gameModeName = "debug-online-client";
 
-            ElympicsLogger.CurrentContext.SetMatchId(matchData.MatchId.ToString())
-                .SetServerAddress(matchData.TcpUdpServerAddress, matchData.WebServerAddress)
-                .Log("Matchmaking finished, connecting to the game server...");
+            ElympicsLogger.State.SetGameServerAddress(matchData.TcpUdpServerAddress, matchData.WebServerAddress);
+            ElympicsLogger.LogInfo("Matchmaking finished, connecting to the game server...");
             _initialPlayerData.Player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[_initialPlayerData.UserId];
 
             var serializer = new GameServerJsonSerializer();
             var config = _elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
-            var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
+            var gsEndpoint = _elympicsConfig.ElympicsGameServersEndpoint;
             var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, matchData.WebServerAddress, _elympicsGameConfig.TestMatchData.regionName);
-            _ = ElympicsLogger.CurrentContext.SetGameMode(gameModeName)
-                .SetElympicsContext(ElympicsConfig.SdkVersion, _elympicsGameConfig.gameId);
+            ElympicsLogger.State.SetGameMode(gameModeName);
             GameServerClient gameServerClient = _elympicsGameConfig.UseWeb
                 ? new WebGameServerClient(serializer,
                     config,

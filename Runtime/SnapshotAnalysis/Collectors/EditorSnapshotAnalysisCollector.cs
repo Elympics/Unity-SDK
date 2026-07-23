@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis.Serialization;
 
 namespace Elympics.SnapshotAnalysis

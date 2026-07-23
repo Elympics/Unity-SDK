@@ -12,8 +12,6 @@ using Unity.WebRTC;
 using UnityEngine;
 using WebRtcWrapper;
 
-#nullable enable
-
 // The goal here is to have two interchangeable types with the same full name.
 // Using Platforms and Define Constraints in .asmdef, they are used in alternation.
 // ReSharper disable once CheckNamespace

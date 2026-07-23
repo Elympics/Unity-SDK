@@ -7,7 +7,6 @@ using Elympics;
 using Elympics.Communication.Models;
 using Elympics.Communication.Utils;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients;
 using MatchTcpLibrary.TransportLayer.Interfaces;

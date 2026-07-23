@@ -6,7 +6,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Core.Logger;
-using Elympics.ElympicsSystems.Internal;
 using MatchTcpClients;
 using MatchTcpLibrary;
 using UnityEngine;

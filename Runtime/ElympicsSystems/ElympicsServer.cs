@@ -46,6 +46,7 @@ namespace Elympics
         private ElympicsSnapshotWithMetadata _currentSnapshot = null!;
         private ElympicsSnapshotWithMetadata? _previousSnapshot;
         private ElympicsScore _score = null!;
+        private LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsServer));
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -85,6 +86,8 @@ namespace Elympics
                     _playerData,
                     new LatestMessagePackSerializer()
                 );
+                _logger.WithMethodName(nameof(_gameEngineAdapter.ReceivedInitialMatchPlayerDatas))
+                    .LogDebug($"Received server seed: {args.Data.Seed?.ToString() ?? "none"}");
                 ElympicsBehavioursManager.OnServerInit(args.Data);
                 InitializeBotsAndClientInServer(args.Data);
                 SetInitialized();
@@ -157,10 +160,9 @@ namespace Elympics
         private void LogHalfRemoteRunInBackgroundErrorIfApplicable()
         {
             if (!Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
-                ElympicsLogger.LogError("Development Mode is set to Half Remote "
-                                        + "but PlayerSettings \"Run In Background\" option is false, "
-                                        + "hence network simulation will not be performed in out-of-focus windows. "
-                                        + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
+                _logger.LogError("Development Mode is set to Half Remote, but PlayerSettings \"Run In Background\" option is false, "
+                    + "hence network simulation will not be performed in out-of-focus windows. "
+                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
         }
 
         private void OnApplicationPause(bool pauseStatus)

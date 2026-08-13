@@ -18,6 +18,9 @@ namespace Elympics
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; set; }
         public byte[]? ExternalGameData { get; set; }
 
+        public uint? Seed => CustomMatchmakingData?.GetValueOrDefault(TournamentConst.SeedKey) is { } seed
+            ? uint.Parse(seed) : null;
+
         internal InitialMatchPlayerDatasGuid(IEnumerable<InitialMatchPlayerDataGuid> playerDatas) : base(playerDatas)
         { }
 

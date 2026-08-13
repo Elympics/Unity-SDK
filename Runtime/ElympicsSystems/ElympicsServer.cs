@@ -85,6 +85,7 @@ namespace Elympics
                     _playerData,
                     new LatestMessagePackSerializer()
                 );
+                ElympicsLogger.LogInfo(args.Data.Seed is { } seed ? $"[SEED] Received server seed: {seed}" : "[SEED] No seed received");
                 ElympicsBehavioursManager.OnServerInit(args.Data);
                 InitializeBotsAndClientInServer(args.Data);
                 SetInitialized();

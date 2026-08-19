@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Plugins.Elympics.Runtime.Communication.HalfRemote
 {
-    public class SimpleHttpSignalingServer
+    internal class SimpleHttpSignalingServer
     {
         private readonly HttpListener _listener;
         private readonly IWebClientInitializer _webClientInitializer;
@@ -80,7 +80,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
                             using (var readStream = new StreamReader(request.InputStream, Encoding.ASCII))
                                 offer = await readStream.ReadToEndAsync();
 
-                            var answer = await _webClientInitializer.InitClientAndCreateAnswer(offer);
+                            var answer = await _webClientInitializer.InitClientAndCreateAnswer(JsonUtility.FromJson<OfferWithCandidates>(offer));
                             var responseJson = JsonUtility.ToJson(new SignalingResponse
                             {
                                 answer = answer,

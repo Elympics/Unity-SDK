@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
+using Elympics.Communication.Models;
 
 namespace UnityConnectors.HalfRemote.Server
 {
-    public interface IWebClientInitializer
+    internal interface IWebClientInitializer
     {
-        Task<string> InitClientAndCreateAnswer(string offer);
+        Task<string> InitClientAndCreateAnswer(OfferWithCandidates offer);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Elympics.Communication.Models;
 using GameEngineCore;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -217,7 +218,7 @@ namespace UnityConnectors.HalfRemote
             }
         }
 
-        public Task<string> InitClientAndCreateAnswer(string offer)
+        public Task<string> InitClientAndCreateAnswer(OfferWithCandidates offer)
         {
             return _webClientInitializer.InitClientAndCreateAnswer(offer);
         }

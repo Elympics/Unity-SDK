@@ -2,6 +2,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Elympics.Communication.Models;
 using Elympics.Core.Logger;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Proto.ProtoClient;
@@ -58,7 +59,7 @@ namespace UnityConnectors.HalfRemote.Server
             _webRtcListener = null;
         }
 
-        public async Task<string> InitClientAndCreateAnswer(string offer)
+        public async Task<string> InitClientAndCreateAnswer(OfferWithCandidates offer)
         {
             var clientId = Guid.NewGuid();
 
@@ -80,7 +81,7 @@ namespace UnityConnectors.HalfRemote.Server
 
             try
             {
-                var answer = await webRtcServerClient.CreateAnswerAsync(offer);
+                var answer = await webRtcServerClient.CreateAnswerAsync(offer.offer);
 
                 webRtcServerClient.ReceiveReliable();
                 webRtcServerClient.ReceiveUnreliable();

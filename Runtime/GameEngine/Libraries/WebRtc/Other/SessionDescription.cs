@@ -26,6 +26,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc.Other
                 "pranswer" => RTCSdpType.Pranswer,
                 "answer" => RTCSdpType.Answer,
                 "rollback" => RTCSdpType.Rollback,
+                null => throw new ArgumentNullException(nameof(sessionDescription.type)),
                 _ => throw new ArgumentOutOfRangeException(nameof(sessionDescription.type), sessionDescription.type, "Unsupported session description type"),
             },
             sdp = sessionDescription.sdp,

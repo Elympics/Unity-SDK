@@ -2,10 +2,12 @@ using System;
 using System.Net.Http;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models;
+using UnityEngine;
 
 namespace Elympics.Tests.UnityConnectors.HalfRemote
 {
-    public class SimpleHttpSignalingClient
+    internal class SimpleHttpSignalingClient
     {
         private readonly Uri _uri;
         private readonly HttpClient _httpClient;
@@ -16,10 +18,12 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             _httpClient = new HttpClient();
         }
 
-        public async UniTask<string> PostOfferAsync(string offer)
+        public async UniTask<SignalingResponse> PostOfferAsync(OfferWithCandidates offer)
         {
-            var response = await _httpClient.PostAsync(_uri, new StringContent(offer, Encoding.ASCII, "application/json"));
-            return await response.Content.ReadAsStringAsync();
+            var requestContent = new StringContent(JsonUtility.ToJson(offer), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(_uri, requestContent);
+            var responseText = await response.Content.ReadAsStringAsync();
+            return JsonUtility.FromJson<SignalingResponse>(responseText);
         }
     }
 }

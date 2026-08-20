@@ -4,9 +4,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Communication.Models;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using NUnit.Framework;
+using Plugins.Elympics.Runtime.Communication.HalfRemote;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
@@ -44,7 +46,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             const int tcpPort = 7894;
             const int webPort = 7895;
 
-            var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/doSignaling"));
+            var httpClient = new SimpleHttpSignalingClient(new Uri($"http://{IPAddress.Loopback}:{webPort}/v2/doSignaling/{Guid.Empty}"));
             var webRtcClient = WebRtcFactory.CreateClient(WebRtcConfig.Default);
 
             var reliableChannel = webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
@@ -57,10 +59,14 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
                     throw new ArgumentException("Offer is empty");
 
                 Debug.Log(offer);
-                var answer = await httpClient.PostOfferAsync(offer);
+                var answer = await httpClient.PostOfferAsync(new OfferWithCandidates
+                {
+                    offer = offer,
+                    candidates = Array.Empty<string>(),
+                });
                 Debug.Log(answer);
 
-                await webRtcClient.OnAnswer(answer);
+                await webRtcClient.OnAnswer(answer.answer);
 
                 return new HalfRemoteMatchClient(UserId, reliableChannel, unreliableChannel);
             }
@@ -171,11 +177,16 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
             // Assert
             Assert.IsTrue(playerConnected);
-            Assert.AreEqual(unreliableDataNumberToSend, unreliableServerDataReceived);
-            Assert.AreEqual(unreliableDataNumberToSend, unreliableClientDataReceived);
+            Assert.IsTrue(matchEnded);
             Assert.AreEqual(reliableDataNumberToSend, reliableServerDataReceived);
             Assert.AreEqual(reliableDataNumberToSend, reliableClientDataReceived);
-            Assert.IsTrue(matchEnded);
+            // Previously, these lines checked if both unreliableClientDataReceived
+            //  and unreliableServerDataReceived are equal to unreliableDataNumberToSend.
+            // Of course, because the channel is UNRELIABLE it means that such thing should not be asserted.
+            // In contrary, here I'm asserting that at least one in ten messages have arrived.
+            // This seems to be a chance high enough.
+            Assert.That(unreliableClientDataReceived, Is.GreaterThan(0));
+            Assert.That(unreliableServerDataReceived, Is.GreaterThan(0));
         }
     }
 }

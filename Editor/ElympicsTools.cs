@@ -1,10 +1,11 @@
 using System.IO;
 using Elympics.Core.Logger;
+using Elympics.Editor.Config;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Elympics
+namespace Elympics.Editor
 {
     public static class ElympicsTools
     {

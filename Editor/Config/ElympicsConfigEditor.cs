@@ -5,10 +5,10 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Elympics.Editor
+namespace Elympics.Editor.Config
 {
     [CustomEditor(typeof(ElympicsConfig))]
-    public class ElympicsConfigEditor : UnityEditor.Editor
+    internal class ElympicsConfigEditor : UnityEditor.Editor
     {
         public VisualTreeAsset? inspectorUxml;
 

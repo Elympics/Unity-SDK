@@ -1,6 +1,8 @@
 using System;
 using UnityEngine.Networking;
 
+#nullable enable
+
 namespace Elympics
 {
     public class EditorEndpointChecker
@@ -8,17 +10,23 @@ namespace Elympics
         private const string HealthQuery = "health";
         private const int DefaultTimeout = 3;
 
-        private string _lastUrl;
-        private Uri _uri;
+        private string? _lastUrl;
+        private Uri? _uri;
         private bool _uriUpdated;
 
-        private UnityWebRequest _request;
+        private UnityWebRequest? _request;
 
-        public void UpdateUri(string url)
+        public void UpdateUri(string? url)
         {
             if (_lastUrl == url)
                 return;
             _lastUrl = url;
+
+            if (url is null)
+            {
+                _uri = null;
+                return;
+            }
 
             try
             {
@@ -38,7 +46,7 @@ namespace Elympics
 
         public void Update()
         {
-            if (!_uriUpdated)
+            if (!_uriUpdated || _uri is null)
                 return;
 
             _uriUpdated = false;
@@ -56,6 +64,6 @@ namespace Elympics
 
         public bool IsUriCorrect => _uri != null;
         public bool IsRequestDone => _request?.isDone ?? false;
-        public bool IsRequestSuccessful => !_request.IsProtocolError() && !_request.IsConnectionError();
+        public bool IsRequestSuccessful => _request != null && !_request.IsProtocolError() && !_request.IsConnectionError();
     }
 }

@@ -47,7 +47,7 @@ namespace Elympics
 #if UNITY_EDITOR
         private void OnEnable()
         {
-            if (currentGame > 0 && currentGame < availableGames.Count)
+            if (!migratedActiveGame && currentGame > 0 && currentGame < availableGames.Count)
             {
                 var activeGame = availableGames[currentGame];
                 availableGames.RemoveAt(currentGame);

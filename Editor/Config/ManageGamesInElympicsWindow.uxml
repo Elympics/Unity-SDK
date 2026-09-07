@@ -1,0 +1,88 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.daftmobile.elympics/Editor/Config/ManageGamesInElympicsWindow.uss?fileID=7433441132597879392&amp;guid=849134b9f2674fbeb3fdfe728c9591e2&amp;type=3#ManageGamesInElympicsWindow" />
+    <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="no-config-info" text="Couldn't load Elympics Config. Create one using &quot;Tools/Elympics/Setup&quot; menu item." style="display: none;" />
+    <ui:VisualElement name="login-view" style="display: none; margin-left: 10px; margin-right: 10px; margin-top: 5px;">
+        <ui:Label text="Account" name="login-account-header" class="elympics-header" />
+        <ui:VisualElement class="elympics-header-line" />
+        <ui:Label text="You have to be logged in to manage games in Elympics!" class="elympics-info elympics-centered" />
+        <ui:Label text="Username" class="elympics-centered" />
+        <ui:TextField name="login-username" class="elympics-centered-field" />
+        <ui:Label text="Password" class="elympics-centered" />
+        <ui:TextField name="login-password" class="elympics-centered-field" />
+        <ui:Button text="Login" display-tooltip-when-elided="true" name="login-button" class="elympics-centered-button" />
+        <ui:VisualElement style="height: 9px;" />
+        <ui:Label text="Elympics endpoints" name="login-endpoints-header" class="elympics-header" />
+        <ui:VisualElement class="elympics-header-line" />
+        <ui:VisualElement class="elympics-endpoint-row">
+            <ui:Label text="Elympics Web endpoint" class="elympics-endpoint-label" />
+            <ui:TextField name="login-web-endpoint" binding-path="elympicsWebEndpoint" class="elympics-endpoint-field" />
+            <ui:Label text="Connecting..." display-tooltip-when-elided="true" name="login-web-endpoint-status" class="elympics-endpoint-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="manage-view" style="display: none; flex-grow: 1; margin-left: 10px; margin-right: 10px; margin-top: 5px;">
+        <ui:Label text="Account" name="account-header" class="elympics-header" />
+        <ui:VisualElement class="elympics-header-line" />
+        <ui:VisualElement style="flex-direction: row; align-items: center; justify-content: center;">
+            <ui:Label text="Logged in " display-tooltip-when-elided="true" />
+            <ui:Label text="ElympicsWeb" display-tooltip-when-elided="true" style="color: rgb(46, 172, 255);" />
+            <ui:Label text=" as " display-tooltip-when-elided="true" />
+            <ui:Label text="username" display-tooltip-when-elided="true" name="logged-as" style="-unity-font-style: bold;" />
+        </ui:VisualElement>
+        <ui:Button text="Logout" display-tooltip-when-elided="true" name="logout-button" class="elympics-centered-button" />
+        <ui:Label text="Endpoints" name="endpoints-header" class="elympics-header" />
+        <ui:VisualElement class="elympics-header-line" />
+        <ui:VisualElement class="elympics-endpoint-row">
+            <ui:Label text="Web endpoint" class="elympics-endpoint-label" />
+            <ui:TextField name="web-endpoint" binding-path="elympicsWebEndpoint" class="elympics-endpoint-field" />
+            <ui:Label text="Connecting..." display-tooltip-when-elided="true" name="web-endpoint-status" class="elympics-endpoint-status" />
+        </ui:VisualElement>
+        <ui:Button text="Synchronize" display-tooltip-when-elided="true" name="synchronize-button" class="elympics-wide-button" />
+        <ui:Label text="Synchronize endpoints and games available for your account" display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+        <ui:VisualElement class="elympics-endpoint-row">
+            <ui:Label text="Game Servers endpoint" class="elympics-endpoint-label" />
+            <ui:TextField name="gs-endpoint" binding-path="elympicsGameServersEndpoint" class="elympics-endpoint-field" />
+            <ui:Label text="Connecting..." display-tooltip-when-elided="true" name="gs-endpoint-status" class="elympics-endpoint-status" />
+        </ui:VisualElement>
+        <ui:ScrollView name="manage-scroll" style="flex-grow: 1; margin-top: 5px;">
+            <ui:VisualElement name="account-games-section" style="display: none;">
+                <ui:Label text="Account Games - use this data to fill local game configs" name="account-games-header" class="elympics-header" />
+                <ui:VisualElement class="elympics-header-line" />
+                <ui:VisualElement name="account-games-container" style="max-height: 120px;" />
+            </ui:VisualElement>
+            <ui:Label text="Local games configurations" name="local-games-header" class="elympics-header" />
+            <ui:VisualElement class="elympics-header-line" />
+            <ui:VisualElement name="regions-section">
+                <ui:Label display-tooltip-when-elided="true" name="regions-info" />
+                <ui:VisualElement name="regions-container" />
+            </ui:VisualElement>
+            <ui:ListView focusable="true" name="available-games" binding-path="availableGames" header-title="Local games configurations" show-foldout-header="true" show-add-remove-footer="true" fixed-item-height="20" />
+            <ui:Label text="The current active game config is the first non-null position from the list above" display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+            <ui:VisualElement name="no-game-config-section" style="display: none;">
+                <ui:Label text="You don't have any available games yet. Click button below to create first Elympics Config!" display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+                <ui:Button text="Create first game config!" display-tooltip-when-elided="true" name="create-first-config-button" class="elympics-wide-button" />
+                <ui:Label text="or import existing games (e.g. samples)" display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+                <ui:Button text="Find and import games (0)" display-tooltip-when-elided="true" name="import-games-button" class="elympics-wide-button" />
+            </ui:VisualElement>
+            <ui:VisualElement name="game-config-section" style="display: none;">
+                <ui:Label text="Game settings" name="game-config-header" class="elympics-header" />
+                <ui:VisualElement class="elympics-header-line" />
+                <ui:VisualElement name="game-config-root" class="compact-game-config" />
+                <ui:Label text="Manage game in Elympics" name="manage-game-header" class="elympics-header" />
+                <ui:VisualElement class="elympics-header-line" />
+                <ui:Button text="Build &amp; upload server" display-tooltip-when-elided="true" name="build-upload-server-button" class="elympics-wide-button" />
+                <ui:Button text="Log uploaded server versions" display-tooltip-when-elided="true" name="log-versions-button" class="elympics-wide-button" />
+                <ui:Label text="Upload new version of game with current settings to Elympics, game name and game id in config should match with game in Elympics. It's required to first upload a game version if you want to play it in online mode." display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+                <ui:VisualElement style="height: 9px;" />
+                <ui:VisualElement class="elympics-field-row">
+                    <ui:Label text="Client version" class="elympics-field-label" tooltip="Name of the client build version that will be uploaded. It doesn't have to match the game version from Elympics game config. The game version from Elympics game config is used to match client with server version, so you can upload a new client version with UI fixes without uploading a new server version." />
+                    <ui:TextField name="client-version" class="elympics-endpoint-field" />
+                </ui:VisualElement>
+                <ui:VisualElement class="elympics-field-row">
+                    <ui:Label text="Client build path" class="elympics-field-label" tooltip="Path to the directory containing the client build that will be uploaded." />
+                    <ui:TextField name="client-build-path" class="elympics-endpoint-field" />
+                </ui:VisualElement>
+                <ui:Button text="Upload client" display-tooltip-when-elided="true" name="upload-client-button" class="elympics-wide-button" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

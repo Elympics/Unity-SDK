@@ -16,6 +16,8 @@ namespace Elympics.Editor
     [CustomEditor(typeof(ElympicsGameConfig))]
     internal class ElympicsGameConfigEditor : UnityEditor.Editor
     {
+        private const int DataChangedDebounceMs = 500;
+
         public VisualTreeAsset? inspectorUxml;
 
         public override VisualElement CreateInspectorGUI()
@@ -31,6 +33,12 @@ namespace Elympics.Editor
             VisualElement inspectorTree = sourceTree.CloneTree();
 
             var gameConfig = (ElympicsGameConfig)serializedObject.targetObject;
+
+            var gameName = inspectorTree.Q<TextField>("game-name");
+            var gameId = inspectorTree.Q<TextField>("game-id");
+            var gameIdErrorBox = inspectorTree.Q<HelpBox>("game-id-error");
+            var gameVersion = inspectorTree.Q<TextField>("game-version");
+            var maxPlayers = inspectorTree.Q<SliderInt>("max-players");
 
             var scenePath = inspectorTree.Q<TextField>("scene-path");
             var sceneAsset = inspectorTree.Q<ObjectField>("scene-object");
@@ -75,6 +83,18 @@ namespace Elympics.Editor
                 isCurrentGameVersionUploaded = inProgress ? null : CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded;
             CurrentGameVersionUploadedToTheCloudStatus.Initialize(gameConfig);
 
+            var notifyDataChanged = inspectorTree.schedule.Execute(gameConfig.ProcessElympicsConfigDataChanged);
+            notifyDataChanged.Pause();
+
+            _ = gameName.RegisterValueChangedCallback(_ => RescheduleDataChangedNotification());
+            _ = gameId.RegisterValueChangedCallback(_ =>
+            {
+                UpdateGameIdErrorBox();
+                RescheduleDataChangedNotification();
+            });
+            _ = gameVersion.RegisterValueChangedCallback(_ => RescheduleDataChangedNotification());
+            _ = maxPlayers.RegisterValueChangedCallback(_ => RescheduleDataChangedNotification());
+
             _ = sceneAsset.RegisterValueChangedCallback(evt =>
             {
                 var asset = (SceneAsset)evt.newValue;
@@ -113,6 +133,7 @@ namespace Elympics.Editor
                     _ = EditorSceneManager.OpenScene(path);
             };
 
+            UpdateGameIdErrorBox();
             UpdateSceneButton();
             UpdateTicksPerSecondLabel();
             UpdateTotalPredictionLimitLabel();
@@ -122,6 +143,10 @@ namespace Elympics.Editor
             UpdateInputLagHighValue();
 
             return inspectorTree;
+
+            void RescheduleDataChangedNotification() => notifyDataChanged.ExecuteLater(DataChangedDebounceMs);
+
+            void UpdateGameIdErrorBox() => SetVisible(gameIdErrorBox, !Guid.TryParse(gameId.value, out _));
 
             void UpdateSceneButton()
             {
@@ -245,5 +270,7 @@ namespace Elympics.Editor
 
             void UpdateInputLagHighValue() => inputLag.highValue = gameConfig.TicksPerSecond;
         }
+
+        private static void SetVisible(VisualElement element, bool visible) => element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 }

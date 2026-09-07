@@ -70,16 +70,18 @@
     margin-bottom: 1px;
 }
 
-.elympics-endpoint-label {
-    width: 30%;
+.elympics-endpoint-label,
+.elympics-field-label {
     flex-shrink: 0;
     -unity-text-align: middle-center;
 }
 
+.elympics-endpoint-label {
+    width: 30%;
+}
+
 .elympics-field-label {
     width: 25%;
-    flex-shrink: 0;
-    -unity-text-align: middle-center;
 }
 
 .elympics-endpoint-field {

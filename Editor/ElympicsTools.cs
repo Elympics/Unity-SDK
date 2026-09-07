@@ -31,13 +31,19 @@ namespace Elympics.Editor
         [MenuItem(ElympicsEditorMenuPaths.RESET_IDS_MENU_PATH, priority = 3)]
         public static void ResetIds() => SceneNetworkIdAssigner.ResetAllIds(SceneManager.GetActiveScene());
 
+        internal static void EnsureElympicsResourcesDirectoryExists()
+        {
+            if (Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
+                return;
+
+            ElympicsLogger.LogInfo("Creating Elympics resources directory...");
+            _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
+            ElympicsLogger.LogInfo("Elympics resources directory created successfully.");
+        }
+
         private static ElympicsConfig CreateNewConfig()
         {
-            if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
-            {
-                ElympicsLogger.LogInfo("Creating Elympics resources directory...");
-                _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
-            }
+            EnsureElympicsResourcesDirectoryExists();
 
             var newConfig = ScriptableObject.CreateInstance<ElympicsConfig>();
 

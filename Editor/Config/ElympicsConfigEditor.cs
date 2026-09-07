@@ -55,18 +55,18 @@ namespace Elympics.Editor.Config
 
             void UpdateChosenGameConfig()
             {
-                chosenGameConfig.style.display = DisplayStyle.None;
-                noGameConfigInfo.style.display = DisplayStyle.None;
+                chosenGameConfig.SetVisible(false);
+                noGameConfigInfo.SetVisible(false);
 
                 var gameConfig = config.GetCurrentGameConfig();
                 if (gameConfig == null)
                 {
-                    noGameConfigInfo.style.display = DisplayStyle.Flex;
+                    noGameConfigInfo.SetVisible(true);
                     _ = CreateChosenGameEditorIfChanged(null);
                     return;
                 }
 
-                chosenGameConfig.style.display = DisplayStyle.Flex;
+                chosenGameConfig.SetVisible(true);
                 gameTitle.text = gameConfig.GameName;
 
                 if (!CreateChosenGameEditorIfChanged(gameConfig))

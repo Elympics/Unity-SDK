@@ -146,7 +146,7 @@ namespace Elympics.Editor
 
             void RescheduleDataChangedNotification() => notifyDataChanged.ExecuteLater(DataChangedDebounceMs);
 
-            void UpdateGameIdErrorBox() => SetVisible(gameIdErrorBox, !Guid.TryParse(gameId.value, out _));
+            void UpdateGameIdErrorBox() => gameIdErrorBox.SetVisible(!Guid.TryParse(gameId.value, out _));
 
             void UpdateSceneButton()
             {
@@ -169,32 +169,32 @@ namespace Elympics.Editor
             void UpdateDebugModeOptions()
             {
                 debugModeWarning.text = "";
-                debugModeWarning.style.display = DisplayStyle.None;
-                halfRemoteOptions.style.display = DisplayStyle.None;
-                debugOnlineOptions.style.display = DisplayStyle.None;
-                snapshotReplayOptions.style.display = DisplayStyle.None;
+                debugModeWarning.SetVisible(false);
+                halfRemoteOptions.SetVisible(false);
+                debugOnlineOptions.SetVisible(false);
+                snapshotReplayOptions.SetVisible(false);
                 switch (gameConfig.GameplaySceneDebugMode)
                 {
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots:
                         debugModeSummary.text = "Run the server, a single player and bots locally with no networking. Good for anything outside of gameplay, such as UI, graphics and sound design.";
                         debugModeWarning.text = "This mode is not fit for gameplay development!";
-                        debugModeWarning.style.display = DisplayStyle.Flex;
+                        debugModeWarning.SetVisible(true);
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote:
                         debugModeSummary.text = "Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server, user or bot, use ParrelSync to create more instances.";
                         debugModeWarning.text = "This mode is only a simulation of production environment!";
-                        debugModeWarning.style.display = DisplayStyle.Flex;
-                        halfRemoteOptions.style.display = DisplayStyle.Flex;
+                        debugModeWarning.SetVisible(true);
+                        halfRemoteOptions.SetVisible(true);
                         UpdateHalfRemoteModeOptions();
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
                         debugModeSummary.text = "Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.";
-                        debugOnlineOptions.style.display = DisplayStyle.Flex;
+                        debugOnlineOptions.SetVisible(true);
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay:
                         debugModeSummary.text = "Replay previously recorded match using snapshots from a file.";
-                        snapshotReplayOptions.style.display = DisplayStyle.Flex;
-                        halfRemoteRecordSnapshot.style.display = DisplayStyle.None;
+                        snapshotReplayOptions.SetVisible(true);
+                        halfRemoteRecordSnapshot.SetVisible(false);
                         UpdateSnapshotReplayOptions();
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer:
@@ -202,42 +202,38 @@ namespace Elympics.Editor
                         break;
                     default:
                         debugModeSummary.text = "";
-                        debugModeSummary.style.display = DisplayStyle.None;
+                        debugModeSummary.SetVisible(false);
                         break;
                 }
             }
 
             void UpdateHalfRemoteModeOptions()
             {
-                var displayIfServer = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Server
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
-                var displayIfClient = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Client
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
-                snapshotReplayOptions.style.display = displayIfServer;
-                halfRemoteRecordSnapshot.style.display = displayIfServer;
-                halfRemoteClientOptions.style.display = displayIfClient;
+                var isServer = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Server;
+                var isClient = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Client;
+                snapshotReplayOptions.SetVisible(isServer);
+                halfRemoteRecordSnapshot.SetVisible(isServer);
+                halfRemoteClientOptions.SetVisible(isClient);
                 UpdateSnapshotReplayOptions();
             }
 
             void UpdateVersionUploadStatus()
             {
-                debugOnlineError.style.display = DisplayStyle.None;
+                debugOnlineError.SetVisible(false);
                 if (!isCurrentGameVersionUploaded.HasValue)
-                    debugOnlineSpinner.style.display = DisplayStyle.Flex;
+                    debugOnlineSpinner.SetVisible(true);
                 else
                 {
-                    debugOnlineSpinner.style.display = DisplayStyle.None;
+                    debugOnlineSpinner.SetVisible(false);
                     if (!isCurrentGameVersionUploaded.Value)
-                        debugOnlineError.style.display = DisplayStyle.Flex;
+                        debugOnlineError.SetVisible(true);
                 }
             }
 
             void UpdateSnapshotReplayOptions()
             {
                 snapshotReplayPath.SetEnabled(true);
-                snapshotReplayError.style.display = DisplayStyle.None;
+                snapshotReplayError.SetVisible(false);
                 snapshotReplayError.text = "";
 
                 if (gameConfig is
@@ -264,13 +260,11 @@ namespace Elympics.Editor
                 void SetErrorMessage(string message)
                 {
                     snapshotReplayError.text = message;
-                    snapshotReplayError.style.display = DisplayStyle.Flex;
+                    snapshotReplayError.SetVisible(true);
                 }
             }
 
             void UpdateInputLagHighValue() => inputLag.highValue = gameConfig.TicksPerSecond;
         }
-
-        private static void SetVisible(VisualElement element, bool visible) => element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 }

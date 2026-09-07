@@ -22,26 +22,18 @@ namespace Elympics
                 return;
             _lastUrl = url;
 
-            if (url is null)
+            if (url is null || !Uri.TryCreate(url, UriKind.Absolute, out var validatedUrl))
             {
                 _uri = null;
                 return;
             }
 
-            try
-            {
-                var validatedUrl = new Uri(url);
-                var builder = new UriBuilder(validatedUrl);
-                builder.Path = $"{builder.Path.TrimEnd('/')}/{HealthQuery}";
-                builder.Query = "";
-                builder.Fragment = "";
-                _uri = builder.Uri;
-                _uriUpdated = true;
-            }
-            catch (UriFormatException)
-            {
-                _uri = null;
-            }
+            var builder = new UriBuilder(validatedUrl);
+            builder.Path = $"{builder.Path.TrimEnd('/')}/{HealthQuery}";
+            builder.Query = "";
+            builder.Fragment = "";
+            _uri = builder.Uri;
+            _uriUpdated = true;
         }
 
         public void Update()

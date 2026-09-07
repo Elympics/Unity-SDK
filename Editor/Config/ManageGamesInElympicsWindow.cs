@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Elympics.Core.Logger;
@@ -85,7 +84,11 @@ namespace Elympics.Editor.Config
 
         private IVisualElementScheduledItem? _tick;
 
-        private (EditorEndpointChecker Web, EditorEndpointChecker GameServers)? _endpointCheckers;
+        private EditorEndpointChecker? _webEndpointChecker;
+        private EditorEndpointChecker? _gameServersEndpointChecker;
+
+        private (string Text, Color Color)? _lastWebIndicator;
+        private (string Text, Color Color)? _lastGameServersIndicator;
 
         private string[]? _availableRegions;
         private List<ElympicsWebIntegration.GameResponseModel> _accountGames = new();
@@ -98,23 +101,74 @@ namespace Elympics.Editor.Config
 
         private class VisualElements
         {
-            public VisualElement LoginView { get; init; } = null!;
-            public VisualElement ManageView { get; init; } = null!;
-            public Label LoginWebEndpointStatus { get; init; } = null!;
-            public Label WebEndpointStatus { get; init; } = null!;
-            public Label GameServersEndpointStatus { get; init; } = null!;
-            public Label LoggedAs { get; init; } = null!;
-            public VisualElement AccountGamesSection { get; init; } = null!;
-            public VisualElement AccountGamesContainer { get; init; } = null!;
-            public VisualElement RegionsSection { get; init; } = null!;
-            public Label RegionsInfo { get; init; } = null!;
-            public VisualElement RegionsContainer { get; init; } = null!;
-            public VisualElement NoGameConfigSection { get; init; } = null!;
-            public Button ImportGamesButton { get; init; } = null!;
-            public VisualElement GameConfigSection { get; init; } = null!;
-            public Label GameConfigHeader { get; init; } = null!;
-            public VisualElement GameConfigRoot { get; init; } = null!;
-            public Label ManageGameHeader { get; init; } = null!;
+            public VisualElement LoginView { get; }
+            public VisualElement ManageView { get; }
+            public Label LoginWebEndpointStatus { get; }
+            public Label WebEndpointStatus { get; }
+            public Label GameServersEndpointStatus { get; }
+            public Label LoggedAs { get; }
+            public VisualElement AccountGamesSection { get; }
+            public VisualElement AccountGamesContainer { get; }
+            public VisualElement RegionsSection { get; }
+            public Label RegionsInfo { get; }
+            public VisualElement RegionsContainer { get; }
+            public VisualElement NoGameConfigSection { get; }
+            public Button ImportGamesButton { get; }
+            public VisualElement GameConfigSection { get; }
+            public Label GameConfigHeader { get; }
+            public VisualElement GameConfigRoot { get; }
+            public Label ManageGameHeader { get; }
+            public ListView AvailableGamesList { get; }
+            public Button CreateFirstConfigButton { get; }
+            public TextField LoginUsername { get; }
+            public TextField LoginPassword { get; }
+            public Button LoginButton { get; }
+            public Button LogoutButton { get; }
+            public TextField LoginWebEndpoint { get; }
+            public TextField WebEndpoint { get; }
+            public TextField GameServersEndpoint { get; }
+            public Button SynchronizeButton { get; }
+            public TextField ClientVersion { get; }
+            public TextField BuildPath { get; }
+            public Button BuildUploadServerButton { get; }
+            public Button LogVersionsButton { get; }
+            public Button UploadClientButton { get; }
+
+            public VisualElements(VisualElement root)
+            {
+                LoginView = root.Q<VisualElement>("login-view");
+                ManageView = root.Q<VisualElement>("manage-view");
+                LoginWebEndpointStatus = root.Q<Label>("login-web-endpoint-status");
+                WebEndpointStatus = root.Q<Label>("web-endpoint-status");
+                GameServersEndpointStatus = root.Q<Label>("gs-endpoint-status");
+                LoggedAs = root.Q<Label>("logged-as");
+                AccountGamesSection = root.Q<VisualElement>("account-games-section");
+                AccountGamesContainer = root.Q<VisualElement>("account-games-container");
+                RegionsSection = root.Q<VisualElement>("regions-section");
+                RegionsInfo = root.Q<Label>("regions-info");
+                RegionsContainer = root.Q<VisualElement>("regions-container");
+                NoGameConfigSection = root.Q<VisualElement>("no-game-config-section");
+                ImportGamesButton = root.Q<Button>("import-games-button");
+                GameConfigSection = root.Q<VisualElement>("game-config-section");
+                GameConfigHeader = root.Q<Label>("game-config-header");
+                GameConfigRoot = root.Q<VisualElement>("game-config-root");
+                ManageGameHeader = root.Q<Label>("manage-game-header");
+                AvailableGamesList = root.Q<ListView>("available-games");
+                CreateFirstConfigButton = root.Q<Button>("create-first-config-button");
+                LoginUsername = root.Q<TextField>("login-username");
+                LoginPassword = root.Q<TextField>("login-password");
+                LoginButton = root.Q<Button>("login-button");
+                LogoutButton = root.Q<Button>("logout-button");
+                LoginWebEndpoint = root.Q<TextField>("login-web-endpoint");
+                WebEndpoint = root.Q<TextField>("web-endpoint");
+                GameServersEndpoint = root.Q<TextField>("gs-endpoint");
+                SynchronizeButton = root.Q<Button>("synchronize-button");
+                ClientVersion = root.Q<TextField>("client-version");
+                BuildPath = root.Q<TextField>("client-build-path");
+                BuildUploadServerButton = root.Q<Button>("build-upload-server-button");
+                LogVersionsButton = root.Q<Button>("log-versions-button");
+                UploadClientButton = root.Q<Button>("upload-client-button");
+            }
         }
 
         private VisualElements? _elements;
@@ -182,6 +236,8 @@ namespace Elympics.Editor.Config
             rootVisualElement.Clear();
             DestroyGameConfigEditor();
             _lastIsLogin = null;
+            _lastWebIndicator = null;
+            _lastGameServersIndicator = null;
 
             windowUxml.CloneTree(rootVisualElement);
 
@@ -191,20 +247,21 @@ namespace Elympics.Editor.Config
             var noConfigInfo = rootVisualElement.Q<HelpBox>("no-config-info");
             if (config == null)
             {
-                SetVisible(noConfigInfo, true);
+                noConfigInfo.SetVisible(true);
                 return;
             }
 
             _lastRebuildConfig = config;
             _serializedConfig = new SerializedConfig(new SerializedObject(config));
 
-            _endpointCheckers = (new EditorEndpointChecker(), new EditorEndpointChecker());
+            _webEndpointChecker = new EditorEndpointChecker();
+            _gameServersEndpointChecker = new EditorEndpointChecker();
 
-            QueryElements();
-            BindLoginSection();
-            BindEndpointsSection();
-            BindAvailableGamesSection();
-            BindGameManagementSection();
+            _elements = new VisualElements(rootVisualElement);
+            BindLoginSection(_elements, _webEndpointChecker);
+            BindEndpointsSection(_elements, _serializedConfig, _webEndpointChecker, _gameServersEndpointChecker);
+            BindAvailableGamesSection(_elements);
+            BindGameManagementSection(_elements);
 
             rootVisualElement.Bind(_serializedConfig.Config);
 
@@ -213,56 +270,41 @@ namespace Elympics.Editor.Config
             UpdateAvailableRegions();
             UpdateChosenGameConfig();
 
+            // Better alternative to EditorApplication.update
             _tick = rootVisualElement.schedule.Execute(Tick).Every(TickIntervalMs);
-        }
 
-        private void QueryElements()
-        {
-            _elements = new VisualElements
+            void Tick()
             {
-                LoginView = rootVisualElement.Q<VisualElement>("login-view"),
-                ManageView = rootVisualElement.Q<VisualElement>("manage-view"),
-                LoginWebEndpointStatus = rootVisualElement.Q<Label>("login-web-endpoint-status"),
-                WebEndpointStatus = rootVisualElement.Q<Label>("web-endpoint-status"),
-                GameServersEndpointStatus = rootVisualElement.Q<Label>("gs-endpoint-status"),
-                LoggedAs = rootVisualElement.Q<Label>("logged-as"),
-                AccountGamesSection = rootVisualElement.Q<VisualElement>("account-games-section"),
-                AccountGamesContainer = rootVisualElement.Q<VisualElement>("account-games-container"),
-                RegionsSection = rootVisualElement.Q<VisualElement>("regions-section"),
-                RegionsInfo = rootVisualElement.Q<Label>("regions-info"),
-                RegionsContainer = rootVisualElement.Q<VisualElement>("regions-container"),
-                NoGameConfigSection = rootVisualElement.Q<VisualElement>("no-game-config-section"),
-                ImportGamesButton = rootVisualElement.Q<Button>("import-games-button"),
-                GameConfigSection = rootVisualElement.Q<VisualElement>("game-config-section"),
-                GameConfigHeader = rootVisualElement.Q<Label>("game-config-header"),
-                GameConfigRoot = rootVisualElement.Q<VisualElement>("game-config-root"),
-                ManageGameHeader = rootVisualElement.Q<Label>("manage-game-header"),
-            };
+                UpdateEndpointCheckers();
+                UpdateLoginState();
+            }
         }
 
         #region Ticking
 
-        //IMGUI used to drive the endpoint checkers on every repaint. The scheduler is bound to the window's panel,
-        //so it stops on its own when the window is closed - unlike EditorApplication.update, which would need manual cleanup.
-        private void Tick()
-        {
-            UpdateEndpointCheckers();
-            UpdateLoginState();
-        }
 
         private void UpdateEndpointCheckers()
         {
-            if (_endpointCheckers is null || _elements is null)
+            if (_webEndpointChecker is null || _gameServersEndpointChecker is null || _elements is null)
                 return;
 
-            _endpointCheckers.Value.Web.Update();
-            _endpointCheckers.Value.GameServers.Update();
+            _webEndpointChecker.Update();
+            _gameServersEndpointChecker.Update();
 
-            //Both endpoint labels show the same checker - the login and manage views are mutually exclusive
-            var webIndicator = GetEndpointIndicator(_endpointCheckers.Value.Web);
-            SetEndpointStatus(_elements.LoginWebEndpointStatus, webIndicator);
-            SetEndpointStatus(_elements.WebEndpointStatus, webIndicator);
-            SetEndpointStatus(_elements.GameServersEndpointStatus, GetEndpointIndicator(_endpointCheckers.Value.GameServers));
+            var webIndicator = GetEndpointIndicator(_webEndpointChecker);
+            if (_lastWebIndicator != webIndicator)
+            {
+                _lastWebIndicator = webIndicator;
+                SetEndpointStatus(_elements.LoginWebEndpointStatus, webIndicator);
+                SetEndpointStatus(_elements.WebEndpointStatus, webIndicator);
+            }
+
+            var gameServersIndicator = GetEndpointIndicator(_gameServersEndpointChecker);
+            if (_lastGameServersIndicator != gameServersIndicator)
+            {
+                _lastGameServersIndicator = gameServersIndicator;
+                SetEndpointStatus(_elements.GameServersEndpointStatus, gameServersIndicator);
+            }
         }
 
         private static void SetEndpointStatus(Label status, (string Text, Color Color) indicator)
@@ -282,7 +324,6 @@ namespace Elympics.Editor.Config
                 : ("Didn't connect", NotConnectedColor);
         }
 
-        //ElympicsConfig.IsLogin is backed by EditorPrefs and exposes no change event, so it has to be polled
         private void UpdateLoginState()
         {
             if (_elements is null)
@@ -293,8 +334,8 @@ namespace Elympics.Editor.Config
                 return;
             _lastIsLogin = isLogin;
 
-            SetVisible(_elements.LoginView, !isLogin);
-            SetVisible(_elements.ManageView, isLogin);
+            _elements.LoginView.SetVisible(!isLogin);
+            _elements.ManageView.SetVisible(isLogin);
             _elements.LoggedAs.text = ElympicsConfig.Username;
         }
 
@@ -302,63 +343,55 @@ namespace Elympics.Editor.Config
 
         #region Login Section
 
-        private void BindLoginSection()
+        private static void BindLoginSection(VisualElements elements, EditorEndpointChecker webChecker)
         {
-            var username = rootVisualElement.Q<TextField>("login-username");
-            var password = rootVisualElement.Q<TextField>("login-password");
+            var username = elements.LoginUsername;
+            var password = elements.LoginPassword;
 
             BindToExternalValue(username, ElympicsConfig.Username, value => ElympicsConfig.Username = value);
 
             password.isPasswordField = true;
             BindToExternalValue(password, ElympicsConfig.Password, value => ElympicsConfig.Password = value);
 
-            rootVisualElement.Q<Button>("login-button").clicked += () =>
+            elements.LoginButton.clicked += () =>
             {
-                if (!IsConnected())
+                if (!IsConnected(webChecker))
                     return;
                 ElympicsWebIntegration.Login();
             };
 
-            rootVisualElement.Q<Button>("logout-button").clicked += ElympicsWebIntegration.Logout;
+            elements.LogoutButton.clicked += ElympicsWebIntegration.Logout;
         }
 
         #endregion
 
         #region Elympics Endpoints Section
 
-        private void BindEndpointsSection()
+        private void BindEndpointsSection(VisualElements elements, SerializedConfig serializedConfig, EditorEndpointChecker webChecker, EditorEndpointChecker gsChecker)
         {
-            if (_endpointCheckers is null)
-                throw new InvalidOperationException("Could not bind endpoints section due to endpoint checkers being null");
+            _ = elements.LoginWebEndpoint.RegisterValueChangedCallback(evt => webChecker.UpdateUri(evt.newValue));
+            _ = elements.WebEndpoint.RegisterValueChangedCallback(evt => webChecker.UpdateUri(evt.newValue));
+            _ = elements.GameServersEndpoint.RegisterValueChangedCallback(evt => gsChecker.UpdateUri(evt.newValue));
 
-            var loginWebEndpoint = rootVisualElement.Q<TextField>("login-web-endpoint");
-            var webEndpoint = rootVisualElement.Q<TextField>("web-endpoint");
-            var gameServersEndpoint = rootVisualElement.Q<TextField>("gs-endpoint");
+            webChecker.UpdateUri(serializedConfig.ElympicsWebEndpoint.stringValue);
+            gsChecker.UpdateUri(serializedConfig.ElympicsGameServersEndpoint.stringValue);
 
-            //Both fields are bound to the same property and share a single checker, which ignores repeated URIs
-            _ = loginWebEndpoint.RegisterValueChangedCallback(evt => _endpointCheckers?.Web.UpdateUri(evt.newValue));
-            _ = webEndpoint.RegisterValueChangedCallback(evt => _endpointCheckers?.Web.UpdateUri(evt.newValue));
-            _ = gameServersEndpoint.RegisterValueChangedCallback(evt => _endpointCheckers?.GameServers.UpdateUri(evt.newValue));
-
-            _endpointCheckers.Value.Web.UpdateUri(_serializedConfig?.ElympicsWebEndpoint.stringValue);
-            _endpointCheckers.Value.GameServers.UpdateUri(_serializedConfig?.ElympicsGameServersEndpoint.stringValue);
-
-            rootVisualElement.Q<Button>("synchronize-button").clicked += Synchronize;
+            elements.SynchronizeButton.clicked += Synchronize;
         }
 
         private void Synchronize()
         {
-            if (!IsConnected())
+            if (_webEndpointChecker is null || !IsConnected(_webEndpointChecker))
                 return;
 
             ElympicsWebIntegration.GetElympicsEndpoints(endpoint =>
             {
-                if (_endpointCheckers is null || _serializedConfig is null || config is null)
+                if (_gameServersEndpointChecker is null || _serializedConfig is null || config is null)
                     return;
 
                 _serializedConfig.ElympicsGameServersEndpoint.stringValue = endpoint.GameServers;
                 _serializedConfig.ApplyModifiedProperties();
-                _endpointCheckers.Value.GameServers.UpdateUri(endpoint.GameServers);
+                _gameServersEndpointChecker.UpdateUri(endpoint.GameServers);
 
                 ElympicsWebIntegration.GetGames(availableGamesOnline =>
                 {
@@ -394,11 +427,11 @@ namespace Elympics.Editor.Config
             _elements.AccountGamesContainer.Clear();
             if (_accountGames.Count == 0)
             {
-                SetVisible(_elements.AccountGamesSection, false);
+                _elements.AccountGamesSection.SetVisible(false);
                 return;
             }
 
-            SetVisible(_elements.AccountGamesSection, true);
+            _elements.AccountGamesSection.SetVisible(true);
             foreach (var game in _accountGames)
             {
                 var row = new VisualElement();
@@ -444,15 +477,11 @@ namespace Elympics.Editor.Config
 
         #region Available Games Section
 
-        private void BindAvailableGamesSection()
+        private void BindAvailableGamesSection(VisualElements elements)
         {
-            if (_elements is null)
-                return;
-
-            rootVisualElement.Q<ListView>("available-games").RegisterCallback<ChangeEvent<Object>>(_ => UpdateChosenGameConfig());
-
-            rootVisualElement.Q<Button>("create-first-config-button").clicked += CreateFirstGameConfig;
-            _elements.ImportGamesButton.clicked += ImportExistingGameConfigs;
+            elements.AvailableGamesList.RegisterCallback<ChangeEvent<Object>>(_ => UpdateChosenGameConfig());
+            elements.CreateFirstConfigButton.clicked += CreateFirstGameConfig;
+            elements.ImportGamesButton.clicked += ImportExistingGameConfigs;
         }
 
         private void CreateFirstGameConfig()
@@ -461,12 +490,7 @@ namespace Elympics.Editor.Config
                 return;
 
             var gameConfig = CreateInstance<ElympicsGameConfig>();
-            if (!Directory.Exists(ElympicsConfig.ElympicsResourcesPath))
-            {
-                ElympicsLogger.LogInfo("Creating Elympics Resources directory...");
-                _ = Directory.CreateDirectory(ElympicsConfig.ElympicsResourcesPath);
-                ElympicsLogger.LogInfo("Elympics Resources directory created successfully.");
-            }
+            ElympicsTools.EnsureElympicsResourcesDirectoryExists();
 
             AssetDatabase.CreateAsset(gameConfig, ElympicsConfig.ElympicsResourcesPath + "/ElympicsGameConfig.asset");
             AssetDatabase.SaveAssets();
@@ -509,9 +533,9 @@ namespace Elympics.Editor.Config
 
             var gameConfig = config.GetCurrentGameConfig();
             var hasGameConfig = gameConfig != null;
-            SetVisible(_elements.NoGameConfigSection, !hasGameConfig);
-            SetVisible(_elements.GameConfigSection, hasGameConfig);
-            SetVisible(_elements.RegionsSection, hasGameConfig);
+            _elements.NoGameConfigSection.SetVisible(!hasGameConfig);
+            _elements.GameConfigSection.SetVisible(hasGameConfig);
+            _elements.RegionsSection.SetVisible(hasGameConfig);
 
             if (gameConfig == null)
             {
@@ -560,23 +584,20 @@ namespace Elympics.Editor.Config
 
         #region Game Management in Elympics Section
 
-        private void BindGameManagementSection()
+        private void BindGameManagementSection(VisualElements elements)
         {
-            var clientVersion = rootVisualElement.Q<TextField>("client-version");
-            var buildPath = rootVisualElement.Q<TextField>("client-build-path");
+            BindToExternalValue(elements.ClientVersion, clientVersionName, value => clientVersionName = value);
+            BindToExternalValue(elements.BuildPath, clientBuildPath, value => clientBuildPath = value);
 
-            BindToExternalValue(clientVersion, clientVersionName, value => clientVersionName = value);
-            BindToExternalValue(buildPath, clientBuildPath, value => clientBuildPath = value);
-
-            rootVisualElement.Q<Button>("build-upload-server-button").clicked += () =>
+            elements.BuildUploadServerButton.clicked += () =>
             {
                 if (!ElympicsWebIntegration.IsConnectedToElympics())
                     return;
                 ElympicsWebIntegration.BuildAndUploadGame();
             };
 
-            rootVisualElement.Q<Button>("log-versions-button").clicked += LogUploadedServerVersions;
-            rootVisualElement.Q<Button>("upload-client-button").clicked += UploadClientBuild;
+            elements.LogVersionsButton.clicked += LogUploadedServerVersions;
+            elements.UploadClientButton.clicked += UploadClientBuild;
         }
 
         private void LogUploadedServerVersions()
@@ -596,7 +617,7 @@ namespace Elympics.Editor.Config
                     foreach (var gameVersion in gameVersions.Versions)
                         _ = log.AppendFormat("{0,-15} {1,40}\n", gameVersion.Version, gameVersion.UploadedTime);
 
-                    Debug.Log(log.ToString());
+                    ElympicsLogger.LogInfo(log.ToString());
                 });
         }
 
@@ -621,19 +642,17 @@ namespace Elympics.Editor.Config
 
         #endregion
 
-        private static void SetVisible(VisualElement element, bool visible) => element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-
         private static void BindToExternalValue(TextField field, string? initialValue, Action<string> setValue)
         {
             field.SetValueWithoutNotify(initialValue ?? "");
             _ = field.RegisterValueChangedCallback(evt => setValue(evt.newValue));
         }
 
-        private bool IsConnected()
+        private static bool IsConnected(EditorEndpointChecker webChecker)
         {
-            if (_endpointCheckers != null && _endpointCheckers.Value.Web.IsUriCorrect && _endpointCheckers.Value.Web.IsRequestSuccessful)
+            if (webChecker is { IsUriCorrect: true, IsRequestSuccessful: true })
                 return true;
-            ElympicsLogger.LogError("Cannot connect to Elympics cloud! " + "Check your Internet connection and configured Elympics endpoints.");
+            ElympicsLogger.LogError("Cannot connect to Elympics cloud! Check your Internet connection and configured Elympics endpoints.");
             return false;
         }
     }

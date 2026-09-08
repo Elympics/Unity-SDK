@@ -1,4 +1,4 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="True">
     <Style src="project://database/Packages/com.daftmobile.elympics/Editor/Config/ManageGamesInElympicsWindow.uss?fileID=7433441132597879392&amp;guid=849134b9f2674fbeb3fdfe728c9591e2&amp;type=3#ManageGamesInElympicsWindow" />
     <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="no-config-info" text="Couldn't load Elympics Config. Create one using &quot;Tools/Elympics/Setup&quot; menu item." style="display: none;" />
     <ui:VisualElement name="login-view" style="display: none; margin-left: 10px; margin-right: 10px; margin-top: 5px;">
@@ -82,6 +82,21 @@
                     <ui:TextField name="client-build-path" class="elympics-endpoint-field" />
                 </ui:VisualElement>
                 <ui:Button text="Upload client" display-tooltip-when-elided="true" name="upload-client-button" class="elympics-wide-button" />
+                <ui:VisualElement style="height: 9px;" />
+                <ui:Label text="Upload StreamingAssets content under its own content version, independent of the client build above." display-tooltip-when-elided="true" class="elympics-info elympics-centered" />
+                <ui:VisualElement class="elympics-field-row">
+                    <ui:Label text="Content layout" class="elympics-field-label" tooltip="Directory of Addressable-based variants expects one folder per variant, each an Addressables content build with its own &quot;aa&quot; folder, and also uploads a generated variants.meta.json listing them. Files sitting directly in the path are uploaded too, with a warning. Unstructured assets validates nothing and just uploads everything below the path as-is." />
+                    <ui:DropdownField name="sa-layout" class="elympics-endpoint-field" />
+                </ui:VisualElement>
+                <ui:VisualElement class="elympics-field-row">
+                    <ui:Label text="Content version" class="elympics-field-label" tooltip="How this content is addressed later, so it must match the version the content was built against. Independent of the game version. Max 63 characters; only alphanumerics, &quot;-&quot; and &quot;.&quot;." />
+                    <ui:TextField name="sa-version" class="elympics-endpoint-field" />
+                </ui:VisualElement>
+                <ui:VisualElement class="elympics-field-row">
+                    <ui:Label text="Content path" class="elympics-field-label" tooltip="Local folder to upload. Subfolders are included. For Addressables content this is the content build output directory (e.g. ServerData), not Assets/StreamingAssets - the Addressables variant builder deletes that folder on every build." />
+                    <ui:TextField name="sa-path" class="elympics-endpoint-field" />
+                </ui:VisualElement>
+                <ui:Button text="Upload StreamingAssets" display-tooltip-when-elided="true" name="upload-sa-button" class="elympics-wide-button" />
             </ui:VisualElement>
         </ui:ScrollView>
     </ui:VisualElement>

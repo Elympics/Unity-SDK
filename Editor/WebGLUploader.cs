@@ -64,7 +64,6 @@ namespace Elympics.Editor
             public string gameId;
             public string clientGameVersion;
             public string serverGameVersion;
-            public string streamingAssetsUrl;
             public string[] files;
         }
 
@@ -213,7 +212,6 @@ namespace Elympics.Editor
             string gameId,
             string clientGameVersion,
             string serverGameVersion,
-            string streamingAssetsUrl,
             List<(string name, string extension)> validFiles)
         {
             return new UploadInitRequest
@@ -221,7 +219,6 @@ namespace Elympics.Editor
                 gameId = gameId,
                 clientGameVersion = clientGameVersion,
                 serverGameVersion = serverGameVersion,
-                streamingAssetsUrl = streamingAssetsUrl,
                 files = validFiles.Select(fileNameAndExtension => FixedPrefix + fileNameAndExtension.extension).ToArray(),
             };
         }

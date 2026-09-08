@@ -429,7 +429,7 @@ namespace Elympics
         internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
             => WebGLUploader.GetValidFiles(fileNames, knownCompoundExtensions);
 
-        public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion, string streamingAssetsUrl = null)
+        public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion)
         {
             CheckAuthTokenAndRefreshIfNeeded(OnCheckAuthTokenAndRefreshIfNeededContinuation);
             const string title = "Uploading client build to Elympics cloud";
@@ -453,7 +453,7 @@ namespace Elympics
 
                 EditorUtility.DisplayProgressBar(title, "Initializing upload", 0.1f);
 
-                var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, streamingAssetsUrl, validFiles);
+                var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
                 _ = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest, webRequest =>
                 {
                     try
@@ -675,18 +675,6 @@ namespace Elympics
             string serverGameVersion) =>
             UploadClientBuildInBatchmodeInternal(username, password, clientBuildPath, gameId, clientGameVersion, serverGameVersion);
 
-        [PublicAPI]
-        [Obsolete("The streamingAssetsUrl parameter is no longer supported.")]
-        public static void UploadClientBuildInBatchmode(
-            string username,
-            string password,
-            string clientBuildPath,
-            string gameId,
-            string clientGameVersion,
-            string serverGameVersion,
-            string streamingAssetsUrl) =>
-            UploadClientBuildInBatchmodeInternal(username, password, clientBuildPath, gameId, clientGameVersion, serverGameVersion);
-
         private static void UploadClientBuildInBatchmodeInternal(
             string username,
             string password,
@@ -701,7 +689,7 @@ namespace Elympics
             if (validationError != null)
                 throw new ElympicsException(validationError);
 
-            var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, null, validFiles);
+            var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
             var initOp = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest);
             while (!initOp.isDone)
             { }

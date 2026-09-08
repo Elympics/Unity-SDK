@@ -56,10 +56,10 @@ namespace Elympics.Editor.Config
         private static readonly Vector2 MinWindowSize = new(250, 500);
         private static readonly Vector2 MaxWindowSize = new(1000, 1800);
 
-        private static readonly Color WrongUriColor = new(0.925f, 0.780f, 0.047f);   // #ECC70C
-        private static readonly Color ConnectingColor = new(0.000f, 0.380f, 0.882f); // #0061E1
-        private static readonly Color ConnectedColor = new(0.388f, 0.871f, 0.294f);  // #63DE4B
-        private static readonly Color NotConnectedColor = new(0.882f, 0.000f, 0.118f); // #E1001E
+        private static readonly Color WrongUriColor = new(0xEC / 255f, 0xC7 / 255f, 0x0C / 255f);
+        private static readonly Color ConnectingColor = new(0x00 / 255f, 0x61 / 255f, 0xE1 / 255f);
+        private static readonly Color ConnectedColor = new(0x63 / 255f, 0xDE / 255f, 0x4B / 255f);
+        private static readonly Color NotConnectedColor = new(0xE1 / 255f, 0x00 / 255f, 0x1E / 255f);
 
         // NOTE: All serialized fields survive domain reloads
 

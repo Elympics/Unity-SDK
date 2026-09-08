@@ -18,13 +18,13 @@ namespace Elympics.Editor.UnityCli
         [CliCommand(CommandName,
             "Upload a directory of StreamingAssets variants to the Elympics cloud as a new content version. "
             + "Uses the Editor's current login and active game config unless username/password/game_id are given. "
-            + "Versions are write-once - a burnt version number cannot be reused, and the upload is not undoable. "
+            + "Versions are write-once - a burnt version name cannot be reused, and the upload is not undoable. "
             + "Blocks the Editor main thread for the whole upload, so raise the client timeout "
             + "or run it as a detached job for large bundles.",
             Tags = new[] { "build" })]
         public static object UploadStreamingAssets(
             [CliArg("streaming_assets_path", "Local directory to upload. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
-            [CliArg("version", "Content version to publish. Write-once - a version that has already been used (or failed mid-upload) cannot be reused.", Required = true)] string version,
+            [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. Only Latin letters, digits, dashes, and dots are allowed.", Required = true)] string versionName,
             [CliArg("game_id", "Target game ID. Defaults to the active Elympics game config's ID.")] string gameId = "",
             [CliArg("username", "Elympics account username. Omit to upload as the currently logged in account. Must be paired with password.")] string username = "",
             [CliArg("password", "Elympics account password. Omit to upload as the currently logged in account. Must be paired with username.")] string password = "",
@@ -33,7 +33,7 @@ namespace Elympics.Editor.UnityCli
             string layout = nameof(StreamingAssetsLayout.AddressableVariants))
         {
             RequireArgument(streamingAssetsPath, "streaming_assets_path");
-            RequireArgument(version, "version");
+            RequireArgument(versionName, "version_name");
 
             var parsedLayout = ParseLayout(layout);
             var resolvedPath = Path.GetFullPath(streamingAssetsPath);
@@ -49,15 +49,15 @@ namespace Elympics.Editor.UnityCli
             var usedActiveGameConfig = ResolveGameId(ref gameId);
 
             if (hasUsername)
-                ElympicsWebIntegration.UploadStreamingAssetsInBatchmode(username, password, gameId, streamingAssetsPath, version, parsedLayout);
+                ElympicsWebIntegration.UploadStreamingAssetsInBatchmode(username, password, gameId, streamingAssetsPath, versionName, parsedLayout);
             else
-                ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLogin(gameId, streamingAssetsPath, version, parsedLayout);
+                ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLogin(gameId, streamingAssetsPath, versionName, parsedLayout);
 
             return new
             {
                 status = "uploaded",
                 gameId,
-                version,
+                versionName,
                 layout = parsedLayout.ToString(),
                 streamingAssetsPath,
                 usedCurrentLogin = !hasUsername,

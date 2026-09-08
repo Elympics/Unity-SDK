@@ -586,6 +586,68 @@ namespace Elympics
             ElympicsLogger.LogInfo(DescribeUploadSuccess(relativePaths.Count, version));
         }
 
+        [PublicAPI]
+        public static void UploadStreamingAssetsUsingCurrentLogin(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout)
+        {
+            RefreshAuthTokenIfNeededSynchronously();
+
+            var validationError = WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out var relativePaths, out var generatedFiles);
+            if (validationError != null)
+                throw new ElympicsException(validationError);
+
+            var initRequest = WebGLUploader.CreateStreamingAssetsInitRequest(gameId, version, relativePaths);
+            var initOp = WebGLUploader.SendStreamingAssetsInitRequest(ElympicsWebEndpoint, initRequest);
+            while (!initOp.isDone)
+            { }
+
+            if (!TryDeserializeResponse<WebGLUploader.StreamingAssetsUploadInitResponse>(initOp.webRequest, StreamingAssetsInitAction, out var initResponse, out var initError))
+                throw new ElympicsException(DescribeFailure(StreamingAssetsInitAction, initError));
+
+            var uploadError = WebGLUploader.UploadStreamingAssetsToGcs(streamingAssetsPath, initResponse, generatedFiles);
+            if (uploadError != null)
+                throw new ElympicsException(uploadError);
+
+            ElympicsLogger.LogInfo(DescribeUploadSuccess(relativePaths.Count, version));
+        }
+
+        /// <summary>
+        /// Blocking counterpart of <see cref="CheckAuthTokenAndRefreshIfNeeded"/>.
+        /// </summary>
+        private static void RefreshAuthTokenIfNeededSynchronously()
+        {
+            if (!ElympicsConfig.IsLogin)
+                throw new ElympicsException("Not logged in to Elympics cloud. Log in before uploading.");
+
+            var authTokenExpStr = ElympicsConfig.AuthTokenExp;
+            if (string.IsNullOrEmpty(authTokenExpStr))
+            {
+                SetAsLoggedOut();
+                throw new ElympicsException("Can't check auth token expiration time. Are you logged in?");
+            }
+
+            var authTokenExp = long.Parse(authTokenExpStr);
+            var currentTimestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            if (currentTimestamp <= authTokenExp)
+                return;
+
+            ElympicsLogger.LogInfo("Auth token expired. Refreshing using refresh token...");
+
+            var refreshOp = ElympicsEditorWebClient.SendJsonPostRequestApi(RefreshEndpoint, new TokenRefreshingRequestModel { RefreshToken = ElympicsConfig.RefreshToken }, null, false);
+            while (!refreshOp.isDone)
+            { }
+
+            if (!TryDeserializeResponse(refreshOp.webRequest, "Refresh auth token", out RefreshedTokensResponseModel responseModel))
+            {
+                SetAsLoggedOut();
+                throw new ElympicsException("Refreshing the Elympics auth token failed. Log in to Elympics again.");
+            }
+
+            var authToken = responseModel.AuthToken;
+            ElympicsConfig.AuthToken = authToken;
+            ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+            ElympicsConfig.RefreshToken = responseModel.RefreshToken;
+        }
+
         private const string StreamingAssetsInitAction = "Initialize StreamingAssets upload";
         private const string ClientBuildInitAction = "Initialize client build upload";
 

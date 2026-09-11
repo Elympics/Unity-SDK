@@ -7,7 +7,7 @@ namespace Elympics.Editor.Tests
     {
         private const string DefaultPrefix = "Build";
 
-        private static readonly string[] CompoundExtensions = ElympicsWebIntegration.compoundExtensions;
+        private static readonly string[] CompoundExtensions = WebGLUploader.CompoundExtensions;
         private static readonly string[] InvalidFileNames = { "readme.txt", "notes.md", "config.yaml" };
 
         private static string[] ValidFileNames =>

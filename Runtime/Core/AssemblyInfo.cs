@@ -12,8 +12,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.WebRtc.Other")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Editor")]
-[assembly: InternalsVisibleTo("SmartContractService")]
-[assembly: InternalsVisibleTo("SmartContractService.Editor")]
-[assembly: InternalsVisibleTo("SmartContractService.Test")]
 [assembly: InternalsVisibleTo("UnityConnectors")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]

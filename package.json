@@ -43,11 +43,6 @@
       "path": "Samples~/RoomsMenu"
     },
     {
-      "displayName": "Leaderboard menu [Menu]",
-      "description": "A sample menu with leaderboards only (no Play button) to illustrate usage of leaderboards. Works only if your game has generated any leaderboard data",
-      "path": "Samples~/Leaderboards"
-    },
-    {
       "displayName": "Simple menu [Menu]",
       "description": "Simple menu scene with all play modes and all available games listed",
       "path": "Samples~/SimpleMenu"

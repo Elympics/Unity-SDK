@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using Elympics.Core.Logger;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Elympics.Editor
@@ -13,6 +16,17 @@ namespace Elympics.Editor
         private const string ContentTypeKey = "Content-Type";
         private const string NamePattern = "^[0-9-a-zA-Z.]+$";
         private const string FixedPrefix = "Build";
+        private const string ClientBuildsRoute = "client-builds";
+
+        private const int MaxStreamingAssetsVersionLength = 63;
+        private const string AddressablesDirectoryName = "aa";
+        private const string AddressablesSettingsFileName = "settings.json";
+        private const string CatalogFileNamePrefix = "catalog";
+        private const string DefaultContentType = "application/octet-stream";
+
+        /// <summary>Generated in memory and uploaded to bucket so client doesn't have to list it to discover variants.</summary>
+        /// <remarks>Only used in <see cref="StreamingAssetsLayout.AddressableVariants" />.</remarks>
+        private const string VariantsManifestFileName = "variants.meta.json";
 
         internal static readonly string[] CompoundExtensions =
         {
@@ -32,6 +46,13 @@ namespace Elympics.Editor
             "application/octet-stream",
         };
 
+        /// <summary>Content-Type header values for GCS PUT requests.</summary>
+        private static readonly Dictionary<string, string> StreamingAssetsContentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [".json"] = "application/json",
+            [".xml"] = "application/xml",
+        };
+
         #region Models
 
         [Serializable]
@@ -40,13 +61,13 @@ namespace Elympics.Editor
             public string gameId;
             public string clientGameVersion;
             public string serverGameVersion;
-            public string streamingAssetsUrl;
             public string[] files;
         }
 
         [Serializable]
         public class UploadInitResponse
         {
+            // ReSharper disable InconsistentNaming
             public string UploadId;
             public DateTime ExpiresAt;
             public FileUploadInfo[] Files;
@@ -58,6 +79,7 @@ namespace Elympics.Editor
                 public string SignedUrl;
                 public string GcsPath;
             }
+            // ReSharper restore InconsistentNaming
         }
 
         [Serializable]
@@ -67,39 +89,63 @@ namespace Elympics.Editor
             public bool success;
         }
 
+        [Serializable]
+        internal class StreamingAssetsUploadInitRequest
+        {
+            public string gameId;
+            public string version;
+            public string[] files;
+        }
+
+        [Serializable]
+        internal class VariantsManifest
+        {
+            public string[] variants;
+        }
+
+        [Serializable]
+        internal class StreamingAssetsUploadInitResponse
+        {
+            // ReSharper disable InconsistentNaming
+            public DateTime ExpiresAt;
+            public UploadInitResponse.FileUploadInfo[] Files;
+            // ReSharper restore InconsistentNaming
+        }
+
         #endregion
 
         #region File Validation Helpers
 
-        private static bool TryGetFullExtension(ReadOnlySpan<char> fileName, string[] knownCompoundExtensions, out string compoundExtension)
+        private static bool TryGetFullExtension(string filename, string[] knownCompoundExtensions, out string compoundExtension)
         {
             compoundExtension = string.Empty;
             foreach (var ext in knownCompoundExtensions)
             {
-                var extIndex = fileName.IndexOf(ext.AsSpan(), StringComparison.OrdinalIgnoreCase);
+                var extIndex = filename.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
                 if (extIndex < 0)
                     continue;
 
-                compoundExtension = fileName[extIndex..].ToString();
+                compoundExtension = filename[extIndex..];
                 return true;
             }
 
             return false;
         }
 
-        private static bool DoesFileHaveGivenCompoundExtension(string fileName, string compoundExtension)
+        internal static bool DoesFileHaveGivenCompoundExtension(string filePath, string compoundExtension)
         {
-            if (TryGetFullExtension(fileName.AsSpan(), CompoundExtensions, out var fileCompoundExtension))
+            var filename = Path.GetFileName(filePath);
+            if (TryGetFullExtension(filename, CompoundExtensions, out var fileCompoundExtension))
                 return fileCompoundExtension == compoundExtension;
             return false;
         }
 
-        private static string FetchEncoding(string compoundExtension)
+        /// <param name="extension">Extension with a dot. May be compound.</param>
+        private static string FetchEncoding(string extension)
         {
-            var fileName = compoundExtension.AsSpan();
-            if (fileName.EndsWith(".br"))
+            if (extension.EndsWith(".br"))
                 return "br";
-            if (fileName.EndsWith(".gz"))
+            if (extension.EndsWith(".gz"))
                 return "gzip";
             return string.Empty;
         }
@@ -116,14 +162,20 @@ namespace Elympics.Editor
             throw new ElympicsException("Unknown content type: " + fileExtension);
         }
 
-        internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
+        private static void ValidateVersionCharacters(string label, string version)
         {
-            return fileNames.Select(fileName =>
+            if (!Regex.IsMatch(version, NamePattern))
+                throw new ElympicsException($"{label} '{version}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.");
+        }
+
+        internal static List<(string name, string extension)> GetValidFiles(string[] filenames, string[] knownCompoundExtensions)
+        {
+            return filenames.Select(filePath =>
             {
-                if (TryGetFullExtension(fileName.AsSpan(), knownCompoundExtensions, out var compoundExtension))
+                if (TryGetFullExtension(Path.GetFileName(filePath), knownCompoundExtensions, out var compoundExtension))
                 {
                     var splitExtension = compoundExtension.Split('.');
-                    var split = fileName.Split('.');
+                    var split = filePath.Split('.');
                     var name = string.Join(".", split.Take(split.Length - splitExtension.Length + 1));
                     return (name, compoundExtension);
                 }
@@ -135,39 +187,31 @@ namespace Elympics.Editor
         #endregion
 
 
-        internal static string PrepareValidFiles(
+        internal static void PrepareValidFiles(
             string clientBuildPath,
             string clientGameVersion,
             out List<(string name, string extension)> validFiles)
         {
-            validFiles = null;
-
-            if (!Directory.Exists(clientBuildPath))
-                return $"Client build directory '{clientBuildPath}' does not exist.";
-
-            var isNameValid = Regex.IsMatch(clientGameVersion, NamePattern);
-            if (!isNameValid)
-                return $"Client game version '{clientGameVersion}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.";
+            if (string.IsNullOrWhiteSpace(clientBuildPath) || !Directory.Exists(clientBuildPath))
+                throw new ElympicsException($"Client build directory '{clientBuildPath}' does not exist.");
+            ValidateVersionCharacters("Client game version", clientGameVersion);
 
             var filePaths = Directory.GetFiles(clientBuildPath);
             var fileNames = filePaths.Select(Path.GetFileName).ToArray();
             validFiles = GetValidFiles(fileNames, CompoundExtensions);
 
             if (validFiles.Count != CompoundExtensions.Length)
-                return
-                    $"Not all required files will be uploaded to bucket{Environment.NewLine}Files in directory: {string.Join('|', fileNames)}{Environment.NewLine}Validated files: {string.Join('|', validFiles)}";
-
-            if (!ElympicsConfig.IsLogin)
-                return "You must be logged in Elympics to upload a client build.";
-
-            return null;
+                // TODO: make this exception more informative ~dsygocki 2026-09-11
+                throw new ElympicsException((validFiles.Count < CompoundExtensions.Length ? "Some required files are missing\n" : "There are too many files\n")
+                    + $"Required extensions: [{string.Join(", ", CompoundExtensions)}]\n"
+                    + $"Files in directory: [{string.Join(", ", fileNames)}]\n"
+                    + $"Validated files: [{string.Join(", ", validFiles)}]");
         }
 
         internal static UploadInitRequest CreateInitRequest(
             string gameId,
             string clientGameVersion,
             string serverGameVersion,
-            string streamingAssetsUrl,
             List<(string name, string extension)> validFiles)
         {
             return new UploadInitRequest
@@ -175,18 +219,33 @@ namespace Elympics.Editor
                 gameId = gameId,
                 clientGameVersion = clientGameVersion,
                 serverGameVersion = serverGameVersion,
-                streamingAssetsUrl = streamingAssetsUrl,
                 files = validFiles.Select(fileNameAndExtension => FixedPrefix + fileNameAndExtension.extension).ToArray(),
             };
         }
 
         internal static UnityWebRequestAsyncOperation SendInitRequest(string apiEndpoint, UploadInitRequest request, Action<UnityWebRequest> completed = null)
         {
-            var uri = $"{apiEndpoint}/client-builds/init";
+            var uri = $"{apiEndpoint}/{ClientBuildsRoute}/init";
             return ElympicsEditorWebClient.SendJsonPostRequestApi(uri, request, completed);
         }
 
-        internal static string UploadFilesToGcs(
+        /// <remarks>Blocking (busy loop).</remarks>
+        private static void PutFileToGcs(string filename, string signedUrl, byte[] payload, string contentType, string contentEncoding)
+        {
+            using var request = UnityWebRequest.Put(signedUrl, payload);
+            request.SetRequestHeader(ContentTypeKey, contentType);
+            if (!string.IsNullOrEmpty(contentEncoding))
+                request.SetRequestHeader(ContentEncodingKey, contentEncoding);
+
+            var operation = request.SendWebRequest();
+            while (!operation.isDone)
+            { }
+
+            if (operation.webRequest.IsConnectionError() || operation.webRequest.IsProtocolError())
+                throw new ElympicsException($"Failed to upload file '{filename}': {operation.webRequest.error}\n{operation.webRequest.downloadHandler.text}");
+        }
+
+        internal static void UploadFilesToGcs(
             string clientBuildPath,
             UploadInitResponse initResponse,
             List<(string name, string extension)> validFiles,
@@ -195,38 +254,23 @@ namespace Elympics.Editor
             for (var index = 0; index < initResponse.Files.Length; index++)
             {
                 var fileUploadInfo = initResponse.Files[index];
-                var responseFile = Path.Combine(clientBuildPath, fileUploadInfo.FilePath);
                 var expectedFile = validFiles[index];
 
-                if (!DoesFileHaveGivenCompoundExtension(responseFile, expectedFile.extension))
-                    return $"Uploaded file '{fileUploadInfo.FilePath}' does not match expected extension '{expectedFile.extension}'.";
+                if (!DoesFileHaveGivenCompoundExtension(fileUploadInfo.FilePath, expectedFile.extension))
+                    throw new ElympicsException($"Uploaded file '{fileUploadInfo.FilePath}' does not match expected extension '{expectedFile.extension}'.");
 
                 var localFile = expectedFile.name + expectedFile.extension;
-                var progress = (float)(index + 1) / initResponse.Files.Length;
-                progressCallback?.Invoke(localFile, progress);
+                progressCallback?.Invoke(localFile, (float)index / initResponse.Files.Length);
 
                 var filePath = Path.Combine(clientBuildPath, localFile);
-                using var request = UnityWebRequest.Put(fileUploadInfo.SignedUrl, File.ReadAllBytes(filePath));
-                var requestContentType = FetchContentType(expectedFile.extension);
-                request.SetRequestHeader(ContentTypeKey, requestContentType);
-                var encoding = FetchEncoding(expectedFile.extension);
-                if (!string.IsNullOrEmpty(encoding))
-                    request.SetRequestHeader(ContentEncodingKey, encoding);
-
-                var operation = request.SendWebRequest();
-                while (!operation.isDone)
-                { }
-
-                if (operation.webRequest.IsConnectionError() || operation.webRequest.IsProtocolError())
-                    return $"Failed to upload file '{localFile}': {operation.webRequest.error}{Environment.NewLine}{operation.webRequest.downloadHandler.text}";
+                PutFileToGcs(localFile, fileUploadInfo.SignedUrl, File.ReadAllBytes(filePath), FetchContentType(expectedFile.extension), FetchEncoding(expectedFile.extension));
+                progressCallback?.Invoke(localFile, (float)(index + 1) / initResponse.Files.Length);
             }
-
-            return null;
         }
 
         internal static UnityWebRequestAsyncOperation SendCompleteRequest(string apiEndpoint, string uploadId, bool success)
         {
-            var uri = $"{apiEndpoint}/client-builds/complete";
+            var uri = $"{apiEndpoint}/{ClientBuildsRoute}/complete";
             return ElympicsEditorWebClient.SendJsonPostRequestApi(uri,
                 new UploadCompleteRequest
                 {
@@ -234,6 +278,209 @@ namespace Elympics.Editor
                     success = success,
                 });
         }
+
+        #region StreamingAssets content upload
+
+        /// <exception cref="ElympicsException">The content cannot be uploaded; the message says why.</exception>
+        internal static void PrepareStreamingAssetsFiles(
+            string rootPath,
+            string version,
+            StreamingAssetsLayout layout,
+            out List<string> relativePaths,
+            out Dictionary<string, byte[]> generatedFiles)
+        {
+            generatedFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
+                throw new ElympicsException($"Content directory '{rootPath}' does not exist.");
+
+            if (string.IsNullOrEmpty(version))
+                throw new ElympicsException("Content version cannot be empty.");
+
+            ValidateVersionCharacters("Content version", version);
+
+            if (version.Length > MaxStreamingAssetsVersionLength)
+                throw new ElympicsException($"Content version '{version}' is too long - {version.Length} characters, maximum is {MaxStreamingAssetsVersionLength}.");
+
+            var root = Path.GetFullPath(rootPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            List<string> files;
+            List<string> variantNames = null;
+            switch (layout)
+            {
+                case StreamingAssetsLayout.AddressableVariants:
+                    CollectAddressableVariants(root, out files, out variantNames);
+                    break;
+                case StreamingAssetsLayout.UnstructuredAssets:
+                    files = CollectFilesRecursively(root, root);
+                    break;
+                default:
+                    throw new ElympicsException($"Unknown content layout '{layout}'.");
+            }
+
+            if (files.Count == 0)
+                throw new ElympicsException($"No files found in '{rootPath}'.");
+
+            files.Sort(StringComparer.OrdinalIgnoreCase);
+
+            if (variantNames != null)
+            {
+                generatedFiles[VariantsManifestFileName] = CreateVariantsManifest(variantNames);
+                files.Add(VariantsManifestFileName);
+            }
+
+            relativePaths = files;
+        }
+
+        private static byte[] CreateVariantsManifest(List<string> variantNames)
+        {
+            var manifest = new VariantsManifest { variants = variantNames.OrderBy(name => name, StringComparer.Ordinal).ToArray() };
+            return Encoding.UTF8.GetBytes(JsonUtility.ToJson(manifest));
+        }
+
+        /// <exception cref="ElympicsException">
+        /// The directory is not a set of Addressables variant builds. The message lists every problem found, not just the first.
+        /// </exception>
+        private static void CollectAddressableVariants(string root, out List<string> relativePaths, out List<string> variantNames)
+        {
+            var errors = new List<string>();
+
+            var looseFiles = Directory.GetFiles(root).Select(Path.GetFileName).ToList();
+            if (looseFiles.Count > 0)
+                ElympicsLogger.LogWarning($"Uploading {looseFiles.Count} file(s) found directly in '{root}', outside any variant: {string.Join(", ", looseFiles)}.");
+
+            var variantDirectories = Directory.GetDirectories(root);
+            if (variantDirectories.Length == 0)
+                throw new ElympicsException(
+                    $"Content directory '{root}' contains no variant directories. The {nameof(StreamingAssetsLayout.AddressableVariants)} layout expects one directory per variant, "
+                    + $"each containing its own \"{AddressablesDirectoryName}\" directory. Use {nameof(StreamingAssetsLayout.UnstructuredAssets)} to upload a path as-is.");
+
+            var misplacedDirectories = Directory.GetDirectories(root, AddressablesDirectoryName, SearchOption.AllDirectories)
+                .Select(directory => ToRelativePath(root, directory))
+                .Where(directory => directory.Count(character => character == '/') != 1)
+                .ToList();
+            if (misplacedDirectories.Count > 0)
+                errors.Add($"Unexpected \"{AddressablesDirectoryName}\" directories at the wrong depth: {string.Join(", ", misplacedDirectories)}. "
+                    + $"The {nameof(StreamingAssetsLayout.AddressableVariants)} layout requires exactly one per variant, at \"{{variant}}/{AddressablesDirectoryName}\".");
+
+            var files = new List<string>(looseFiles);
+            var names = new List<string>();
+            var variantsByCatalogFormat = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var variantDirectory in variantDirectories)
+            {
+                var variantName = Path.GetFileName(variantDirectory);
+                names.Add(variantName);
+                files.AddRange(CollectFilesRecursively(root, variantDirectory));
+
+                var addressablesDirectory = Path.Combine(variantDirectory, AddressablesDirectoryName);
+                if (!Directory.Exists(addressablesDirectory))
+                {
+                    errors.Add($"Variant directory '{variantName}' does not contain an \"{AddressablesDirectoryName}\" directory, so it is not an Addressables content build. "
+                        + $"The {nameof(StreamingAssetsLayout.AddressableVariants)} layout requires '{variantName}/{AddressablesDirectoryName}/...'.");
+                    continue;
+                }
+
+                var addressablesFileNames = Directory.GetFiles(addressablesDirectory).Select(Path.GetFileName).ToList();
+                var catalogFormats = new[] { ".json", ".bin" }.Where(format => addressablesFileNames.Contains(CatalogFileNamePrefix + format, StringComparer.OrdinalIgnoreCase)).ToList();
+
+                if (catalogFormats.Count == 0)
+                    errors.Add($"Variant '{variantName}' has no catalog - '{variantName}/{AddressablesDirectoryName}' contains neither \"{CatalogFileNamePrefix}.json\" nor \"{CatalogFileNamePrefix}.bin\".");
+                if (!addressablesFileNames.Contains(AddressablesSettingsFileName, StringComparer.OrdinalIgnoreCase))
+                    errors.Add($"Variant '{variantName}' is missing '{variantName}/{AddressablesDirectoryName}/{AddressablesSettingsFileName}'.");
+
+                foreach (var catalogFormat in catalogFormats)
+                {
+                    if (!variantsByCatalogFormat.TryGetValue(catalogFormat, out var formatVariants))
+                        variantsByCatalogFormat[catalogFormat] = formatVariants = new List<string>();
+                    formatVariants.Add(variantName);
+                }
+            }
+
+            if (variantsByCatalogFormat.Count > 1)
+                ElympicsLogger.LogWarning($"Variants use mixed catalog formats: {string.Join("; ", variantsByCatalogFormat.Select(entry => $"{CatalogFileNamePrefix}{entry.Key} - {string.Join(", ", entry.Value)}"))}. "
+                    + "This is usually an ENABLE_JSON_CATALOG mismatch between content builds; the client can only load the format it was built for.");
+
+            if (errors.Count > 0)
+                throw new ElympicsException(string.Join(Environment.NewLine, errors));
+
+            relativePaths = files;
+            variantNames = names;
+        }
+
+        private static List<string> CollectFilesRecursively(string root, string directory) =>
+            Directory.GetFiles(directory, "*", SearchOption.AllDirectories).Select(filePath => ToRelativePath(root, filePath)).ToList();
+
+        private static string ToRelativePath(string root, string fullPath) =>
+            fullPath[root.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/');
+
+        internal static StreamingAssetsUploadInitRequest CreateStreamingAssetsInitRequest(string gameId, string version, List<string> relativePaths)
+        {
+            return new StreamingAssetsUploadInitRequest
+            {
+                gameId = gameId,
+                version = version,
+                files = relativePaths.ToArray(),
+            };
+        }
+
+        internal static UnityWebRequestAsyncOperation SendStreamingAssetsInitRequest(string apiEndpoint, StreamingAssetsUploadInitRequest request, Action<UnityWebRequest> completed = null)
+        {
+            var uri = $"{apiEndpoint}/{ClientBuildsRoute}/streaming-assets";
+            return ElympicsEditorWebClient.SendJsonPostRequestApi(uri, request, completed);
+        }
+
+        /// <summary>
+        /// Sorts files by importance (bundle first, then per-variant metadata, then global metadata) and by name.
+        /// </summary>
+        internal static List<UploadInitResponse.FileUploadInfo> SortStreamingAssetsFilesForUpload(IEnumerable<UploadInitResponse.FileUploadInfo> files) =>
+            files.OrderBy(file => UploadTier(file.FilePath)).ThenBy(file => file.FilePath, StringComparer.OrdinalIgnoreCase).ToList();
+
+        private static int UploadTier(string filePath)
+        {
+            var fileName = Path.GetFileName(filePath ?? string.Empty);
+            if (fileName.Equals(VariantsManifestFileName, StringComparison.OrdinalIgnoreCase))
+                return 2;
+            return fileName.StartsWith(CatalogFileNamePrefix, StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        }
+
+        private static string FetchStreamingAssetsContentType(string extension) =>
+            StreamingAssetsContentTypes.GetValueOrDefault(extension ?? string.Empty, DefaultContentType);
+
+        internal static void UploadStreamingAssetsToGcs(
+            string rootPath,
+            StreamingAssetsUploadInitResponse initResponse,
+            Dictionary<string, byte[]> generatedFiles,
+            Action<string, float> progressCallback = null)
+        {
+            if (initResponse.Files == null || initResponse.Files.Length == 0)
+                throw new ElympicsException("Elympics cloud returned no files to upload.");
+
+            var files = SortStreamingAssetsFilesForUpload(initResponse.Files);
+
+            for (var index = 0; index < files.Count; index++)
+            {
+                var fileUploadInfo = files[index];
+                progressCallback?.Invoke(fileUploadInfo.FilePath, (float)index / files.Count);
+
+                byte[] payload;
+                if (generatedFiles.TryGetValue(fileUploadInfo.FilePath, out var generatedPayload))
+                    payload = generatedPayload;
+                else
+                {
+                    var filePath = Path.Combine(rootPath, fileUploadInfo.FilePath);
+                    if (!File.Exists(filePath))
+                        throw new ElympicsException($"File '{fileUploadInfo.FilePath}' requested by Elympics cloud was not found at '{filePath}'.");
+                    payload = File.ReadAllBytes(filePath);
+                }
+
+                var extension = Path.GetExtension(fileUploadInfo.FilePath);
+                PutFileToGcs(fileUploadInfo.FilePath, fileUploadInfo.SignedUrl, payload, FetchStreamingAssetsContentType(extension), FetchEncoding(extension));
+                progressCallback?.Invoke(fileUploadInfo.FilePath, (float)(index + 1) / files.Count);
+            }
+        }
+
+        #endregion
 
     }
 }

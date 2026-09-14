@@ -1,0 +1,28 @@
+{
+    "name": "Elympics.Editor.UnityCli",
+    "rootNamespace": "Elympics.Editor.UnityCli",
+    "references": [
+        "Elympics",
+        "Elympics.Editor",
+        "Unity.Pipeline"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ELYMPICS_UNITY_PIPELINE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.pipeline",
+            "expression": "",
+            "define": "ELYMPICS_UNITY_PIPELINE"
+        }
+    ],
+    "noEngineReferences": false
+}

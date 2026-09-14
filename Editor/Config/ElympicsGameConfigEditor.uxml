@@ -2,6 +2,7 @@
     <ui:Foldout text="&lt;b&gt;General settings&lt;/b&gt;" name="general-foldout" style="-unity-font-style: normal;">
         <ui:TextField picking-mode="Ignore" label="Game name" binding-path="gameName" name="game-name" />
         <ui:TextField picking-mode="Ignore" label="Game ID" binding-path="gameId" name="game-id" />
+        <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="game-id-error" text="Game ID has to be a GUID!" style="display: none;" />
         <ui:TextField picking-mode="Ignore" label="Game version" binding-path="gameVersion" name="game-version" />
         <ui:SliderInt picking-mode="Ignore" label="Max players" high-value="32" low-value="1" show-input-field="true" name="max-players" binding-path="maxPlayers" tooltip="Maximum number of players allowed in a match" />
         <ui:GroupBox name="scene-group" style="padding-left: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; margin-top: 3px; margin-bottom: 3px;">
@@ -56,6 +57,12 @@
                 </ui:GroupBox>
                 <uie:EnumField label="Reconcile" binding-path="reconciliationFrequency" style="margin-left: 0;" />
             </ui:GroupBox>
+            <ui:GroupBox name="half-remote-init-data">
+                <uie:PropertyField name="half-remote-match-data" binding-path="testMatchData" label="&lt;i&gt;Test match data&lt;/i&gt;" />
+                <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
+                    <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Match Init Data" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
+                </ui:Foldout>
+            </ui:GroupBox>
         </ui:GroupBox>
         <ui:GroupBox name="debug-online-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
             <ui:HelpBox display-tooltip-when-elided="true" message-type="Info" name="debug-online-uploading-spinner" text="Checking if current game version is uploaded to the Elympics cloud..." style="display: flex;" />
@@ -66,12 +73,6 @@
             <ui:Toggle label="Record snapshots" name="half-remote-record-snapshot" tooltip="Save snapshots to a file to analyze and replay them later" binding-path="recordSnapshots" />
             <ui:TextField label="Snapshot file path" name="snapshot-replay-path" tooltip="Path to a file or a folder where snapshots are stored." binding-path="snapshotFilePath" />
             <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="snapshot-replay-error" style="display: none;" />
-        </ui:GroupBox>
-        <ui:GroupBox name="halfremote-init-data">
-            <uie:PropertyField name="match-init-data" binding-path="testMatchData" />
-            <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
-                <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Match Init Data" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
-            </ui:Foldout>
         </ui:GroupBox>
     </ui:Foldout>
 </ui:UXML>

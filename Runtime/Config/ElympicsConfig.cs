@@ -73,9 +73,6 @@ namespace Elympics
         internal string ElympicsGameServersEndpoint => ApplicationParameters.Parameters.GameServersEndpoint.GetValue(new UriBuilder(elympicsGameServersEndpoint).Uri)
             .GetAbsoluteOrRelativeString();
 
-        internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
-            .GetAbsoluteOrRelativeString();
-
         internal Uri ElympicsReplaySource => ApplicationParameters.Parameters.ReplaySource.GetValue(GetV2Endpoint("replay"));
 
         internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Routes.Base).ToString();

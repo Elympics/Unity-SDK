@@ -37,9 +37,6 @@ namespace Elympics
         public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
             parse: ParseUri);
 
-        public readonly Parameter<Uri> RespectEndpoint = new("ELYMPICS_RESPECT", "elympicsRespect", "elympics-respect",
-            parse: ParseUri);
-
         public readonly Parameter<Uri> ReplaySource = new("ELYMPICS_REPLAY", "elympicsReplay", "elympics-replay",
             parse: ParseUri);
 

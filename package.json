@@ -1,15 +1,15 @@
 {
   "name": "com.daftmobile.elympics",
   "version": "0.27.0",
-  "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
+  "description": "Elympics is a complete toolset for competitive games. Learn more at https://elympics.ai/",
   "displayName": "Elympics",
   "unity": "2021.3",
   "author": {
     "name": "Elympics",
     "email": "hello@elympics.cc",
-    "url": "https://www.elympics.cc/"
+    "url": "https://www.elympics.ai/"
   },
-  "documentationUrl": "https://docs.elympics.cc/",
+  "documentationUrl": "https://docs.elympics.ai/",
   "changelogUrl": "https://github.com/Elympics/Unity-SDK/releases",
   "license": "See LICENSE.md file",
   "keywords": [
@@ -21,11 +21,6 @@
       "displayName": "Button Clicker [Game]",
       "description": "Clicker-type game for 1-4 players. Remember to set the player count in game config and queue settings",
       "path": "Samples~/ButtonClicker"
-    },
-    {
-      "displayName": "Tech Demo [Game]",
-      "description": "Sample with 2 players throwing instantiable balls",
-      "path": "Samples~/TechDemo"
     },
     {
       "displayName": "Match events [Game]",

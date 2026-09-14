@@ -27,8 +27,6 @@
     margin-bottom: 2px;
 }
 
-/* -unity-text-align on the TextField itself is overridden by the default theme's rule
-   on the inner input element, so the alignment has to be set on the input directly. */
 .elympics-centered-field .unity-base-text-field__input,
 .elympics-centered-field .unity-text-element {
     -unity-text-align: middle-center;
@@ -98,9 +96,7 @@
     -unity-text-align: middle-center;
 }
 
-/* Sections of the embedded ElympicsGameConfig inspector that the
-   Manage Games in Elympics window does not display. They stay in the tree
-   (and stay bound) so that ElympicsGameConfigEditor keeps working. */
+/* Sections of the embedded ElympicsGameConfigEditor inspector that the 'Manage Games...' window does not display. */
 .compact-game-config #max-players,
 .compact-game-config #webrtc-toggle,
 .compact-game-config #connection-config,

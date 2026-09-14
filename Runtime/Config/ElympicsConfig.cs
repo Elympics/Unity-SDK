@@ -52,8 +52,9 @@ namespace Elympics
                 var activeGame = availableGames[currentGame];
                 availableGames.RemoveAt(currentGame);
                 availableGames.Insert(0, activeGame);
+                migratedActiveGame = true;
+                currentGame = -1;
             }
-            migratedActiveGame = true;
         }
 #endif
 

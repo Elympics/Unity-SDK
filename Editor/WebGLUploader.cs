@@ -24,10 +24,8 @@ namespace Elympics.Editor
         private const string CatalogFileNamePrefix = "catalog";
         private const string DefaultContentType = "application/octet-stream";
 
-        /// <summary>
-        /// Generated in memory and uploaded at the root of an <see cref="StreamingAssetsLayout.AddressableVariants" />
-        /// upload, so a consumer can discover which variants a content version contains without listing the bucket.
-        /// </summary>
+        /// <summary>Generated in memory and uploaded to bucket so client doesn't have to list it to discover variants.</summary>
+        /// <remarks>Only used in <see cref="StreamingAssetsLayout.AddressableVariants" />.</remarks>
         private const string VariantsManifestFileName = "variants.meta.json";
 
         internal static readonly string[] CompoundExtensions =
@@ -48,9 +46,7 @@ namespace Elympics.Editor
             "application/octet-stream",
         };
 
-        // The signed URL covers Content-Type, so a value the backend did not sign fails the PUT with GCS
-        // "SignatureDoesNotMatch". Only extensions verified against a real upload belong here; the rest must fall
-        // through to DefaultContentType, which is what the backend uses for them.
+        /// <summary>Content-Type header values for GCS PUT requests.</summary>
         private static readonly Dictionary<string, string> StreamingAssetsContentTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             [".json"] = "application/json",
@@ -120,25 +116,26 @@ namespace Elympics.Editor
 
         #region File Validation Helpers
 
-        private static bool TryGetFullExtension(ReadOnlySpan<char> fileName, string[] knownCompoundExtensions, out string compoundExtension)
+        private static bool TryGetFullExtension(string filename, string[] knownCompoundExtensions, out string compoundExtension)
         {
             compoundExtension = string.Empty;
             foreach (var ext in knownCompoundExtensions)
             {
-                var extIndex = fileName.IndexOf(ext.AsSpan(), StringComparison.OrdinalIgnoreCase);
+                var extIndex = filename.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
                 if (extIndex < 0)
                     continue;
 
-                compoundExtension = fileName[extIndex..].ToString();
+                compoundExtension = filename[extIndex..];
                 return true;
             }
 
             return false;
         }
 
-        private static bool DoesFileHaveGivenCompoundExtension(string fileName, string compoundExtension)
+        internal static bool DoesFileHaveGivenCompoundExtension(string filePath, string compoundExtension)
         {
-            if (TryGetFullExtension(fileName.AsSpan(), CompoundExtensions, out var fileCompoundExtension))
+            var filename = Path.GetFileName(filePath);
+            if (TryGetFullExtension(filename, CompoundExtensions, out var fileCompoundExtension))
                 return fileCompoundExtension == compoundExtension;
             return false;
         }
@@ -171,14 +168,14 @@ namespace Elympics.Editor
                 throw new ElympicsException($"{label} '{version}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.");
         }
 
-        internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
+        internal static List<(string name, string extension)> GetValidFiles(string[] filenames, string[] knownCompoundExtensions)
         {
-            return fileNames.Select(fileName =>
+            return filenames.Select(filePath =>
             {
-                if (TryGetFullExtension(fileName.AsSpan(), knownCompoundExtensions, out var compoundExtension))
+                if (TryGetFullExtension(Path.GetFileName(filePath), knownCompoundExtensions, out var compoundExtension))
                 {
                     var splitExtension = compoundExtension.Split('.');
-                    var split = fileName.Split('.');
+                    var split = filePath.Split('.');
                     var name = string.Join(".", split.Take(split.Length - splitExtension.Length + 1));
                     return (name, compoundExtension);
                 }
@@ -257,18 +254,17 @@ namespace Elympics.Editor
             for (var index = 0; index < initResponse.Files.Length; index++)
             {
                 var fileUploadInfo = initResponse.Files[index];
-                var responseFile = Path.Combine(clientBuildPath, fileUploadInfo.FilePath);
                 var expectedFile = validFiles[index];
 
-                if (!DoesFileHaveGivenCompoundExtension(responseFile, expectedFile.extension))
+                if (!DoesFileHaveGivenCompoundExtension(fileUploadInfo.FilePath, expectedFile.extension))
                     throw new ElympicsException($"Uploaded file '{fileUploadInfo.FilePath}' does not match expected extension '{expectedFile.extension}'.");
 
                 var localFile = expectedFile.name + expectedFile.extension;
-                var progress = (float)(index + 1) / initResponse.Files.Length;
-                progressCallback?.Invoke(localFile, progress);
+                progressCallback?.Invoke(localFile, (float)index / initResponse.Files.Length);
 
                 var filePath = Path.Combine(clientBuildPath, localFile);
                 PutFileToGcs(localFile, fileUploadInfo.SignedUrl, File.ReadAllBytes(filePath), FetchContentType(expectedFile.extension), FetchEncoding(expectedFile.extension));
+                progressCallback?.Invoke(localFile, (float)(index + 1) / initResponse.Files.Length);
             }
         }
 
@@ -465,6 +461,8 @@ namespace Elympics.Editor
             for (var index = 0; index < files.Count; index++)
             {
                 var fileUploadInfo = files[index];
+                progressCallback?.Invoke(fileUploadInfo.FilePath, (float)index / files.Count);
+
                 byte[] payload;
                 if (generatedFiles.TryGetValue(fileUploadInfo.FilePath, out var generatedPayload))
                     payload = generatedPayload;
@@ -476,10 +474,9 @@ namespace Elympics.Editor
                     payload = File.ReadAllBytes(filePath);
                 }
 
-                progressCallback?.Invoke(fileUploadInfo.FilePath, (float)index / files.Count);
-
                 var extension = Path.GetExtension(fileUploadInfo.FilePath);
                 PutFileToGcs(fileUploadInfo.FilePath, fileUploadInfo.SignedUrl, payload, FetchStreamingAssetsContentType(extension), FetchEncoding(extension));
+                progressCallback?.Invoke(fileUploadInfo.FilePath, (float)(index + 1) / files.Count);
             }
         }
 

@@ -504,7 +504,6 @@ namespace Elympics
                 }
                 catch (ElympicsException e)
                 {
-                    EditorUtility.ClearProgressBar();
                     ElympicsLogger.LogError(e.Message);
                     if (!Application.isBatchMode)
                         _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "OK");
@@ -512,11 +511,14 @@ namespace Elympics
                     _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, false);
                     return;
                 }
+                finally
+                {
+                    EditorUtility.ClearProgressBar();
+                }
 
                 _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, true);
 
                 ElympicsLogger.LogInfo("Client build uploaded successfully.");
-                EditorUtility.ClearProgressBar();
             }
 
             void FailWithException(Exception exception)
@@ -565,22 +567,26 @@ namespace Elympics
                         if (!TryDeserializeResponse<WebGLUploader.StreamingAssetsUploadInitResponse>(webRequest, StreamingAssetsInitAction, out var response, out var error))
                         {
                             FailUpload(title, DescribeFailure(StreamingAssetsInitAction, error));
+                            EditorUtility.ClearProgressBar();
                             return;
                         }
 
                         try
                         {
-                            WebGLUploader.UploadStreamingAssetsToGcs(streamingAssetsPath, response, generatedFiles,
+                            WebGLUploader.UploadStreamingAssetsToGcs(streamingAssetsPath,
+                                response,
+                                generatedFiles,
                                 (fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.2f + progress * 0.7f));
+                            ElympicsLogger.LogInfo(DescribeUploadSuccess(relativePaths.Count, version));
                         }
                         catch (ElympicsException e)
                         {
                             FailUpload(title, e.Message);
-                            return;
                         }
-
-                        ElympicsLogger.LogInfo(DescribeUploadSuccess(relativePaths.Count, version));
-                        EditorUtility.ClearProgressBar();
+                        finally
+                        {
+                            EditorUtility.ClearProgressBar();
+                        }
                     });
             }
         }
@@ -774,9 +780,7 @@ namespace Elympics
             if (buildReport.summary.result == BuildResult.Failed)
                 return buildReport;
 
-            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            if (currentGameConfig is null)
-                throw new ElympicsException("Current game config is null");
+            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
 
             if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
                 throw new ElympicsException("Problem with packing engine");

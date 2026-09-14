@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using NUnit.Framework;
 
@@ -24,7 +25,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ReturnsEmpty_WhenInputIsEmpty()
         {
-            var result = ElympicsWebIntegration.GetValidFiles(new string[0], CompoundExtensions);
+            var result = ElympicsWebIntegration.GetValidFiles(Array.Empty<string>(), CompoundExtensions);
 
             Assert.IsEmpty(result);
         }
@@ -90,7 +91,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ParsesPrefixWithHyphenAndNumber([ValueSource(nameof(CompoundExtensions))] string extension)
         {
-            const string prefixWithHyphen = "Build-1";
+            const string prefixWithHyphen = DefaultPrefix + "-1";
             var fileName = prefixWithHyphen + extension;
             var fileNames = new[] { fileName };
 
@@ -104,7 +105,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ParsesPrefixWithDot([ValueSource(nameof(CompoundExtensions))] string extension)
         {
-            const string prefixWithDot = "Build.1";
+            const string prefixWithDot = DefaultPrefix + ".1";
             var fileName = prefixWithDot + extension;
             var fileNames = new[] { fileName };
 
@@ -127,6 +128,16 @@ namespace Elympics.Editor.Tests
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(DefaultPrefix, result[0].name);
             Assert.AreEqual(extension + packExtension, result[0].extension);
+        }
+
+        [Test]
+        public void MatchesCompoundExtension_WhenADirectorySegmentCarriesAnotherKnownExtension()
+        {
+            const string filename = DefaultPrefix + ".data";
+            const string fullPath = "release.wasm/" + filename;
+
+            Assert.IsTrue(WebGLUploader.DoesFileHaveGivenCompoundExtension(filename, ".data"));
+            Assert.IsTrue(WebGLUploader.DoesFileHaveGivenCompoundExtension(fullPath, ".data"));
         }
     }
 }

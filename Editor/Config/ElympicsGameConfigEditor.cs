@@ -20,12 +20,24 @@ namespace Elympics.Editor
 
         public VisualTreeAsset? inspectorUxml;
 
+        private Action<bool>? _versionUploadStatusChanged;
+
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
             if (inspectorUxml != null)
                 root.Add(PrepareInspectorTree(inspectorUxml));
             return root;
+        }
+
+        private void OnDisable() => UnsubscribeFromVersionUploadStatus();
+
+        private void UnsubscribeFromVersionUploadStatus()
+        {
+            if (_versionUploadStatusChanged == null)
+                return;
+            CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged -= _versionUploadStatusChanged;
+            _versionUploadStatusChanged = null;
         }
 
         private VisualElement PrepareInspectorTree(VisualTreeAsset sourceTree)
@@ -79,8 +91,13 @@ namespace Elympics.Editor
             var snapshotReplayError = inspectorTree.Q<HelpBox>("snapshot-replay-error");
 
             bool? isCurrentGameVersionUploaded = null;
-            CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged += inProgress =>
+            UnsubscribeFromVersionUploadStatus();
+            _versionUploadStatusChanged = inProgress =>
+            {
                 isCurrentGameVersionUploaded = inProgress ? null : CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded;
+                UpdateVersionUploadStatus();
+            };
+            CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged += _versionUploadStatusChanged;
             CurrentGameVersionUploadedToTheCloudStatus.Initialize(gameConfig);
 
             var notifyDataChanged = inspectorTree.schedule.Execute(gameConfig.ProcessElympicsConfigDataChanged);

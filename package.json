@@ -41,11 +41,6 @@
       "displayName": "Rooms-based menu [Menu]",
       "description": "Showcase of the rooms feature",
       "path": "Samples~/RoomsMenu"
-    },
-    {
-      "displayName": "Simple menu [Menu]",
-      "description": "Simple menu scene with all play modes and all available games listed",
-      "path": "Samples~/SimpleMenu"
     }
   ],
   "dependencies": {

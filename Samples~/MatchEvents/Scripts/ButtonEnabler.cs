@@ -1,5 +1,6 @@
 using System;
 using Elympics;
+using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,7 +40,7 @@ namespace MatchEvents
 
         public void OnConnected(TimeSynchronizationData data) => SetButtonsConnected();
         public void OnAuthenticated(Guid userId) => SetButtonsConnected();
-        public void OnMatchJoined(Guid matchId) => SetButtonsConnected();
+        public void OnMatchJoined(MatchInitialData matchInitialData) => SetButtonsConnected();
 
         public void OnConnectingFailed() => SetButtonsDisconnected();
         public void OnAuthenticatedFailed(string errorMessage) => SetButtonsDisconnected();
@@ -81,8 +82,5 @@ namespace MatchEvents
                 endGameButton.interactable = false;
             });
         }
-
-        public void OnSynchronized(TimeSynchronizationData data)
-        { }
     }
 }

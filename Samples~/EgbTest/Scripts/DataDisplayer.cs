@@ -70,29 +70,5 @@ namespace Elympics.EgbTest
         {
             Debug.LogError("This sample is meant for Debug Online and Online modes only.");
         }
-
-        #region Unused callbacks
-
-        public void OnConnected(TimeSynchronizationData data) { }
-
-        public void OnConnectingFailed() { }
-
-        public void OnDisconnectedByServer() { }
-
-        public void OnDisconnectedByClient() { }
-
-        public void OnSynchronized(TimeSynchronizationData data) { }
-
-        public void OnAuthenticated(Guid userId) { }
-
-        public void OnAuthenticatedFailed(string errorMessage) { }
-
-        public void OnMatchJoined(Guid matchId) { }
-
-        public void OnMatchJoinedFailed(string errorMessage) { }
-
-        public void OnMatchEnded(Guid matchId) { }
-
-        #endregion Unused callbacks
     }
 }

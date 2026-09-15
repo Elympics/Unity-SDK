@@ -400,12 +400,6 @@ namespace Elympics
 
         public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
         {
-            #region ObsoleteCalls
-            // Obsolete - to be removed in future versions. Leave for backward compatibility.
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchJoined(matchInitData.MatchId);
-            #endregion
-
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchJoinedWithInitData(matchInitData);
         }

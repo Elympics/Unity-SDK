@@ -22,7 +22,7 @@ namespace Elympics
         internal const int UndefinedNetworkId = -1;
         private const int DefaultAbsenceTickParameter = 0;
 
-        internal static string NetworkIdPropertyName = nameof(networkId);
+        internal static readonly string NetworkIdPropertyName = nameof(networkId);
         [SerializeField] private int networkId = UndefinedNetworkId;
         [SerializeField] internal ElympicsPlayer predictableFor = ElympicsPlayer.World;
         [SerializeField] internal bool isUpdatableForNonOwners;
@@ -161,6 +161,7 @@ namespace Elympics
         /// <summary>
         /// Provides Elympics-specific game instance data and methods.
         /// </summary>
+        [PublicAPI]
         public IElympics Elympics => ElympicsBase;
 
         internal ElympicsBase ElympicsBase { get; private set; }
@@ -198,10 +199,7 @@ namespace Elympics
 
         private Dictionary<ElympicsPlayer, (long Tick, byte[] Data)> _tickBasedInputByPlayer;
 
-        internal void ClearInputs()
-        {
-            _tickBasedInputByPlayer.Clear();
-        }
+        internal void ClearInputs() => _tickBasedInputByPlayer.Clear();
 
         /// <summary>
         /// Retrieves received input for a player.
@@ -288,10 +286,7 @@ namespace Elympics
             _tickBasedInputByPlayer = new Dictionary<ElympicsPlayer, (long Tick, byte[] Data)>();
         }
 
-        private void OnDestroy()
-        {
-            _inputReader?.Dispose();
-        }
+        private void OnDestroy() => _inputReader?.Dispose();
 
         internal byte[] GetState()
         {
@@ -367,20 +362,14 @@ namespace Elympics
             return areEqual;
         }
 
-        internal void OnInputForClient(BinaryInputWriter inputWriter)
-        {
+        internal void OnInputForClient(BinaryInputWriter inputWriter) =>
             _componentsContainer.InputHandler?.OnInputForClient(inputWriter);
-        }
 
-        internal void OnInputForBot(BinaryInputWriter inputWriter)
-        {
+        internal void OnInputForBot(BinaryInputWriter inputWriter) =>
             _componentsContainer.InputHandler?.OnInputForBot(inputWriter);
-        }
 
-        internal void SetCurrentInput(ElympicsPlayer player, long inputTick, byte[] rawInput)
-        {
+        internal void SetCurrentInput(ElympicsPlayer player, long inputTick, byte[] rawInput) =>
             _tickBasedInputByPlayer[player] = (inputTick, rawInput);
-        }
 
         internal void CommitVars()
         {
@@ -447,96 +436,54 @@ namespace Elympics
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnStandaloneClientInit(data);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnStandaloneClientInit(new InitialMatchPlayerData(data));
-#pragma warning restore CS0618
         }
 
         internal void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnClientsOnServerInit(data);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnClientsOnServerInit(new InitialMatchPlayerDatas(data));
-#pragma warning restore CS0618
         }
 
         internal void OnConnected(TimeSynchronizationData data)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnConnected(data);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnConnected(data);
-#pragma warning restore CS0618
         }
 
         internal void OnConnectingFailed()
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnConnectingFailed();
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnConnectingFailed();
-#pragma warning restore CS0618
         }
 
         internal void OnDisconnectedByServer()
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnDisconnectedByServer();
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnDisconnectedByServer();
-#pragma warning restore CS0618
         }
 
         internal void OnDisconnectedByClient()
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnDisconnectedByClient();
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnDisconnectedByClient();
-#pragma warning restore CS0618
         }
 
         internal void OnSynchronized(TimeSynchronizationData data)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnSynchronized(data);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnSynchronized(data);
-#pragma warning restore CS0618
         }
 
         internal void OnAuthenticated(Guid userId)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnAuthenticated(userId);
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnAuthenticated(userId.ToString());
         }
 
         internal void OnAuthenticatedFailed(string errorMessage)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnAuthenticatedFailed(errorMessage);
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnAuthenticatedFailed(errorMessage);
-        }
-
-        internal void OnMatchJoined(Guid matchId)
-        {
-#pragma warning disable CS0618 // Type or member is obsolete - call obsolete methods for backward compatibility
-            foreach (var handler in _componentsContainer.ClientHandlersGuid)
-                handler.OnMatchJoined(matchId);
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnMatchJoined(matchId.ToString());
-#pragma warning restore CS0618
         }
 
         public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
@@ -549,16 +496,12 @@ namespace Elympics
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnMatchJoinedFailed(errorMessage);
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnMatchJoinedFailed(errorMessage);
         }
 
         internal void OnMatchEnded(Guid matchId)
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnMatchEnded(matchId);
-            foreach (var handler in _componentsContainer.ClientHandlers)
-                handler.OnMatchEnded(matchId.ToString());
         }
 
         #endregion
@@ -569,20 +512,12 @@ namespace Elympics
         {
             foreach (var handler in _componentsContainer.BotHandlersGuid)
                 handler.OnStandaloneBotInit(initialMatchData);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.BotHandlers)
-                handler.OnStandaloneBotInit(new InitialMatchPlayerData(initialMatchData));
-#pragma warning restore CS0618
         }
 
         internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchDatas)
         {
             foreach (var handler in _componentsContainer.BotHandlersGuid)
                 handler.OnBotsOnServerInit(initialMatchDatas);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.BotHandlers)
-                handler.OnBotsOnServerInit(new InitialMatchPlayerDatas(initialMatchDatas));
-#pragma warning restore CS0618
         }
 
         #endregion
@@ -593,30 +528,18 @@ namespace Elympics
         {
             foreach (var handler in _componentsContainer.ServerHandlersGuid)
                 handler.OnServerInit(initialMatchData);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ServerHandlers)
-                handler.OnServerInit(new InitialMatchPlayerDatas(initialMatchData));
-#pragma warning restore CS0618
         }
 
         internal void OnPlayerConnected(ElympicsPlayer player)
         {
             foreach (var handler in _componentsContainer.ServerHandlersGuid)
                 handler.OnPlayerConnected(player);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ServerHandlers)
-                handler.OnPlayerConnected(player);
-#pragma warning restore CS0618
         }
 
         internal void OnPlayerDisconnected(ElympicsPlayer player)
         {
             foreach (var handler in _componentsContainer.ServerHandlersGuid)
                 handler.OnPlayerDisconnected(player);
-#pragma warning disable CS0618
-            foreach (var handler in _componentsContainer.ServerHandlers)
-                handler.OnPlayerDisconnected(player);
-#pragma warning restore CS0618
         }
 
         #endregion

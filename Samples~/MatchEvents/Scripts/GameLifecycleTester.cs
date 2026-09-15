@@ -97,12 +97,6 @@ namespace MatchEvents
                 { nameof(errorMessage), errorMessage }
             });
 
-        public void OnMatchJoined(Guid matchId) => Serializer.PrintCall(
-            new Dictionary<string, object>
-            {
-                { nameof(matchId), matchId }
-            });
-
         public void OnMatchJoinedFailed(string errorMessage) => Serializer.PrintCall(
             new Dictionary<string, object>
             {

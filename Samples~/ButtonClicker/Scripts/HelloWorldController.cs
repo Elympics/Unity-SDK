@@ -102,41 +102,4 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     {
         _ended = true;
     }
-
-    #region Unused interface methods
-
-    public void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
-    { }
-
-    public void OnClientsOnServerInit(InitialMatchPlayerDatasGuid data)
-    { }
-
-    public void OnConnected(TimeSynchronizationData data)
-    { }
-
-    public void OnConnectingFailed()
-    { }
-
-    public void OnDisconnectedByServer()
-    { }
-
-    public void OnDisconnectedByClient()
-    { }
-
-    public void OnSynchronized(TimeSynchronizationData data)
-    { }
-
-    public void OnAuthenticated(Guid userId)
-    { }
-
-    public void OnAuthenticatedFailed(string errorMessage)
-    { }
-
-    public void OnMatchJoined(Guid matchId)
-    { }
-
-    public void OnMatchJoinedFailed(string errorMessage)
-    { }
-
-    #endregion Unused interface methods
 }

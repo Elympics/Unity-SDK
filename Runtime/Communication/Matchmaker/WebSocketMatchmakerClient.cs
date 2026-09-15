@@ -133,10 +133,7 @@ namespace Elympics
                 EmitMatchmakingFailed($"Connection closed abnormally [{code}] {reason}", matchId, _gameId, _gameVersion);
         }
 
-        private void HandleWarning(string message)
-        {
-            EmitMatchmakingWarning(message, _matchId);
-        }
+        private void HandleWarning(string message) => EmitMatchmakingWarning(message, _matchId);
 
         private void HandleError(string message)
         {

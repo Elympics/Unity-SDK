@@ -12,7 +12,6 @@ namespace Elympics
         private SinglePlayerGameEngine _gameEngine;
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
@@ -58,7 +57,6 @@ namespace Elympics
             });
 
             behavioursManager.InitializeInternal(server, 1);
-            bot.Destroy();
         }
 
         public override void Dispose() => _gameEngine.Dispose();

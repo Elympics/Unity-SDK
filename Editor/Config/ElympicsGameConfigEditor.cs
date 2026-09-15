@@ -198,7 +198,7 @@ namespace Elympics.Editor
                         debugModeWarning.SetVisible(true);
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote:
-                        debugModeSummary.text = "Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server, user or bot, use ParrelSync to create more instances.";
+                        debugModeSummary.text = "Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server or a client, use ParrelSync to create more instances.";
                         debugModeWarning.text = "This mode is only a simulation of production environment!";
                         debugModeWarning.SetVisible(true);
                         halfRemoteOptions.SetVisible(true);

@@ -312,12 +312,6 @@ namespace Elympics
 
         #endregion
 
-        #region BotCallbacks
-
-        protected void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData) => Enqueue(() => ElympicsBehavioursManager.OnStandaloneBotInit(initialMatchData));
-
-        #endregion
-
         #region ServerCallbacks
 
         protected void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerConnected(player));

@@ -8,8 +8,6 @@ namespace Plugins.Elympics.Plugins.ParrelSync
 {
 	public static class ElympicsClonesManager
 	{
-		private const string BotArgument = "bot";
-
 		public static bool IsClone()
 		{
 #if UNITY_EDITOR
@@ -26,16 +24,6 @@ namespace Plugins.Elympics.Plugins.ParrelSync
 			return int.Parse(Regex.Match(path, @"\d+$").Value);
 #else
 			return 0;
-#endif
-		}
-
-		public static bool IsBot()
-		{
-#if UNITY_EDITOR
-			var arg = ClonesManager.GetArgument();
-			return arg == BotArgument;
-#else
-			return false;
 #endif
 		}
 	}

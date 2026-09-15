@@ -17,7 +17,6 @@ namespace Elympics
 
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
@@ -37,7 +36,6 @@ namespace Elympics
             BehavioursManager.InitializeInternal(Server, GameConfig.MaxPlayers);
 
             client.Destroy();
-            bot.Destroy();
             // singlePlayer.Destroy();
         }
 

@@ -2,14 +2,13 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using GameBotCore.V1._1;
 using GameEngineCore;
 using Proto.ProtoClient;
 using ProtoLog;
 
 namespace UnityConnectors
 {
-    internal class ProtoConnector : IGameEngineLogger, IGameBotLogger, IDisposable
+    internal class ProtoConnector : IGameEngineLogger, IDisposable
     {
         private readonly TimeSpan _connectionTimeout = TimeSpan.FromSeconds(30);
         private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(1);

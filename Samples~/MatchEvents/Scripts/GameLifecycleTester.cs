@@ -135,12 +135,6 @@ namespace MatchEvents
 
         #region IBotHandler
 
-        public void OnStandaloneBotInit(InitialMatchPlayerDataGuid data) => Serializer.PrintCall(
-            new Dictionary<string, object>
-            {
-                { nameof(data), data }
-            });
-
         public void OnBotsOnServerInit(InitialMatchPlayerDatasGuid datas) => Serializer.PrintCall(
             new Dictionary<string, object>
             {

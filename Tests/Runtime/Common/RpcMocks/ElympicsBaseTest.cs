@@ -4,7 +4,6 @@ namespace Elympics.Tests.RpcMocks
     {
         public static ElympicsStatus StandaloneClient => new(true, false, false);
         public static ElympicsStatus StandaloneServer => new(false, true, false);
-        public static ElympicsStatus StandaloneBot => new(false, false, true);
         public static ElympicsStatus ServerWithBots => new(false, true, true);
         public static ElympicsStatus LocalPlayerWithBots => new(true, true, true);
     }

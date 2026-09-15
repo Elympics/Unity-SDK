@@ -128,8 +128,6 @@ namespace Elympics.Tests
                 new(ElympicsStatus.StandaloneClient, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.ServerToPlayers, false),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.PlayerToServer, true),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.ServerToPlayers, true),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.ServerToPlayers, false),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.LocalPlayerWithBots, ElympicsRpcDirection.ServerToPlayers, false),
@@ -200,7 +198,6 @@ namespace Elympics.Tests
             {
                 new(ElympicsStatus.StandaloneClient, ElympicsRpcDirection.PlayerToServer),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.ServerToPlayers),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.PlayerToServer),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.ServerToPlayers),
             };
 

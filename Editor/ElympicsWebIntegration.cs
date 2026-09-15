@@ -26,7 +26,6 @@ namespace Elympics
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";
         private const string EngineSubdirectory = "Engine";
-        private const string BotSubdirectory = "Bot";
 
         private static string ElympicsWebEndpoint => ElympicsConfig.Load()?.ElympicsApiEndpoint;
 
@@ -396,7 +395,6 @@ namespace Elympics
                 }
 
                 string enginePath;
-                string botPath;
                 var waitingForContinuation = false;
                 try
                 {
@@ -411,10 +409,6 @@ namespace Elympics
                     if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out enginePath))
                         return;
 
-                    EditorUtility.DisplayProgressBar(title, "Packing bot", 0.4f);
-                    if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out botPath))
-                        return;
-
                     EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
                     waitingForContinuation = true;
                 }
@@ -427,7 +421,7 @@ namespace Elympics
                 var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
                 _ = ElympicsEditorWebClient.SendEnginePostRequestApi(url,
                     currentGameConfig.GameVersion,
-                    new[] { enginePath, botPath },
+                    new[] { enginePath },
                     webRequest =>
                     {
                         try
@@ -785,11 +779,8 @@ namespace Elympics
             if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
                 throw new ElympicsException("Problem with packing engine");
 
-            if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out var botPath))
-                throw new ElympicsException("Problem with packing bot");
-
             var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-            var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });
+            var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath });
 
             while (!uploadOp.isDone)
                 ;

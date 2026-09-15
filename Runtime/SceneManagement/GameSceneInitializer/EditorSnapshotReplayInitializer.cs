@@ -11,7 +11,6 @@ namespace Elympics
 
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
@@ -24,7 +23,6 @@ namespace Elympics
                 throw new Exception($"Game version mismatch. Replay was recorded using game version {replayVersion} and current game version is {currentVersion}. Use a matching version of the game to watch this replay.");
 
             InitializeInternal(
-                bot,
                 server,
                 gameConfig,
                 behavioursManager,

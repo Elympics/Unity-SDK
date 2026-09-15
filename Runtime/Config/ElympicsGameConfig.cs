@@ -25,8 +25,6 @@ namespace Elympics
         [SerializeField] internal SceneAsset? gameplaySceneAsset;
 #endif
 
-        [SerializeField] private bool botsInServer = true;
-
         [SerializeField] private bool useWeb;
         [SerializeField] private bool enableReconnect;
         [SerializeField] private ClientConnectionSettings connectionConfig = new();
@@ -74,8 +72,6 @@ namespace Elympics
 
         public int MaxPlayers => Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
         public string GameplayScene => gameplayScene;
-
-        public bool BotsInServer => botsInServer;
 
         public bool UseWeb =>
 #if UNITY_WEBGL
@@ -146,7 +142,7 @@ namespace Elympics
 #endif
         }
 
-        public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone() ? ElympicsClonesManager.IsBot() ? HalfRemoteModeEnum.Bot : HalfRemoteModeEnum.Client : defaultHalfRemoteMode;
+        public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone() ? HalfRemoteModeEnum.Client : defaultHalfRemoteMode;
 
         public static bool IsOverridenInHalfRemoteByClone() => ElympicsClonesManager.IsClone();
 
@@ -186,7 +182,6 @@ namespace Elympics
         {
             Server,
             Client,
-            Bot,
         }
 
         public enum ReconciliationFrequencyEnum

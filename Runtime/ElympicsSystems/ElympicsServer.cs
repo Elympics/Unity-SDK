@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elympics.Core;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
@@ -26,9 +27,6 @@ namespace Elympics
 
         public override bool IsReplay => _isReplay;
 
-        private bool _handlingBotsOverride;
-
-        private bool HandlingBotsInServer => _handlingBotsOverride || Config.BotsInServer;
         private bool HandlingClientsInServer { get; set; }
 
         private bool _isReplay;
@@ -37,8 +35,6 @@ namespace Elympics
         private ResultMatchPlayerDatas? _matchResult;
         private GameEngineAdapter? _gameEngineAdapter;
         private InitialMatchPlayerDatasGuid? _playerData;
-
-        private List<ElympicsInput>? _inputList;
 
         private SnapshotAnalysisCollector _snapshotCollector = null!;
         private IServerPlayerHandler _serverPlayerHandler = null!;
@@ -65,10 +61,8 @@ namespace Elympics
             _isReplay = _serverElympicsUpdate is SnapshotReplayElympicsUpdateLoop;
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
             SwitchBehaviourToServer();
-            _handlingBotsOverride = handlingBotsOverride;
             HandlingClientsInServer = handlingClientsOverride;
             _gameEngineAdapter = gameEngineAdapter;
-            _inputList = new List<ElympicsInput>();
             SetupCallbacks();
             LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
@@ -142,7 +136,7 @@ namespace Elympics
         internal void SwitchBehaviourToServer()
         {
             _currentPlayer = ServerPlayer;
-            _currentIsBot = HandlingBotsInServer;
+            _currentIsBot = true;
         }
 
         internal void SwitchBehaviourToBot(ElympicsPlayer player)

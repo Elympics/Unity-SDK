@@ -6,10 +6,7 @@ namespace Elympics
 {
     internal static class ApplicationParameters
     {
-        public static bool ShouldLoadElympicsOnlineServer => Parameters.IsElympicsOnlineServer.GetValue() is true
-            && Parameters.IsElympicsOnlineBot.GetValue() is not true;
-        public static bool ShouldLoadElympicsOnlineBot => Parameters.IsElympicsOnlineServer.GetValue() is true
-            && Parameters.IsElympicsOnlineBot.GetValue() is true;
+        public static bool ShouldLoadElympicsOnlineServer => Parameters.IsElympicsOnlineServer.GetValue() is true;
 
         public static ParameterList Parameters
         {

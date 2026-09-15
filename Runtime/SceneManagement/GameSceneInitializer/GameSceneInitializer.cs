@@ -4,7 +4,6 @@ namespace Elympics
     {
         public abstract void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager);

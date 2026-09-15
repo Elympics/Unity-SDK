@@ -10,7 +10,6 @@ namespace Elympics
     {
         [SerializeField] private ElympicsBehavioursManager elympicsBehavioursManager;
         [SerializeField] private ElympicsClient elympicsClient;
-        [SerializeField] private ElympicsBot elympicsBot;
         [SerializeField] private ElympicsServer elympicsServer;
 
         private GameSceneInitializer _gameSceneInitializer;
@@ -31,7 +30,7 @@ namespace Elympics
                     + $"(ID: {elympicsGameConfig.GameId}), version {elympicsGameConfig.GameVersion}");
                 _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig);
                 ElympicsLogger.LogInfo($"Created game scene initializer of type {_gameSceneInitializer.GetType().Name}");
-                _gameSceneInitializer.Initialize(elympicsClient, elympicsBot, elympicsServer, elympicsGameConfig, elympicsBehavioursManager);
+                _gameSceneInitializer.Initialize(elympicsClient, elympicsServer, elympicsGameConfig, elympicsBehavioursManager);
                 ElympicsLogger.LogInfo("Elympics game scene initialized successfully.");
             }
             catch (Exception e)

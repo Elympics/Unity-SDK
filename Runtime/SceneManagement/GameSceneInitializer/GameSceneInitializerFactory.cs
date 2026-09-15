@@ -8,8 +8,6 @@ namespace Elympics
     {
         public static GameSceneInitializer Create(ElympicsGameConfig elympicsGameConfig)
         {
-            if (ApplicationParameters.ShouldLoadElympicsOnlineBot)
-                return new OnlineGameBotInitializer();
             if (ApplicationParameters.ShouldLoadElympicsOnlineServer)
                 return new OnlineGameServerInitializer();
             if (LobbyRegister.IsLobbyRegistered())
@@ -47,7 +45,6 @@ namespace Elympics
             {
                 ElympicsGameConfig.HalfRemoteModeEnum.Server => new HalfRemoteGameServerInitializer(),
                 ElympicsGameConfig.HalfRemoteModeEnum.Client => new HalfRemoteGameClientInitializer(),
-                ElympicsGameConfig.HalfRemoteModeEnum.Bot => new HalfRemoteGameBotInitializer(),
                 _ => throw new ArgumentOutOfRangeException(),
             };
         }

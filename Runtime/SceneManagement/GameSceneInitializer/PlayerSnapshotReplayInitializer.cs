@@ -7,14 +7,13 @@ namespace Elympics
     {
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
 
             var snapshotRetriever = LobbyRegister.GetSnapshotRetriever();
-            InitializeInternal(bot, server, gameConfig, behavioursManager, snapshotRetriever, new NullReplayManipulator() /*TO DO: Pass a manipulator connected to UI (from game or PlayPad)*/);
+            InitializeInternal(server, gameConfig, behavioursManager, snapshotRetriever, new NullReplayManipulator() /*TO DO: Pass a manipulator connected to UI (from game or PlayPad)*/);
         }
     }
 }

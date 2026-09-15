@@ -17,7 +17,6 @@ namespace Elympics
 
 
         public readonly ValueParameter<bool> IsElympicsOnlineServer = new("ELYMPICS", parse: ParseBoolFlag);
-        public readonly ValueParameter<bool> IsElympicsOnlineBot = new("ELYMPICS_BOT", parse: ParseBoolFlag);
 
         public readonly ValueParameter<int> HalfRemotePlayerIndex =
             new("ELYMPICS_HALF_REMOTE_PLAYER_INDEX", "playerIndex", "half-remote-player-index");

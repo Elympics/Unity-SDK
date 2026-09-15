@@ -12,7 +12,6 @@ namespace Elympics
     internal abstract class SnapshotReplayInitializer : GameSceneInitializer
     {
         protected void InitializeInternal(
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager,
@@ -61,7 +60,6 @@ namespace Elympics
             true);
             // @formatter:on
             behavioursManager.InitializeInternal(server, gameConfig.MaxPlayers);
-            bot.Destroy();
 
             replayManipulator.LoadReplay(updateLoop, new ReplayData { InitData = initData, Snapshots = snapshots });
         }

@@ -449,12 +449,6 @@ namespace Elympics
 
         #region BotCallbacks
 
-        internal void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData)
-        {
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnStandaloneBotInit(initialMatchData);
-        }
-
         internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)

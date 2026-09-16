@@ -64,11 +64,6 @@
                 </ui:Foldout>
             </ui:GroupBox>
         </ui:GroupBox>
-        <ui:GroupBox name="debug-online-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
-            <ui:HelpBox display-tooltip-when-elided="true" message-type="Info" name="debug-online-uploading-spinner" text="Checking if current game version is uploaded to the Elympics cloud..." style="display: flex;" />
-            <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="debug-online-not-uploaded" text="Current game version is not uploaded to the Elympics cloud! Upload your game first using &quot;Tools/Elympics/Manage games in Elympics&quot; window!" style="display: none;" />
-            <uie:PropertyField name="debug-online-match-data" binding-path="testMatchData" label="&lt;i&gt;Test match data&lt;/i&gt;" />
-        </ui:GroupBox>
         <ui:GroupBox name="snapshot-replay-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
             <ui:Toggle label="Record snapshots" name="half-remote-record-snapshot" tooltip="Save snapshots to a file to analyze and replay them later" binding-path="recordSnapshots" />
             <ui:TextField label="Snapshot file path" name="snapshot-replay-path" tooltip="Path to a file or a folder where snapshots are stored." binding-path="snapshotFilePath" />

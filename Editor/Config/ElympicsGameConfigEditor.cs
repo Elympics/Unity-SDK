@@ -11,7 +11,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Elympics.Editor
+namespace Elympics.Editor.Config
 {
     [CustomEditor(typeof(ElympicsGameConfig))]
     internal class ElympicsGameConfigEditor : UnityEditor.Editor
@@ -20,24 +20,12 @@ namespace Elympics.Editor
 
         public VisualTreeAsset? inspectorUxml;
 
-        private Action<bool>? _versionUploadStatusChanged;
-
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
             if (inspectorUxml != null)
                 root.Add(PrepareInspectorTree(inspectorUxml));
             return root;
-        }
-
-        private void OnDisable() => UnsubscribeFromVersionUploadStatus();
-
-        private void UnsubscribeFromVersionUploadStatus()
-        {
-            if (_versionUploadStatusChanged == null)
-                return;
-            CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged -= _versionUploadStatusChanged;
-            _versionUploadStatusChanged = null;
         }
 
         private VisualElement PrepareInspectorTree(VisualTreeAsset sourceTree)
@@ -83,22 +71,9 @@ namespace Elympics.Editor
                          ("lag-preset-total-mess", c => c.LoadTotalMess()),
                      })
                 inspectorTree.Q<Button>(id).clicked += () => loader(gameConfig.HalfRemoteLagConfig);
-            var debugOnlineOptions = inspectorTree.Q<GroupBox>("debug-online-options");
-            var debugOnlineSpinner = inspectorTree.Q<HelpBox>("debug-online-uploading-spinner");
-            var debugOnlineError = inspectorTree.Q<HelpBox>("debug-online-not-uploaded");
             var snapshotReplayOptions = inspectorTree.Q<GroupBox>("snapshot-replay-options");
             var snapshotReplayPath = inspectorTree.Q<TextField>("snapshot-replay-path");
             var snapshotReplayError = inspectorTree.Q<HelpBox>("snapshot-replay-error");
-
-            bool? isCurrentGameVersionUploaded = null;
-            UnsubscribeFromVersionUploadStatus();
-            _versionUploadStatusChanged = inProgress =>
-            {
-                isCurrentGameVersionUploaded = inProgress ? null : CurrentGameVersionUploadedToTheCloudStatus.IsVersionUploaded;
-                UpdateVersionUploadStatus();
-            };
-            CurrentGameVersionUploadedToTheCloudStatus.CheckingIfGameVersionIsUploadedChanged += _versionUploadStatusChanged;
-            CurrentGameVersionUploadedToTheCloudStatus.Initialize(gameConfig);
 
             var notifyDataChanged = inspectorTree.schedule.Execute(gameConfig.ProcessElympicsConfigDataChanged);
             notifyDataChanged.Pause();
@@ -155,7 +130,6 @@ namespace Elympics.Editor
             UpdateTicksPerSecondLabel();
             UpdateTotalPredictionLimitLabel();
             UpdateDebugModeOptions();
-            UpdateVersionUploadStatus();
             UpdateSnapshotReplayOptions();
             UpdateInputLagHighValue();
 
@@ -188,7 +162,6 @@ namespace Elympics.Editor
                 debugModeWarning.text = "";
                 debugModeWarning.SetVisible(false);
                 halfRemoteOptions.SetVisible(false);
-                debugOnlineOptions.SetVisible(false);
                 snapshotReplayOptions.SetVisible(false);
                 switch (gameConfig.GameplaySceneDebugMode)
                 {
@@ -203,10 +176,6 @@ namespace Elympics.Editor
                         debugModeWarning.SetVisible(true);
                         halfRemoteOptions.SetVisible(true);
                         UpdateHalfRemoteModeOptions();
-                        break;
-                    case ElympicsGameConfig.GameplaySceneDebugModeEnum.DebugOnlinePlayer:
-                        debugModeSummary.text = "Connect as a player to production server (which has to be uploaded beforehand). Realistic environment, occasionally better stack trace. Great for finalizing a feature or release.";
-                        debugOnlineOptions.SetVisible(true);
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay:
                         debugModeSummary.text = "Replay previously recorded match using snapshots from a file.";
@@ -232,19 +201,6 @@ namespace Elympics.Editor
                 halfRemoteRecordSnapshot.SetVisible(isServer);
                 halfRemoteClientOptions.SetVisible(isClient);
                 UpdateSnapshotReplayOptions();
-            }
-
-            void UpdateVersionUploadStatus()
-            {
-                debugOnlineError.SetVisible(false);
-                if (!isCurrentGameVersionUploaded.HasValue)
-                    debugOnlineSpinner.SetVisible(true);
-                else
-                {
-                    debugOnlineSpinner.SetVisible(false);
-                    if (!isCurrentGameVersionUploaded.Value)
-                        debugOnlineError.SetVisible(true);
-                }
             }
 
             void UpdateSnapshotReplayOptions()

@@ -173,7 +173,6 @@ namespace Elympics
         {
             LocalPlayerAndBots,
             HalfRemote,
-            DebugOnlinePlayer,
             SnapshotReplay,
             SinglePlayer,
         }

@@ -34,7 +34,7 @@ public class AuthenticateWindowController : BaseWindow
         {
             _roomController = roomController;
             var currentRoomId = ElympicsLobbyClient.Instance!.RoomsManager.CurrentRoom!.RoomId;
-            _roomController.Recconect(currentRoomId);
+            _roomController.Reconnect(currentRoomId);
             recconectButton.gameObject.SetActive(false);
         });
         _onSignin += onSignin;

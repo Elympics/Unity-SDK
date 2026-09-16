@@ -8,10 +8,10 @@ namespace Elympics
 {
     internal interface ILobby
     {
-        public AuthData? AuthData { get; }
+        AuthData? AuthData { get; }
         SnapshotAnalysisRetriever? SnapshotAnalysisRetriever { get; }
         MatchmakingFinishedData? MatchDataGuid { get; }
         JoinedMatchMode MatchMode { get; }
-        public void PlayMatchInternal(MatchmakingFinishedData matchData);
+        void PlayMatchInternal(MatchmakingFinishedData matchData);
     }
 }

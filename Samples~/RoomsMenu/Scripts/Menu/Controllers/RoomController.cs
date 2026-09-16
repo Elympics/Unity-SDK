@@ -8,88 +8,101 @@ using Elympics.Rooms.Models;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+
+#nullable enable
 
 public class RoomController : BaseWindow
 {
     private const int MatchmakingCountdownSeconds = 3;
 
-    [SerializeField] private CanvasGroup roomCanvasGroup;
-    [SerializeField] private CanvasGroup joinCodeSection;
-    [SerializeField] private CanvasGroup joinIdSection;
-    [SerializeField] private TextMeshProUGUI joinCode;
-    [SerializeField] private TextMeshProUGUI joinId;
-    [SerializeField] private TextMeshProUGUI statusText;
-    [SerializeField] private Button readyButton;
-    [SerializeField] private Button leaveButton;
-    [SerializeField] private Button startMatchmakingButton;
-    [SerializeField] private BasePopup leavePopup;
+    [SerializeField] private CanvasGroup? roomCanvasGroup;
+    [SerializeField] private CanvasGroup? joinCodeSection;
+    [SerializeField] private CanvasGroup? joinIdSection;
+    [SerializeField] private TextMeshProUGUI? joinCode;
+    [SerializeField] private TextMeshProUGUI? joinId;
+    [SerializeField] private TextMeshProUGUI? statusText;
+    [SerializeField] private Button? readyButton;
+    [SerializeField] private Button? leaveButton;
+    [SerializeField] private Button? startMatchmakingButton;
+    [SerializeField] private BasePopup? leavePopup;
 
-    [SerializeField] private RoomWindowView roomViewElements;
-    [SerializeField] private AdditionalRoomData _additionalRoomData;
-    private PlayerSeat[] _playerSeats;
+    [SerializeField] private RoomWindowView? roomViewElements;
+    [FormerlySerializedAs("_additionalRoomData")] [SerializeField] private AdditionalRoomData? additionalRoomData;
+    private PlayerSeat[]? _playerSeats;
     private Dictionary<int, Guid[]> _teams = new();
 
-    private bool IsActive => roomCanvasGroup.blocksRaycasts;
-
-    private int RoomCapacity => RoomsUtility.RoomCapacity(_currentRoom);
+    private bool IsActive => roomCanvasGroup!.blocksRaycasts;
 
     private readonly Dictionary<Guid, PlayerSeat> _seatLookup = new();
-    private IRoom _currentRoom;
-    private static Guid MyUserId => ElympicsLobbyClient.Instance.AuthData.UserId;
-    private bool AmIHost => MyUserId.Equals(_currentRoom.State.Host.User.UserId);
+    private IRoom? _currentRoom;
+    private static Guid MyUserId => ElympicsLobbyClient.Instance!.AuthData!.UserId;
+    private bool AmIHost => MyUserId.Equals(_currentRoom!.State.Host.User.UserId);
 
-    [SerializeField] private Button recconectButton;
+    [FormerlySerializedAs("recconectButton")] [SerializeField] private Button? reconnectButton;
 
     public void InitController()
     {
-        recconectButton.gameObject.SetActive(false);
-        roomViewElements.Init(_additionalRoomData.GetDataHolderUi());
+        reconnectButton!.gameObject.SetActive(false);
+        roomViewElements!.Init(additionalRoomData!.GetDataHolderUi());
         roomViewElements.SubscribeRoomNameChenge(SaveDataChanged);
-        ElympicsLobbyClient.Instance.ShouldLoadGameplaySceneAfterMatchmaking = true;
+        ElympicsLobbyClient.Instance!.ShouldLoadGameplaySceneAfterMatchmaking = true;
         _ = StartCoroutine(TrackListAfterWait());
         RejoinRoomIfAvailable();
     }
+
     public void DeinitController()
     {
-        roomViewElements.UnsubscribeRoomNameChanged();
-        ElympicsLobbyClient.Instance.ShouldLoadGameplaySceneAfterMatchmaking = false;
+        roomViewElements!.UnsubscribeRoomNameChanged();
+        ElympicsLobbyClient.Instance!.ShouldLoadGameplaySceneAfterMatchmaking = false;
         _ = RoomsUtility.RoomsManager.StopTrackingAvailableRooms();
     }
+
     private void RejoinRoomIfAvailable()
     {
         if (RoomsUtility.LastConnectedRoom == Guid.Empty)
             return;
         InitRejoinRoom();
     }
+
     private void Init()
     {
         CreateSeats();
         CreateTeams();
         AssignJoinedPlayersToSeats();
         AssignJoinedPlayersToTeams();
-        _seatLookup[_currentRoom.State.Host.User.UserId].SetHostIndicator();
+        _seatLookup[_currentRoom!.State.Host.User.UserId].SetHostIndicator();
         SetJoinCode();
         SetIdCode();
     }
-    public async void InitRoom(Guid RoomId)
+
+    public async void InitRoom(Guid roomId)
     {
-        if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(RoomId, out _currentRoom))
-            return;
+        try
+        {
+            if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(roomId, out _currentRoom))
+                return;
 
-        Init();
+            Init();
 
-        var firstUser = _currentRoom.State.Users.First();
-        if (!AssignPlayerToEmptyTeam(firstUser, out var emptyTeam))
-            return;
-        await _currentRoom.ChangeTeam((uint?)emptyTeam);
-        UpdateSeatsVisuals();
-        SetTeamsColors();
-        RoomsNavigationController.Instance.ShowRoomView();
+            var firstUser = _currentRoom!.State.Users.First();
+            if (!AssignPlayerToEmptyTeam(firstUser, out var emptyTeam))
+                return;
+            await _currentRoom.ChangeTeam((uint?)emptyTeam);
+            UpdateSeatsVisuals();
+            SetTeamsColors();
+            RoomsNavigationController.Instance.ShowRoomView();
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
-    public void Recconect(Guid RoomId)
+
+    public void Reconnect(Guid roomId)
     {
-        if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(RoomId, out _currentRoom))
+        if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(roomId, out _currentRoom))
             Debug.LogError("Room doesnt exist");
 
         Init();
@@ -97,25 +110,25 @@ public class RoomController : BaseWindow
         UpdateSeatsVisuals();
         SetTeamsColors();
         RoomsNavigationController.Instance.ShowRoomView();
-        var state = _currentRoom.State.MatchmakingData.MatchmakingState;
+        var state = _currentRoom!.State.MatchmakingData!.MatchmakingState;
 
         if (state == MatchmakingState.Unlocked)
         {
-            readyButton.gameObject.SetActive(true);
+            readyButton!.gameObject.SetActive(true);
             return;
         }
 
-        recconectButton.onClick.AddListener(() =>
+        reconnectButton!.onClick.AddListener(() =>
         {
             RoomsUtility.LastConnectedRoom = _currentRoom.RoomId;
             UnsubscribeFromRoomEvents();
             _currentRoom.PlayAvailableMatch();
         });
         ForceLockPlayersInRoom(true);
-        recconectButton.gameObject.SetActive(true);
-        statusText.text = RoomStatusMessages.RecconectMessage;
-
+        reconnectButton.gameObject.SetActive(true);
+        statusText!.text = RoomStatusMessages.RecconectMessage;
     }
+
     private void InitRejoinRoom()
     {
         if (!RoomsUtility.RoomsManager.TryGetJoinedRoom(RoomsUtility.LastConnectedRoom, out var lastConnectedRoom))
@@ -124,34 +137,35 @@ public class RoomController : BaseWindow
         Init();
         SetTeamsColors();
 
-        if (_currentRoom.State.MatchmakingData.MatchmakingState == MatchmakingState.Playing)
+        if (_currentRoom!.State.MatchmakingData!.MatchmakingState == MatchmakingState.Playing)
         {
-            recconectButton.gameObject.SetActive(true);
-            statusText.text = RoomStatusMessages.RecconectMessage;
+            reconnectButton!.gameObject.SetActive(true);
+            statusText!.text = RoomStatusMessages.RecconectMessage;
 
             ForceLockPlayersInRoom(true);
         }
 
-        recconectButton.onClick.AddListener(() =>
+        reconnectButton!.onClick.AddListener(() =>
         {
             UnsubscribeFromRoomEvents();
-            ElympicsLobbyClient.Instance.RejoinLastOnlineMatch();
+            ElympicsLobbyClient.Instance!.RoomsManager.CurrentRoom!.PlayAvailableMatch();
         });
         RoomsNavigationController.Instance.ShowRoomView();
     }
+
     private void UpdateSeatsVisuals()
     {
         foreach (var entry in _seatLookup)
-        {
             UpdateSeatVisuals(entry.Value, entry.Key);
-        }
     }
+
     private void UpdateSeatVisuals(PlayerSeat seat, Guid userId)
     {
         var user = GetCurrentRoomUserInfo(userId);
         seat.SetSeatText(user);
     }
-    public void SubscribeToRoomEvents()
+
+    private void SubscribeToRoomEvents()
     {
         RoomsUtility.RoomsManager.UserJoined += AddPlayer;
         RoomsUtility.RoomsManager.UserLeft += RemovePlayer;
@@ -166,7 +180,8 @@ public class RoomController : BaseWindow
         RoomsUtility.RoomsManager.MatchmakingEnded += OnMatchmakingEnded;
         RoomsUtility.RoomsManager.MatchmakingDataChanged += OnMatchmakingStateChanged;
     }
-    public void UnsubscribeFromRoomEvents()
+
+    private void UnsubscribeFromRoomEvents()
     {
 
         RoomsUtility.RoomsManager.UserJoined -= AddPlayer;
@@ -187,18 +202,18 @@ public class RoomController : BaseWindow
     {
         SubscribeToRoomEvents();
 
-        roomViewElements.RoomName.text = _currentRoom.State.RoomName;
+        roomViewElements!.RoomName.text = _currentRoom!.State.RoomName;
         roomViewElements.SetPrivacy(_currentRoom.State.IsPrivate);
-        roomViewElements.ManageInteractability(AmIHost && _currentRoom.State.MatchmakingData.MatchmakingState != MatchmakingState.Playing);
+        roomViewElements.ManageInteractability(AmIHost && _currentRoom.State.MatchmakingData!.MatchmakingState != MatchmakingState.Playing);
 
         var users = _currentRoom.State.Users;
 
-        readyButton.interactable = true;
+        readyButton!.interactable = true;
         ManageRoomFill(users.Count);
 
-        _additionalRoomData.PopulateData(_currentRoom);
-        _additionalRoomData.UpdateUi();
-        _additionalRoomData.SubscribeOnDataUpdate(new Action(SaveDataChanged));
+        additionalRoomData!.PopulateData(_currentRoom);
+        additionalRoomData.UpdateUi();
+        additionalRoomData.SubscribeOnDataUpdate(SaveDataChanged);
         SetVisibility(true);
     }
     public override void Hide()
@@ -206,106 +221,98 @@ public class RoomController : BaseWindow
         UnsubscribeFromRoomEvents();
 
         SetVisibility(false);
-        leavePopup.Hide();
+        leavePopup!.Hide();
 
         foreach (var seat in _seatLookup.Values)
             seat.SetEmpty();
         _seatLookup.Clear();
 
-        _additionalRoomData.ClearData();
-        _additionalRoomData.UnsubscribeOnDataUpdate();
+        additionalRoomData!.ClearData();
+        additionalRoomData.UnsubscribeOnDataUpdate();
         DestroySeats();
-        _currentRoom.Leave().Forget();
+        _currentRoom!.Leave().Forget();
     }
-    public void CreateSeats()
+
+    private void CreateSeats()
     {
         _playerSeats = new PlayerSeat[RoomsUtility.RoomCapacity(_currentRoom)];
         for (var i = 0; i < _playerSeats.Length; i++)
         {
-            var newSeat = roomViewElements.GetPlayerSeat();
+            var newSeat = roomViewElements!.GetPlayerSeat();
             newSeat.InitButton(SetUnreadyState);
             _playerSeats[i] = newSeat;
             newSeat.transform.SetParent(roomViewElements.GetSeatsHolder());
             newSeat.transform.localScale = Vector3.one;
         }
     }
-    public void CreateTeams()
+
+    private void CreateTeams()
     {
         _teams = new Dictionary<int, Guid[]>();
-        var teamCount = _currentRoom.State.MatchmakingData.TeamCount;
+        var teamCount = _currentRoom!.State.MatchmakingData!.TeamCount;
         var teamSize = _currentRoom.State.MatchmakingData.TeamSize;
 
         for (var i = 0; i < teamCount; i++)
-        {
             _teams.Add(i, new Guid[teamSize]);
-        }
     }
+
     private void AssignJoinedPlayersToSeats()
     {
         _seatLookup.Clear();
-        var conectedUsers = _currentRoom.State.Users;
-        foreach (var user in conectedUsers)
+        var connectedUsers = _currentRoom!.State.Users;
+        foreach (var user in connectedUsers)
         {
             var freeSeat = GetFreeSeat() ?? throw new Exception("No free seats");
             AssignPlayer(user, freeSeat);
         }
     }
+
     private void AssignJoinedPlayersToTeams()
     {
-        var conectedUsers = _currentRoom.State.Users;
-        foreach (var user in conectedUsers)
-        {
+        var connectedUsers = _currentRoom!.State.Users;
+        foreach (var user in connectedUsers)
             if (user.TeamIndex != null)
             {
                 var team = _teams[(int)user.TeamIndex];
                 for (var i = 0; i < team.Length; i++)
-                {
                     if (team[i] == Guid.Empty)
                     {
                         team[i] = user.User.UserId;
                         break;
                     }
-                }
             }
-        }
     }
-    private void AssignPlayer(UserInfo player, PlayerSeat seat)
+
+    private void AssignPlayer(UserInfo player, PlayerSeat? seat)
     {
+        if (seat is null)
+            return;
         _seatLookup.Add(player.User.UserId, seat);
         seat.SetPlayer(player, MyUserId.Equals(player.User.UserId));
     }
-    public bool AssignPlayerToEmptyTeam(UserInfo player, out int emptyTeam)
+
+    private bool AssignPlayerToEmptyTeam(UserInfo player, out int emptyTeam)
     {
         foreach (var team in _teams)
-        {
             for (var i = 0; i < team.Value.Length; i++)
-            {
                 if (team.Value[i] == Guid.Empty)
                 {
                     team.Value[i] = player.User.UserId;
                     emptyTeam = team.Key;
                     return true;
                 }
-            }
-        }
+
         emptyTeam = -1;
         return false;
     }
-    private PlayerSeat GetFreeSeat()
-    {
-        foreach (var seat in _playerSeats)
-        {
-            if (!seat.IsOccupied)
-            {
-                return seat;
-            }
-        }
-        return null;
-    }
-    public void SetTeamsColors(UserChangedTeamArgs usr) => SetTeamsColors();
+
+    private PlayerSeat? GetFreeSeat() => _playerSeats?.FirstOrDefault(seat => !seat.IsOccupied);
+
+    private void SetTeamsColors(UserChangedTeamArgs usr) => SetTeamsColors();
+
     private void SetTeamsColors()
     {
-        var users = _currentRoom.State.Users;
+        var users = _currentRoom!.State.Users;
         foreach (var user in users)
         {
             if (user.TeamIndex == null)
@@ -314,20 +321,16 @@ public class RoomController : BaseWindow
             _seatLookup[user.User.UserId].SetTeamColor(teamColor);
         }
     }
-    #region Events integration
-    #endregion
+
     private IEnumerator TrackListAfterWait()
     {
-        yield return new WaitUntil(() => ElympicsLobbyClient.Instance.IsAuthenticated && ElympicsLobbyClient.Instance.WebSocketSession.IsConnected);
+        yield return new WaitUntil(() => ElympicsLobbyClient.Instance!.IsAuthenticated && ElympicsLobbyClient.Instance.WebSocketSession.IsConnected);
         Debug.Log("Initialized room list tracking");
         _ = RoomsUtility.RoomsManager.StartTrackingAvailableRooms();
     }
-    private void RoomLeaveFeedback(LeftRoomArgs _)
-    {
-        startMatchmakingButton.gameObject.SetActive(false);
-        Debug.Log("You've just left the room.");
-    }
+
     private void AddPlayer(UserJoinedArgs obj) => AddPlayer(obj.User);
+
     private void AddPlayer(UserInfo player)
     {
         var freeSeat = GetFreeSeat();
@@ -335,6 +338,7 @@ public class RoomController : BaseWindow
             Debug.LogError("No free seats!");
         AssignPlayer(player, freeSeat);
     }
+
     private void RemovePlayer(UserLeftArgs obj)
     {
         _seatLookup[obj.User.User.UserId].SetEmpty();
@@ -349,31 +353,28 @@ public class RoomController : BaseWindow
             return;
         var allSeatsFull = userCount == RoomsUtility.RoomCapacity(_currentRoom);
 
-        readyButton.gameObject.SetActive(allSeatsFull && !_currentRoom.State.Users.Single(x => x.User.UserId == MyUserId).IsReady);
-        statusText.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
+        readyButton!.gameObject.SetActive(allSeatsFull && !_currentRoom.State.Users.Single(x => x.User.UserId == MyUserId).IsReady);
+        statusText!.text = allSeatsFull ? RoomStatusMessages.WaitingForReadyMessage : RoomStatusMessages.WaitingForPlayerToJoinMessage;
     }
+
     private void ManageHostIndicatorState(HostChangedArgs obj)
     {
         var oldSeat = _seatLookup[obj.UserId];
         var newHost = GetCurrentRoomUserInfo(obj.UserId);
 
-        if (_playerSeats[0] != null && !_playerSeats[0].IsOccupied)
+        if (_playerSeats![0] != null && !_playerSeats[0].IsOccupied)
         {
-            if (!_seatLookup.TryGetValue(newHost.User.UserId, out var _))
-            {
+            if (!_seatLookup.TryGetValue(newHost!.User.UserId, out _))
                 AssignPlayer(newHost, _playerSeats[0]);
-            }
             else
-            {
                 _playerSeats[0].SetPlayer(newHost, MyUserId.Equals(newHost.User.UserId));
-            }
             oldSeat.SetEmpty();
 
             if (MyUserId.Equals(obj.UserId))
             {
                 SetJoinCode();
                 SetIdCode();
-                roomViewElements.ManageInteractability(true);
+                roomViewElements!.ManageInteractability(true);
             }
         }
         _seatLookup[obj.UserId].SetHostIndicator();
@@ -384,139 +385,148 @@ public class RoomController : BaseWindow
             LockPlayersInRoom(false);
 
         if (MyUserId.Equals(obj.UserId))
-        {
-            readyButton.interactable = !obj.IsReady;
-        }
+            readyButton!.interactable = !obj.IsReady;
 
         _seatLookup[obj.UserId].SetReady(obj.IsReady);
 
-        var isRoomReady = _currentRoom.State.Users.Count(x => x.IsReady) == RoomsUtility.RoomCapacity(_currentRoom);
+        var isRoomReady = _currentRoom!.State.Users.Count(x => x.IsReady) == RoomsUtility.RoomCapacity(_currentRoom);
 
         if (isRoomReady && AmIHost)
-            startMatchmakingButton.gameObject.SetActive(true);
+            startMatchmakingButton!.gameObject.SetActive(true);
         else
-            startMatchmakingButton.gameObject.SetActive(false);
+            startMatchmakingButton!.gameObject.SetActive(false);
     }
-    private void ManageRoomName(RoomNameChangedArgs obj) => roomViewElements.RoomName.text = obj.RoomName;
+    private void ManageRoomName(RoomNameChangedArgs obj) => roomViewElements!.RoomName.text = obj.RoomName;
 
-    private void ManageRoomPrivacy(RoomPublicnessChangedArgs obj) => roomViewElements.SetPrivacy(obj.IsPrivate);
+    private void ManageRoomPrivacy(RoomPublicnessChangedArgs obj) => roomViewElements!.SetPrivacy(obj.IsPrivate);
     private void OnMatchmakingStateChanged(MatchmakingDataChangedArgs obj)
     {
-        var currentState = _currentRoom.State.MatchmakingData.MatchmakingState;
+        var currentState = _currentRoom!.State.MatchmakingData!.MatchmakingState;
         if (currentState == MatchmakingState.Matchmaking)
-            statusText.text = RoomStatusMessages.MatchmakingStartedMessage;
+            statusText!.text = RoomStatusMessages.MatchmakingStartedMessage;
         else if (currentState == MatchmakingState.Playing)
         {
             UnsubscribeFromRoomEvents();
             RoomsUtility.LastConnectedRoom = _currentRoom.RoomId;
-            statusText.text = RoomStatusMessages.MatchmakingFinishedMessage;
+            statusText!.text = RoomStatusMessages.MatchmakingFinishedMessage;
             ForceLockPlayersInRoom(true);
         }
         else if (currentState == MatchmakingState.Unlocked)
         {
             LockPlayersInRoom(false);
-            recconectButton.gameObject.SetActive(false);
-            readyButton.gameObject.SetActive(true);
+            reconnectButton!.gameObject.SetActive(false);
+            readyButton!.gameObject.SetActive(true);
         }
     }
 
     private void OnMatchmakingEnded(MatchmakingEndedArgs obj)
     {
-        var roomMatchmakingData = _currentRoom.State.MatchmakingData;
-        if (roomMatchmakingData.MatchmakingState == MatchmakingState.Playing || roomMatchmakingData?.MatchData?.FailReason == null)
+        var roomMatchmakingData = _currentRoom!.State.MatchmakingData;
+        if (roomMatchmakingData!.MatchmakingState == MatchmakingState.Playing || roomMatchmakingData.MatchData?.FailReason == null)
             return;
 
-        statusText.text = string.Format(RoomStatusMessages.MatchmakingErrorMessage, roomMatchmakingData.MatchData?.FailReason);
+        statusText!.text = string.Format(RoomStatusMessages.MatchmakingErrorMessage, roomMatchmakingData.MatchData?.FailReason);
 
         LockPlayersInRoom(false);
     }
+
     [UsedImplicitly]
     public void StartMatchmaking()
     {
-        startMatchmakingButton.gameObject.SetActive(false);
+        startMatchmakingButton!.gameObject.SetActive(false);
         _ = StartCoroutine(InitiateMatchmakingAfterSeconds(MatchmakingCountdownSeconds));
     }
+
     private IEnumerator InitiateMatchmakingAfterSeconds(int delay)
     {
         LockPlayersInRoom(true);
 
         for (var i = delay; i > 0; i--)
         {
-            statusText.text = string.Format(RoomStatusMessages.MatchmakingStartCountdownMessage, i);
+            statusText!.text = string.Format(RoomStatusMessages.MatchmakingStartCountdownMessage, i);
             yield return new WaitForSeconds(1);
         }
         if (AmIHost)
-            _currentRoom.StartMatchmaking().Forget();
+            _currentRoom!.StartMatchmaking().Forget();
     }
 
     private void LockPlayersInRoom(bool shouldBeLocked)
     {
-        leaveButton.interactable = !shouldBeLocked;
+        leaveButton!.interactable = !shouldBeLocked;
         _seatLookup[MyUserId].LockUnreadyInteractability(shouldBeLocked);
 
         if (AmIHost)
-            roomViewElements.ManageInteractability(!shouldBeLocked);
+            roomViewElements!.ManageInteractability(!shouldBeLocked);
     }
+
     private void ForceLockPlayersInRoom(bool shouldBeLocked)
     {
-        leaveButton.interactable = !shouldBeLocked;
+        leaveButton!.interactable = !shouldBeLocked;
         _seatLookup[MyUserId].LockUnreadyInteractability(shouldBeLocked);
-        roomViewElements.ManageInteractability(!shouldBeLocked);
+        roomViewElements!.ManageInteractability(!shouldBeLocked);
     }
-    public void DestroySeats()
+
+    private void DestroySeats()
     {
         if (_playerSeats == null || _playerSeats.Length == 0)
             return;
 
         foreach (var seat in _playerSeats)
-        {
             Destroy(seat.gameObject);
-        }
     }
+
     private void SetVisibility(bool shouldBeVisible)
     {
-        roomCanvasGroup.alpha = shouldBeVisible ? 1 : 0;
+        roomCanvasGroup!.alpha = shouldBeVisible ? 1 : 0;
         roomCanvasGroup.blocksRaycasts = shouldBeVisible;
     }
 
     private void SetJoinCode()
     {
-        joinCodeSection.alpha = _currentRoom.State.JoinCode != null ? 1 : 0;
-        joinCode.text = _currentRoom.State.JoinCode;
+        joinCodeSection!.alpha = _currentRoom!.State.JoinCode != null ? 1 : 0;
+        joinCode!.text = _currentRoom.State.JoinCode;
     }
+
     private void SetIdCode()
     {
-        joinIdSection.alpha = _currentRoom.RoomId != null ? 1 : 0;
-        joinId.text = _currentRoom.RoomId.ToString();
+        joinIdSection!.alpha = _currentRoom?.RoomId != null ? 1 : 0;
+        joinId!.text = _currentRoom?.RoomId.ToString();
     }
+
     [UsedImplicitly]
     public void SetReadyState() => SetReadyStateAsync().Forget();
-    public async UniTaskVoid SetReadyStateAsync()
-    {
-        LockPlayersInRoom(true);
-        readyButton.gameObject.SetActive(false);
-        startMatchmakingButton.gameObject.SetActive(false);
 
-        await _currentRoom.MarkYourselfReady();
-        LockPlayersInRoom(false);
-    }
-    private void SetUnreadyState() => SetUnreadyStateAsync().Forget();
-    public async UniTaskVoid SetUnreadyStateAsync()
+    private async UniTaskVoid SetReadyStateAsync()
     {
         LockPlayersInRoom(true);
-        if (startMatchmakingButton.gameObject.activeSelf)
-            startMatchmakingButton.gameObject.SetActive(false);
-        await _currentRoom.MarkYourselfUnready();
-        readyButton.gameObject.SetActive(true);
+        readyButton!.gameObject.SetActive(false);
+        startMatchmakingButton!.gameObject.SetActive(false);
+
+        await _currentRoom!.MarkYourselfReady();
         LockPlayersInRoom(false);
     }
-    private UserInfo GetCurrentRoomUserInfo(Guid userId)
+
+    private void SetUnreadyState() => SetUnreadyStateAsync().Forget();
+
+    private async UniTaskVoid SetUnreadyStateAsync()
     {
-        var users = _currentRoom.State.Users;
+        LockPlayersInRoom(true);
+        if (startMatchmakingButton!.gameObject.activeSelf)
+            startMatchmakingButton.gameObject.SetActive(false);
+        await _currentRoom!.MarkYourselfUnready();
+        readyButton!.gameObject.SetActive(true);
+        LockPlayersInRoom(false);
+    }
+
+    private UserInfo? GetCurrentRoomUserInfo(Guid userId)
+    {
+        var users = _currentRoom!.State.Users;
         return users.Where(user => user.User.UserId == userId).DefaultIfEmpty(null).First();
     }
+
     [UsedImplicitly]
     public void SaveDataChanged() => SaveDataChangeAsync().Forget();
+
     private async UniTask SaveDataChangeAsync()
     {
         try
@@ -524,7 +534,7 @@ public class RoomController : BaseWindow
             if (!AmIHost || !IsActive)
                 return;
 
-            await _currentRoom.UpdateRoomParams(roomViewElements.RoomName.text, roomViewElements.IsPrivate, _additionalRoomData.GetCustomRoomData(), _additionalRoomData.GetMatchmakingRoomData());//TODO keys
+            await _currentRoom!.UpdateRoomParams(roomViewElements!.RoomName.text, roomViewElements.IsPrivate, additionalRoomData!.GetCustomRoomData(), additionalRoomData.GetMatchmakingRoomData());//TODO keys
         }
         catch (Exception e)
         {

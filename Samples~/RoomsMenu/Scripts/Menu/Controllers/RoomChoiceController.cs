@@ -19,43 +19,42 @@ public class RoomChoiceController : BaseWindow
     [SerializeField] private Button backButton;
     private RoomController _roomController;
 
-
     private Dictionary<Guid, RoomRecordController> _roomRecordsLookup = new();
 
     public Action<int> ListLengthChanged;
-    public Action<Guid> OnRoomJoined;
+    private Action<Guid> _onRoomJoined;
 
     public void Init(RoomController roomController)
     {
         _roomController = roomController;
         joinRoomWithCodePopup.Init(TryJoinRoomByCode);
-        OnRoomJoined += _roomController.InitRoom;
+        _onRoomJoined += _roomController.InitRoom;
         RoomsUtility.RoomsManager.RoomListUpdated += OnRoomsListUpdated;
     }
+
     public void Deinit()
     {
         joinRoomWithCodePopup.Deinit();
-        OnRoomJoined -= _roomController.InitRoom;
+        _onRoomJoined -= _roomController.InitRoom;
         RoomsUtility.RoomsManager.RoomListUpdated -= OnRoomsListUpdated;
         _roomController = null;
     }
+
     private void InitializeRoomList()
     {
         _roomRecordsLookup = new();
 
         foreach (var room in RoomsUtility.RoomsManager.ListAvailableRooms())
-        {
             AddRoomRecord(room);
-        }
     }
+
     public void ReinitializeRoomRecords()
     {
         foreach (var room in _roomRecordsLookup)
-        {
             Destroy(room.Value.gameObject);
-        }
         InitializeRoomList();
     }
+
     private void OnRoomsListUpdated(RoomListUpdatedArgs obj)
     {
         foreach (var updatedRoomId in obj.RoomIds)
@@ -77,34 +76,31 @@ public class RoomChoiceController : BaseWindow
         var newRoomRecord = Instantiate(roomRecordPrefab, roomListContentParent);
         newRoomRecord.Init(room, TryJoinRoomById, joinRoomWithCodePopup.SetAndShow);
         foreach (var userInfo in room.State.Users)
-        {
-            if (userInfo.User.UserId == ElympicsLobbyClient.Instance.UserGuid)
+            if (userInfo.User.UserId == ElympicsLobbyClient.Instance!.UserGuid)
                 newRoomRecord.SetBackgroundColor(Color.green);
-        }
         _roomRecordsLookup.Add(room.RoomId, newRoomRecord);
         ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
     }
 
     private void RemoveRoomRecord(Guid roomId)
     {
-        if (_roomRecordsLookup.TryGetValue(roomId, out var recordController))
-        {
-            _ = _roomRecordsLookup.Remove(roomId);
-            Destroy(recordController.gameObject);
-            ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
-        }
+        if (!_roomRecordsLookup.TryGetValue(roomId, out var recordController))
+            return;
+        _ = _roomRecordsLookup.Remove(roomId);
+        Destroy(recordController.gameObject);
+        ListLengthChanged?.Invoke(_roomRecordsLookup.Count);
     }
 
     private void TryJoinRoomById(Guid roomId) => TryJoinRoom(roomId, null, errorPopup).Forget();
     private void TryJoinRoomByCode(string joinCode, Guid? roomId = null) => TryJoinRoom(roomId, joinCode, joinRoomWithCodePopup.PopupView).Forget();
 
-    private async UniTaskVoid TryJoinRoom(Guid? roomId, string joinCode, BasePopup errorPopup)
+    private async UniTaskVoid TryJoinRoom(Guid? roomId, string joinCode, BasePopup popup)
     {
         try
         {
             ManageWindowInteractability(false);
-            var room = await RoomsUtility.RoomsManager.JoinRoom(roomId, joinCode, null);
-            OnRoomJoined?.Invoke(room.RoomId);
+            var room = await RoomsUtility.RoomsManager.JoinRoom(roomId, joinCode);
+            _onRoomJoined?.Invoke(room.RoomId);
             ManageWindowInteractability(true);
         }
         catch (Exception e)
@@ -113,8 +109,8 @@ public class RoomChoiceController : BaseWindow
 
             var errorMessage = $"Joining failed: {e.Message}";
             Debug.LogError(errorMessage);
-            errorPopup.SetMessage(errorMessage);
-            errorPopup.Show();
+            popup.SetMessage(errorMessage);
+            popup.Show();
             ManageWindowInteractability(true);
 
         }
@@ -132,14 +128,16 @@ public class RoomChoiceController : BaseWindow
 
     [UsedImplicitly]
     public void ShowRoomCreationView() => RoomsNavigationController.Instance.ShowRoomCreationView();
+
     [UsedImplicitly]
     public void StartQuickMatch() => TryStartQuickGame().Forget();
+
     private async UniTaskVoid TryStartQuickGame()
     {
         try
         {
             ManageWindowInteractability(false);
-            var room = await ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("solo", null, null, null, null, null, null, new CancellationTokenSource()!.Token);
+            _ = await ElympicsLobbyClient.Instance!.RoomsManager.StartQuickMatch("solo", null, null, null, null, null, null, new CancellationTokenSource()!.Token);
         }
         catch (Exception ex)
         {
@@ -147,6 +145,7 @@ public class RoomChoiceController : BaseWindow
             ManageWindowInteractability(true);
         }
     }
+
     private void ManageWindowInteractability(bool interactable)
     {
         joinByButton.interactable = interactable;

@@ -35,7 +35,7 @@ namespace Elympics
 {
     [DefaultExecutionOrder(ElympicsExecutionOrder.ElympicsLobbyClient)]
     [RequireComponent(typeof(AsyncEventsDispatcher))]
-    public partial class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, ILobby, IWebSocketSessionController
+    public class ElympicsLobbyClient : MonoBehaviour, IMatchLauncher, IAuthManager, ILobby, IWebSocketSessionController
     {
         private static readonly MatchmakingFinishedData SinglePlayerMatchmakingFinishedData = new(Guid.Empty,
             new MatchDetails(
@@ -75,7 +75,7 @@ namespace Elympics
         public event Action<ElympicsConnectionLostData>? ElympicsConnectionLost;
 
         private IAuthClient _auth = null!;
-        public AuthData? AuthData { get; internal set; }
+        public AuthData? AuthData { get; private set; }
 
         [PublicAPI]
         public ElympicsUser? ElympicsUser { get; internal set; }
@@ -89,6 +89,7 @@ namespace Elympics
 
         [PublicAPI]
         public IGameplaySceneMonitor? GameplaySceneMonitor { get; private set; }
+        public bool IsCurrentlyInMatch => GameplaySceneMonitor!.IsCurrentlyInMatch;
 
         [PublicAPI]
         public IWebSocketSession WebSocketSession => _webSocketSession.IsValueCreated ? _webSocketSession.Value
@@ -109,28 +110,18 @@ namespace Elympics
         #region Matchmaking
 
         [PublicAPI]
-        public MatchmakingFinishedData? MatchDataGuid
-        {
-            get => _matchDataGuid;
-            private set
-            {
-                _matchDataGuid = value;
-                MatchData = new JoinedMatchData(value);
-            }
-        }
+        public MatchmakingFinishedData? MatchDataGuid { get; private set; }
 
         public JoinedMatchMode MatchMode { get; private set; }
         void ILobby.PlayMatchInternal(MatchmakingFinishedData matchData) => PlayMatchInternal(matchData);
 
-        private MatchmakingFinishedData? _matchDataGuid;
-
         [Tooltip("Default starting value. The value can be changed at runtime using "
-            + nameof(ElympicsLobbyClient)
-            + "."
-            + nameof(Instance)
-            + "."
-            + nameof(ShouldLoadGameplaySceneAfterMatchmaking)
-            + " property.")]
+                 + nameof(ElympicsLobbyClient)
+                 + "."
+                 + nameof(Instance)
+                 + "."
+                 + nameof(ShouldLoadGameplaySceneAfterMatchmaking)
+                 + " property.")]
         [SerializeField]
         private bool shouldLoadGameplaySceneAfterMatchmaking = true;
 
@@ -203,16 +194,10 @@ namespace Elympics
                     nameof(_config.ElympicsAuthEndpoint)));
 
             _auth = new RemoteAuthClient(_config.ElympicsAuthEndpoint);
-            _matchmaker = new WebSocketMatchmakerClient(_config.ElympicsLobbyEndpoint);
             GameplaySceneMonitor = new GameplaySceneMonitor(_gameConfig.gameplayScene);
             GameplaySceneMonitor.GameplayFinished += OnGameplayFinished;
             ShouldLoadGameplaySceneAfterMatchmaking = shouldLoadGameplaySceneAfterMatchmaking;
             _roomsManager.Value.Reset(); // calling Value initializes RoomsManager and its dependencies (RoomsClient, WebSocketSession) ~dsygocki 2023-12-06
-            Matchmaker.MatchmakingSucceeded += HandleMatchmakingSucceeded;
-            Matchmaker.MatchmakingMatchFound += HandleMatchIdReceived;
-            Matchmaker.MatchmakingCancelledGuid += HandleMatchmakingCancelled;
-            Matchmaker.MatchmakingFailed += HandleMatchmakingFailed;
-            Matchmaker.MatchmakingWarning += HandleMatchmakingWarning;
 
             awakeLogger.LogInfo("Initialized");
 
@@ -330,12 +315,6 @@ namespace Elympics
                     eventName = nameof(AuthenticationFailed);
                     AuthenticationFailed?.Invoke(result.Error);
                 }
-
-                eventName = nameof(AuthenticatedGuid);
-                AuthenticatedGuid?.Invoke(
-                    result.IsSuccess ? Result<AuthenticationData, string>.Success(new AuthenticationData(result.Value)) : Result<AuthenticationData, string>.Failure(result.Error));
-                eventName = nameof(Authenticated);
-                Authenticated?.Invoke(result.IsSuccess, result.Value?.UserId.ToString() ?? "", result.Value?.JwtToken ?? "", result.Error);
             }
             catch (Exception e)
             {
@@ -548,7 +527,7 @@ namespace Elympics
             ElympicsLogger.State.ClearRoom();
         }
 
-        internal void ClearAuthData()
+        private void ClearAuthData()
         {
             AuthData = null;
             ElympicsUser = null;

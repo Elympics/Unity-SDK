@@ -142,7 +142,7 @@ namespace Elympics
             Dictionary<string, string>? customPlayerData = null,
             CompetitivenessConfig? competitivenessConfig = null,
             CancellationToken ct = default);
-        public event Func<IRoom, IRoom>? RoomSetUp;
+        event Func<IRoom, IRoom>? RoomSetUp;
         internal UniTask CheckJoinedRoomStatus(GameDataResponseDto gameDataResponse);
         internal void Reset();
     }

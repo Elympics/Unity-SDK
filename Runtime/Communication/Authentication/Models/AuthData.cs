@@ -17,12 +17,6 @@ namespace Elympics.Models.Authentication
             AuthType = authType;
         }
 
-        public AuthData(AuthenticationDataResponse response, AuthType authType = AuthType.None)
-        {
-            UserId = new Guid(response.userId);
-            JwtToken = response.jwtToken;
-            AuthType = authType;
-        }
         private bool Equals(AuthData other) => UserId.Equals(other.UserId) && JwtToken == other.JwtToken && AuthType == other.AuthType;
         public override bool Equals(object obj)
         {

@@ -14,7 +14,7 @@ namespace Elympics
         }
         public override async UniTask<Result<AuthData, string>> Authorize(ConnectionData data)
         {
-            ElympicsLogger.LogWarning($"Already authorized. Using existing AuthData. To change your authorization data please use {nameof(ElympicsLobbyClient.Instance.SignOut)}");
+            ElympicsLogger.LogWarning($"Already authorized. Using existing AuthData. To change your authorization data please sign out");
             return await UniTask.FromResult(Result<AuthData, string>.Success(_currentAuthData));
         }
     }

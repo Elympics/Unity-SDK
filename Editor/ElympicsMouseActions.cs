@@ -8,30 +8,12 @@ namespace Elympics
     public static class ElympicsMouseActions
     {
         private const string PathToElympicsSystem = "Elympics";
-        private const string PathToElympicsLobby = "ElympicsLobby";
 
         [MenuItem(ElympicsEditorMenuPaths.MOUSE_ACTION_CREATE_ELYMPICS_SYSTEM)]
         private static void AddElympicsSystemToScene()
         {
             const string name = "Elympics System";
-            if (HasActiveSceneAnyObjectOfType<ElympicsLobbyClient>())
-            {
-                ElympicsLogger.LogError($"{name} cannot be placed in the menu scene. Use a separate game scene.");
-                return;
-            }
             AddUniquePrefabToScene<GameSceneManager>(PathToElympicsSystem, name);
-        }
-
-        [MenuItem(ElympicsEditorMenuPaths.MOUSE_ACTION_CREATE_ELYMPICS_LOBBY)]
-        private static void AddElympicsLobbyToScene()
-        {
-            const string name = "Elympics Lobby";
-            if (HasActiveSceneAnyObjectOfType<GameSceneManager>())
-            {
-                ElympicsLogger.LogError($"{name} cannot be placed in the game scene. Use a separate menu scene.");
-                return;
-            }
-            AddUniquePrefabToScene<ElympicsLobbyClient>(PathToElympicsLobby, name);
         }
 
         private static void AddUniquePrefabToScene<T>(string path, string name)

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Communication.Lobby.InternalModels;
 using Elympics.Core.Logger;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -74,8 +73,6 @@ namespace Elympics
             .GetAbsoluteOrRelativeString();
 
         internal Uri ElympicsReplaySource => ApplicationParameters.Parameters.ReplaySource.GetValue(GetV2Endpoint("replay"));
-
-        internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Routes.Base).ToString();
 
         internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.AllRegionsRouteUnityFormat).ToString();
         internal string GameAvailableRegionsUrl(string gameId) =>

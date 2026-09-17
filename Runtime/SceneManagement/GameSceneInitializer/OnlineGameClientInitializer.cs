@@ -9,8 +9,7 @@ namespace Elympics
         {
             if (!LobbyRegister.IsAuthenticated())
             {
-                ElympicsLogger.LogError("User is not authenticated. Remember to set \"Authenticate On Awake With\" "
-                    + $"correctly for {nameof(ElympicsLobbyClient)} object.");
+                ElympicsLogger.LogError("User is not authenticated.");
                 return;
             }
             var matchData = LobbyRegister.GetMatchData();

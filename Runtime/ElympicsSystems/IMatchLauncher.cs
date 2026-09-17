@@ -1,7 +1,5 @@
 #nullable enable
 
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Models.Matchmaking;
 using JetBrains.Annotations;
 
@@ -17,8 +15,6 @@ namespace Elympics
 
         void PlayMatch(MatchmakingFinishedData matchData);
 
-        UniTask StartMatchmaking(IRoom room);
-        UniTask CancelMatchmaking(IRoom room, CancellationToken ct = default);
         void MatchmakingCompleted();
     }
 }

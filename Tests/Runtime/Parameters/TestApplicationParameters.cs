@@ -28,8 +28,9 @@ namespace Elympics.Tests.Parameters
             var envVariables = new Dictionary<string, string>();
             var arguments = Array.Empty<string>();
             var urlQuery = new NameValueCollection();
+            var elympicsUrlQuery = new NameValueCollection();
 
-            var initializationResult = ApplicationParameters.Parameters.Initialize(envVariables, arguments, urlQuery);
+            var initializationResult = ApplicationParameters.Parameters.Initialize(envVariables, arguments, urlQuery, elympicsUrlQuery);
 
             Assert.IsTrue(initializationResult);
             Assert.IsTrue(ApplicationParameters.Parameters.Initialized);
@@ -54,8 +55,9 @@ namespace Elympics.Tests.Parameters
             var envVariables = testCase.EnvKeys.ToDictionary(envKey => envKey, _ => "");
             var arguments = Array.Empty<string>();
             var urlQuery = new NameValueCollection();
+            var elympicsUrlQuery = new NameValueCollection();
 
-            var initializationResult = ApplicationParameters.Parameters.Initialize(envVariables, arguments, urlQuery);
+            var initializationResult = ApplicationParameters.Parameters.Initialize(envVariables, arguments, urlQuery, elympicsUrlQuery);
 
             Assert.IsTrue(initializationResult);
             Assert.IsTrue(ApplicationParameters.Parameters.Initialized);

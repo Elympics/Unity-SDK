@@ -66,7 +66,7 @@ namespace Elympics
 
         private static Uri ParseUri(string rawValue) => new UriBuilder(rawValue).Uri;
 
-        public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery)
+        public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery, NameValueCollection elympicsUrlQuery)
         {
             var (parameters, names) = FindParameters();
 
@@ -77,6 +77,7 @@ namespace Elympics
 
             CollectFromEnvironmentVariables(parameters, envVariables);
             CollectFromUrlQuery(parameters, urlQuery);
+            CollectFromUrlQuery(parameters, elympicsUrlQuery);
             CollectFromPositionalArguments(parameters, args);
             CollectFromNamedArguments(parameters, args);
 

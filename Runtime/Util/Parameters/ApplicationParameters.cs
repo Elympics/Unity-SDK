@@ -24,7 +24,8 @@ namespace Elympics
             var envVariables = Environment.GetEnvironmentVariables();
             var commandLineArgs = Environment.GetCommandLineArgs();
             var urlQuery = ElympicsWebGL.GetUrlQuery();
-            return ParameterList.Initialize(envVariables, commandLineArgs, urlQuery);
+            var elympicsUrlQuery = ElympicsWebGL.GetElympicsUrlQuery();
+            return ParameterList.Initialize(envVariables, commandLineArgs, urlQuery, elympicsUrlQuery);
         }
     }
 }

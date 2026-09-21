@@ -21,7 +21,7 @@ namespace Elympics
             {
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => new LocalGameServerInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote => InitializeHalfRemotePlayers(elympicsGameConfig),
-                ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay => new EditorSnapshotReplayInitializer(),
+                ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay when Application.isEditor => new EditorSnapshotReplayInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer => new SinglePlayerGameInitializer(),
                 _ => throw new ArgumentOutOfRangeException(nameof(elympicsGameConfig.GameplaySceneDebugMode)),
             };

@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Shared memory
+
+Use `.claude/MEMORY.md` as your memory for this package, instead of your local/auto memory. Append important findings there, following the format rules at its top (including regenerating `MEMORY.short.md`). The short version is imported below. Open `MEMORY.md` for details before acting on an entry.
+
+@MEMORY.short.md
+
 ## What this is
 
 `com.daftmobile.elympics` is the Elympics Unity SDK: a server-authoritative, deterministic-tick multiplayer netcode UPM package. It targets Unity 2021.3 and is published to GitHub as `Elympics/Unity-SDK`, with the version in `package.json`.
@@ -123,7 +129,7 @@ Under `Runtime/GameEngine/Libraries/`:
   - `MessagePackGenerated.cs`, `ProtosCompiled/`.
   - `Elympics.Analyzers.dll`.
 - **Unity `.meta` files:** every new asset or folder needs one, and renames or moves must carry the `.meta` along so the GUID is kept.
-- **Public API:** `[PublicAPI]`-marked members are shipped API. Don't change their signatures or behaviour when refactoring. Add a sibling member instead.
+- **Public API:** from 1.0.0 on, `[PublicAPI]`-marked members are shipped API. Don't change their signatures or behaviour when refactoring. Add a sibling member instead. Before 1.0.0 (current version: `package.json`), refactoring and breaking changes are allowed, but a breaking change must increase the minor version number.
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `perf:`, …).
   - `CHANGELOG.md` and the version are generated from commits on `release/vX.Y.Z` branches.
   - CI rejects any `tmp:` commit on top of `develop`.

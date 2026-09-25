@@ -577,3 +577,5 @@ Runtime/WeaverLockingProblemTest.*
 # Claude Code: ignore local settings, share project instructions
 .claude/*
 !.claude/CLAUDE.md
+!.claude/MEMORY.md
+!.claude/MEMORY.short.md

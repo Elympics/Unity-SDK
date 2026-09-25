@@ -187,8 +187,21 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         private void OnConnectionStateChanged(string newState)
         {
-            if (newState is RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed or RtcPeerConnectionStates.Disconnected)
-                IsConnected = false;
+            switch (newState)
+            {
+                case RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed:
+                    IsConnected = false;
+                    break;
+                // Transient: ICE recovers by itself, and the server closes the peer connection after its own failure timeout
+                case RtcPeerConnectionStates.Disconnected:
+                    _logger.WithMethodName().LogWarning("WebRTC connection disconnected, waiting for ICE to recover...");
+                    break;
+                case RtcPeerConnectionStates.Connected when IsConnected:
+                    _logger.WithMethodName().LogInfo("WebRTC connection (re)established.");
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void RaiseDisconnected() => IsConnected = false;

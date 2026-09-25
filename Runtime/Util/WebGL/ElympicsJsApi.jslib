@@ -17,13 +17,31 @@
  * }} UnityGameOptions
  */
 
+/**
+ * @typedef {{
+ *   matchId: string,
+ *   userSecret: string,
+ *   queueName?: string,
+ *   regionName?: string,
+ *   gameEngineData?: string | Uint8Array,
+ *   matchmakerData?: string | number[],
+ *   webServerAddress: string,
+ *   matchedPlayers: string | string[],
+ * }} ElympicsLaunchData
+ */
+
 /* eslint-disable no-unassigned-vars */
 // noinspection ES6ConvertVarToLetConst
 /** @type {ElympicsUtils} */ var elympicsUtils;
 /* eslint-enable no-unassigned-vars */
 
 // noinspection SillyAssignmentJS
-/** @type {UnityGameOptions | undefined} */ window.unityGameOptions = window.unityGameOptions;
+/** @type {UnityGameOptions | undefined}
+ * @deprecated "Use typed ElympicsLaunchData"
+ */ window.unityGameOptions = window.unityGameOptions;
+
+// noinspection SillyAssignmentJS
+/** @type {ElympicsLaunchData | string | undefined} */ window.elympicsLaunchData = window.elympicsLaunchData;
 
 /** @type {ElympicsWebGL} */
 const elympicsWebGL = {

@@ -19,7 +19,6 @@ namespace Elympics
 
             return elympicsGameConfig.GameplaySceneDebugMode switch
             {
-                ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots => new LocalGameServerInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote => InitializeHalfRemotePlayers(elympicsGameConfig),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay when Application.isEditor => new EditorSnapshotReplayInitializer(),
                 ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer => new SinglePlayerGameInitializer(),
@@ -32,7 +31,6 @@ namespace Elympics
             JoinedMatchMode.Online => new OnlineGameClientInitializer(),
             JoinedMatchMode.HalfRemoteClient => new HalfRemoteGameClientInitializer(),
             JoinedMatchMode.HalfRemoteServer => new HalfRemoteGameServerInitializer(),
-            JoinedMatchMode.Local => new LocalGameServerInitializer(),
             JoinedMatchMode.SinglePlayer => new SinglePlayerGameInitializer(),
             JoinedMatchMode.SnapshotReplay => new PlayerSnapshotReplayInitializer(),
             _ => throw new ArgumentOutOfRangeException(LobbyRegister.GetJoinedMatchMode().ToString()),

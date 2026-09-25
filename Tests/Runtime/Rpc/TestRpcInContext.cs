@@ -93,6 +93,7 @@ namespace Elympics.Tests
             new(ElympicsStatus.StandaloneClient, true, false),
             new(ElympicsStatus.ServerWithBots, true, true),
             new(ElympicsStatus.LocalPlayerWithBots, true, true),
+            new(ElympicsStatus.SinglePlayer, true, true),
         };
 
         [Test]

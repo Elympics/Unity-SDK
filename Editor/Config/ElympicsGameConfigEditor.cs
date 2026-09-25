@@ -165,11 +165,6 @@ namespace Elympics.Editor.Config
                 snapshotReplayOptions.SetVisible(false);
                 switch (gameConfig.GameplaySceneDebugMode)
                 {
-                    case ElympicsGameConfig.GameplaySceneDebugModeEnum.LocalPlayerAndBots:
-                        debugModeSummary.text = "Run the server, a single player and bots locally with no networking. Good for anything outside of gameplay, such as UI, graphics and sound design.";
-                        debugModeWarning.text = "This mode is not fit for gameplay development!";
-                        debugModeWarning.SetVisible(true);
-                        break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote:
                         debugModeSummary.text = "Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server or a client, use ParrelSync to create more instances.";
                         debugModeWarning.text = "This mode is only a simulation of production environment!";
@@ -184,7 +179,8 @@ namespace Elympics.Editor.Config
                         UpdateSnapshotReplayOptions();
                         break;
                     case ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer:
-                        debugModeSummary.text = "Play locally acting as server and client at the same time.";
+                        debugModeSummary.text = "Play locally acting as server and client at the same time. Good for anything outside of gameplay, such as UI, graphics and sound design.";
+                        debugModeWarning.text = "This mode is not fit for gameplay development!";
                         break;
                     default:
                         debugModeSummary.text = "";

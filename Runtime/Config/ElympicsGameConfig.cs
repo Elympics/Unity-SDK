@@ -171,7 +171,6 @@ namespace Elympics
 #endif
         public enum GameplaySceneDebugModeEnum
         {
-            LocalPlayerAndBots,
             HalfRemote,
             SnapshotReplay,
             SinglePlayer,

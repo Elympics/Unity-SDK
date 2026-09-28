@@ -11,6 +11,8 @@ namespace Elympics
 {
     internal abstract class SnapshotReplayInitializer : GameSceneInitializer
     {
+        public override bool ReportsMatchJoined => false;
+
         protected void InitializeInternal(
             ElympicsServer server,
             ElympicsGameConfig gameConfig,

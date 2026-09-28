@@ -10,6 +10,8 @@ namespace Elympics
         protected virtual bool HandlingBotsOverride => false;
         protected virtual bool HandlingClientsOverride => false;
 
+        public override bool ReportsMatchJoined => false;
+
         protected GameEngineAdapter GameEngineAdapter;
         protected ElympicsBehavioursManager BehavioursManager;
         protected ElympicsServer Server;

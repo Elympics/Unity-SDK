@@ -1,26 +1,25 @@
+using System;
 using Elympics.Core.Logger;
+using Elympics.Models.Matchmaking;
 using MatchTcpClients;
 
 namespace Elympics
 {
     internal class OnlineGameClientInitializer : GameClientInitializer
     {
+        private readonly MatchmakingFinishedData _matchData;
+        private readonly Guid _userId;
+
+        public OnlineGameClientInitializer(MatchmakingFinishedData matchData, Guid userId)
+        {
+            _matchData = matchData;
+            _userId = userId;
+        }
+
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
-            if (!LobbyRegister.IsAuthenticated())
-            {
-                ElympicsLogger.LogError("User is not authenticated.");
-                return;
-            }
-            var matchData = LobbyRegister.GetMatchData();
-            if (matchData == null)
-            {
-                ElympicsLogger.LogError("Match data not found. Going through matchmaking is required before joining an online match.");
-                return;
-            }
-
-            var authData = LobbyRegister.GetAuthData();
-            var userId = authData.UserId;
+            var matchData = _matchData;
+            var userId = _userId;
             var matchmakerData = matchData.MatchmakerData;
             var gameEngineData = matchData.GameEngineData;
             var player = ElympicsPlayerAssociations.GetUserIdsToPlayers(matchData.MatchedPlayers)[userId];

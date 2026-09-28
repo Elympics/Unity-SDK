@@ -10,14 +10,20 @@ namespace Elympics
 {
     internal class SinglePlayerGameInitializer : GameSceneInitializer
     {
+        private readonly MatchmakingFinishedData _matchData;
         private SinglePlayerGameEngine _gameEngine;
+
+        /// <param name="matchData">Match data from the host, or null to play with an empty one.</param>
+        public SinglePlayerGameInitializer(MatchmakingFinishedData matchData) =>
+            _matchData = matchData ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
+
         public override void Initialize(
             ElympicsClient client,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            var matchData = LobbyRegister.GetMatchData() ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
+            var matchData = _matchData;
             var userData = CreateUserData(matchData, gameConfig);
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021

@@ -24,6 +24,12 @@ namespace Elympics
         [SerializeField] private int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames = new();
 
+        [Tooltip("Scene the match launcher returns to after a match. Must be in Build Settings.")]
+        [SerializeField] internal string bootScene = "";
+#if UNITY_EDITOR
+        [SerializeField] internal SceneAsset? bootSceneAsset;
+#endif
+
         [SerializeField] private bool migratedActiveGame;
 
         private static string sdkVersion = "";
@@ -74,6 +80,9 @@ namespace Elympics
             elympicsWebEndpoint.AppendPathSegments("v2", serviceName);
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;
+
+        /// <summary>Path of the scene the match launcher returns to after a match.</summary>
+        public string BootScene => bootScene;
 
         public event Action? CurrentGameSwitched;
 

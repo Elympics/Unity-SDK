@@ -8,6 +8,8 @@ namespace Elympics
     {
         public static bool ShouldLoadElympicsOnlineServer => Parameters.IsElympicsOnlineServer.GetValue() is true;
 
+        public static bool IsInitialized => ParameterList.Initialized;
+
         public static ParameterList Parameters
         {
             get

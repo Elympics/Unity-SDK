@@ -7,11 +7,9 @@ namespace Elympics.SnapshotAnalysis.Retrievers
 {
     internal class DefaultSnapshotAnalysisRetriever : SnapshotAnalysisRetriever
     {
-        private readonly IMatchLauncher _matchLauncher;
         private readonly ISnapshotDownloader _downloader;
-        public DefaultSnapshotAnalysisRetriever(Uri source, IMatchLauncher matchLauncher)
+        public DefaultSnapshotAnalysisRetriever(Uri source)
         {
-            _matchLauncher = matchLauncher;
             _downloader = SnapshotDownloaderFactory.GetDownloader(source);
         }
 

@@ -2,7 +2,6 @@
 
 using System;
 using System.Linq;
-using Elympics.Rooms.Models;
 
 namespace Elympics.Models.Matchmaking
 {
@@ -31,19 +30,6 @@ namespace Elympics.Models.Matchmaking
             TcpUdpServerAddress = tcpUdpServerAddress;
             WebServerAddress = webServerAddress;
             MatchedPlayers = matchedPlayers;
-        }
-
-        public MatchmakingFinishedData(Guid matchId, MatchDetails matchData, string queueName, string regionName)
-        {
-            MatchId = matchId;
-            UserSecret = matchData.UserSecret;
-            QueueName = queueName;
-            RegionName = regionName;
-            GameEngineData = matchData.GameEngineData;
-            MatchmakerData = matchData.MatchmakerData;
-            TcpUdpServerAddress = matchData.TcpUdpServerAddress;
-            WebServerAddress = matchData.WebServerAddress;
-            MatchedPlayers = matchData.MatchedPlayersId.ToArray();
         }
 
         public bool Equals(MatchmakingFinishedData? other)

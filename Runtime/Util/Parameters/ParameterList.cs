@@ -26,13 +26,6 @@ namespace Elympics
 
         public readonly Parameter<Uri> ApiEndpoint = new("ELYMPICS_API", "elympicsApi", "elympics-api",
             parse: ParseUri);
-        public readonly Parameter<Uri> LobbyEndpoint = new("ELYMPICS_LOBBY", "elympicsLobby", "elympics-lobby",
-            parse: ParseUri);
-        public readonly Parameter<Uri> AuthEndpoint = new("ELYMPICS_AUTH", "elympicsAuth", "elympics-auth",
-            parse: ParseUri);
-        public readonly Parameter<Uri> LeaderboardsEndpoint = new("ELYMPICS_LEADERBOARDS", "elympicsLeaderboards",
-            "elympics-leaderboards",
-            parse: ParseUri);
         public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
             parse: ParseUri);
 
@@ -43,16 +36,6 @@ namespace Elympics
             parse: ParseBoolFlag);
         public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", "elympicsUseTcpUdp", "elympics-use-tcp-udp",
             parse: ParseBoolFlag);
-
-        public readonly Parameter<string> ClientSecret =
-            new("ELYMPICS_CLIENT_SECRET", "elympicsClientSecret", "elympics-client-secret");
-        public readonly ValueParameter<Guid> GameId = new("ELYMPICS_GAME_ID", "elympicsGameId", "elympics-game-id",
-            parse: Guid.Parse);
-        public readonly Parameter<string> VersionName = new("ELYMPICS_GAME_VERSION", "elympicsGameVersion",
-            "elympics-game-version",
-            validationRegex: new Regex(".+", RegexOptions.Compiled));
-        public readonly Parameter<string> Queue = new("ELYMPICS_QUEUE", "elympicsQueue", "elympics-queue");
-        public readonly Parameter<string> Region = new("ELYMPICS_REGION", "elympicsRegion", "elympics-region");
 
         private static readonly Regex ShortArgRegex = new("^-([^-])$", RegexOptions.Compiled);
         private static readonly Regex LongArgRegex = new("^--([^-][^=]*)(=([^=]*))?$", RegexOptions.Compiled);

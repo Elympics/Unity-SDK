@@ -19,7 +19,7 @@ namespace Elympics
             _client = client;
             server.Destroy();
             // singlePlayer.Destroy();
-            //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympcisBase zamiast od argumentow.
+            //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympicsBase zamiast od argumentow.
             InitializeClient(client, gameConfig);
         }
 

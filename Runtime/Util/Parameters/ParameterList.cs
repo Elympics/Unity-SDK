@@ -37,6 +37,10 @@ namespace Elympics
         public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", "elympicsUseTcpUdp", "elympics-use-tcp-udp",
             parse: ParseBoolFlag);
 
+        /// <summary>Which out-of-process host the match launcher talks to: auto, webgl, native or none.</summary>
+        public readonly Parameter<string> HostBridge = new("ELYMPICS_HOST_BRIDGE", "elympicsHostBridge", "elympics-host-bridge",
+            validationRegex: new Regex("^(auto|webgl|native|none)$", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+
         private static readonly Regex ShortArgRegex = new("^-([^-])$", RegexOptions.Compiled);
         private static readonly Regex LongArgRegex = new("^--([^-][^=]*)(=([^=]*))?$", RegexOptions.Compiled);
 

@@ -34,6 +34,7 @@
  *     arg4: number | null,
  *   ) => void,
  *   preRun: (() => void)[],
+ *   SendMessage: (gameObjectName: string, methodName: string, parameter?: string | number) => void,
  * }} EmscriptenModule
  */
 

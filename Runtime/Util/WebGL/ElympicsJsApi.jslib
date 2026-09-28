@@ -1,5 +1,6 @@
 /**
  * @typedef {{
+ *   $elympicsUtils: ElympicsUtils,
  *   ElympicsWebGL_GetElympicsHref: () => number,
  *   ElympicsWebGL_GetHref: () => number,
  * }} ElympicsWebGL
@@ -27,21 +28,28 @@
  *   matchmakerData?: string | number[],
  *   webServerAddress: string,
  *   matchedPlayers: string | string[],
+ *   gameId?: string,
+ *   matchMode?: string,
+ *   userId?: string,
+ *   requestId?: string,
+ *   tcpUdpServerAddress?: string,
  * }} ElympicsLaunchData
+ */
+
+/**
+ * Globals a page may set before the build loads, or that the build installs.
+ * Accessed through a cast, as library files can only declare types, not globals.
+ * @typedef {Window & {
+ *   unityGameOptions?: UnityGameOptions,
+ *   elympicsLaunchData?: ElympicsLaunchData | string | null,
+ *   elympicsHost?: ElympicsHostApi,
+ * }} ElympicsWindow
  */
 
 /* eslint-disable no-unassigned-vars */
 // noinspection ES6ConvertVarToLetConst
 /** @type {ElympicsUtils} */ var elympicsUtils;
 /* eslint-enable no-unassigned-vars */
-
-// noinspection SillyAssignmentJS
-/** @type {UnityGameOptions | undefined}
- * @deprecated "Use typed ElympicsLaunchData"
- */ window.unityGameOptions = window.unityGameOptions;
-
-// noinspection SillyAssignmentJS
-/** @type {ElympicsLaunchData | string | undefined} */ window.elympicsLaunchData = window.elympicsLaunchData;
 
 /** @type {ElympicsWebGL} */
 const elympicsWebGL = {
@@ -57,7 +65,7 @@ const elympicsWebGL = {
 
     ElympicsWebGL_GetHref: function () {
         try {
-            const href = window.top.location.href;
+            const href = (window.top || window).location.href;
             return elympicsUtils.stringToBuffer(href);
         } catch (error) {
             console.error(`ElympicsGetHref failed, empty string will be returned. Error:\n${error}`);
@@ -67,7 +75,7 @@ const elympicsWebGL = {
 
     ElympicsWebGL_GetElympicsHref: function () {
         try {
-            const unityGameOptions = window.unityGameOptions;
+            const unityGameOptions = /** @type {ElympicsWindow} */ (window).unityGameOptions;
             if (typeof unityGameOptions === 'undefined') {
                 return elympicsUtils.stringToBuffer('');
             }

@@ -22,6 +22,7 @@ namespace Elympics
 #endif
 
         private ElympicsMatchLauncher? _launcher;
+        private IElympicsHostBridge? _bridge;
 
         /// <summary>
         /// True in builds that run a game server (online or half-remote). There the launcher stays passive:
@@ -56,11 +57,44 @@ namespace Elympics
             if (_launcher == null || IsServerProcess)
                 return;
             _ = _launcher.BootScene;
+            StartBridge(_launcher);
             _launcher.EmitReady();
+            _bridge?.OnReady();
         }
+
+        private void StartBridge(ElympicsMatchLauncher launcher)
+        {
+            var bridge = ElympicsHostBridgeFactory.Create(ApplicationParameters.Parameters.HostBridge.GetValue(ElympicsHostBridgeFactory.Auto));
+            if (bridge == null)
+                return;
+            if (!bridge.TryStart(launcher))
+            {
+                bridge.Dispose();
+                return;
+            }
+            _bridge = bridge;
+            launcher.HostEventEmitted += bridge.DispatchEvent;
+            ElympicsLogger.LogInfo($"Match launcher host bridge: {bridge.Name}.");
+        }
+
+        private void Update() => _bridge?.Poll();
+
+        // SendMessage entry points of the WebGL bridge (window.elympicsHost). Also usable with UnitySendMessage.
+        public void HostLaunchMatch(string requestJson) => _launcher?.HandleHostLaunch(requestJson);
+        public void HostAbortMatch(string requestId) => _launcher?.HandleHostAbort(requestId);
+        public void HostReturnToBoot(string requestId) => _launcher?.HandleHostAbort(requestId);
+        public void HostQuitApplication(string reason) => _launcher?.HandleHostQuit(reason);
+        public void HostPing(string requestId) => _launcher?.HandleHostPing(requestId);
 
         private void OnDestroy()
         {
+            if (_bridge != null)
+            {
+                if (_launcher != null)
+                    _launcher.HostEventEmitted -= _bridge.DispatchEvent;
+                _bridge.Dispose();
+                _bridge = null;
+            }
             if (ElympicsMatchLauncher.Current == _launcher)
                 ElympicsMatchLauncher.Current = null;
         }

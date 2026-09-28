@@ -37,16 +37,42 @@ namespace Elympics.Editor.Config
             var gameTitle = inspectorTree.Q<Label>("game-title");
             var gameConfigNestingRoot = inspectorTree.Q<GroupBox>("game-config-nesting-root");
             var noGameConfigInfo = inspectorTree.Q<HelpBox>("no-game-config-info");
+            var bootSceneAsset = inspectorTree.Q<ObjectField>("boot-scene-object");
+            var bootScenePath = inspectorTree.Q<TextField>("boot-scene-path");
+            var launcherBuildProblems = inspectorTree.Q<HelpBox>("launcher-build-problems");
 
-            availableGames.RegisterCallback<ChangeEvent<Object>>(_ => UpdateChosenGameConfig());
+            _ = bootSceneAsset.RegisterValueChangedCallback(evt =>
+            {
+                var asset = evt.newValue as SceneAsset;
+                // Written to the bound field only on user change: a write before Bind() would be discarded.
+                bootScenePath.value = asset != null ? AssetDatabase.GetAssetOrScenePath(asset) : string.Empty;
+            });
+            // Deferred: the change reaches the ElympicsConfig asset only after the binding applies it.
+            _ = bootScenePath.RegisterValueChangedCallback(_ => inspectorTree.schedule.Execute(UpdateLauncherBuildProblems));
+            EditorBuildSettings.sceneListChanged += UpdateLauncherBuildProblems;
+            inspectorTree.RegisterCallback<DetachFromPanelEvent>(_ => EditorBuildSettings.sceneListChanged -= UpdateLauncherBuildProblems);
+
+            availableGames.RegisterCallback<ChangeEvent<Object>>(_ =>
+            {
+                UpdateChosenGameConfig();
+                UpdateLauncherBuildProblems();
+            });
 
             inspectorTree.Q<Button>("manage-games-button").clicked += () =>
                 ManageGamesInElympicsWindow.ShowWindow(serializedObject);
 
             UpdateSdkVersion();
             UpdateChosenGameConfig();
+            UpdateLauncherBuildProblems();
 
             return inspectorTree;
+
+            void UpdateLauncherBuildProblems()
+            {
+                var problems = Launcher.ElympicsLauncherBuildValidation.FindProblems(config, Launcher.ElympicsLauncherBuildValidation.EnabledBuildScenes());
+                launcherBuildProblems.text = "Client builds will fail:\n- " + string.Join("\n- ", problems);
+                launcherBuildProblems.SetVisible(problems.Count > 0);
+            }
 
             void UpdateSdkVersion()
             {

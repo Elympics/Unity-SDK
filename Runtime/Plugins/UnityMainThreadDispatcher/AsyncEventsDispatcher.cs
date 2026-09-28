@@ -46,6 +46,26 @@ namespace Elympics
 				Instance = this;
 		}
 
+		private void OnDestroy()
+		{
+			if (Instance == this)
+				Instance = null!;
+		}
+
+		/// <summary>
+		/// Drops the queued actions of the current match and releases <see cref="Instance"/>, so it holds no destroyed objects
+		/// until the next gameplay scene claims it. Must run before that scene loads, as it claims the instance only if empty.
+		/// </summary>
+		internal static void ReleaseForTeardown()
+		{
+			var instance = Instance;
+			Instance = null!;
+			if (instance is null)
+				return;
+			while (instance._executionQueue.TryDequeue(out _))
+			{ }
+		}
+
 		private void Update()
 		{
 			while (_executionQueue.TryDequeue(out var action))

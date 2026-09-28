@@ -286,7 +286,15 @@ namespace Elympics
             _tickBasedInputByPlayer = new Dictionary<ElympicsPlayer, (long Tick, byte[] Data)>();
         }
 
-        private void OnDestroy() => _inputReader?.Dispose();
+        private void OnDestroy()
+        {
+            _inputReader?.Dispose();
+            _binaryWriter1?.Dispose();
+            _binaryReader1?.Dispose();
+            _binaryReader2?.Dispose();
+            _memoryStream1?.Dispose();
+            _memoryStream2?.Dispose();
+        }
 
         internal byte[] GetState()
         {

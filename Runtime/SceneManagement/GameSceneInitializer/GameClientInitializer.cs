@@ -26,8 +26,9 @@ namespace Elympics
         public override void Dispose()
         {
             base.Dispose();
-            if (_client != null && _client.Initialized)
-                _client.MatchConnectClient.Dispose();
+            // Not guarded by Initialized: a launch that failed to connect still holds a socket or peer connection.
+            // `?.` on purpose: the managed connection must be disposed even if Unity already destroyed the component.
+            _client?.DisposeMatchConnectClient();
         }
 
         protected abstract void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig);

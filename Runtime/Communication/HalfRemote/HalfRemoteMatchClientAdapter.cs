@@ -165,8 +165,8 @@ namespace Elympics
             GetNewLag(out var lost, out var lagMs);
             if (lost)
                 return;
-            if (lagMs != 0)
-                await UniTask.Delay(lagMs, DelayType.Realtime);
+            if (lagMs != 0 && await UniTask.Delay(lagMs, DelayType.Realtime, cancellationToken: _disposeCts.Token).SuppressCancellationThrow())
+                return;
 
             action.Invoke();
         }
@@ -210,6 +210,14 @@ namespace Elympics
         }
 
         private bool NotDisconnected() => !_playerDisconnected;
-        public void Dispose() => _input?.Dispose();
+        public void Dispose()
+        {
+            // Drops lag-delayed sends, which would otherwise fire after the match is torn down.
+            _disposeCts.Cancel();
+            _disposeCts.Dispose();
+            _input?.Dispose();
+        }
+
+        private readonly CancellationTokenSource _disposeCts = new();
     }
 }

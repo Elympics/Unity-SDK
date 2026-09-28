@@ -124,7 +124,7 @@ namespace Elympics
                 throw ElympicsLogger.LogExceptionAndReturn(new ArgumentOutOfRangeException(nameof(game)));
         }
 
-        private static void UpdateLoggerState(ElympicsGameConfig gameConfig)
+        internal static void UpdateLoggerState(ElympicsGameConfig gameConfig)
         {
             var gameId = Guid.TryParse(gameConfig.GameId, out var parsedId) ? parsedId : Guid.NewGuid();
             ElympicsLogger.State.SetGame(gameId, gameConfig.GameVersion);

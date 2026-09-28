@@ -183,6 +183,17 @@ namespace Elympics
 
         #endregion
 
-        private void OnDestroy() => _snapshotCollector?.Dispose();
+        private void OnDestroy()
+        {
+            // Also on an aborted match, where EndGame (the other place disposing it) never runs.
+            _snapshotCollector?.Dispose();
+            if (_score != null)
+                _score.PlayerScoreUpdated -= SubmitIntermediateScore;
+            if (_gameEngineAdapter == null)
+                return;
+            _gameEngineAdapter.PlayerConnected -= OnPlayerConnected;
+            _gameEngineAdapter.PlayerDisconnected -= OnPlayerDisconnected;
+            _gameEngineAdapter.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
+        }
     }
 }

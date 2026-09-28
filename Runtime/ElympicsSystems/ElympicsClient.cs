@@ -28,9 +28,6 @@ namespace Elympics
         private long _tick;
         public override long Tick => _tick;
 
-        /// <summary>Raised whenever <see cref="TimeSynchronizationData"/> is generated passing it as argument together with current tick.</summary>
-        public static event Action<TimeSynchronizationData, long>? TimeSynchronized;
-
         private volatile bool _started;
         private volatile bool _wasEverStarted;
         private volatile bool _reconnectResetPending;
@@ -38,6 +35,9 @@ namespace Elympics
         private ClientTickCalculatorNetworkDetailsToFile? _logToFile;
         internal IMatchConnectClient MatchConnectClient => _matchConnectClient ?? throw new ElympicsException("Elympics not initialized! Did you change ScriptExecutionOrder?");
         private IMatchConnectClient _matchConnectClient;
+
+        /// <summary>Disposes the match connection even if initialization did not finish. Safe to use in teardown, unlike <see cref="MatchConnectClient"/>.</summary>
+        internal void DisposeMatchConnectClient() => _matchConnectClient?.Dispose();
         private IMatchClient _matchClient;
 
         // Prediction
@@ -95,21 +95,28 @@ namespace Elympics
             SetInitialized();
 
             if (connectOnStart)
-                RunConnectAndJoinAsPlayer();
+                RunConnectAndJoinAsPlayer().Forget();
         }
 
-        private async void RunConnectAndJoinAsPlayer()
+        private async UniTaskVoid RunConnectAndJoinAsPlayer()
         {
             var logger = _logger.WithMethodName();
+            // Cancelled when the launcher tears the match down, or when this client is destroyed.
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(MatchToken, this.GetCancellationTokenOnDestroy());
             try
             {
-                await UniTask.Yield();
-                await ConnectAndJoinAsPlayerAsync(CancellationToken.None);
+                await UniTask.Yield(cts.Token);
+                await ConnectAndJoinAsPlayerAsync(cts.Token);
                 logger.LogInfo("Successfully connected to the game server.");
             }
             catch (OperationCanceledException)
             {
                 logger.LogInfo("Connect and join was cancelled.");
+            }
+            catch (Exception) when (cts.IsCancellationRequested)
+            {
+                // Teardown disposed the transport mid-connect: expected, not a connection error.
+                logger.LogInfo("Connect and join was interrupted by match teardown.");
             }
             catch (Exception e)
             {
@@ -150,7 +157,6 @@ namespace Elympics
             OnSynchronized(data);
             RaiseRttReceived(data);
             RaiseReceivedStatsUpdated();
-            TimeSynchronized?.Invoke(data, Tick);
         }
 
         private void RaiseRttReceived(TimeSynchronizationData data) => CrossAssemblyEventBroadcaster.RaiseEvent(new RttReceived

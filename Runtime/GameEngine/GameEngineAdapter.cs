@@ -63,7 +63,7 @@ namespace Elympics
             foreach (var userId in userIds)
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
-            var world = ElympicsWorld.Current;
+            var world = ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
             Assert.IsNotNull(world);
             if (world != null)
                 for (var i = 0; i < UserCount; i++)
@@ -108,7 +108,7 @@ namespace Elympics
         {
             var playerIndex = (int)player;
             // Enqueue update for thread-safe drain at tick start
-            var world = ElympicsWorld.Current;
+            var world = ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
             world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
 
             foreach (var value in inputList.Values)
@@ -135,7 +135,7 @@ namespace Elympics
         public void OnPlayerConnected(string userId)
         {
             var player = _userIdsToPlayers[new Guid(userId)];
-            var world = ElympicsWorld.Current;
+            var world = ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
             world?.ActivatePlayer((int)player);
             PlayerConnected?.Invoke(player);
         }
@@ -144,7 +144,7 @@ namespace Elympics
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            var world = ElympicsWorld.Current;
+            var world = ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
             world?.DeactivatePlayer((int)player);
         }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading;
 using Elympics.Core.Logger;
@@ -20,10 +21,14 @@ namespace Elympics
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _systemToken = new CancellationTokenSource();
+            // Launcher-driven: report the match end and let the host return to boot. Otherwise quit, as before.
+            var sink = LifecycleSink;
+            Action onAfterGameEnded = sink == null ? null : () => sink.MatchEnded(Guid.Empty);
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
                 gameEngineAdapter,
                 new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.TcpPortForHalfRemoteMode),
-                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
+                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode),
+                onAfterGameEnded);
             _halfRemoteGameEngineProtoConnector.ReliableClientConnected += clientId =>
                 ElympicsLogger.LogInfo($"Client {clientId} connected using reliable channel.");
             _halfRemoteGameEngineProtoConnector.ReliableClientReceivingError += (clientId, error) =>
@@ -50,7 +55,7 @@ namespace Elympics
             _signalingServerCts = new CancellationTokenSource();
 
             _halfRemoteGameEngineProtoConnector.Listen();
-            _signalingServer.RunAsync(_signalingServerCts.Token);
+            _signalingServer.RunAsync(_signalingServerCts.Token).Forget();
         }
         protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() =>
             GameConfig.RecordSnapshots ? new EditorSnapshotAnalysisCollector(GameConfig.SnapshotFilePath) : new NullSnapshotAnalysisCollector();
@@ -59,9 +64,17 @@ namespace Elympics
 
         public override void Dispose()
         {
-            _systemToken.Cancel();
+            base.Dispose();
+            _systemToken?.Cancel();
+            _systemToken?.Dispose();
+            _systemToken = null;
             _halfRemoteGameEngineProtoConnector?.Dispose();
+            _halfRemoteGameEngineProtoConnector = null;
             _signalingServerCts?.Cancel();
+            _signalingServerCts?.Dispose();
+            _signalingServerCts = null;
+            _signalingServer?.Dispose();
+            _signalingServer = null;
         }
     }
 }

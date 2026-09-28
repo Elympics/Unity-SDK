@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Plugins.Elympics.Runtime.Communication.HalfRemote
 {
-    internal class SimpleHttpSignalingServer
+    internal class SimpleHttpSignalingServer : IDisposable
     {
         private readonly HttpListener _listener;
         private readonly IWebClientInitializer _webClientInitializer;
@@ -26,7 +26,7 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             _listener.Prefixes.Add(_uri);
         }
 
-        public async void RunAsync(CancellationToken ct)
+        public async UniTaskVoid RunAsync(CancellationToken ct)
         {
             try
             {
@@ -54,6 +54,19 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             {
                 ElympicsLogger.LogInfo("Signaling server stopped.");
             }
+        }
+
+        /// <summary>Stops listening and releases the port, so the next half-remote match can bind it again.</summary>
+        public void Dispose()
+        {
+            try
+            {
+                if (_listener.IsListening)
+                    _listener.Stop();
+                _listener.Close();
+            }
+            catch (ObjectDisposedException)
+            { }
         }
 
         private async UniTask HandleRequest(CancellationToken ct)

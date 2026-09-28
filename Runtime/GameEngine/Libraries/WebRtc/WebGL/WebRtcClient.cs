@@ -20,6 +20,17 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     {
         private static readonly Dictionary<int, WebRtcClient> Instances = new();
 
+        /// <summary>Live peer connections. Must be 0 between matches.</summary>
+        internal static int InstanceCount => Instances.Count;
+
+        /// <summary>Live peer connections as seen by the JS library.</summary>
+        internal static int JsInstanceCount => WebRtcGetInstanceCount();
+
+        /// <summary>Size of the wasm heap in bytes.</summary>
+        internal static long WasmHeapSize => (long)ElympicsGetHeapSize();
+
+        private bool _disposed;
+
         private readonly int _instanceId;
         private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
             .WithClass(typeof(WebRtcClient));
@@ -124,7 +135,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             { }
         }
 
-        public void Dispose() => HandleInstanceDestroy(_instanceId);
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            _channels.Clear();
+            HandleInstanceDestroy(_instanceId);
+        }
 
         public void SetIceServers(string iceServersJson) => WebRtcSetIceServers(_instanceId, iceServersJson);
 
@@ -178,6 +196,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         [DllImport("__Internal")] private static extern int WebRtcAllocate();
 
         [DllImport("__Internal")] private static extern void WebRtcFree(int instanceId);
+
+        [DllImport("__Internal")] private static extern int WebRtcGetInstanceCount();
+
+        [DllImport("__Internal")] private static extern double ElympicsGetHeapSize();
 
         [DllImport("__Internal")] private static extern void WebRtcSetIceServers(int instanceId, string iceServersJson);
 

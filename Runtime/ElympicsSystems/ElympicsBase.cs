@@ -17,6 +17,9 @@ namespace Elympics
         internal ElympicsBehavioursManager ElympicsBehavioursManager;
         [SerializeField] internal AsyncEventsDispatcher asyncEventsDispatcher;
 
+        /// <summary>Cancelled when <see cref="ElympicsMatchLauncher"/> tears the match down. None if the scene is not launcher-driven.</summary>
+        internal CancellationToken MatchToken { get; set; }
+
         [Tooltip("Attach GameObjects that you want to be destroyed together with this system")]
         [SerializeField]
         private GameObject[] linkedLogic;

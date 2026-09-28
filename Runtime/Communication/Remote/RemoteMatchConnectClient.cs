@@ -235,6 +235,15 @@ namespace Elympics
             _connected = false;
         }
 
-        public void Dispose() => Disconnect();
+        public void Dispose()
+        {
+            Disconnect();
+            _gameServerClient.Disconnected -= OnDisconnectedByServer;
+            _gameServerClient.MatchEnded -= OnMatchEnded;
+            UnsetCallbacksForJoiningAsPlayer();
+            UnsetCallbacksForJoiningAsSpectator();
+            // This client owns the game server client, and with it the sockets or the WebRTC peer connection.
+            _gameServerClient.Dispose();
+        }
     }
 }

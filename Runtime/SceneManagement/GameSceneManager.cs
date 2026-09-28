@@ -45,7 +45,19 @@ namespace Elympics
                 elympicsBehavioursManager.LifecycleSink = sink;
                 _gameSceneInitializer = GameSceneInitializerFactory.Create(elympicsGameConfig, session?.Launch);
                 ElympicsLogger.LogInfo($"Created game scene initializer of type {_gameSceneInitializer.GetType().Name}");
-                session?.RegisterTeardown("dispose game scene initializer", DisposeInitializer);
+                _gameSceneInitializer.LifecycleSink = sink;
+                if (session != null)
+                {
+                    elympicsClient.MatchToken = session.Token;
+                    elympicsServer.MatchToken = session.Token;
+                }
+                if (session != null)
+                {
+                    // The scene keeps ticking until the boot scene replaces it: stop it before its transport is disposed.
+                    session.RegisterTeardown("stop simulation", StopSimulation);
+                    session.RegisterTeardown("dispose game scene initializer", DisposeInitializer);
+                    session.TrackCollectable(elympicsBehavioursManager);
+                }
                 _gameSceneInitializer.Initialize(elympicsClient, elympicsServer, elympicsGameConfig, elympicsBehavioursManager);
                 ElympicsLogger.LogInfo("Elympics game scene initialized successfully.");
                 if (!_gameSceneInitializer.ReportsMatchJoined)
@@ -60,6 +72,14 @@ namespace Elympics
         }
 
         private void OnDisable() => DisposeInitializer();
+
+        private void StopSimulation()
+        {
+            if (elympicsClient != null)
+                elympicsClient.enabled = false;
+            if (elympicsServer != null)
+                elympicsServer.enabled = false;
+        }
 
         private void DisposeInitializer()
         {

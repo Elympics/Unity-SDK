@@ -209,6 +209,25 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
+        public IEnumerator TeardownRestoresProcessGlobals() => UniTask.ToCoroutine(async () =>
+        {
+            var before = Time.fixedDeltaTime;
+            try
+            {
+                _ = await LaunchToRunning();
+                Time.fixedDeltaTime = before * 3;
+
+                _ = await _launcher.AbortAsync("abort", default);
+
+                Assert.That(Time.fixedDeltaTime, Is.EqualTo(before));
+            }
+            finally
+            {
+                Time.fixedDeltaTime = before;
+            }
+        });
+
+        [UnityTest]
         public IEnumerator ReplacementSequenceWorks() => UniTask.ToCoroutine(async () =>
         {
             _ = await LaunchToRunning();

@@ -46,7 +46,7 @@ namespace Elympics
 
         private void Awake()
         {
-            _launcher = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, PlatformCanListen, _ => ExitUtility.ExitGame());
+            _launcher = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, PlatformCanListen, _ => ExitUtility.ExitGame(), Debug.isDebugBuild);
             ElympicsMatchLauncher.Current = _launcher;
         }
 

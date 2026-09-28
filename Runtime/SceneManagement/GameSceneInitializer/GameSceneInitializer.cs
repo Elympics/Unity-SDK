@@ -2,6 +2,9 @@ namespace Elympics
 {
     internal abstract class GameSceneInitializer
     {
+        /// <summary>Set before <see cref="Initialize"/> if the scene was loaded by <see cref="ElympicsMatchLauncher"/>.</summary>
+        public IElympicsMatchLifecycleSink LifecycleSink { get; set; }
+
         public abstract void Initialize(
             ElympicsClient client,
             ElympicsServer server,

@@ -109,7 +109,9 @@ namespace Elympics
         internal void Clear()
         {
             _rpcMethods.Clear();
+            _rpcMethodDetails.Clear();
             _rpcMethodIds.Clear();
+            _methodIdCounter = 0;
         }
     }
 }

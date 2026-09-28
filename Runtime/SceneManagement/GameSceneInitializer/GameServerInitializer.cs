@@ -41,6 +41,15 @@ namespace Elympics
             // singlePlayer.Destroy();
         }
 
+        public override void Dispose()
+        {
+            base.Dispose();
+            GameEngineAdapter = null;
+            BehavioursManager = null;
+            Server = null;
+            GameConfig = null;
+        }
+
         protected abstract void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter);
 
         protected abstract SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector();

@@ -75,6 +75,9 @@ namespace Elympics
         private readonly Func<ElympicsConfig?> _loadConfig;
         private readonly bool _platformCanListen;
         private readonly Action<string> _exitApplication;
+        private readonly bool _verifyTeardown;
+        private ElympicsProcessGlobals? _processGlobals;
+        private int _cycle;
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsMatchLauncher));
 
         private string? _bootScene;
@@ -86,12 +89,14 @@ namespace Elympics
         private readonly List<(string RequestId, UniTaskCompletionSource<ElympicsAbortResult> Completion)> _abortWaiters = new();
         private bool _quitting;
 
-        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, bool platformCanListen, Action<string> exitApplication)
+        /// <param name="verifyTeardown">Run the post-teardown assertions and memory sample (development builds only).</param>
+        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, bool platformCanListen, Action<string> exitApplication, bool verifyTeardown = false)
         {
             _sceneLoader = sceneLoader;
             _loadConfig = loadConfig;
             _platformCanListen = platformCanListen;
             _exitApplication = exitApplication;
+            _verifyTeardown = verifyTeardown;
         }
 
         #region Launch
@@ -120,6 +125,10 @@ namespace Elympics
             var completion = new UniTaskCompletionSource<ElympicsLaunchResult>();
             _session = session;
             _launchCompletion = completion;
+            _processGlobals = ElympicsProcessGlobals.Capture();
+            ElympicsConfig.UpdateLoggerState(launch!.GameConfig);
+            if (launch.MatchData != null)
+                ElympicsLogger.State.SetMatchId(launch.MatchData.MatchId.ToString());
             SetState(MatchLauncherState.Loading);
             _logger.LogInfo($"Launching {launch!.MatchMode} match of {launch.GameConfig.GameName} (request {requestId}).");
             Emit(ElympicsHostProtocol.Events.LaunchAccepted, requestId);
@@ -337,8 +346,19 @@ namespace Elympics
                 _logger.LogException(e);
             }
 
+            // Per-scene steps first (stop the simulation, dispose transport and initializer), then process-wide state.
             session?.Detach();
             _session = null;
+            ElympicsMatchTeardown.ReleaseStatics();
+            try
+            {
+                _processGlobals?.Restore();
+            }
+            catch (Exception e)
+            {
+                _logger.LogException(e);
+            }
+            _processGlobals = null;
 
             try
             {
@@ -356,6 +376,8 @@ namespace Elympics
             try
             {
                 await _sceneLoader.ReleaseMemoryAsync();
+                if (_verifyTeardown)
+                    ElympicsMatchTeardown.AssertReleased(session?.Collectable ?? Array.Empty<WeakReference>(), ++_cycle);
             }
             catch (Exception e)
             {

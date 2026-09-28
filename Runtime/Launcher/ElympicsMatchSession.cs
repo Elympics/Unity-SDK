@@ -15,18 +15,24 @@ namespace Elympics
     {
         public ElympicsLaunch Launch { get; }
         /// <summary>Cancelled when the match is torn down.</summary>
-        public CancellationToken Token => _cts.Token;
+        public CancellationToken Token { get; }
         public bool SceneInitialized { get; private set; }
         public bool Detached { get; private set; }
 
         private readonly CancellationTokenSource _cts = new();
         private readonly IElympicsMatchLifecycleSink _owner;
         private readonly List<(string Name, Action Step)> _teardownSteps = new();
+        private readonly List<WeakReference> _collectable = new();
+
+        /// <summary>Objects that must be garbage-collectable after teardown. Checked in development builds.</summary>
+        public IReadOnlyList<WeakReference> Collectable => _collectable;
 
         public ElympicsMatchSession(ElympicsLaunch launch, IElympicsMatchLifecycleSink owner)
         {
             Launch = launch;
             _owner = owner;
+            // Cached: reading CancellationTokenSource.Token after Dispose throws, and late readers are expected.
+            Token = _cts.Token;
         }
 
         /// <summary>Called by the gameplay scene when it picks the session up. Returns false if it was already picked up.</summary>
@@ -44,6 +50,9 @@ namespace Elympics
             if (!Detached)
                 _teardownSteps.Add((name, step));
         }
+
+        /// <summary>Registers an object that must not outlive the match.</summary>
+        public void TrackCollectable(object target) => _collectable.Add(new WeakReference(target));
 
         /// <summary>Cancels <see cref="Token"/>, runs the teardown steps and stops forwarding reports. Never throws. Idempotent.</summary>
         public void Detach()

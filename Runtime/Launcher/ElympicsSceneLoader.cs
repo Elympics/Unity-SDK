@@ -1,8 +1,6 @@
 #nullable enable
 
-using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Elympics
@@ -34,11 +32,6 @@ namespace Elympics
 
         public string ActiveScenePath => SceneManager.GetActiveScene().path;
 
-        public async UniTask ReleaseMemoryAsync()
-        {
-            GC.Collect();
-            await Resources.UnloadUnusedAssets();
-            GC.Collect();
-        }
+        public UniTask ReleaseMemoryAsync() => ElympicsMatchTeardown.ReleaseMemoryAsync();
     }
 }

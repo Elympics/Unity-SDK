@@ -42,8 +42,29 @@ namespace Elympics
         /// <summary>Every event of the host protocol, as (type, requestId, payloadJson). Consumed by host bridges and editor tooling.</summary>
         internal event Action<string, string, string>? HostEventEmitted;
 
+        internal enum SceneAttachment
+        {
+            /// <summary>The scene was loaded by the launcher and must initialize for the returned session.</summary>
+            Attached,
+            /// <summary>No launcher-driven match: the scene was opened directly (e.g. Play pressed in the Editor) and uses its debug mode.</summary>
+            NotLauncherDriven,
+            /// <summary>A launcher-driven match is being torn down or already has its scene. The scene must not initialize at all.</summary>
+            Suppressed,
+        }
+
         /// <summary>The session a loading gameplay scene should pick up, or null if no launch is loading.</summary>
         internal ElympicsMatchSession? SessionAwaitingScene => State == MatchLauncherState.Loading ? _session : null;
+
+        /// <summary>Called by a gameplay scene on load to decide how it initializes.</summary>
+        internal SceneAttachment AttachGameplayScene(out ElympicsMatchSession? session)
+        {
+            session = SessionAwaitingScene;
+            if (session != null && session.TryAttachScene())
+                return SceneAttachment.Attached;
+            session = null;
+            // E.g. the launch was aborted or timed out while its scene was still loading: the scene activates during teardown.
+            return IsDrivingMatch ? SceneAttachment.Suppressed : SceneAttachment.NotLauncherDriven;
+        }
 
         /// <summary>True while a launcher-driven match exists, i.e. the gameplay scene must not quit the application on its own.</summary>
         internal bool IsDrivingMatch => _session != null;
@@ -450,9 +471,14 @@ namespace Elympics
             if (_sceneLoader.IsInBuild(configured))
                 return configured;
             var fallback = _sceneLoader.ActiveScenePath;
-            _logger.LogError(string.IsNullOrEmpty(configured)
+            var message = string.IsNullOrEmpty(configured)
                 ? $"{nameof(ElympicsConfig)}.bootScene is not set. The match launcher will return to {fallback} after matches."
-                : $"Boot scene {configured} is not in Build Settings. The match launcher will return to {fallback} after matches.");
+                : $"Boot scene {configured} is not in Build Settings. The match launcher will return to {fallback} after matches.";
+            // A warning in the Editor, where playing a scene directly is routine; build validation guards players.
+            if (Application.isEditor)
+                _logger.LogWarning(message);
+            else
+                _logger.LogError(message);
             return fallback;
         }
 

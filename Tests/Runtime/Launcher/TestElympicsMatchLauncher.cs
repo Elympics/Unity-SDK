@@ -92,10 +92,9 @@ namespace Elympics.Tests
         /// <summary>Plays the part of GameSceneManager.Awake.</summary>
         private IElympicsMatchLifecycleSink AttachScene()
         {
-            var session = _launcher.SessionAwaitingScene;
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Attached));
             Assert.That(session, Is.Not.Null);
-            Assert.That(session!.TryAttachScene(), Is.True);
-            return session;
+            return session!;
         }
 
         private async UniTask<(ElympicsLaunchResult Result, IElympicsMatchLifecycleSink Sink)> LaunchToRunning(ElympicsLaunchRequest? request = null)
@@ -257,6 +256,37 @@ namespace Elympics.Tests
             // The boot scene is loaded after the in-flight gameplay load, never before it.
             Assert.That(_loader.Loaded, Is.EqualTo(new[] { GameplayScene, BootScene }));
         });
+
+        [UnityTest]
+        public IEnumerator SceneActivatingDuringTeardownIsSuppressed() => UniTask.ToCoroutine(async () =>
+        {
+            _loader.HoldGameplayLoad = true;
+            var launch = _launcher.LaunchMatchAsync(Request());
+            var abort = _launcher.AbortAsync("abort", default);
+
+            // The gameplay scene activates only now, after the abort.
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
+            Assert.That(session, Is.Null);
+            _ = _loader.PendingGameplayLoad!.TrySetResult(true);
+
+            Assert.That((await launch).Code, Is.EqualTo(ElympicsLaunchErrorCode.Aborted));
+            Assert.That((await abort).Success, Is.True);
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
+        });
+
+        [Test]
+        public void SecondAttachOfSameLaunchIsSuppressed()
+        {
+            _loader.HoldGameplayLoad = true;
+            _ = _launcher.LaunchMatchAsync(Request());
+            _ = AttachScene();
+
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
+        }
+
+        [Test]
+        public void SceneWithoutLauncherMatchIsNotLauncherDriven() =>
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
 
         [UnityTest]
         public IEnumerator LateReportsFromTornDownSceneAreIgnored() => UniTask.ToCoroutine(async () =>
@@ -436,7 +466,6 @@ namespace Elympics.Tests
         {
             _config.bootScene = "";
             _loader.ActiveScenePath = "Assets/Splash.unity";
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("bootScene is not set"));
             Assert.That(_launcher.BootScene, Is.EqualTo("Assets/Splash.unity"));
         }
     }

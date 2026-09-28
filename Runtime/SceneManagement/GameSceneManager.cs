@@ -23,9 +23,13 @@ namespace Elympics
                 ExitUtility.ExitGame();
 
             // Set if the scene was loaded by ElympicsMatchLauncher. Null if Play was pressed directly in this scene.
-            var session = ElympicsMatchLauncher.Current?.SessionAwaitingScene;
-            if (session != null && !session.TryAttachScene())
-                session = null;
+            ElympicsMatchSession? session = null;
+            var attachment = ElympicsMatchLauncher.Current?.AttachGameplayScene(out session) ?? ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven;
+            if (attachment == ElympicsMatchLauncher.SceneAttachment.Suppressed)
+            {
+                ElympicsLogger.LogInfo("Gameplay scene loaded while its match is being torn down. Not initializing it.");
+                return;
+            }
             IElympicsMatchLifecycleSink? sink = session;
 
             try

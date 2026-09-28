@@ -13,7 +13,6 @@ using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
 
 namespace Elympics.Tests
 {
@@ -134,29 +133,18 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ReleaseStaticsDisposesReplicationWorldAndDispatcher()
+        public void ReleaseStaticsDisposesReplicationWorld()
         {
             var world = new ElympicsWorld(2);
             ElympicsWorld.Current = world;
             ReplicationPipeline.Initialize(2, world);
-            var dispatcherObject = new GameObject("dispatcher");
-            try
-            {
-                var dispatcher = dispatcherObject.AddComponent<AsyncEventsDispatcher>();
-                AsyncEventsDispatcher.Instance = dispatcher;
 
-                ElympicsMatchTeardown.ReleaseStatics();
+            ElympicsMatchTeardown.ReleaseStatics();
 
-                Assert.That(ElympicsWorld.Current, Is.Null);
-                Assert.That(ReplicationPipeline.Current, Is.Null);
-                Assert.That(world.IsDisposed, Is.True);
-                Assert.That(AsyncEventsDispatcher.Instance is null, Is.True);
-                Assert.That(ElympicsBehavioursManager.IndicesPerPlayer, Is.Zero);
-            }
-            finally
-            {
-                Object.DestroyImmediate(dispatcherObject);
-            }
+            Assert.That(ElympicsWorld.Current, Is.Null);
+            Assert.That(ReplicationPipeline.Current, Is.Null);
+            Assert.That(world.IsDisposed, Is.True);
+            Assert.That(ElympicsBehavioursManager.IndicesPerPlayer, Is.Zero);
         }
 
         [Test]

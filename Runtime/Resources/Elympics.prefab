@@ -244,7 +244,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d38b60a0ea5c7fa478abfa1ffb6c05e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}
   connectOnStart: 1
@@ -261,7 +260,6 @@ GameObject:
   - component: {fileID: 6242262048872652232}
   - component: {fileID: 7529846740173844772}
   - component: {fileID: 1655228288893870731}
-  - component: {fileID: 8165584693659152778}
   m_Layer: 0
   m_Name: Elympics
   m_TagString: Untagged
@@ -329,18 +327,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c5237200a7d7a7468bd615ba4ce10f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &8165584693659152778
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7529846740173844773}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd55e11dca40e6646982daee3830002a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7529846741445686785
 GameObject:
   m_ObjectHideFlags: 0
@@ -385,6 +371,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa050f8fe65dae745a8e115b4be8ae1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}

@@ -68,8 +68,6 @@ namespace Elympics
                 ElympicsWorld.Current = null;
                 world?.Dispose();
             });
-            // Before the boot scene loads: the next gameplay scene's dispatcher claims Instance only if it is empty.
-            Try("release async events dispatcher", AsyncEventsDispatcher.ReleaseForTeardown);
             Try("reset behaviours manager statics", ElympicsBehavioursManager.ResetStatics);
             Try("clear logger match state", () =>
             {
@@ -104,8 +102,6 @@ namespace Elympics
                 failures.Add($"{nameof(ElympicsWorld)}.{nameof(ElympicsWorld.Current)} is not null");
             if (ReplicationPipeline.Current != null)
                 failures.Add($"{nameof(ReplicationPipeline)}.{nameof(ReplicationPipeline.Current)} is not null");
-            if (AsyncEventsDispatcher.Instance is not null)
-                failures.Add($"{nameof(AsyncEventsDispatcher)}.{nameof(AsyncEventsDispatcher.Instance)} is not null");
             var liveWebRtcClients = WebRtcFactory.LiveClientCount;
             if (liveWebRtcClients != 0)
                 failures.Add($"{liveWebRtcClients} WebRTC clients were not disposed");

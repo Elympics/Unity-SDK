@@ -17,7 +17,6 @@ namespace MatchEvents
         [SerializeField] private Button endGameButton;
 
         [SerializeField] private GameLifecycleTester gameLifecycleTester;
-        [SerializeField] private AsyncEventsDispatcher asyncEventsDispatcher;
 
 #pragma warning restore CS0649
 
@@ -52,35 +51,26 @@ namespace MatchEvents
 
         private void DisableAllButtons()
         {
-            asyncEventsDispatcher.Enqueue(() =>
-            {
-                playerConnectButton.interactable = false;
-                spectatorConnectButton.interactable = false;
-                disconnectButton.interactable = false;
-                endGameButton.interactable = false;
-            });
+            playerConnectButton.interactable = false;
+            spectatorConnectButton.interactable = false;
+            disconnectButton.interactable = false;
+            endGameButton.interactable = false;
         }
 
         private void SetButtonsConnected()
         {
-            asyncEventsDispatcher.Enqueue(() =>
-            {
-                playerConnectButton.interactable = false;
-                spectatorConnectButton.interactable = false;
-                disconnectButton.interactable = true;
-                endGameButton.interactable = true;
-            });
+            playerConnectButton.interactable = false;
+            spectatorConnectButton.interactable = false;
+            disconnectButton.interactable = true;
+            endGameButton.interactable = true;
         }
 
         private void SetButtonsDisconnected()
         {
-            asyncEventsDispatcher.Enqueue(() =>
-            {
-                playerConnectButton.interactable = true;
-                spectatorConnectButton.interactable = true;
-                disconnectButton.interactable = false;
-                endGameButton.interactable = false;
-            });
+            playerConnectButton.interactable = true;
+            spectatorConnectButton.interactable = true;
+            disconnectButton.interactable = false;
+            endGameButton.interactable = false;
         }
     }
 }

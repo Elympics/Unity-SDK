@@ -574,5 +574,8 @@ Runtime/WeaverLockingProblemTest.*
 # Track additional compiler settings
 !*.rsp
 
-# Local Claude settings
-.claude/
+# Claude Code: ignore local settings, share project instructions
+.claude/*
+!.claude/CLAUDE.md
+!.claude/MEMORY.md
+!.claude/MEMORY.short.md

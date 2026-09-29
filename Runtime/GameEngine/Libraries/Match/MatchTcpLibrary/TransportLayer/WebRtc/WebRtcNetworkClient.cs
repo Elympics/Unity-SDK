@@ -47,6 +47,7 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
         private readonly LoggerConfig _logger;
 
         private IWebRtcClient? _client;
+        private string _lastConnectionState = RtcPeerConnectionStates.New;
 
         public WebRtcNetworkClient(
             IGameServerWebSignalingClient signalingClient,
@@ -187,8 +188,36 @@ namespace MatchTcpLibrary.TransportLayer.WebRtc
 
         private void OnConnectionStateChanged(string newState)
         {
-            if (newState is RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed or RtcPeerConnectionStates.Disconnected)
-                IsConnected = false;
+            var logger = _logger.WithMethodName();
+            switch (newState)
+            {
+                case RtcPeerConnectionStates.Failed or RtcPeerConnectionStates.Closed:
+                {
+                    logger.WithMonitoringEnabled().LogError($"WebRTC state changed to {newState}, closing connection...");
+                    IsConnected = false;
+                    break;
+                }
+                case RtcPeerConnectionStates.Disconnected:
+                {
+                    // Transient: ICE recovers by itself, and the server closes the peer connection after its own failure timeout
+                    logger.WithMonitoringEnabled().LogWarning("WebRTC state changed to disconnected, waiting for ICE to recover...");
+                    break;
+                }
+                case RtcPeerConnectionStates.Connected when _lastConnectionState == RtcPeerConnectionStates.Disconnected:
+                {
+                    logger.WithMonitoringEnabled().LogInfo("WebRTC state changed back to connected from disconnected, connection re-established.");
+                    break;
+                }
+                case RtcPeerConnectionStates.Connected when IsConnected:
+                {
+                    logger.LogInfo("WebRTC connection established.");
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            _lastConnectionState = newState;
         }
 
         private void RaiseDisconnected() => IsConnected = false;

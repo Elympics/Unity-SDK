@@ -56,7 +56,7 @@ namespace Elympics
             // Reading ElympicsConfig is deferred to Start, as Resources are not guaranteed to be loadable at BeforeSceneLoad on every platform.
             if (_launcher == null || IsServerProcess)
                 return;
-            _ = _launcher.BootScene;
+            _ = _launcher.Boot;
             StartBridge(_launcher);
             _launcher.EmitReady();
             _bridge?.OnReady();

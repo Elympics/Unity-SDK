@@ -66,15 +66,26 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void MissingBootSceneIsReported()
+        public void MissingBootSceneIsAWarningNotAProblem()
         {
             _config.bootScene = "";
-            AssertOneProblem(Problems(GameplayA, GameplayB), "no boot scene");
+            Assert.That(Problems(GameplayA, GameplayB), Is.Empty);
+            var warnings = ElympicsLauncherBuildValidation.FindWarnings(_config);
+            Assert.That(warnings, Has.Count.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("no boot scene"));
         }
 
         [Test]
-        public void BootSceneNotInBuildIsReported() =>
-            AssertOneProblem(Problems(GameplayA, GameplayB), Boot + " is not enabled");
+        public void ValidBootSceneHasNoWarnings() =>
+            Assert.That(ElympicsLauncherBuildValidation.FindWarnings(_config), Is.Empty);
+
+        [Test]
+        public void BootSceneNotInBuildIsReportedWithOptOut()
+        {
+            var problems = Problems(GameplayA, GameplayB);
+            AssertOneProblem(problems, Boot + " is not enabled");
+            Assert.That(problems.Single(), Does.Contain("clear"));
+        }
 
         [Test]
         public void GameplaySceneNotInBuildIsReportedPerGame()

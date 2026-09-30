@@ -25,6 +25,7 @@ namespace Elympics.Tests
             public bool HoldGameplayLoad;
             public bool GameplayLoadResult = true;
             public string ActiveScenePath { get; set; } = BootScene;
+            public int EmptyReturns;
 
             public async UniTask<bool> LoadSingleAsync(string scenePath)
             {
@@ -45,6 +46,14 @@ namespace Elympics.Tests
             }
 
             public bool IsInBuild(string scenePath) => scenePath is BootScene or GameplayScene;
+
+            public async UniTask ReturnToEmptySceneAsync()
+            {
+                EmptyReturns++;
+                await UniTask.Yield();
+                ActiveScenePath = "";
+            }
+
             public UniTask ReleaseMemoryAsync() => UniTask.CompletedTask;
         }
 
@@ -481,11 +490,40 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void MissingBootSceneFallsBackToActiveScene()
+        public void ValidBootSceneHasNoWarnings()
         {
-            _config.bootScene = "";
-            _loader.ActiveScenePath = "Assets/Splash.unity";
-            Assert.That(_launcher.BootScene, Is.EqualTo("Assets/Splash.unity"));
+            _launcher.EmitReady();
+            var ready = JsonUtility.FromJson<ElympicsReadyInfo>(_events.Single().Payload);
+            Assert.That(_launcher.Boot.ScenePath, Is.EqualTo(BootScene));
+            Assert.That(ready.warnings, Is.Empty);
         }
+
+        private static readonly (string BootScene, string WarningFragment)[] UnusableBootScenes =
+        {
+            ("", "Set ElympicsConfig > Boot scene to return to your own scene"),
+            ("Assets/NotInBuild.unity", "not in Build Settings"),
+            (GameplayScene, "also a gameplay scene"),
+        };
+
+        [UnityTest]
+        public IEnumerator UnusableBootSceneReturnsToEmptySceneWithWarning([Values(0, 1, 2)] int caseIndex) => UniTask.ToCoroutine(async () =>
+        {
+            var (bootScene, fragment) = UnusableBootScenes[caseIndex];
+            _config.bootScene = bootScene;
+
+            _launcher.EmitReady();
+            var ready = JsonUtility.FromJson<ElympicsReadyInfo>(_events.Single().Payload);
+            Assert.That(_launcher.Boot.ScenePath, Is.Null);
+            Assert.That(ready.warnings, Has.Length.EqualTo(1));
+            Assert.That(ready.warnings[0], Does.Contain(fragment));
+
+            _ = await LaunchToRunning();
+            _loader.Loaded.Clear();
+            _ = await _launcher.AbortAsync("abort", default);
+
+            Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
+            Assert.That(_loader.EmptyReturns, Is.EqualTo(1));
+            Assert.That(_loader.Loaded, Is.Empty);
+        });
     }
 }

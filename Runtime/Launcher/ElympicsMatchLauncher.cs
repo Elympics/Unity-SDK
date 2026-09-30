@@ -69,7 +69,26 @@ namespace Elympics
         /// <summary>True while a launcher-driven match exists, i.e. the gameplay scene must not quit the application on its own.</summary>
         internal bool IsDrivingMatch => _session != null;
 
-        internal string BootScene => _bootScene ??= ResolveBootScene();
+        /// <summary>Where teardown returns to. Resolved once, on first use.</summary>
+        internal BootTarget Boot => _boot ??= ResolveBootTarget();
+
+        /// <summary>The configured boot scene, or a generated empty scene if the configured one is unusable.</summary>
+        internal sealed class BootTarget
+        {
+            /// <summary>The boot scene path, or null to return to a generated empty scene.</summary>
+            public string? ScenePath { get; }
+            /// <summary>Why the configured boot scene is not used, or null if it is.</summary>
+            public string? Warning { get; }
+
+            private BootTarget(string? scenePath, string? warning)
+            {
+                ScenePath = scenePath;
+                Warning = warning;
+            }
+
+            public static BootTarget Scene(string scenePath) => new(scenePath, null);
+            public static BootTarget Empty(string warning) => new(null, warning);
+        }
 
         private readonly IElympicsSceneLoader _sceneLoader;
         private readonly Func<ElympicsConfig?> _loadConfig;
@@ -80,7 +99,7 @@ namespace Elympics
         private int _cycle;
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsMatchLauncher));
 
-        private string? _bootScene;
+        private BootTarget? _boot;
         private ElympicsMatchSession? _session;
         private UniTaskCompletionSource<ElympicsLaunchResult>? _launchCompletion;
         private CancellationTokenSource? _timerCts;
@@ -362,11 +381,8 @@ namespace Elympics
 
             try
             {
-                var bootScene = BootScene;
-                if (_sceneLoader.ActiveScenePath == bootScene)
-                    _logger.LogInfo("Still in the boot scene, not reloading it.");
-                else if (!_quitting && !await _sceneLoader.LoadSingleAsync(bootScene))
-                    _logger.LogError($"Could not load boot scene {bootScene}. Set {nameof(ElympicsConfig)}.bootScene and add it to Build Settings.");
+                if (!_quitting)
+                    await ReturnToBootAsync();
             }
             catch (Exception e)
             {
@@ -393,6 +409,17 @@ namespace Elympics
             _abortWaiters.Clear();
             foreach (var (requestId, completion) in waiters)
                 _ = completion.TrySetResult(ElympicsAbortResult.Succeeded(requestId));
+        }
+
+        private async UniTask ReturnToBootAsync()
+        {
+            var bootScene = Boot.ScenePath;
+            if (bootScene == null)
+                await _sceneLoader.ReturnToEmptySceneAsync();
+            else if (_sceneLoader.ActiveScenePath == bootScene)
+                _logger.LogInfo("Still in the boot scene, not reloading it.");
+            else if (!await _sceneLoader.LoadSingleAsync(bootScene))
+                _logger.LogError($"Could not load boot scene {bootScene}. Set {nameof(ElympicsConfig)}.bootScene and add it to Build Settings.");
         }
 
         #endregion
@@ -477,31 +504,37 @@ namespace Elympics
         internal void EmitReady()
         {
             var games = _loadConfig()?.AvailableGames ?? Array.Empty<ElympicsGameConfig>();
+            var bootWarning = Boot.Warning;
             Emit(ElympicsHostProtocol.Events.Ready, string.Empty, new ElympicsReadyInfo
             {
                 sdkVersion = ElympicsConfig.SdkVersion,
                 protocolVersion = ElympicsHostProtocol.Version,
                 gameIds = games.Where(game => game != null).Select(game => game.GameId).ToArray(),
+                warnings = bootWarning != null ? new[] { bootWarning } : Array.Empty<string>(),
             });
         }
 
         #endregion
 
-        private string ResolveBootScene()
+        private BootTarget ResolveBootTarget()
         {
-            var configured = _loadConfig()?.BootScene ?? string.Empty;
-            if (_sceneLoader.IsInBuild(configured))
-                return configured;
-            var fallback = _sceneLoader.ActiveScenePath;
-            var message = string.IsNullOrEmpty(configured)
-                ? $"{nameof(ElympicsConfig)}.bootScene is not set. The match launcher will return to {fallback} after matches."
-                : $"Boot scene {configured} is not in Build Settings. The match launcher will return to {fallback} after matches.";
-            // A warning in the Editor, where playing a scene directly is routine; build validation guards players.
-            if (Application.isEditor)
-                _logger.LogWarning(message);
-            else
-                _logger.LogError(message);
-            return fallback;
+            var config = _loadConfig();
+            var configured = config?.BootScene ?? string.Empty;
+            string? warning = null;
+            if (string.IsNullOrEmpty(configured))
+                warning = $"{nameof(ElympicsConfig)} has no boot scene, so matches return to an empty scene. "
+                    + "Set ElympicsConfig > Boot scene to return to your own scene.";
+            else if (!_sceneLoader.IsInBuild(configured))
+                warning = $"Boot scene {configured} is not in Build Settings, so matches return to an empty scene. "
+                    + "Set ElympicsConfig > Boot scene to a separate scene in Build Settings, or clear it.";
+            else if (config!.AvailableGames.Any(game => game != null && game.GameplayScene == configured))
+                warning = $"Boot scene {configured} is also a gameplay scene, so matches return to an empty scene. "
+                    + "Set ElympicsConfig > Boot scene to a separate scene in Build Settings, or clear it.";
+
+            if (warning == null)
+                return BootTarget.Scene(configured);
+            _logger.LogWarning(warning);
+            return BootTarget.Empty(warning);
         }
 
         private void SetState(MatchLauncherState state)

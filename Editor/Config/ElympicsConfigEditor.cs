@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -70,8 +71,15 @@ namespace Elympics.Editor.Config
             void UpdateLauncherBuildProblems()
             {
                 var problems = Launcher.ElympicsLauncherBuildValidation.FindProblems(config, Launcher.ElympicsLauncherBuildValidation.EnabledBuildScenes());
-                launcherBuildProblems.text = "Client builds will fail:\n- " + string.Join("\n- ", problems);
-                launcherBuildProblems.SetVisible(problems.Count > 0);
+                var warnings = Launcher.ElympicsLauncherBuildValidation.FindWarnings(config);
+                var sections = new List<string>();
+                if (problems.Count > 0)
+                    sections.Add("Client builds will fail:\n- " + string.Join("\n- ", problems));
+                if (warnings.Count > 0)
+                    sections.Add("Warning:\n- " + string.Join("\n- ", warnings));
+                launcherBuildProblems.text = string.Join("\n", sections);
+                launcherBuildProblems.messageType = problems.Count > 0 ? HelpBoxMessageType.Error : HelpBoxMessageType.Warning;
+                launcherBuildProblems.SetVisible(sections.Count > 0);
             }
 
             void UpdateSdkVersion()

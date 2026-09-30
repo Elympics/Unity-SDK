@@ -12,6 +12,8 @@ namespace Elympics
         public string sdkVersion = "";
         public string protocolVersion = "";
         public string[] gameIds = Array.Empty<string>();
+        /// <summary>Configuration problems the host should know about, e.g. an unusable boot scene. Empty if there are none.</summary>
+        public string[] warnings = Array.Empty<string>();
     }
 
     [Serializable, PublicAPI]

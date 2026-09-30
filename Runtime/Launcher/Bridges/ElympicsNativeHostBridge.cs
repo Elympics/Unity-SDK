@@ -20,16 +20,6 @@ namespace Elympics
         /// <summary>Bounds the work per frame if a host floods commands.</summary>
         private const int MaxCommandsPerFrame = 64;
 
-        private enum CommandKind
-        {
-            None = 0,
-            LaunchMatch = 1,
-            AbortMatch = 2,
-            ReturnToBoot = 3,
-            QuitApplication = 4,
-            Ping = 5,
-        }
-
 #if UNITY_IOS && !UNITY_EDITOR
         private const string Library = "__Internal";
 #else
@@ -77,42 +67,18 @@ namespace Elympics
             for (var i = 0; i < MaxCommandsPerFrame; i++)
             {
                 var argumentPointer = ElympicsHost_PollCommand(out var kind);
-                if ((CommandKind)kind == CommandKind.None)
+                if ((ElympicsHostCommandKind)kind == ElympicsHostCommandKind.None)
                     return;
                 // Copied right away: the plugin reuses the buffer on the next poll.
                 var argument = FromUtf8(argumentPointer);
                 try
                 {
-                    Execute((CommandKind)kind, argument);
+                    _launcher.HandleHostCommand((ElympicsHostCommandKind)kind, argument);
                 }
                 catch (Exception e)
                 {
                     _logger.LogException(e);
                 }
-            }
-        }
-
-        private void Execute(CommandKind kind, string argument)
-        {
-            switch (kind)
-            {
-                case CommandKind.LaunchMatch:
-                    _launcher!.HandleHostLaunch(argument);
-                    break;
-                case CommandKind.AbortMatch:
-                case CommandKind.ReturnToBoot:
-                    _launcher!.HandleHostAbort(argument);
-                    break;
-                case CommandKind.QuitApplication:
-                    _launcher!.HandleHostQuit(argument);
-                    break;
-                case CommandKind.Ping:
-                    _launcher!.HandleHostPing(argument);
-                    break;
-                case CommandKind.None:
-                default:
-                    _logger.LogWarning($"Unknown native host command {(int)kind} ignored.");
-                    break;
             }
         }
 

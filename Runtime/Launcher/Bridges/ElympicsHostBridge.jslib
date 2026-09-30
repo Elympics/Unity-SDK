@@ -16,7 +16,7 @@
 /**
  * @typedef {{
  *   $elympicsHostState: ElympicsHostState,
- *   ElympicsHost_Initialize: (gameObjectNamePtr: number) => void,
+ *   ElympicsHost_Initialize: (commandCallback: FunctionPointer) => void,
  *   ElympicsHost_DispatchEvent: (typePtr: number, requestIdPtr: number, payloadPtr: number) => void,
  *   ElympicsHost_TakeLaunchData: (defaultGameIdPtr: number) => number,
  * }} LibraryElympicsHost
@@ -27,6 +27,7 @@
  *   toBase64: (value: unknown) => string,
  *   toList: (value: unknown) => unknown[],
  *   toText: (value: unknown) => string,
+ *   send: (commandCallback: FunctionPointer, kind: number, first?: string, second?: string, third?: string) => void,
  * }} ElympicsHostState
  */
 
@@ -70,24 +71,33 @@ const elympicsHostLibrary = {
         toText: function (value) {
             return typeof value === 'string' ? value : '';
         },
+        // Calls the C# command callback synchronously; C# copies the strings before it returns.
+        send: function (commandCallback, kind, first, second, third) {
+            const buffers = [first, second, third].map(function (text) { return elympicsUtils.stringToBuffer(text || ''); });
+            try {
+                Module.dynCall_viiii(commandCallback, kind, buffers[0], buffers[1], buffers[2]);
+            } finally {
+                buffers.forEach(function (buffer) { _free(buffer); });
+            }
+        },
     },
 
-    ElympicsHost_Initialize: function (gameObjectNamePtr) {
-        const gameObjectName = UTF8ToString(gameObjectNamePtr);
+    // Command kinds: ElympicsHostCommandKind (C#).
+    ElympicsHost_Initialize: function (commandCallback) {
         const elympicsWindow = /** @type {ElympicsWindow} */ (window);
         const existing = elympicsWindow.elympicsHost;
-        /** @param {string} method @param {string} argument */
-        const send = function (method, argument) {
-            Module.SendMessage(gameObjectName, method, argument);
+        /** @param {number} kind @param {string} argument */
+        const send = function (kind, argument) {
+            elympicsHostState.send(commandCallback, kind, argument);
         };
         elympicsWindow.elympicsHost = {
             launchMatch: function (request) {
-                send('HostLaunchMatch', typeof request === 'string' ? request : JSON.stringify(request));
+                send(1, typeof request === 'string' ? request : JSON.stringify(request));
             },
-            abortMatch: function (requestId) { send('HostAbortMatch', requestId || ''); },
-            returnToBoot: function (requestId) { send('HostReturnToBoot', requestId || ''); },
-            quitApplication: function (reason) { send('HostQuitApplication', reason || ''); },
-            ping: function (requestId) { send('HostPing', requestId || ''); },
+            abortMatch: function (requestId) { send(2, requestId || ''); },
+            returnToBoot: function (requestId) { send(3, requestId || ''); },
+            quitApplication: function (reason) { send(4, reason || ''); },
+            ping: function (requestId) { send(5, requestId || ''); },
             // Keeps a handler the page registered before the build booted.
             onEvent: existing && typeof existing.onEvent === 'function' ? existing.onEvent : null,
         };

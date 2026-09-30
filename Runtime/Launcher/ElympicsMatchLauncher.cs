@@ -26,11 +26,8 @@ namespace Elympics
         public static IElympicsMatchLauncher Instance =>
             Current ?? throw new InvalidOperationException($"{nameof(ElympicsMatchLauncher)} is not created yet. It is created before the first scene loads in play mode.");
 
+        /// <summary>Set and cleared by <see cref="ElympicsMatchLauncherBootstrap"/>.</summary>
         internal static ElympicsMatchLauncher? Current { get; set; }
-
-        // Keeps the static correct with domain reload disabled.
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Current = null;
 
         public MatchLauncherState State { get; private set; } = MatchLauncherState.Idle;
         public bool IsCurrentlyInMatch => State is MatchLauncherState.Loading or MatchLauncherState.Running or MatchLauncherState.Ended;
@@ -493,6 +490,31 @@ namespace Elympics
                 return;
             }
             LaunchAsync(request, ElympicsLaunchSource.Wire, CancellationToken.None).Forget();
+        }
+
+        /// <summary>Runs a command received by a host bridge. <paramref name="argument"/> is the command's only string argument.</summary>
+        internal void HandleHostCommand(ElympicsHostCommandKind kind, string argument)
+        {
+            switch (kind)
+            {
+                case ElympicsHostCommandKind.LaunchMatch:
+                    HandleHostLaunch(argument);
+                    break;
+                case ElympicsHostCommandKind.AbortMatch:
+                case ElympicsHostCommandKind.ReturnToBoot:
+                    HandleHostAbort(argument);
+                    break;
+                case ElympicsHostCommandKind.QuitApplication:
+                    HandleHostQuit(argument);
+                    break;
+                case ElympicsHostCommandKind.Ping:
+                    HandleHostPing(argument);
+                    break;
+                case ElympicsHostCommandKind.None:
+                default:
+                    _logger.LogWarning($"Unknown host command {(int)kind} ignored.");
+                    break;
+            }
         }
 
         internal void HandleHostAbort(string requestId) => AbortAsync(requestId, CancellationToken.None).Forget();

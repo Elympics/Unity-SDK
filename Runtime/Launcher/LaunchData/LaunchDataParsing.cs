@@ -25,16 +25,6 @@ namespace Elympics
             }
         }
 
-        /// <summary>False where <see cref="ElympicsGameConfig.UseWeb"/> is forced, as browsers have no TCP/UDP sockets.</summary>
-        public static bool CanUseTcpUdp =>
-#if UNITY_WEBGL
-            false;
-#else
-            true;
-#endif
-
-        public const string NoTcpUdpMessage = "TCP/UDP is not available on WebGL. Use WebRTC.";
-
         public static bool IsValidPort(int port) => port is > IPEndPoint.MinPort and <= IPEndPoint.MaxPort;
     }
 }

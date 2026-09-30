@@ -52,14 +52,16 @@ namespace Elympics
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
 
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData)
+        /// <param name="serverEndPoint">The server's TCP endpoint, or its signaling endpoint if <paramref name="useWeb"/>.</param>
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, IPEndPoint serverEndPoint, bool useWeb,
+            Guid userId, MatchInitialData halfRemoteMatchInitialData)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
-            _ip = IPAddress.Parse(gameConfig.IpForHalfRemoteMode);
-            _port = gameConfig.PortForHalfRemoteMode;
+            _ip = serverEndPoint.Address;
+            _port = serverEndPoint.Port;
             _userId = userId;
             _halfRemoteMatchInitialData = halfRemoteMatchInitialData;
-            _useWeb = gameConfig.UseWeb;
+            _useWeb = useWeb;
             _connectionConfig = gameConfig.ConnectionConfig;
             if (_useWeb)
             {

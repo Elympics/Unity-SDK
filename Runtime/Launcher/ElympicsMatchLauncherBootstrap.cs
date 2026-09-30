@@ -12,12 +12,6 @@ namespace Elympics
     /// </summary>
     internal static class ElympicsMatchLauncherBootstrap
     {
-#if (UNITY_WEBGL || UNITY_IOS) && !UNITY_EDITOR
-        private const bool PlatformCanListen = false;
-#else
-        private const bool PlatformCanListen = true;
-#endif
-
         private static IElympicsHostBridge? bridge;
         private static BridgePoller? poller;
 
@@ -41,7 +35,7 @@ namespace Elympics
             if (!ApplicationParameters.InitializeParameters())
                 ElympicsLogger.LogError("Could not initialize application parameters.");
 
-            ElympicsMatchLauncher.Current = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, PlatformCanListen, _ => ExitUtility.ExitGame(), Debug.isDebugBuild);
+            ElympicsMatchLauncher.Current = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild);
             Application.quitting -= Shutdown;
             Application.quitting += Shutdown;
         }

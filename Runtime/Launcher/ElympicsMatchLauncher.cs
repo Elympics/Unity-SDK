@@ -89,7 +89,7 @@ namespace Elympics
 
         private readonly IElympicsSceneLoader _sceneLoader;
         private readonly Func<ElympicsConfig?> _loadConfig;
-        private readonly bool _platformCanListen;
+        private readonly ElympicsLaunchPlatform _platform;
         private readonly Action<string> _exitApplication;
         private readonly bool _verifyTeardown;
         private ElympicsProcessGlobals? _processGlobals;
@@ -106,11 +106,11 @@ namespace Elympics
         private bool _quitting;
 
         /// <param name="verifyTeardown">Run the post-teardown assertions and memory sample (development builds only).</param>
-        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, bool platformCanListen, Action<string> exitApplication, bool verifyTeardown = false)
+        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, ElympicsLaunchPlatform platform, Action<string> exitApplication, bool verifyTeardown = false)
         {
             _sceneLoader = sceneLoader;
             _loadConfig = loadConfig;
-            _platformCanListen = platformCanListen;
+            _platform = platform;
             _exitApplication = exitApplication;
             _verifyTeardown = verifyTeardown;
         }
@@ -144,7 +144,7 @@ namespace Elympics
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, $"A match is already {State}. Abort it and wait for idle before launching another one.");
 
             var games = (IReadOnlyList<ElympicsGameConfig?>?)_loadConfig()?.AvailableGames ?? Array.Empty<ElympicsGameConfig?>();
-            if (!ElympicsLaunchValidator.TryValidate(requestId, gameId, data, options, games, _platformCanListen, out var launch, out var failure))
+            if (!ElympicsLaunchValidator.TryValidate(requestId, gameId, data, options, games, _platform, out var launch, out var failure))
                 return RejectLaunch(requestId, failure!.Code, failure.message);
 
             var session = new ElympicsMatchSession(launch!, this);

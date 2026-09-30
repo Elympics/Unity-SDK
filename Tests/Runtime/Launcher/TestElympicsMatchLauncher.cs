@@ -75,7 +75,7 @@ namespace Elympics.Tests
             _config.availableGames.Add(_game);
             _config.bootScene = BootScene;
             _exits = new List<string>();
-            _launcher = new ElympicsMatchLauncher(_loader, () => _config, true, reason => _exits.Add(reason));
+            _launcher = new ElympicsMatchLauncher(_loader, () => _config, ElympicsLaunchPlatform.Unrestricted, reason => _exits.Add(reason));
             _events = new List<(string, string, string)>();
             _launcher.HostEventEmitted += (type, requestId, payload) => _events.Add((type, requestId, payload));
         }

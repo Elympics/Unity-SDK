@@ -46,22 +46,27 @@ namespace UnityConnectors.HalfRemote
 
         private readonly Action _onAfterGameEnded;
 
+        /// <param name="tcpListenEndpoint">Where to listen for TCP/UDP clients, or null not to.</param>
+        /// <param name="webListenEndpoint">Where to listen for WebRTC clients, or null not to. At least one endpoint is required.</param>
         public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, Action onAfterGameEnded = null)
         {
+            if (tcpListenEndpoint == null && webListenEndpoint == null)
+                throw new ArgumentException("At least one listen endpoint is required.");
+
             _reliableClients = new Dictionary<Guid, GameEngineProtoClient>();
             _unreliableClients = new Dictionary<Guid, GameEngineProtoClient>();
 
             var serverNtpReceiver = new ServerNtpReceiver();
 
-            var tcpHalfRemoteGameEngineServer = new TcpHalfRemoteGameEngineServer(tcpListenEndpoint, this, serverNtpReceiver);
-            var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver);
-
-            _webClientInitializer = webHalfRemoteGameEngineServer;
-            _listeners = new List<IHalfRemoteGameEngineServer>
+            _listeners = new List<IHalfRemoteGameEngineServer>();
+            if (tcpListenEndpoint != null)
+                _listeners.Add(new TcpHalfRemoteGameEngineServer(tcpListenEndpoint, this, serverNtpReceiver));
+            if (webListenEndpoint != null)
             {
-                tcpHalfRemoteGameEngineServer,
-                webHalfRemoteGameEngineServer,
-            };
+                var webHalfRemoteGameEngineServer = new WebHalfRemoteGameEngineServer(webListenEndpoint, this, serverNtpReceiver);
+                _webClientInitializer = webHalfRemoteGameEngineServer;
+                _listeners.Add(webHalfRemoteGameEngineServer);
+            }
 
             foreach (var listener in _listeners)
             {
@@ -220,7 +225,7 @@ namespace UnityConnectors.HalfRemote
 
         public Task<string> InitClientAndCreateAnswer(OfferWithCandidates offer)
         {
-            return _webClientInitializer.InitClientAndCreateAnswer(offer);
+            return (_webClientInitializer ?? throw new InvalidOperationException("The half-remote server does not listen on WebRTC.")).InitClientAndCreateAnswer(offer);
         }
     }
 }

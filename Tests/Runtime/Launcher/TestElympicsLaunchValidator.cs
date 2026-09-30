@@ -37,17 +37,20 @@ namespace Elympics.Tests
         private static OnlineLaunchData Online(string serverAddress = "gs.example", bool? useTcpUdp = false, string userSecret = "secret", Guid? userId = null, Guid[]? players = null) =>
             new(serverAddress, useTcpUdp, MatchId, userSecret, userId ?? UserId, players ?? new[] { OtherPlayerId, UserId }, "warsaw", new byte[] { 1, 2, 3 }, new[] { 0.5f });
 
-        private ElympicsLaunch Validate(LaunchData data, ElympicsLaunchOptions? options = null, bool canListen = true, string gameId = GameId)
+        private static readonly ElympicsLaunchPlatform WebGlPlayer = new(canListen: false, canUseTcpUdp: false, hasLocalFiles: false);
+        private static readonly ElympicsLaunchPlatform IosPlayer = new(canListen: false, canUseTcpUdp: true, hasLocalFiles: true);
+
+        private ElympicsLaunch Validate(LaunchData data, ElympicsLaunchOptions? options = null, ElympicsLaunchPlatform? platform = null, string gameId = GameId)
         {
-            var ok = ElympicsLaunchValidator.TryValidate("request", gameId, data, options, _games, canListen, out var launch, out var failure);
+            var ok = ElympicsLaunchValidator.TryValidate("request", gameId, data, options, _games, platform ?? ElympicsLaunchPlatform.Unrestricted, out var launch, out var failure);
             Assert.That(ok, Is.True, failure?.ToString());
             Assert.That(failure, Is.Null);
             return launch!;
         }
 
-        private ElympicsLaunchFailure ValidateFailure(LaunchData? data, ElympicsLaunchOptions? options = null, bool canListen = true, string? gameId = GameId)
+        private ElympicsLaunchFailure ValidateFailure(LaunchData? data, ElympicsLaunchOptions? options = null, ElympicsLaunchPlatform? platform = null, string? gameId = GameId)
         {
-            var ok = ElympicsLaunchValidator.TryValidate("request", gameId, data, options, _games, canListen, out var launch, out var failure);
+            var ok = ElympicsLaunchValidator.TryValidate("request", gameId, data, options, _games, platform ?? ElympicsLaunchPlatform.Unrestricted, out var launch, out var failure);
             Assert.That(ok, Is.False);
             Assert.That(launch, Is.Null);
             Assert.That(failure, Is.Not.Null);
@@ -242,11 +245,9 @@ namespace Elympics.Tests
         public void BrokenOnlineDataIsInvalidPayload(OnlineLaunchData data) =>
             Assert.That(ValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
-        // The Editor defines UNITY_WEBGL when WebGL is the build target, so both outcomes are tested, each on its own target.
         [Test]
         public void OnlineTcpUdpAddressWithoutPortIsInvalidPayload()
         {
-            Assume.That(LaunchDataParsing.CanUseTcpUdp, "TCP/UDP is unavailable with the WebGL build target.");
             Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
             _ = Validate(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true));
         }
@@ -254,9 +255,9 @@ namespace Elympics.Tests
         [Test]
         public void TcpUdpOnWebGlIsUnsupportedMode()
         {
-            Assume.That(LaunchDataParsing.CanUseTcpUdp, Is.False, "TCP/UDP is available outside the WebGL build target.");
-            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
-            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData(useTcpUdpInsteadOfWebRtc: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData(useTcpUdpInsteadOfWebRtc: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            _ = Validate(Online(serverAddress: "gs.example", useTcpUdp: false), platform: WebGlPlayer);
         }
 
         [Test]
@@ -430,13 +431,16 @@ namespace Elympics.Tests
         [Test]
         public void HalfRemoteServerWhereListeningIsImpossibleIsUnsupportedMode()
         {
-            var failure = ValidateFailure(new HalfRemoteServerLaunchData(), canListen: false);
-            Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
-            Assert.That(failure.message, Does.Contain(HalfRemoteServerLaunchData.CannotListenMessage));
+            foreach (var platform in new[] { WebGlPlayer, IosPlayer })
+            {
+                var failure = ValidateFailure(new HalfRemoteServerLaunchData(), platform: platform);
+                Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+                Assert.That(failure.message, Does.Contain(ElympicsLaunchPlatform.CannotListenMessage));
+            }
         }
 
         [Test]
-        public void HalfRemoteClientWhereListeningIsImpossibleIsAccepted() => _ = Validate(new HalfRemoteClientLaunchData(), canListen: false);
+        public void HalfRemoteClientWhereListeningIsImpossibleIsAccepted() => _ = Validate(new HalfRemoteClientLaunchData(), platform: IosPlayer);
 
         #endregion
 
@@ -449,6 +453,10 @@ namespace Elympics.Tests
         [Test]
         public void SnapshotReplayWithoutPathIsInvalidPayload() =>
             Assert.That(ValidateFailure(new SnapshotReplayLaunchData("")).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+
+        [Test]
+        public void SnapshotReplayByPathWithoutLocalFilesIsUnsupportedMode() =>
+            Assert.That(ValidateFailure(new SnapshotReplayLaunchData("replays/match"), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
 
         [Test]
         public void SnapshotReplayOfMissingFileIsInvalidPayload()

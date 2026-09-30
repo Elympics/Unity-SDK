@@ -53,7 +53,7 @@ namespace Elympics
             LaunchData? data,
             ElympicsLaunchOptions? options,
             IReadOnlyList<ElympicsGameConfig?> availableGames,
-            bool platformCanListen,
+            ElympicsLaunchPlatform platform,
             out ElympicsLaunch? launch,
             out ElympicsLaunchFailure? failure)
         {
@@ -75,7 +75,7 @@ namespace Elympics
                 || !TryResolveTimeout(options?.PostMatchTimeout, ElympicsLaunchDefaults.PostMatchTimeoutSeconds, nameof(ElympicsLaunchOptions.PostMatchTimeout), out var postMatchTimeout, out failure))
                 return false;
 
-            if (!data.TryValidate(gameConfig, platformCanListen, out failure))
+            if (!data.TryValidate(gameConfig, platform, out failure))
                 return false;
 
             launch = new ElympicsLaunch(requestId, gameConfig, data, launchTimeout, postMatchTimeout);

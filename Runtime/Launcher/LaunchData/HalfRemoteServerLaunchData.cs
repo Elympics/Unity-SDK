@@ -43,15 +43,13 @@ namespace Elympics
             MaxPlayers = maxPlayers;
         }
 
-        internal const string CannotListenMessage = "platform cannot open a listening socket";
-
         internal override string ModeName => "HalfRemoteServer";
 
-        internal override bool TryValidate(ElympicsGameConfig gameConfig, bool platformCanListen, out ElympicsLaunchFailure? failure)
+        internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
             failure = null;
-            if (!platformCanListen)
-                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {CannotListenMessage}.", out failure);
+            if (!platform.CanListen)
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {ElympicsLaunchPlatform.CannotListenMessage}.", out failure);
             if (Protocols is { } protocols && (protocols == 0 || (protocols & ~ElympicsHalfRemoteProtocols.Both) != 0))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(Protocols)} must be {nameof(ElympicsHalfRemoteProtocols.TcpUdp)}, "
                     + $"{nameof(ElympicsHalfRemoteProtocols.WebRtc)} or {nameof(ElympicsHalfRemoteProtocols.Both)}, got {(int)protocols}.", out failure);

@@ -2,7 +2,6 @@
 
 using System;
 using JetBrains.Annotations;
-using UnityEngine;
 
 namespace Elympics
 {
@@ -21,15 +20,15 @@ namespace Elympics
 
         internal bool IsUrl => Uri.TryCreate(Path, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
-        internal override bool TryValidate(ElympicsGameConfig gameConfig, bool platformCanListen, out ElympicsLaunchFailure? failure)
+        internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
             failure = null;
             if (string.IsNullOrWhiteSpace(Path))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(Path)} is required.", out failure);
             if (IsUrl)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, "Replays from a URL are not supported yet.", out failure);
-            if (Application.platform == RuntimePlatform.WebGLPlayer)
-                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{nameof(Path)} must be an http(s) URL on WebGL, which has no local file system.", out failure);
+            if (!platform.HasLocalFiles)
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{nameof(Path)} {ElympicsLaunchPlatform.NoLocalFilesMessage}.", out failure);
             if (!SnapshotReplayLoader.LocalReplayExists(Path, out var message))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, message, out failure);
             return true;

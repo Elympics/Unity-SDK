@@ -1,5 +1,5 @@
 using System;
-using System.Net;
+using System.Linq;
 using System.Threading;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
@@ -13,26 +13,27 @@ namespace Elympics
 {
     internal class HalfRemoteGameServerInitializer : GameServerInitializer
     {
-        /// <summary>The launch settings of this server.</summary>
-        internal HalfRemoteServerLaunchData Data { get; }
-
+        private readonly HalfRemoteServerLaunchData _data;
         private SimpleHttpSignalingServer _signalingServer;
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
         private CancellationTokenSource _systemToken;
 
-        public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => Data = data;
+        public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => _data = data;
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _systemToken = new CancellationTokenSource();
+            var settings = HalfRemoteServerSettings.Resolve(_data, elympicsGameConfig);
+            foreach (var warning in settings.Warnings)
+                ElympicsLogger.LogWarning(warning);
             // Launcher-driven: report the match end and let the host return to boot. Otherwise quit, as before.
             var sink = LifecycleSink;
             Action onAfterGameEnded = sink == null ? null : () => sink.MatchEnded(Guid.Empty);
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(
                 gameEngineAdapter,
-                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.TcpPortForHalfRemoteMode),
-                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode),
+                settings.TcpUdpEndPoint,
+                settings.WebEndPoint,
                 onAfterGameEnded);
             _halfRemoteGameEngineProtoConnector.ReliableClientConnected += clientId =>
                 ElympicsLogger.LogInfo($"Client {clientId} connected using reliable channel.");
@@ -53,14 +54,19 @@ namespace Elympics
 
             // ReplicationPipeline + PipelineBuffers only needed on server
             ReplicationPipeline.Initialize(elympicsGameConfig.MaxPlayers, ElympicsWorld.Current);
-            gameEngineAdapter.Initialize(new InitialMatchData { UserData = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig) });
-
-            _signalingServer = new SimpleHttpSignalingServer(_halfRemoteGameEngineProtoConnector,
-                new IPEndPoint(IPAddress.Parse(elympicsGameConfig.IpForHalfRemoteMode), elympicsGameConfig.WebPortForHalfRemoteMode));
-            _signalingServerCts = new CancellationTokenSource();
+            var players = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig).Take(settings.PlayerCount).ToList();
+            gameEngineAdapter.Initialize(new InitialMatchData { UserData = players });
 
             _halfRemoteGameEngineProtoConnector.Listen();
-            _signalingServer.RunAsync(_signalingServerCts.Token).Forget();
+            ElympicsLogger.LogInfo($"Half-remote server listening on {(settings.TcpUdpEndPoint != null ? $"TCP/UDP {settings.TcpUdpEndPoint}" : "")}"
+                + $"{(settings.TcpUdpEndPoint != null && settings.WebEndPoint != null ? " and " : "")}"
+                + $"{(settings.WebEndPoint != null ? $"WebRTC signaling {settings.WebEndPoint}" : "")}, for {players.Count} players.");
+            if (settings.WebEndPoint != null)
+            {
+                _signalingServer = new SimpleHttpSignalingServer(_halfRemoteGameEngineProtoConnector, settings.WebEndPoint);
+                _signalingServerCts = new CancellationTokenSource();
+                _signalingServer.RunAsync(_signalingServerCts.Token).Forget();
+            }
         }
         protected override SnapshotAnalysisCollector ProvideSnapSnapshotAnalysisCollector() =>
             GameConfig.RecordSnapshots ? new EditorSnapshotAnalysisCollector(GameConfig.SnapshotFilePath) : new NullSnapshotAnalysisCollector();

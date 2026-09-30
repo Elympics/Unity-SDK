@@ -24,7 +24,7 @@ namespace Elympics
         internal virtual Guid EventMatchId => Guid.Empty;
 
         /// <summary>Checks the data against the game it launches and the platform. <paramref name="failure"/> is set if it returns false.</summary>
-        internal abstract bool TryValidate(ElympicsGameConfig gameConfig, bool platformCanListen, out ElympicsLaunchFailure? failure);
+        internal abstract bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure);
 
         private protected abstract GameSceneInitializer CreateInitializer(GameSceneLaunchContext context);
 

@@ -16,10 +16,10 @@ namespace Elympics
         private static BridgePoller? poller;
 
         /// <summary>
-        /// True in an online game server, which runs its one match without a host. There the launcher stays passive:
-        /// no host bridge and no <c>ready</c> event. Other server builds (UNITY_SERVER) are driven by a host like any other build.
+        /// True in a process that runs one match without a host: an online game server, or one started with the launch mode parameter.
+        /// There the launcher stays passive: no host bridge and no <c>ready</c> event. Other server builds (UNITY_SERVER) are driven by a host like any other build.
         /// </summary>
-        internal static bool IsPassive => ApplicationParameters.ShouldLoadElympicsOnlineServer;
+        internal static bool IsPassive => ApplicationParameters.ShouldLoadElympicsOnlineServer || LaunchDataFromParameters.IsSet;
 
         // Keeps the statics correct with domain reload disabled.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -35,7 +35,8 @@ namespace Elympics
             if (!ApplicationParameters.InitializeParameters())
                 ElympicsLogger.LogError("Could not initialize application parameters.");
 
-            ElympicsMatchLauncher.Current = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild);
+            ElympicsMatchLauncher.Current = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild,
+                LaunchDataFromParameters.IsSet);
             Application.quitting -= Shutdown;
             Application.quitting += Shutdown;
         }

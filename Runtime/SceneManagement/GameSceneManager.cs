@@ -1,8 +1,11 @@
 #nullable enable
 
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
 using Elympics.Replication;
+using Elympics.SnapshotAnalysis.Retrievers;
 using UnityEngine;
 
 namespace Elympics
@@ -23,51 +26,144 @@ namespace Elympics
         internal const string AwaitingLaunchEditorMessage = "The gameplay scene has been loaded and awaits a launch method call. To start a match, use "
             + "Tools > Elympics > Match Launcher, or call one of ElympicsMatchLauncher.Instance.Launch*Async methods (e.g. LaunchSinglePlayerAsync).";
 
-        public void Awake()
+        /// <summary>What initializes the gameplay scene, in order of priority.</summary>
+        internal enum Driver
+        {
+            /// <summary><c>ApplicationParameters.ShouldLoadElympicsOnlineServer</c>.</summary>
+            OnlineServer,
+            /// <summary>The <c>ELYMPICS_LAUNCH_MODE</c> parameter, which limits the process to one match.</summary>
+            LaunchModeParameter,
+            /// <summary>The launch data of the launcher session that loaded the scene.</summary>
+            Session,
+            /// <summary>The scene activated while its match is being torn down.</summary>
+            Suppressed,
+            /// <summary>Nothing: the scene awaits a launch call.</summary>
+            None,
+        }
+
+        internal static Driver ChooseDriver(bool isOnlineServer, bool isLaunchModeSet, Func<ElympicsMatchLauncher.SceneAttachment> attach)
+        {
+            if (isOnlineServer)
+                return Driver.OnlineServer;
+            if (isLaunchModeSet)
+                return Driver.LaunchModeParameter;
+            return attach() switch
+            {
+                ElympicsMatchLauncher.SceneAttachment.Attached => Driver.Session,
+                ElympicsMatchLauncher.SceneAttachment.Suppressed => Driver.Suppressed,
+                ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven => Driver.None,
+                _ => Driver.None,
+            };
+        }
+
+        // Everything up to choosing the driver runs synchronously, keeping the order against other scene Awakes.
+        public void Awake() => AwakeAsync().Forget();
+
+        private async UniTaskVoid AwakeAsync()
         {
             if (!ApplicationParameters.IsInitialized && !ApplicationParameters.InitializeParameters())
                 ExitUtility.ExitGame();
 
-            // An online game server runs exactly this scene, whatever the launcher does.
-            if (ApplicationParameters.ShouldLoadElympicsOnlineServer)
-            {
-                var serverConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-                if (serverConfig == null)
-                {
-                    ElympicsLogger.LogError("Game config not found. Not initializing the online game server.");
-                    return;
-                }
-                Run(serverConfig, null, context =>
-                {
-                    var initializer = new OnlineGameServerInitializer();
-                    context.Adopt(initializer);
-                    initializer.Initialize(context.Client, context.Server, context.GameConfig, context.BehavioursManager);
-                    return initializer;
-                });
-                return;
-            }
-
             ElympicsMatchSession? session = null;
-            var attachment = ElympicsMatchLauncher.Current?.AttachGameplayScene(out session) ?? ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven;
-            switch (attachment)
+            var driver = ChooseDriver(ApplicationParameters.ShouldLoadElympicsOnlineServer, LaunchDataFromParameters.IsSet,
+                () => ElympicsMatchLauncher.Current?.AttachGameplayScene(out session) ?? ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven);
+            switch (driver)
             {
-                case ElympicsMatchLauncher.SceneAttachment.Attached:
-                    Run(session!.Launch.GameConfig, session, context => session.Launch.Data.Launch(context));
+                case Driver.OnlineServer:
+                    if (LoadGameConfig() is { } serverConfig)
+                        Run(serverConfig, null, null, null, context =>
+                        {
+                            var initializer = new OnlineGameServerInitializer();
+                            context.Adopt(initializer);
+                            initializer.Initialize(context.Client, context.Server, context.GameConfig, context.BehavioursManager);
+                            return initializer;
+                        });
                     return;
-                case ElympicsMatchLauncher.SceneAttachment.Suppressed:
+                case Driver.LaunchModeParameter:
+                    await RunFromLaunchModeParameterAsync();
+                    return;
+                case Driver.Session:
+                    Run(session!.Launch.GameConfig, session, session, session.SnapshotRetriever, context => session.Launch.Data.Launch(context));
+                    return;
+                case Driver.Suppressed:
                     ElympicsLogger.LogInfo("Gameplay scene loaded while its match is being torn down. Not initializing it.");
                     return;
-                case ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven:
+                case Driver.None:
                 default:
                     ElympicsLogger.LogInfo(Application.isEditor ? AwaitingLaunchEditorMessage : AwaitingLaunchMessage);
                     return;
             }
         }
 
-        /// <param name="session">The launcher session of the match, or null for an online game server.</param>
-        private void Run(ElympicsGameConfig gameConfig, ElympicsMatchSession? session, Func<GameSceneLaunchContext, GameSceneInitializer> launch)
+        /// <summary>Starts the one match of the launch mode parameter. The process quits once it is over, see <see cref="ExitAfterMatchSink"/>.</summary>
+        private async UniTask RunFromLaunchModeParameterAsync()
         {
-            IElympicsMatchLifecycleSink? sink = session;
+            var sink = new ExitAfterMatchSink(_ => ExitUtility.ExitGame());
+            try
+            {
+                var parameters = ApplicationParameters.Parameters;
+                var mode = parameters.LaunchMode.GetValue();
+                var gameConfig = LoadGameConfig();
+                if (gameConfig == null)
+                {
+                    sink.SceneInitializationFailed(ElympicsLaunchErrorCode.UnknownGame, "Game config not found.");
+                    return;
+                }
+                if (!LaunchDataFromParameters.TryCreate(mode, parameters.ReplayPath.GetValue(), gameConfig, out var data, out var error))
+                {
+                    sink.SceneInitializationFailed(ElympicsLaunchErrorCode.UnsupportedMode, error);
+                    return;
+                }
+                if (!data!.TryValidate(gameConfig, ElympicsLaunchPlatform.Current, out var failure))
+                {
+                    sink.SceneInitializationFailed(failure!.Code, failure.message);
+                    return;
+                }
+                ElympicsLogger.LogInfo($"Starting a {data.ModeName} match from the launch mode parameter.");
+
+                SnapshotAnalysisRetriever? retriever = null;
+                if (data is SnapshotReplayLaunchData replay)
+                {
+                    var destroyed = this.GetCancellationTokenOnDestroy();
+                    var result = await SnapshotReplayLoader.LoadAsync(replay, gameConfig, destroyed);
+                    if (!IsStillWanted(destroyed))
+                        return;
+                    if (result.Failure != null)
+                    {
+                        sink.SceneInitializationFailed(result.Failure.Code, result.Failure.message);
+                        return;
+                    }
+                    retriever = result.Retriever;
+                }
+                Run(gameConfig, null, sink, retriever, data.Launch);
+            }
+            catch (OperationCanceledException)
+            {
+                // The scene was destroyed while the replay was downloading.
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
+                sink.SceneInitializationFailed(ElympicsLaunchErrorCode.InternalError, $"{e.GetType().Name}: {e.Message}");
+            }
+        }
+
+        /// <summary>After an await: false if the scene was destroyed (or disabled, so its initializer is already disposed) meanwhile.</summary>
+        internal bool IsStillWanted(CancellationToken destroyed) => !destroyed.IsCancellationRequested && !_disposed;
+
+        private static ElympicsGameConfig? LoadGameConfig()
+        {
+            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+            if (gameConfig == null)
+                ElympicsLogger.LogError("Game config not found. Not initializing the gameplay scene.");
+            return gameConfig;
+        }
+
+        /// <param name="session">The launcher session of the match, or null for a match without one.</param>
+        /// <param name="sink">Receives the match lifecycle reports: the session, a quitting sink, or null.</param>
+        private void Run(ElympicsGameConfig gameConfig, ElympicsMatchSession? session, IElympicsMatchLifecycleSink? sink, SnapshotAnalysisRetriever? snapshotRetriever,
+            Func<GameSceneLaunchContext, GameSceneInitializer> launch)
+        {
             try
             {
                 // ElympicsWorld needed for all modes (client uses it for IsVisibleTo bitmask lookup)
@@ -85,7 +181,7 @@ namespace Elympics
                     session.TrackCollectable(elympicsBehavioursManager);
                 }
 
-                var context = new GameSceneLaunchContext(elympicsClient, elympicsServer, gameConfig, elympicsBehavioursManager, session?.SnapshotRetriever, initializer =>
+                var context = new GameSceneLaunchContext(elympicsClient, elympicsServer, gameConfig, elympicsBehavioursManager, snapshotRetriever, initializer =>
                 {
                     _gameSceneInitializer = initializer;
                     initializer.LifecycleSink = sink;

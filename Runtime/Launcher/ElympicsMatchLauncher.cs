@@ -39,11 +39,13 @@ namespace Elympics
         /// <summary>Every event of the host protocol, as (type, requestId, payloadJson). Consumed by host bridges and editor tooling.</summary>
         internal event Action<string, string, string>? HostEventEmitted;
 
+        internal const string LimitedToParameterMatchMessage = "This process is limited to the match set by ELYMPICS_LAUNCH_MODE.";
+
         internal enum SceneAttachment
         {
             /// <summary>The scene was loaded by the launcher and must initialize for the returned session.</summary>
             Attached,
-            /// <summary>No launcher-driven match: the scene was opened directly (e.g. Play pressed in the Editor) and uses its debug mode.</summary>
+            /// <summary>No launcher-driven match: the scene was opened directly (e.g. Play pressed in the Editor) and does not start one.</summary>
             NotLauncherDriven,
             /// <summary>A launcher-driven match is being torn down or already has its scene. The scene must not initialize at all.</summary>
             Suppressed,
@@ -92,6 +94,7 @@ namespace Elympics
         private readonly ElympicsLaunchPlatform _platform;
         private readonly Action<string> _exitApplication;
         private readonly bool _verifyTeardown;
+        private readonly bool _limitedToParameterMatch;
         private ElympicsProcessGlobals? _processGlobals;
         private int _cycle;
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsMatchLauncher));
@@ -106,8 +109,11 @@ namespace Elympics
         private bool _quitting;
 
         /// <param name="verifyTeardown">Run the post-teardown assertions and memory sample (development builds only).</param>
-        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, ElympicsLaunchPlatform platform, Action<string> exitApplication, bool verifyTeardown = false)
+        /// <param name="limitedToParameterMatch">The launch mode parameter is set: the process runs only that match, and every launch is rejected.</param>
+        internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, ElympicsLaunchPlatform platform, Action<string> exitApplication,
+            bool verifyTeardown = false, bool limitedToParameterMatch = false)
         {
+            _limitedToParameterMatch = limitedToParameterMatch;
             _sceneLoader = sceneLoader;
             _loadConfig = loadConfig;
             _platform = platform;
@@ -140,6 +146,8 @@ namespace Elympics
 
             if (_quitting)
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Aborted, "The application is quitting.");
+            if (_limitedToParameterMatch)
+                return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, LimitedToParameterMatchMessage);
             if (State != MatchLauncherState.Idle)
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, $"A match is already {State}. Abort it and wait for idle before launching another one.");
 

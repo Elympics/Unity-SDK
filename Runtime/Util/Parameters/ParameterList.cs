@@ -41,6 +41,15 @@ namespace Elympics
         public readonly Parameter<string> HostBridge = new("ELYMPICS_HOST_BRIDGE", "elympicsHostBridge", "elympics-host-bridge",
             validationRegex: new Regex("^(auto|webgl|native|none)$", RegexOptions.Compiled | RegexOptions.IgnoreCase));
 
+        /// <summary>
+        /// Starts this match in the gameplay scene, without a launcher session: halfRemoteClient, halfRemoteServer, singlePlayer or snapshotReplay.
+        /// Limits the process to that one match. See <c>LaunchDataFromParameters</c>.
+        /// </summary>
+        public readonly Parameter<string> LaunchMode = new("ELYMPICS_LAUNCH_MODE", "elympicsLaunchMode", "elympics-launch-mode");
+
+        /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
+        public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
+
         private static readonly Regex ShortArgRegex = new("^-([^-])$", RegexOptions.Compiled);
         private static readonly Regex LongArgRegex = new("^--([^-][^=]*)(=([^=]*))?$", RegexOptions.Compiled);
 

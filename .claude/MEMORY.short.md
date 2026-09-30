@@ -18,6 +18,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 ## Verification
 - **dotnet format is not a compile check:** never cite its exit code as proof that code compiles.
 - **Compile and test evidence:** compile with the redirected `dotnet build`. Test with batchmode if a seat is free, `unity command` if the host has `com.unity.pipeline`, or else the open Editor plus `ScriptAssemblies` mtimes, `Editor.log` offsets and `TestResults.xml`.
+- **Generated csprojs follow the Editor's build target:** check `<DefineConstants>` for a platform (e.g. `UNITY_WEBGL`) and also compile the other side of each `#if`: build refs normally, then rebuild the Elympics projects with escaped `DefineConstants` and `BuildProjectReferences=false`. Pass platform capabilities into code under test.
 
 ## Git
 - **Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing:** use `git show :path` / `HEAD:path`. Copy files with unstaged changes before editing.

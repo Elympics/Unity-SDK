@@ -76,6 +76,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `-runTests` fails with `BatchMode: Unity has not been activated with a valid License` before compiling anything.
 - **Time scope:** If `com.unity.pipeline` becomes a dependency of this package, rewrite the test part.
 
+### Generated csprojs follow the Editor's build target
+- **Rule:** before trusting a redirected `dotnet build`, check the platform defines in the host's generated csproj (`<DefineConstants>`). If it has `UNITY_WEBGL` (or another player platform), also compile with that platform's defines swapped for the other platform, so both sides of every `#if` build. Build the references normally first and rebuild only the Elympics projects with `-p:DefineConstants=…` (semicolons escaped as `%3B`) and `-p:BuildProjectReferences=false`. A global define override also replaces the defines of vendored projects such as UniTask. Tests that depend on a platform define should take the capability as input (like `ElympicsLaunchPlatform`), not read the define.
+- **Reason:** Unity generates the csprojs, and runs Editor tests, with the active build target's defines. With WebGL selected, `UNITY_WEBGL` is defined in the Editor, so the `#else` branches are never compiled by a plain redirected build, and Editor tests take the WebGL paths.
+- **Example:** a `#if UNITY_WEBGL` TCP/UDP guard made two validation tests fail in the Editor, whose build target was WebGL. A global `DefineConstants` override then broke UniTask's `UnityWebRequest` extensions (CS8209/CS0246 in `GoogleCloudPingResultFactory.cs`).
+- **Time scope:** If CI or the host project stops generating csprojs per build target, rewrite this.
+
 ## Git
 
 ### Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing

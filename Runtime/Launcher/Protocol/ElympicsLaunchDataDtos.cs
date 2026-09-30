@@ -270,7 +270,7 @@ namespace Elympics
     [Serializable]
     internal class SnapshotReplayLaunchDataDto : ILaunchDataDto
     {
-        /// <summary>A replay file, or a directory ending with a separator.</summary>
+        /// <summary>An http(s) URL, a replay file, or a directory ending with a separator.</summary>
         public string path = "";
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)

@@ -458,6 +458,11 @@ namespace Elympics.Tests
         public void SnapshotReplayByPathWithoutLocalFilesIsUnsupportedMode() =>
             Assert.That(ValidateFailure(new SnapshotReplayLaunchData("replays/match"), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
 
+        [TestCase("https://replays.example/match.snapshots")]
+        [TestCase("http://localhost:8080/match")]
+        public void SnapshotReplayByUrlIsAcceptedEverywhere(string url) =>
+            _ = Validate(new SnapshotReplayLaunchData(url), platform: WebGlPlayer);
+
         [Test]
         public void SnapshotReplayOfMissingFileIsInvalidPayload()
         {

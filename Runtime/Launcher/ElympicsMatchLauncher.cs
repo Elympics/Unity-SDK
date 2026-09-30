@@ -178,12 +178,16 @@ namespace Elympics
             {
                 if (session.Launch.Data is SnapshotReplayLaunchData replay)
                 {
-                    if (!SnapshotReplayLoader.TryLoad(replay, session.Launch.GameConfig, out var retriever, out var failure))
+                    // Under the launch timeout, and cancelled with the match if the launch is aborted meanwhile.
+                    var result = await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
+                    if (session != _session || State != MatchLauncherState.Loading)
+                        return;
+                    if (result.Failure != null)
                     {
-                        FailLaunch(failure!.Code, failure.message);
+                        FailLaunch(result.Failure.Code, result.Failure.message);
                         return;
                     }
-                    session.SnapshotRetriever = retriever;
+                    session.SnapshotRetriever = result.Retriever;
                 }
                 var loaded = await _sceneLoader.LoadSingleAsync(scenePath);
                 if (session != _session || State != MatchLauncherState.Loading)
@@ -192,6 +196,10 @@ namespace Elympics
                     FailLaunch(ElympicsLaunchErrorCode.SceneLoadFailed, $"Could not load gameplay scene {scenePath}. Make sure it is in Build Settings.");
                 else if (!session.SceneInitialized)
                     FailLaunch(ElympicsLaunchErrorCode.SceneLoadFailed, $"Gameplay scene {scenePath} has no {nameof(GameSceneManager)}.");
+            }
+            catch (OperationCanceledException) when (session.Token.IsCancellationRequested)
+            {
+                // Torn down while loading the replay: teardown reports the outcome.
             }
             catch (Exception e)
             {

@@ -10,7 +10,8 @@ namespace Elympics
     public sealed class SnapshotReplayLaunchData : LaunchData
     {
         /// <summary>
-        /// A replay file, or a directory ending with a separator, in which case its newest replay file is used.
+        /// An http(s) URL of a replay file, downloaded before the gameplay scene loads. Otherwise a local replay file,
+        /// or a directory ending with a separator, in which case its newest replay file is used. Only URLs work on WebGL.
         /// </summary>
         public string Path { get; }
 
@@ -26,7 +27,7 @@ namespace Elympics
             if (string.IsNullOrWhiteSpace(Path))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(Path)} is required.", out failure);
             if (IsUrl)
-                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, "Replays from a URL are not supported yet.", out failure);
+                return true;
             if (!platform.HasLocalFiles)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{nameof(Path)} {ElympicsLaunchPlatform.NoLocalFilesMessage}.", out failure);
             if (!SnapshotReplayLoader.LocalReplayExists(Path, out var message))

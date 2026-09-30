@@ -52,7 +52,6 @@ namespace Elympics
             _ = launcher.Boot;
             StartBridge(launcher);
             launcher.EmitReady();
-            bridge?.OnReady();
         }
 
         private static void StartBridge(ElympicsMatchLauncher launcher)

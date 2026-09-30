@@ -520,14 +520,29 @@ namespace Elympics
             LaunchAsync(gameId, data, options, CancellationToken.None).Forget();
         }
 
-        /// <summary>Runs a command received by a host bridge. <paramref name="argument"/> is the command's only string argument.</summary>
-        internal void HandleHostCommand(ElympicsHostCommandKind kind, string argument)
+        /// <summary>
+        /// Runs a command received by a host bridge. Launch commands take (game ID, data JSON, options JSON);
+        /// the others take one string in <paramref name="first"/>. Unused strings are empty.
+        /// </summary>
+        internal void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "")
         {
+            var argument = first;
             switch (kind)
             {
-                case ElympicsHostCommandKind.LaunchMatch:
-                    _ = RejectLaunch(string.Empty, ElympicsLaunchErrorCode.UnsupportedMode,
-                        "The generic launchMatch command was removed. Per-mode launch commands (launchOnline, launchSinglePlayer, ...) come with the next host bridge version.");
+                case ElympicsHostCommandKind.LaunchOnline:
+                    HandleHostLaunch(ElympicsHostLaunchKind.Online, first, second, third);
+                    break;
+                case ElympicsHostCommandKind.LaunchSinglePlayer:
+                    HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, first, second, third);
+                    break;
+                case ElympicsHostCommandKind.LaunchHalfRemoteClient:
+                    HandleHostLaunch(ElympicsHostLaunchKind.HalfRemoteClient, first, second, third);
+                    break;
+                case ElympicsHostCommandKind.LaunchHalfRemoteServer:
+                    HandleHostLaunch(ElympicsHostLaunchKind.HalfRemoteServer, first, second, third);
+                    break;
+                case ElympicsHostCommandKind.LaunchSnapshotReplay:
+                    HandleHostLaunch(ElympicsHostLaunchKind.SnapshotReplay, first, second, third);
                     break;
                 case ElympicsHostCommandKind.AbortMatch:
                 case ElympicsHostCommandKind.ReturnToBoot:

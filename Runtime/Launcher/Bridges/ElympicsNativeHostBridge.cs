@@ -15,7 +15,7 @@ namespace Elympics
     internal sealed class ElympicsNativeHostBridge : IElympicsHostBridge
     {
         /// <summary>Must match <c>ApiVersion</c> in ElympicsHost.cpp.</summary>
-        internal const int ApiVersion = 1;
+        internal const int ApiVersion = 2;
 
         /// <summary>Bounds the work per frame if a host floods commands.</summary>
         private const int MaxCommandsPerFrame = 64;
@@ -28,7 +28,7 @@ namespace Elympics
 
         [DllImport(Library)] private static extern int ElympicsHost_GetApiVersion();
         [DllImport(Library)] private static extern int ElympicsHost_DispatchEvent(byte[] type, byte[] requestId, byte[] payloadJson);
-        [DllImport(Library)] private static extern IntPtr ElympicsHost_PollCommand(out int kind);
+        [DllImport(Library)] private static extern IntPtr ElympicsHost_PollCommand(out int kind, out IntPtr second, out IntPtr third);
 
         public string Name => "native";
 
@@ -57,23 +57,22 @@ namespace Elympics
             return true;
         }
 
-        public void OnReady()
-        { }
-
         public void Poll()
         {
             if (_launcher == null)
                 return;
             for (var i = 0; i < MaxCommandsPerFrame; i++)
             {
-                var argumentPointer = ElympicsHost_PollCommand(out var kind);
+                var firstPointer = ElympicsHost_PollCommand(out var kind, out var secondPointer, out var thirdPointer);
                 if ((ElympicsHostCommandKind)kind == ElympicsHostCommandKind.None)
                     return;
-                // Copied right away: the plugin reuses the buffer on the next poll.
-                var argument = FromUtf8(argumentPointer);
+                // Copied right away: the plugin reuses the buffers on the next poll.
+                var first = FromUtf8(firstPointer);
+                var second = FromUtf8(secondPointer);
+                var third = FromUtf8(thirdPointer);
                 try
                 {
-                    _launcher.HandleHostCommand((ElympicsHostCommandKind)kind, argument);
+                    _launcher.HandleHostCommand((ElympicsHostCommandKind)kind, first, second, third);
                 }
                 catch (Exception e)
                 {

@@ -19,29 +19,10 @@
  */
 
 /**
- * @typedef {{
- *   matchId: string,
- *   userSecret: string,
- *   queueName?: string,
- *   regionName?: string,
- *   gameEngineData?: string | Uint8Array,
- *   matchmakerData?: string | number[],
- *   webServerAddress: string,
- *   matchedPlayers: string | string[],
- *   gameId?: string,
- *   matchMode?: string,
- *   userId?: string,
- *   requestId?: string,
- *   tcpUdpServerAddress?: string,
- * }} ElympicsLaunchData
- */
-
-/**
  * Globals a page may set before the build loads, or that the build installs.
  * Accessed through a cast, as library files can only declare types, not globals.
  * @typedef {Window & {
  *   unityGameOptions?: UnityGameOptions,
- *   elympicsLaunchData?: ElympicsLaunchData | string | null,
  *   elympicsHost?: ElympicsHostApi,
  * }} ElympicsWindow
  */

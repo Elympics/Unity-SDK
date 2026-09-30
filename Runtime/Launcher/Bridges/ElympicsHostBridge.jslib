@@ -1,10 +1,19 @@
 /**
- * JS host API of the Elympics match launcher, installed as `window.elympicsHost` once the build boots.
- * A page drives matches with its methods and receives every launcher event through `onEvent`
- * and as an `elympics` CustomEvent on `window`. Event types and payloads: ElympicsHostProtocol (C#).
+ * JS host API of the Elympics match launcher, installed as `window.elympicsHost` once the build boots
+ * (wait for its `ready` event). A page drives matches with its methods and receives every launcher event
+ * through `onEvent` and as an `elympics` CustomEvent on `window`. Event types and payloads: ElympicsHostProtocol (C#).
  *
+ * Every launch method takes the game ID, the mode's launch data and the launch options. Data and options are
+ * objects or JSON strings; omitted or null means the defaults. A `Uint8Array` (e.g. `gameEngineData`) is sent as base64.
+ *
+ * @typedef {object | string | null | undefined} ElympicsLaunchArgument
+ * @typedef {(gameId: string, data?: ElympicsLaunchArgument, options?: ElympicsLaunchArgument) => void} ElympicsLaunchMethod
  * @typedef {{
- *   launchMatch: (request: object | string) => void,
+ *   launchOnline: ElympicsLaunchMethod,
+ *   launchSinglePlayer: ElympicsLaunchMethod,
+ *   launchHalfRemoteClient: ElympicsLaunchMethod,
+ *   launchHalfRemoteServer: ElympicsLaunchMethod,
+ *   launchSnapshotReplay: ElympicsLaunchMethod,
  *   abortMatch: (requestId?: string) => void,
  *   returnToBoot: (requestId?: string) => void,
  *   quitApplication: (reason?: string) => void,
@@ -18,15 +27,12 @@
  *   $elympicsHostState: ElympicsHostState,
  *   ElympicsHost_Initialize: (commandCallback: FunctionPointer) => void,
  *   ElympicsHost_DispatchEvent: (typePtr: number, requestIdPtr: number, payloadPtr: number) => void,
- *   ElympicsHost_TakeLaunchData: (defaultGameIdPtr: number) => number,
  * }} LibraryElympicsHost
  */
 
 /**
  * @typedef {{
- *   toBase64: (value: unknown) => string,
- *   toList: (value: unknown) => unknown[],
- *   toText: (value: unknown) => string,
+ *   toJson: (value: ElympicsLaunchArgument) => string,
  *   send: (commandCallback: FunctionPointer, kind: number, first?: string, second?: string, third?: string) => void,
  * }} ElympicsHostState
  */
@@ -41,35 +47,24 @@
 const elympicsHostLibrary = {
     /** @alias elympicsHostState */
     /** @type {ElympicsHostState} */ $elympicsHostState: {
-        toBase64: function (value) {
+        // Strings pass through; objects become JSON, with Uint8Arrays as base64.
+        toJson: function (value) {
+            if (typeof value === 'undefined' || value === null) {
+                return '';
+            }
             if (typeof value === 'string') {
                 return value;
             }
-            if (value instanceof Uint8Array) {
-                let binary = '';
-                for (let i = 0; i < value.length; i++) {
-                    binary += String.fromCharCode(value[i]);
+            return JSON.stringify(value, function (_key, field) {
+                if (field instanceof Uint8Array) {
+                    let binary = '';
+                    for (let i = 0; i < field.length; i++) {
+                        binary += String.fromCharCode(field[i]);
+                    }
+                    return btoa(binary);
                 }
-                return btoa(binary);
-            }
-            return '';
-        },
-        // Accepts an array, a JSON array string or a comma-separated string.
-        toList: function (value) {
-            if (Array.isArray(value)) {
-                return value;
-            }
-            if (typeof value !== 'string' || value.length === 0) {
-                return [];
-            }
-            if (value.charAt(0) === '[') {
-                const parsed = JSON.parse(value);
-                return Array.isArray(parsed) ? parsed : [];
-            }
-            return value.split(',').map(function (item) { return item.trim(); });
-        },
-        toText: function (value) {
-            return typeof value === 'string' ? value : '';
+                return field;
+            });
         },
         // Calls the C# command callback synchronously; C# copies the strings before it returns.
         send: function (commandCallback, kind, first, second, third) {
@@ -86,18 +81,26 @@ const elympicsHostLibrary = {
     ElympicsHost_Initialize: function (commandCallback) {
         const elympicsWindow = /** @type {ElympicsWindow} */ (window);
         const existing = elympicsWindow.elympicsHost;
-        /** @param {number} kind @param {string} argument */
+        /** @param {number} kind @param {string} [argument] */
         const send = function (kind, argument) {
-            elympicsHostState.send(commandCallback, kind, argument);
+            elympicsHostState.send(commandCallback, kind, argument || '');
+        };
+        /** @param {number} kind @returns {ElympicsLaunchMethod} */
+        const launch = function (kind) {
+            return function (gameId, data, options) {
+                elympicsHostState.send(commandCallback, kind, gameId || '', elympicsHostState.toJson(data), elympicsHostState.toJson(options));
+            };
         };
         elympicsWindow.elympicsHost = {
-            launchMatch: function (request) {
-                send(1, typeof request === 'string' ? request : JSON.stringify(request));
-            },
-            abortMatch: function (requestId) { send(2, requestId || ''); },
-            returnToBoot: function (requestId) { send(3, requestId || ''); },
-            quitApplication: function (reason) { send(4, reason || ''); },
-            ping: function (requestId) { send(5, requestId || ''); },
+            launchOnline: launch(6),
+            launchSinglePlayer: launch(7),
+            launchHalfRemoteClient: launch(8),
+            launchHalfRemoteServer: launch(9),
+            launchSnapshotReplay: launch(10),
+            abortMatch: function (requestId) { send(2, requestId); },
+            returnToBoot: function (requestId) { send(3, requestId); },
+            quitApplication: function (reason) { send(4, reason); },
+            ping: function (requestId) { send(5, requestId); },
             // Keeps a handler the page registered before the build booted.
             onEvent: existing && typeof existing.onEvent === 'function' ? existing.onEvent : null,
         };
@@ -119,39 +122,6 @@ const elympicsHostLibrary = {
         window.dispatchEvent(new CustomEvent('elympics', {
             detail: { type: type, requestId: requestId, payload: payload, payloadJson: payloadJson },
         }));
-    },
-
-    // Converts window.elympicsLaunchData (set by the page before the build loads) into a launch request, once.
-    ElympicsHost_TakeLaunchData: function (defaultGameIdPtr) {
-        const elympicsWindow = /** @type {ElympicsWindow} */ (window);
-        const data = elympicsWindow.elympicsLaunchData;
-        if (typeof data === 'undefined' || data === null) {
-            return elympicsUtils.stringToBuffer('');
-        }
-        delete elympicsWindow.elympicsLaunchData;
-        try {
-            /** @type {Record<string, unknown>} */
-            const source = typeof data === 'string' ? JSON.parse(data) : data;
-            const request = {
-                requestId: elympicsHostState.toText(source.requestId) || 'elympicsLaunchData',
-                gameId: elympicsHostState.toText(source.gameId) || UTF8ToString(defaultGameIdPtr),
-                matchMode: elympicsHostState.toText(source.matchMode) || 'Online',
-                userId: elympicsHostState.toText(source.userId),
-                matchId: elympicsHostState.toText(source.matchId),
-                userSecret: elympicsHostState.toText(source.userSecret),
-                queueName: elympicsHostState.toText(source.queueName),
-                regionName: elympicsHostState.toText(source.regionName),
-                tcpUdpServerAddress: elympicsHostState.toText(source.tcpUdpServerAddress),
-                webServerAddress: elympicsHostState.toText(source.webServerAddress),
-                gameEngineData: elympicsHostState.toBase64(source.gameEngineData),
-                matchmakerData: elympicsHostState.toList(source.matchmakerData).map(Number),
-                matchedPlayers: elympicsHostState.toList(source.matchedPlayers).map(String),
-            };
-            return elympicsUtils.stringToBuffer(JSON.stringify(request));
-        } catch (error) {
-            console.error('window.elympicsLaunchData could not be read, no match will be launched from it:', error);
-            return elympicsUtils.stringToBuffer('');
-        }
     },
 };
 

@@ -503,12 +503,39 @@ namespace Elympics.Tests
             Assert.That(_launcher.SessionAwaitingScene!.Launch.Data, Is.InstanceOf<SinglePlayerLaunchData>());
         });
 
-        [Test]
-        public void GenericLaunchMatchCommandIsUnsupported()
+        // Command kinds by value: the test method is public, the enums internal.
+        [TestCase(6, "Online")]
+        [TestCase(7, "SinglePlayer")]
+        [TestCase(8, "HalfRemoteClient")]
+        [TestCase(9, "HalfRemoteServer")]
+        [TestCase(10, "SnapshotReplay")]
+        public void LaunchCommandKindsRouteToTheirMode(int kind, string mode)
         {
-            _launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchMatch, "{}");
-            Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
-            Assert.That(_events.Single().Payload, Does.Contain("UnsupportedMode"));
+            // Empty data is invalid for Online and SnapshotReplay, and valid for the others: either way the command reaches its mode.
+            _launcher.HandleHostCommand((ElympicsHostCommandKind)kind, GameId, "", "{\"requestId\": \"cmd\"}");
+
+            var first = _events.First();
+            Assert.That(first.RequestId, Is.EqualTo("cmd"));
+            if (first.Type == "launchAccepted")
+                Assert.That(_launcher.SessionAwaitingScene!.Launch.Data.ModeName, Is.EqualTo(mode));
+            else
+                Assert.That(first.Payload, Does.Contain("InvalidPayload"));
+        }
+
+        [Test]
+        public void RemovedGenericLaunchKindIsIgnored()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            _launcher.HandleHostCommand((ElympicsHostCommandKind)1, "{}");
+            Assert.That(_events, Is.Empty);
+            Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
+        }
+
+        [Test]
+        public void ControlCommandsTakeTheirFirstString()
+        {
+            _launcher.HandleHostCommand(ElympicsHostCommandKind.Ping, "p");
+            Assert.That(_events.Single(), Is.EqualTo(("pong", "p", "")));
         }
 
         [Test]

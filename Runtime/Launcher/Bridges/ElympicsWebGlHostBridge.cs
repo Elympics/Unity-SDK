@@ -2,7 +2,6 @@
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using AOT;
 using Elympics.Core.Logger;
@@ -26,7 +25,6 @@ namespace Elympics
 
         [DllImport("__Internal")] private static extern void ElympicsHost_Initialize(CommandCallback commandCallback);
         [DllImport("__Internal")] private static extern void ElympicsHost_DispatchEvent(string type, string requestId, string payloadJson);
-        [DllImport("__Internal")] private static extern string ElympicsHost_TakeLaunchData(string defaultGameId);
 
         public bool TryStart(ElympicsMatchLauncher newLauncher)
         {
@@ -41,7 +39,7 @@ namespace Elympics
         {
             try
             {
-                launcher?.HandleHostCommand((ElympicsHostCommandKind)kind, Marshal.PtrToStringAuto(first) ?? string.Empty);
+                launcher?.HandleHostCommand((ElympicsHostCommandKind)kind, ToText(first), ToText(second), ToText(third));
             }
             catch (Exception e)
             {
@@ -49,27 +47,15 @@ namespace Elympics
             }
         }
 
-        public void DispatchEvent(string type, string requestId, string payloadJson) => ElympicsHost_DispatchEvent(type, requestId, payloadJson);
+        private static string ToText(IntPtr pointer) => pointer == IntPtr.Zero ? string.Empty : Marshal.PtrToStringAuto(pointer) ?? string.Empty;
 
-        /// <summary>Launches straight into a match if the page set <c>window.elympicsLaunchData</c> before the build loaded.</summary>
-        public void OnReady()
-        {
-            if (launcher == null)
-                return;
-            var defaultGameId = ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(game => game != null)?.GameId ?? string.Empty;
-            var requestJson = ElympicsHost_TakeLaunchData(defaultGameId);
-            if (!string.IsNullOrEmpty(requestJson))
-                launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchMatch, requestJson);
-        }
+        public void DispatchEvent(string type, string requestId, string payloadJson) => ElympicsHost_DispatchEvent(type, requestId, payloadJson);
 
         public void Dispose() => launcher = null;
 #else
         public bool TryStart(ElympicsMatchLauncher launcher) => false;
 
         public void DispatchEvent(string type, string requestId, string payloadJson)
-        { }
-
-        public void OnReady()
         { }
 
         public void Dispose()

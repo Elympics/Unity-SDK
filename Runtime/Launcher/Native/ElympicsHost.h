@@ -36,8 +36,19 @@ ELYMPICS_HOST_EXPORT void ElympicsHost_RegisterEventHandler(ElympicsHostEventHan
 
 // Commands (host -> Unity). All strings are UTF-8 and copied; NULL is treated as "".
 
-// requestJson: an ElympicsLaunchRequest serialized to JSON. Its "requestId" is echoed in the replies.
-ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchMatch(const char *requestJson);
+// Launch commands, one per match mode. Each takes:
+// gameId:      the GUID of a game in ElympicsConfig's available games.
+// dataJson:    the mode's launch data as flat JSON, or "" for the mode's defaults. The fields are those of the
+//              C# *LaunchData types, camelCase; unset is "", [] or 0 (-1 for playerIndex). See Documentation~/MatchLauncher.md.
+// optionsJson: {"requestId", "launchTimeoutSeconds", "postMatchTimeoutSeconds"}, or "" for defaults.
+//              The requestId is echoed in the replies; timeouts of 0 mean the default, -1 never.
+ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchOnline(const char *gameId, const char *dataJson, const char *optionsJson);
+ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchSinglePlayer(const char *gameId, const char *dataJson, const char *optionsJson);
+ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteClient(const char *gameId, const char *dataJson, const char *optionsJson);
+// Not available on iOS, which cannot listen for connections: fails with "UnsupportedMode".
+ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteServer(const char *gameId, const char *dataJson, const char *optionsJson);
+ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchSnapshotReplay(const char *gameId, const char *dataJson, const char *optionsJson);
+
 // Leaves the current match whatever its state. Always succeeds; replies "abortAccepted" then "idle".
 ELYMPICS_HOST_EXPORT void ElympicsHost_AbortMatch(const char *requestId);
 // Same as ElympicsHost_AbortMatch, for readability once the match has ended.
@@ -49,7 +60,7 @@ ELYMPICS_HOST_EXPORT void ElympicsHost_Ping(const char *requestId);
 
 // Used by the SDK's C# side only.
 ELYMPICS_HOST_EXPORT int ElympicsHost_DispatchEvent(const char *type, const char *requestId, const char *payloadJson);
-ELYMPICS_HOST_EXPORT const char *ElympicsHost_PollCommand(int *kind);
+ELYMPICS_HOST_EXPORT const char *ElympicsHost_PollCommand(int *kind, const char **second, const char **third);
 ELYMPICS_HOST_EXPORT int ElympicsHost_GetApiVersion(void);
 
 #ifdef __cplusplus

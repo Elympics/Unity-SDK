@@ -57,6 +57,8 @@ namespace Elympics
             failure = null;
             if (string.IsNullOrEmpty(ServerAddress))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} is required.", out failure);
+            if (UsesTcpUdp(gameConfig) && !LaunchDataParsing.CanUseTcpUdp)
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, LaunchDataParsing.NoTcpUdpMessage, out failure);
             if (UsesTcpUdp(gameConfig) && !LaunchDataParsing.TryParseEndPoint(ServerAddress, out _))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} must be ip:port with TCP/UDP, got \"{ServerAddress}\".", out failure);
             if (string.IsNullOrEmpty(UserSecret))

@@ -48,6 +48,8 @@ namespace Elympics
         internal override bool TryValidate(ElympicsGameConfig gameConfig, bool platformCanListen, out ElympicsLaunchFailure? failure)
         {
             failure = null;
+            if (UseTcpUdpInsteadOfWebRtc == true && !LaunchDataParsing.CanUseTcpUdp)
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, LaunchDataParsing.NoTcpUdpMessage, out failure);
             if (ServerAddress != null && !LaunchDataParsing.TryParseEndPoint(ServerAddress, out _))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} must be ip:port, got \"{ServerAddress}\".", out failure);
             if (PlayerIndex is < 0)

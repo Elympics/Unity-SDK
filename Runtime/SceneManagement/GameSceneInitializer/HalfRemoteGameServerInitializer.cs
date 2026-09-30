@@ -21,6 +21,12 @@ namespace Elympics
 
         public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => _data = data;
 
+        public override void Initialize(ElympicsClient client, ElympicsServer server, ElympicsGameConfig gameConfig, ElympicsBehavioursManager behavioursManager)
+        {
+            server.IsHalfRemoteServer = true;
+            base.Initialize(client, server, gameConfig, behavioursManager);
+        }
+
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {
             _systemToken = new CancellationTokenSource();

@@ -10,8 +10,8 @@ using UnityEngine;
 namespace Elympics.Editor.Launcher
 {
     /// <summary>
-    /// Drives <see cref="ElympicsMatchLauncher"/> in play mode the way an out-of-process host would,
-    /// and shows every host event it emits.
+    /// Launches matches in the Editor: one click per mode with the selected game's <see cref="ElympicsGameConfig"/> defaults,
+    /// or any launch as JSON, the way an out-of-process host would. Shows every host event the launcher emits.
     /// </summary>
     internal sealed class MatchLauncherWindow : EditorWindow
     {
@@ -30,6 +30,7 @@ namespace Elympics.Editor.Launcher
         private Vector2 _optionsScroll;
         private Vector2 _logScroll;
         private int _requestCounter;
+        private string? _launchModeSource;
 
         [MenuItem(MenuPath)]
         public static void OpenWindow() => GetWindow<MatchLauncherWindow>().titleContent = new GUIContent(EditorTitle);
@@ -42,6 +43,25 @@ namespace Elympics.Editor.Launcher
                 dataJson = TemplateData(launchKind);
             if (string.IsNullOrEmpty(optionsJson))
                 optionsJson = TemplateOptions();
+            _launchModeSource = LaunchModeParameterSource();
+        }
+
+        private void OnFocus() => _launchModeSource = LaunchModeParameterSource();
+
+        /// <summary>
+        /// Where the launch mode parameter of this Editor comes from, or null if it is not set. With it set, the launcher
+        /// rejects every launch, so the window's launch controls are disabled.
+        /// </summary>
+        private static string? LaunchModeParameterSource()
+        {
+            const string argument = "--elympics-launch-mode";
+            if (CloneArguments.Read().Any(arg => arg.StartsWith(argument)))
+                return "Launch mode is set by this clone's ParrelSync arguments (" + argument + "). Edit or clear them in the Clones Manager to launch from here.";
+            if (Environment.GetCommandLineArgs().Any(arg => arg.StartsWith(argument)))
+                return "Launch mode is set by this Editor's command line (" + argument + "). Restart the Editor without it to launch from here.";
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ELYMPICS_LAUNCH_MODE")))
+                return "Launch mode is set by the ELYMPICS_LAUNCH_MODE environment variable. Restart the Editor without it to launch from here.";
+            return null;
         }
 
         private void OnDisable() => Subscribe(null);
@@ -94,7 +114,59 @@ namespace Elympics.Editor.Launcher
             var launcher = _subscribed;
             EditorGUILayout.LabelField("State", launcher == null ? "Not in play mode" : $"{launcher.State} (in match: {launcher.IsCurrentlyInMatch})", EditorStyles.boldLabel);
 
+            if (_launchModeSource != null)
+                EditorGUILayout.HelpBox(_launchModeSource, MessageType.Info);
+            using (new EditorGUI.DisabledScope(_launchModeSource != null))
+                DrawLaunchControls(launcher);
+
             EditorGUILayout.Space();
+            using (new EditorGUI.DisabledScope(launcher == null))
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Abort / return to boot"))
+                    SendWithId("abortMatch", id => launcher!.HandleHostAbort(id));
+                if (GUILayout.Button("Ping"))
+                    SendWithId("ping", id => launcher!.HandleHostPing(id));
+                if (GUILayout.Button("Quit application"))
+                    Send("quitApplication", () => launcher!.HandleHostQuit("Match Launcher window"));
+            }
+
+            EditorGUILayout.Space();
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Events", EditorStyles.boldLabel);
+                if (GUILayout.Button("Clear", GUILayout.Width(60)))
+                    log.Clear();
+            }
+            _logScroll = EditorGUILayout.BeginScrollView(_logScroll, GUILayout.ExpandHeight(true));
+            foreach (var line in log)
+                EditorGUILayout.SelectableLabel(line, EditorStyles.wordWrappedMiniLabel, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void DrawLaunchControls(ElympicsMatchLauncher? launcher)
+        {
+
+            EditorGUILayout.Space();
+            var game = SelectedGame();
+            EditorGUILayout.LabelField("Quick launch", game != null ? $"{game.GameName}, with its config defaults" : "No game selected in ElympicsConfig", EditorStyles.boldLabel);
+            using (new EditorGUI.DisabledScope(game == null || launcher is { State: not MatchLauncherState.Idle }))
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("▶ Single player"))
+                    QuickLaunch(ElympicsHostLaunchKind.SinglePlayer, game!);
+                if (GUILayout.Button("▶ HR server"))
+                    QuickLaunch(ElympicsHostLaunchKind.HalfRemoteServer, game!);
+                if (GUILayout.Button("▶ HR client"))
+                    QuickLaunch(ElympicsHostLaunchKind.HalfRemoteClient, game!);
+                if (GUILayout.Button(new GUIContent("▶ Replay", game != null ? $"Replays {game.SnapshotFilePath}" : "")))
+                    QuickLaunch(ElympicsHostLaunchKind.SnapshotReplay, game!);
+            }
+            if (game != null && !Application.runInBackground)
+                EditorGUILayout.HelpBox("PlayerSettings \"Run In Background\" is off: half-remote matches stop simulating in out-of-focus Editor windows.", MessageType.Warning);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("JSON launch", EditorStyles.boldLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
                 var kind = (ElympicsHostLaunchKind)EditorGUILayout.EnumPopup("Match mode", launchKind);
@@ -134,25 +206,8 @@ namespace Elympics.Editor.Launcher
             {
                 if (GUILayout.Button("Launch"))
                     Send($"launch{launchKind}", () => launcher!.HandleHostLaunch(launchKind, gameId, dataJson, optionsJson));
-                if (GUILayout.Button("Abort / return to boot"))
-                    SendWithId("abortMatch", id => launcher!.HandleHostAbort(id));
-                if (GUILayout.Button("Ping"))
-                    SendWithId("ping", id => launcher!.HandleHostPing(id));
-                if (GUILayout.Button("Quit application"))
-                    Send("quitApplication", () => launcher!.HandleHostQuit("Match Launcher window"));
             }
 
-            EditorGUILayout.Space();
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.LabelField("Events", EditorStyles.boldLabel);
-                if (GUILayout.Button("Clear", GUILayout.Width(60)))
-                    log.Clear();
-            }
-            _logScroll = EditorGUILayout.BeginScrollView(_logScroll, GUILayout.ExpandHeight(true));
-            foreach (var line in log)
-                EditorGUILayout.SelectableLabel(line, EditorStyles.wordWrappedMiniLabel, GUILayout.Height(EditorGUIUtility.singleLineHeight));
-            EditorGUILayout.EndScrollView();
         }
 
         private void Send(string command, Action send)
@@ -173,6 +228,14 @@ namespace Elympics.Editor.Launcher
             var path = EditorUtility.OpenFilePanel("Load launch data", Application.dataPath, "json");
             if (!string.IsNullOrEmpty(path))
                 dataJson = File.ReadAllText(path);
+        }
+
+        private static ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.GetCurrentGameConfig();
+
+        private void QuickLaunch(ElympicsHostLaunchKind kind, ElympicsGameConfig game)
+        {
+            Append($"{DateTime.Now:HH:mm:ss.fff} → {kind} of {game.GameName}{(Application.isPlaying ? "" : " (entering play mode)")}");
+            EditorMatchLaunchQueue.Launch(kind, game.GameId);
         }
 
         private static string DefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";

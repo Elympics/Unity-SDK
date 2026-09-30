@@ -151,10 +151,13 @@ namespace Elympics
             _currentIsBot = false;
         }
 
+        /// <summary>Set by the half-remote server initializer, which needs the simulation to run in out-of-focus windows.</summary>
+        internal bool IsHalfRemoteServer { get; set; }
+
         private void LogHalfRemoteRunInBackgroundErrorIfApplicable()
         {
-            if (!Application.runInBackground && Config.GameplaySceneDebugMode == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
-                _logger.LogError("Development Mode is set to Half Remote, but PlayerSettings \"Run In Background\" option is false, "
+            if (!Application.runInBackground && IsHalfRemoteServer)
+                _logger.LogError("This is a half-remote server, but PlayerSettings \"Run In Background\" option is false, "
                     + "hence network simulation will not be performed in out-of-focus windows. "
                     + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
         }

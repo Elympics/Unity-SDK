@@ -3,12 +3,10 @@
 using System;
 using System.Globalization;
 using System.IO;
-using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Elympics.Editor.Config
@@ -54,12 +52,6 @@ namespace Elympics.Editor.Config
             var predictionLimit = inspectorTree.Q<SliderInt>("prediction-limit");
             var totalPredictionLimit = inspectorTree.Q<Label>("total-prediction-limit");
 
-            var debugMode = inspectorTree.Q<EnumField>("debug-mode");
-            var debugModeSummary = inspectorTree.Q<Label>("debug-mode-summary");
-            var debugModeWarning = inspectorTree.Q<HelpBox>("debug-mode-warning");
-            var halfRemoteOptions = inspectorTree.Q<GroupBox>("half-remote-options");
-            var halfRemoteMode = inspectorTree.Q<EnumField>("half-remote-mode");
-            var halfRemoteClientOptions = inspectorTree.Q<GroupBox>("client-half-remote-options");
             var halfRemoteRecordSnapshot = inspectorTree.Q<Toggle>("half-remote-record-snapshot");
             foreach (var (id, loader) in new (string, Action<HalfRemoteLagConfig>)[]
                      {
@@ -71,7 +63,6 @@ namespace Elympics.Editor.Config
                          ("lag-preset-total-mess", c => c.LoadTotalMess()),
                      })
                 inspectorTree.Q<Button>(id).clicked += () => loader(gameConfig.HalfRemoteLagConfig);
-            var snapshotReplayOptions = inspectorTree.Q<GroupBox>("snapshot-replay-options");
             var snapshotReplayPath = inspectorTree.Q<TextField>("snapshot-replay-path");
             var snapshotReplayError = inspectorTree.Q<HelpBox>("snapshot-replay-error");
 
@@ -105,16 +96,6 @@ namespace Elympics.Editor.Config
             _ = inputLag.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
             _ = predictionLimit.RegisterValueChangedCallback(_ => UpdateTotalPredictionLimitLabel());
 
-            _ = halfRemoteMode.RegisterValueChangedCallback(_ => UpdateHalfRemoteModeOptions());
-            _ = debugMode.RegisterValueChangedCallback(evt =>
-            {
-                UpdateDebugModeOptions();
-                if (!Application.runInBackground && (ElympicsGameConfig.GameplaySceneDebugModeEnum)evt.newValue == ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote)
-                    ElympicsLogger.LogError("Development Mode is set to Half Remote but PlayerSettings "
-                        + "\"Run In Background\" option is false. Network simulation will not be performed in "
-                        + "out-of-focus Editor windows. Please make sure that PlayerSettings \"Run In Background\" "
-                        + "option is set to true.");
-            });
             _ = halfRemoteRecordSnapshot.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
             _ = snapshotReplayPath.RegisterValueChangedCallback(_ => UpdateSnapshotReplayOptions());
 
@@ -129,7 +110,6 @@ namespace Elympics.Editor.Config
             UpdateSceneButton();
             UpdateTicksPerSecondLabel();
             UpdateTotalPredictionLimitLabel();
-            UpdateDebugModeOptions();
             UpdateSnapshotReplayOptions();
             UpdateInputLagHighValue();
 
@@ -157,68 +137,16 @@ namespace Elympics.Editor.Config
                 totalPredictionLimit.text = $"Total prediction limit: {totalLimit} ms";
             }
 
-            void UpdateDebugModeOptions()
-            {
-                debugModeWarning.text = "";
-                debugModeWarning.SetVisible(false);
-                halfRemoteOptions.SetVisible(false);
-                snapshotReplayOptions.SetVisible(false);
-                switch (gameConfig.GameplaySceneDebugMode)
-                {
-                    case ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote:
-                        debugModeSummary.text = "Run the server, players and bots separately with simulated networking. The mock network can simulate many connection types. Best for gameplay development, provides a semi-realistic game behavior with relatively quick testing cycles. You can also test on multiple devices by providing a non-local server address. A single Unity instance can host either a server or a client, use ParrelSync to create more instances.";
-                        debugModeWarning.text = "This mode is only a simulation of production environment!";
-                        debugModeWarning.SetVisible(true);
-                        halfRemoteOptions.SetVisible(true);
-                        UpdateHalfRemoteModeOptions();
-                        break;
-                    case ElympicsGameConfig.GameplaySceneDebugModeEnum.SnapshotReplay:
-                        debugModeSummary.text = "Replay previously recorded match using snapshots from a file.";
-                        snapshotReplayOptions.SetVisible(true);
-                        halfRemoteRecordSnapshot.SetVisible(false);
-                        UpdateSnapshotReplayOptions();
-                        break;
-                    case ElympicsGameConfig.GameplaySceneDebugModeEnum.SinglePlayer:
-                        debugModeSummary.text = "Play locally acting as server and client at the same time. Good for anything outside of gameplay, such as UI, graphics and sound design.";
-                        debugModeWarning.text = "This mode is not fit for gameplay development!";
-                        break;
-                    default:
-                        debugModeSummary.text = "";
-                        debugModeSummary.SetVisible(false);
-                        break;
-                }
-            }
-
-            void UpdateHalfRemoteModeOptions()
-            {
-                var isServer = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Server;
-                var isClient = gameConfig.HalfRemoteMode == ElympicsGameConfig.HalfRemoteModeEnum.Client;
-                snapshotReplayOptions.SetVisible(isServer);
-                halfRemoteRecordSnapshot.SetVisible(isServer);
-                halfRemoteClientOptions.SetVisible(isClient);
-                UpdateSnapshotReplayOptions();
-            }
-
             void UpdateSnapshotReplayOptions()
             {
-                snapshotReplayPath.SetEnabled(true);
                 snapshotReplayError.SetVisible(false);
                 snapshotReplayError.text = "";
 
-                if (gameConfig is
-                    {
-                        GameplaySceneDebugMode: ElympicsGameConfig.GameplaySceneDebugModeEnum.HalfRemote,
-                        HalfRemoteMode: ElympicsGameConfig.HalfRemoteModeEnum.Server,
-                        RecordSnapshots: false,
-                    })
-                    snapshotReplayPath.SetEnabled(false);
-
-                if (!snapshotReplayPath.enabledSelf)
+                // Recording creates the file, and an http(s) URL is downloaded at launch: only an existing local replay can be checked.
+                if (string.IsNullOrWhiteSpace(gameConfig.SnapshotFilePath) || gameConfig.RecordSnapshots
+                    || new SnapshotReplayLaunchData(gameConfig.SnapshotFilePath).IsUrl)
                     return;
-
-                if (string.IsNullOrWhiteSpace(gameConfig.SnapshotFilePath))
-                    SetErrorMessage("Snapshot file path is required.");
-                else if (gameConfig.SnapshotFilePath.EndsWith(Path.DirectorySeparatorChar) || gameConfig.SnapshotFilePath.EndsWith(Path.AltDirectorySeparatorChar))
+                if (gameConfig.SnapshotFilePath.EndsWith(Path.DirectorySeparatorChar) || gameConfig.SnapshotFilePath.EndsWith(Path.AltDirectorySeparatorChar))
                 {
                     if (!Directory.Exists(gameConfig.SnapshotFilePath))
                         SetErrorMessage("Snapshot file path is invalid or points to a folder that does not exist or can't be accessed.");

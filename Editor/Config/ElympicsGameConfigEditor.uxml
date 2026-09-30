@@ -32,11 +32,8 @@
     <ui:VisualElement class="separator" style="height: 9px;" />
     <ui:Foldout text="&lt;b&gt;Debug options&lt;/b&gt;" name="debug-foldout">
         <ui:Toggle label="Detailed network log" name="detailed-network-log" binding-path="detailedNetworkLog" tooltip="The log contains errors and warnings to differentiate between slight and serious throttle" />
-        <uie:EnumField label="Debug mode" binding-path="mode" name="debug-mode" type="Elympics.ElympicsGameConfig+GameplaySceneDebugModeEnum,Elympics" />
-        <ui:Label display-tooltip-when-elided="true" name="debug-mode-summary" style="-unity-font-style: italic; white-space: normal;" />
-        <ui:HelpBox display-tooltip-when-elided="true" message-type="Warning" name="debug-mode-warning" style="display: none;" />
+        <ui:Label text="Launch defaults, used by Tools &gt; Elympics &gt; Match Launcher, ELYMPICS_LAUNCH_MODE and launch data that leaves them unset." display-tooltip-when-elided="true" name="launch-defaults-summary" style="-unity-font-style: italic; white-space: normal;" />
         <ui:GroupBox name="half-remote-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
-            <uie:EnumField label="Half remote mode" name="half-remote-mode" type="Elympics.ElympicsGameConfig+HalfRemoteModeEnum,Elympics" binding-path="halfRemoteMode" />
             <ui:TextField picking-mode="Ignore" label="Server IP" name="half-remote-ip" tooltip="IP Address of server" binding-path="ipForHalfRemoteMode" />
             <uie:IntegerField label="Server TCP port" name="half-remote-tcp-port" tooltip="Port TCP server listens on" binding-path="tcpPortForHalfRemoteMode" />
             <uie:IntegerField label="Server Web port" name="half-remote-web-port" tooltip="Port Web server listens on" binding-path="webPortForHalfRemoteMode" />

@@ -129,7 +129,6 @@ namespace Elympics
             var gameId = Guid.TryParse(gameConfig.GameId, out var parsedId) ? parsedId : Guid.NewGuid();
             ElympicsLogger.State.SetGame(gameId, gameConfig.GameVersion);
             ElympicsLogger.State.SetGameName(gameConfig.GameName);
-            ElympicsLogger.State.SetGameMode(gameConfig.GameplaySceneDebugMode.ToString());
             if (gameConfig.UseWeb)
                 ElympicsLogger.State.SetWebRtc();
             else

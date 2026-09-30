@@ -98,7 +98,7 @@ namespace Elympics.Tests.SnapshotAnalysis
 
         #region URL
 
-        /// <summary>Serves one response on a free localhost port. Desktop only.</summary>
+        /// <summary>Serves one response on a free loopback port. Desktop only.</summary>
         private sealed class OneShotServer : IDisposable
         {
             private readonly HttpListener _listener = new();
@@ -107,8 +107,9 @@ namespace Elympics.Tests.SnapshotAnalysis
             public OneShotServer(int status, byte[] body)
             {
                 var port = FreePort();
-                Url = $"http://localhost:{port}/replay{EditorSnapshotAnalysisCollector.DefaultFileExtension}";
-                _listener.Prefixes.Add($"http://localhost:{port}/");
+                // 127.0.0.1, not localhost: the web request may resolve localhost to ::1, where the listener is not bound.
+                Url = $"http://127.0.0.1:{port}/replay{EditorSnapshotAnalysisCollector.DefaultFileExtension}";
+                _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
                 _listener.Start();
                 _ = Task.Run(async () =>
                 {

@@ -277,6 +277,8 @@ mode when the match ends. An edited argument is left alone.
 - **Controls:** abort, ping and quit. The window logs every event.
 - **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note
   naming the parameter's source.
+- **The gameplay scene must be enabled in Build Settings**, in the Editor too. The launcher loads it by path,
+  so a launch fails with `SceneLoadFailed` otherwise. The window says so when the selected game's scene is missing.
 
 The samples launch the same way. Open a sample's boot or gameplay scene and use the window.
 

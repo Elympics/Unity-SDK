@@ -162,6 +162,9 @@ namespace Elympics.Editor.Launcher
                 if (GUILayout.Button(new GUIContent("▶ Replay", game != null ? $"Replays {game.SnapshotFilePath}" : "")))
                     QuickLaunch(ElympicsHostLaunchKind.SnapshotReplay, game!);
             }
+            if (game != null && !IsInBuildSettings(game.GameplayScene))
+                EditorGUILayout.HelpBox($"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "
+                    + "Add it in File > Build Settings.", MessageType.Error);
             if (game != null && !Application.runInBackground)
                 EditorGUILayout.HelpBox("PlayerSettings \"Run In Background\" is off: half-remote matches stop simulating in out-of-focus Editor windows.", MessageType.Warning);
 
@@ -229,6 +232,8 @@ namespace Elympics.Editor.Launcher
             if (!string.IsNullOrEmpty(path))
                 dataJson = File.ReadAllText(path);
         }
+
+        private static bool IsInBuildSettings(string scenePath) => EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == scenePath);
 
         private static ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.GetCurrentGameConfig();
 

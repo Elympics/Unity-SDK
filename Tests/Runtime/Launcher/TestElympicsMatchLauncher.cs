@@ -76,8 +76,9 @@ namespace Elympics.Tests
             _config.bootScene = BootScene;
             _exits = new List<string>();
             _launcher = new ElympicsMatchLauncher(_loader, () => _config, ElympicsLaunchPlatform.Unrestricted, reason => _exits.Add(reason));
-            _events = new List<(string, string, string)>();
-            _launcher.HostEventEmitted += (type, requestId, payload) => _events.Add((type, requestId, payload));
+            // A local list: a launcher a test leaves loading must not add its late events to the next test's list.
+            var events = _events = new List<(string, string, string)>();
+            _launcher.HostEventEmitted += (type, requestId, payload) => events.Add((type, requestId, payload));
         }
 
         [TearDown]

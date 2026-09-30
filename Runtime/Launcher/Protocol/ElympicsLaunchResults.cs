@@ -7,12 +7,12 @@ namespace Elympics
     [PublicAPI]
     public static class ElympicsLaunchDefaults
     {
-        /// <summary>Used when <see cref="ElympicsLaunchRequest.launchTimeoutSeconds"/> is 0.</summary>
+        /// <summary>Used when <see cref="ElympicsLaunchOptions.LaunchTimeout"/> is null.</summary>
         public const int LaunchTimeoutSeconds = 60;
-        /// <summary>Used when <see cref="ElympicsLaunchRequest.postMatchTimeoutSeconds"/> is 0.</summary>
+        /// <summary>Used when <see cref="ElympicsLaunchOptions.PostMatchTimeout"/> is null.</summary>
         public const int PostMatchTimeoutSeconds = 300;
-        /// <summary>Set <see cref="ElympicsLaunchRequest.postMatchTimeoutSeconds"/> to this to wait in <c>MatchLauncherState.Ended</c> forever.</summary>
-        public const int NoPostMatchTimeout = -1;
+        /// <summary>A timeout in seconds on the wire (<c>launchTimeoutSeconds</c>, <c>postMatchTimeoutSeconds</c>) that means never.</summary>
+        public const int NoTimeout = -1;
         /// <summary>How long <c>IElympicsMatchLauncher.QuitApplication</c> lets teardown run before exiting anyway.</summary>
         public const float QuitGraceSeconds = 2f;
     }

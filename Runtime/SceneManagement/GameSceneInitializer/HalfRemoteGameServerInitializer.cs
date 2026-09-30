@@ -13,10 +13,15 @@ namespace Elympics
 {
     internal class HalfRemoteGameServerInitializer : GameServerInitializer
     {
+        /// <summary>The launch settings of this server.</summary>
+        internal HalfRemoteServerLaunchData Data { get; }
+
         private SimpleHttpSignalingServer _signalingServer;
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
         private CancellationTokenSource _systemToken;
+
+        public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => Data = data;
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)
         {

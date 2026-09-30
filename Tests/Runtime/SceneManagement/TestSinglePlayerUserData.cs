@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Elympics.Models.Matchmaking;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -23,8 +22,8 @@ namespace Elympics.Tests
         [TearDown]
         public void TearDown() => UnityEngine.Object.DestroyImmediate(_config);
 
-        private static MatchmakingFinishedData MatchData(params Guid[] players) =>
-            new(Guid.NewGuid(), "", "queue", "region", new byte[] { 1, 2 }, new[] { 3f }, "", "", players);
+        private static SinglePlayerLaunchData MatchData(Guid? userId) =>
+            new(Guid.NewGuid(), userId, "queue", "region", new byte[] { 1, 2 }, new[] { 3f });
 
         private void AddTestPlayer(bool isBot, double difficulty = 0) =>
             _config.TestPlayers.Add(new ElympicsGameConfig.InitialUserData { isBot = isBot, botDifficulty = difficulty });
@@ -86,9 +85,9 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void EmptyMatchedPlayersFallsBackToEmptyGuid()
+        public void MissingUserIdFallsBackToEmptyGuid()
         {
-            var users = SinglePlayerGameInitializer.CreateUserData(MatchData(), _config);
+            var users = SinglePlayerGameInitializer.CreateUserData(MatchData(null), _config);
 
             Assert.That(users, Has.Count.EqualTo(1));
             Assert.That(users[0].UserId, Is.EqualTo(Guid.Empty));

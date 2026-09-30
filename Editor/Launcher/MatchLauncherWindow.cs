@@ -19,11 +19,15 @@ namespace Elympics.Editor.Launcher
         private const string EditorTitle = "Match Launcher";
         private const int MaxLogEntries = 500;
 
-        [SerializeField] private string requestJson = "";
+        [SerializeField] private ElympicsHostLaunchKind launchKind = ElympicsHostLaunchKind.SinglePlayer;
+        [SerializeField] private string gameId = "";
+        [SerializeField] private string dataJson = "";
+        [SerializeField] private string optionsJson = "";
         [SerializeField] private List<string> log = new();
 
         private ElympicsMatchLauncher? _subscribed;
-        private Vector2 _requestScroll;
+        private Vector2 _dataScroll;
+        private Vector2 _optionsScroll;
         private Vector2 _logScroll;
         private int _requestCounter;
 
@@ -32,8 +36,12 @@ namespace Elympics.Editor.Launcher
 
         private void OnEnable()
         {
-            if (string.IsNullOrEmpty(requestJson))
-                requestJson = TemplateRequest();
+            if (string.IsNullOrEmpty(gameId))
+                gameId = DefaultGameId();
+            if (string.IsNullOrEmpty(dataJson))
+                dataJson = TemplateData(launchKind);
+            if (string.IsNullOrEmpty(optionsJson))
+                optionsJson = TemplateOptions();
         }
 
         private void OnDisable() => Subscribe(null);
@@ -87,25 +95,45 @@ namespace Elympics.Editor.Launcher
             EditorGUILayout.LabelField("State", launcher == null ? "Not in play mode" : $"{launcher.State} (in match: {launcher.IsCurrentlyInMatch})", EditorStyles.boldLabel);
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Launch request (ElympicsLaunchRequest JSON)");
-            _requestScroll = EditorGUILayout.BeginScrollView(_requestScroll, GUILayout.MinHeight(120), GUILayout.MaxHeight(260));
-            requestJson = EditorGUILayout.TextArea(requestJson, GUILayout.ExpandHeight(true));
-            EditorGUILayout.EndScrollView();
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var kind = (ElympicsHostLaunchKind)EditorGUILayout.EnumPopup("Match mode", launchKind);
+                if (kind != launchKind)
+                {
+                    launchKind = kind;
+                    dataJson = TemplateData(kind);
+                }
+            }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                gameId = EditorGUILayout.TextField("Game ID", gameId);
+                if (GUILayout.Button("First game", GUILayout.Width(80)))
+                    gameId = DefaultGameId();
+            }
 
+            EditorGUILayout.LabelField($"Launch data ({launchKind} JSON, empty for defaults)");
+            _dataScroll = EditorGUILayout.BeginScrollView(_dataScroll, GUILayout.MinHeight(100), GUILayout.MaxHeight(240));
+            dataJson = EditorGUILayout.TextArea(dataJson, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Template"))
-                    requestJson = TemplateRequest();
+                    dataJson = TemplateData(launchKind);
                 if (GUILayout.Button("Load file…"))
-                    LoadRequestFromFile();
+                    LoadDataFromFile();
             }
+
+            EditorGUILayout.LabelField("Launch options (JSON, empty for defaults)");
+            _optionsScroll = EditorGUILayout.BeginScrollView(_optionsScroll, GUILayout.MinHeight(60), GUILayout.MaxHeight(120));
+            optionsJson = EditorGUILayout.TextArea(optionsJson, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
 
             EditorGUILayout.Space();
             using (new EditorGUI.DisabledScope(launcher == null))
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Launch"))
-                    Send("launchMatch", () => launcher!.HandleHostLaunch(requestJson));
+                    Send($"launch{launchKind}", () => launcher!.HandleHostLaunch(launchKind, gameId, dataJson, optionsJson));
                 if (GUILayout.Button("Abort / return to boot"))
                     SendWithId("abortMatch", id => launcher!.HandleHostAbort(id));
                 if (GUILayout.Button("Ping"))
@@ -140,23 +168,18 @@ namespace Elympics.Editor.Launcher
             send(requestId);
         }
 
-        private void LoadRequestFromFile()
+        private void LoadDataFromFile()
         {
-            var path = EditorUtility.OpenFilePanel("Load launch request", Application.dataPath, "json");
+            var path = EditorUtility.OpenFilePanel("Load launch data", Application.dataPath, "json");
             if (!string.IsNullOrEmpty(path))
-                requestJson = File.ReadAllText(path);
+                dataJson = File.ReadAllText(path);
         }
 
-        /// <summary>A SinglePlayer request for the first available game: the smallest request that launches anything.</summary>
-        private static string TemplateRequest()
-        {
-            var game = ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null);
-            var request = new ElympicsLaunchRequest
-            {
-                gameId = game != null ? game.GameId : "",
-                matchMode = nameof(ElympicsSystems.Internal.JoinedMatchMode.SinglePlayer),
-            };
-            return JsonUtility.ToJson(request, true);
-        }
+        private static string DefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";
+
+        /// <summary>The wire form of <paramref name="kind"/> with every field unset, so the launch uses the defaults.</summary>
+        private static string TemplateData(ElympicsHostLaunchKind kind) => JsonUtility.ToJson(ElympicsLaunchDtos.Create(kind), true);
+
+        private static string TemplateOptions() => JsonUtility.ToJson(new ElympicsLaunchOptionsDto(), true);
     }
 }

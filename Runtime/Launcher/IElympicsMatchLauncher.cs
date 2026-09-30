@@ -20,12 +20,31 @@ namespace Elympics
         /// <summary>True while the gameplay scene is loaded: <see cref="MatchLauncherState.Loading"/>, <see cref="MatchLauncherState.Running"/> or <see cref="MatchLauncherState.Ended"/>.</summary>
         bool IsCurrentlyInMatch { get; }
 
-        /// <summary>
-        /// Loads the gameplay scene of the requested game and connects. Completes when the match is joined or the launch fails.
-        /// Accepted only in <see cref="MatchLauncherState.Idle"/>, otherwise fails with <see cref="ElympicsLaunchErrorCode.Busy"/>.
-        /// </summary>
+        // Every Launch*Async method loads the gameplay scene of the game with ID gameId and starts the match. It completes when the match
+        // is joined or the launch fails, and is accepted only in MatchLauncherState.Idle (otherwise it fails with ElympicsLaunchErrorCode.Busy).
+
+        /// <summary>Joins a match on an Elympics game server.</summary>
         /// <param name="ct">Stops waiting for the result. Does not cancel the launch — use <see cref="AbortMatchAsync"/> for that.</param>
-        UniTask<ElympicsLaunchResult> LaunchMatchAsync(ElympicsLaunchRequest request, CancellationToken ct = default);
+        UniTask<ElympicsLaunchResult> LaunchOnlineAsync(string gameId, OnlineLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
+
+        /// <summary>Plays a match with the server simulated in this process.</summary>
+        /// <param name="data">Null means all defaults.</param>
+        /// <param name="ct">Stops waiting for the result. Does not cancel the launch — use <see cref="AbortMatchAsync"/> for that.</param>
+        UniTask<ElympicsLaunchResult> LaunchSinglePlayerAsync(string gameId, SinglePlayerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
+
+        /// <summary>Joins a half-remote server.</summary>
+        /// <param name="data">Null means all values from <see cref="ElympicsGameConfig"/>.</param>
+        /// <param name="ct">Stops waiting for the result. Does not cancel the launch — use <see cref="AbortMatchAsync"/> for that.</param>
+        UniTask<ElympicsLaunchResult> LaunchHalfRemoteClientAsync(string gameId, HalfRemoteClientLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
+
+        /// <summary>Runs a half-remote server in this process. Fails with <see cref="ElympicsLaunchErrorCode.UnsupportedMode"/> on WebGL and iOS.</summary>
+        /// <param name="data">Null means all values from <see cref="ElympicsGameConfig"/>.</param>
+        /// <param name="ct">Stops waiting for the result. Does not cancel the launch — use <see cref="AbortMatchAsync"/> for that.</param>
+        UniTask<ElympicsLaunchResult> LaunchHalfRemoteServerAsync(string gameId, HalfRemoteServerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
+
+        /// <summary>Replays a recorded match.</summary>
+        /// <param name="ct">Stops waiting for the result. Does not cancel the launch — use <see cref="AbortMatchAsync"/> for that.</param>
+        UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotReplayLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
 
         /// <summary>
         /// Leaves the current match, whatever its state, and returns to the boot scene. Completes in <see cref="MatchLauncherState.Idle"/>.

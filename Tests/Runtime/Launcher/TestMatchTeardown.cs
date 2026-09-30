@@ -44,7 +44,7 @@ namespace Elympics.Tests
         private static ElympicsMatchSession NewSession()
         {
             var game = ScriptableObject.CreateInstance<ElympicsGameConfig>();
-            var launch = new ElympicsLaunch("r", game, ElympicsSystems.Internal.JoinedMatchMode.SinglePlayer, Guid.Empty, null, null, TimeSpan.FromSeconds(1), null);
+            var launch = new ElympicsLaunch("r", game, new SinglePlayerLaunchData(), TimeSpan.FromSeconds(1), null);
             return new ElympicsMatchSession(launch, new NullSink());
         }
 

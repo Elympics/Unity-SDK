@@ -16,7 +16,8 @@ namespace Elympics
     [PublicAPI]
     public static class ElympicsHostProtocol
     {
-        public const string Version = "1.0.0";
+        /// <summary>Version of the wire format (command arguments and event payloads), reported in the <c>ready</c> event.</summary>
+        public const string Version = "2.0.0";
 
         /// <summary>Event types sent by Unity to the host.</summary>
         public static class Events
@@ -33,20 +34,6 @@ namespace Elympics
             public const string Idle = "idle";
             public const string Quitting = "quitting";
             public const string Pong = "pong";
-        }
-
-        /// <summary>Returns true if <paramref name="version"/> has the same major version as <see cref="Version"/>.</summary>
-        public static bool IsCompatible(string? version) =>
-            TryGetMajor(version, out var major) && TryGetMajor(Version, out var ownMajor) && major == ownMajor;
-
-        internal static bool TryGetMajor(string? version, out int major)
-        {
-            major = 0;
-            if (string.IsNullOrWhiteSpace(version))
-                return false;
-            var dot = version!.IndexOf('.');
-            var majorPart = dot < 0 ? version : version[..dot];
-            return int.TryParse(majorPart, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out major);
         }
     }
 }

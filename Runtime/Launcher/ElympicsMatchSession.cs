@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Elympics.Core.Logger;
+using Elympics.SnapshotAnalysis.Retrievers;
 
 namespace Elympics
 {
@@ -14,6 +15,8 @@ namespace Elympics
     internal sealed class ElympicsMatchSession : IElympicsMatchLifecycleSink
     {
         public ElympicsLaunch Launch { get; }
+        /// <summary>The replay of a snapshot replay launch, loaded before its scene. Null for other modes.</summary>
+        public SnapshotAnalysisRetriever? SnapshotRetriever { get; set; }
         /// <summary>Cancelled when the match is torn down.</summary>
         public CancellationToken Token { get; }
         public bool SceneInitialized { get; private set; }

@@ -9,13 +9,16 @@ namespace Elympics
 {
     internal class HalfRemoteGameClientInitializer : GameClientInitializer
     {
+        private readonly HalfRemoteClientLaunchData _data;
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
+
+        public HalfRemoteGameClientInitializer(HalfRemoteClientLaunchData data) => _data = data;
 
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
             const string gameModeName = "half remote";
-            var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
+            var playerIndex = _data.PlayerIndex ?? elympicsGameConfig.PlayerIndexForHalfRemoteMode;
             var queueName = elympicsGameConfig.TestMatchData.queueName;
             var regionName = elympicsGameConfig.TestMatchData.regionName;
             var customRoomData = elympicsGameConfig.TestMatchData.roomCustomData;

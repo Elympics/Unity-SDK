@@ -117,16 +117,26 @@ namespace Elympics
 
         #region Launch
 
-        public UniTask<ElympicsLaunchResult> LaunchMatchAsync(ElympicsLaunchRequest request, CancellationToken ct = default) =>
-            LaunchAsync(request, ElympicsLaunchSource.InProcess, ct);
+        public UniTask<ElympicsLaunchResult> LaunchOnlineAsync(string gameId, OnlineLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
+            LaunchAsync(gameId, data, options, ct);
 
-        internal async UniTask<ElympicsLaunchResult> LaunchAsync(ElympicsLaunchRequest? request, ElympicsLaunchSource source, CancellationToken ct)
+        public UniTask<ElympicsLaunchResult> LaunchSinglePlayerAsync(string gameId, SinglePlayerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
+            LaunchAsync(gameId, data ?? new SinglePlayerLaunchData(), options, ct);
+
+        public UniTask<ElympicsLaunchResult> LaunchHalfRemoteClientAsync(string gameId, HalfRemoteClientLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
+            LaunchAsync(gameId, data ?? new HalfRemoteClientLaunchData(), options, ct);
+
+        public UniTask<ElympicsLaunchResult> LaunchHalfRemoteServerAsync(string gameId, HalfRemoteServerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
+            LaunchAsync(gameId, data ?? new HalfRemoteServerLaunchData(), options, ct);
+
+        public UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotReplayLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
+            LaunchAsync(gameId, data, options, ct);
+
+        internal async UniTask<ElympicsLaunchResult> LaunchAsync(string? gameId, LaunchData? data, ElympicsLaunchOptions? options, CancellationToken ct)
         {
             await UniTask.SwitchToMainThread();
 
-            var requestId = request != null && !string.IsNullOrEmpty(request.requestId) ? request.requestId : Guid.NewGuid().ToString("N");
-            if (request != null)
-                request.requestId = requestId;
+            var requestId = string.IsNullOrEmpty(options?.RequestId) ? Guid.NewGuid().ToString("N") : options!.RequestId!;
 
             if (_quitting)
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Aborted, "The application is quitting.");
@@ -134,7 +144,7 @@ namespace Elympics
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, $"A match is already {State}. Abort it and wait for idle before launching another one.");
 
             var games = (IReadOnlyList<ElympicsGameConfig?>?)_loadConfig()?.AvailableGames ?? Array.Empty<ElympicsGameConfig?>();
-            if (!ElympicsLaunchRequestParser.TryParse(request, games, source, _platformCanListen, out var launch, out var failure))
+            if (!ElympicsLaunchValidator.TryValidate(requestId, gameId, data, options, games, _platformCanListen, out var launch, out var failure))
                 return RejectLaunch(requestId, failure!.Code, failure.message);
 
             var session = new ElympicsMatchSession(launch!, this);
@@ -143,10 +153,10 @@ namespace Elympics
             _launchCompletion = completion;
             _processGlobals = ElympicsProcessGlobals.Capture();
             ElympicsConfig.UpdateLoggerState(launch!.GameConfig);
-            if (launch.MatchData != null)
-                ElympicsLogger.State.SetMatchId(launch.MatchData.MatchId.ToString());
+            if (launch.MatchId != Guid.Empty)
+                ElympicsLogger.State.SetMatchId(launch.MatchId.ToString());
             SetState(MatchLauncherState.Loading);
-            _logger.LogInfo($"Launching {launch!.MatchMode} match of {launch.GameConfig.GameName} (request {requestId}).");
+            _logger.LogInfo($"Launching {launch.Data.ModeName} match of {launch.GameConfig.GameName} (request {requestId}).");
             Emit(ElympicsHostProtocol.Events.LaunchAccepted, requestId);
             ArmTimer(launch.LaunchTimeout, () => OnLaunchTimeout(session));
             _sceneLoad = LoadGameplaySceneAsync(session).Preserve();
@@ -166,6 +176,15 @@ namespace Elympics
             var scenePath = session.Launch.GameConfig.GameplayScene;
             try
             {
+                if (session.Launch.Data is SnapshotReplayLaunchData replay)
+                {
+                    if (!SnapshotReplayLoader.TryLoad(replay, session.Launch.GameConfig, out var retriever, out var failure))
+                    {
+                        FailLaunch(failure!.Code, failure.message);
+                        return;
+                    }
+                    session.SnapshotRetriever = retriever;
+                }
                 var loaded = await _sceneLoader.LoadSingleAsync(scenePath);
                 if (session != _session || State != MatchLauncherState.Loading)
                     return;
@@ -203,7 +222,7 @@ namespace Elympics
         private void OnLaunchTimeout(ElympicsMatchSession session)
         {
             if (session == _session)
-                FailLaunch(ElympicsLaunchErrorCode.Timeout, $"The match was not joined within {session.Launch.LaunchTimeout.TotalSeconds:0.#} s.");
+                FailLaunch(ElympicsLaunchErrorCode.Timeout, $"The match was not joined within {session.Launch.LaunchTimeout?.TotalSeconds:0.#} s.");
         }
 
         #endregion
@@ -219,7 +238,7 @@ namespace Elympics
             CancelTimer();
             SetState(MatchLauncherState.Running);
             var launch = _session.Launch;
-            var matchId = (launch.MatchData?.MatchId ?? Guid.Empty).ToString();
+            var matchId = launch.MatchId.ToString();
             _logger.LogInfo($"Launch {launch.RequestId} succeeded.");
             Emit(ElympicsHostProtocol.Events.LaunchSucceeded, launch.RequestId, new ElympicsLaunchSucceededInfo { gameId = launch.GameConfig.GameId, matchId = matchId });
             CompleteLaunch(ElympicsLaunchResult.Succeeded(launch.RequestId, launch.GameConfig.GameId, matchId));
@@ -260,7 +279,7 @@ namespace Elympics
                     FailLaunch(ElympicsLaunchErrorCode.ConnectionFailed, $"Disconnected by {(byServer ? "server" : "client")} before the match was joined.");
                     return;
                 case MatchLauncherState.Running:
-                    var info = new ElympicsDisconnectedInfo { matchId = (_session?.Launch.MatchData?.MatchId ?? Guid.Empty).ToString(), byServer = byServer };
+                    var info = new ElympicsDisconnectedInfo { matchId = (_session?.Launch.MatchId ?? Guid.Empty).ToString(), byServer = byServer };
                     EnterEnded();
                     Emit(ElympicsHostProtocol.Events.Disconnected, string.Empty, info);
                     Raise(Disconnected, info);
@@ -286,7 +305,7 @@ namespace Elympics
                 return;
             _logger.LogWarning($"The host did not return to boot within {session.Launch.PostMatchTimeout?.TotalSeconds:0.#} s after the match ended. Returning on its own.");
             Emit(ElympicsHostProtocol.Events.MatchEndTimedOut, string.Empty,
-                new ElympicsMatchEndedInfo { matchId = (session.Launch.MatchData?.MatchId ?? Guid.Empty).ToString() });
+                new ElympicsMatchEndedInfo { matchId = session.Launch.MatchId.ToString() });
             BeginTeardown(string.Empty);
         }
 
@@ -473,23 +492,16 @@ namespace Elympics
 
         #region Host commands
 
-        internal void HandleHostLaunch(string requestJson)
+        /// <summary>Runs a launch command of a host bridge: the JSON of the mode's launch data and of the launch options, each empty for defaults.</summary>
+        internal void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
-            ElympicsLaunchRequest? request = null;
-            try
+            if (!ElympicsLaunchValidator.TryParseOptions(optionsJson, out var options, out var failure)
+                || !ElympicsLaunchValidator.TryParseData(kind, dataJson, out var data, out failure))
             {
-                request = JsonUtility.FromJson<ElympicsLaunchRequest>(requestJson);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning($"Malformed launch request JSON: {e.Message}");
-            }
-            if (request == null)
-            {
-                _ = RejectLaunch(string.Empty, ElympicsLaunchErrorCode.InvalidPayload, "The launch request is not valid JSON.");
+                _ = RejectLaunch(options?.RequestId ?? string.Empty, failure!.Code, failure.message);
                 return;
             }
-            LaunchAsync(request, ElympicsLaunchSource.Wire, CancellationToken.None).Forget();
+            LaunchAsync(gameId, data, options, CancellationToken.None).Forget();
         }
 
         /// <summary>Runs a command received by a host bridge. <paramref name="argument"/> is the command's only string argument.</summary>
@@ -498,7 +510,8 @@ namespace Elympics
             switch (kind)
             {
                 case ElympicsHostCommandKind.LaunchMatch:
-                    HandleHostLaunch(argument);
+                    _ = RejectLaunch(string.Empty, ElympicsLaunchErrorCode.UnsupportedMode,
+                        "The generic launchMatch command was removed. Per-mode launch commands (launchOnline, launchSinglePlayer, ...) come with the next host bridge version.");
                     break;
                 case ElympicsHostCommandKind.AbortMatch:
                 case ElympicsHostCommandKind.ReturnToBoot:

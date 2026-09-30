@@ -22,10 +22,10 @@ namespace Elympics
         private static BridgePoller? poller;
 
         /// <summary>
-        /// True in builds that run a game server (online or half-remote). There the launcher stays passive:
-        /// no host bridge and no <c>ready</c> event.
+        /// True in an online game server, which runs its one match without a host. There the launcher stays passive:
+        /// no host bridge and no <c>ready</c> event. Other server builds (UNITY_SERVER) are driven by a host like any other build.
         /// </summary>
-        internal static bool IsPassive => ApplicationParameters.ShouldLoadElympicsOnlineServer || (ScriptingSymbols.IsUnityServer && !Application.isEditor);
+        internal static bool IsPassive => ApplicationParameters.ShouldLoadElympicsOnlineServer;
 
         // Keeps the statics correct with domain reload disabled.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

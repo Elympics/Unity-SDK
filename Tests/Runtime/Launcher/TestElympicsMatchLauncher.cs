@@ -87,14 +87,21 @@ namespace Elympics.Tests
             UnityEngine.Object.DestroyImmediate(_game);
         }
 
-        private static ElympicsLaunchRequest Request(string requestId = "launch", int postMatchTimeout = 0, int launchTimeout = 0) => new()
+        /// <param name="postMatchTimeout">Seconds: 0 is the default, -1 never.</param>
+        /// <param name="launchTimeout">Seconds: 0 is the default.</param>
+        private static ElympicsLaunchOptions Request(string requestId = "launch", int postMatchTimeout = 0, int launchTimeout = 0) => new()
         {
-            requestId = requestId,
-            gameId = GameId,
-            matchMode = "SinglePlayer",
-            postMatchTimeoutSeconds = postMatchTimeout,
-            launchTimeoutSeconds = launchTimeout,
+            RequestId = requestId,
+            PostMatchTimeout = postMatchTimeout switch
+            {
+                0 => null,
+                -1 => System.Threading.Timeout.InfiniteTimeSpan,
+                _ => TimeSpan.FromSeconds(postMatchTimeout),
+            },
+            LaunchTimeout = launchTimeout == 0 ? null : TimeSpan.FromSeconds(launchTimeout),
         };
+
+        private UniTask<ElympicsLaunchResult> Launch(ElympicsLaunchOptions options) => _launcher.LaunchSinglePlayerAsync(GameId, null, options);
 
         private IEnumerable<string> EventTypes => _events.Select(e => e.Type);
 
@@ -106,10 +113,10 @@ namespace Elympics.Tests
             return session!;
         }
 
-        private async UniTask<(ElympicsLaunchResult Result, IElympicsMatchLifecycleSink Sink)> LaunchToRunning(ElympicsLaunchRequest? request = null)
+        private async UniTask<(ElympicsLaunchResult Result, IElympicsMatchLifecycleSink Sink)> LaunchToRunning(ElympicsLaunchOptions? request = null)
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(request ?? Request());
+            var launch = Launch(request ?? Request());
             var sink = AttachScene();
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
             await UniTask.Yield();
@@ -149,10 +156,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator InvalidRequestFailsWithoutLeavingIdle() => UniTask.ToCoroutine(async () =>
         {
-            var request = Request();
-            request.gameId = Guid.NewGuid().ToString();
-
-            var result = await _launcher.LaunchMatchAsync(request);
+            var result = await _launcher.LaunchSinglePlayerAsync(Guid.NewGuid().ToString(), null, Request());
 
             Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnknownGame));
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
@@ -164,9 +168,9 @@ namespace Elympics.Tests
         public IEnumerator LaunchWhileLoadingIsBusy() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            _ = _launcher.LaunchMatchAsync(Request());
+            _ = Launch(Request());
 
-            var second = await _launcher.LaunchMatchAsync(Request("second"));
+            var second = await Launch(Request("second"));
 
             Assert.That(second.Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
             Assert.That(second.RequestId, Is.EqualTo("second"));
@@ -181,11 +185,11 @@ namespace Elympics.Tests
             var states = new List<MatchLauncherState>();
             _launcher.StateChanged += states.Add;
 
-            Assert.That((await _launcher.LaunchMatchAsync(Request("r2"))).Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
+            Assert.That((await Launch(Request("r2"))).Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Running));
 
             sink.MatchEnded(Guid.Empty);
-            Assert.That((await _launcher.LaunchMatchAsync(Request("r3"))).Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
+            Assert.That((await Launch(Request("r3"))).Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Ended));
             Assert.That(_launcher.IsCurrentlyInMatch, Is.True);
             Assert.That(states, Is.EqualTo(new[] { MatchLauncherState.Ended }));
@@ -268,7 +272,7 @@ namespace Elympics.Tests
         public IEnumerator AbortDuringLoadingFailsLaunchWithAborted() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request());
+            var launch = Launch(Request());
             _ = AttachScene();
 
             var abort = _launcher.AbortAsync("abort", default);
@@ -289,7 +293,7 @@ namespace Elympics.Tests
         public IEnumerator SceneActivatingDuringTeardownIsSuppressed() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request());
+            var launch = Launch(Request());
             var abort = _launcher.AbortAsync("abort", default);
 
             // The gameplay scene activates only now, after the abort.
@@ -306,7 +310,7 @@ namespace Elympics.Tests
         public void SecondAttachOfSameLaunchIsSuppressed()
         {
             _loader.HoldGameplayLoad = true;
-            _ = _launcher.LaunchMatchAsync(Request());
+            _ = Launch(Request());
             _ = AttachScene();
 
             Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
@@ -333,7 +337,7 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator SceneWithoutGameSceneManagerFails() => UniTask.ToCoroutine(async () =>
         {
-            var result = await _launcher.LaunchMatchAsync(Request());
+            var result = await Launch(Request());
 
             Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.SceneLoadFailed));
             await WaitUntil(() => _launcher.State == MatchLauncherState.Idle);
@@ -345,7 +349,7 @@ namespace Elympics.Tests
         {
             _loader.GameplayLoadResult = false;
 
-            var result = await _launcher.LaunchMatchAsync(Request());
+            var result = await Launch(Request());
 
             Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.SceneLoadFailed));
             await WaitUntil(() => _launcher.State == MatchLauncherState.Idle);
@@ -357,7 +361,7 @@ namespace Elympics.Tests
         public IEnumerator SceneInitializationFailureFailsLaunch() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request());
+            var launch = Launch(Request());
             AttachScene().SceneInitializationFailed(ElympicsLaunchErrorCode.InternalError, "boom");
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
@@ -371,7 +375,7 @@ namespace Elympics.Tests
         public IEnumerator JoinFailureIsConnectionFailed() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request());
+            var launch = Launch(Request());
             var sink = AttachScene();
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
             await UniTask.Yield();
@@ -384,7 +388,7 @@ namespace Elympics.Tests
         public IEnumerator LaunchTimeoutFailsAndNextLaunchWorks() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request(launchTimeout: 1));
+            var launch = Launch(Request(launchTimeout: 1));
             _ = AttachScene();
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
@@ -456,7 +460,7 @@ namespace Elympics.Tests
         public IEnumerator QuitDuringLoadingFailsLaunchFirst() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            var launch = _launcher.LaunchMatchAsync(Request());
+            var launch = Launch(Request());
 
             _launcher.QuitApplication();
 
@@ -475,9 +479,36 @@ namespace Elympics.Tests
         [Test]
         public void MalformedHostLaunchIsInvalidPayload()
         {
-            _launcher.HandleHostLaunch("{not json");
+            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "{not json", "");
             Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
             Assert.That(_events.Single().Payload, Does.Contain("InvalidPayload"));
+        }
+
+        [Test]
+        public void MalformedHostLaunchOptionsAreInvalidPayload()
+        {
+            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "", "{\"launchTimeoutSeconds\": -5}");
+            Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
+            Assert.That(_events.Single().Payload, Does.Contain("InvalidPayload"));
+        }
+
+        [UnityTest]
+        public IEnumerator HostLaunchWithEmptyDataStartsSinglePlayer() => UniTask.ToCoroutine(async () =>
+        {
+            _loader.HoldGameplayLoad = true;
+            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "", "{\"requestId\": \"host\"}");
+            await WaitUntil(() => _launcher.State == MatchLauncherState.Loading);
+
+            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("launchAccepted", "host") }));
+            Assert.That(_launcher.SessionAwaitingScene!.Launch.Data, Is.InstanceOf<SinglePlayerLaunchData>());
+        });
+
+        [Test]
+        public void GenericLaunchMatchCommandIsUnsupported()
+        {
+            _launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchMatch, "{}");
+            Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
+            Assert.That(_events.Single().Payload, Does.Contain("UnsupportedMode"));
         }
 
         [Test]

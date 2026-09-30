@@ -59,7 +59,7 @@ namespace Elympics
             var defaultGameId = ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(game => game != null)?.GameId ?? string.Empty;
             var requestJson = ElympicsHost_TakeLaunchData(defaultGameId);
             if (!string.IsNullOrEmpty(requestJson))
-                launcher.HandleHostLaunch(requestJson);
+                launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchMatch, requestJson);
         }
 
         public void Dispose() => launcher = null;

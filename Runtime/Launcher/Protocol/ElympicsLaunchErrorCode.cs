@@ -8,13 +8,11 @@ namespace Elympics
     [PublicAPI]
     public enum ElympicsLaunchErrorCode
     {
-        /// <summary>Malformed JSON, a missing required field, an unparseable GUID or a match field sent to a mode that does not read it.</summary>
+        /// <summary>Malformed JSON, a missing required field, an unparseable value, or launch data the game or mode rejects.</summary>
         InvalidPayload,
-        /// <summary>The major version of the request differs from <see cref="ElympicsHostProtocol.Version"/>.</summary>
-        ProtocolMismatch,
         /// <summary>The game ID is not in <c>ElympicsConfig.availableGames</c>, or that game has no gameplay scene.</summary>
         UnknownGame,
-        /// <summary>The match mode is not parseable, is not available over the wire, or is not supported on this platform.</summary>
+        /// <summary>The launch command is unknown, or its match mode is not supported on this platform.</summary>
         UnsupportedMode,
         /// <summary>The gameplay scene could not be loaded or initialized.</summary>
         SceneLoadFailed,

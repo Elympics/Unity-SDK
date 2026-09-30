@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
-using Elympics.Models.Matchmaking;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore;
 
@@ -10,12 +10,11 @@ namespace Elympics
 {
     internal class SinglePlayerGameInitializer : GameSceneInitializer
     {
-        private readonly MatchmakingFinishedData _matchData;
+        private readonly SinglePlayerLaunchData _data;
         private SinglePlayerGameEngine _gameEngine;
 
-        /// <param name="matchData">Match data from the host, or null to play with an empty one.</param>
-        public SinglePlayerGameInitializer(MatchmakingFinishedData matchData) =>
-            _matchData = matchData ?? new MatchmakingFinishedData(Guid.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<byte>(), Array.Empty<float>(), string.Empty, string.Empty, new[] { Guid.Empty });
+        /// <param name="data">Launch data from the host, or null for all defaults.</param>
+        public SinglePlayerGameInitializer(SinglePlayerLaunchData data) => _data = data ?? new SinglePlayerLaunchData();
 
         public override void Initialize(
             ElympicsClient client,
@@ -23,13 +22,14 @@ namespace Elympics
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            var matchData = _matchData;
-            var userData = CreateUserData(matchData, gameConfig);
+            var data = _data;
+            var matchId = data.MatchId ?? Guid.Empty;
+            var userData = CreateUserData(data, gameConfig);
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             var gameEngineAdapter = new GameEngineAdapter(gameConfig);
             ElympicsLogger.State.SetGameMode("single player");
-            _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, behavioursManager, matchData.MatchId);
+            _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, behavioursManager, matchId);
             server.InitializeInternal(gameConfig,
                 gameEngineAdapter,
                 behavioursManager,
@@ -42,12 +42,11 @@ namespace Elympics
             gameEngineAdapter.Initialize(new InitialMatchData
             {
                 UserData = userData,
-                MatchId = matchData.MatchId,
-                QueueName = matchData.QueueName,
-                RegionName = matchData.RegionName,
+                MatchId = matchId,
+                QueueName = data.QueueName ?? SinglePlayerLaunchData.DefaultQueueName,
+                RegionName = data.RegionName,
                 CustomRoomData = null, //TODO: can be added when full list of users will be delivered to client. ~k.pieta 21.02.2025
                 CustomMatchmakingData = null, //TODO: can be added when full list of users will be delivered to client. ~k.pieta 21.02.2025
-                // ExternalGameData = matchData.GameEngineData
                 ExternalGameData = Array.Empty<byte>()
             });
 
@@ -55,21 +54,21 @@ namespace Elympics
         }
 
         /// <summary>
-        /// Exactly one real player at index 0 (from <paramref name="matchData"/>), followed by the bots
+        /// Exactly one real player at index 0 (from <paramref name="data"/>), followed by the bots
         /// from <see cref="ElympicsGameConfig.TestPlayers"/>, clamped to <see cref="ElympicsGameConfig.MaxPlayers"/>.
         /// Non-bot test players are ignored, as the real player always comes from the match data.
         /// </summary>
-        internal static List<InitialMatchUserData> CreateUserData(MatchmakingFinishedData matchData, ElympicsGameConfig gameConfig)
+        internal static List<InitialMatchUserData> CreateUserData(SinglePlayerLaunchData data, ElympicsGameConfig gameConfig)
         {
             var users = new List<InitialMatchUserData>
             {
                 new()
                 {
-                    UserId = matchData.MatchedPlayers.Length > 0 ? matchData.MatchedPlayers[0] : Guid.Empty,
+                    UserId = data.UserId ?? Guid.Empty,
                     IsBot = false,
                     BotDifficulty = 0,
-                    MatchmakerData = matchData.MatchmakerData,
-                    GameEngineData = matchData.GameEngineData,
+                    MatchmakerData = data.MatchmakerData.ToArray(),
+                    GameEngineData = data.GameEngineData.ToArray(),
                     RoomId = null, //TODO: can be added when full list of users will be delivered to client. ~k.pieta 21.02.2025
                     TeamIndex = 0,
                 },

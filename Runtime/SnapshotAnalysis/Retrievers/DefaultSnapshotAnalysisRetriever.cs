@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 
 namespace Elympics.SnapshotAnalysis.Retrievers
@@ -15,7 +14,5 @@ namespace Elympics.SnapshotAnalysis.Retrievers
 
         public UniTask RetrieveSnapshotReplay(string matchId) =>
             throw new NotImplementedException(); //This will have to be called before RetrieveInitData or RetrieveSnapshots
-        public override SnapshotSaverInitData RetrieveInitData() => Replay.InitData;
-        public override Dictionary<long, ElympicsSnapshotWithMetadata> RetrieveSnapshots() => Replay.Snapshots;
     }
 }

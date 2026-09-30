@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elympics.SnapshotAnalysis.Serialization;
@@ -45,9 +44,7 @@ namespace Elympics.SnapshotAnalysis.Retrievers
                 throw new Exception($"Failed to deserialize snapshots from file \"{path}\".", e);
             }
         }
-        public override SnapshotSaverInitData RetrieveInitData() => Replay.InitData;
 
-        public override Dictionary<long, ElympicsSnapshotWithMetadata> RetrieveSnapshots() => Replay.Snapshots;
         public void AddStateMetaData(ElympicsBehavioursManager behaviourManager)
         {
             long? firstTick = null;

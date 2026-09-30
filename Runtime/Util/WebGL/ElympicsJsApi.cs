@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Specialized;
 using System.Web;
-using JetBrains.Annotations;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System.Runtime.InteropServices;
 #endif
@@ -10,14 +9,14 @@ using System.Runtime.InteropServices;
 
 namespace Elympics
 {
-    internal static class ElympicsWebGL
+    internal static class ElympicsJsApi
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-		[DllImport("__Internal")] private static extern string ElympicsWebGL_GetHref();
-		[DllImport("__Internal")] private static extern string ElympicsWebGL_GetElympicsHref();
+		[DllImport("__Internal")] private static extern string ElympicsJsApi_GetHref();
+		[DllImport("__Internal")] private static extern string ElympicsJsApi_GetElympicsHref();
 
-        private static string GetHref() => ElympicsWebGL_GetHref();
-        private static string GetElympicsHref() => ElympicsWebGL_GetElympicsHref();
+        private static string GetHref() => ElympicsJsApi_GetHref();
+        private static string GetElympicsHref() => ElympicsJsApi_GetElympicsHref();
 #else
         private static string GetHref() => "";
         private static string GetElympicsHref() => "";

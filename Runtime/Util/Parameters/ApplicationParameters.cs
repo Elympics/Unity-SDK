@@ -15,7 +15,7 @@ namespace Elympics
             get
             {
                 if (!ParameterList.Initialized && !Application.isEditor)
-                    ElympicsLogger.LogWarning("Accessing uninitialized application parameters.\n" + Environment.StackTrace);
+                    ElympicsLogger.WithStacktraceForEverything().LogWarning("Accessing uninitialized application parameters.");
                 return ParameterList;
             }
         }
@@ -25,8 +25,8 @@ namespace Elympics
         {
             var envVariables = Environment.GetEnvironmentVariables();
             var commandLineArgs = Environment.GetCommandLineArgs();
-            var urlQuery = ElympicsWebGL.GetUrlQuery();
-            var elympicsUrlQuery = ElympicsWebGL.GetElympicsUrlQuery();
+            var urlQuery = ElympicsJsApi.GetUrlQuery();
+            var elympicsUrlQuery = ElympicsJsApi.GetElympicsUrlQuery();
             return ParameterList.Initialize(envVariables, commandLineArgs, urlQuery, elympicsUrlQuery);
         }
     }

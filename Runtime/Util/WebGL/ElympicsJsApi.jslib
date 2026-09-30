@@ -1,9 +1,9 @@
 /**
  * @typedef {{
  *   $elympicsUtils: ElympicsUtils,
- *   ElympicsWebGL_GetElympicsHref: () => number,
- *   ElympicsWebGL_GetHref: () => number,
- * }} ElympicsWebGL
+ *   ElympicsJsApi_GetElympicsHref: () => number,
+ *   ElympicsJsApi_GetHref: () => number,
+ * }} ElympicsJsApi
  */
 
 /**
@@ -51,8 +51,8 @@
 /** @type {ElympicsUtils} */ var elympicsUtils;
 /* eslint-enable no-unassigned-vars */
 
-/** @type {ElympicsWebGL} */
-const elympicsWebGL = {
+/** @type {ElympicsJsApi} */
+const elympicsJsApi = {
     /** @alias elympicsUtils */
     /** @type {ElympicsUtils} */ $elympicsUtils: {
         stringToBuffer: (text) => {
@@ -63,7 +63,7 @@ const elympicsWebGL = {
         }
     },
 
-    ElympicsWebGL_GetHref: function () {
+    ElympicsJsApi_GetHref: function () {
         try {
             const href = (window.top || window).location.href;
             return elympicsUtils.stringToBuffer(href);
@@ -73,7 +73,7 @@ const elympicsWebGL = {
         }
     },
 
-    ElympicsWebGL_GetElympicsHref: function () {
+    ElympicsJsApi_GetElympicsHref: function () {
         try {
             const unityGameOptions = /** @type {ElympicsWindow} */ (window).unityGameOptions;
             if (typeof unityGameOptions === 'undefined') {
@@ -91,5 +91,5 @@ const elympicsWebGL = {
     },
 };
 
-autoAddDeps(elympicsWebGL, "$elympicsUtils");
-mergeInto(LibraryManager.library, elympicsWebGL);
+autoAddDeps(elympicsJsApi, "$elympicsUtils");
+mergeInto(LibraryManager.library, elympicsJsApi);

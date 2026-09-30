@@ -175,8 +175,8 @@ namespace Elympics.Tests
         {
             var json = JsonUtility.ToJson(new OnlineLaunchDataDto
             {
-                serverAddress = "127.0.0.1:9000",
-                transport = "tcpUdp",
+                serverAddress = "gs.example",
+                transport = "webRtc",
                 matchId = MatchId.ToString(),
                 userSecret = "secret",
                 userId = UserId.ToString(),
@@ -188,8 +188,8 @@ namespace Elympics.Tests
 
             var data = (OnlineLaunchData)ParseData(ElympicsHostLaunchKind.Online, json);
 
-            Assert.That(data.ServerAddress, Is.EqualTo("127.0.0.1:9000"));
-            Assert.That(data.UseTcpUdpInsteadOfWebRtc, Is.True);
+            Assert.That(data.ServerAddress, Is.EqualTo("gs.example"));
+            Assert.That(data.UseTcpUdpInsteadOfWebRtc, Is.False);
             Assert.That(data.MatchId, Is.EqualTo(MatchId));
             Assert.That(data.UserSecret, Is.EqualTo("secret"));
             Assert.That(data.UserId, Is.EqualTo(UserId));
@@ -229,7 +229,6 @@ namespace Elympics.Tests
         private static IEnumerable<TestCaseData> BrokenOnlineData()
         {
             yield return Case("no server address", Online(serverAddress: ""));
-            yield return Case("tcp/udp address without port", Online(serverAddress: "127.0.0.1", useTcpUdp: true));
             yield return Case("no user secret", Online(userSecret: ""));
             yield return Case("no players", Online(players: Array.Empty<Guid>()));
             yield return Case("duplicate players", Online(players: new[] { UserId, UserId }));
@@ -242,6 +241,23 @@ namespace Elympics.Tests
         [TestCaseSource(nameof(BrokenOnlineData))]
         public void BrokenOnlineDataIsInvalidPayload(OnlineLaunchData data) =>
             Assert.That(ValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+
+        // The Editor defines UNITY_WEBGL when WebGL is the build target, so both outcomes are tested, each on its own target.
+        [Test]
+        public void OnlineTcpUdpAddressWithoutPortIsInvalidPayload()
+        {
+            Assume.That(LaunchDataParsing.CanUseTcpUdp, "TCP/UDP is unavailable with the WebGL build target.");
+            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            _ = Validate(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true));
+        }
+
+        [Test]
+        public void TcpUdpOnWebGlIsUnsupportedMode()
+        {
+            Assume.That(LaunchDataParsing.CanUseTcpUdp, Is.False, "TCP/UDP is available outside the WebGL build target.");
+            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData(useTcpUdpInsteadOfWebRtc: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+        }
 
         [Test]
         public void OnlineWebRtcAddressNeedsNoPort() => _ = Validate(Online(serverAddress: "gs.example", useTcpUdp: false));

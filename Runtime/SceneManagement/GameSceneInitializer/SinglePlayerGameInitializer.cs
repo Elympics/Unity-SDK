@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
+using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore;
 
@@ -28,6 +29,8 @@ namespace Elympics
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             var gameEngineAdapter = new GameEngineAdapter(gameConfig);
+            // The server update loop replicates snapshots every sending period, as in the other server modes.
+            ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             ElympicsLogger.State.SetGameMode("single player");
             _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, behavioursManager, matchId);
             server.InitializeInternal(gameConfig,

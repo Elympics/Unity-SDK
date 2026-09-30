@@ -179,12 +179,16 @@ namespace Elympics
                     session.RegisterTeardown("stop simulation", StopSimulation);
                     session.RegisterTeardown("dispose game scene initializer", DisposeInitializer);
                     session.TrackCollectable(elympicsBehavioursManager);
+                    session.TrackCollectable(elympicsClient);
+                    session.TrackCollectable(elympicsServer);
+                    session.TrackCollectable(this);
                 }
 
                 var context = new GameSceneLaunchContext(elympicsClient, elympicsServer, gameConfig, elympicsBehavioursManager, snapshotRetriever, initializer =>
                 {
                     _gameSceneInitializer = initializer;
                     initializer.LifecycleSink = sink;
+                    session?.TrackCollectable(initializer);
                     ElympicsLogger.LogInfo($"Created game scene initializer of type {initializer.GetType().Name}");
                 });
                 var initialized = launch(context);

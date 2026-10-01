@@ -26,12 +26,16 @@ namespace Elympics.SnapshotAnalysis.Serialization
                     Debug.Log($"Found snapshots {deserializedSnapshots.Snapshots.Length}");
                     foreach (var deserialized in deserializedSnapshots.Snapshots)
                     {
-                        foreach (var (id, state) in deserialized.Data!)
+                        // A null state is unchanged since the last snapshot that had one. Filled in over a copy of the keys,
+                        // as writing to a dictionary while enumerating it throws on Mono.
+                        var data = deserialized.Data!;
+                        foreach (var id in new List<int>(data.Keys))
                         {
+                            var state = data[id];
                             if (state != null)
                                 _unpackSourceData[id] = state;
                             else
-                                deserialized.Data[id] = _unpackSourceData[id];
+                                data[id] = _unpackSourceData[id];
                         }
 
                         snapshots.Add(deserialized.Tick, deserialized);

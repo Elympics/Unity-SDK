@@ -55,7 +55,7 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
-                    return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {e.Message}");
+                    return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {Describe(e)}");
                 }
             }
             else
@@ -66,10 +66,19 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
-                    return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {e.Message}");
+                    return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {Describe(e)}");
                 }
             }
             return TryCheckVersion(retriever, gameConfig, out var failure) ? Result.Loaded(retriever) : Result.Failed(failure!.Code, failure.message);
+        }
+
+        /// <summary>The message of <paramref name="e"/> and of its inner exceptions, which carry the actual cause of a failed read.</summary>
+        private static string Describe(Exception e)
+        {
+            var message = e.Message;
+            for (var inner = e.InnerException; inner != null; inner = inner.InnerException)
+                message += $" {inner.GetType().Name}: {inner.Message}";
+            return message;
         }
 
         private static async UniTask<byte[]> DownloadAsync(string url, CancellationToken ct)

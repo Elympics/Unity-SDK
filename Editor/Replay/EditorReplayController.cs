@@ -105,6 +105,13 @@ namespace Elympics.Editor.Replay
             _replayClient.SetIsPlaying(false);
         }
 
+        // The window outlives the match: keeping the client would keep the match's ElympicsBehavioursManager and ElympicsBase alive.
+        public void UnloadReplay()
+        {
+            _replayClient = null;
+            _currentTick = -1;
+        }
+
         public void SetCurrentTick(long tick)
         {
             if (_replayClient == null || _currentTick == tick)

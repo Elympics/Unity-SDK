@@ -13,6 +13,15 @@ namespace Elympics
     {
         public override bool ReportsMatchJoined => false;
 
+        private IReplayManipulator _replayManipulator;
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _replayManipulator?.UnloadReplay();
+            _replayManipulator = null;
+        }
+
         protected void InitializeInternal(
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
@@ -63,6 +72,7 @@ namespace Elympics
             // @formatter:on
             behavioursManager.InitializeInternal(server, gameConfig.MaxPlayers);
 
+            _replayManipulator = replayManipulator;
             replayManipulator.LoadReplay(updateLoop, new ReplayData { InitData = initData, Snapshots = snapshots });
         }
     }

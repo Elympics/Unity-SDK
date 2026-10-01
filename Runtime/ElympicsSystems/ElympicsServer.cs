@@ -101,16 +101,19 @@ namespace Elympics
 
             var snapshot = _serverElympicsUpdate.GenerateSnapshot();
             _currentSnapshot = ElympicsBehavioursManager.AddMetadataToSnapshot(snapshot);
-
-            using (ElympicsMarkers.Elympics_SnapshotCollector.Auto())
-                _snapshotCollector.CaptureSnapshot(_previousSnapshot, _currentSnapshot);
-            _previousSnapshot = _currentSnapshot;
         }
 
         protected override void ElympicsRenderUpdate(in RenderData renderData) => _serverElympicsUpdate.HandleRenderFrame(renderData);
 
         protected override void ElympicsLateFixedUpdate()
         {
+            // TickEndUtc is set only once ElympicsFixedUpdate has returned: stamp and capture the snapshot here,
+            // or it carries the end time of the previous tick.
+            _currentSnapshot.TickEndUtc = TickEndUtc;
+            using (ElympicsMarkers.Elympics_SnapshotCollector.Auto())
+                _snapshotCollector.CaptureSnapshot(_previousSnapshot, _currentSnapshot);
+            _previousSnapshot = _currentSnapshot;
+
             SendQueuedRpcMessages();
             _serverElympicsUpdate.FinalizeTick(_currentSnapshot);
             if (_endGameRequested)

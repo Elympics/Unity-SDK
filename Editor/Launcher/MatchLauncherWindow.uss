@@ -39,13 +39,15 @@
 }
 
 .tabs {
-    flex-wrap: wrap;
-    height: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 21px;
     margin-bottom: 2px;
 }
 
 .tab {
     flex-grow: 1;
+    flex-basis: 0;
     -unity-text-align: middle-center;
 }
 
@@ -64,7 +66,17 @@
     min-height: 80px;
 }
 
+/* The log field fills the scroll view, which grows into the window's spare height. */
+.log-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
+.log {
+    flex-grow: 1;
+}
+
 .log > .unity-text-field__input {
+    flex-grow: 1;
     white-space: normal;
     font-size: 10px;
 }

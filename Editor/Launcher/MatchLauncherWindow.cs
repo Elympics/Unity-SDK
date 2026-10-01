@@ -47,9 +47,9 @@ namespace Elympics.Editor.Launcher
         private Label _gameName = null!;
         private HelpBox _buildSettingsError = null!;
         private HelpBox _runInBackgroundWarning = null!;
-        private EnumField? _dataMode;
+        private readonly Dictionary<ElympicsHostLaunchKind, ToolbarToggle> _tabs = new();
         private TextField _dataJson = null!;
-        private VisualElement _launchButtons = null!;
+        private Button _launchButton = null!;
         private VisualElement _matchControls = null!;
         private ScrollView _logScroll = null!;
         private TextField? _log;
@@ -94,7 +94,6 @@ namespace Elympics.Editor.Launcher
             _gameName = root.Q<Label>("game-name");
             _buildSettingsError = root.Q<HelpBox>("build-settings-error");
             _runInBackgroundWarning = root.Q<HelpBox>("run-in-background-warning");
-            _launchButtons = root.Q<VisualElement>("launch-buttons");
             _matchControls = root.Q<VisualElement>("match-controls");
             _logScroll = root.Q<ScrollView>("log-scroll");
             _log = root.Q<TextField>("log");
@@ -107,13 +106,14 @@ namespace Elympics.Editor.Launcher
             _dataJson = root.Q<TextField>("data-json");
             _dataJson.SetValueWithoutNotify(dataJsons[(int)editedKind]);
             _ = _dataJson.RegisterValueChangedCallback(change => dataJsons[(int)editedKind] = change.newValue);
-            _dataMode = root.Q<EnumField>("data-mode");
-            _dataMode.Init(editedKind);
-            _ = _dataMode.RegisterValueChangedCallback(change =>
+            _tabs.Clear();
+            foreach (var kind in LaunchKinds)
             {
-                editedKind = (ElympicsHostLaunchKind)change.newValue;
-                _dataJson.SetValueWithoutNotify(dataJsons[(int)editedKind]);
-            });
+                var tab = root.Q<ToolbarToggle>($"tab-{kind}");
+                _tabs[kind] = tab;
+                // A tab can't be closed by clicking it again: one tab is always open.
+                _ = tab.RegisterValueChangedCallback(change => SelectTab(change.newValue ? kind : editedKind));
+            }
             root.Q<Button>("data-template").clicked += () => _dataJson.value = TemplateData(editedKind);
             root.Q<Button>("data-load").clicked += LoadDataFromFile;
 
@@ -122,8 +122,9 @@ namespace Elympics.Editor.Launcher
             _ = optionsField.RegisterValueChangedCallback(change => optionsJson = change.newValue);
             root.Q<Button>("options-template").clicked += () => optionsField.value = TemplateOptions();
 
-            foreach (var kind in LaunchKinds)
-                root.Q<Button>($"launch-{kind}").clicked += () => Launch(kind);
+            _launchButton = root.Q<Button>("launch");
+            _launchButton.clicked += () => Launch(editedKind);
+            SelectTab(editedKind);
 
             root.Q<Button>("abort").clicked += () => SendWithId("abortMatch", id => _subscribed?.HandleHostAbort(id));
             root.Q<Button>("ping").clicked += () => SendWithId("ping", id => _subscribed?.HandleHostPing(id));
@@ -162,8 +163,18 @@ namespace Elympics.Editor.Launcher
                     + "Add it in File > Build Settings.";
             SetShown(_runInBackgroundWarning, !Application.runInBackground);
 
-            _launchButtons.SetEnabled(launcher == null || launcher.State == MatchLauncherState.Idle);
+            _launchButton.SetEnabled(launcher == null || launcher.State == MatchLauncherState.Idle);
             _matchControls.SetEnabled(launcher != null);
+        }
+
+        /// <summary>Opens the data tab of <paramref name="kind"/> and makes the launch button launch it.</summary>
+        private void SelectTab(ElympicsHostLaunchKind kind)
+        {
+            editedKind = kind;
+            foreach (var (tabKind, tab) in _tabs)
+                tab.SetValueWithoutNotify(tabKind == kind);
+            _dataJson.SetValueWithoutNotify(dataJsons[(int)kind]);
+            _launchButton.text = $"▶ {_tabs[kind].text}";
         }
 
         private static void SetShown(VisualElement element, bool shown) => element.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
@@ -204,11 +215,9 @@ namespace Elympics.Editor.Launcher
             Append($"{DateTime.Now:HH:mm:ss.fff} ← {type}{requestPart}{payloadPart}");
         }
 
-        /// <summary>Sends the launch of <paramref name="kind"/> with its data JSON, entering play mode first if needed. Shows the sent data in the editor.</summary>
+        /// <summary>Sends the launch of <paramref name="kind"/> with its data JSON, entering play mode first if needed.</summary>
         private void Launch(ElympicsHostLaunchKind kind)
         {
-            if (_dataMode != null)
-                _dataMode.value = kind;
             var entering = EditorApplication.isPlaying ? "" : " (entering play mode)";
             Append($"{DateTime.Now:HH:mm:ss.fff} → launch{kind} {gameId}{entering}");
             if (!EditorMatchLaunchQueue.Launch(kind, gameId, dataJsons[(int)kind], optionsJson))

@@ -270,12 +270,12 @@ mode when the match ends. An edited argument is left alone.
 
 ## In the Editor: Tools > Elympics > Match Launcher
 
-- **Launch data:** each mode keeps its own data JSON, with the same wire form as the web page. Pick the mode to
-  edit, or start from its template (every field unset, so the game config fills it; the replay template is the
-  config's snapshot file path). Options JSON and the game ID are shared by all modes.
-- **Launch buttons:** `▶ Online`, `▶ Single player`, `▶ HR server`, `▶ HR client` and `▶ Replay` send that mode's
-  data, the options and the game ID exactly as written in the window. Outside play mode they enter play mode
-  first, from the boot scene or from an empty scene.
+- **Launch data:** one tab per mode, each with its own data JSON in the same wire form as the web page. A
+  template sets every field as unset, so the game config fills it; the replay template is the config's snapshot
+  file path. The options JSON and the game ID are shared by all modes.
+- **Launch button:** named after the open tab (`▶ Online`, `▶ Single player`, `▶ HR server`, `▶ HR client`,
+  `▶ Replay`). It sends that tab's data, the options and the game ID exactly as written in the window. Outside
+  play mode it enters play mode first, from the boot scene or from an empty scene.
 - **Controls:** abort, ping and quit. The window logs every command and event as one selectable text; `Copy all`
   copies the whole log.
 - **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note

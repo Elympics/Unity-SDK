@@ -38,9 +38,25 @@
     white-space: normal;
 }
 
-.launch-button {
+.tabs {
+    flex-wrap: wrap;
+    height: auto;
+    margin-bottom: 2px;
+}
+
+.tab {
     flex-grow: 1;
-    min-width: 96px;
+    -unity-text-align: middle-center;
+}
+
+.tab > .unity-toggle__input {
+    justify-content: center;
+}
+
+.launch-button {
+    margin-top: 6px;
+    height: 24px;
+    -unity-font-style: bold;
 }
 
 .log-scroll {

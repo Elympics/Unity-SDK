@@ -1,0 +1,54 @@
+.root {
+    flex-grow: 1;
+    padding: 4px;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.wrap {
+    flex-wrap: wrap;
+}
+
+.grow {
+    flex-grow: 1;
+}
+
+.section {
+    -unity-font-style: bold;
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+.state {
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.hint {
+    -unity-font-style: italic;
+    white-space: normal;
+    margin-left: 3px;
+}
+
+.json > .unity-text-field__input {
+    min-height: 72px;
+    white-space: normal;
+}
+
+.launch-button {
+    flex-grow: 1;
+    min-width: 96px;
+}
+
+.log-scroll {
+    flex-grow: 1;
+    min-height: 80px;
+}
+
+.log > .unity-text-field__input {
+    white-space: normal;
+    font-size: 10px;
+}

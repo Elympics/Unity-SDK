@@ -5,34 +5,54 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Elympics.Editor.Launcher
 {
     /// <summary>
-    /// Launches matches in the Editor: one click per mode with the selected game's <see cref="ElympicsGameConfig"/> defaults,
-    /// or any launch as JSON, the way an out-of-process host would. Shows every host event the launcher emits.
+    /// Launches matches in the Editor the way an out-of-process host would: each mode with its own data JSON, the shared
+    /// options JSON and the game ID set in the window. Shows every host event the launcher emits.
     /// </summary>
     internal sealed class MatchLauncherWindow : EditorWindow
     {
         private const string MenuPath = "Tools/Elympics/" + EditorTitle;
         private const string EditorTitle = "Match Launcher";
         private const int MaxLogEntries = 500;
-        /// <summary>Room for the vertical scrollbar and margins when measuring wrapped log lines.</summary>
-        private const float LogScrollbarWidth = 24f;
+        /// <summary>
+        /// The log field shows at most this many of the latest characters: a UI Toolkit text element can't have more than
+        /// 65535 vertices (4 per character). "Copy all" copies the whole log.
+        /// </summary>
+        private const int MaxShownLogCharacters = 12000;
+        private const long UpdateIntervalMs = 200;
 
-        [SerializeField] private ElympicsHostLaunchKind launchKind = ElympicsHostLaunchKind.SinglePlayer;
+        private static readonly ElympicsHostLaunchKind[] LaunchKinds = (ElympicsHostLaunchKind[])Enum.GetValues(typeof(ElympicsHostLaunchKind));
+
+        [SerializeField] private VisualTreeAsset? windowUxml;
+
+        [SerializeField] private ElympicsHostLaunchKind editedKind = ElympicsHostLaunchKind.SinglePlayer;
         [SerializeField] private string gameId = "";
-        [SerializeField] private string dataJson = "";
+        /// <summary>The data JSON of each mode, indexed by <see cref="ElympicsHostLaunchKind"/>.</summary>
+        [SerializeField] private List<string> dataJsons = new();
         [SerializeField] private string optionsJson = "";
         [SerializeField] private List<string> log = new();
 
         private ElympicsMatchLauncher? _subscribed;
-        private Vector2 _dataScroll;
-        private Vector2 _optionsScroll;
-        private Vector2 _logScroll;
         private int _requestCounter;
-        private string? _launchModeSource;
+
+        private Label? _state;
+        private HelpBox _launchModeNote = null!;
+        private VisualElement _launchControls = null!;
+        private Label _gameName = null!;
+        private HelpBox _buildSettingsError = null!;
+        private HelpBox _runInBackgroundWarning = null!;
+        private EnumField? _dataMode;
+        private TextField _dataJson = null!;
+        private VisualElement _launchButtons = null!;
+        private VisualElement _matchControls = null!;
+        private ScrollView _logScroll = null!;
+        private TextField? _log;
 
         [MenuItem(MenuPath)]
         public static void OpenWindow() => GetWindow<MatchLauncherWindow>().titleContent = new GUIContent(EditorTitle);
@@ -41,14 +61,114 @@ namespace Elympics.Editor.Launcher
         {
             if (string.IsNullOrEmpty(gameId))
                 gameId = DefaultGameId();
-            if (string.IsNullOrEmpty(dataJson))
-                dataJson = TemplateData(launchKind);
+            while (dataJsons.Count < LaunchKinds.Length)
+                dataJsons.Add(TemplateData((ElympicsHostLaunchKind)dataJsons.Count));
             if (string.IsNullOrEmpty(optionsJson))
                 optionsJson = TemplateOptions();
-            _launchModeSource = LaunchModeParameterSource();
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            // After the domain reload of entering play mode, subscribe before the launch queue sends its launch.
+            Subscribe(CurrentLauncher());
         }
 
-        private void OnFocus() => _launchModeSource = LaunchModeParameterSource();
+        private void OnDisable()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            Subscribe(null);
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange change) => Subscribe(CurrentLauncher());
+
+        private void CreateGUI()
+        {
+            if (windowUxml == null)
+            {
+                rootVisualElement.Add(new HelpBox($"{nameof(MatchLauncherWindow)}.uxml is not assigned to the window script.", HelpBoxMessageType.Error));
+                return;
+            }
+            windowUxml.CloneTree(rootVisualElement);
+            var root = rootVisualElement;
+
+            _state = root.Q<Label>("state");
+            _launchModeNote = root.Q<HelpBox>("launch-mode-note");
+            _launchControls = root.Q<VisualElement>("launch-controls");
+            _gameName = root.Q<Label>("game-name");
+            _buildSettingsError = root.Q<HelpBox>("build-settings-error");
+            _runInBackgroundWarning = root.Q<HelpBox>("run-in-background-warning");
+            _launchButtons = root.Q<VisualElement>("launch-buttons");
+            _matchControls = root.Q<VisualElement>("match-controls");
+            _logScroll = root.Q<ScrollView>("log-scroll");
+            _log = root.Q<TextField>("log");
+
+            var gameIdField = root.Q<TextField>("game-id");
+            gameIdField.SetValueWithoutNotify(gameId);
+            _ = gameIdField.RegisterValueChangedCallback(change => gameId = change.newValue);
+            root.Q<Button>("first-game").clicked += () => gameIdField.value = DefaultGameId();
+
+            _dataJson = root.Q<TextField>("data-json");
+            _dataJson.SetValueWithoutNotify(dataJsons[(int)editedKind]);
+            _ = _dataJson.RegisterValueChangedCallback(change => dataJsons[(int)editedKind] = change.newValue);
+            _dataMode = root.Q<EnumField>("data-mode");
+            _dataMode.Init(editedKind);
+            _ = _dataMode.RegisterValueChangedCallback(change =>
+            {
+                editedKind = (ElympicsHostLaunchKind)change.newValue;
+                _dataJson.SetValueWithoutNotify(dataJsons[(int)editedKind]);
+            });
+            root.Q<Button>("data-template").clicked += () => _dataJson.value = TemplateData(editedKind);
+            root.Q<Button>("data-load").clicked += LoadDataFromFile;
+
+            var optionsField = root.Q<TextField>("options-json");
+            optionsField.SetValueWithoutNotify(optionsJson);
+            _ = optionsField.RegisterValueChangedCallback(change => optionsJson = change.newValue);
+            root.Q<Button>("options-template").clicked += () => optionsField.value = TemplateOptions();
+
+            foreach (var kind in LaunchKinds)
+                root.Q<Button>($"launch-{kind}").clicked += () => Launch(kind);
+
+            root.Q<Button>("abort").clicked += () => SendWithId("abortMatch", id => _subscribed?.HandleHostAbort(id));
+            root.Q<Button>("ping").clicked += () => SendWithId("ping", id => _subscribed?.HandleHostPing(id));
+            root.Q<Button>("quit").clicked += () => Send("quitApplication", () => _subscribed?.HandleHostQuit("Match Launcher window"));
+            root.Q<Button>("log-copy").clicked += () => EditorGUIUtility.systemCopyBuffer = string.Join("\n", log);
+            root.Q<Button>("log-clear").clicked += () =>
+            {
+                log.Clear();
+                ShowLog();
+            };
+
+            ShowLog();
+            UpdateState();
+            _ = root.schedule.Execute(UpdateState).Every(UpdateIntervalMs);
+        }
+
+        /// <summary>Refreshes everything that depends on play mode, the launcher state, the config and the launch mode parameter.</summary>
+        private void UpdateState()
+        {
+            Subscribe(CurrentLauncher());
+            if (_state == null)
+                return;
+            var launcher = _subscribed;
+            _state.text = launcher == null ? "Not in play mode" : $"{launcher.State} (in match: {launcher.IsCurrentlyInMatch})";
+
+            var launchModeSource = LaunchModeParameterSource();
+            SetShown(_launchModeNote, launchModeSource != null);
+            _launchModeNote.text = launchModeSource ?? "";
+            _launchControls.SetEnabled(launchModeSource == null);
+
+            var game = SelectedGame();
+            _gameName.text = game != null ? game.GameName : $"No game with ID \"{gameId}\" in ElympicsConfig";
+            SetShown(_buildSettingsError, game != null && !IsInBuildSettings(game.GameplayScene));
+            if (game != null)
+                _buildSettingsError.text = $"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "
+                    + "Add it in File > Build Settings.";
+            SetShown(_runInBackgroundWarning, !Application.runInBackground);
+
+            _launchButtons.SetEnabled(launcher == null || launcher.State == MatchLauncherState.Idle);
+            _matchControls.SetEnabled(launcher != null);
+        }
+
+        private static void SetShown(VisualElement element, bool shown) => element.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+
+        private static ElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
 
         /// <summary>
         /// Where the launch mode parameter of this Editor comes from, or null if it is not set. With it set, the launcher
@@ -66,34 +186,16 @@ namespace Elympics.Editor.Launcher
             return null;
         }
 
-        private void OnDisable() => Subscribe(null);
-
-        // Keeps the subscription on the launcher of the current play session.
-        private void OnInspectorUpdate()
-        {
-            var current = Application.isPlaying ? ElympicsMatchLauncher.Current : null;
-            if (current != _subscribed)
-            {
-                Subscribe(current);
-                Repaint();
-            }
-        }
-
         private void Subscribe(ElympicsMatchLauncher? launcher)
         {
-            if (_subscribed != null)
-            {
-                _subscribed.HostEventEmitted -= OnHostEvent;
-                _subscribed.StateChanged -= OnStateChanged;
-            }
-            _subscribed = launcher;
-            if (_subscribed == null)
+            if (launcher == _subscribed)
                 return;
-            _subscribed.HostEventEmitted += OnHostEvent;
-            _subscribed.StateChanged += OnStateChanged;
+            if (_subscribed != null)
+                _subscribed.HostEventEmitted -= OnHostEvent;
+            _subscribed = launcher;
+            if (_subscribed != null)
+                _subscribed.HostEventEmitted += OnHostEvent;
         }
-
-        private void OnStateChanged(MatchLauncherState state) => Repaint();
 
         private void OnHostEvent(string type, string requestId, string payloadJson)
         {
@@ -102,122 +204,15 @@ namespace Elympics.Editor.Launcher
             Append($"{DateTime.Now:HH:mm:ss.fff} ← {type}{requestPart}{payloadPart}");
         }
 
-        private void Append(string line)
+        /// <summary>Sends the launch of <paramref name="kind"/> with its data JSON, entering play mode first if needed. Shows the sent data in the editor.</summary>
+        private void Launch(ElympicsHostLaunchKind kind)
         {
-            log.Add(line);
-            if (log.Count > MaxLogEntries)
-                log.RemoveRange(0, log.Count - MaxLogEntries);
-            _logScroll.y = float.MaxValue;
-            Repaint();
-        }
-
-        private void OnGUI()
-        {
-            var launcher = _subscribed;
-            EditorGUILayout.LabelField("State", launcher == null ? "Not in play mode" : $"{launcher.State} (in match: {launcher.IsCurrentlyInMatch})", EditorStyles.boldLabel);
-
-            if (_launchModeSource != null)
-                EditorGUILayout.HelpBox(_launchModeSource, MessageType.Info);
-            using (new EditorGUI.DisabledScope(_launchModeSource != null))
-                DrawLaunchControls(launcher);
-
-            EditorGUILayout.Space();
-            using (new EditorGUI.DisabledScope(launcher == null))
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Abort / return to boot"))
-                    SendWithId("abortMatch", id => launcher!.HandleHostAbort(id));
-                if (GUILayout.Button("Ping"))
-                    SendWithId("ping", id => launcher!.HandleHostPing(id));
-                if (GUILayout.Button("Quit application"))
-                    Send("quitApplication", () => launcher!.HandleHostQuit("Match Launcher window"));
-            }
-
-            EditorGUILayout.Space();
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.LabelField("Events", EditorStyles.boldLabel);
-                if (GUILayout.Button("Clear", GUILayout.Width(60)))
-                    log.Clear();
-            }
-            _logScroll = EditorGUILayout.BeginScrollView(_logScroll, GUILayout.ExpandHeight(true));
-            foreach (var line in log)
-            {
-                // Wrapped lines (e.g. with a JSON payload) need their real height, or they overlap the next entry.
-                var style = EditorStyles.wordWrappedMiniLabel;
-                var height = style.CalcHeight(new GUIContent(line), position.width - LogScrollbarWidth);
-                EditorGUILayout.SelectableLabel(line, style, GUILayout.Height(height));
-            }
-            EditorGUILayout.EndScrollView();
-        }
-
-        private void DrawLaunchControls(ElympicsMatchLauncher? launcher)
-        {
-
-            EditorGUILayout.Space();
-            var game = SelectedGame();
-            EditorGUILayout.LabelField("Quick launch", game != null ? $"{game.GameName}, with its config defaults" : "No game selected in ElympicsConfig", EditorStyles.boldLabel);
-            using (new EditorGUI.DisabledScope(game == null || launcher is { State: not MatchLauncherState.Idle }))
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("▶ Single player"))
-                    QuickLaunch(ElympicsHostLaunchKind.SinglePlayer, game!);
-                if (GUILayout.Button("▶ HR server"))
-                    QuickLaunch(ElympicsHostLaunchKind.HalfRemoteServer, game!);
-                if (GUILayout.Button("▶ HR client"))
-                    QuickLaunch(ElympicsHostLaunchKind.HalfRemoteClient, game!);
-                if (GUILayout.Button(new GUIContent("▶ Replay", game != null ? $"Replays {game.SnapshotFilePath}" : "")))
-                    QuickLaunch(ElympicsHostLaunchKind.SnapshotReplay, game!);
-            }
-            if (game != null && !IsInBuildSettings(game.GameplayScene))
-                EditorGUILayout.HelpBox($"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "
-                    + "Add it in File > Build Settings.", MessageType.Error);
-            if (game != null && !Application.runInBackground)
-                EditorGUILayout.HelpBox("PlayerSettings \"Run In Background\" is off: half-remote matches stop simulating in out-of-focus Editor windows.", MessageType.Warning);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("JSON launch", EditorStyles.boldLabel);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                var kind = (ElympicsHostLaunchKind)EditorGUILayout.EnumPopup("Match mode", launchKind);
-                if (kind != launchKind)
-                {
-                    launchKind = kind;
-                    dataJson = TemplateData(kind);
-                }
-            }
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                gameId = EditorGUILayout.TextField("Game ID", gameId);
-                if (GUILayout.Button("First game", GUILayout.Width(80)))
-                    gameId = DefaultGameId();
-            }
-
-            EditorGUILayout.LabelField($"Launch data ({launchKind} JSON, empty for defaults)");
-            _dataScroll = EditorGUILayout.BeginScrollView(_dataScroll, GUILayout.MinHeight(100), GUILayout.MaxHeight(240));
-            dataJson = EditorGUILayout.TextArea(dataJson, GUILayout.ExpandHeight(true));
-            EditorGUILayout.EndScrollView();
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Template"))
-                    dataJson = TemplateData(launchKind);
-                if (GUILayout.Button("Load file…"))
-                    LoadDataFromFile();
-            }
-
-            EditorGUILayout.LabelField("Launch options (JSON, empty for defaults)");
-            _optionsScroll = EditorGUILayout.BeginScrollView(_optionsScroll, GUILayout.MinHeight(60), GUILayout.MaxHeight(120));
-            optionsJson = EditorGUILayout.TextArea(optionsJson, GUILayout.ExpandHeight(true));
-            EditorGUILayout.EndScrollView();
-
-            EditorGUILayout.Space();
-            using (new EditorGUI.DisabledScope(launcher == null))
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Launch"))
-                    Send($"launch{launchKind}", () => launcher!.HandleHostLaunch(launchKind, gameId, dataJson, optionsJson));
-            }
-
+            if (_dataMode != null)
+                _dataMode.value = kind;
+            var entering = EditorApplication.isPlaying ? "" : " (entering play mode)";
+            Append($"{DateTime.Now:HH:mm:ss.fff} → launch{kind} {gameId}{entering}");
+            if (!EditorMatchLaunchQueue.Launch(kind, gameId, dataJsons[(int)kind], optionsJson))
+                Append($"{DateTime.Now:HH:mm:ss.fff} Cancelled: the open scenes were not saved.");
         }
 
         private void Send(string command, Action send)
@@ -233,27 +228,54 @@ namespace Elympics.Editor.Launcher
             send(requestId);
         }
 
+        private void Append(string line)
+        {
+            log.Add(line);
+            if (log.Count > MaxLogEntries)
+                log.RemoveRange(0, log.Count - MaxLogEntries);
+            ShowLog();
+        }
+
+        /// <summary>Shows the log as one text, so any part of it can be selected and copied.</summary>
+        private void ShowLog()
+        {
+            if (_log == null)
+                return;
+            var text = string.Join("\n", log);
+            if (text.Length > MaxShownLogCharacters)
+            {
+                var start = text.IndexOf('\n', text.Length - MaxShownLogCharacters);
+                text = "(older entries: Copy all)\n" + text[(start < 0 ? text.Length - MaxShownLogCharacters : start + 1)..];
+            }
+            _log.SetValueWithoutNotify(text);
+            // Scroll once the new text is laid out.
+            _ = _logScroll.schedule.Execute(() => _logScroll.scrollOffset = new Vector2(0, float.MaxValue));
+        }
+
         private void LoadDataFromFile()
         {
             var path = EditorUtility.OpenFilePanel("Load launch data", Application.dataPath, "json");
             if (!string.IsNullOrEmpty(path))
-                dataJson = File.ReadAllText(path);
+                _dataJson.value = File.ReadAllText(path);
         }
 
         private static bool IsInBuildSettings(string scenePath) => EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == scenePath);
 
-        private static ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.GetCurrentGameConfig();
-
-        private void QuickLaunch(ElympicsHostLaunchKind kind, ElympicsGameConfig game)
-        {
-            Append($"{DateTime.Now:HH:mm:ss.fff} → {kind} of {game.GameName}{(Application.isPlaying ? "" : " (entering play mode)")}");
-            EditorMatchLaunchQueue.Launch(kind, game.GameId);
-        }
+        private ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null && config.GameId == gameId);
 
         private static string DefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";
 
-        /// <summary>The wire form of <paramref name="kind"/> with every field unset, so the launch uses the defaults.</summary>
-        private static string TemplateData(ElympicsHostLaunchKind kind) => JsonUtility.ToJson(ElympicsLaunchDtos.Create(kind), true);
+        /// <summary>
+        /// The wire form of <paramref name="kind"/> with every field unset, so the launch uses the game config's values.
+        /// A replay has no default, so its template points at the selected game's snapshot file.
+        /// </summary>
+        private string TemplateData(ElympicsHostLaunchKind kind)
+        {
+            var dto = ElympicsLaunchDtos.Create(kind);
+            if (dto is SnapshotReplayLaunchDataDto replay && SelectedGame() is { } game)
+                replay.path = game.SnapshotFilePath;
+            return JsonUtility.ToJson(dto, true);
+        }
 
         private static string TemplateOptions() => JsonUtility.ToJson(new ElympicsLaunchOptionsDto(), true);
     }

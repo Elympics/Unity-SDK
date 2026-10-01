@@ -1,0 +1,47 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.daftmobile.elympics/Editor/Launcher/MatchLauncherWindow.uss?fileID=7433441132597879392&amp;guid=28a915dc7fde432fa226e875c1006af7&amp;type=3#MatchLauncherWindow" />
+    <ui:VisualElement name="root" class="root">
+        <ui:Label name="state" class="state" />
+        <ui:HelpBox name="launch-mode-note" message-type="Info" style="display: none;" />
+        <ui:VisualElement name="launch-controls">
+            <ui:VisualElement class="row">
+                <ui:TextField name="game-id" label="Game ID" class="grow" />
+                <ui:Button name="first-game" text="First game" tooltip="Use the first game in ElympicsConfig." />
+            </ui:VisualElement>
+            <ui:Label name="game-name" class="hint" />
+            <ui:HelpBox name="build-settings-error" message-type="Error" style="display: none;" />
+            <ui:HelpBox name="run-in-background-warning" message-type="Warning" text="PlayerSettings &quot;Run In Background&quot; is off: half-remote matches stop simulating in out-of-focus Editor windows." style="display: none;" />
+            <ui:Label text="Launch data" class="section" />
+            <uie:EnumField name="data-mode" label="Mode" tooltip="Each mode keeps its own launch data. A launch button sends its mode's data." />
+            <ui:TextField name="data-json" multiline="true" class="json" tooltip="The mode's launch data as JSON. Unset fields (&quot;&quot;, [], 0, -1 for playerIndex) use the game config." />
+            <ui:VisualElement class="row">
+                <ui:Button name="data-template" text="Template" class="grow" tooltip="Replace this mode's data with its template." />
+                <ui:Button name="data-load" text="Load file…" class="grow" />
+            </ui:VisualElement>
+            <ui:Label text="Launch options" class="section" />
+            <ui:TextField name="options-json" multiline="true" class="json" tooltip="requestId, launchTimeoutSeconds and postMatchTimeoutSeconds. 0 means the default, -1 never." />
+            <ui:Button name="options-template" text="Template" />
+            <ui:Label text="Launch (enters play mode if needed)" class="section" />
+            <ui:VisualElement name="launch-buttons" class="row wrap">
+                <ui:Button name="launch-Online" text="▶ Online" class="launch-button" />
+                <ui:Button name="launch-SinglePlayer" text="▶ Single player" class="launch-button" />
+                <ui:Button name="launch-HalfRemoteServer" text="▶ HR server" class="launch-button" />
+                <ui:Button name="launch-HalfRemoteClient" text="▶ HR client" class="launch-button" />
+                <ui:Button name="launch-SnapshotReplay" text="▶ Replay" class="launch-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="match-controls" class="row">
+            <ui:Button name="abort" text="Abort / return to boot" class="grow" />
+            <ui:Button name="ping" text="Ping" class="grow" />
+            <ui:Button name="quit" text="Quit application" class="grow" />
+        </ui:VisualElement>
+        <ui:VisualElement class="row">
+            <ui:Label text="Events" class="section grow" />
+            <ui:Button name="log-copy" text="Copy all" />
+            <ui:Button name="log-clear" text="Clear" />
+        </ui:VisualElement>
+        <ui:ScrollView name="log-scroll" class="log-scroll">
+            <ui:TextField name="log" multiline="true" readonly="true" class="log" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

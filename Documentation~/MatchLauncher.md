@@ -270,11 +270,14 @@ mode when the match ends. An edited argument is left alone.
 
 ## In the Editor: Tools > Elympics > Match Launcher
 
-- **Quick launch:** `▶ Single player`, `▶ HR server`, `▶ HR client` and `▶ Replay` (of the config's snapshot file
-  path) launch the selected game with its config defaults. Outside play mode they enter play mode first, from
-  the boot scene or from an empty scene.
-- **JSON launch:** any mode, with the same data and options JSON as the web page. It has per-mode templates.
-- **Controls:** abort, ping and quit. The window logs every event.
+- **Launch data:** each mode keeps its own data JSON, with the same wire form as the web page. Pick the mode to
+  edit, or start from its template (every field unset, so the game config fills it; the replay template is the
+  config's snapshot file path). Options JSON and the game ID are shared by all modes.
+- **Launch buttons:** `▶ Online`, `▶ Single player`, `▶ HR server`, `▶ HR client` and `▶ Replay` send that mode's
+  data, the options and the game ID exactly as written in the window. Outside play mode they enter play mode
+  first, from the boot scene or from an empty scene.
+- **Controls:** abort, ping and quit. The window logs every command and event as one selectable text; `Copy all`
+  copies the whole log.
 - **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note
   naming the parameter's source.
 - **The gameplay scene must be enabled in Build Settings**, in the Editor too. The launcher loads it by path,

@@ -2,16 +2,16 @@
 
 using System;
 using System.Linq;
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 
 namespace Elympics.Editor.Launcher
 {
     /// <summary>
-    /// One-click launches of the Match Launcher window: enters play mode from the boot scene (or an empty scene) if needed,
-    /// then launches the chosen mode of the selected game with its <see cref="ElympicsGameConfig"/> defaults.
+    /// Launches of the Match Launcher window: enters play mode from the boot scene (or an empty scene) if needed,
+    /// then sends the launch command with the window's game ID, data JSON and options JSON.
     /// The pending launch survives the domain reload of entering play mode in <see cref="SessionState"/>.
     /// </summary>
     [InitializeOnLoad]
@@ -19,28 +19,39 @@ namespace Elympics.Editor.Launcher
     {
         private const string PendingKey = "Elympics.MatchLauncher.PendingLaunch";
 
+        [Serializable]
+        private struct PendingLaunch
+        {
+            public ElympicsHostLaunchKind kind;
+            public string gameId;
+            public string dataJson;
+            public string optionsJson;
+        }
+
         static EditorMatchLaunchQueue()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        /// <summary>Launches now in play mode, or enters play mode and launches then.</summary>
-        public static void Launch(ElympicsHostLaunchKind kind, string gameId)
+        /// <summary>Launches now in play mode, or enters play mode and launches then. Returns false if the user cancelled saving the open scenes.</summary>
+        public static bool Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
+            var launch = new PendingLaunch { kind = kind, gameId = gameId, dataJson = dataJson, optionsJson = optionsJson };
             if (EditorApplication.isPlaying)
             {
-                LaunchNow(kind, gameId);
-                return;
+                LaunchNow(launch);
+                return true;
             }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                return;
+                return false;
             if (ValidBootScene() is { } bootScene)
                 _ = EditorSceneManager.OpenScene(bootScene);
             else
                 _ = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
-            SessionState.SetString(PendingKey, $"{kind}|{gameId}");
+            SessionState.SetString(PendingKey, JsonUtility.ToJson(launch));
             EditorApplication.EnterPlaymode();
+            return true;
         }
 
         /// <summary>The configured boot scene if the launcher would return to it, else null (the launcher then uses a generated empty scene).</summary>
@@ -65,14 +76,14 @@ namespace Elympics.Editor.Launcher
                 return;
             var pending = SessionState.GetString(PendingKey, "");
             SessionState.EraseString(PendingKey);
-            var parts = pending.Split('|');
-            if (parts.Length != 2 || !Enum.TryParse<ElympicsHostLaunchKind>(parts[0], out var kind))
+            if (string.IsNullOrEmpty(pending))
                 return;
+            var launch = JsonUtility.FromJson<PendingLaunch>(pending);
             // The launcher is created before the first scene loads, so it exists once play mode is entered.
-            EditorApplication.delayCall += () => LaunchNow(kind, parts[1]);
+            EditorApplication.delayCall += () => LaunchNow(launch);
         }
 
-        private static void LaunchNow(ElympicsHostLaunchKind kind, string gameId)
+        private static void LaunchNow(PendingLaunch launch)
         {
             var launcher = ElympicsMatchLauncher.Current;
             if (launcher == null)
@@ -80,24 +91,8 @@ namespace Elympics.Editor.Launcher
                 ElympicsLogger.LogError("The match launcher does not exist. Is play mode running?");
                 return;
             }
-            var game = ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null && config.GameId == gameId);
-            var launch = kind switch
-            {
-                ElympicsHostLaunchKind.SinglePlayer => launcher.LaunchSinglePlayerAsync(gameId),
-                ElympicsHostLaunchKind.HalfRemoteServer => launcher.LaunchHalfRemoteServerAsync(gameId),
-                ElympicsHostLaunchKind.HalfRemoteClient => launcher.LaunchHalfRemoteClientAsync(gameId),
-                ElympicsHostLaunchKind.SnapshotReplay => launcher.LaunchSnapshotReplayAsync(gameId, new SnapshotReplayLaunchData(game != null ? game.SnapshotFilePath : "")),
-                ElympicsHostLaunchKind.Online => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Online launches need match data. Use the JSON launch."),
-                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
-            };
-            LogResult(launch).Forget();
-        }
-
-        private static async UniTaskVoid LogResult(UniTask<ElympicsLaunchResult> launch)
-        {
-            var result = await launch;
-            if (!result.Success)
-                ElympicsLogger.LogWarning($"Match Launcher: {result}");
+            // The launcher reports the result, including a rejection of the JSON, as host events in the window.
+            launcher.HandleHostLaunch(launch.kind, launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
         }
     }
 }

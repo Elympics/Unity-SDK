@@ -18,6 +18,8 @@ namespace Elympics.Editor.Launcher
         private const string MenuPath = "Tools/Elympics/" + EditorTitle;
         private const string EditorTitle = "Match Launcher";
         private const int MaxLogEntries = 500;
+        /// <summary>Room for the vertical scrollbar and margins when measuring wrapped log lines.</summary>
+        private const float LogScrollbarWidth = 24f;
 
         [SerializeField] private ElympicsHostLaunchKind launchKind = ElympicsHostLaunchKind.SinglePlayer;
         [SerializeField] private string gameId = "";
@@ -140,7 +142,12 @@ namespace Elympics.Editor.Launcher
             }
             _logScroll = EditorGUILayout.BeginScrollView(_logScroll, GUILayout.ExpandHeight(true));
             foreach (var line in log)
-                EditorGUILayout.SelectableLabel(line, EditorStyles.wordWrappedMiniLabel, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            {
+                // Wrapped lines (e.g. with a JSON payload) need their real height, or they overlap the next entry.
+                var style = EditorStyles.wordWrappedMiniLabel;
+                var height = style.CalcHeight(new GUIContent(line), position.width - LogScrollbarWidth);
+                EditorGUILayout.SelectableLabel(line, style, GUILayout.Height(height));
+            }
             EditorGUILayout.EndScrollView();
         }
 

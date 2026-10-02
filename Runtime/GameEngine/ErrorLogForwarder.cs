@@ -16,8 +16,11 @@ namespace Elympics
         private static TextWriter errorOutput;
         private static readonly StringBuilder LoggerSb = new();
 
+#if UNITY_SERVER
+        // Only a game server's host reads stderr. Elsewhere this duplicates every error, e.g. in Editor.log.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void Initialize() => Initialize(Console.Error);
+#endif
 
         public static void Initialize(TextWriter textWriter)
         {

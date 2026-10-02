@@ -635,6 +635,7 @@ namespace Elympics
         private void Emit(string type, string requestId, object? payload = null)
         {
             var payloadJson = payload == null ? string.Empty : JsonUtility.ToJson(payload);
+            _logger.LogDebug($"Host event {type}" + (requestId.Length > 0 ? $" (request {requestId})" : "") + (payloadJson.Length > 0 ? $": {payloadJson}" : ""));
             try
             {
                 HostEventEmitted?.Invoke(type, requestId, payloadJson);

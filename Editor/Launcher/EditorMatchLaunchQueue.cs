@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.IO;
 using System.Linq;
 using Elympics.Core.Logger;
 using UnityEditor;
@@ -18,6 +19,7 @@ namespace Elympics.Editor.Launcher
     internal static class EditorMatchLaunchQueue
     {
         private const string PendingKey = "Elympics.MatchLauncher.PendingLaunch";
+        private const string SceneSetupKey = "Elympics.MatchLauncher.SceneSetup";
 
         [Serializable]
         private struct PendingLaunch
@@ -26,6 +28,20 @@ namespace Elympics.Editor.Launcher
             public string gameId;
             public string dataJson;
             public string optionsJson;
+        }
+
+        [Serializable]
+        private struct SavedScene
+        {
+            public string path;
+            public bool isLoaded;
+            public bool isActive;
+        }
+
+        [Serializable]
+        private struct SavedSceneSetup
+        {
+            public SavedScene[] scenes;
         }
 
         static EditorMatchLaunchQueue()
@@ -45,6 +61,7 @@ namespace Elympics.Editor.Launcher
             }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return false;
+            SaveSceneSetup();
             if (ValidBootScene() is { } bootScene)
                 _ = EditorSceneManager.OpenScene(bootScene);
             else
@@ -68,10 +85,48 @@ namespace Elympics.Editor.Launcher
             return inBuild && !isGameplay ? bootScene : null;
         }
 
+        private static void SaveSceneSetup()
+        {
+            var scenes = EditorSceneManager.GetSceneManagerSetup()
+                .Where(scene => !string.IsNullOrEmpty(scene.path))
+                .Select(scene => new SavedScene { path = scene.path, isLoaded = scene.isLoaded, isActive = scene.isActive })
+                .ToArray();
+            if (scenes.Length == 0)
+            {
+                SessionState.EraseString(SceneSetupKey);
+                return;
+            }
+            if (!scenes.Any(scene => scene.isActive))
+                scenes[0].isActive = true;
+            SessionState.SetString(SceneSetupKey, JsonUtility.ToJson(new SavedSceneSetup { scenes = scenes }));
+        }
+
+        private static void RestoreSceneSetup()
+        {
+            var json = SessionState.GetString(SceneSetupKey, "");
+            SessionState.EraseString(SceneSetupKey);
+            if (string.IsNullOrEmpty(json))
+                return;
+            var saved = JsonUtility.FromJson<SavedSceneSetup>(json).scenes;
+            if (saved == null || saved.Length == 0)
+                return;
+            var setup = saved.Where(scene => File.Exists(scene.path))
+                .Select(scene => new SceneSetup { path = scene.path, isLoaded = scene.isLoaded, isActive = scene.isActive })
+                .ToArray();
+            if (setup.Length == 0)
+                return;
+            if (!setup.Any(scene => scene.isActive))
+                setup[0].isActive = true;
+            EditorSceneManager.RestoreSceneManagerSetup(setup);
+        }
+
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.EnteredEditMode)
+            {
                 SessionState.EraseString(PendingKey);
+                RestoreSceneSetup();
+            }
             if (change != PlayModeStateChange.EnteredPlayMode)
                 return;
             var pending = SessionState.GetString(PendingKey, "");

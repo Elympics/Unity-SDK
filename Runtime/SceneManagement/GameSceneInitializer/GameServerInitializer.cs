@@ -7,7 +7,6 @@ namespace Elympics
 {
     internal abstract class GameServerInitializer : GameSceneInitializer
     {
-        protected virtual bool HandlingBotsOverride => false;
         protected virtual bool HandlingClientsOverride => false;
 
         public override bool ReportsMatchJoined => false;
@@ -33,7 +32,7 @@ namespace Elympics
             // ReplicationPipeline + PipelineBuffers only needed on server
             ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
-            Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
+            Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingClientsOverride);
             InitializeGameServer(GameConfig, GameEngineAdapter);
             BehavioursManager.InitializeInternal(Server, GameConfig.MaxPlayers);
 

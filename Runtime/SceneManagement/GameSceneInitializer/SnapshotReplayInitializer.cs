@@ -40,8 +40,7 @@ namespace Elympics
                 behavioursManager,
                 new NullServerPlayerHandler(),
                 new NullSnapshotAnalysisCollector(),
-                updateLoop,
-                true);
+                updateLoop);
 
             // @formatter:off
             gameEngineAdapter.Initialize(new InitialMatchData

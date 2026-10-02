@@ -37,7 +37,6 @@ namespace Elympics
                 new SinglePlayerPlayerHandler(server, gameEngineAdapter, behavioursManager),
                 new SinglePlayerSnapshotAnalysisCollector(),
                 new DefaultServerElympicsUpdateLoop(behavioursManager, gameEngineAdapter, server, gameConfig),
-                handlingBotsOverride: true,
                 handlingClientsOverride: true);
 
             gameEngineAdapter.Initialize(new InitialMatchData

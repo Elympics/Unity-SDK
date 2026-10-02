@@ -1,7 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Elympics.Core;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
@@ -52,7 +50,6 @@ namespace Elympics
             IServerPlayerHandler playerHandler,
             SnapshotAnalysisCollector snapshotAnalysisCollector,
             IServerElympicsUpdateLoop serverElympicsUpdate,
-            bool handlingBotsOverride = false,
             bool handlingClientsOverride = false)
         {
             _score = new ElympicsScore(elympicsGameConfig.MaxPlayers);

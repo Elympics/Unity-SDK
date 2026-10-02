@@ -29,10 +29,10 @@ namespace Elympics
                 throw new ElympicsException($"Current player amount {playersList.Count} is greater than maximum player amount {elympicsGameConfig.MaxPlayers} ");
 
             if (playersList.Count <= playerIndex)
-                throw ElympicsLogger.LogExceptionAndReturn(new ElympicsException("Half Remote client won't be initialized because "
+                throw new ElympicsException("Half Remote client won't be initialized because "
                     + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
                     + $"The list has only {playersList.Count} entries. "
-                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}."));
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             ElympicsLogger.State.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
             // The launch data overrides the local player data of this client.

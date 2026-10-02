@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Elympics
@@ -39,9 +40,12 @@ namespace Elympics
         {
             // Scene names must be unique, so reuse the generated scene if it survived an earlier return.
             var empty = SceneManager.GetSceneByName(EmptyBootSceneName);
-            if (!empty.IsValid() || !string.IsNullOrEmpty(empty.path))
+            var created = !empty.IsValid() || !string.IsNullOrEmpty(empty.path);
+            if (created)
                 empty = SceneManager.CreateScene(EmptyBootSceneName);
             _ = SceneManager.SetActiveScene(empty);
+            if (created)
+                AddBlackCamera();
 
             var others = new List<Scene>();
             for (var i = 0; i < SceneManager.sceneCount; i++)
@@ -56,6 +60,15 @@ namespace Elympics
                 if (operation != null)
                     await operation;
             }
+        }
+
+        // Without a camera, the screen keeps showing the last frame of the match.
+        private static void AddBlackCamera()
+        {
+            var camera = new GameObject("ElympicsBootCamera").AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.cullingMask = 0;
         }
 
         public UniTask ReleaseMemoryAsync() => ElympicsMatchTeardown.ReleaseMemoryAsync();

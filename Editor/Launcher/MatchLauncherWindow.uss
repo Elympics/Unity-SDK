@@ -33,6 +33,12 @@
     margin-left: 3px;
 }
 
+.single-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .json > .unity-text-field__input {
     min-height: 72px;
     white-space: normal;

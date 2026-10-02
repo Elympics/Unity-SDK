@@ -19,6 +19,7 @@ namespace Elympics.Editor.Launcher
         /// <summary>A UI Toolkit text element can't have more than 65535 vertices (4 per character).</summary>
         private const int MaxShownLogCharacters = 12000;
         private const long UpdateIntervalMs = 200;
+        private const string OtherGame = "Other";
 
         private static readonly ElympicsHostLaunchKind[] LaunchKinds = (ElympicsHostLaunchKind[])Enum.GetValues(typeof(ElympicsHostLaunchKind));
 
@@ -36,7 +37,10 @@ namespace Elympics.Editor.Launcher
         private Label? _state;
         private HelpBox _launchModeNote = null!;
         private VisualElement _launchControls = null!;
-        private Label _gameName = null!;
+        private DropdownField _game = null!;
+        private TextField _gameIdField = null!;
+        private readonly List<string> _gameIds = new();
+        private Label _unknownGame = null!;
         private HelpBox _buildSettingsError = null!;
         private HelpBox _runInBackgroundWarning = null!;
         private readonly Dictionary<ElympicsHostLaunchKind, ToolbarToggle> _tabs = new();
@@ -83,17 +87,22 @@ namespace Elympics.Editor.Launcher
             _state = root.Q<Label>("state");
             _launchModeNote = root.Q<HelpBox>("launch-mode-note");
             _launchControls = root.Q<VisualElement>("launch-controls");
-            _gameName = root.Q<Label>("game-name");
+            _unknownGame = root.Q<Label>("unknown-game");
             _buildSettingsError = root.Q<HelpBox>("build-settings-error");
             _runInBackgroundWarning = root.Q<HelpBox>("run-in-background-warning");
             _matchControls = root.Q<VisualElement>("match-controls");
             _logScroll = root.Q<ScrollView>("log-scroll");
             _log = root.Q<TextField>("log");
 
-            var gameIdField = root.Q<TextField>("game-id");
-            gameIdField.SetValueWithoutNotify(gameId);
-            _ = gameIdField.RegisterValueChangedCallback(change => gameId = change.newValue);
-            root.Q<Button>("first-game").clicked += () => gameIdField.value = DefaultGameId();
+            _game = root.Q<DropdownField>("game");
+            _ = _game.RegisterValueChangedCallback(change => SelectGame(change.newValue));
+            _gameIdField = root.Q<TextField>("game-id");
+            _gameIdField.SetValueWithoutNotify(gameId);
+            _ = _gameIdField.RegisterValueChangedCallback(change =>
+            {
+                gameId = change.newValue;
+                ShowSelectedGame();
+            });
 
             _dataJson = root.Q<TextField>("data-json");
             _dataJson.SetValueWithoutNotify(dataJsons[(int)editedKind]);
@@ -146,8 +155,10 @@ namespace Elympics.Editor.Launcher
             _launchModeNote.text = launchModeSource ?? "";
             _launchControls.SetEnabled(launchModeSource == null);
 
+            UpdateGameChoices();
             var game = SelectedGame();
-            _gameName.text = game != null ? game.GameName : $"No game with ID \"{gameId}\" in ElympicsConfig";
+            _unknownGame.style.visibility = game == null ? Visibility.Visible : Visibility.Hidden;
+            _unknownGame.text = $"No game with ID \"{gameId}\" in ElympicsConfig";
             SetShown(_buildSettingsError, game != null && !IsInBuildSettings(game.GameplayScene));
             if (game != null)
                 _buildSettingsError.text = $"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "
@@ -254,6 +265,40 @@ namespace Elympics.Editor.Launcher
         }
 
         private static bool IsInBuildSettings(string scenePath) => EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == scenePath);
+
+        private void UpdateGameChoices()
+        {
+            var games = ElympicsConfig.Load()?.AvailableGames.Where(config => config != null).ToList() ?? new List<ElympicsGameConfig>();
+            var ids = games.Select(game => game.GameId).ToList();
+            var labels = games.Select(game => games.Count(other => other.GameName == game.GameName) > 1 ? $"{game.GameName} ({game.GameId})" : game.GameName)
+                .Append(OtherGame)
+                .ToList();
+            if (!ids.SequenceEqual(_gameIds) || !labels.SequenceEqual(_game.choices))
+            {
+                _gameIds.Clear();
+                _gameIds.AddRange(ids);
+                _game.choices = labels;
+            }
+            ShowSelectedGame();
+        }
+
+        private void ShowSelectedGame()
+        {
+            var index = _gameIds.IndexOf(gameId);
+            _game.SetValueWithoutNotify(index >= 0 ? _game.choices[index] : OtherGame);
+        }
+
+        private void SelectGame(string label)
+        {
+            var index = _game.choices.IndexOf(label);
+            if (index >= 0 && index < _gameIds.Count)
+                _gameIdField.value = _gameIds[index];
+            else if (_gameIds.Contains(gameId))
+            {
+                _gameIdField.value = "";
+                _gameIdField.Focus();
+            }
+        }
 
         private ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null && config.GameId == gameId);
 

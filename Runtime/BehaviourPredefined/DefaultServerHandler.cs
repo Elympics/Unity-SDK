@@ -77,8 +77,10 @@ namespace Elympics
                 ElympicsLogger.LogInfo("Not all players connected yet...");
                 _ = await UniTask.Delay(_checkInterval, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }
+            if (ct.IsCancellationRequested || GameStarted)
+                return;
             ElympicsLogger.LogWarning(
-                $"Forcing game server to quit because conditions for {nameof(TerminationOption)}.{autoTerminationOnLeft} were met.");
+                $"Forcing game server to quit because not all players connected within {startGameTimeoutSeconds} s.");
             Elympics.EndGame();
         }
 

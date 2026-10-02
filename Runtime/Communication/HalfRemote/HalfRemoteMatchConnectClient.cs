@@ -101,6 +101,7 @@ namespace Elympics
 
         private async UniTask<HalfRemoteMatchClient> ConnectTcpAsync(CancellationToken ct)
         {
+            Exception lastError = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
                 if (!Application.isPlaying || ct.IsCancellationRequested)
@@ -127,12 +128,13 @@ namespace Elympics
                 }
                 catch (Exception e)
                 {
-                    ElympicsLogger.LogException(new ElympicsException($"TCP client could not connect to {_ip}:{_port}", e));
+                    lastError = e;
+                    ElympicsLogger.LogWarning($"TCP attempt {i + 1}/{ConnectMaxRetries} to {_ip}:{_port} failed: {e.GetType().Name}: {e.Message}");
                 }
                 tcpClient.Dispose();
             }
 
-            throw new ElympicsException($"Failed to connect to TCP server {_ip}:{_port} after {ConnectMaxRetries} retries.");
+            throw new ElympicsException($"Failed to connect to TCP server {_ip}:{_port} after {ConnectMaxRetries} retries.", lastError);
         }
 
         private async UniTask<HalfRemoteMatchClient> ConnectWebAsync(CancellationToken ct)
@@ -149,6 +151,7 @@ namespace Elympics
             if (string.IsNullOrEmpty(offer))
                 throw new ElympicsException("Offer not received from WebRTC client.");
 
+            Exception lastError = null;
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
@@ -170,12 +173,13 @@ namespace Elympics
                 catch (OperationCanceledException) { throw; }
                 catch (Exception e)
                 {
-                    ElympicsLogger.LogError("Error occurred while awaiting an answer from the signaling server: " + e);
+                    lastError = e;
+                    ElympicsLogger.LogWarning($"Signaling server attempt {i + 1}/{ConnectMaxRetries} failed: {e.GetType().Name}: {e.Message}");
                 }
             }
 
             if (string.IsNullOrEmpty(answer))
-                throw new ElympicsException("WebRTC answer is empty because of a connection error or an issue with signaling server.");
+                throw new ElympicsException("WebRTC answer is empty because of a connection error or an issue with signaling server.", lastError);
 
             var client = new HalfRemoteMatchClient(_userId.ToString(), reliableChannel, unreliableChannel);
             await _webRtcClient.OnAnswer(answer);

@@ -32,6 +32,7 @@ namespace Elympics
         private bool _isReplay;
 
         private bool _endGameRequested;
+        private bool _gameEnded;
         private ResultMatchPlayerDatas? _matchResult;
         private GameEngineAdapter? _gameEngineAdapter;
         private InitialMatchPlayerDatasGuid? _playerData;
@@ -119,6 +120,7 @@ namespace Elympics
             if (_endGameRequested)
             {
                 _endGameRequested = false;
+                _gameEnded = true;
                 SetDeInitialized();
                 _snapshotCollector.Dispose();
                 _gameEngineAdapter.EndGame(_matchResult);
@@ -181,6 +183,11 @@ namespace Elympics
 
         public override void EndGame(ResultMatchPlayerDatas? result = null)
         {
+            if (_gameEnded)
+            {
+                _logger.LogWarning("EndGame was called after the game had ended. Ignored.");
+                return;
+            }
             _endGameRequested = true;
             _matchResult = result;
         }

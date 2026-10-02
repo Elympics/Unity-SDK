@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
-using Elympics.Replication;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore;
 using UnityConnectors.HalfRemote;
@@ -58,8 +57,6 @@ namespace Elympics
             _halfRemoteGameEngineProtoConnector.ListeningError += x =>
                 ElympicsLogger.LogInfo($"Listening error for {x.Source}: {x.Error}");
 
-            // ReplicationPipeline + PipelineBuffers only needed on server
-            ReplicationPipeline.Initialize(elympicsGameConfig.MaxPlayers, ElympicsWorld.Current);
             var players = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig).Take(settings.PlayerCount).ToList();
             gameEngineAdapter.Initialize(new InitialMatchData { UserData = players });
 

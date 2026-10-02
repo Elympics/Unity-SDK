@@ -5,16 +5,11 @@ using Elympics.Core.Logger;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Lifecycle sink of a match started from the launch mode parameter. The process runs only that match,
-    /// so it quits once the match is over or could not start (in the Editor, play mode exits).
-    /// </summary>
     internal sealed class ExitAfterMatchSink : IElympicsMatchLifecycleSink
     {
         private readonly Action<string> _exit;
         private bool _exited;
 
-        /// <param name="exit">Called once, with the reason.</param>
         public ExitAfterMatchSink(Action<string> exit) => _exit = exit;
 
         public void SceneInitializationFailed(ElympicsLaunchErrorCode code, string message) => Exit($"The match could not start: {code}: {message}", true);

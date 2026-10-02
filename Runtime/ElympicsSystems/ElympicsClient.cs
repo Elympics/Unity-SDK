@@ -101,7 +101,6 @@ namespace Elympics
         private async UniTaskVoid RunConnectAndJoinAsPlayer()
         {
             var logger = _logger.WithMethodName();
-            // Cancelled when the launcher tears the match down, or when this client is destroyed.
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(MatchToken, this.GetCancellationTokenOnDestroy());
             try
             {
@@ -115,7 +114,6 @@ namespace Elympics
             }
             catch (Exception) when (cts.IsCancellationRequested)
             {
-                // Teardown disposed the transport mid-connect: expected, not a connection error.
                 logger.LogInfo("Connect and join was interrupted by match teardown.");
             }
             catch (Exception e)

@@ -10,11 +10,7 @@ using UnityEngine;
 
 namespace Elympics.Editor.Launcher
 {
-    /// <summary>
-    /// Launches of the Match Launcher window: enters play mode from the boot scene (or an empty scene) if needed,
-    /// then sends the launch command with the window's game ID, data JSON and options JSON.
-    /// The pending launch survives the domain reload of entering play mode in <see cref="SessionState"/>.
-    /// </summary>
+    /// <summary>The pending launch survives the domain reload of entering play mode in <see cref="SessionState"/>.</summary>
     [InitializeOnLoad]
     internal static class EditorMatchLaunchQueue
     {
@@ -50,7 +46,6 @@ namespace Elympics.Editor.Launcher
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        /// <summary>Launches now in play mode, or enters play mode and launches then. Returns false if the user cancelled saving the open scenes.</summary>
         public static bool Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
             var launch = new PendingLaunch { kind = kind, gameId = gameId, dataJson = dataJson, optionsJson = optionsJson };
@@ -71,7 +66,6 @@ namespace Elympics.Editor.Launcher
             return true;
         }
 
-        /// <summary>The configured boot scene if the launcher would return to it, else null (the launcher then uses a generated empty scene).</summary>
         private static string? ValidBootScene()
         {
             var config = ElympicsConfig.Load();
@@ -146,7 +140,7 @@ namespace Elympics.Editor.Launcher
                 ElympicsLogger.LogError("The match launcher does not exist. Is play mode running?");
                 return;
             }
-            // The launcher reports the result, including a rejection of the JSON, as host events in the window.
+            // The launcher reports the result, including a rejected JSON, as host events in the window.
             launcher.HandleHostLaunch(launch.kind, launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
         }
     }

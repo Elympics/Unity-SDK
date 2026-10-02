@@ -4,17 +4,13 @@ using System;
 
 namespace Elympics
 {
-    // Wire forms of the launch data, one flat JsonUtility DTO per match mode, plus the shared options.
     // JsonUtility has no nullables, so "unset" is an empty string or array, 0 for ports and counts, and -1 for indices.
 
-    /// <summary>The <c>options</c> argument of every launch command. Empty JSON means all defaults.</summary>
     [Serializable]
     internal class ElympicsLaunchOptionsDto
     {
         public string requestId = "";
-        /// <summary>0 means <see cref="ElympicsLaunchDefaults.LaunchTimeoutSeconds"/>, -1 means never.</summary>
         public int launchTimeoutSeconds;
-        /// <summary>0 means <see cref="ElympicsLaunchDefaults.PostMatchTimeoutSeconds"/>, -1 means never.</summary>
         public int postMatchTimeoutSeconds;
 
         public bool TryToOptions(out ElympicsLaunchOptions? options, out ElympicsLaunchFailure? failure)
@@ -126,7 +122,6 @@ namespace Elympics
         }
     }
 
-    /// <summary>Wire form of <see cref="LaunchData"/>, parsed from the <c>data</c> argument of a launch command.</summary>
     internal interface ILaunchDataDto
     {
         bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure);
@@ -136,14 +131,12 @@ namespace Elympics
     internal class OnlineLaunchDataDto : ILaunchDataDto
     {
         public string serverAddress = "";
-        /// <summary>"" (use the game config), "webRtc" or "tcpUdp".</summary>
         public string transport = "";
         public string matchId = "";
         public string userSecret = "";
         public string userId = "";
         public string[] matchedPlayers = Array.Empty<string>();
         public string regionName = "";
-        /// <summary>Base64-encoded bytes.</summary>
         public string gameEngineData = "";
         public float[] matchmakerData = Array.Empty<float>();
 
@@ -169,7 +162,6 @@ namespace Elympics
         public string userId = "";
         public string queueName = "";
         public string regionName = "";
-        /// <summary>Base64-encoded bytes.</summary>
         public string gameEngineData = "";
         public float[] matchmakerData = Array.Empty<float>();
 
@@ -189,15 +181,11 @@ namespace Elympics
     [Serializable]
     internal class HalfRemoteClientLaunchDataDto : ILaunchDataDto
     {
-        /// <summary><c>ip:port</c>, or "" for the game config.</summary>
         public string serverAddress = "";
-        /// <summary>"" (use the game config), "webRtc" or "tcpUdp".</summary>
         public string transport = "";
-        /// <summary>-1 means the game config.</summary>
         public int playerIndex = -1;
         public string regionName = "";
         public string queueName = "";
-        /// <summary>Base64-encoded bytes.</summary>
         public string gameEngineData = "";
         public float[] matchmakerData = Array.Empty<float>();
 
@@ -226,15 +214,10 @@ namespace Elympics
         public const string ProtocolsWebRtc = "webRtc";
         public const string ProtocolsBoth = "both";
 
-        /// <summary>"" (both), "tcpUdp", "webRtc" or "both".</summary>
         public string protocols = "";
-        /// <summary>IP address to listen on, or "" for the game config.</summary>
         public string serverHostname = "";
-        /// <summary>0 means the game config.</summary>
         public int tcpUdpPort;
-        /// <summary>0 means the game config.</summary>
         public int signalingPort;
-        /// <summary>0 means all test players.</summary>
         public int maxPlayers;
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)
@@ -270,7 +253,6 @@ namespace Elympics
     [Serializable]
     internal class SnapshotReplayLaunchDataDto : ILaunchDataDto
     {
-        /// <summary>An http(s) URL, a replay file, or a directory ending with a separator.</summary>
         public string path = "";
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)
@@ -283,7 +265,6 @@ namespace Elympics
 
     internal static class ElympicsLaunchDtos
     {
-        /// <summary>A default instance of the DTO of <paramref name="kind"/>, e.g. for templates.</summary>
         public static ILaunchDataDto Create(ElympicsHostLaunchKind kind) => kind switch
         {
             ElympicsHostLaunchKind.Online => new OnlineLaunchDataDto(),

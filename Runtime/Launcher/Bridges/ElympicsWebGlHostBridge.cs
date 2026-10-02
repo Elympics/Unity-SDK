@@ -9,16 +9,11 @@ using Elympics.Core.Logger;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Host bridge for a web page: installs <c>window.elympicsHost</c> (see ElympicsHostBridge.jslib).
-    /// The page's commands arrive through one C# callback registered at start, called synchronously from the page's call.
-    /// </summary>
     internal sealed class ElympicsWebGlHostBridge : IElympicsHostBridge
     {
         public string Name => "webgl";
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        /// <summary>Called by the page with a command kind and up to three UTF-8 strings (unused ones are empty).</summary>
         private delegate void CommandCallback(int kind, IntPtr first, IntPtr second, IntPtr third);
 
         private static ElympicsMatchLauncher? launcher;

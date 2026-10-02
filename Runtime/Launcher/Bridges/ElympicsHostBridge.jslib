@@ -47,7 +47,6 @@
 const elympicsHostLibrary = {
     /** @alias elympicsHostState */
     /** @type {ElympicsHostState} */ $elympicsHostState: {
-        // Strings pass through; objects become JSON, with Uint8Arrays as base64.
         toJson: function (value) {
             if (typeof value === 'undefined' || value === null) {
                 return '';

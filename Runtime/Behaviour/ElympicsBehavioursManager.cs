@@ -27,7 +27,6 @@ namespace Elympics
 
         internal static void ResetStatics() => IndicesPerPlayer = 0;
 
-        /// <summary>Receives match lifecycle reports if the scene was loaded by <see cref="ElympicsMatchLauncher"/>.</summary>
         internal IElympicsMatchLifecycleSink LifecycleSink { get; set; }
 
         internal static int SceneObjectsMaxIndex => SceneObjectsReserved - 1;

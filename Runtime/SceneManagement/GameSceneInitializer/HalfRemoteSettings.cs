@@ -64,9 +64,8 @@ namespace Elympics
     /// </summary>
     internal sealed class HalfRemoteServerSettings
     {
-        /// <summary>Null if TCP/UDP is not listened on.</summary>
         public IPEndPoint? TcpUdpEndPoint { get; }
-        /// <summary>The signaling (web) endpoint. Null if WebRTC is not listened on.</summary>
+        /// <summary>The signaling endpoint. Null if WebRTC is not listened on.</summary>
         public IPEndPoint? WebEndPoint { get; }
         /// <summary>How many <see cref="ElympicsGameConfig.TestPlayers"/> entries the match uses.</summary>
         public int PlayerCount { get; }

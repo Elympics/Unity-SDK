@@ -5,21 +5,15 @@ using JetBrains.Annotations;
 namespace Elympics
 {
     /// <summary>
-    /// Constants shared by all out-of-process hosts of <c>ElympicsMatchLauncher</c>
-    /// (the native C API on desktop and iOS, and the JS API on WebGL).
+    /// Events are delivered as <c>(type, requestId, payloadJson)</c>, with <c>type</c> one of <see cref="Events"/>
+    /// and <c>payloadJson</c> the JSON of the matching payload class (e.g. <see cref="ElympicsLaunchFailure"/>), or empty.
     /// </summary>
-    /// <remarks>
-    /// Commands are separate typed entry points. Events are delivered as <c>(type, requestId, payloadJson)</c>,
-    /// with <c>type</c> one of <see cref="Events"/> and <c>payloadJson</c> the JSON of the matching payload class
-    /// (e.g. <see cref="ElympicsLaunchFailure"/>), or empty.
-    /// </remarks>
     [PublicAPI]
     public static class ElympicsHostProtocol
     {
         /// <summary>Version of the wire format (command arguments and event payloads), reported in the <c>ready</c> event.</summary>
         public const string Version = "2.0.0";
 
-        /// <summary>Event types sent by Unity to the host.</summary>
         public static class Events
         {
             public const string Ready = "ready";

@@ -19,7 +19,6 @@ namespace Elympics
     {
         public const string FileName = ".parrelsyncarg";
 
-        /// <summary>The arguments of this clone, or none if this is not a clone Editor.</summary>
         public static IList<string> Read()
         {
 #if UNITY_EDITOR

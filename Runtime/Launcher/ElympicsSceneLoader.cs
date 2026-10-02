@@ -6,14 +6,12 @@ using UnityEngine.SceneManagement;
 
 namespace Elympics
 {
-    /// <summary>Scene and memory operations of the match launcher, replaceable in tests.</summary>
     internal interface IElympicsSceneLoader
     {
-        /// <summary>Loads <paramref name="scenePath"/> in <see cref="LoadSceneMode.Single"/>. Returns false if Unity refused to start loading it.</summary>
+        /// <summary>Returns false if Unity refused to start loading the scene.</summary>
         UniTask<bool> LoadSingleAsync(string scenePath);
         bool IsInBuild(string scenePath);
         string ActiveScenePath { get; }
-        /// <summary>Makes a generated empty scene the only loaded scene. Used when no usable boot scene is configured.</summary>
         UniTask ReturnToEmptySceneAsync();
         UniTask ReleaseMemoryAsync();
     }

@@ -10,7 +10,7 @@ namespace Elympics.SnapshotAnalysis.Retrievers
         public virtual SnapshotSaverInitData RetrieveInitData() => Replay.InitData;
         public virtual Dictionary<long, ElympicsSnapshotWithMetadata> RetrieveSnapshots() => Replay.Snapshots;
 
-        /// <summary>Feeds every snapshot's metadata to <paramref name="behaviourManager"/>, then restores the first snapshot. Used by the Editor replay controller.</summary>
+        /// <summary>Feeds every snapshot's metadata to <paramref name="behaviourManager"/>, then restores the first snapshot.</summary>
         public void AddStateMetaData(ElympicsBehavioursManager behaviourManager)
         {
             long? firstTick = null;

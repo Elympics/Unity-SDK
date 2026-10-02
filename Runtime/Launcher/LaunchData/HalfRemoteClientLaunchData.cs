@@ -5,10 +5,7 @@ using JetBrains.Annotations;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Joins a half-remote server (see <see cref="HalfRemoteServerLaunchData"/>) as one of its test players.
-    /// Every property is optional: null means the value from <see cref="ElympicsGameConfig"/> (or its application parameter).
-    /// </summary>
+    /// <summary>Every property is optional: null means the value from <see cref="ElympicsGameConfig"/> (or its application parameter).</summary>
     /// <remarks>
     /// The player list, with bot flags, always comes from <see cref="ElympicsGameConfig.TestPlayers"/>,
     /// as the half-remote server derives the same player IDs from its own config.

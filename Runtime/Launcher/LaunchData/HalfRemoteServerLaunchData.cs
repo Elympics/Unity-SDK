@@ -6,7 +6,6 @@ using JetBrains.Annotations;
 
 namespace Elympics
 {
-    /// <summary>Transports a half-remote server listens on.</summary>
     [Flags, PublicAPI]
     public enum ElympicsHalfRemoteProtocols
     {
@@ -15,10 +14,7 @@ namespace Elympics
         Both = TcpUdp | WebRtc,
     }
 
-    /// <summary>
-    /// Runs a half-remote server in this process, which half-remote clients (see <see cref="HalfRemoteClientLaunchData"/>) join.
-    /// Every property is optional: null means the value from <see cref="ElympicsGameConfig"/>. Not available on WebGL and iOS.
-    /// </summary>
+    /// <summary>Every property is optional: null means the value from <see cref="ElympicsGameConfig"/>. Not available on WebGL and iOS.</summary>
     [PublicAPI]
     public sealed class HalfRemoteServerLaunchData : LaunchData
     {

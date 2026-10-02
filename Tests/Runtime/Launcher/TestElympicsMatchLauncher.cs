@@ -88,8 +88,6 @@ namespace Elympics.Tests
             UnityEngine.Object.DestroyImmediate(_game);
         }
 
-        /// <param name="postMatchTimeout">Seconds: 0 is the default, -1 never.</param>
-        /// <param name="launchTimeout">Seconds: 0 is the default.</param>
         private static ElympicsLaunchOptions Request(string requestId = "launch", int postMatchTimeout = 0, int launchTimeout = 0) => new()
         {
             RequestId = requestId,
@@ -286,7 +284,6 @@ namespace Elympics.Tests
             Assert.That(abortResult.Success, Is.True);
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(EventTypes.Count(t => t == "launchSucceeded"), Is.Zero);
-            // The boot scene is loaded after the in-flight gameplay load, never before it.
             Assert.That(_loader.Loaded, Is.EqualTo(new[] { GameplayScene, BootScene }));
         });
 

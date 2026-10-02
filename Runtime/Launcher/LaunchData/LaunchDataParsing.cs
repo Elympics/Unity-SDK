@@ -8,7 +8,6 @@ namespace Elympics
 {
     internal static class LaunchDataParsing
     {
-        /// <summary>Parses <c>ip:port</c> as <see cref="IPEndPointExtensions.Parse(string)"/> does, without throwing.</summary>
         public static bool TryParseEndPoint(string? address, out IPEndPoint? endPoint)
         {
             endPoint = null;

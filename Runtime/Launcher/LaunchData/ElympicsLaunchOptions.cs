@@ -6,7 +6,6 @@ using JetBrains.Annotations;
 
 namespace Elympics
 {
-    /// <summary>Optional settings of one launch, shared by all match modes.</summary>
     [PublicAPI]
     public sealed class ElympicsLaunchOptions
     {

@@ -7,17 +7,12 @@ using Elympics.Core.Logger;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Host bridge for a native app embedding Unity as a library (iOS, Windows, Linux, macOS),
-    /// through the C API in <c>Runtime/Launcher/Native/ElympicsHost.h</c>.
-    /// The host's commands are queued by the plugin and drained here on the main thread.
-    /// </summary>
+    /// <summary>Bridge to the C API in <c>Runtime/Launcher/Native/ElympicsHost.h</c>. The plugin queues the host's commands; they are drained here on the main thread.</summary>
     internal sealed class ElympicsNativeHostBridge : IElympicsHostBridge
     {
         /// <summary>Must match <c>ApiVersion</c> in ElympicsHost.cpp.</summary>
         internal const int ApiVersion = 2;
 
-        /// <summary>Bounds the work per frame if a host floods commands.</summary>
         private const int MaxCommandsPerFrame = 64;
 
 #if UNITY_IOS && !UNITY_EDITOR

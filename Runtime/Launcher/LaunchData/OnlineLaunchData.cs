@@ -7,11 +7,10 @@ using JetBrains.Annotations;
 
 namespace Elympics
 {
-    /// <summary>Joins a match on an Elympics game server, e.g. one found by matchmaking.</summary>
-    /// <remarks>
+    /// <summary>
     /// <see cref="UserSecret"/> is a per-match game-server credential, unrelated to any account-level Elympics
     /// client secret. No bearer token is ever part of launch data.
-    /// </remarks>
+    /// </summary>
     [PublicAPI]
     public sealed class OnlineLaunchData : LaunchData
     {
@@ -26,7 +25,7 @@ namespace Elympics
         public string UserSecret { get; }
         /// <summary>The local player. Must be one of <see cref="MatchedPlayers"/>.</summary>
         public Guid UserId { get; }
-        /// <summary>All players. Their order defines <see cref="ElympicsPlayer"/> indices.</summary>
+        /// <summary>Their order defines <see cref="ElympicsPlayer"/> indices.</summary>
         public IReadOnlyList<Guid> MatchedPlayers { get; }
         public string? RegionName { get; }
         public IReadOnlyList<byte> GameEngineData { get; }
@@ -49,7 +48,6 @@ namespace Elympics
         internal override string ModeName => "Online";
         internal override Guid EventMatchId => MatchId;
 
-        /// <summary>The transport in effect for <paramref name="gameConfig"/>.</summary>
         internal bool UsesTcpUdp(ElympicsGameConfig gameConfig) => UseTcpUdpInsteadOfWebRtc ?? !gameConfig.UseWeb;
 
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)

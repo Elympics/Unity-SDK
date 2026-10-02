@@ -9,14 +9,9 @@ using UnityEngine;
 
 namespace Elympics.Editor.Launcher
 {
-    /// <summary>
-    /// A client build must contain every gameplay scene the match launcher can launch, and the boot scene it returns to if one is set.
-    /// Missing scenes do not fail at build time on their own: <c>LoadSceneAsync</c> returns null at runtime instead.
-    /// </summary>
+    /// <summary>Missing scenes do not fail the build on their own: <c>LoadSceneAsync</c> returns null at runtime instead.</summary>
     internal static class ElympicsLauncherBuildValidation
     {
-        /// <param name="enabledBuildScenes">Paths of the scenes enabled in Build Settings.</param>
-        /// <returns>One human-readable problem per line; empty if the configuration is valid.</returns>
         public static List<string> FindProblems(ElympicsConfig config, IReadOnlyCollection<string> enabledBuildScenes)
         {
             var problems = new List<string>();
@@ -44,7 +39,6 @@ namespace Elympics.Editor.Launcher
             return problems;
         }
 
-        /// <returns>One human-readable warning per line: valid configurations the user may not intend.</returns>
         public static List<string> FindWarnings(ElympicsConfig config)
         {
             var warnings = new List<string>();
@@ -58,7 +52,7 @@ namespace Elympics.Editor.Launcher
             EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToHashSet();
     }
 
-    /// <summary>Fails client builds whose scenes do not match <see cref="ElympicsConfig"/>. Server builds contain a single gameplay scene and never return to boot.</summary>
+    /// <summary>Server builds are skipped: they contain a single gameplay scene and never return to boot.</summary>
     internal sealed class ElympicsLauncherBuildPreprocessor : IPreprocessBuildWithReport
     {
         public int callbackOrder => 0;

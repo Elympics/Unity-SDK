@@ -12,10 +12,6 @@ namespace Elympics
         internal const string Native = "native";
         internal const string None = "none";
 
-        /// <param name="mode">
-        /// Value of the <c>ELYMPICS_HOST_BRIDGE</c> parameter. <c>auto</c> picks the WebGL bridge in browser builds, none in the Editor
-        /// (use Tools > Elympics > Match Launcher there) and the native bridge elsewhere, which stays off if its library is missing.
-        /// </param>
         public static IElympicsHostBridge? Create(string? mode)
         {
             switch (string.IsNullOrEmpty(mode) ? Auto : mode!.ToLowerInvariant())

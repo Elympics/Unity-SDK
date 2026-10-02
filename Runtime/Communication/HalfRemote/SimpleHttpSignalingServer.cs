@@ -56,7 +56,6 @@ namespace Plugins.Elympics.Runtime.Communication.HalfRemote
             }
         }
 
-        /// <summary>Stops listening and releases the port, so the next half-remote match can bind it again.</summary>
         public void Dispose()
         {
             try

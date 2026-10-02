@@ -94,7 +94,6 @@ namespace MatchTcpClients
             networkClient.Dispose();
         }
 
-        /// <summary>Disconnects and releases the network client (sockets or WebRTC peer connection). Idempotent.</summary>
         public void Dispose()
         {
             if (_disposed)

@@ -14,7 +14,6 @@ namespace Elympics
         private readonly SinglePlayerLaunchData _data;
         private SinglePlayerGameEngine _gameEngine;
 
-        /// <param name="data">Launch data from the host, or null for all defaults.</param>
         public SinglePlayerGameInitializer(SinglePlayerLaunchData data) => _data = data ?? new SinglePlayerLaunchData();
 
         public override void Initialize(
@@ -29,7 +28,6 @@ namespace Elympics
 
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
             var gameEngineAdapter = new GameEngineAdapter(gameConfig);
-            // The server update loop replicates snapshots every sending period, as in the other server modes.
             ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             ElympicsLogger.State.SetGameMode("single player");
             _gameEngine = new SinglePlayerGameEngine(gameEngineAdapter, behavioursManager, matchId);

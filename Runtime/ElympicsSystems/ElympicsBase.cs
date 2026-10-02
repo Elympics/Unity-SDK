@@ -320,10 +320,7 @@ namespace Elympics
 
         #endregion
 
-        /// <summary>
-        /// Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.
-        /// Called from network threads.
-        /// </summary>
+        /// <summary>Called from network threads. Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.</summary>
         protected void Enqueue(Action action)
         {
             var matchToken = MatchToken;

@@ -32,7 +32,7 @@ namespace Elympics
             var settings = HalfRemoteServerSettings.Resolve(_data, elympicsGameConfig);
             foreach (var warning in settings.Warnings)
                 ElympicsLogger.LogWarning(warning);
-            // Launcher-driven: report the match end and let the host return to boot. Otherwise quit, as before.
+            // Null without a launcher session: the connector then quits the application.
             var sink = LifecycleSink;
             Action onAfterGameEnded = sink == null ? null : () => sink.MatchEnded(Guid.Empty);
             _halfRemoteGameEngineProtoConnector = new HalfRemoteGameEngineProtoConnector(

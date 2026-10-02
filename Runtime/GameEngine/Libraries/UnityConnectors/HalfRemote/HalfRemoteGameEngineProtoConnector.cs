@@ -47,7 +47,7 @@ namespace UnityConnectors.HalfRemote
         private readonly Action _onAfterGameEnded;
 
         /// <param name="tcpListenEndpoint">Where to listen for TCP/UDP clients, or null not to.</param>
-        /// <param name="webListenEndpoint">Where to listen for WebRTC clients, or null not to. At least one endpoint is required.</param>
+        /// <param name="webListenEndpoint">Where to listen for WebRTC clients, or null not to.</param>
         public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, Action onAfterGameEnded = null)
         {
             if (tcpListenEndpoint == null && webListenEndpoint == null)

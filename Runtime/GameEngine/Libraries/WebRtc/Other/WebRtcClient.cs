@@ -21,13 +21,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     {
         private static int instanceCount;
 
-        /// <summary>Live peer connections. Must be 0 between matches.</summary>
+        /// <summary>Must be 0 between matches.</summary>
         internal static int InstanceCount => instanceCount;
 
-        /// <summary>WebGL only; -1 here. Kept so both implementations have the same API.</summary>
+        // WebGL-only diagnostics, kept so both implementations have the same API.
         internal static int JsInstanceCount => -1;
 
-        /// <summary>WebGL only; -1 here. Kept so both implementations have the same API.</summary>
         internal static long WasmHeapSize => -1;
 
         private readonly WebRtcConfig _config;

@@ -2,14 +2,12 @@
 
 namespace Elympics
 {
-    /// <summary>What the platform allows a launch to do. Passed into validation, so tests can check every platform's outcome on any build target.</summary>
+    /// <summary>Passed into validation, so tests can check every platform's outcome on any build target.</summary>
     internal readonly struct ElympicsLaunchPlatform
     {
-        /// <summary>Can open listening sockets, as a half-remote server needs. False on WebGL and iOS players.</summary>
         public bool CanListen { get; }
         /// <summary>Has TCP/UDP sockets. False with the WebGL build target, where <see cref="ElympicsGameConfig.UseWeb"/> is forced.</summary>
         public bool CanUseTcpUdp { get; }
-        /// <summary>Can read local files, e.g. a replay by path. False in WebGL players.</summary>
         public bool HasLocalFiles { get; }
 
         public ElympicsLaunchPlatform(bool canListen, bool canUseTcpUdp, bool hasLocalFiles)
@@ -19,7 +17,6 @@ namespace Elympics
             HasLocalFiles = hasLocalFiles;
         }
 
-        /// <summary>This build.</summary>
         public static ElympicsLaunchPlatform Current => new(
 #if (UNITY_WEBGL || UNITY_IOS) && !UNITY_EDITOR
             canListen: false,
@@ -37,7 +34,6 @@ namespace Elympics
             hasLocalFiles: true);
 #endif
 
-        /// <summary>Everything allowed.</summary>
         public static ElympicsLaunchPlatform Unrestricted => new(true, true, true);
 
         public const string CannotListenMessage = "platform cannot open a listening socket";

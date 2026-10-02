@@ -12,10 +12,6 @@ using UnityEngine;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Process-wide settings a gameplay scene changes (tick-driven physics and time step, server frame rate).
-    /// Captured before the gameplay scene loads and restored in teardown, so the boot scene gets them back.
-    /// </summary>
     internal readonly struct ElympicsProcessGlobals
     {
         private readonly float _fixedDeltaTime;
@@ -46,19 +42,14 @@ namespace Elympics
         }
     }
 
-    /// <summary>The process-wide part of match teardown. Per-scene steps are registered on <see cref="ElympicsMatchSession"/>.</summary>
     internal static class ElympicsMatchTeardown
     {
         /// <summary>
-        /// Frames yielded around releasing memory. On WebGL the garbage collector only runs with an empty stack,
-        /// i.e. at the end of a frame — collecting (or checking collectability) in the teardown frame achieves nothing there.
+        /// On WebGL the garbage collector only runs with an empty stack, i.e. at the end of a frame, so collecting
+        /// (or checking collectability) in the teardown frame achieves nothing there.
         /// </summary>
         internal const int CollectionFrames = 2;
 
-        /// <summary>
-        /// Releases the static state of the torn-down match. Runs after the session is detached and before the boot scene loads.
-        /// Never throws.
-        /// </summary>
         public static void ReleaseStatics()
         {
             Try("dispose replication pipeline", () => ReplicationPipeline.Current?.Dispose());
@@ -76,10 +67,7 @@ namespace Elympics
             });
         }
 
-        /// <summary>
-        /// Lets the frame-end collector run, unloads unused assets, and collects again. <see cref="GC.Collect()"/> is effective
-        /// on desktop and iOS; on WebGL it is a no-op and the yields do the work.
-        /// </summary>
+        /// <summary><see cref="GC.Collect()"/> is a no-op on WebGL; there the frame yields do the work.</summary>
         public static async UniTask ReleaseMemoryAsync()
         {
             await UniTask.DelayFrame(CollectionFrames);
@@ -90,10 +78,7 @@ namespace Elympics
             GC.Collect();
         }
 
-        /// <summary>
-        /// Post-teardown checks (<c>UNITY_ASSERTIONS</c>, i.e. Editor and development builds) and the per-cycle memory sample
-        /// used by soak tests. Call after <see cref="ReleaseMemoryAsync"/>, never in the teardown frame.
-        /// </summary>
+        /// <summary>Call after <see cref="ReleaseMemoryAsync"/>, never in the teardown frame.</summary>
         public static void AssertReleased(IReadOnlyList<WeakReference> collectable, int cycle)
         {
 #if UNITY_ASSERTIONS
@@ -125,7 +110,7 @@ namespace Elympics
 #endif
         }
 
-        /// <summary>One line per cycle for soak tests. The heap size is coarse (it grows in big steps and never shrinks): it can falsify but never confirm.</summary>
+        /// <summary>The heap size is coarse (it grows in big steps and never shrinks): it can falsify but never confirm.</summary>
         internal static string DescribeMemory(int cycle)
         {
             var sb = new StringBuilder($"Match cycle {cycle} memory: ");

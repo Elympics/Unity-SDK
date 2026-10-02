@@ -6,18 +6,14 @@ using UnityEngine;
 
 namespace Elympics
 {
-    /// <summary>
-    /// Creates <see cref="ElympicsMatchLauncher"/> before the first scene loads and runs its host bridge.
-    /// It uses static Unity hooks only, so no scene needs any setup and no game object is involved.
-    /// </summary>
     internal static class ElympicsMatchLauncherBootstrap
     {
         private static IElympicsHostBridge? bridge;
         private static BridgePoller? poller;
 
         /// <summary>
-        /// True in a process that runs one match without a host: an online game server, or one started with the launch mode parameter.
-        /// There the launcher stays passive: no host bridge and no <c>ready</c> event. Other server builds (UNITY_SERVER) are driven by a host like any other build.
+        /// A process that runs one match without a host gets no host bridge and no <c>ready</c> event.
+        /// Other server builds (UNITY_SERVER) are driven by a host like any other build.
         /// </summary>
         internal static bool IsPassive => ApplicationParameters.ShouldLoadElympicsOnlineServer || LaunchDataFromParameters.IsSet;
 
@@ -71,7 +67,6 @@ namespace Elympics
             ElympicsLogger.LogInfo($"Match launcher host bridge: {newBridge.Name}.");
         }
 
-        /// <summary>Disposes the host bridge, stops polling it and clears <see cref="ElympicsMatchLauncher.Current"/>. Safe to call repeatedly.</summary>
         internal static void Shutdown()
         {
             Application.quitting -= Shutdown;
@@ -87,7 +82,7 @@ namespace Elympics
             ElympicsMatchLauncher.Current = null;
         }
 
-        /// <summary>Runs the bridge's queued commands every frame. UniTask has no removal API: the item ends by returning false.</summary>
+        /// <summary>UniTask has no removal API for player loop items: the item ends by returning false.</summary>
         private sealed class BridgePoller : IPlayerLoopItem
         {
             private IElympicsHostBridge? _bridge;

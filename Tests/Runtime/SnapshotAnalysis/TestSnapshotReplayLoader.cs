@@ -98,7 +98,6 @@ namespace Elympics.Tests.SnapshotAnalysis
 
         #region URL
 
-        /// <summary>Serves one response on a free loopback port. Desktop only.</summary>
         private sealed class OneShotServer : IDisposable
         {
             private readonly HttpListener _listener = new();

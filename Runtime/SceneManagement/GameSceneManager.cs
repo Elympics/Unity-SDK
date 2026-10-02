@@ -29,15 +29,12 @@ namespace Elympics
         /// <summary>What initializes the gameplay scene, in order of priority.</summary>
         internal enum Driver
         {
-            /// <summary><c>ApplicationParameters.ShouldLoadElympicsOnlineServer</c>.</summary>
             OnlineServer,
             /// <summary>The <c>ELYMPICS_LAUNCH_MODE</c> parameter, which limits the process to one match.</summary>
             LaunchModeParameter,
-            /// <summary>The launch data of the launcher session that loaded the scene.</summary>
             Session,
             /// <summary>The scene activated while its match is being torn down.</summary>
             Suppressed,
-            /// <summary>Nothing: the scene awaits a launch call.</summary>
             None,
         }
 
@@ -95,7 +92,6 @@ namespace Elympics
             }
         }
 
-        /// <summary>Starts the one match of the launch mode parameter. The process quits once it is over, see <see cref="ExitAfterMatchSink"/>.</summary>
         private async UniTask RunFromLaunchModeParameterAsync()
         {
             var sink = new ExitAfterMatchSink(_ => ExitUtility.ExitGame());
@@ -159,8 +155,6 @@ namespace Elympics
             return gameConfig;
         }
 
-        /// <param name="session">The launcher session of the match, or null for a match without one.</param>
-        /// <param name="sink">Receives the match lifecycle reports: the session, a quitting sink, or null.</param>
         private void Run(ElympicsGameConfig gameConfig, ElympicsMatchSession? session, IElympicsMatchLifecycleSink? sink, SnapshotAnalysisRetriever? snapshotRetriever,
             Func<GameSceneLaunchContext, GameSceneInitializer> launch)
         {

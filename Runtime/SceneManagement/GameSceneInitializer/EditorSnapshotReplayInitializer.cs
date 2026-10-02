@@ -5,7 +5,6 @@ using Elympics.SnapshotAnalysis.Retrievers;
 
 namespace Elympics
 {
-    /// <summary>Replays in the Editor, controlled by the replay controller window.</summary>
     internal class EditorSnapshotReplayInitializer : SnapshotReplayInitializer
     {
         public static Func<IReplayManipulator>? GetManipulator;

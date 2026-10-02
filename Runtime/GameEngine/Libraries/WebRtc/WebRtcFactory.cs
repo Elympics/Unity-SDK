@@ -10,7 +10,6 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         public static IWebRtcServer CreateServer() =>
             new WebRtcServer();
 
-        /// <summary>Peer connections created by <see cref="CreateClient"/> and not disposed yet.</summary>
         public static int LiveClientCount => WebRtcClient.InstanceCount;
 
         /// <summary>Peer connections held by the WebGL JS library, or -1 on other platforms.</summary>

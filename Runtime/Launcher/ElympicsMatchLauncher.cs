@@ -12,21 +12,16 @@ using UnityEngine;
 namespace Elympics
 {
     /// <summary>
-    /// Host-driven match launcher. Created automatically before the first scene loads and kept alive for the whole process.
+    /// Created before the first scene loads and kept for the whole process. State transitions run synchronously
+    /// on the main thread, so commands are serialized without a queue.
     /// </summary>
-    /// <remarks>
-    /// All state transitions happen synchronously on the main thread, so commands are serialized without a queue:
-    /// a launch is accepted only in <see cref="MatchLauncherState.Idle"/>, and an abort is accepted in every state.
-    /// The launcher owns nothing per match except the <see cref="ElympicsMatchSession"/>, which is detached in teardown.
-    /// </remarks>
     [PublicAPI]
     public sealed class ElympicsMatchLauncher : IElympicsMatchLauncher, IElympicsMatchLifecycleSink
     {
-        /// <summary>The launcher of this process. Available from the first scene's <c>Awake</c> on.</summary>
+        /// <summary>Available from the first scene's <c>Awake</c> on.</summary>
         public static IElympicsMatchLauncher Instance =>
             Current ?? throw new InvalidOperationException($"{nameof(ElympicsMatchLauncher)} is not created yet. It is created before the first scene loads in play mode.");
 
-        /// <summary>Set and cleared by <see cref="ElympicsMatchLauncherBootstrap"/>.</summary>
         internal static ElympicsMatchLauncher? Current { get; set; }
 
         public MatchLauncherState State { get; private set; } = MatchLauncherState.Idle;
@@ -36,25 +31,22 @@ namespace Elympics
         public event Action<ElympicsDisconnectedInfo>? Disconnected;
         public event Action<MatchLauncherState>? StateChanged;
 
-        /// <summary>Every event of the host protocol, as (type, requestId, payloadJson). Consumed by host bridges and editor tooling.</summary>
+        /// <summary>Every host protocol event, as (type, requestId, payloadJson).</summary>
         internal event Action<string, string, string>? HostEventEmitted;
 
         internal const string LimitedToParameterMatchMessage = "This process is limited to the match set by ELYMPICS_LAUNCH_MODE.";
 
         internal enum SceneAttachment
         {
-            /// <summary>The scene was loaded by the launcher and must initialize for the returned session.</summary>
             Attached,
-            /// <summary>No launcher-driven match: the scene was opened directly (e.g. Play pressed in the Editor) and does not start one.</summary>
+            /// <summary>The scene was opened directly (e.g. Play pressed in the Editor).</summary>
             NotLauncherDriven,
-            /// <summary>A launcher-driven match is being torn down or already has its scene. The scene must not initialize at all.</summary>
+            /// <summary>The match is being torn down or already has its scene. The scene must not initialize at all.</summary>
             Suppressed,
         }
 
-        /// <summary>The session a loading gameplay scene should pick up, or null if no launch is loading.</summary>
         internal ElympicsMatchSession? SessionAwaitingScene => State == MatchLauncherState.Loading ? _session : null;
 
-        /// <summary>Called by a gameplay scene on load to decide how it initializes.</summary>
         internal SceneAttachment AttachGameplayScene(out ElympicsMatchSession? session)
         {
             session = SessionAwaitingScene;
@@ -65,18 +57,14 @@ namespace Elympics
             return IsDrivingMatch ? SceneAttachment.Suppressed : SceneAttachment.NotLauncherDriven;
         }
 
-        /// <summary>True while a launcher-driven match exists, i.e. the gameplay scene must not quit the application on its own.</summary>
+        /// <summary>While true, the gameplay scene must not quit the application on its own.</summary>
         internal bool IsDrivingMatch => _session != null;
 
-        /// <summary>Where teardown returns to. Resolved once, on first use.</summary>
         internal BootTarget Boot => _boot ??= ResolveBootTarget();
 
-        /// <summary>The configured boot scene, or a generated empty scene if the configured one is unusable.</summary>
         internal sealed class BootTarget
         {
-            /// <summary>The boot scene path, or null to return to a generated empty scene.</summary>
             public string? ScenePath { get; }
-            /// <summary>Why the configured boot scene is not used, or null if it is.</summary>
             public string? Warning { get; }
 
             private BootTarget(string? scenePath, string? warning)
@@ -108,8 +96,6 @@ namespace Elympics
         private readonly List<(string RequestId, UniTaskCompletionSource<ElympicsAbortResult> Completion)> _abortWaiters = new();
         private bool _quitting;
 
-        /// <param name="verifyTeardown">Run the post-teardown assertions and memory sample (development builds only).</param>
-        /// <param name="limitedToParameterMatch">The launch mode parameter is set: the process runs only that match, and every launch is rejected.</param>
         internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, ElympicsLaunchPlatform platform, Action<string> exitApplication,
             bool verifyTeardown = false, bool limitedToParameterMatch = false)
         {
@@ -186,7 +172,6 @@ namespace Elympics
             {
                 if (session.Launch.Data is SnapshotReplayLaunchData replay)
                 {
-                    // Under the launch timeout, and cancelled with the match if the launch is aborted meanwhile.
                     var result = await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
                     if (session != _session || State != MatchLauncherState.Loading)
                         return;
@@ -383,7 +368,6 @@ namespace Elympics
             TeardownAsync().Forget();
         }
 
-        /// <summary>The only way back to <see cref="MatchLauncherState.Idle"/>. Every step is guarded, so it never throws out.</summary>
         private async UniTaskVoid TeardownAsync()
         {
             var session = _session;
@@ -397,7 +381,7 @@ namespace Elympics
                 _logger.LogException(e);
             }
 
-            // Per-scene steps first (stop the simulation, dispose transport and initializer), then process-wide state.
+            // Per-scene steps first, then process-wide state.
             session?.Detach();
             _session = null;
             ElympicsMatchTeardown.ReleaseStatics();
@@ -486,7 +470,7 @@ namespace Elympics
         {
             try
             {
-                // Best effort, so the game server sees a clean disconnect. Never let it block the exit.
+                // Best effort, so the game server sees a clean disconnect.
                 _ = await UniTask.WhenAny(
                     QuitTeardownAsync(session),
                     UniTask.Delay(TimeSpan.FromSeconds(ElympicsLaunchDefaults.QuitGraceSeconds), DelayType.Realtime));
@@ -508,7 +492,7 @@ namespace Elympics
 
         #region Host commands
 
-        /// <summary>Runs a launch command of a host bridge: the JSON of the mode's launch data and of the launch options, each empty for defaults.</summary>
+        /// <summary>An empty JSON string means defaults.</summary>
         internal void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
             if (!ElympicsLaunchValidator.TryParseOptions(optionsJson, out var options, out var failure)
@@ -521,8 +505,8 @@ namespace Elympics
         }
 
         /// <summary>
-        /// Runs a command received by a host bridge. Launch commands take (game ID, data JSON, options JSON);
-        /// the others take one string in <paramref name="first"/>. Unused strings are empty.
+        /// Launch commands take (game ID, data JSON, options JSON); the others take one string in <paramref name="first"/>.
+        /// Unused strings are empty.
         /// </summary>
         internal void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "")
         {

@@ -5,14 +5,13 @@ using Elympics.SnapshotAnalysis.Retrievers;
 
 namespace Elympics
 {
-    /// <summary>What <see cref="LaunchData.Launch"/> needs from the gameplay scene.</summary>
     internal sealed class GameSceneLaunchContext
     {
         public ElympicsClient Client { get; }
         public ElympicsServer Server { get; }
         public ElympicsGameConfig GameConfig { get; }
         public ElympicsBehavioursManager BehavioursManager { get; }
-        /// <summary>Loaded before the launch for snapshot replays; null for other modes.</summary>
+        /// <summary>Set only for snapshot replays.</summary>
         public SnapshotAnalysisRetriever? SnapshotRetriever { get; }
 
         private readonly Action<GameSceneInitializer> _adopt;

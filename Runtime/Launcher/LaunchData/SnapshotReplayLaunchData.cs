@@ -5,7 +5,6 @@ using JetBrains.Annotations;
 
 namespace Elympics
 {
-    /// <summary>Replays a match recorded with snapshot recording (<see cref="ElympicsGameConfig.RecordSnapshots"/>).</summary>
     [PublicAPI]
     public sealed class SnapshotReplayLaunchData : LaunchData
     {

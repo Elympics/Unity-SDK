@@ -242,7 +242,6 @@ namespace Elympics
             _gameServerClient.MatchEnded -= OnMatchEnded;
             UnsetCallbacksForJoiningAsPlayer();
             UnsetCallbacksForJoiningAsSpectator();
-            // This client owns the game server client, and with it the sockets or the WebRTC peer connection.
             _gameServerClient.Dispose();
         }
     }

@@ -595,13 +595,11 @@ const LibraryWebRtc = {
         instance.close();
     },
 
-    // Diagnostics for match-cycle soak tests: live peer connections held by this library.
     WebRtcGetInstanceCount: function () {
         return Object.keys(webRtcState.instances).length;
     },
 
-    // Diagnostics for match-cycle soak tests: size of the wasm heap in bytes. It grows and never shrinks,
-    // so it is read from inside the module rather than through Module (which may not re-export HEAPU8).
+    // The wasm heap only grows. HEAPU8 is read here, as Module may not re-export it.
     ElympicsGetHeapSize: function () {
         return HEAPU8.buffer.byteLength;
     },

@@ -5,7 +5,7 @@ namespace Elympics.SnapshotAnalysis
     public interface IReplayManipulator
     {
         void LoadReplay(IReplayManipulatorClient replayClient, ReplayData data);
-        /// <summary>Drops the replay given to <see cref="LoadReplay"/>, whose match is being torn down. The manipulator must not keep its client.</summary>
+        /// <summary>Called when the match is torn down. The manipulator must not keep the client given to <see cref="LoadReplay"/>.</summary>
         void UnloadReplay();
         void SetCurrentTick(long tick);
     }

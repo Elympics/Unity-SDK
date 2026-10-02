@@ -7,7 +7,6 @@ using Elympics.SnapshotAnalysis.Serialization;
 
 namespace Elympics.SnapshotAnalysis.Retrievers
 {
-    /// <summary>Reads a replay from the local file system.</summary>
     internal class EditorSnapshotAnalysisRetriever : SnapshotAnalysisRetriever
     {
         public EditorSnapshotAnalysisRetriever(string path)

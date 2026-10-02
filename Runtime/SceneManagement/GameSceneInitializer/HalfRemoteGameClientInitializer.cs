@@ -35,7 +35,6 @@ namespace Elympics
                     + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
             ElympicsLogger.State.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
-            // The launch data overrides the local player data of this client.
             var local = playersList[playerIndex];
             local.MatchmakerData = settings.MatchmakerData ?? local.MatchmakerData ?? Array.Empty<float>();
             local.GameEngineData = settings.GameEngineData ?? local.GameEngineData ?? Array.Empty<byte>();

@@ -10,7 +10,6 @@ using UnityEngine.Networking;
 
 namespace Elympics
 {
-    /// <summary>Loads the replay of a <see cref="SnapshotReplayLaunchData"/> before its gameplay scene loads.</summary>
     internal static class SnapshotReplayLoader
     {
         public readonly struct Result
@@ -31,7 +30,7 @@ namespace Elympics
         public static bool LocalReplayExists(string path, out string error) => EditorSnapshotAnalysisRetriever.TryResolvePath(path, out _, out error);
 
         /// <summary>
-        /// Reads a local replay, or downloads one from an http(s) URL. A failed download is <see cref="ElympicsLaunchErrorCode.ConnectionFailed"/>;
+        /// A failed download is <see cref="ElympicsLaunchErrorCode.ConnectionFailed"/>;
         /// an unreadable replay or one of another game version is <see cref="ElympicsLaunchErrorCode.InvalidPayload"/>.
         /// </summary>
         /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled during the download.</exception>
@@ -72,7 +71,7 @@ namespace Elympics
             return TryCheckVersion(retriever, gameConfig, out var failure) ? Result.Loaded(retriever) : Result.Failed(failure!.Code, failure.message);
         }
 
-        /// <summary>The message of <paramref name="e"/> and of its inner exceptions, which carry the actual cause of a failed read.</summary>
+        /// <summary>Inner exceptions carry the actual cause of a failed read.</summary>
         private static string Describe(Exception e)
         {
             var message = e.Message;
@@ -89,7 +88,6 @@ namespace Elympics
             return request.downloadHandler.data;
         }
 
-        /// <summary>A replay plays back only in the game version it was recorded with.</summary>
         internal static bool TryCheckVersion(SnapshotAnalysisRetriever retriever, ElympicsGameConfig gameConfig, out ElympicsLaunchFailure? failure)
         {
             failure = null;

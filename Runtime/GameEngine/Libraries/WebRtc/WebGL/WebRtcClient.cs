@@ -20,13 +20,11 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     {
         private static readonly Dictionary<int, WebRtcClient> Instances = new();
 
-        /// <summary>Live peer connections. Must be 0 between matches.</summary>
+        /// <summary>Must be 0 between matches.</summary>
         internal static int InstanceCount => Instances.Count;
 
-        /// <summary>Live peer connections as seen by the JS library.</summary>
         internal static int JsInstanceCount => WebRtcGetInstanceCount();
 
-        /// <summary>Size of the wasm heap in bytes.</summary>
         internal static long WasmHeapSize => (long)ElympicsGetHeapSize();
 
         private bool _disposed;

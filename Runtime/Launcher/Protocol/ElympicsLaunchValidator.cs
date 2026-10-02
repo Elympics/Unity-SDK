@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace Elympics
 {
-    /// <summary>Launch commands of host bridges, one per match mode.</summary>
     internal enum ElympicsHostLaunchKind
     {
         Online,
@@ -17,7 +16,6 @@ namespace Elympics
         SnapshotReplay,
     }
 
-    /// <summary>A validated launch.</summary>
     internal sealed class ElympicsLaunch
     {
         public string RequestId { get; }
@@ -28,7 +26,6 @@ namespace Elympics
         /// <summary>Null means wait for the host forever.</summary>
         public TimeSpan? PostMatchTimeout { get; }
 
-        /// <summary>The match ID reported in launcher events.</summary>
         public Guid MatchId => Data.EventMatchId;
 
         public ElympicsLaunch(string requestId, ElympicsGameConfig gameConfig, LaunchData data, TimeSpan? launchTimeout, TimeSpan? postMatchTimeout)
@@ -43,10 +40,6 @@ namespace Elympics
 
     internal static class ElympicsLaunchValidator
     {
-        /// <summary>
-        /// Validates a launch against the available games and the platform.
-        /// Exactly one of <paramref name="launch"/> and <paramref name="failure"/> is non-null on return.
-        /// </summary>
         public static bool TryValidate(
             string requestId,
             string? gameId,
@@ -82,7 +75,6 @@ namespace Elympics
             return true;
         }
 
-        /// <summary>Parses the <paramref name="optionsJson"/> argument of a launch command. Empty means all defaults.</summary>
         public static bool TryParseOptions(string? optionsJson, out ElympicsLaunchOptions? options, out ElympicsLaunchFailure? failure)
         {
             options = null;
@@ -91,7 +83,6 @@ namespace Elympics
             return dto!.TryToOptions(out options, out failure);
         }
 
-        /// <summary>Parses the <paramref name="dataJson"/> argument of the launch command of <paramref name="kind"/>. Empty means the mode's defaults.</summary>
         public static bool TryParseData(ElympicsHostLaunchKind kind, string? dataJson, out LaunchData? data, out ElympicsLaunchFailure? failure)
         {
             data = null;

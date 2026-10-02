@@ -7,13 +7,10 @@ namespace Elympics
     [PublicAPI]
     public static class ElympicsLaunchDefaults
     {
-        /// <summary>Used when <see cref="ElympicsLaunchOptions.LaunchTimeout"/> is null.</summary>
         public const int LaunchTimeoutSeconds = 60;
-        /// <summary>Used when <see cref="ElympicsLaunchOptions.PostMatchTimeout"/> is null.</summary>
         public const int PostMatchTimeoutSeconds = 300;
         /// <summary>A timeout in seconds on the wire (<c>launchTimeoutSeconds</c>, <c>postMatchTimeoutSeconds</c>) that means never.</summary>
         public const int NoTimeout = -1;
-        /// <summary>How long <c>IElympicsMatchLauncher.QuitApplication</c> lets teardown run before exiting anyway.</summary>
         public const float QuitGraceSeconds = 2f;
     }
 
@@ -22,7 +19,6 @@ namespace Elympics
     {
         public bool Success { get; }
         public string RequestId { get; }
-        /// <summary>Set only if <see cref="Success"/> is false.</summary>
         public ElympicsLaunchErrorCode? Code { get; }
         public string Message { get; }
         public string GameId { get; }
@@ -52,7 +48,6 @@ namespace Elympics
     {
         public bool Success { get; }
         public string RequestId { get; }
-        /// <summary>Set only if <see cref="Success"/> is false.</summary>
         public ElympicsLaunchErrorCode? Code { get; }
         public string Message { get; }
 

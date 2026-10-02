@@ -11,19 +11,12 @@ using UnityEngine.UIElements;
 
 namespace Elympics.Editor.Launcher
 {
-    /// <summary>
-    /// Launches matches in the Editor the way an out-of-process host would: each mode with its own data JSON, the shared
-    /// options JSON and the game ID set in the window. Shows every host event the launcher emits.
-    /// </summary>
     internal sealed class MatchLauncherWindow : EditorWindow
     {
         private const string MenuPath = "Tools/Elympics/" + EditorTitle;
         private const string EditorTitle = "Match Launcher";
         private const int MaxLogEntries = 500;
-        /// <summary>
-        /// The log field shows at most this many of the latest characters: a UI Toolkit text element can't have more than
-        /// 65535 vertices (4 per character). "Copy all" copies the whole log.
-        /// </summary>
+        /// <summary>A UI Toolkit text element can't have more than 65535 vertices (4 per character).</summary>
         private const int MaxShownLogCharacters = 12000;
         private const long UpdateIntervalMs = 200;
 
@@ -33,7 +26,6 @@ namespace Elympics.Editor.Launcher
 
         [SerializeField] private ElympicsHostLaunchKind editedKind = ElympicsHostLaunchKind.SinglePlayer;
         [SerializeField] private string gameId = "";
-        /// <summary>The data JSON of each mode, indexed by <see cref="ElympicsHostLaunchKind"/>.</summary>
         [SerializeField] private List<string> dataJsons = new();
         [SerializeField] private string optionsJson = "";
         [SerializeField] private List<string> log = new();
@@ -141,7 +133,6 @@ namespace Elympics.Editor.Launcher
             _ = root.schedule.Execute(UpdateState).Every(UpdateIntervalMs);
         }
 
-        /// <summary>Refreshes everything that depends on play mode, the launcher state, the config and the launch mode parameter.</summary>
         private void UpdateState()
         {
             Subscribe(CurrentLauncher());
@@ -167,7 +158,6 @@ namespace Elympics.Editor.Launcher
             _matchControls.SetEnabled(launcher != null);
         }
 
-        /// <summary>Opens the data tab of <paramref name="kind"/> and makes the launch button launch it.</summary>
         private void SelectTab(ElympicsHostLaunchKind kind)
         {
             editedKind = kind;
@@ -181,10 +171,7 @@ namespace Elympics.Editor.Launcher
 
         private static ElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
 
-        /// <summary>
-        /// Where the launch mode parameter of this Editor comes from, or null if it is not set. With it set, the launcher
-        /// rejects every launch, so the window's launch controls are disabled.
-        /// </summary>
+        /// <summary>With the launch mode parameter set, the launcher rejects every launch.</summary>
         private static string? LaunchModeParameterSource()
         {
             const string argument = "--elympics-launch-mode";
@@ -215,7 +202,6 @@ namespace Elympics.Editor.Launcher
             Append($"{DateTime.Now:HH:mm:ss.fff} ← {type}{requestPart}{payloadPart}");
         }
 
-        /// <summary>Sends the launch of <paramref name="kind"/> with its data JSON, entering play mode first if needed.</summary>
         private void Launch(ElympicsHostLaunchKind kind)
         {
             var entering = EditorApplication.isPlaying ? "" : " (entering play mode)";
@@ -245,7 +231,6 @@ namespace Elympics.Editor.Launcher
             ShowLog();
         }
 
-        /// <summary>Shows the log as one text, so any part of it can be selected and copied.</summary>
         private void ShowLog()
         {
             if (_log == null)
@@ -274,10 +259,7 @@ namespace Elympics.Editor.Launcher
 
         private static string DefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";
 
-        /// <summary>
-        /// The wire form of <paramref name="kind"/> with every field unset, so the launch uses the game config's values.
-        /// A replay has no default, so its template points at the selected game's snapshot file.
-        /// </summary>
+        /// <summary>Every field is unset, so the launch uses the game config's values.</summary>
         private string TemplateData(ElympicsHostLaunchKind kind)
         {
             var dto = ElympicsLaunchDtos.Create(kind);

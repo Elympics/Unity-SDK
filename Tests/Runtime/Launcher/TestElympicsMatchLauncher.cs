@@ -202,7 +202,7 @@ namespace Elympics.Tests
             var result = await _launcher.ReturnToBootAsync("return", default);
 
             Assert.That(result.Success, Is.True);
-            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "abort"), ("idle", "abort") }));
+            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "return"), ("idle", "return") }));
             Assert.That(_loader.Loaded, Is.Empty);
         });
 
@@ -217,7 +217,7 @@ namespace Elympics.Tests
             Assert.That(result.Success, Is.True);
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(_launcher.IsCurrentlyInMatch, Is.False);
-            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "abort"), ("idle", "abort") }));
+            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "return"), ("idle", "return") }));
             Assert.That(_loader.Loaded.Last(), Is.EqualTo(BootScene));
             Assert.That(_launcher.SessionAwaitingScene, Is.Null);
         });

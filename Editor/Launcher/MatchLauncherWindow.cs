@@ -127,7 +127,7 @@ namespace Elympics.Editor.Launcher
             _launchButton.clicked += () => Launch(editedKind);
             SelectTab(editedKind);
 
-            root.Q<Button>("abort").clicked += () => SendWithId("abortMatch", id => _subscribed?.HandleHostAbort(id));
+            root.Q<Button>("return-to-boot").clicked += () => SendWithId("returnToBoot", id => _subscribed?.HandleHostReturnToBoot(id));
             root.Q<Button>("ping").clicked += () => SendWithId("ping", id => _subscribed?.HandleHostPing(id));
             root.Q<Button>("quit").clicked += () => Send("quitApplication", () => _subscribed?.HandleHostQuit("Match Launcher window"));
             root.Q<Button>("log-copy").clicked += () => EditorGUIUtility.systemCopyBuffer = string.Join("\n", log);

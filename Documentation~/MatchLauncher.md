@@ -16,14 +16,15 @@ Every host gets the same commands, events and error codes.
 ```
 Idle ──launch──▶ Loading ──joined──▶ Running ──match ended / disconnected──▶ Ended
   ▲                 │                   │                                     │
-  └──── idle ◀── Unloading ◀────────────┴──── abort / return to boot / post-match timeout
+  └──── idle ◀── Unloading ◀────────────┴──── return to boot / post-match timeout
 ```
 
 - A launch is accepted only in `Idle`. Otherwise it fails with `Busy`.
-- An abort is accepted in every state. It tears the match down and completes in `Idle`.
+- A return to boot is accepted in every state, whether the match finished or is still loading or running. It tears the match
+  down, loads the boot scene and completes in `Idle`.
 - After the match ends, the gameplay scene stays loaded (`Ended`) until the host returns to boot or the
   post-match timeout elapses.
-- `idle` is always the last event of a cycle. The soft cycle `abort → idle → launch` is the normal way to
+- `idle` is always the last event of a cycle. The soft cycle `return to boot → idle → launch` is the normal way to
   play match after match in one process.
 
 ## Launching from C#
@@ -47,7 +48,7 @@ if (!result.Success)
     Debug.LogWarning(result);                    // e.g. "Launch … failed: ConnectionFailed: …"
 
 // Later, back to the boot scene:
-await launcher.AbortMatchAsync();
+await launcher.ReturnToBootAsync();
 ```
 
 | Method | Launch data | Notes |
@@ -59,7 +60,7 @@ await launcher.AbortMatchAsync();
 | `LaunchSnapshotReplayAsync` | `SnapshotReplayLaunchData` (required) | Replays a recorded match |
 
 The task completes when the match is joined (`Success`) or the launch fails. Its `CancellationToken`
-only stops waiting. It does not cancel the launch: use `AbortMatchAsync` for that.
+only stops waiting. It does not cancel the launch: use `ReturnToBootAsync` for that.
 
 ### Launch data
 
@@ -141,7 +142,7 @@ window.addEventListener('elympics', (e) => {
 | Method | Arguments |
 |---|---|
 | `launchOnline`, `launchSinglePlayer`, `launchHalfRemoteClient`, `launchHalfRemoteServer`, `launchSnapshotReplay` | `(gameId, data?, options?)` |
-| `abortMatch`, `returnToBoot`, `ping` | `(requestId?)` |
+| `returnToBoot`, `ping` | `(requestId?)` |
 | `quitApplication` | `(reason?)` |
 | `onEvent` | a handler `(type, requestId, payload, payloadJson) => void`. A handler set before the build booted is kept |
 
@@ -169,21 +170,21 @@ static void OnEvent(const char *type, const char *requestId, const char *payload
 
 ElympicsHost_RegisterEventHandler(OnEvent);   // before the first command, to receive "ready"
 ElympicsHost_LaunchSinglePlayer("a1b2c3d4-…", "", "{\"requestId\":\"first\"}");
-ElympicsHost_AbortMatch("back");
+ElympicsHost_ReturnToBoot("back");
 ```
 
 - `ElympicsHost_LaunchOnline`, `_LaunchSinglePlayer`, `_LaunchHalfRemoteClient`, `_LaunchHalfRemoteServer`
   and `_LaunchSnapshotReplay` take `(gameId, dataJson, optionsJson)`, with the same JSON as the web page.
-- `ElympicsHost_AbortMatch`, `_ReturnToBoot` and `_Ping` take a request ID. `ElympicsHost_QuitApplication`
+- `ElympicsHost_ReturnToBoot` and `_Ping` take a request ID. `ElympicsHost_QuitApplication`
   takes a reason.
 - Commands may be called from any thread, even before Unity has started. They are queued and run on
   Unity's main thread in order. Events arrive on Unity's main thread.
-- The API version is 2 (`ElympicsHost_GetApiVersion`). The SDK refuses a plugin of another version.
+- The API version is 3 (`ElympicsHost_GetApiVersion`). The SDK refuses a plugin of another version.
 
 ## Events
 
 Every event is `(type, requestId, payloadJson)`, and `requestId` is the ID of the command that caused it.
-`launchAccepted` and `abortAccepted` mean the action started, never that it finished.
+`launchAccepted` and `returnToBootAccepted` mean the action started, never that it finished.
 
 | Type | Payload | When |
 |---|---|---|
@@ -191,8 +192,8 @@ Every event is `(type, requestId, payloadJson)`, and `requestId` is the ID of th
 | `launchAccepted` | — | the launch was validated and its scene is loading |
 | `launchSucceeded` | `{ gameId, matchId }` | the match was joined |
 | `launchFailed` | `{ code, message }` | the launch failed, at validation or later. Terminal for that request |
-| `abortAccepted` | — | teardown is starting |
-| `abortFailed` | `{ code, message }` | only `InternalError` |
+| `returnToBootAccepted` | — | teardown is starting |
+| `returnToBootFailed` | `{ code, message }` | only `InternalError` |
 | `matchEnded` | `{ matchId }` | the server ended the match. The state is `Ended` |
 | `disconnected` | `{ matchId, byServer }` | the connection was lost mid-match. The state is `Ended` |
 | `matchEndTimedOut` | `{ matchId }` | the post-match timeout elapsed, and the launcher returns to boot on its own |
@@ -200,7 +201,7 @@ Every event is `(type, requestId, payloadJson)`, and `requestId` is the ID of th
 | `quitting` | `{ reason }` | right before the process exits |
 | `pong` | — | the reply to `ping` |
 
-`protocolVersion` (`ElympicsHostProtocol.Version`, now `2.0.0`) describes the wire format of this build.
+`protocolVersion` (`ElympicsHostProtocol.Version`, now `3.0.0`) describes the wire format of this build.
 Requests carry no version, so a host that needs one checks it on `ready`.
 
 ### Error codes
@@ -216,7 +217,7 @@ Requests carry no version, so a host that needs one checks it on `ready`.
 | `ConnectionFailed` | connecting to or joining the game server failed, or a replay download failed |
 | `Timeout` | the match was not joined within the launch timeout |
 | `Busy` | a match already exists, or the process is limited to its `ELYMPICS_LAUNCH_MODE` match |
-| `Aborted` | an abort or quit arrived while the launch was loading |
+| `Aborted` | a return to boot or quit arrived while the launch was loading |
 | `InternalError` | an unexpected exception |
 
 <a id="userSecret"></a>
@@ -276,7 +277,7 @@ mode when the match ends. An edited argument is left alone.
 - **Launch button:** named after the open tab (`▶ Online`, `▶ Single player`, `▶ HR server`, `▶ HR client`,
   `▶ Replay`). It sends that tab's data, the options and the game ID exactly as written in the window. Outside
   play mode it enters play mode first, from the boot scene or from an empty scene.
-- **Controls:** abort, ping and quit. The window logs every command and event as one selectable text; `Copy all`
+- **Controls:** return to boot, ping and quit. The window logs every command and event as one selectable text; `Copy all`
   copies the whole log.
 - **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note
   naming the parameter's source.
@@ -287,13 +288,13 @@ The samples launch the same way. Open a sample's boot or gameplay scene and use 
 
 ## Quitting, per platform
 
-`quitApplication` is a backup escape hatch. The normal reset is `abortMatch` and waiting for `idle`. Quit
+`quitApplication` is a backup escape hatch. The normal reset is `returnToBoot` and waiting for `idle`. Quit
 means something different on every platform:
 
 | Platform | What quitting does | What the host must do |
 |---|---|---|
 | **WebGL** | Stops the player loop. **The page, the canvas and the wasm heap survive** | On `quitting`, call `unityInstance.Quit()` and drop the reference. Create a new instance to start again |
-| **iOS** | Exits the process. Apple treats a self-terminating app as a crash, and the user sees the app vanish | Prefer `abortMatch`. Quit only when the host itself is tearing down the Unity view |
+| **iOS** | Exits the process. Apple treats a self-terminating app as a crash, and the user sees the app vanish | Prefer `returnToBoot`. Quit only when the host itself is tearing down the Unity view |
 | **Desktop** | Exits the process | Relaunch the executable |
 | **Editor** | Leaves play mode | — |
 
@@ -308,7 +309,7 @@ Teardown before a quit is best effort and lasts at most `ElympicsLaunchDefaults.
   The ~1.4 GB figure that circulates is an allocation ceiling, not a budget.
 - **Mixed games on iOS:** if a host mixes memory-heavy and light games in one page session, consider
   `unityInstance.Quit()` and a new instance when switching between them, not only for recovery. On desktop,
-  the soft `abortMatch → idle → launch` cycle is correct and quitting is unnecessary.
+  the soft `returnToBoot → idle → launch` cycle is correct and quitting is unnecessary.
 - **Unity versions:** the SDK builds on Unity 2021.3, while games may ship on Unity 6. The two differ:
 
 | | Unity 2021.3 | Unity 6 |

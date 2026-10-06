@@ -16,7 +16,7 @@ namespace Elympics
         bool IsCurrentlyInMatch { get; }
 
         // Launch*Async completes when the match is joined or the launch fails. It is accepted only in MatchLauncherState.Idle,
-        // otherwise it fails with ElympicsLaunchErrorCode.Busy. Its ct only stops waiting: use AbortMatchAsync to cancel the launch.
+        // otherwise it fails with ElympicsLaunchErrorCode.Busy. Its ct only stops waiting: use ReturnToBootAsync to cancel the launch.
 
         UniTask<ElympicsLaunchResult> LaunchOnlineAsync(string gameId, OnlineLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
 
@@ -31,12 +31,15 @@ namespace Elympics
 
         UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotReplayLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default);
 
-        /// <summary>Accepted in any state; completes in <see cref="MatchLauncherState.Idle"/>, immediately if already there.</summary>
-        /// <param name="ct">Stops waiting for the result. Does not cancel the abort.</param>
-        UniTask<ElympicsAbortResult> AbortMatchAsync(CancellationToken ct = default);
+        /// <summary>
+        /// Ends the match, whether it has finished or is still loading or running, and loads the boot scene.
+        /// Accepted in any state; completes in <see cref="MatchLauncherState.Idle"/>, immediately if already there.
+        /// </summary>
+        /// <param name="ct">Stops waiting for the result. Does not cancel the return to boot.</param>
+        UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(CancellationToken ct = default);
 
         /// <summary>
-        /// Exits after at most <see cref="ElympicsLaunchDefaults.QuitGraceSeconds"/> of teardown. Prefer <see cref="AbortMatchAsync"/>.
+        /// Exits after at most <see cref="ElympicsLaunchDefaults.QuitGraceSeconds"/> of teardown. Prefer <see cref="ReturnToBootAsync"/>.
         /// On WebGL the page survives: the host has to call <c>unityInstance.Quit()</c>.
         /// </summary>
         void QuitApplication(string reason = "");

@@ -11,7 +11,7 @@ namespace Elympics
     internal sealed class ElympicsNativeHostBridge : IElympicsHostBridge
     {
         /// <summary>Must match <c>ApiVersion</c> in ElympicsHost.cpp.</summary>
-        internal const int ApiVersion = 2;
+        internal const int ApiVersion = 3;
 
         private const int MaxCommandsPerFrame = 64;
 

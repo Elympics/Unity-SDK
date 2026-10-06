@@ -17,9 +17,9 @@ namespace Elympics
         /// <summary>Connecting to, authenticating with or joining the game server failed.</summary>
         ConnectionFailed,
         Timeout,
-        /// <summary>A match is already loading, running or ended. Abort it first and wait for idle.</summary>
+        /// <summary>A match is already loading, running or ended. Return to boot first and wait for idle.</summary>
         Busy,
-        /// <summary>The launch was cancelled by an abort while it was still loading.</summary>
+        /// <summary>The launch was cancelled by a return to boot or a quit while it was still loading.</summary>
         Aborted,
         InternalError,
     }

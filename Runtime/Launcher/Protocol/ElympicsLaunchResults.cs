@@ -44,14 +44,14 @@ namespace Elympics
     }
 
     [PublicAPI]
-    public sealed class ElympicsAbortResult
+    public sealed class ElympicsReturnToBootResult
     {
         public bool Success { get; }
         public string RequestId { get; }
         public ElympicsLaunchErrorCode? Code { get; }
         public string Message { get; }
 
-        private ElympicsAbortResult(bool success, string requestId, ElympicsLaunchErrorCode? code, string message)
+        private ElympicsReturnToBootResult(bool success, string requestId, ElympicsLaunchErrorCode? code, string message)
         {
             Success = success;
             RequestId = requestId;
@@ -59,11 +59,11 @@ namespace Elympics
             Message = message;
         }
 
-        internal static ElympicsAbortResult Succeeded(string requestId) => new(true, requestId, null, string.Empty);
+        internal static ElympicsReturnToBootResult Succeeded(string requestId) => new(true, requestId, null, string.Empty);
 
-        internal static ElympicsAbortResult Failed(string requestId, ElympicsLaunchErrorCode code, string message) =>
+        internal static ElympicsReturnToBootResult Failed(string requestId, ElympicsLaunchErrorCode code, string message) =>
             new(false, requestId, code, message);
 
-        public override string ToString() => Success ? $"Abort {RequestId} succeeded" : $"Abort {RequestId} failed: {Code}: {Message}";
+        public override string ToString() => Success ? $"Return to boot {RequestId} succeeded" : $"Return to boot {RequestId} failed: {Code}: {Message}";
     }
 }

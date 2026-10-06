@@ -28,7 +28,7 @@
             <ui:Button name="launch" class="launch-button" tooltip="Sends the open tab's data, the options and the game ID. Outside play mode, enters play mode first." />
         </ui:VisualElement>
         <ui:VisualElement name="match-controls" class="row">
-            <ui:Button name="abort" text="Abort / return to boot" class="grow" />
+            <ui:Button name="return-to-boot" text="Return to boot" class="grow" />
             <ui:Button name="ping" text="Ping" class="grow" />
             <ui:Button name="quit" text="Quit application" class="grow" />
         </ui:VisualElement>

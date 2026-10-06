@@ -49,9 +49,7 @@ ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteClient(const char *gameId
 ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteServer(const char *gameId, const char *dataJson, const char *optionsJson);
 ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchSnapshotReplay(const char *gameId, const char *dataJson, const char *optionsJson);
 
-// Leaves the current match whatever its state. Always succeeds; replies "abortAccepted" then "idle".
-ELYMPICS_HOST_EXPORT void ElympicsHost_AbortMatch(const char *requestId);
-// Same as ElympicsHost_AbortMatch, for readability once the match has ended.
+// Ends the current match whatever its state and loads the boot scene. Always succeeds; replies "returnToBootAccepted" then "idle".
 ELYMPICS_HOST_EXPORT void ElympicsHost_ReturnToBoot(const char *requestId);
 // Backup escape hatch: exits the application after a short best-effort teardown. Replies "quitting".
 ELYMPICS_HOST_EXPORT void ElympicsHost_QuitApplication(const char *reason);

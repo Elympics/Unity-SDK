@@ -197,27 +197,27 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
-        public IEnumerator AbortFromIdleSucceedsImmediately() => UniTask.ToCoroutine(async () =>
+        public IEnumerator ReturnToBootFromIdleSucceedsImmediately() => UniTask.ToCoroutine(async () =>
         {
-            var result = await _launcher.AbortAsync("abort", default);
+            var result = await _launcher.ReturnToBootAsync("return", default);
 
             Assert.That(result.Success, Is.True);
-            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("abortAccepted", "abort"), ("idle", "abort") }));
+            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "abort"), ("idle", "abort") }));
             Assert.That(_loader.Loaded, Is.Empty);
         });
 
         [UnityTest]
-        public IEnumerator AbortFromRunningReturnsToBoot() => UniTask.ToCoroutine(async () =>
+        public IEnumerator ReturnToBootFromRunningLoadsBootScene() => UniTask.ToCoroutine(async () =>
         {
             _ = await LaunchToRunning();
             _events.Clear();
 
-            var result = await _launcher.AbortAsync("abort", default);
+            var result = await _launcher.ReturnToBootAsync("return", default);
 
             Assert.That(result.Success, Is.True);
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(_launcher.IsCurrentlyInMatch, Is.False);
-            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("abortAccepted", "abort"), ("idle", "abort") }));
+            Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("returnToBootAccepted", "abort"), ("idle", "abort") }));
             Assert.That(_loader.Loaded.Last(), Is.EqualTo(BootScene));
             Assert.That(_launcher.SessionAwaitingScene, Is.Null);
         });
@@ -231,7 +231,7 @@ namespace Elympics.Tests
                 _ = await LaunchToRunning();
                 Time.fixedDeltaTime = before * 3;
 
-                _ = await _launcher.AbortAsync("abort", default);
+                _ = await _launcher.ReturnToBootAsync("return", default);
 
                 Assert.That(Time.fixedDeltaTime, Is.EqualTo(before));
             }
@@ -245,7 +245,7 @@ namespace Elympics.Tests
         public IEnumerator ReplacementSequenceWorks() => UniTask.ToCoroutine(async () =>
         {
             _ = await LaunchToRunning();
-            _ = await _launcher.AbortAsync("abort", default);
+            _ = await _launcher.ReturnToBootAsync("return", default);
             _events.Clear();
 
             var (result, _) = await LaunchToRunning(Request("again"));
@@ -255,13 +255,13 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
-        public IEnumerator TwoAbortsTearDownOnce() => UniTask.ToCoroutine(async () =>
+        public IEnumerator TwoReturnsToBootTearDownOnce() => UniTask.ToCoroutine(async () =>
         {
             _ = await LaunchToRunning();
             _loader.Loaded.Clear();
 
-            var first = _launcher.AbortAsync("a1", default);
-            var second = _launcher.AbortAsync("a2", default);
+            var first = _launcher.ReturnToBootAsync("a1", default);
+            var second = _launcher.ReturnToBootAsync("a2", default);
             var (r1, r2) = await UniTask.WhenAll(first, second);
 
             Assert.That(r1.Success && r2.Success, Is.True);
@@ -270,20 +270,20 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
-        public IEnumerator AbortDuringLoadingFailsLaunchWithAborted() => UniTask.ToCoroutine(async () =>
+        public IEnumerator ReturnToBootDuringLoadingFailsLaunchWithAborted() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
             var launch = Launch(Request());
             _ = AttachScene();
 
-            var abort = _launcher.AbortAsync("abort", default);
+            var returnToBoot = _launcher.ReturnToBootAsync("return", default);
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
             var launchResult = await launch;
-            var abortResult = await abort;
+            var returnResult = await returnToBoot;
 
             Assert.That(launchResult.Code, Is.EqualTo(ElympicsLaunchErrorCode.Aborted));
-            Assert.That(abortResult.Success, Is.True);
+            Assert.That(returnResult.Success, Is.True);
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(EventTypes.Count(t => t == "launchSucceeded"), Is.Zero);
             Assert.That(_loader.Loaded, Is.EqualTo(new[] { GameplayScene, BootScene }));
@@ -294,15 +294,15 @@ namespace Elympics.Tests
         {
             _loader.HoldGameplayLoad = true;
             var launch = Launch(Request());
-            var abort = _launcher.AbortAsync("abort", default);
+            var returnToBoot = _launcher.ReturnToBootAsync("return", default);
 
-            // The gameplay scene activates only now, after the abort.
+            // The gameplay scene activates only now, after the return to boot.
             Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
             Assert.That(session, Is.Null);
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
             Assert.That((await launch).Code, Is.EqualTo(ElympicsLaunchErrorCode.Aborted));
-            Assert.That((await abort).Success, Is.True);
+            Assert.That((await returnToBoot).Success, Is.True);
             Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
         });
 
@@ -324,7 +324,7 @@ namespace Elympics.Tests
         public IEnumerator LateReportsFromTornDownSceneAreIgnored() => UniTask.ToCoroutine(async () =>
         {
             var (_, sink) = await LaunchToRunning();
-            _ = await _launcher.AbortAsync("abort", default);
+            _ = await _launcher.ReturnToBootAsync("return", default);
             _events.Clear();
 
             sink.MatchEnded(Guid.Empty);
@@ -460,7 +460,7 @@ namespace Elympics.Tests
             Assert.That(EventTypes.Last(), Is.EqualTo("matchEnded"));
             Assert.That(_loader.ActiveScenePath, Is.EqualTo(GameplayScene));
 
-            _ = await _launcher.AbortAsync("return", default);
+            _ = await _launcher.ReturnToBootAsync("return", default);
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
         });
 
@@ -570,6 +570,14 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void RemovedAbortMatchKindIsIgnored()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            _launcher.HandleHostCommand((ElympicsHostCommandKind)2, "abort");
+            Assert.That(_events, Is.Empty);
+        }
+
+        [Test]
         public void RemovedGenericLaunchKindIsIgnored()
         {
             LogAssert.ignoreFailingMessages = true;
@@ -624,7 +632,7 @@ namespace Elympics.Tests
 
             _ = await LaunchToRunning();
             _loader.Loaded.Clear();
-            _ = await _launcher.AbortAsync("abort", default);
+            _ = await _launcher.ReturnToBootAsync("return", default);
 
             Assert.That(_launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(_loader.EmptyReturns, Is.EqualTo(1));

@@ -4,8 +4,7 @@ namespace Elympics
     internal enum ElympicsHostCommandKind
     {
         None = 0,
-        // 1 was the generic launch of native API version 1.
-        AbortMatch = 2,
+        // 1 was the generic launch of native API version 1, 2 was AbortMatch of version 2.
         ReturnToBoot = 3,
         QuitApplication = 4,
         Ping = 5,

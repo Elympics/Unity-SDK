@@ -12,7 +12,7 @@ namespace Elympics
     public static class ElympicsHostProtocol
     {
         /// <summary>Version of the wire format (command arguments and event payloads), reported in the <c>ready</c> event.</summary>
-        public const string Version = "2.0.0";
+        public const string Version = "3.0.0";
 
         public static class Events
         {
@@ -20,8 +20,8 @@ namespace Elympics
             public const string LaunchAccepted = "launchAccepted";
             public const string LaunchSucceeded = "launchSucceeded";
             public const string LaunchFailed = "launchFailed";
-            public const string AbortAccepted = "abortAccepted";
-            public const string AbortFailed = "abortFailed";
+            public const string ReturnToBootAccepted = "returnToBootAccepted";
+            public const string ReturnToBootFailed = "returnToBootFailed";
             public const string MatchEnded = "matchEnded";
             public const string Disconnected = "disconnected";
             public const string MatchEndTimedOut = "matchEndTimedOut";

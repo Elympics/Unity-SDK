@@ -94,7 +94,7 @@ namespace Elympics
         private CancellationTokenSource? _timerCts;
         private UniTask _sceneLoad = UniTask.CompletedTask;
         private string _teardownCause = string.Empty;
-        private readonly List<(string RequestId, UniTaskCompletionSource<ElympicsAbortResult> Completion)> _abortWaiters = new();
+        private readonly List<(string RequestId, UniTaskCompletionSource<ElympicsReturnToBootResult> Completion)> _returnToBootWaiters = new();
         private bool _quitting;
 
         internal ElympicsMatchLauncher(IElympicsSceneLoader sceneLoader, Func<ElympicsConfig?> loadConfig, ElympicsLaunchPlatform platform, Action<string> exitApplication,
@@ -140,7 +140,7 @@ namespace Elympics
             if (_limitedToParameterMatch)
                 return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, LimitedToParameterMatchMessage);
             if (State != MatchLauncherState.Idle)
-                return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, $"A match is already {State}. Abort it and wait for idle before launching another one.");
+                return RejectLaunch(requestId, ElympicsLaunchErrorCode.Busy, $"A match is already {State}. Return to boot and wait for idle before launching another one.");
 
             var games = (IReadOnlyList<ElympicsGameConfig?>?)_loadConfig()?.AvailableGames ?? Array.Empty<ElympicsGameConfig?>();
             if (!ElympicsLaunchValidator.TryValidate(requestId, gameId, data, options, games, _platform, out var launch, out var failure))
@@ -319,11 +319,11 @@ namespace Elympics
 
         #endregion
 
-        #region Abort and teardown
+        #region Return to boot and teardown
 
-        public UniTask<ElympicsAbortResult> AbortMatchAsync(CancellationToken ct = default) => AbortAsync(Guid.NewGuid().ToString("N"), ct);
+        public UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(CancellationToken ct = default) => ReturnToBootAsync(Guid.NewGuid().ToString("N"), ct);
 
-        internal async UniTask<ElympicsAbortResult> AbortAsync(string requestId, CancellationToken ct)
+        internal async UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(string requestId, CancellationToken ct)
         {
             await UniTask.SwitchToMainThread();
             if (string.IsNullOrEmpty(requestId))
@@ -332,14 +332,14 @@ namespace Elympics
             {
                 if (State == MatchLauncherState.Idle)
                 {
-                    Emit(ElympicsHostProtocol.Events.AbortAccepted, requestId);
+                    Emit(ElympicsHostProtocol.Events.ReturnToBootAccepted, requestId);
                     Emit(ElympicsHostProtocol.Events.Idle, requestId);
-                    return ElympicsAbortResult.Succeeded(requestId);
+                    return ElympicsReturnToBootResult.Succeeded(requestId);
                 }
 
-                var completion = new UniTaskCompletionSource<ElympicsAbortResult>();
-                _abortWaiters.Add((requestId, completion));
-                Emit(ElympicsHostProtocol.Events.AbortAccepted, requestId);
+                var completion = new UniTaskCompletionSource<ElympicsReturnToBootResult>();
+                _returnToBootWaiters.Add((requestId, completion));
+                Emit(ElympicsHostProtocol.Events.ReturnToBootAccepted, requestId);
 
                 if (State == MatchLauncherState.Loading && _session != null)
                 {
@@ -360,8 +360,8 @@ namespace Elympics
             {
                 _logger.LogException(e);
                 var message = $"{e.GetType().Name}: {e.Message}";
-                Emit(ElympicsHostProtocol.Events.AbortFailed, requestId, new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InternalError, message));
-                return ElympicsAbortResult.Failed(requestId, ElympicsLaunchErrorCode.InternalError, message);
+                Emit(ElympicsHostProtocol.Events.ReturnToBootFailed, requestId, new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InternalError, message));
+                return ElympicsReturnToBootResult.Failed(requestId, ElympicsLaunchErrorCode.InternalError, message);
             }
         }
 
@@ -405,7 +405,7 @@ namespace Elympics
             try
             {
                 if (!_quitting)
-                    await ReturnToBootAsync();
+                    await LoadBootSceneAsync();
             }
             catch (Exception e)
             {
@@ -425,16 +425,16 @@ namespace Elympics
 
             SetState(MatchLauncherState.Idle);
             var idleRequestIds = new List<string> { _teardownCause };
-            idleRequestIds.AddRange(_abortWaiters.Select(waiter => waiter.RequestId));
+            idleRequestIds.AddRange(_returnToBootWaiters.Select(waiter => waiter.RequestId));
             foreach (var requestId in idleRequestIds.Distinct())
                 Emit(ElympicsHostProtocol.Events.Idle, requestId);
-            var waiters = _abortWaiters.ToArray();
-            _abortWaiters.Clear();
+            var waiters = _returnToBootWaiters.ToArray();
+            _returnToBootWaiters.Clear();
             foreach (var (requestId, completion) in waiters)
-                _ = completion.TrySetResult(ElympicsAbortResult.Succeeded(requestId));
+                _ = completion.TrySetResult(ElympicsReturnToBootResult.Succeeded(requestId));
         }
 
-        private async UniTask ReturnToBootAsync()
+        private async UniTask LoadBootSceneAsync()
         {
             var bootScene = Boot.ScenePath;
             if (bootScene == null)
@@ -463,10 +463,10 @@ namespace Elympics
                 Emit(ElympicsHostProtocol.Events.LaunchFailed, session.Launch.RequestId, new ElympicsLaunchFailure(ElympicsLaunchErrorCode.Aborted, message));
                 CompleteLaunch(ElympicsLaunchResult.Failed(session.Launch.RequestId, ElympicsLaunchErrorCode.Aborted, message));
             }
-            var waiters = _abortWaiters.ToArray();
-            _abortWaiters.Clear();
+            var waiters = _returnToBootWaiters.ToArray();
+            _returnToBootWaiters.Clear();
             foreach (var (requestId, completion) in waiters)
-                _ = completion.TrySetResult(ElympicsAbortResult.Succeeded(requestId));
+                _ = completion.TrySetResult(ElympicsReturnToBootResult.Succeeded(requestId));
 
             Emit(ElympicsHostProtocol.Events.Quitting, string.Empty, new ElympicsQuitInfo { reason = reason ?? string.Empty });
             CancelTimer();
@@ -535,9 +535,8 @@ namespace Elympics
                 case ElympicsHostCommandKind.LaunchSnapshotReplay:
                     HandleHostLaunch(ElympicsHostLaunchKind.SnapshotReplay, first, second, third);
                     break;
-                case ElympicsHostCommandKind.AbortMatch:
                 case ElympicsHostCommandKind.ReturnToBoot:
-                    HandleHostAbort(argument);
+                    HandleHostReturnToBoot(argument);
                     break;
                 case ElympicsHostCommandKind.QuitApplication:
                     HandleHostQuit(argument);
@@ -552,7 +551,7 @@ namespace Elympics
             }
         }
 
-        internal void HandleHostAbort(string requestId) => AbortAsync(requestId, CancellationToken.None).Forget();
+        internal void HandleHostReturnToBoot(string requestId) => ReturnToBootAsync(requestId, CancellationToken.None).Forget();
 
         internal void HandleHostPing(string requestId) => Emit(ElympicsHostProtocol.Events.Pong, requestId);
 

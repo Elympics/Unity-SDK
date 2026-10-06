@@ -6,13 +6,12 @@
 #include <string>
 
 // Must match ElympicsNativeHostBridge.ApiVersion and the command kinds in C#.
-static const int ApiVersion = 2;
+static const int ApiVersion = 3;
 
 enum CommandKind
 {
     CommandNone = 0,
-    // 1 was the generic launch of API version 1.
-    CommandAbortMatch = 2,
+    // 1 was the generic launch of API version 1, 2 was AbortMatch of version 2.
     CommandReturnToBoot = 3,
     CommandQuitApplication = 4,
     CommandPing = 5,
@@ -57,7 +56,6 @@ ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchSinglePlayer(const char *gameId, co
 ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteClient(const char *gameId, const char *dataJson, const char *optionsJson) { Enqueue(CommandLaunchHalfRemoteClient, gameId, dataJson, optionsJson); }
 ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchHalfRemoteServer(const char *gameId, const char *dataJson, const char *optionsJson) { Enqueue(CommandLaunchHalfRemoteServer, gameId, dataJson, optionsJson); }
 ELYMPICS_HOST_EXPORT void ElympicsHost_LaunchSnapshotReplay(const char *gameId, const char *dataJson, const char *optionsJson) { Enqueue(CommandLaunchSnapshotReplay, gameId, dataJson, optionsJson); }
-ELYMPICS_HOST_EXPORT void ElympicsHost_AbortMatch(const char *requestId) { Enqueue(CommandAbortMatch, requestId); }
 ELYMPICS_HOST_EXPORT void ElympicsHost_ReturnToBoot(const char *requestId) { Enqueue(CommandReturnToBoot, requestId); }
 ELYMPICS_HOST_EXPORT void ElympicsHost_QuitApplication(const char *reason) { Enqueue(CommandQuitApplication, reason); }
 ELYMPICS_HOST_EXPORT void ElympicsHost_Ping(const char *requestId) { Enqueue(CommandPing, requestId); }

@@ -42,6 +42,23 @@ namespace Elympics.Tests.Parameters
             }
         }
 
+        [Test]
+        public void PlayPadLobbyParametersAreReadFromEnvironmentVariables()
+        {
+            var envVariables = new Dictionary<string, string>
+            {
+                { "ELYMPICS_LOBBY", "https://lobby.example/v2/lobby" },
+                { "ELYMPICS_AUTH", "https://auth.example/v2/auth" },
+                { "ELYMPICS_CLIENT_SECRET", "secret" },
+            };
+
+            Assert.IsTrue(ApplicationParameters.Parameters.Initialize(envVariables, Array.Empty<string>(), new NameValueCollection(), new NameValueCollection()));
+
+            Assert.That(ApplicationParameters.Parameters.LobbyEndpoint.GetValue(), Is.EqualTo(new Uri("https://lobby.example/v2/lobby")));
+            Assert.That(ApplicationParameters.Parameters.AuthEndpoint.GetValue(), Is.EqualTo(new Uri("https://auth.example/v2/auth")));
+            Assert.That(ApplicationParameters.Parameters.ClientSecret.GetValue(), Is.EqualTo("secret"));
+        }
+
         public record OnlineModeTestCase(string[] EnvKeys, bool ShouldBeServer);
         private static List<OnlineModeTestCase> OnlineModeTestCases => new()
         {

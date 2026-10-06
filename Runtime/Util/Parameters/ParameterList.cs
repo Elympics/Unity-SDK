@@ -29,6 +29,14 @@ namespace Elympics
         public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
             parse: ParseUri);
 
+        // Read by the PlayPad lobby.
+        public readonly Parameter<Uri> LobbyEndpoint = new("ELYMPICS_LOBBY", "elympicsLobby", "elympics-lobby",
+            parse: ParseUri);
+        public readonly Parameter<Uri> AuthEndpoint = new("ELYMPICS_AUTH", "elympicsAuth", "elympics-auth",
+            parse: ParseUri);
+        public readonly Parameter<string> ClientSecret =
+            new("ELYMPICS_CLIENT_SECRET", "elympicsClientSecret", "elympics-client-secret");
+
         public readonly Parameter<Uri> ReplaySource = new("ELYMPICS_REPLAY", "elympicsReplay", "elympics-replay",
             parse: ParseUri);
 

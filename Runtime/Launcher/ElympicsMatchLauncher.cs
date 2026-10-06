@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.SnapshotAnalysis.Retrievers;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -124,6 +125,10 @@ namespace Elympics
         public UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotReplayLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
             LaunchAsync(gameId, data, options, ct);
 
+        /// <summary>Launches a replay that is already in memory, e.g. one received from a web host.</summary>
+        internal UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotAnalysisRetriever retriever, ElympicsLaunchOptions? options, CancellationToken ct) =>
+            LaunchAsync(gameId, new SnapshotReplayLaunchData(retriever), options, ct);
+
         internal async UniTask<ElympicsLaunchResult> LaunchAsync(string? gameId, LaunchData? data, ElympicsLaunchOptions? options, CancellationToken ct)
         {
             await UniTask.SwitchToMainThread();
@@ -172,7 +177,9 @@ namespace Elympics
             {
                 if (session.Launch.Data is SnapshotReplayLaunchData replay)
                 {
-                    var result = await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
+                    var result = replay.Preloaded != null
+                        ? SnapshotReplayLoader.Check(replay.Preloaded, session.Launch.GameConfig)
+                        : await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
                     if (session != _session || State != MatchLauncherState.Loading)
                         return;
                     if (result.Failure != null)

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Elympics.SnapshotAnalysis.Retrievers;
 using JetBrains.Annotations;
 
 namespace Elympics
@@ -16,6 +17,15 @@ namespace Elympics
 
         public SnapshotReplayLaunchData(string path) => Path = path ?? string.Empty;
 
+        /// <summary>A replay the caller has already loaded. No path is read; only its game version is checked.</summary>
+        internal SnapshotReplayLaunchData(SnapshotAnalysisRetriever preloaded)
+        {
+            Path = string.Empty;
+            Preloaded = preloaded;
+        }
+
+        internal SnapshotAnalysisRetriever? Preloaded { get; }
+
         internal override string ModeName => "SnapshotReplay";
 
         internal bool IsUrl => Uri.TryCreate(Path, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
@@ -23,6 +33,8 @@ namespace Elympics
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
             failure = null;
+            if (Preloaded != null)
+                return true;
             if (string.IsNullOrWhiteSpace(Path))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(Path)} is required.", out failure);
             if (IsUrl)

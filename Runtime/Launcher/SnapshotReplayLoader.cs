@@ -68,8 +68,11 @@ namespace Elympics
                     return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {Describe(e)}");
                 }
             }
-            return TryCheckVersion(retriever, gameConfig, out var failure) ? Result.Loaded(retriever) : Result.Failed(failure!.Code, failure.message);
+            return Check(retriever, gameConfig);
         }
+
+        public static Result Check(SnapshotAnalysisRetriever retriever, ElympicsGameConfig gameConfig) =>
+            TryCheckVersion(retriever, gameConfig, out var failure) ? Result.Loaded(retriever) : Result.Failed(failure!.Code, failure.message);
 
         /// <summary>Inner exceptions carry the actual cause of a failed read.</summary>
         private static string Describe(Exception e)

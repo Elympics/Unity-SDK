@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.SnapshotAnalysis;
+using Elympics.SnapshotAnalysis.Retrievers;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -395,6 +397,53 @@ namespace Elympics.Tests
 
             var (result, _) = await LaunchToRunning(Request("next"));
             Assert.That(result.Success, Is.True);
+        });
+
+        private static SnapshotAnalysisRetriever Replay(string gameVersion) => new InMemorySnapshotAnalysisRetriever(new SnapshotReplayData
+        {
+            InitData = new SnapshotSaverInitData("1", "game", GameId, gameVersion, 1, "0", 0.02f, default, null, Array.Empty<InitialMatchPlayerDataGuid>()),
+            Snapshots = new Dictionary<long, ElympicsSnapshotWithMetadata>(),
+        });
+
+        [UnityTest]
+        public IEnumerator PreloadedReplayLaunchUsesTheGivenRetriever() => UniTask.ToCoroutine(async () =>
+        {
+            var retriever = Replay(_game.GameVersion);
+            _loader.HoldGameplayLoad = true;
+
+            var launch = _launcher.LaunchSnapshotReplayAsync(GameId, retriever, Request(), default);
+            var session = (ElympicsMatchSession)AttachScene();
+            _ = _loader.PendingGameplayLoad!.TrySetResult(true);
+            await UniTask.Yield();
+            ((IElympicsMatchLifecycleSink)session).MatchJoined();
+            var result = await launch;
+
+            Assert.That(result.Success, Is.True, result.ToString());
+            Assert.That(session.SnapshotRetriever, Is.SameAs(retriever));
+            Assert.That(_loader.Loaded, Is.EqualTo(new[] { GameplayScene }));
+        });
+
+        [UnityTest]
+        public IEnumerator PreloadedReplayOfAnotherGameVersionIsInvalidPayload() => UniTask.ToCoroutine(async () =>
+        {
+            var result = await _launcher.LaunchSnapshotReplayAsync(GameId, Replay(_game.GameVersion + "-other"), Request(), default);
+
+            Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            await WaitUntil(() => _launcher.State == MatchLauncherState.Idle);
+            Assert.That(_loader.Loaded, Has.No.Member(GameplayScene));
+        });
+
+        [UnityTest]
+        public IEnumerator PreloadedReplayIsAcceptedOnWebGl() => UniTask.ToCoroutine(async () =>
+        {
+            var webGlPlayer = new ElympicsLaunchPlatform(canListen: false, canUseTcpUdp: false, hasLocalFiles: false);
+            var launcher = new ElympicsMatchLauncher(_loader, () => _config, webGlPlayer, _ => { });
+
+            // No GameSceneManager attaches in this test, so a launch past validation fails at the scene, not before it.
+            var result = await launcher.LaunchSnapshotReplayAsync(GameId, Replay(_game.GameVersion), Request(), default);
+
+            Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.SceneLoadFailed));
+            Assert.That(_loader.Loaded, Does.Contain(GameplayScene));
         });
 
         [UnityTest]

@@ -55,7 +55,7 @@ await launcher.ReturnToBootAsync();
 |---|---|---|
 | `LaunchOnlineAsync` | `OnlineLaunchData` (required) | Joins a match on an Elympics game server |
 | `LaunchSinglePlayerAsync` | `SinglePlayerLaunchData` (optional) | Server simulated in process. Bots come from `TestPlayers` |
-| `LaunchHalfRemoteClientAsync` | `HalfRemoteClientLaunchData` (optional) | Joins a half-remote server |
+| `LaunchHalfRemoteClientAsync` | `HalfRemoteClientLaunchData` (optional) | Joins a half-remote server. WebGL players include it only with the `ELYMPICS_WEBGL_HALF_REMOTE` scripting define, otherwise `UnsupportedMode` |
 | `LaunchHalfRemoteServerAsync` | `HalfRemoteServerLaunchData` (optional) | Not available on WebGL and iOS (`UnsupportedMode`) |
 | `LaunchSnapshotReplayAsync` | `SnapshotReplayLaunchData` (required) | Replays a recorded match |
 
@@ -212,7 +212,7 @@ Requests carry no version, so a host that needs one checks it on `ready`.
 |---|---|
 | `InvalidPayload` | malformed JSON, a missing or unparseable field, or data the game or mode rejects (e.g. a replay of another game version) |
 | `UnknownGame` | the game ID is not among the available games, or that game has no gameplay scene |
-| `UnsupportedMode` | not supported on this platform (a half-remote server on WebGL or iOS, TCP/UDP or a local replay path on WebGL) |
+| `UnsupportedMode` | not supported on this platform (a half-remote server on WebGL or iOS, TCP/UDP or a local replay path on WebGL, a half-remote client in a WebGL player without `ELYMPICS_WEBGL_HALF_REMOTE`) |
 | `SceneLoadFailed` | the gameplay scene could not be loaded (is it in Build Settings?) or initialized |
 | `ConnectionFailed` | connecting to or joining the game server failed, or a replay download failed |
 | `Timeout` | the match was not joined within the launch timeout |

@@ -61,6 +61,12 @@ namespace Elympics
             return true;
         }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Unreachable after validation. Not referencing the initializer lets the linker drop the half-remote server.
+        private protected override GameSceneInitializer CreateInitializer(GameSceneLaunchContext context) =>
+            throw new ElympicsException(ElympicsLaunchPlatform.CannotListenMessage);
+#else
         private protected override GameSceneInitializer CreateInitializer(GameSceneLaunchContext context) => new HalfRemoteGameServerInitializer(this);
+#endif
     }
 }

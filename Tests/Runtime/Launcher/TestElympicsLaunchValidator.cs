@@ -442,6 +442,18 @@ namespace Elympics.Tests
         [Test]
         public void HalfRemoteClientWhereListeningIsImpossibleIsAccepted() => _ = Validate(new HalfRemoteClientLaunchData(), platform: IosPlayer);
 
+        [Test]
+        public void HalfRemoteClientWithoutItInThePlayerIsUnsupportedMode()
+        {
+            var platform = new ElympicsLaunchPlatform(canListen: false, canUseTcpUdp: false, hasLocalFiles: false, hasHalfRemoteClient: false);
+            var failure = ValidateFailure(new HalfRemoteClientLaunchData(), platform: platform);
+            Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(failure.message, Does.Contain(ElympicsLaunchPlatform.NoHalfRemoteClientMessage));
+        }
+
+        [Test]
+        public void HalfRemoteClientOnWebGlWithItInThePlayerIsAccepted() => _ = Validate(new HalfRemoteClientLaunchData(), platform: WebGlPlayer);
+
         #endregion
 
         #region Snapshot replay

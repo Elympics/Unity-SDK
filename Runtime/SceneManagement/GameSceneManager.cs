@@ -67,6 +67,10 @@ namespace Elympics
             switch (driver)
             {
                 case Driver.OnlineServer:
+#if UNITY_WEBGL && !UNITY_EDITOR
+                    // Left out of WebGL players, so the linker drops the game-engine connector and protobuf.
+                    ElympicsLogger.LogError("The online server can't run in a WebGL player.");
+#else
                     if (LoadGameConfig() is { } serverConfig)
                         Run(serverConfig, null, null, null, context =>
                         {
@@ -75,6 +79,7 @@ namespace Elympics
                             initializer.Initialize(context.Client, context.Server, context.GameConfig, context.BehavioursManager);
                             return initializer;
                         });
+#endif
                     return;
                 case Driver.LaunchModeParameter:
                     await RunFromLaunchModeParameterAsync();

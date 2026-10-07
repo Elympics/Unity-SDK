@@ -45,6 +45,8 @@ namespace Elympics
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
             failure = null;
+            if (!platform.HasHalfRemoteClient)
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {ElympicsLaunchPlatform.NoHalfRemoteClientMessage}.", out failure);
             if (UseTcpUdpInsteadOfWebRtc == true && !platform.CanUseTcpUdp)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, ElympicsLaunchPlatform.NoTcpUdpMessage, out failure);
             if (ServerAddress != null && !LaunchDataParsing.TryParseEndPoint(ServerAddress, out _))
@@ -54,6 +56,12 @@ namespace Elympics
             return true;
         }
 
+#if UNITY_WEBGL && !UNITY_EDITOR && !ELYMPICS_WEBGL_HALF_REMOTE
+        // Unreachable after validation. Not referencing the initializer lets the linker drop the half-remote client.
+        private protected override GameSceneInitializer CreateInitializer(GameSceneLaunchContext context) =>
+            throw new ElympicsException(ElympicsLaunchPlatform.NoHalfRemoteClientMessage);
+#else
         private protected override GameSceneInitializer CreateInitializer(GameSceneLaunchContext context) => new HalfRemoteGameClientInitializer(this);
+#endif
     }
 }

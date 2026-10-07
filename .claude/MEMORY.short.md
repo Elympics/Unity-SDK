@@ -19,6 +19,12 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **dotnet format is not a compile check:** never cite its exit code as proof that code compiles.
 - **Compile and test evidence:** compile with the redirected `dotnet build`. Test with batchmode if a seat is free, `unity command` if the host has `com.unity.pipeline`, or else the open Editor plus `ScriptAssemblies` mtimes, `Editor.log` offsets and `TestResults.xml`.
 - **Generated csprojs follow the Editor's build target:** check `<DefineConstants>` for a platform (e.g. `UNITY_WEBGL`) and also compile the other side of each `#if`: build refs normally, then rebuild the Elympics projects with escaped `DefineConstants` and `BuildProjectReferences=false`. Pass platform capabilities into code under test.
+- **The running Editor caches EditorPrefs:** force Editor state with a temporary in-Editor code change, not external registry writes.
+- **Test Runner window runs write TestResults.xml only through the performance package:** keep `com.unity.test-framework.performance` in the host, and check `start-time` before trusting the file.
+- **WebGL linked assemblies: read the build, not ScriptingAssemblies.json:** use `ManagedStripped` right after the build, or the `.dll` names in the build's `global-metadata.dat`.
+
+## Configuration
+- **The active game is availableGames[0]; duplicate game IDs resolve to the first entry:** list order decides the gameplay scene when IDs repeat.
 
 ## Git
 - **Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing:** use `git show :path` / `HEAD:path`. Copy files with unstaged changes before editing.

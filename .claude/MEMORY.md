@@ -82,6 +82,32 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** a `#if UNITY_WEBGL` TCP/UDP guard made two validation tests fail in the Editor, whose build target was WebGL. A global `DefineConstants` override then broke UniTask's `UnityWebRequest` extensions (CS8209/CS0246 in `GoogleCloudPingResultFactory.cs`).
 - **Time scope:** If CI or the host project stops generating csprojs per build target, rewrite this.
 
+### The running Editor caches EditorPrefs
+- **Rule:** to force Editor state for a manual test (e.g. an expired developer token), make a temporary, uncommitted code change inside the Editor, then revert it. Don't write EditorPrefs from outside Unity.
+- **Reason:** an open Editor caches EditorPrefs in memory, so an external registry write isn't seen, and the test silently checks nothing.
+- **Example:** setting `AuthTokenExp` to 0 in the registry left the Editor using its cached value, and the Play-mode token refresh never ran. A temporary 1-day expiry margin in the hook forced the refresh instead.
+- **Time scope:** If Unity stops caching EditorPrefs per process, remove this.
+
+### Test Runner window runs write TestResults.xml only through the performance package
+- **Rule:** when reading Editor test results from `TestResults.xml` in `Application.persistentDataPath`, make sure the host has `com.unity.test-framework.performance`. Check the file's `start-time` before trusting it.
+- **Reason:** Test Framework 1.4.x saves results to a file only in command-line runs. The file after a window run comes from the performance package's `PerformanceTestRunSaver`. Without it, a window run leaves the previous file, and a watcher never fires.
+- **Example:** removing `com.unity.entities` from the host also removed the performance package it pulled in, so a PlayMode run left no file, until the package was added directly.
+- **Time scope:** If the host adds its own results-saving callback or the Test Framework saves window runs, remove this.
+
+### WebGL linked assemblies: read the build, not ScriptingAssemblies.json
+- **Rule:** to see which assemblies a WebGL build linked, read `Library/Bee/artifacts/WebGL/ManagedStripped` right after that build, or the `.dll` names in the IL2CPP `global-metadata.dat` packed in the build's `.data`. `ScriptingAssemblies.json` lists the assemblies before linking.
+- **Reason:** `ManagedStripped` is overwritten by the next build, and `ScriptingAssemblies.json` makes stripped assemblies look linked.
+- **Example:** `ScriptingAssemblies.json` listed 159 assemblies, including Nethereum and Newtonsoft. The metadata's string table matched `ManagedStripped` exactly, at 72 = 72.
+- **Time scope:** If the WebGL build format changes (e.g. a newer Unity's data packing), recheck this.
+
+## Configuration
+
+### The active game is availableGames[0]; duplicate game IDs resolve to the first entry
+- **Rule:** the launcher, the Editor tools and PlayPad use `ElympicsConfig.availableGames[0]` as the active game. When several entries share a game ID, a launch by that ID picks the first.
+- **Reason:** the legacy `currentGame` index was removed. With duplicate IDs, the list order silently decides which gameplay scene loads.
+- **Example:** two sample configs uploaded to the same staging game ID, and reordering `availableGames` switched which sample's gameplay scene a launch loaded.
+- **Time scope:** If `ElympicsConfig` gets an explicit active-game field again, rewrite this.
+
 ## Git
 
 ### Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing

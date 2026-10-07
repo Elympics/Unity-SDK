@@ -635,7 +635,7 @@ namespace Elympics
         /// <summary>
         /// Blocking counterpart of <see cref="CheckAuthTokenAndRefreshIfNeeded"/>.
         /// </summary>
-        private static void RefreshAuthTokenIfNeededSynchronously()
+        private static void RefreshAuthTokenIfNeededSynchronously(long expirationMarginSeconds = 0)
         {
             if (!ElympicsConfig.IsLogin)
                 throw new ElympicsException("Not logged in to Elympics cloud. Log in before uploading.");
@@ -649,7 +649,7 @@ namespace Elympics
 
             var authTokenExp = long.Parse(authTokenExpStr);
             var currentTimestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-            if (currentTimestamp <= authTokenExp)
+            if (currentTimestamp + expirationMarginSeconds <= authTokenExp)
                 return;
 
             ElympicsLogger.LogInfo("Auth token expired. Refreshing using refresh token...");
@@ -668,6 +668,27 @@ namespace Elympics
             ElympicsConfig.AuthToken = authToken;
             ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
             ElympicsConfig.RefreshToken = responseModel.RefreshToken;
+        }
+
+        // Play-mode code (e.g. the PlayPad extension handshake) sends the stored token as is,
+        // so it has to be valid, with a margin for the domain reload and scene load.
+        private const long PlayModeTokenExpirationMarginSeconds = 60;
+
+        [InitializeOnLoadMethod]
+        private static void RefreshAuthTokenOnEnteringPlayMode() => EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change != PlayModeStateChange.ExitingEditMode || !ElympicsConfig.IsLogin)
+                return;
+            try
+            {
+                RefreshAuthTokenIfNeededSynchronously(PlayModeTokenExpirationMarginSeconds);
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
+            }
         }
 
         private const string StreamingAssetsInitAction = "Initialize StreamingAssets upload";

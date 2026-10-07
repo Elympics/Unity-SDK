@@ -21,7 +21,6 @@ namespace Elympics
         [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.ai";
 
-        [SerializeField] private int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames = new();
 
         [Tooltip("Scene the match launcher returns to after a match. Must be in Build Settings.")]
@@ -29,8 +28,6 @@ namespace Elympics
 #if UNITY_EDITOR
         [SerializeField] internal SceneAsset? bootSceneAsset;
 #endif
-
-        [SerializeField] private bool migratedActiveGame;
 
         private static string sdkVersion = "";
 
@@ -48,20 +45,6 @@ namespace Elympics
         [InitializeOnLoadMethod]
 #endif
         private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
-
-#if UNITY_EDITOR
-        private void OnEnable()
-        {
-            if (!migratedActiveGame && currentGame > 0 && currentGame < availableGames.Count)
-            {
-                var activeGame = availableGames[currentGame];
-                availableGames.RemoveAt(currentGame);
-                availableGames.Insert(0, activeGame);
-                migratedActiveGame = true;
-                currentGame = -1;
-            }
-        }
-#endif
 
         internal string ElympicsApiEndpoint => ApplicationParameters.Parameters.ApiEndpoint.GetValue(GetV2Endpoint("api"))
             .GetAbsoluteOrRelativeString();

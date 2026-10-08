@@ -5,10 +5,16 @@ namespace Elympics
 {
     internal class PingResultResultFactoryMock : IPingResultFactory
     {
-        private Dictionary<string, PingResults> _mockResults = new();
+        private readonly string[] _testRegionList;
+        private readonly Dictionary<string, PingResults> _mockResults = new();
 
-        public PingResultResultFactoryMock() => GeneratePingResults(true);
         public async UniTask<PingResults> GetPingResult(string region) => await UniTask.FromResult(_mockResults[region]);
+
+        public PingResultResultFactoryMock(string[] testRegionList)
+        {
+            _testRegionList = testRegionList;
+            GeneratePingResults(true);
+        }
 
         public void Reset()
         {
@@ -35,7 +41,7 @@ namespace Elympics
         private void GeneratePingResults(bool valid)
         {
             var ping = 10d;
-            foreach (var region in ElympicsRegions.AllAvailableRegions)
+            foreach (var region in _testRegionList)
             {
                 _mockResults.Add(region, new PingResults(region, ping, valid));
                 ping += 10;

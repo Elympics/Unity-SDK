@@ -67,14 +67,5 @@ namespace Elympics
                 }
             }
         }
-
-        [Obsolete("Call" + nameof(GetAvailableRegions) + "for updated list of available regions.")]
-        public static readonly List<string> AllAvailableRegions = new()
-        {
-            Warsaw,
-            Tokyo,
-            Dallas,
-            Mumbai
-        };
     }
 }

@@ -48,13 +48,6 @@ namespace Elympics
         UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct = default);
         void Disconnect();
 
-        [Obsolete("Use " + nameof(ConnectAndJoinAsPlayerAsync) + " instead")]
-        IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback = null, CancellationToken ct = default);
-
-        [Obsolete("Use " + nameof(ConnectAndJoinAsPlayerAsync) + " instead")]
-        IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback = null, CancellationToken ct = default);
-
-
         #endregion
 
         #region Server

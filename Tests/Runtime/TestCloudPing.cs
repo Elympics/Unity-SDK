@@ -10,17 +10,19 @@ namespace Elympics.Tests
     [TestFixture]
     public class TestCloudPing
     {
+        private static readonly string[] TestRegionList = { "warsaw", "tokyo", "dallas", "mumbai" };
+
         private PingResultResultFactoryMock _pingResultFactory;
 
         [OneTimeSetUp]
         public void SutSetup()
         {
-            _pingResultFactory = new PingResultResultFactoryMock();
+            _pingResultFactory = new PingResultResultFactoryMock(TestRegionList);
             ElympicsCloudPing.PingResultFactory = _pingResultFactory;
         }
 
         [UnityTest]
-        public IEnumerator TestSameRegionCopiedMultipleTimes([ValueSource(typeof(ElympicsRegions), nameof(ElympicsRegions.AllAvailableRegions))] string region) => UniTask.ToCoroutine(async () =>
+        public IEnumerator TestSameRegionCopiedMultipleTimes([ValueSource(nameof(TestRegionList))] string region) => UniTask.ToCoroutine(async () =>
         {
             var result = await ElympicsCloudPing.ChooseClosestRegion(new[]
             {
@@ -31,7 +33,7 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
-        public IEnumerator TestSingleRegion([ValueSource(typeof(ElympicsRegions), nameof(ElympicsRegions.AllAvailableRegions))] string region) => UniTask.ToCoroutine(async () =>
+        public IEnumerator TestSingleRegion([ValueSource(nameof(TestRegionList))] string region) => UniTask.ToCoroutine(async () =>
         {
             IList<string> test = new List<string>
             {
@@ -45,37 +47,37 @@ namespace Elympics.Tests
         [UnityTest]
         public IEnumerator TestAllRegions() => UniTask.ToCoroutine(async () =>
         {
-            var result = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+            var result = await ElympicsCloudPing.ChooseClosestRegion(TestRegionList);
             await TestContext.Out.WriteLineAsync($"Region: {result.Region}, latency: {result.LatencyMs} ms");
-            Assert.Contains(result.Region, ElympicsRegions.AllAvailableRegions);
+            Assert.Contains(result.Region, TestRegionList);
         });
 
         [UnityTest]
         public IEnumerator TestLatencyDataForAllRegions() => UniTask.ToCoroutine(async () =>
         {
-            var data = await ElympicsCloudPing.GetLatencyDataForRegions(ElympicsRegions.AllAvailableRegions);
-            Assert.AreEqual(ElympicsRegions.AllAvailableRegions.Count, data.Count);
+            var data = await ElympicsCloudPing.GetLatencyDataForRegions(TestRegionList);
+            Assert.AreEqual(TestRegionList.Length, data.Count);
             foreach (var (region, latency) in data)
             {
                 await TestContext.Out.WriteLineAsync($"Region: {region}, latency: {latency}");
-                Assert.Contains(region, ElympicsRegions.AllAvailableRegions);
+                Assert.Contains(region, TestRegionList);
             }
         });
 
-        private static List<string> testRegions = new(ElympicsRegions.AllAvailableRegions);
+        private static List<string> testRegions = new(TestRegionList);
 
         [UnityTest]
         public IEnumerator TestIfInvalidRegionsWontBeIncludedInResult([ValueSource(nameof(testRegions))] string invalidRegion) => UniTask.ToCoroutine(async () =>
         {
             _pingResultFactory.SetInvalidRegion(invalidRegion);
-            var data = await ElympicsCloudPing.GetLatencyDataForRegions(ElympicsRegions.AllAvailableRegions);
+            _ = await ElympicsCloudPing.GetLatencyDataForRegions(TestRegionList);
         });
 
         [UnityTest]
         public IEnumerator TestIfClosestRegionWillBeSelectedAsLowestPing([ValueSource(nameof(testRegions))] string closestRegion) => UniTask.ToCoroutine(async () =>
         {
             _pingResultFactory.SetClosestRegion(closestRegion);
-            var data = await ElympicsCloudPing.ChooseClosestRegion(ElympicsRegions.AllAvailableRegions);
+            var data = await ElympicsCloudPing.ChooseClosestRegion(TestRegionList);
             Assert.AreEqual(closestRegion, data.Region);
         });
 
@@ -188,9 +190,6 @@ namespace Elympics.Tests
         });
 
         [TearDown]
-        public void Reset()
-        {
-            _pingResultFactory.Reset();
-        }
+        public void Reset() => _pingResultFactory.Reset();
     }
 }

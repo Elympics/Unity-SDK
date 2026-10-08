@@ -107,7 +107,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, tcpListenEndpoint, webListenEndpoint, () => { });
             var signalingServerCts = new CancellationTokenSource();
             var signalingServer = new SimpleHttpSignalingServer(connector, webListenEndpoint);
-            signalingServer.RunAsync(signalingServerCts.Token);
+            signalingServer.RunAsync(signalingServerCts.Token).Forget();
 
             connector.ReliableClientConnected += (clientId) => Debug.Log($"Reliable client connected {clientId}");
             connector.ReliableClientReceivingError += (clientId, error) => Debug.Log($"Reliable client error {clientId} - {error}");

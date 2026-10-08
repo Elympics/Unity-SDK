@@ -572,20 +572,9 @@ namespace Elympics
         private BootTarget ResolveBootTarget()
         {
             var config = _loadConfig();
-            var configured = config?.BootScene ?? string.Empty;
-            string? warning = null;
-            if (string.IsNullOrEmpty(configured))
-                warning = $"{nameof(ElympicsConfig)} has no boot scene, so matches return to an empty scene. "
-                    + "Set ElympicsConfig > Boot scene to return to your own scene.";
-            else if (!_sceneLoader.IsInBuild(configured))
-                warning = $"Boot scene {configured} is not in Build Settings, so matches return to an empty scene. "
-                    + "Set ElympicsConfig > Boot scene to a separate scene in Build Settings, or clear it.";
-            else if (config!.AvailableGames.Any(game => game != null && game.GameplayScene == configured))
-                warning = $"Boot scene {configured} is also a gameplay scene, so matches return to an empty scene. "
-                    + "Set ElympicsConfig > Boot scene to a separate scene in Build Settings, or clear it.";
-
+            var warning = ElympicsBootScene.FindProblem(config, _sceneLoader.IsInBuild);
             if (warning == null)
-                return BootTarget.Scene(configured);
+                return BootTarget.Scene(config!.BootScene);
             _logger.LogWarning(warning);
             return BootTarget.Empty(warning);
         }

@@ -69,14 +69,7 @@ namespace Elympics.Editor.Launcher
         private static string? ValidBootScene()
         {
             var config = ElympicsConfig.Load();
-            if (config == null)
-                return null;
-            var bootScene = config.BootScene;
-            if (string.IsNullOrEmpty(bootScene))
-                return null;
-            var inBuild = EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == bootScene);
-            var isGameplay = config.AvailableGames.Any(game => game != null && game.GameplayScene == bootScene);
-            return inBuild && !isGameplay ? bootScene : null;
+            return ElympicsBootScene.FindProblem(config, ElympicsLauncherBuildValidation.EnabledBuildScenes().Contains) == null ? config!.BootScene : null;
         }
 
         private static void SaveSceneSetup()

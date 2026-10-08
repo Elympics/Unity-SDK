@@ -43,8 +43,7 @@ namespace Elympics.Editor.Launcher
         {
             var warnings = new List<string>();
             if (string.IsNullOrEmpty(config.BootScene))
-                warnings.Add($"{nameof(ElympicsConfig)} has no boot scene, so matches return to an empty scene. "
-                    + "Set ElympicsConfig > Boot scene to return to your own scene.");
+                warnings.Add(ElympicsBootScene.NotSetWarning);
             return warnings;
         }
 

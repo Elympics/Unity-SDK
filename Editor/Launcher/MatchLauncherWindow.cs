@@ -264,7 +264,7 @@ namespace Elympics.Editor.Launcher
                 _dataJson.value = File.ReadAllText(path);
         }
 
-        private static bool IsInBuildSettings(string scenePath) => EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == scenePath);
+        private static bool IsInBuildSettings(string scenePath) => ElympicsLauncherBuildValidation.EnabledBuildScenes().Contains(scenePath);
 
         private void UpdateGameChoices()
         {

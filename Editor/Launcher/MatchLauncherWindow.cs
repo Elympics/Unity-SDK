@@ -62,6 +62,8 @@ namespace Elympics.Editor.Launcher
             if (string.IsNullOrEmpty(optionsJson))
                 optionsJson = TemplateOptions();
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplication.projectChanged += UpdateEnvironment;
+            EditorBuildSettings.sceneListChanged += UpdateEnvironment;
             // After the domain reload of entering play mode, subscribe before the launch queue sends its launch.
             Subscribe(CurrentLauncher());
         }
@@ -69,10 +71,18 @@ namespace Elympics.Editor.Launcher
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.projectChanged -= UpdateEnvironment;
+            EditorBuildSettings.sceneListChanged -= UpdateEnvironment;
             Subscribe(null);
         }
 
-        private void OnPlayModeStateChanged(PlayModeStateChange change) => Subscribe(CurrentLauncher());
+        private void OnFocus() => UpdateEnvironment();
+
+        private void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            Subscribe(CurrentLauncher());
+            UpdateEnvironment();
+        }
 
         private void CreateGUI()
         {
@@ -101,7 +111,7 @@ namespace Elympics.Editor.Launcher
             _ = _gameIdField.RegisterValueChangedCallback(change =>
             {
                 gameId = change.newValue;
-                ShowSelectedGame();
+                UpdateEnvironment();
             });
 
             _dataJson = root.Q<TextField>("data-json");
@@ -138,18 +148,27 @@ namespace Elympics.Editor.Launcher
             };
 
             ShowLog();
-            UpdateState();
-            _ = root.schedule.Execute(UpdateState).Every(UpdateIntervalMs);
+            UpdateEnvironment();
+            UpdateLauncherState();
+            _ = root.schedule.Execute(UpdateLauncherState).Every(UpdateIntervalMs);
         }
 
-        private void UpdateState()
+        private void UpdateLauncherState()
         {
             Subscribe(CurrentLauncher());
             if (_state == null)
                 return;
             var launcher = _subscribed;
             _state.text = launcher == null ? "Not in play mode" : $"{launcher.State} (in match: {launcher.IsCurrentlyInMatch})";
+            _launchButton.SetEnabled(launcher == null || launcher.State == MatchLauncherState.Idle);
+            _matchControls.SetEnabled(launcher != null);
+        }
 
+        /// <summary>Reads config, Build Settings and arguments, so it runs on changes and focus instead of every tick.</summary>
+        private void UpdateEnvironment()
+        {
+            if (_state == null)
+                return;
             var launchModeSource = LaunchModeParameterSource();
             SetShown(_launchModeNote, launchModeSource != null);
             _launchModeNote.text = launchModeSource ?? "";
@@ -164,9 +183,6 @@ namespace Elympics.Editor.Launcher
                 _buildSettingsError.text = $"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "
                     + "Add it in File > Build Settings.";
             SetShown(_runInBackgroundWarning, !Application.runInBackground);
-
-            _launchButton.SetEnabled(launcher == null || launcher.State == MatchLauncherState.Idle);
-            _matchControls.SetEnabled(launcher != null);
         }
 
         private void SelectTab(ElympicsHostLaunchKind kind)

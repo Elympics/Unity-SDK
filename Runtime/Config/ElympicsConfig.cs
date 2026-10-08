@@ -16,7 +16,8 @@ namespace Elympics
     public class ElympicsConfig : ScriptableObject
     {
         public const string ElympicsResourcesPath = "Assets/Resources/Elympics";
-        public const string PathInResources = "Elympics/ElympicsConfig";
+        internal const string PathInResourcesDefault = "Elympics/ElympicsConfig";
+        public static string PathInResources { get; internal set; } = PathInResourcesDefault;
 
         [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.ai";

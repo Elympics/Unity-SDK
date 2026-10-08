@@ -318,37 +318,6 @@ verify-compiled-protos:
       - "$PROTO_SCHEMAS_DIR/$CURRENT_COMPILED_PATH"
     expire_in: 1 day
 
-.trigger:
-  extends: .cond.releasebranch
-  stage: trigger
-  needs:
-    - job: test:playmode
-      artifacts: false
-    - job: test:editmode
-      artifacts: false
-  inherit:
-    variables: false
-  variables:
-    CI_ELYMPICS_SDK_VERSION_OVERRIDE: "$CI_COMMIT_SHA"
-    CI_ELYMPICS_SDK_SOURCE_OVERRIDE: "$CI_PROJECT_URL.git"
-    GIT_DEPTH: 1
-
-trigger:tanks:
-  extends:
-    - .trigger
-  rules: *cond_mergerequest_target_main
-  trigger:
-    project: unity/tanks
-    strategy: depend
-
-trigger:spellz:
-  extends:
-    - .trigger
-  rules: *cond_mergerequest_target_main
-  trigger:
-    project: unity/spellz/gameplay
-    strategy: depend
-
 create-changelog:
   extends:
     - .node_image

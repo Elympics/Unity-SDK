@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis.Retrievers;
 
 namespace Elympics
@@ -53,23 +52,11 @@ namespace Elympics
             if (Detached)
                 return;
             Detached = true;
-            Try("cancel match token", _cts.Cancel);
+            ElympicsMatchTeardown.Try("cancel match token", _cts.Cancel);
             foreach (var (name, step) in _teardownSteps)
-                Try(name, step);
+                ElympicsMatchTeardown.Try(name, step);
             _teardownSteps.Clear();
-            Try("dispose match token", _cts.Dispose);
-        }
-
-        private static void Try(string name, Action step)
-        {
-            try
-            {
-                step();
-            }
-            catch (Exception e)
-            {
-                ElympicsLogger.LogException(new ElympicsException($"Match teardown step \"{name}\" failed.", e));
-            }
+            ElympicsMatchTeardown.Try("dispose match token", _cts.Dispose);
         }
 
         void IElympicsMatchLifecycleSink.SceneInitializationFailed(ElympicsLaunchErrorCode code, string message)

@@ -78,7 +78,7 @@ namespace Elympics
         public static bool TryParseOptions(string? optionsJson, out ElympicsLaunchOptions? options, out ElympicsLaunchFailure? failure)
         {
             options = null;
-            if (!TryFromJson<ElympicsLaunchOptionsDto>(optionsJson, "options", out var dto, out failure))
+            if (!TryFromJson(optionsJson, "options", new ElympicsLaunchOptionsDto(), out var dto, out failure))
                 return false;
             return dto!.TryToOptions(out options, out failure);
         }
@@ -86,35 +86,24 @@ namespace Elympics
         public static bool TryParseData(ElympicsHostLaunchKind kind, string? dataJson, out LaunchData? data, out ElympicsLaunchFailure? failure)
         {
             data = null;
-            return kind switch
-            {
-                ElympicsHostLaunchKind.Online => TryParseDto<OnlineLaunchDataDto>(dataJson, out data, out failure),
-                ElympicsHostLaunchKind.SinglePlayer => TryParseDto<SinglePlayerLaunchDataDto>(dataJson, out data, out failure),
-                ElympicsHostLaunchKind.HalfRemoteClient => TryParseDto<HalfRemoteClientLaunchDataDto>(dataJson, out data, out failure),
-                ElympicsHostLaunchKind.HalfRemoteServer => TryParseDto<HalfRemoteServerLaunchDataDto>(dataJson, out data, out failure),
-                ElympicsHostLaunchKind.SnapshotReplay => TryParseDto<SnapshotReplayLaunchDataDto>(dataJson, out data, out failure),
-                _ => Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"Unknown launch command {(int)kind}.", out failure),
-            };
+            if (!Enum.IsDefined(typeof(ElympicsHostLaunchKind), kind))
+                return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"Unknown launch command {(int)kind}.", out failure);
+            return TryFromJson(dataJson, "data", ElympicsLaunchDtos.Create(kind), out var dto, out failure) && dto!.TryToLaunchData(out data, out failure);
         }
 
-        private static bool TryParseDto<T>(string? dataJson, out LaunchData? data, out ElympicsLaunchFailure? failure) where T : class, ILaunchDataDto, new()
-        {
-            data = null;
-            return TryFromJson<T>(dataJson, "data", out var dto, out failure) && dto!.TryToLaunchData(out data, out failure);
-        }
-
-        private static bool TryFromJson<T>(string? json, string argumentName, out T? value, out ElympicsLaunchFailure? failure) where T : class, new()
+        /// <param name="empty">Returned for empty JSON. Its runtime type is the type parsed.</param>
+        private static bool TryFromJson<T>(string? json, string argumentName, T empty, out T? value, out ElympicsLaunchFailure? failure) where T : class
         {
             failure = null;
             value = null;
             if (string.IsNullOrWhiteSpace(json))
             {
-                value = new T();
+                value = empty;
                 return true;
             }
             try
             {
-                value = JsonUtility.FromJson<T>(json);
+                value = (T?)JsonUtility.FromJson(json, empty.GetType());
             }
             catch (Exception e)
             {

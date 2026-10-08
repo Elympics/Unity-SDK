@@ -215,9 +215,14 @@ namespace Elympics
                 return;
             var requestId = _session.Launch.RequestId;
             _logger.LogWarning($"Launch {requestId} failed: {code}: {message}");
+            ReportLaunchFailed(requestId, code, message);
+            BeginTeardown(requestId);
+        }
+
+        private void ReportLaunchFailed(string requestId, ElympicsLaunchErrorCode code, string message)
+        {
             Emit(ElympicsHostProtocol.Events.LaunchFailed, requestId, new ElympicsLaunchFailure(code, message));
             CompleteLaunch(ElympicsLaunchResult.Failed(requestId, code, message));
-            BeginTeardown(requestId);
         }
 
         private void CompleteLaunch(ElympicsLaunchResult result)
@@ -342,12 +347,7 @@ namespace Elympics
                 Emit(ElympicsHostProtocol.Events.ReturnToBootAccepted, requestId);
 
                 if (State == MatchLauncherState.Loading && _session != null)
-                {
-                    var launchId = _session.Launch.RequestId;
-                    const string message = "The launch was aborted.";
-                    Emit(ElympicsHostProtocol.Events.LaunchFailed, launchId, new ElympicsLaunchFailure(ElympicsLaunchErrorCode.Aborted, message));
-                    CompleteLaunch(ElympicsLaunchResult.Failed(launchId, ElympicsLaunchErrorCode.Aborted, message));
-                }
+                    ReportLaunchFailed(_session.Launch.RequestId, ElympicsLaunchErrorCode.Aborted, "The launch was aborted.");
 
                 BeginTeardown(requestId);
                 return await completion.Task.AttachExternalCancellation(ct);
@@ -428,6 +428,11 @@ namespace Elympics
             idleRequestIds.AddRange(_returnToBootWaiters.Select(waiter => waiter.RequestId));
             foreach (var requestId in idleRequestIds.Distinct())
                 Emit(ElympicsHostProtocol.Events.Idle, requestId);
+            CompleteReturnToBootWaiters();
+        }
+
+        private void CompleteReturnToBootWaiters()
+        {
             var waiters = _returnToBootWaiters.ToArray();
             _returnToBootWaiters.Clear();
             foreach (var (requestId, completion) in waiters)
@@ -458,15 +463,8 @@ namespace Elympics
 
             var session = _session;
             if (State == MatchLauncherState.Loading && session != null)
-            {
-                const string message = "The application is quitting.";
-                Emit(ElympicsHostProtocol.Events.LaunchFailed, session.Launch.RequestId, new ElympicsLaunchFailure(ElympicsLaunchErrorCode.Aborted, message));
-                CompleteLaunch(ElympicsLaunchResult.Failed(session.Launch.RequestId, ElympicsLaunchErrorCode.Aborted, message));
-            }
-            var waiters = _returnToBootWaiters.ToArray();
-            _returnToBootWaiters.Clear();
-            foreach (var (requestId, completion) in waiters)
-                _ = completion.TrySetResult(ElympicsReturnToBootResult.Succeeded(requestId));
+                ReportLaunchFailed(session.Launch.RequestId, ElympicsLaunchErrorCode.Aborted, "The application is quitting.");
+            CompleteReturnToBootWaiters();
 
             Emit(ElympicsHostProtocol.Events.Quitting, string.Empty, new ElympicsQuitInfo { reason = reason ?? string.Empty });
             CancelTimer();
@@ -517,7 +515,6 @@ namespace Elympics
         /// </summary>
         internal void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "")
         {
-            var argument = first;
             switch (kind)
             {
                 case ElympicsHostCommandKind.LaunchOnline:
@@ -536,13 +533,13 @@ namespace Elympics
                     HandleHostLaunch(ElympicsHostLaunchKind.SnapshotReplay, first, second, third);
                     break;
                 case ElympicsHostCommandKind.ReturnToBoot:
-                    HandleHostReturnToBoot(argument);
+                    HandleHostReturnToBoot(first);
                     break;
                 case ElympicsHostCommandKind.QuitApplication:
-                    HandleHostQuit(argument);
+                    HandleHostQuit(first);
                     break;
                 case ElympicsHostCommandKind.Ping:
-                    HandleHostPing(argument);
+                    HandleHostPing(first);
                     break;
                 case ElympicsHostCommandKind.None:
                 default:

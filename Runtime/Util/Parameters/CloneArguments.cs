@@ -1,12 +1,11 @@
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 #if UNITY_EDITOR
-using System.IO;
-using Plugins.Elympics.Plugins.ParrelSync;
-using UnityEngine;
+using ParrelSync;
+#else
+using System;
 #endif
 
 namespace Elympics
@@ -17,15 +16,14 @@ namespace Elympics
     /// </summary>
     internal static class CloneArguments
     {
-        public const string FileName = ".parrelsyncarg";
+#if UNITY_EDITOR
+        public const string FileName = ClonesManager.ArgumentFileName;
+#endif
 
         public static IList<string> Read()
         {
 #if UNITY_EDITOR
-            if (!ElympicsClonesManager.IsClone())
-                return Array.Empty<string>();
-            var path = Path.Combine(Application.dataPath, "..", FileName);
-            return File.Exists(path) ? Split(File.ReadAllText(path, Encoding.UTF8)) : Array.Empty<string>();
+            return Split(ClonesManager.GetArgument());
 #else
             return Array.Empty<string>();
 #endif

@@ -28,6 +28,11 @@ namespace Elympics
             _adopt = adopt;
         }
 
-        public void Adopt(GameSceneInitializer initializer) => _adopt(initializer);
+        public GameSceneInitializer Start(GameSceneInitializer initializer)
+        {
+            _adopt(initializer);
+            initializer.Initialize(Client, Server, GameConfig, BehavioursManager);
+            return initializer;
+        }
     }
 }

@@ -45,9 +45,7 @@ namespace Elympics
             else
             {
                 // The port follows the transport in effect, which the launch data may have overridden.
-                var configPort = useWeb ? config.WebPortForHalfRemoteMode : config.TcpPortForHalfRemoteMode;
-                var port = ApplicationParameters.Parameters.HalfRemotePort.GetValue(configPort);
-                endPoint = new IPEndPoint(IPAddress.Parse(config.IpForHalfRemoteMode), port);
+                endPoint = new IPEndPoint(IPAddress.Parse(config.IpForHalfRemoteMode), config.GetPortForHalfRemoteMode(useWeb));
             }
             return new HalfRemoteClientSettings(endPoint, useWeb,
                 data?.PlayerIndex ?? config.PlayerIndexForHalfRemoteMode,

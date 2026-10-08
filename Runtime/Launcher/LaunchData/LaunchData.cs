@@ -21,13 +21,7 @@ namespace Elympics
 
         private protected abstract GameSceneInitializer CreateInitializer(GameSceneLaunchContext context);
 
-        internal GameSceneInitializer Launch(GameSceneLaunchContext context)
-        {
-            var initializer = CreateInitializer(context);
-            context.Adopt(initializer);
-            initializer.Initialize(context.Client, context.Server, context.GameConfig, context.BehavioursManager);
-            return initializer;
-        }
+        internal GameSceneInitializer Launch(GameSceneLaunchContext context) => context.Start(CreateInitializer(context));
 
         private protected static bool Fail(ElympicsLaunchErrorCode code, string message, out ElympicsLaunchFailure? failure)
         {

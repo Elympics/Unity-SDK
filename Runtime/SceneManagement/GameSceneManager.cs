@@ -48,7 +48,6 @@ namespace Elympics
             {
                 ElympicsMatchLauncher.SceneAttachment.Attached => Driver.Session,
                 ElympicsMatchLauncher.SceneAttachment.Suppressed => Driver.Suppressed,
-                ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven => Driver.None,
                 _ => Driver.None,
             };
         }
@@ -72,13 +71,7 @@ namespace Elympics
                     ElympicsLogger.LogError("The online server can't run in a WebGL player.");
 #else
                     if (LoadGameConfig() is { } serverConfig)
-                        Run(serverConfig, null, null, null, context =>
-                        {
-                            var initializer = new OnlineGameServerInitializer();
-                            context.Adopt(initializer);
-                            initializer.Initialize(context.Client, context.Server, context.GameConfig, context.BehavioursManager);
-                            return initializer;
-                        });
+                        Run(serverConfig, null, null, null, context => context.Start(new OnlineGameServerInitializer()));
 #endif
                     return;
                 case Driver.LaunchModeParameter:

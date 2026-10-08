@@ -90,7 +90,8 @@ namespace Elympics
 
         public bool DetailedNetworkLog => detailedNetworkLog;
         public string IpForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemoteIp.GetValue(IPAddress.Parse(ipForHalfRemoteMode)).ToString();
-        public ushort PortForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemotePort.GetValue(UseWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
+        public ushort PortForHalfRemoteMode => GetPortForHalfRemoteMode(UseWeb);
+        internal ushort GetPortForHalfRemoteMode(bool useWeb) => ApplicationParameters.Parameters.HalfRemotePort.GetValue(useWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
         public ushort TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
         public ushort WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
         public bool RecordSnapshots => recordSnapshots;

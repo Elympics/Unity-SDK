@@ -121,7 +121,7 @@ namespace Elympics
             return sb.ToString();
         }
 
-        private static void Try(string name, Action step)
+        internal static void Try(string name, Action step)
         {
             try
             {

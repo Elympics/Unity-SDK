@@ -62,7 +62,7 @@ namespace Elympics.Tests
         private FakeSceneLoader _loader = null!;
         private ElympicsConfig _config = null!;
         private ElympicsGameConfig _game = null!;
-        private ElympicsMatchLauncher _launcher = null!;
+        private DefaultElympicsMatchLauncher _launcher = null!;
         private List<(string Type, string RequestId, string Payload)> _events = null!;
         private List<string> _exits = null!;
 
@@ -77,7 +77,7 @@ namespace Elympics.Tests
             _config.availableGames.Add(_game);
             _config.bootScene = BootScene;
             _exits = new List<string>();
-            _launcher = new ElympicsMatchLauncher(_loader, () => _config, ElympicsLaunchPlatform.Unrestricted, reason => _exits.Add(reason));
+            _launcher = new DefaultElympicsMatchLauncher(_loader, () => _config, ElympicsLaunchPlatform.Unrestricted, reason => _exits.Add(reason));
             // A local list: a launcher a test leaves loading must not add its late events to the next test's list.
             var events = _events = new List<(string, string, string)>();
             _launcher.HostEventEmitted += (type, requestId, payload) => events.Add((type, requestId, payload));
@@ -109,7 +109,7 @@ namespace Elympics.Tests
         /// <summary>Plays the part of GameSceneManager.Awake.</summary>
         private IElympicsMatchLifecycleSink AttachScene()
         {
-            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Attached));
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Attached));
             Assert.That(session, Is.Not.Null);
             return session!;
         }
@@ -223,6 +223,18 @@ namespace Elympics.Tests
         });
 
         [UnityTest]
+        public IEnumerator ActiveLaunchDataIsSetUntilIdle() => UniTask.ToCoroutine(async () =>
+        {
+            Assert.That(_launcher.ActiveLaunchData, Is.Null);
+
+            _ = await LaunchToRunning();
+            Assert.That(_launcher.ActiveLaunchData, Is.InstanceOf<SinglePlayerLaunchData>());
+
+            _ = await _launcher.ReturnToBootAsync("return", default);
+            Assert.That(_launcher.ActiveLaunchData, Is.Null);
+        });
+
+        [UnityTest]
         public IEnumerator TeardownRestoresProcessGlobals() => UniTask.ToCoroutine(async () =>
         {
             var before = Time.fixedDeltaTime;
@@ -297,13 +309,13 @@ namespace Elympics.Tests
             var returnToBoot = _launcher.ReturnToBootAsync("return", default);
 
             // The gameplay scene activates only now, after the return to boot.
-            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Suppressed));
             Assert.That(session, Is.Null);
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
             Assert.That((await launch).Code, Is.EqualTo(ElympicsLaunchErrorCode.Aborted));
             Assert.That((await returnToBoot).Success, Is.True);
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
         });
 
         [Test]
@@ -313,12 +325,12 @@ namespace Elympics.Tests
             _ = Launch(Request());
             _ = AttachScene();
 
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Suppressed));
         }
 
         [Test]
         public void SceneWithoutLauncherMatchIsNotLauncherDriven() =>
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
 
         [UnityTest]
         public IEnumerator LateReportsFromTornDownSceneAreIgnored() => UniTask.ToCoroutine(async () =>
@@ -437,7 +449,7 @@ namespace Elympics.Tests
         public IEnumerator PreloadedReplayIsAcceptedOnWebGl() => UniTask.ToCoroutine(async () =>
         {
             var webGlPlayer = new ElympicsLaunchPlatform(canListen: false, canUseTcpUdp: false, hasLocalFiles: false);
-            var launcher = new ElympicsMatchLauncher(_loader, () => _config, webGlPlayer, _ => { });
+            var launcher = new DefaultElympicsMatchLauncher(_loader, () => _config, webGlPlayer, _ => { });
 
             // No GameSceneManager attaches in this test, so a launch past validation fails at the scene, not before it.
             var result = await launcher.LaunchSnapshotReplayAsync(GameId, Replay(_game.GameVersion), Request(), default);

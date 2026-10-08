@@ -31,7 +31,7 @@ namespace Elympics.Editor.Launcher
         [SerializeField] private string optionsJson = "";
         [SerializeField] private List<string> log = new();
 
-        private ElympicsMatchLauncher? _subscribed;
+        private DefaultElympicsMatchLauncher? _subscribed;
         private int _requestCounter;
 
         private Label? _state;
@@ -196,7 +196,7 @@ namespace Elympics.Editor.Launcher
 
         private static void SetShown(VisualElement element, bool shown) => element.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
 
-        private static ElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
+        private static DefaultElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
 
         /// <summary>With the launch mode parameter set, the launcher rejects every launch.</summary>
         private static string? LaunchModeParameterSource()
@@ -211,7 +211,7 @@ namespace Elympics.Editor.Launcher
             return null;
         }
 
-        private void Subscribe(ElympicsMatchLauncher? launcher)
+        private void Subscribe(DefaultElympicsMatchLauncher? launcher)
         {
             if (launcher == _subscribed)
                 return;

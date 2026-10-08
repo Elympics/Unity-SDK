@@ -47,6 +47,7 @@ namespace Elympics
 
         internal override string ModeName => "Online";
         internal override Guid EventMatchId => MatchId;
+        internal override Guid? EventUserId => UserId;
 
         internal bool UsesTcpUdp(ElympicsGameConfig gameConfig) => UseTcpUdpInsteadOfWebRtc ?? !gameConfig.UseWeb;
 

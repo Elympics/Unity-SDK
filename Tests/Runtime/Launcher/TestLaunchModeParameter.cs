@@ -107,13 +107,13 @@ namespace Elympics.Tests
         public void LauncherLimitedToParameterMatchRejectsLaunchesAsBusy()
         {
             var events = new List<(string Type, string Payload)>();
-            var launcher = new ElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
             launcher.HostEventEmitted += (type, _, payload) => events.Add((type, payload));
 
             var result = launcher.LaunchSinglePlayerAsync("a1b2c3d4-0000-0000-0000-000000000001").GetAwaiter().GetResult();
 
             Assert.That(result.Code, Is.EqualTo(ElympicsLaunchErrorCode.Busy));
-            Assert.That(result.Message, Is.EqualTo(ElympicsMatchLauncher.LimitedToParameterMatchMessage));
+            Assert.That(result.Message, Is.EqualTo(DefaultElympicsMatchLauncher.LimitedToParameterMatchMessage));
             Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Idle));
             Assert.That(events, Has.Count.EqualTo(1));
             Assert.That(events[0].Type, Is.EqualTo("launchFailed"));
@@ -136,7 +136,7 @@ namespace Elympics.Tests
         [TestCase(false, false, "NotLauncherDriven", "None")]
         public void DriverFollowsPriority(bool onlineServer, bool launchMode, string attachmentName, string expectedName)
         {
-            var attachment = (ElympicsMatchLauncher.SceneAttachment)Enum.Parse(typeof(ElympicsMatchLauncher.SceneAttachment), attachmentName);
+            var attachment = (DefaultElympicsMatchLauncher.SceneAttachment)Enum.Parse(typeof(DefaultElympicsMatchLauncher.SceneAttachment), attachmentName);
             var expected = (GameSceneManager.Driver)Enum.Parse(typeof(GameSceneManager.Driver), expectedName);
             var attached = false;
             var driver = GameSceneManager.ChooseDriver(onlineServer, launchMode, () =>

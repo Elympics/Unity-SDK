@@ -38,7 +38,7 @@ namespace Elympics
             None,
         }
 
-        internal static Driver ChooseDriver(bool isOnlineServer, bool isLaunchModeSet, Func<ElympicsMatchLauncher.SceneAttachment> attach)
+        internal static Driver ChooseDriver(bool isOnlineServer, bool isLaunchModeSet, Func<DefaultElympicsMatchLauncher.SceneAttachment> attach)
         {
             if (isOnlineServer)
                 return Driver.OnlineServer;
@@ -46,8 +46,8 @@ namespace Elympics
                 return Driver.LaunchModeParameter;
             return attach() switch
             {
-                ElympicsMatchLauncher.SceneAttachment.Attached => Driver.Session,
-                ElympicsMatchLauncher.SceneAttachment.Suppressed => Driver.Suppressed,
+                DefaultElympicsMatchLauncher.SceneAttachment.Attached => Driver.Session,
+                DefaultElympicsMatchLauncher.SceneAttachment.Suppressed => Driver.Suppressed,
                 _ => Driver.None,
             };
         }
@@ -62,7 +62,7 @@ namespace Elympics
 
             ElympicsMatchSession? session = null;
             var driver = ChooseDriver(ApplicationParameters.ShouldLoadElympicsOnlineServer, LaunchDataFromParameters.IsSet,
-                () => ElympicsMatchLauncher.Current?.AttachGameplayScene(out session) ?? ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven);
+                () => ElympicsMatchLauncher.Current?.AttachGameplayScene(out session) ?? DefaultElympicsMatchLauncher.SceneAttachment.NotLauncherDriven);
             switch (driver)
             {
                 case Driver.OnlineServer:

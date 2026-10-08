@@ -31,7 +31,7 @@ namespace Elympics
             if (!ApplicationParameters.InitializeParameters())
                 ElympicsLogger.LogError("Could not initialize application parameters.");
 
-            ElympicsMatchLauncher.Current = new ElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild,
+            ElympicsMatchLauncher.Current = new DefaultElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild,
                 LaunchDataFromParameters.IsSet);
             Application.quitting -= Shutdown;
             Application.quitting += Shutdown;
@@ -50,7 +50,7 @@ namespace Elympics
             launcher.EmitReady();
         }
 
-        private static void StartBridge(ElympicsMatchLauncher launcher)
+        private static void StartBridge(DefaultElympicsMatchLauncher launcher)
         {
             var newBridge = ElympicsHostBridgeFactory.Create(ApplicationParameters.Parameters.HostBridge.GetValue(ElympicsHostBridgeFactory.Auto));
             if (newBridge == null)

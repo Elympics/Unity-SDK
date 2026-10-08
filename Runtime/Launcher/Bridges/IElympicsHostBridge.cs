@@ -10,7 +10,7 @@ namespace Elympics
         string Name { get; }
 
         /// <summary>Returns false if the transport is not available here (e.g. the native library is not in the build).</summary>
-        bool TryStart(ElympicsMatchLauncher launcher);
+        bool TryStart(DefaultElympicsMatchLauncher launcher);
 
         /// <summary>Called every frame on the main thread.</summary>
         void Poll();

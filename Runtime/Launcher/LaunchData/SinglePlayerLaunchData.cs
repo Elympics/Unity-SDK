@@ -35,6 +35,7 @@ namespace Elympics
 
         internal override string ModeName => "SinglePlayer";
         internal override Guid EventMatchId => MatchId ?? Guid.Empty;
+        internal override Guid? EventUserId => UserId;
 
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {

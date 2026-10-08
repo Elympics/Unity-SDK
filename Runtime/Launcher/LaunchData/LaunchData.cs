@@ -17,6 +17,8 @@ namespace Elympics
 
         internal virtual Guid EventMatchId => Guid.Empty;
 
+        internal virtual Guid? EventUserId => null;
+
         internal abstract bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure);
 
         private protected abstract GameSceneInitializer CreateInitializer(GameSceneLaunchContext context);

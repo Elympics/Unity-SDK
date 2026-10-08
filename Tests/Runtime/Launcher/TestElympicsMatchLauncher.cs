@@ -56,7 +56,7 @@ namespace Elympics.Tests
                 ActiveScenePath = "";
             }
 
-            public UniTask ReleaseMemoryAsync() => UniTask.CompletedTask;
+            public UniTask ReleaseMemoryAsync(bool forceCollect) => UniTask.CompletedTask;
         }
 
         private FakeSceneLoader _loader = null!;

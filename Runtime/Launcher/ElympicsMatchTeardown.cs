@@ -68,11 +68,14 @@ namespace Elympics
         }
 
         /// <summary><see cref="GC.Collect()"/> is a no-op on WebGL; there the frame yields do the work.</summary>
-        public static async UniTask ReleaseMemoryAsync()
+        /// <param name="forceCollect">Blocks the main thread with full collections. Needed only before <see cref="AssertReleased"/>.</param>
+        public static async UniTask ReleaseMemoryAsync(bool forceCollect)
         {
             await UniTask.DelayFrame(CollectionFrames);
             await Resources.UnloadUnusedAssets();
             await UniTask.DelayFrame(CollectionFrames);
+            if (!forceCollect)
+                return;
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();

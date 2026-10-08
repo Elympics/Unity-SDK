@@ -14,7 +14,7 @@ namespace Elympics
         bool IsInBuild(string scenePath);
         string ActiveScenePath { get; }
         UniTask ReturnToEmptySceneAsync();
-        UniTask ReleaseMemoryAsync();
+        UniTask ReleaseMemoryAsync(bool forceCollect);
     }
 
     internal sealed class ElympicsSceneLoader : IElympicsSceneLoader
@@ -71,6 +71,6 @@ namespace Elympics
             camera.cullingMask = 0;
         }
 
-        public UniTask ReleaseMemoryAsync() => ElympicsMatchTeardown.ReleaseMemoryAsync();
+        public UniTask ReleaseMemoryAsync(bool forceCollect) => ElympicsMatchTeardown.ReleaseMemoryAsync(forceCollect);
     }
 }

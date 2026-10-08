@@ -125,7 +125,7 @@ namespace Elympics.Tests
             public bool IsInBuild(string scenePath) => false;
             public string ActiveScenePath => "";
             public Cysharp.Threading.Tasks.UniTask ReturnToEmptySceneAsync() => Cysharp.Threading.Tasks.UniTask.CompletedTask;
-            public Cysharp.Threading.Tasks.UniTask ReleaseMemoryAsync() => Cysharp.Threading.Tasks.UniTask.CompletedTask;
+            public Cysharp.Threading.Tasks.UniTask ReleaseMemoryAsync(bool forceCollect) => Cysharp.Threading.Tasks.UniTask.CompletedTask;
         }
 
         // Enums by name: the test method is public, the enums internal.

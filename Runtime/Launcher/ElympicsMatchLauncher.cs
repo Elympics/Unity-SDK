@@ -414,7 +414,7 @@ namespace Elympics
 
             try
             {
-                await _sceneLoader.ReleaseMemoryAsync();
+                await _sceneLoader.ReleaseMemoryAsync(_verifyTeardown);
                 if (_verifyTeardown)
                     ElympicsMatchTeardown.AssertReleased(session?.Collectable ?? Array.Empty<WeakReference>(), ++_cycle);
             }

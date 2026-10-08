@@ -8,6 +8,8 @@ namespace Elympics
 {
     public static class ElympicsRegions
     {
+        public const string Default = Warsaw;
+
         public const string Warsaw = "warsaw";
         public const string Tokyo = "tokyo";
         public const string Dallas = "dallas";

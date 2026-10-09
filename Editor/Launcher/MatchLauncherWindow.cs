@@ -13,8 +13,7 @@ namespace Elympics.Editor.Launcher
 {
     internal sealed class MatchLauncherWindow : EditorWindow
     {
-        private const string MenuPath = "Tools/Elympics/" + EditorTitle;
-        private const string EditorTitle = "Match Launcher";
+        public const string EditorTitle = "Match Launcher";
         private const int MaxLogEntries = 500;
         /// <summary>A UI Toolkit text element can't have more than 65535 vertices (4 per character).</summary>
         private const int MaxShownLogCharacters = 12000;
@@ -50,7 +49,7 @@ namespace Elympics.Editor.Launcher
         private ScrollView _logScroll = null!;
         private TextField? _log;
 
-        [MenuItem(MenuPath)]
+        [MenuItem(ElympicsEditorMenuPaths.MatchLauncher)]
         public static void OpenWindow() => GetWindow<MatchLauncherWindow>().titleContent = new GUIContent(EditorTitle);
 
         private void OnEnable()
@@ -280,7 +279,7 @@ namespace Elympics.Editor.Launcher
                 _dataJson.value = File.ReadAllText(path);
         }
 
-        private static bool IsInBuildSettings(string scenePath) => ElympicsLauncherBuildValidation.EnabledBuildScenes().Contains(scenePath);
+        private static bool IsInBuildSettings(string scenePath) => ElympicsLauncherBuildValidation.GetEnabledBuildScenes().Contains(scenePath);
 
         private void UpdateGameChoices()
         {

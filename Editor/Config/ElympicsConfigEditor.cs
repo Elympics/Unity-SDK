@@ -70,7 +70,7 @@ namespace Elympics.Editor.Config
 
             void UpdateLauncherBuildProblems()
             {
-                var problems = Launcher.ElympicsLauncherBuildValidation.FindProblems(config, Launcher.ElympicsLauncherBuildValidation.EnabledBuildScenes());
+                var problems = Launcher.ElympicsLauncherBuildValidation.FindProblems(config);
                 var warnings = Launcher.ElympicsLauncherBuildValidation.FindWarnings(config);
                 var sections = new List<string>();
                 if (problems.Count > 0)

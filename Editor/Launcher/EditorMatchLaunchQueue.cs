@@ -57,7 +57,7 @@ namespace Elympics.Editor.Launcher
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return false;
             SaveSceneSetup();
-            if (ValidBootScene() is { } bootScene)
+            if (GetValidBootScene() is { } bootScene)
                 _ = EditorSceneManager.OpenScene(bootScene);
             else
                 _ = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
@@ -66,10 +66,10 @@ namespace Elympics.Editor.Launcher
             return true;
         }
 
-        private static string? ValidBootScene()
+        private static string? GetValidBootScene()
         {
             var config = ElympicsConfig.Load();
-            return ElympicsBootScene.FindProblem(config, ElympicsLauncherBuildValidation.EnabledBuildScenes().Contains) == null ? config!.BootScene : null;
+            return ElympicsBootScene.FindProblem(config, ElympicsLauncherBuildValidation.GetEnabledBuildScenes().Contains) == null ? config!.BootScene : null;
         }
 
         private static void SaveSceneSetup()

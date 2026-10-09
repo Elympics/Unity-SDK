@@ -49,7 +49,7 @@ namespace Elympics.Editor.Tests
         }
 
         private List<string> Problems(params string[] buildScenes) =>
-            ElympicsLauncherBuildValidation.FindProblems(_config, buildScenes.ToHashSet());
+            ElympicsLauncherBuildValidation.FindProblems(_config, buildScenes);
 
         private static void AssertOneProblem(List<string> problems, string fragment) =>
             Assert.That(problems.Count(problem => problem.Contains(fragment)), Is.EqualTo(1), string.Join("\n", problems));

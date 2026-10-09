@@ -1,4 +1,5 @@
 using Elympics.Core.Logger;
+using Elympics.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,7 +10,7 @@ namespace Elympics
     {
         private const string PathToElympicsSystem = "Elympics";
 
-        [MenuItem(ElympicsEditorMenuPaths.MOUSE_ACTION_CREATE_ELYMPICS_SYSTEM)]
+        [MenuItem(ElympicsEditorMenuPaths.MouseActionCreateElympicsSystem)]
         private static void AddElympicsSystemToScene()
         {
             const string name = "Elympics System";

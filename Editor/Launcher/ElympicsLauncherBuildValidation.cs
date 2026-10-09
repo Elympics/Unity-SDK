@@ -12,8 +12,9 @@ namespace Elympics.Editor.Launcher
     /// <summary>Missing scenes do not fail the build on their own: <c>LoadSceneAsync</c> returns null at runtime instead.</summary>
     internal static class ElympicsLauncherBuildValidation
     {
-        public static List<string> FindProblems(ElympicsConfig config, IReadOnlyCollection<string> enabledBuildScenes)
+        public static List<string> FindProblems(ElympicsConfig config, IReadOnlyCollection<string>? enabledBuildScenes = null)
         {
+            enabledBuildScenes ??= GetEnabledBuildScenes();
             var problems = new List<string>();
             var gameplayScenes = config.AvailableGames
                 .Where(game => game != null)
@@ -47,7 +48,7 @@ namespace Elympics.Editor.Launcher
             return warnings;
         }
 
-        public static IReadOnlyCollection<string> EnabledBuildScenes() =>
+        public static IReadOnlyCollection<string> GetEnabledBuildScenes() =>
             EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToHashSet();
     }
 
@@ -66,10 +67,9 @@ namespace Elympics.Editor.Launcher
 
             // Build Settings, not the scene list of this particular build: at runtime, LoadSceneAsync resolves paths against the built scene list,
             // and the launcher requirement is stated against Build Settings.
-            var scenes = ElympicsLauncherBuildValidation.EnabledBuildScenes();
             foreach (var warning in ElympicsLauncherBuildValidation.FindWarnings(config))
                 Debug.LogWarning($"Elympics match launcher: {warning}");
-            var problems = ElympicsLauncherBuildValidation.FindProblems(config, scenes);
+            var problems = ElympicsLauncherBuildValidation.FindProblems(config);
             if (problems.Count > 0)
                 throw new BuildFailedException("Elympics match launcher configuration is invalid:\n- " + string.Join("\n- ", problems));
         }

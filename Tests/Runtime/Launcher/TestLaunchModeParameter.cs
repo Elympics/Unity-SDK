@@ -136,7 +136,7 @@ namespace Elympics.Tests
         [TestCase(false, false, "NotLauncherDriven", "None")]
         public void DriverFollowsPriority(bool onlineServer, bool launchMode, string attachmentName, string expectedName)
         {
-            var attachment = (DefaultElympicsMatchLauncher.SceneAttachment)Enum.Parse(typeof(DefaultElympicsMatchLauncher.SceneAttachment), attachmentName);
+            var attachment = (ElympicsMatchLauncher.SceneAttachment)Enum.Parse(typeof(ElympicsMatchLauncher.SceneAttachment), attachmentName);
             var expected = (GameSceneManager.Driver)Enum.Parse(typeof(GameSceneManager.Driver), expectedName);
             var attached = false;
             var driver = GameSceneManager.ChooseDriver(onlineServer, launchMode, () =>

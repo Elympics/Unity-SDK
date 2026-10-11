@@ -28,10 +28,10 @@ namespace Elympics
         public string Name => "native";
 
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsNativeHostBridge));
-        private DefaultElympicsMatchLauncher? _launcher;
+        private ElympicsMatchLauncher? _launcher;
         private bool _warnedNoHandler;
 
-        public bool TryStart(DefaultElympicsMatchLauncher launcher)
+        public bool TryStart(ElympicsMatchLauncher launcher)
         {
             int version;
             try

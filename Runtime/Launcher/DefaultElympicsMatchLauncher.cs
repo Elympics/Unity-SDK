@@ -18,31 +18,20 @@ namespace Elympics
     {
         private MatchLauncherState _state = MatchLauncherState.Idle;
         public override MatchLauncherState State => _state;
-        public override bool IsCurrentlyInMatch => State is MatchLauncherState.Loading or MatchLauncherState.Running or MatchLauncherState.Ended;
 
         public override event Action<ElympicsMatchEndedInfo>? MatchEnded;
         public override event Action<ElympicsDisconnectedInfo>? Disconnected;
         public override event Action<MatchLauncherState>? StateChanged;
 
-        /// <summary>Every host protocol event, as (type, requestId, payloadJson).</summary>
-        internal event Action<string, string, string>? HostEventEmitted;
+        internal override event Action<string, string, string>? HostEventEmitted;
 
         internal const string LimitedToParameterMatchMessage = "This process is limited to the match set by ELYMPICS_LAUNCH_MODE.";
-
-        internal enum SceneAttachment
-        {
-            Attached,
-            /// <summary>The scene was opened directly (e.g. Play pressed in the Editor).</summary>
-            NotLauncherDriven,
-            /// <summary>The match is being torn down or already has its scene. The scene must not initialize at all.</summary>
-            Suppressed,
-        }
 
         internal override LaunchData? ActiveLaunchData => _session?.Launch.Data;
 
         internal ElympicsMatchSession? SessionAwaitingScene => State == MatchLauncherState.Loading ? _session : null;
 
-        internal SceneAttachment AttachGameplayScene(out ElympicsMatchSession? session)
+        internal override SceneAttachment AttachGameplayScene(out ElympicsMatchSession? session)
         {
             session = SessionAwaitingScene;
             if (session != null && session.TryAttachScene())
@@ -104,22 +93,7 @@ namespace Elympics
 
         #region Launch
 
-        public override UniTask<ElympicsLaunchResult> LaunchOnlineAsync(string gameId, OnlineLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
-            LaunchAsync(gameId, data, options, ct);
-
-        public override UniTask<ElympicsLaunchResult> LaunchSinglePlayerAsync(string gameId, SinglePlayerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
-            LaunchAsync(gameId, data ?? new SinglePlayerLaunchData(), options, ct);
-
-        public override UniTask<ElympicsLaunchResult> LaunchHalfRemoteClientAsync(string gameId, HalfRemoteClientLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
-            LaunchAsync(gameId, data ?? new HalfRemoteClientLaunchData(), options, ct);
-
-        public override UniTask<ElympicsLaunchResult> LaunchHalfRemoteServerAsync(string gameId, HalfRemoteServerLaunchData? data = null, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
-            LaunchAsync(gameId, data ?? new HalfRemoteServerLaunchData(), options, ct);
-
-        public override UniTask<ElympicsLaunchResult> LaunchSnapshotReplayAsync(string gameId, SnapshotReplayLaunchData data, ElympicsLaunchOptions? options = null, CancellationToken ct = default) =>
-            LaunchAsync(gameId, data, options, ct);
-
-        internal async UniTask<ElympicsLaunchResult> LaunchAsync(string? gameId, LaunchData? data, ElympicsLaunchOptions? options, CancellationToken ct)
+        internal override async UniTask<ElympicsLaunchResult> LaunchAsync(string? gameId, LaunchData? data, ElympicsLaunchOptions? options, CancellationToken ct)
         {
             await UniTask.SwitchToMainThread();
 
@@ -316,9 +290,7 @@ namespace Elympics
 
         #region Return to boot and teardown
 
-        public override UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(CancellationToken ct = default) => ReturnToBootAsync(Guid.NewGuid().ToString("N"), ct);
-
-        internal async UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(string requestId, CancellationToken ct)
+        internal override async UniTask<ElympicsReturnToBootResult> ReturnToBootAsync(string requestId, CancellationToken ct)
         {
             await UniTask.SwitchToMainThread();
             if (string.IsNullOrEmpty(requestId))
@@ -487,8 +459,7 @@ namespace Elympics
 
         #region Host commands
 
-        /// <summary>An empty JSON string means defaults.</summary>
-        internal void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
+        private void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
             if (!ElympicsLaunchValidator.TryParseOptions(optionsJson, out var options, out var failure)
                 || !ElympicsLaunchValidator.TryParseData(kind, dataJson, out var data, out failure))
@@ -499,11 +470,7 @@ namespace Elympics
             LaunchAsync(gameId, data, options, CancellationToken.None).Forget();
         }
 
-        /// <summary>
-        /// Launch commands take (game ID, data JSON, options JSON); the others take one string in <paramref name="first"/>.
-        /// Unused strings are empty.
-        /// </summary>
-        internal void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "")
+        internal override void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "")
         {
             switch (kind)
             {
@@ -538,13 +505,13 @@ namespace Elympics
             }
         }
 
-        internal void HandleHostReturnToBoot(string requestId) => ReturnToBootAsync(requestId, CancellationToken.None).Forget();
+        private void HandleHostReturnToBoot(string requestId) => ReturnToBootAsync(requestId, CancellationToken.None).Forget();
 
-        internal void HandleHostPing(string requestId) => Emit(ElympicsHostProtocol.Events.Pong, requestId);
+        private void HandleHostPing(string requestId) => Emit(ElympicsHostProtocol.Events.Pong, requestId);
 
-        internal void HandleHostQuit(string reason) => QuitApplication(reason);
+        private void HandleHostQuit(string reason) => QuitApplication(reason);
 
-        internal void EmitReady()
+        internal override void EmitReady()
         {
             var games = _loadConfig()?.AvailableGames ?? Array.Empty<ElympicsGameConfig>();
             var bootWarning = Boot.Warning;

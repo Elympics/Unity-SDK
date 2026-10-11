@@ -45,12 +45,11 @@ namespace Elympics
             var launcher = ElympicsMatchLauncher.Current;
             if (launcher == null || IsPassive || bridge != null)
                 return;
-            _ = launcher.Boot;
             StartBridge(launcher);
             launcher.EmitReady();
         }
 
-        private static void StartBridge(DefaultElympicsMatchLauncher launcher)
+        private static void StartBridge(ElympicsMatchLauncher launcher)
         {
             var newBridge = ElympicsHostBridgeFactory.Create(ApplicationParameters.Parameters.HostBridge.GetValue(ElympicsHostBridgeFactory.Auto));
             if (newBridge == null)

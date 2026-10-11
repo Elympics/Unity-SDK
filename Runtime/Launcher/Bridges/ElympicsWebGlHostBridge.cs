@@ -16,12 +16,12 @@ namespace Elympics
 #if UNITY_WEBGL && !UNITY_EDITOR
         private delegate void CommandCallback(int kind, IntPtr first, IntPtr second, IntPtr third);
 
-        private static DefaultElympicsMatchLauncher? launcher;
+        private static ElympicsMatchLauncher? launcher;
 
         [DllImport("__Internal")] private static extern void ElympicsHost_Initialize(CommandCallback commandCallback);
         [DllImport("__Internal")] private static extern void ElympicsHost_DispatchEvent(string type, string requestId, string payloadJson);
 
-        public bool TryStart(DefaultElympicsMatchLauncher newLauncher)
+        public bool TryStart(ElympicsMatchLauncher newLauncher)
         {
             launcher = newLauncher;
             ElympicsHost_Initialize(OnCommand);
@@ -48,7 +48,7 @@ namespace Elympics
 
         public void Dispose() => launcher = null;
 #else
-        public bool TryStart(DefaultElympicsMatchLauncher launcher) => false;
+        public bool TryStart(ElympicsMatchLauncher launcher) => false;
 
         public void DispatchEvent(string type, string requestId, string payloadJson)
         { }

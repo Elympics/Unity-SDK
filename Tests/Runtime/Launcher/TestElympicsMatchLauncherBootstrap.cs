@@ -7,7 +7,7 @@ namespace Elympics.Tests
     [Category("Launcher")]
     public class TestElympicsMatchLauncherBootstrap
     {
-        private DefaultElympicsMatchLauncher? _original;
+        private ElympicsMatchLauncher? _original;
 
         [SetUp]
         public void SetUp() => _original = ElympicsMatchLauncher.Current;

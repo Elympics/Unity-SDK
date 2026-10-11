@@ -109,7 +109,7 @@ namespace Elympics.Tests
         /// <summary>Plays the part of GameSceneManager.Awake.</summary>
         private IElympicsMatchLifecycleSink AttachScene()
         {
-            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Attached));
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Attached));
             Assert.That(session, Is.Not.Null);
             return session!;
         }
@@ -309,13 +309,13 @@ namespace Elympics.Tests
             var returnToBoot = _launcher.ReturnToBootAsync("return", default);
 
             // The gameplay scene activates only now, after the return to boot.
-            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Suppressed));
+            Assert.That(_launcher.AttachGameplayScene(out var session), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
             Assert.That(session, Is.Null);
             _ = _loader.PendingGameplayLoad!.TrySetResult(true);
 
             Assert.That((await launch).Code, Is.EqualTo(ElympicsLaunchErrorCode.Aborted));
             Assert.That((await returnToBoot).Success, Is.True);
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
         });
 
         [Test]
@@ -325,12 +325,12 @@ namespace Elympics.Tests
             _ = Launch(Request());
             _ = AttachScene();
 
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.Suppressed));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.Suppressed));
         }
 
         [Test]
         public void SceneWithoutLauncherMatchIsNotLauncherDriven() =>
-            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(DefaultElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
+            Assert.That(_launcher.AttachGameplayScene(out _), Is.EqualTo(ElympicsMatchLauncher.SceneAttachment.NotLauncherDriven));
 
         [UnityTest]
         public IEnumerator LateReportsFromTornDownSceneAreIgnored() => UniTask.ToCoroutine(async () =>
@@ -529,16 +529,9 @@ namespace Elympics.Tests
         });
 
         [Test]
-        public void PingRepliesPong()
-        {
-            _launcher.HandleHostPing("p");
-            Assert.That(_events.Single(), Is.EqualTo(("pong", "p", "")));
-        }
-
-        [Test]
         public void MalformedHostLaunchIsInvalidPayload()
         {
-            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "{not json", "");
+            _launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchSinglePlayer, GameId, "{not json", "");
             Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
             Assert.That(_events.Single().Payload, Does.Contain("InvalidPayload"));
         }
@@ -546,7 +539,7 @@ namespace Elympics.Tests
         [Test]
         public void MalformedHostLaunchOptionsAreInvalidPayload()
         {
-            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "", "{\"launchTimeoutSeconds\": -5}");
+            _launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchSinglePlayer, GameId, "", "{\"launchTimeoutSeconds\": -5}");
             Assert.That(_events.Single().Type, Is.EqualTo("launchFailed"));
             Assert.That(_events.Single().Payload, Does.Contain("InvalidPayload"));
         }
@@ -555,7 +548,7 @@ namespace Elympics.Tests
         public IEnumerator HostLaunchWithEmptyDataStartsSinglePlayer() => UniTask.ToCoroutine(async () =>
         {
             _loader.HoldGameplayLoad = true;
-            _launcher.HandleHostLaunch(ElympicsHostLaunchKind.SinglePlayer, GameId, "", "{\"requestId\": \"host\"}");
+            _launcher.HandleHostCommand(ElympicsHostCommandKind.LaunchSinglePlayer, GameId, "", "{\"requestId\": \"host\"}");
             await WaitUntil(() => _launcher.State == MatchLauncherState.Loading);
 
             Assert.That(_events.Select(e => (e.Type, e.RequestId)), Is.EqualTo(new[] { ("launchAccepted", "host") }));

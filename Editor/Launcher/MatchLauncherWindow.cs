@@ -30,7 +30,7 @@ namespace Elympics.Editor.Launcher
         [SerializeField] private string optionsJson = "";
         [SerializeField] private List<string> log = new();
 
-        private DefaultElympicsMatchLauncher? _subscribed;
+        private ElympicsMatchLauncher? _subscribed;
         private int _requestCounter;
 
         private Label? _state;
@@ -136,9 +136,9 @@ namespace Elympics.Editor.Launcher
             _launchButton.clicked += () => Launch(editedKind);
             SelectTab(editedKind);
 
-            root.Q<Button>("return-to-boot").clicked += () => SendWithId("returnToBoot", id => _subscribed?.HandleHostReturnToBoot(id));
-            root.Q<Button>("ping").clicked += () => SendWithId("ping", id => _subscribed?.HandleHostPing(id));
-            root.Q<Button>("quit").clicked += () => Send("quitApplication", () => _subscribed?.HandleHostQuit("Match Launcher window"));
+            root.Q<Button>("return-to-boot").clicked += () => SendWithId("returnToBoot", id => _subscribed?.HandleHostCommand(ElympicsHostCommandKind.ReturnToBoot, id));
+            root.Q<Button>("ping").clicked += () => SendWithId("ping", id => _subscribed?.HandleHostCommand(ElympicsHostCommandKind.Ping, id));
+            root.Q<Button>("quit").clicked += () => Send("quitApplication", () => _subscribed?.HandleHostCommand(ElympicsHostCommandKind.QuitApplication, "Match Launcher window"));
             root.Q<Button>("log-copy").clicked += () => EditorGUIUtility.systemCopyBuffer = string.Join("\n", log);
             root.Q<Button>("log-clear").clicked += () =>
             {
@@ -195,7 +195,7 @@ namespace Elympics.Editor.Launcher
 
         private static void SetShown(VisualElement element, bool shown) => element.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
 
-        private static DefaultElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
+        private static ElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
 
         /// <summary>With the launch mode parameter set, the launcher rejects every launch.</summary>
         private static string? LaunchModeParameterSource()
@@ -210,7 +210,7 @@ namespace Elympics.Editor.Launcher
             return null;
         }
 
-        private void Subscribe(DefaultElympicsMatchLauncher? launcher)
+        private void Subscribe(ElympicsMatchLauncher? launcher)
         {
             if (launcher == _subscribed)
                 return;

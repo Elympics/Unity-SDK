@@ -134,7 +134,17 @@ namespace Elympics.Editor.Launcher
                 return;
             }
             // The launcher reports the result, including a rejected JSON, as host events in the window.
-            launcher.HandleHostLaunch(launch.kind, launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
+            launcher.HandleHostCommand(ToCommandKind(launch.kind), launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
         }
+
+        private static ElympicsHostCommandKind ToCommandKind(ElympicsHostLaunchKind kind) => kind switch
+        {
+            ElympicsHostLaunchKind.Online => ElympicsHostCommandKind.LaunchOnline,
+            ElympicsHostLaunchKind.SinglePlayer => ElympicsHostCommandKind.LaunchSinglePlayer,
+            ElympicsHostLaunchKind.HalfRemoteClient => ElympicsHostCommandKind.LaunchHalfRemoteClient,
+            ElympicsHostLaunchKind.HalfRemoteServer => ElympicsHostCommandKind.LaunchHalfRemoteServer,
+            ElympicsHostLaunchKind.SnapshotReplay => ElympicsHostCommandKind.LaunchSnapshotReplay,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
     }
 }

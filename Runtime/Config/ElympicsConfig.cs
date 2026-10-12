@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elympics.Communication.Lobby.InternalModels;
 using Elympics.Core.Logger;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -17,15 +16,19 @@ namespace Elympics
     public class ElympicsConfig : ScriptableObject
     {
         public const string ElympicsResourcesPath = "Assets/Resources/Elympics";
-        public const string PathInResources = "Elympics/ElympicsConfig";
+        internal const string PathInResourcesDefault = "Elympics/ElympicsConfig";
+        public static string PathInResources { get; internal set; } = PathInResourcesDefault;
 
         [SerializeField] private string elympicsWebEndpoint = "https://api.elympics.cc";
         [SerializeField] private string elympicsGameServersEndpoint = "https://gs.elympics.ai";
 
-        [SerializeField] private int currentGame = -1;
         [SerializeField] internal List<ElympicsGameConfig> availableGames = new();
 
-        [SerializeField] private bool migratedActiveGame;
+        [Tooltip("Scene the match launcher returns to after a match. Must be in Build Settings.")]
+        [SerializeField] internal string bootScene = "";
+#if UNITY_EDITOR
+        [SerializeField] internal SceneAsset? bootSceneAsset;
+#endif
 
         private static string sdkVersion = "";
 
@@ -44,41 +47,13 @@ namespace Elympics
 #endif
         private static void UpdateSdkVersion() => sdkVersion = ElympicsVersionRetriever.GetVersionStringFromAssembly();
 
-#if UNITY_EDITOR
-        private void OnEnable()
-        {
-            if (!migratedActiveGame && currentGame > 0 && currentGame < availableGames.Count)
-            {
-                var activeGame = availableGames[currentGame];
-                availableGames.RemoveAt(currentGame);
-                availableGames.Insert(0, activeGame);
-                migratedActiveGame = true;
-                currentGame = -1;
-            }
-        }
-#endif
-
         internal string ElympicsApiEndpoint => ApplicationParameters.Parameters.ApiEndpoint.GetValue(GetV2Endpoint("api"))
-            .GetAbsoluteOrRelativeString();
-
-        internal string ElympicsLobbyEndpoint => ApplicationParameters.Parameters.LobbyEndpoint.GetValue(GetV2Endpoint("lobby"))
-            .GetAbsoluteOrRelativeString();
-
-        internal string ElympicsAuthEndpoint => ApplicationParameters.Parameters.AuthEndpoint.GetValue(GetV2Endpoint("auth"))
-            .GetAbsoluteOrRelativeString();
-
-        internal string ElympicsLeaderboardsEndpoint => ApplicationParameters.Parameters.LeaderboardsEndpoint.GetValue(GetV2Endpoint("leaderboardservice"))
             .GetAbsoluteOrRelativeString();
 
         internal string ElympicsGameServersEndpoint => ApplicationParameters.Parameters.GameServersEndpoint.GetValue(new UriBuilder(elympicsGameServersEndpoint).Uri)
             .GetAbsoluteOrRelativeString();
 
-        internal string ElympicsRespectEndpoint => ApplicationParameters.Parameters.RespectEndpoint.GetValue(GetV2Endpoint("respect"))
-            .GetAbsoluteOrRelativeString();
-
         internal Uri ElympicsReplaySource => ApplicationParameters.Parameters.ReplaySource.GetValue(GetV2Endpoint("replay"));
-
-        internal string ElympicsWebSocketUrl => ElympicsLobbyEndpoint.AppendPathSegments(Routes.Base).ToString();
 
         internal string ElympicsAvailableRegionsUrl => ElympicsApiEndpoint.AppendPathSegments(ElympicsApiModels.ApiModels.Regions.Routes.AllRegionsRouteUnityFormat).ToString();
         internal string GameAvailableRegionsUrl(string gameId) =>
@@ -89,6 +64,9 @@ namespace Elympics
             elympicsWebEndpoint.AppendPathSegments("v2", serviceName);
 
         public IReadOnlyList<ElympicsGameConfig> AvailableGames => availableGames;
+
+        /// <summary>Path of the scene the match launcher returns to after a match.</summary>
+        public string BootScene => bootScene;
 
         public event Action? CurrentGameSwitched;
 
@@ -130,12 +108,11 @@ namespace Elympics
                 throw ElympicsLogger.LogExceptionAndReturn(new ArgumentOutOfRangeException(nameof(game)));
         }
 
-        private static void UpdateLoggerState(ElympicsGameConfig gameConfig)
+        internal static void UpdateLoggerState(ElympicsGameConfig gameConfig)
         {
             var gameId = Guid.TryParse(gameConfig.GameId, out var parsedId) ? parsedId : Guid.NewGuid();
             ElympicsLogger.State.SetGame(gameId, gameConfig.GameVersion);
             ElympicsLogger.State.SetGameName(gameConfig.GameName);
-            ElympicsLogger.State.SetGameMode(gameConfig.GameplaySceneDebugMode.ToString());
             if (gameConfig.UseWeb)
                 ElympicsLogger.State.SetWebRtc();
             else

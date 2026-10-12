@@ -19,6 +19,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 {
     internal class WebRtcClient : IWebRtcClient
     {
+        private static int instanceCount;
+
+        /// <summary>Must be 0 between matches.</summary>
+        internal static int InstanceCount => instanceCount;
+
+        // WebGL-only diagnostics, kept so both implementations have the same API.
+        internal static int JsInstanceCount => -1;
+
+        internal static long WasmHeapSize => -1;
+
         private readonly WebRtcConfig _config;
         private readonly LoggerConfig _logger = ElympicsLogger.WithElympicsGameService()
             .WithClass(typeof(WebRtcClient))
@@ -38,6 +48,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public WebRtcClient(WebRtcConfig config)
         {
+            _ = Interlocked.Increment(ref instanceCount);
             _config = config;
             var configuration = new RTCConfiguration
             {
@@ -164,9 +175,19 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Dispose()
         {
+            if (_disposed)
+                return;
+            _disposed = true;
+            _ = Interlocked.Decrement(ref instanceCount);
+            // Stops the native GetStats() poll, which would otherwise outlive the peer connection.
+            _candidatePairCts?.Cancel();
+            _candidatePairCts?.Dispose();
+            _candidatePairCts = null;
             Close();
             _peerConnection.Dispose();
         }
+
+        private bool _disposed;
 
         public async UniTask<string> CreateOffer(bool restart)
         {
@@ -204,7 +225,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var answer = (RTCSessionDescription)answerCustom;
             var asyncOp = _peerConnection.SetRemoteDescription(ref answer);
             await asyncOp;
+            if (_disposed)
+                return;
             _candidatePairCts?.Cancel();
+            _candidatePairCts?.Dispose();
             _candidatePairCts = new CancellationTokenSource();
             WaitForCandidatePair(_candidatePairCts.Token).Forget();
         }

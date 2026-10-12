@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using Elympics.Behaviour;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis.Serialization;
 using Plugins.Elympics.Runtime.SnapshotAnalysis.Utils;
-using UnityEngine;
 
 namespace Elympics.SnapshotAnalysis
 {
@@ -98,11 +98,11 @@ namespace Elympics.SnapshotAnalysis
                 var buffer = GetBuffer;
                 var array = new ElympicsSnapshotWithMetadata[_index];
                 Array.Copy(buffer, array, _index);
-                Debug.Log($"Last Tick to save is {array[^1].Tick}");
+                ElympicsLogger.LogInfo($"Saving the last snapshots, up to tick {array[^1].Tick}.");
                 SaveLastDataAndDispose(array);
             }
 
-            Debug.Log($"{nameof(SnapshotAnalysisCollector)} Disposed");
+            ElympicsLogger.LogDebug($"{nameof(SnapshotAnalysisCollector)} disposed.");
         }
 
 

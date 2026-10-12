@@ -17,7 +17,6 @@ namespace Elympics
 
 
         public readonly ValueParameter<bool> IsElympicsOnlineServer = new("ELYMPICS", parse: ParseBoolFlag);
-        public readonly ValueParameter<bool> IsElympicsOnlineBot = new("ELYMPICS_BOT", parse: ParseBoolFlag);
 
         public readonly ValueParameter<int> HalfRemotePlayerIndex =
             new("ELYMPICS_HALF_REMOTE_PLAYER_INDEX", "playerIndex", "half-remote-player-index");
@@ -27,18 +26,16 @@ namespace Elympics
 
         public readonly Parameter<Uri> ApiEndpoint = new("ELYMPICS_API", "elympicsApi", "elympics-api",
             parse: ParseUri);
+        public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
+            parse: ParseUri);
+
+        // Read by the PlayPad lobby.
         public readonly Parameter<Uri> LobbyEndpoint = new("ELYMPICS_LOBBY", "elympicsLobby", "elympics-lobby",
             parse: ParseUri);
         public readonly Parameter<Uri> AuthEndpoint = new("ELYMPICS_AUTH", "elympicsAuth", "elympics-auth",
             parse: ParseUri);
-        public readonly Parameter<Uri> LeaderboardsEndpoint = new("ELYMPICS_LEADERBOARDS", "elympicsLeaderboards",
-            "elympics-leaderboards",
-            parse: ParseUri);
-        public readonly Parameter<Uri> GameServersEndpoint = new("ELYMPICS_GS", "elympicsGs", "elympics-gs",
-            parse: ParseUri);
-
-        public readonly Parameter<Uri> RespectEndpoint = new("ELYMPICS_RESPECT", "elympicsRespect", "elympics-respect",
-            parse: ParseUri);
+        public readonly Parameter<string> ClientSecret =
+            new("ELYMPICS_CLIENT_SECRET", "elympicsClientSecret", "elympics-client-secret");
 
         public readonly Parameter<Uri> ReplaySource = new("ELYMPICS_REPLAY", "elympicsReplay", "elympics-replay",
             parse: ParseUri);
@@ -48,15 +45,17 @@ namespace Elympics
         public readonly ValueParameter<bool> ShouldUseTcpUdp = new("ELYMPICS_USE_TCP_UDP", "elympicsUseTcpUdp", "elympics-use-tcp-udp",
             parse: ParseBoolFlag);
 
-        public readonly Parameter<string> ClientSecret =
-            new("ELYMPICS_CLIENT_SECRET", "elympicsClientSecret", "elympics-client-secret");
-        public readonly ValueParameter<Guid> GameId = new("ELYMPICS_GAME_ID", "elympicsGameId", "elympics-game-id",
-            parse: Guid.Parse);
-        public readonly Parameter<string> VersionName = new("ELYMPICS_GAME_VERSION", "elympicsGameVersion",
-            "elympics-game-version",
-            validationRegex: new Regex(".+", RegexOptions.Compiled));
-        public readonly Parameter<string> Queue = new("ELYMPICS_QUEUE", "elympicsQueue", "elympics-queue");
-        public readonly Parameter<string> Region = new("ELYMPICS_REGION", "elympicsRegion", "elympics-region");
+        public readonly Parameter<string> HostBridge = new("ELYMPICS_HOST_BRIDGE", "elympicsHostBridge", "elympics-host-bridge",
+            validationRegex: new Regex("^(auto|webgl|native|none)$", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+
+        /// <summary>
+        /// Starts this match in the gameplay scene, without a launcher session: halfRemoteClient, halfRemoteServer, singlePlayer or snapshotReplay.
+        /// Limits the process to that one match. See <c>LaunchDataFromParameters</c>.
+        /// </summary>
+        public readonly Parameter<string> LaunchMode = new("ELYMPICS_LAUNCH_MODE", "elympicsLaunchMode", "elympics-launch-mode");
+
+        /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
+        public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
         private static readonly Regex ShortArgRegex = new("^-([^-])$", RegexOptions.Compiled);
         private static readonly Regex LongArgRegex = new("^--([^-][^=]*)(=([^=]*))?$", RegexOptions.Compiled);
@@ -70,7 +69,10 @@ namespace Elympics
 
         private static Uri ParseUri(string rawValue) => new UriBuilder(rawValue).Uri;
 
-        public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery)
+        /// <param name="cloneArgs">Named arguments of a ParrelSync clone (see <see cref="CloneArguments"/>). They beat environment variables
+        /// and URL queries and lose to <paramref name="args"/>. They do not count for positional arguments.</param>
+        public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery, NameValueCollection elympicsUrlQuery,
+            IList<string> cloneArgs = null)
         {
             var (parameters, names) = FindParameters();
 
@@ -81,6 +83,9 @@ namespace Elympics
 
             CollectFromEnvironmentVariables(parameters, envVariables);
             CollectFromUrlQuery(parameters, urlQuery);
+            CollectFromUrlQuery(parameters, elympicsUrlQuery);
+            if (cloneArgs != null)
+                CollectFromNamedArguments(parameters, cloneArgs);
             CollectFromPositionalArguments(parameters, args);
             CollectFromNamedArguments(parameters, args);
 

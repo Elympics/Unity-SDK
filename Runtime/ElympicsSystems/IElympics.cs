@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Core;
@@ -47,13 +45,6 @@ namespace Elympics
         UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct = default);
         UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct = default);
         void Disconnect();
-
-        [Obsolete("Use " + nameof(ConnectAndJoinAsPlayerAsync) + " instead")]
-        IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback = null, CancellationToken ct = default);
-
-        [Obsolete("Use " + nameof(ConnectAndJoinAsPlayerAsync) + " instead")]
-        IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback = null, CancellationToken ct = default);
-
 
         #endregion
 

@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Auth")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Lobby")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Rooms")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Tests")]
-[assembly: InternalsVisibleTo("SmartContractService")]
-[assembly: InternalsVisibleTo("SmartContractService.Editor")]
-[assembly: InternalsVisibleTo("SmartContractService.Test")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 

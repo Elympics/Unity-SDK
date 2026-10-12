@@ -26,7 +26,6 @@ namespace Elympics
         private const string PackFileName = "pack.zip";
         private const string DirectoryNameToUpload = "Games";
         private const string EngineSubdirectory = "Engine";
-        private const string BotSubdirectory = "Bot";
 
         private static string ElympicsWebEndpoint => ElympicsConfig.Load()?.ElympicsApiEndpoint;
 
@@ -396,7 +395,6 @@ namespace Elympics
                 }
 
                 string enginePath;
-                string botPath;
                 var waitingForContinuation = false;
                 try
                 {
@@ -411,10 +409,6 @@ namespace Elympics
                     if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out enginePath))
                         return;
 
-                    EditorUtility.DisplayProgressBar(title, "Packing bot", 0.4f);
-                    if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out botPath))
-                        return;
-
                     EditorUtility.DisplayProgressBar(title, "Uploading...", 0.8f);
                     waitingForContinuation = true;
                 }
@@ -427,7 +421,7 @@ namespace Elympics
                 var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
                 _ = ElympicsEditorWebClient.SendEnginePostRequestApi(url,
                     currentGameConfig.GameVersion,
-                    new[] { enginePath, botPath },
+                    new[] { enginePath },
                     webRequest =>
                     {
                         try
@@ -641,7 +635,7 @@ namespace Elympics
         /// <summary>
         /// Blocking counterpart of <see cref="CheckAuthTokenAndRefreshIfNeeded"/>.
         /// </summary>
-        private static void RefreshAuthTokenIfNeededSynchronously()
+        private static void RefreshAuthTokenIfNeededSynchronously(long expirationMarginSeconds = 0)
         {
             if (!ElympicsConfig.IsLogin)
                 throw new ElympicsException("Not logged in to Elympics cloud. Log in before uploading.");
@@ -655,7 +649,7 @@ namespace Elympics
 
             var authTokenExp = long.Parse(authTokenExpStr);
             var currentTimestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-            if (currentTimestamp <= authTokenExp)
+            if (currentTimestamp + expirationMarginSeconds <= authTokenExp)
                 return;
 
             ElympicsLogger.LogInfo("Auth token expired. Refreshing using refresh token...");
@@ -674,6 +668,27 @@ namespace Elympics
             ElympicsConfig.AuthToken = authToken;
             ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
             ElympicsConfig.RefreshToken = responseModel.RefreshToken;
+        }
+
+        // Play-mode code (e.g. the PlayPad extension handshake) sends the stored token as is,
+        // so it has to be valid, with a margin for the domain reload and scene load.
+        private const long PlayModeTokenExpirationMarginSeconds = 60;
+
+        [InitializeOnLoadMethod]
+        private static void RefreshAuthTokenOnEnteringPlayMode() => EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change != PlayModeStateChange.ExitingEditMode || !ElympicsConfig.IsLogin)
+                return;
+            try
+            {
+                RefreshAuthTokenIfNeededSynchronously(PlayModeTokenExpirationMarginSeconds);
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
+            }
         }
 
         private const string StreamingAssetsInitAction = "Initialize StreamingAssets upload";
@@ -785,11 +800,8 @@ namespace Elympics
             if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
                 throw new ElympicsException("Problem with packing engine");
 
-            if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.BotPath, BotSubdirectory, out var botPath))
-                throw new ElympicsException("Problem with packing bot");
-
             var url = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, currentGameConfig.GameId, GamesRoutes.GameVersionsRoute);
-            var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath, botPath });
+            var uploadOp = ElympicsEditorWebClient.SendEnginePostRequestApi(url, currentGameConfig.GameVersion, new[] { enginePath });
 
             while (!uploadOp.isDone)
                 ;

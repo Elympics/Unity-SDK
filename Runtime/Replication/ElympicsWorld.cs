@@ -204,8 +204,14 @@ namespace Elympics.Replication
             ElympicsLogger.LogWarning($"[ElympicsWorld] Player at index {playerIndex} is not active. Skipping.");
         }
 
+        /// <summary>True after <see cref="Dispose"/>. Late callers holding a reference must check it: the arrays are gone.</summary>
+        internal bool IsDisposed { get; private set; }
+
         public void Dispose()
         {
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
             SparseToDense = null;
             _currentGeneration = null;
             DenseToSparse = null;
@@ -229,7 +235,8 @@ namespace Elympics.Replication
             MaxPlayers = 0;
             CurrentTick = -1;
 
-            Current = null;
+            if (Current == this)
+                Current = null;
         }
 
         internal void BeginTick(ElympicsSnapshot fullSnapshot, long tick)

@@ -1,15 +1,15 @@
 {
   "name": "com.daftmobile.elympics",
   "version": "0.27.0",
-  "description": "Elympics is a complete toolset for multiplayer games. Learn more at https://elympics.cc/",
+  "description": "Elympics is a complete toolset for competitive games. Learn more at https://elympics.ai/",
   "displayName": "Elympics",
   "unity": "2021.3",
   "author": {
     "name": "Elympics",
     "email": "hello@elympics.cc",
-    "url": "https://www.elympics.cc/"
+    "url": "https://www.elympics.ai/"
   },
-  "documentationUrl": "https://docs.elympics.cc/",
+  "documentationUrl": "https://docs.elympics.ai/",
   "changelogUrl": "https://github.com/Elympics/Unity-SDK/releases",
   "license": "See LICENSE.md file",
   "keywords": [
@@ -23,34 +23,9 @@
       "path": "Samples~/ButtonClicker"
     },
     {
-      "displayName": "Tech Demo [Game]",
-      "description": "Sample with 2 players throwing instantiable balls",
-      "path": "Samples~/TechDemo"
-    },
-    {
       "displayName": "Match events [Game]",
       "description": "A sample to illustrate the lifecycle of Elympics match",
       "path": "Samples~/MatchEvents"
-    },
-    {
-      "displayName": "EGB test [Menu] [Game]",
-      "description": "A sample menu for setting Matchmaking and GameEngine data with a game for checking the response from External Game Backend",
-      "path": "Samples~/EgbTest"
-    },
-    {
-      "displayName": "Rooms-based menu [Menu]",
-      "description": "Showcase of the rooms feature",
-      "path": "Samples~/RoomsMenu"
-    },
-    {
-      "displayName": "Leaderboard menu [Menu]",
-      "description": "A sample menu with leaderboards only (no Play button) to illustrate usage of leaderboards. Works only if your game has generated any leaderboard data",
-      "path": "Samples~/Leaderboards"
-    },
-    {
-      "displayName": "Simple menu [Menu]",
-      "description": "Simple menu scene with all play modes and all available games listed",
-      "path": "Samples~/SimpleMenu"
     }
   ],
   "dependencies": {
@@ -65,7 +40,7 @@
     "com.unity.modules.unitywebrequesttexture": "1.0.0",
     "com.unity.nuget.mono-cecil": "1.11.6",
     "com.unity.nuget.newtonsoft-json": "3.0.2",
-    "com.unity.test-framework": "1.1.31",
+    "com.unity.test-framework": "1.4.6",
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.ugui": "1.0.0",
     "com.unity.webrtc": "3.0.0"

@@ -6,17 +6,16 @@ namespace Elympics
 {
     internal static class ApplicationParameters
     {
-        public static bool ShouldLoadElympicsOnlineServer => Parameters.IsElympicsOnlineServer.GetValue() is true
-            && Parameters.IsElympicsOnlineBot.GetValue() is not true;
-        public static bool ShouldLoadElympicsOnlineBot => Parameters.IsElympicsOnlineServer.GetValue() is true
-            && Parameters.IsElympicsOnlineBot.GetValue() is true;
+        public static bool ShouldLoadElympicsOnlineServer => Parameters.IsElympicsOnlineServer.GetValue() is true;
+
+        public static bool IsInitialized => ParameterList.Initialized;
 
         public static ParameterList Parameters
         {
             get
             {
                 if (!ParameterList.Initialized && !Application.isEditor)
-                    ElympicsLogger.LogWarning("Accessing uninitialized application parameters.\n" + Environment.StackTrace);
+                    ElympicsLogger.WithStacktraceForEverything().LogWarning("Accessing uninitialized application parameters.");
                 return ParameterList;
             }
         }
@@ -26,8 +25,9 @@ namespace Elympics
         {
             var envVariables = Environment.GetEnvironmentVariables();
             var commandLineArgs = Environment.GetCommandLineArgs();
-            var urlQuery = ElympicsWebGL.GetUrlQuery();
-            return ParameterList.Initialize(envVariables, commandLineArgs, urlQuery);
+            var urlQuery = ElympicsJsApi.GetUrlQuery();
+            var elympicsUrlQuery = ElympicsJsApi.GetElympicsUrlQuery();
+            return ParameterList.Initialize(envVariables, commandLineArgs, urlQuery, elympicsUrlQuery, CloneArguments.Read());
         }
     }
 }

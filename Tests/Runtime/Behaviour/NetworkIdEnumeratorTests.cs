@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Elympics.Tests.Runtime.Behaviour
@@ -96,8 +94,6 @@ namespace Elympics.Tests.Runtime.Behaviour
             Assert.That(ExtractGeneration(current), Is.EqualTo(1));
 
             // Act — attempting a second allocation should overflow
-            // ElympicsLogger.LogException(new OverflowException(...)) calls Debug.LogException before throwing
-            LogAssert.Expect(LogType.Exception, new Regex("OverflowException: Cannot generate a network ID. The pool of indices between min: 50 and max: 50 has been used up."));
 
             _ = Assert.Throws<OverflowException>(() => _sut.MoveNextAndGetCurrent(),
                 "Second allocation on single-slot range must throw OverflowException");
@@ -524,7 +520,6 @@ namespace Elympics.Tests.Runtime.Behaviour
                 _ = _sut.MoveNextAndGetCurrent();
 
             // Act & Assert — 6th allocation should overflow
-            LogAssert.Expect(LogType.Exception, new Regex("OverflowException: Cannot generate a network ID. The pool of indices between min: 10 and max: 14 has been used up."));
             _ = Assert.Throws<OverflowException>(() => _sut.MoveNextAndGetCurrent(),
                 "Allocating beyond the index pool must throw OverflowException");
 
@@ -571,7 +566,6 @@ namespace Elympics.Tests.Runtime.Behaviour
             Assert.That(ExtractIndex(id3), Is.EqualTo(22));
 
             // 4th should throw
-            LogAssert.Expect(LogType.Exception, new Regex("OverflowException: Cannot generate a network ID. The pool of indices between min: 20 and max: 22 has been used up."));
             _ = Assert.Throws<OverflowException>(() => _sut.MoveNextAndGetCurrent());
 
             yield return null;
@@ -601,7 +595,6 @@ namespace Elympics.Tests.Runtime.Behaviour
 
             // Act — one more release + allocate should overflow the generation counter
             _sut.ReleaseId(_sut.GetCurrent());
-            LogAssert.Expect(LogType.Exception, new Regex(@"OverflowException: Cannot use new networkId generation\. The pool of generations \(min: 0, max: 65535\) has been used up\."));
             _ = Assert.Throws<OverflowException>(() => _sut.MoveNextAndGetCurrent(),
                 "Generation overflow must throw OverflowException");
 
@@ -921,7 +914,6 @@ namespace Elympics.Tests.Runtime.Behaviour
             Assert.That(ExtractGeneration(onlyId), Is.EqualTo(1));
 
             // Second allocation must fail
-            LogAssert.Expect(LogType.Exception, new Regex("OverflowException: Cannot generate a network ID. The pool of indices between min: 999 and max: 999 has been used up."));
             _ = Assert.Throws<OverflowException>(() => _sut.MoveNextAndGetCurrent());
 
             yield return null;

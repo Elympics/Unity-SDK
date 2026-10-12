@@ -25,6 +25,10 @@ namespace Elympics
 
         internal static int IndicesPerPlayer { get; private set; }
 
+        internal static void ResetStatics() => IndicesPerPlayer = 0;
+
+        internal IElympicsMatchLifecycleSink LifecycleSink { get; set; }
+
         internal static int SceneObjectsMaxIndex => SceneObjectsReserved - 1;
         internal static int[] SpawnableSpecialPlayerIndices => ElympicsPlayer.SpawnableSpecialPlayerIndices;
         internal void InitializeInternal(ElympicsBase elympicsBase, int maxPlayerCount)
@@ -396,29 +400,27 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchJoinedFailed(errorMessage);
+            LifecycleSink?.JoinFailed($"Joining the match failed: {errorMessage}");
         }
 
         public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
         {
-            #region ObsoleteCalls
-            // Obsolete - to be removed in future versions. Leave for backward compatibility.
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchJoined(matchInitData.MatchId);
-            #endregion
-
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchJoinedWithInitData(matchInitData);
+            LifecycleSink?.MatchJoined();
         }
         internal void OnMatchEnded(Guid matchId)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchEnded(matchId);
+            LifecycleSink?.MatchEnded(matchId);
         }
 
         internal void OnAuthenticatedFailed(string errorMessage)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnAuthenticatedFailed(errorMessage);
+            LifecycleSink?.JoinFailed($"Authenticating with the game server failed: {errorMessage}");
         }
 
         internal void OnAuthenticated(Guid userId)
@@ -431,12 +433,14 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnDisconnectedByServer();
+            LifecycleSink?.Disconnected(true);
         }
 
         internal void OnDisconnectedByClient()
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnDisconnectedByClient();
+            LifecycleSink?.Disconnected(false);
         }
 
         internal void OnConnected(TimeSynchronizationData data)
@@ -449,17 +453,12 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnConnectingFailed();
+            LifecycleSink?.JoinFailed("Connecting to the game server failed.");
         }
 
         #endregion
 
         #region BotCallbacks
-
-        internal void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData)
-        {
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnStandaloneBotInit(initialMatchData);
-        }
 
         internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
         {

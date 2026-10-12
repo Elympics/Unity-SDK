@@ -9,7 +9,6 @@ namespace Elympics
 
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
@@ -18,18 +17,17 @@ namespace Elympics
             Time.fixedDeltaTime = gameConfig.TickDuration;
 
             _client = client;
-            bot.Destroy();
             server.Destroy();
             // singlePlayer.Destroy();
-            //behavioursManager.InitializeInternal(client); po pierwsze to powinno byc PRZED inicjalizacja klienta. Po drugie flow inicjalizacji behMenagera jest strasznie zalezne od ElympcisBase zamiast od argumentow.
             InitializeClient(client, gameConfig);
         }
 
         public override void Dispose()
         {
             base.Dispose();
-            if (_client != null && _client.Initialized)
-                _client.MatchConnectClient.Dispose();
+            // Not guarded by Initialized: a launch that failed to connect still holds a socket or peer connection.
+            // `?.` on purpose: the managed connection must be disposed even if Unity already destroyed the component.
+            _client?.DisposeMatchConnectClient();
         }
 
         protected abstract void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig);

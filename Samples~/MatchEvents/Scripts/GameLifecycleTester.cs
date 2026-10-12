@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Elympics;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
@@ -12,48 +13,40 @@ namespace MatchEvents
         public event Action<bool> ConnectingFinished;
 
         [UsedImplicitly]
-        public void OnEndGameClicked()
-        {
-            EndGameInputHandler.ShouldGameEnd = true;
-        }
+        public void OnEndGameClicked() => EndGameInputHandler.ShouldGameEnd = true;
 
         [UsedImplicitly]
-        public void OnConnectAndJoinAsPlayerClicked()
+        public async UniTaskVoid OnConnectAndJoinAsPlayerClicked()
         {
-            void OnConnectAndJoinAsPlayerResult(bool success)
-            {
-                Serializer.PrintCall(new Dictionary<string, object>
-                {
-                    { nameof(success), success }
-                }, $"{nameof(Elympics.ConnectAndJoinAsPlayer)} callback");
-                ConnectingFinished?.Invoke(success);
-            }
-
             ConnectingStarted?.Invoke();
-            _ = StartCoroutine(Elympics.ConnectAndJoinAsPlayer(OnConnectAndJoinAsPlayerResult));
-        }
-
-        [UsedImplicitly]
-        public void OnConnectAndJoinAsSpectatorClicked()
-        {
-            void OnConnectAndJoinAsSpectatorResult(bool success)
+            try
             {
-                Serializer.PrintCall(new Dictionary<string, object>
-                {
-                    { nameof(success), success }
-                }, $"{nameof(Elympics.ConnectAndJoinAsSpectator)} callback");
-                ConnectingFinished?.Invoke(success);
+                await Elympics.ConnectAndJoinAsPlayerAsync();
+                ConnectingFinished?.Invoke(true);
             }
-
-            ConnectingStarted?.Invoke();
-            _ = StartCoroutine(Elympics.ConnectAndJoinAsSpectator(OnConnectAndJoinAsSpectatorResult));
+            catch
+            {
+                ConnectingFinished?.Invoke(false);
+            }
         }
 
         [UsedImplicitly]
-        public void OnDisconnectClicked()
+        public async UniTaskVoid OnConnectAndJoinAsSpectatorClicked()
         {
-            Elympics.Disconnect();
+            ConnectingStarted?.Invoke();
+            try
+            {
+                await Elympics.ConnectAndJoinAsSpectatorAsync();
+                ConnectingFinished?.Invoke(true);
+            }
+            catch
+            {
+                ConnectingFinished?.Invoke(false);
+            }
         }
+
+        [UsedImplicitly]
+        public void OnDisconnectClicked() => Elympics.Disconnect();
 
         #region IClientHandler
 
@@ -97,12 +90,6 @@ namespace MatchEvents
                 { nameof(errorMessage), errorMessage }
             });
 
-        public void OnMatchJoined(Guid matchId) => Serializer.PrintCall(
-            new Dictionary<string, object>
-            {
-                { nameof(matchId), matchId }
-            });
-
         public void OnMatchJoinedFailed(string errorMessage) => Serializer.PrintCall(
             new Dictionary<string, object>
             {
@@ -140,12 +127,6 @@ namespace MatchEvents
         #endregion IServerHandler
 
         #region IBotHandler
-
-        public void OnStandaloneBotInit(InitialMatchPlayerDataGuid data) => Serializer.PrintCall(
-            new Dictionary<string, object>
-            {
-                { nameof(data), data }
-            });
 
         public void OnBotsOnServerInit(InitialMatchPlayerDatasGuid datas) => Serializer.PrintCall(
             new Dictionary<string, object>

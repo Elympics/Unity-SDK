@@ -128,12 +128,12 @@ namespace Elympics.Tests
                 new(ElympicsStatus.StandaloneClient, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.ServerToPlayers, false),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.PlayerToServer, true),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.ServerToPlayers, true),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.ServerToPlayers, false),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.PlayerToServer, false),
                 new(ElympicsStatus.LocalPlayerWithBots, ElympicsRpcDirection.ServerToPlayers, false),
                 new(ElympicsStatus.LocalPlayerWithBots, ElympicsRpcDirection.PlayerToServer, false),
+                new(ElympicsStatus.SinglePlayer, ElympicsRpcDirection.ServerToPlayers, false),
+                new(ElympicsStatus.SinglePlayer, ElympicsRpcDirection.PlayerToServer, false),
             };
 
         [Test]
@@ -181,10 +181,36 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void PlayerToServerRpcScheduledOnSinglePlayerShouldBeQueuedToBeInvoked()
+        {
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
+            _elympicsBase.SetElympicsStatus(ElympicsStatus.SinglePlayer);
+
+            _rpcHolder.PlayerToServerMethod();
+
+            Assert.IsFalse(_rpcHolder.PlayerToServerMethodCalled);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
+        }
+
+        [Test]
         public void ServerToPlayersRpcScheduledOnLocalPlayerWithBotsShouldBeQueuedToBeInvoked()
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
+
+            _rpcHolder.ServerToPlayersMethod();
+
+            Assert.IsFalse(_rpcHolder.ServerToPlayersMethodCalled);
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
+        }
+
+        [Test]
+        public void ServerToPlayersRpcScheduledOnSinglePlayerShouldBeQueuedToBeInvoked()
+        {
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate);
+            _elympicsBase.SetElympicsStatus(ElympicsStatus.SinglePlayer);
 
             _rpcHolder.ServerToPlayersMethod();
 
@@ -200,7 +226,6 @@ namespace Elympics.Tests
             {
                 new(ElympicsStatus.StandaloneClient, ElympicsRpcDirection.PlayerToServer),
                 new(ElympicsStatus.StandaloneServer, ElympicsRpcDirection.ServerToPlayers),
-                new(ElympicsStatus.StandaloneBot, ElympicsRpcDirection.PlayerToServer),
                 new(ElympicsStatus.ServerWithBots, ElympicsRpcDirection.ServerToPlayers),
             };
 
@@ -503,6 +528,29 @@ namespace Elympics.Tests
         {
             using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
             _elympicsBase.SetElympicsStatus(ElympicsStatus.LocalPlayerWithBots);
+            var calledMethodInfo = typeof(RpcHolderComplex).GetMethod(testCase.MethodName);
+            var calledRpcMethod = new RpcMethod(calledMethodInfo, _rpcHolder);
+            var rpcMessage = new ElympicsRpcMessage
+            {
+                NetworkId = _elympicsBehaviour.NetworkId,
+                MethodId = _elympicsBehaviour.RpcMethods.GetIdOf(calledRpcMethod),
+                Arguments = Array.Empty<object>(),
+            };
+            _elympicsBase.RpcMessagesToInvoke.Add(rpcMessage);
+
+            _elympicsBase.InvokeQueuedRpcMessages();
+
+            Assert.IsTrue(testCase.WasPingCalled(_rpcHolder));
+            Assert.IsFalse(testCase.WasPongCalled(_rpcHolder));
+            Assert.Zero(_elympicsBase.RpcMessagesToSend.Count);
+            Assert.AreEqual(_elympicsBase.RpcMessagesToInvoke.Count, 1);
+        }
+
+        [Test]
+        public void RpcOfOppositeDirectionShouldBeQueuedToBeInvokedInsideCurrentlyInvokedRpcInSinglePlayer([ValueSource(nameof(ChainingInLocalModeTestCases))] ChainingInLocalModeTestCase testCase)
+        {
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
+            _elympicsBase.SetElympicsStatus(ElympicsStatus.SinglePlayer);
             var calledMethodInfo = typeof(RpcHolderComplex).GetMethod(testCase.MethodName);
             var calledRpcMethod = new RpcMethod(calledMethodInfo, _rpcHolder);
             var rpcMessage = new ElympicsRpcMessage

@@ -235,6 +235,14 @@ namespace Elympics
             _connected = false;
         }
 
-        public void Dispose() => Disconnect();
+        public void Dispose()
+        {
+            Disconnect();
+            _gameServerClient.Disconnected -= OnDisconnectedByServer;
+            _gameServerClient.MatchEnded -= OnMatchEnded;
+            UnsetCallbacksForJoiningAsPlayer();
+            UnsetCallbacksForJoiningAsSpectator();
+            _gameServerClient.Dispose();
+        }
     }
 }

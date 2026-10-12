@@ -7,7 +7,7 @@ using MatchTcpModels.Messages;
 
 namespace MatchTcpClients
 {
-    public interface IGameServerClient
+    public interface IGameServerClient : IDisposable
     {
         bool IsConnected { get; }
 

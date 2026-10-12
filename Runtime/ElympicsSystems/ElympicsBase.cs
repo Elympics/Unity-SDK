@@ -15,7 +15,8 @@ namespace Elympics
     public abstract class ElympicsBase : MonoBehaviour, IElympics
     {
         internal ElympicsBehavioursManager ElympicsBehavioursManager;
-        [SerializeField] internal AsyncEventsDispatcher asyncEventsDispatcher;
+        /// <summary>Cancelled when <see cref="ElympicsMatchLauncher"/> tears the match down. None if the scene is not launcher-driven.</summary>
+        internal CancellationToken MatchToken { get; set; }
 
         [Tooltip("Attach GameObjects that you want to be destroyed together with this system")]
         [SerializeField]
@@ -312,12 +313,6 @@ namespace Elympics
 
         #endregion
 
-        #region BotCallbacks
-
-        protected void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData) => Enqueue(() => ElympicsBehavioursManager.OnStandaloneBotInit(initialMatchData));
-
-        #endregion
-
         #region ServerCallbacks
 
         protected void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerConnected(player));
@@ -325,7 +320,8 @@ namespace Elympics
 
         #endregion
 
-        protected void Enqueue(Action action) => asyncEventsDispatcher.Enqueue(action);
+        /// <summary>Called from network threads. Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.</summary>
+        protected void Enqueue(Action action) => MainThread.Post(action, MatchToken, this);
 
         /// <summary>Resets the time accumulator so the next ElympicsFixedUpdate fires fresh after reconnect.</summary>
         internal void ResetTimer()

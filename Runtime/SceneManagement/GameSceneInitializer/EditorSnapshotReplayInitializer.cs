@@ -9,28 +9,23 @@ namespace Elympics
     {
         public static Func<IReplayManipulator>? GetManipulator;
 
+        private readonly SnapshotAnalysisRetriever _snapshotRetriever;
+
+        public EditorSnapshotReplayInitializer(SnapshotAnalysisRetriever snapshotRetriever) => _snapshotRetriever = snapshotRetriever;
+
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
         {
-            var retriever = new EditorSnapshotAnalysisRetriever(gameConfig.SnapshotFilePath);
-            var replayVersion = retriever.RetrieveInitData().GameVersion;
-            var currentVersion = gameConfig.GameVersion;
-
-            if (replayVersion != currentVersion)
-                throw new Exception($"Game version mismatch. Replay was recorded using game version {replayVersion} and current game version is {currentVersion}. Use a matching version of the game to watch this replay.");
-
             InitializeInternal(
-                bot,
                 server,
                 gameConfig,
                 behavioursManager,
-                retriever,
+                _snapshotRetriever,
                 (GetManipulator ?? throw new Exception($"{nameof(GetManipulator)} should always be set in editor, are you trying to use {nameof(EditorSnapshotReplayInitializer)} outside of editor?")).Invoke());
-            retriever.AddStateMetaData(behavioursManager);
+            _snapshotRetriever.AddStateMetaData(behavioursManager);
         }
     }
 }

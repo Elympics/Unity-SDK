@@ -42,6 +42,9 @@ namespace Elympics
 
         private readonly int _playerInputBufferSize;
 
+        /// <summary>Network-thread callbacks can outlive the match and its world.</summary>
+        private static ElympicsWorld? LiveWorld => ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
+
         internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new();
         internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } = new();
 
@@ -63,7 +66,7 @@ namespace Elympics
             foreach (var userId in userIds)
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
-            var world = ElympicsWorld.Current;
+            var world = LiveWorld;
             Assert.IsNotNull(world);
             if (world != null)
                 for (var i = 0; i < UserCount; i++)
@@ -108,7 +111,7 @@ namespace Elympics
         {
             var playerIndex = (int)player;
             // Enqueue update for thread-safe drain at tick start
-            var world = ElympicsWorld.Current;
+            var world = LiveWorld;
             world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
 
             foreach (var value in inputList.Values)
@@ -135,7 +138,7 @@ namespace Elympics
         public void OnPlayerConnected(string userId)
         {
             var player = _userIdsToPlayers[new Guid(userId)];
-            var world = ElympicsWorld.Current;
+            var world = LiveWorld;
             world?.ActivatePlayer((int)player);
             PlayerConnected?.Invoke(player);
         }
@@ -144,7 +147,7 @@ namespace Elympics
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            var world = ElympicsWorld.Current;
+            var world = LiveWorld;
             world?.DeactivatePlayer((int)player);
         }
 

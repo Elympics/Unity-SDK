@@ -14,14 +14,12 @@ namespace Elympics
     {
         private const string ServerBuildPath = "serverbuild";
         private const string EngineSubdirectory = "Engine";
-        private const string BotSubdirectory = "Bot";
         private const string UnityBuildPath = "Unity";
 
         private const string ServerBuildAppNameLinux = "Unity";
         private const string ServerBuildAppNameWindows = "Unity.exe";
 
         internal static string EnginePath => Path.Combine(ServerBuildPath, EngineSubdirectory);
-        internal static string BotPath => Path.Combine(ServerBuildPath, BotSubdirectory);
 
         private static readonly Regex MissingModuleRegex = new(
             @"build target (was )?unsupported|LinuxStandalone|scripting backend (\(\w+\) )?(is )?not installed",

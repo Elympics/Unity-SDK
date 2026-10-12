@@ -1,0 +1,88 @@
+.root {
+    flex-grow: 1;
+    padding: 4px;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.wrap {
+    flex-wrap: wrap;
+}
+
+.grow {
+    flex-grow: 1;
+}
+
+.section {
+    -unity-font-style: bold;
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+.state {
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.hint {
+    -unity-font-style: italic;
+    white-space: normal;
+    margin-left: 3px;
+}
+
+.single-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.json > .unity-text-field__input {
+    min-height: 72px;
+    white-space: normal;
+}
+
+.tabs {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 21px;
+    margin-bottom: 2px;
+}
+
+.tab {
+    flex-grow: 1;
+    flex-basis: auto;
+    -unity-text-align: middle-center;
+}
+
+.tab > .unity-toggle__input {
+    justify-content: center;
+}
+
+.launch-button {
+    margin-top: 6px;
+    height: 24px;
+    -unity-font-style: bold;
+}
+
+.log-scroll {
+    flex-grow: 1;
+    min-height: 80px;
+}
+
+/* The log field fills the scroll view, which grows into the window's spare height. */
+.log-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    flex-grow: 1;
+}
+
+.log {
+    flex-grow: 1;
+}
+
+.log > .unity-text-field__input {
+    flex-grow: 1;
+    white-space: normal;
+    font-size: 10px;
+}

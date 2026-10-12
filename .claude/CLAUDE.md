@@ -59,11 +59,16 @@ Two rules when a file starts using another assembly's types:
 - Watch for `var`-inferred types from factories. A file can depend on an assembly without ever naming its types.
 
 ### Mode selection
-`Runtime/SceneManagement/GameSceneInitializer/GameSceneInitializerFactory.cs` picks how a gameplay scene starts. It checks in this order:
-1. **Online server:** `ApplicationParameters`, which merges env vars, command-line args and the WebGL URL query (`Runtime/Util/Parameters/`).
-2. **The mode the lobby joined:** `JoinedMatchMode` (Online, HalfRemote client/server, Local, SinglePlayer, SnapshotReplay).
-3. **`UNITY_SERVER` build:** HalfRemote server.
-4. **Editor setting:** `ElympicsGameConfig.GameplaySceneDebugMode`. ParrelSync clones act as half-remote clients.
+Matches are started by `ElympicsMatchLauncher` (`Runtime/Launcher/`).
+- `ElympicsMatchLauncherBootstrap` creates it before the first scene loads, after initializing `ApplicationParameters` (env vars, command-line args, the WebGL URL query and ParrelSync clone arguments; see `Runtime/Util/Parameters/`).
+- Unless the process is passive (online server or `ELYMPICS_LAUNCH_MODE` set), the bootstrap also starts a host bridge (`Runtime/Launcher/Bridges/`: WebGL or native) and emits `ready`. A host, game code (`Launch*Async`) or the Editor's Match Launcher window then launches matches. Each launch loads the gameplay scene and returns to the boot scene afterwards.
+
+`GameSceneManager.ChooseDriver` (`Runtime/SceneManagement/GameSceneManager.cs`) picks what initializes a loaded gameplay scene. It checks in this order:
+1. **Online server:** set by `ApplicationParameters`.
+2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). ParrelSync clones get it from their default arguments (`Editor/ParrelSync/ElympicsCloneArguments.cs`) and run as half-remote clients.
+3. **Session:** the launcher's current launch. Its `LaunchData` (`Runtime/Launcher/LaunchData/`) creates the mode's `GameSceneInitializer`.
+4. **Suppressed:** the scene activated while its launch is being torn down.
+5. **None:** the scene waits for a launch.
 
 Configuration lives in the `ElympicsConfig` ScriptableObject (`Resources/Elympics/ElympicsConfig`), which holds a list of `ElympicsGameConfig` assets (tick rate, half-remote endpoints, lag simulation).
 

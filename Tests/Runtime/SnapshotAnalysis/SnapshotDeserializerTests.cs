@@ -48,6 +48,34 @@ namespace Elympics.Tests.SnapshotAnalysis
                 AssertSnapshotsAreEqual(a, b);
         });
 
+        // The collector stores a state that did not change as null, and the deserializer restores it from the last stored one.
+        [UnityTest]
+        public IEnumerator UnchangedStatesAreRestoredFromEarlierSnapshots() => UniTask.ToCoroutine(async () =>
+        {
+            MemoryStream stream = new();
+            var first = CreateTestSnapshot(0);
+            var second = CreateTestSnapshot(1);
+            second.Data![27] = null!;
+            var third = CreateTestSnapshot(2);
+            third.Data![27] = null!;
+            third.Data[28] = null!;
+
+            await _sut.SerializeVersionToStream(stream, SerializationUtil.LatestVersion);
+            await _sut.SerializeToStream(stream, CreateTestInitData());
+            await _sut.SerializeToStream(stream, new SnapshotSerializationPackage { Snapshots = new[] { first, second } });
+            await _sut.SerializeToStream(stream, new SnapshotSerializationPackage { Snapshots = new[] { third } });
+
+            stream.Position = 0;
+            var deserialized = SnapshotDeserializer.DeserializeSnapshots(stream);
+
+            Assert.AreEqual(3, deserialized.Snapshots.Count);
+            foreach (var tick in new long[] { 1, 2 })
+            {
+                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, deserialized.Snapshots[tick].Data![27]);
+                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, deserialized.Snapshots[tick].Data![28]);
+            }
+        });
+
         private static void AssertSnapshotsAreEqual(ElympicsSnapshotWithMetadata snapshot, ElympicsSnapshotWithMetadata retrievedSnapshot)
         {
             Assert.AreEqual(snapshot.Tick, retrievedSnapshot.Tick);

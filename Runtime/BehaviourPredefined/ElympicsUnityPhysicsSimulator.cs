@@ -15,6 +15,13 @@ namespace Elympics
         private void OnEnable() => _isActive = true;
         private void OnDisable() => _isActive = false;
 
+        // The static would otherwise keep this component, and through it the match's ElympicsBase, alive after its scene unloads.
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(instance, this))
+                instance = null;
+        }
+
         public void Initialize()
         {
             if (instance != null && instance != this)

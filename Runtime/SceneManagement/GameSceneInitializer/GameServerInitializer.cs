@@ -7,8 +7,9 @@ namespace Elympics
 {
     internal abstract class GameServerInitializer : GameSceneInitializer
     {
-        protected virtual bool HandlingBotsOverride => false;
         protected virtual bool HandlingClientsOverride => false;
+
+        public override bool ReportsMatchJoined => false;
 
         protected GameEngineAdapter GameEngineAdapter;
         protected ElympicsBehavioursManager BehavioursManager;
@@ -17,7 +18,6 @@ namespace Elympics
 
         public override void Initialize(
             ElympicsClient client,
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager)
@@ -32,13 +32,21 @@ namespace Elympics
             // ReplicationPipeline + PipelineBuffers only needed on server
             ReplicationPipeline.Initialize(gameConfig.MaxPlayers, ElympicsWorld.Current);
             // ElympicsServer has to setup callbacks BEFORE initializing GameEngine - possible loss of events like PlayerConnected or Init ~pprzestrzelski 26.05.2021
-            Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingBotsOverride, HandlingClientsOverride);
+            Server.InitializeInternal(GameConfig, GameEngineAdapter, BehavioursManager, ProvideInputRetriever(), ProvideSnapSnapshotAnalysisCollector(), ProvideElympicsUpdateLoop(), HandlingClientsOverride);
             InitializeGameServer(GameConfig, GameEngineAdapter);
             BehavioursManager.InitializeInternal(Server, GameConfig.MaxPlayers);
 
             client.Destroy();
-            bot.Destroy();
             // singlePlayer.Destroy();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            GameEngineAdapter = null;
+            BehavioursManager = null;
+            Server = null;
+            GameConfig = null;
         }
 
         protected abstract void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter);

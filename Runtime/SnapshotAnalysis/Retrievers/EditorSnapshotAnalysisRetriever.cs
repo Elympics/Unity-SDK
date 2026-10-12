@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elympics.SnapshotAnalysis.Serialization;
@@ -12,52 +11,61 @@ namespace Elympics.SnapshotAnalysis.Retrievers
     {
         public EditorSnapshotAnalysisRetriever(string path)
         {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentException("Path to snapshot replay file can't be empty.", nameof(path));
-
-            //If path ends with directory separator (ex. "C:\Users\Elympics\Snapshots\"), look for the newest file with matching extension
-            if (path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar))
-            {
-                var filePath = Directory.EnumerateFiles(path, "*" + EditorSnapshotAnalysisCollector.DefaultFileExtension).OrderByDescending(filePath => File.GetLastWriteTime(filePath))
-                    .FirstOrDefault();
-
-                if (string.IsNullOrEmpty(filePath))
-                    throw new ArgumentException($"No files with extension \"{EditorSnapshotAnalysisCollector.DefaultFileExtension}\" found in directory \"{path}\".", nameof(path));
-
-                path = filePath;
-            }
-            else
-            {
-                if (!path.EndsWith(EditorSnapshotAnalysisCollector.DefaultFileExtension))
-                    path += EditorSnapshotAnalysisCollector.DefaultFileExtension;
-
-                if (!File.Exists(path))
-                    throw new ArgumentException($"File \"{path}\" does not exist or can't be accessed.", nameof(path));
-            }
+            if (!TryResolvePath(path, out var resolvedPath, out var error))
+                throw new ArgumentException(error, nameof(path));
 
             try
             {
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                using var stream = new FileStream(resolvedPath, FileMode.Open, FileAccess.Read);
                 Replay = SnapshotDeserializer.DeserializeSnapshots(stream);
             }
             catch (Exception e)
             {
-                throw new Exception($"Failed to deserialize snapshots from file \"{path}\".", e);
+                throw new Exception($"Failed to deserialize snapshots from file \"{resolvedPath}\".", e);
             }
         }
-        public override SnapshotSaverInitData RetrieveInitData() => Replay.InitData;
 
-        public override Dictionary<long, ElympicsSnapshotWithMetadata> RetrieveSnapshots() => Replay.Snapshots;
-        public void AddStateMetaData(ElympicsBehavioursManager behaviourManager)
+        /// <summary>
+        /// Resolves <paramref name="path"/> to an existing replay file. A path ending with a directory separator
+        /// (e.g. "C:\Users\Elympics\Snapshots\") means the newest replay file in that directory, and the replay extension is optional.
+        /// </summary>
+        internal static bool TryResolvePath(string? path, out string resolvedPath, out string error)
         {
-            long? firstTick = null;
-            foreach (var snapshotWithMeta in Replay.Snapshots)
+            resolvedPath = string.Empty;
+            error = string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
             {
-                firstTick ??= snapshotWithMeta.Key;
-                behaviourManager.ApplySnapshot(snapshotWithMeta.Value, ElympicsBehavioursManager.StatePredictability.Both, true);
-                behaviourManager.AddStateMetaData(snapshotWithMeta.Value);
+                error = "Path to snapshot replay file can't be empty.";
+                return false;
             }
-            behaviourManager.ApplySnapshot(Replay.Snapshots[firstTick!.Value]);
+
+            var extension = EditorSnapshotAnalysisCollector.DefaultFileExtension;
+            if (path!.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar))
+            {
+                if (!Directory.Exists(path))
+                {
+                    error = $"Directory \"{path}\" does not exist or can't be accessed.";
+                    return false;
+                }
+                var newest = Directory.EnumerateFiles(path, "*" + extension).OrderByDescending(File.GetLastWriteTime).FirstOrDefault();
+                if (string.IsNullOrEmpty(newest))
+                {
+                    error = $"No files with extension \"{extension}\" found in directory \"{path}\".";
+                    return false;
+                }
+                resolvedPath = newest;
+                return true;
+            }
+
+            if (!path.EndsWith(extension))
+                path += extension;
+            if (!File.Exists(path))
+            {
+                error = $"File \"{path}\" does not exist or can't be accessed.";
+                return false;
+            }
+            resolvedPath = path;
+            return true;
         }
     }
 }

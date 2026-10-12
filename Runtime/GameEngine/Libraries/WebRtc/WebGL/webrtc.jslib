@@ -3,6 +3,8 @@
  *   $webRtcState: WebRtcState,
  *   WebRtcAllocate: () => number,
  *   WebRtcFree: (id: number) => void,
+ *   WebRtcGetInstanceCount: () => number,
+ *   ElympicsGetHeapSize: () => number,
  *   WebRtcSetIceServers: (id: number, iceServersJsonPtr: Pointer | null) => void,
  *   WebRtcSetOfferAnnouncingDelay: (delayMs: number) => void,
  *   WebRtcCreateDataChannel: (id: number, labelPtr: Pointer, reliable: boolean) => number,
@@ -591,6 +593,15 @@ const LibraryWebRtc = {
 
         delete webRtcState.instances[id];
         instance.close();
+    },
+
+    WebRtcGetInstanceCount: function () {
+        return Object.keys(webRtcState.instances).length;
+    },
+
+    // The wasm heap only grows. HEAPU8 is read here, as Module may not re-export it.
+    ElympicsGetHeapSize: function () {
+        return HEAPU8.buffer.byteLength;
     },
 
     WebRtcSetIceServers: function (id, iceServersJsonPtr) {

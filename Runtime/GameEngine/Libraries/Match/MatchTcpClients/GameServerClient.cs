@@ -24,7 +24,8 @@ namespace MatchTcpClients
         private UniTaskCompletionSource<ConnectedMessage>? _sessionConnectedTcs;
 
         private readonly IGameServerSerializer _serializer;
-        private IClientSynchronizer _clientSynchronizer = null!;
+        private IClientSynchronizer? _clientSynchronizer;
+        private bool _disposed;
 
         public event Action? Connected;
         public event Action<TimeSynchronizationData>? ConnectedAndSynchronized;
@@ -48,8 +49,8 @@ namespace MatchTcpClients
 
         private void Initialize()
         {
-            NetworkClient?.Dispose();
-            NetworkClient = null;
+            DisposeNetworkClient();
+            UnsubscribeSynchronizer();
             NetworkClient = CreateNetworkClient();
 
             _clientDisconnectedCts?.Cancel();
@@ -64,13 +65,50 @@ namespace MatchTcpClients
             _clientSynchronizer.ReliablePingGenerated += SendReliableCommand;
             _clientSynchronizer.UnreliablePingGenerated += SendUnreliableCommand;
             _clientSynchronizer.AuthenticateUnreliableGenerated += SendUnreliableCommand;
-            _clientSynchronizer.Synchronized += data => Synchronized?.Invoke(data);
+            _clientSynchronizer.Synchronized += OnSynchronized;
             _clientSynchronizer.TimedOut += OnTimeout;
+        }
+
+        private void OnSynchronized(TimeSynchronizationData data) => Synchronized?.Invoke(data);
+
+        private void UnsubscribeSynchronizer()
+        {
+            if (_clientSynchronizer == null)
+                return;
+            _clientSynchronizer.ReliablePingGenerated -= SendReliableCommand;
+            _clientSynchronizer.UnreliablePingGenerated -= SendUnreliableCommand;
+            _clientSynchronizer.AuthenticateUnreliableGenerated -= SendUnreliableCommand;
+            _clientSynchronizer.Synchronized -= OnSynchronized;
+            _clientSynchronizer.TimedOut -= OnTimeout;
+            _clientSynchronizer = null;
+        }
+
+        private void DisposeNetworkClient()
+        {
+            var networkClient = NetworkClient;
+            NetworkClient = null;
+            if (networkClient == null)
+                return;
+            networkClient.DataReceived -= OnInGameDataReceived;
+            networkClient.Disconnected -= Disconnect;
+            networkClient.Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            Disconnect();
+            UnsubscribeSynchronizer();
+            DisposeNetworkClient();
         }
 
         public async UniTask ConnectAsync(CancellationToken ct = default)
         {
             var logger = _logger.WithMethodName();
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
             Disconnect();
             Initialize();
 
@@ -108,7 +146,8 @@ namespace MatchTcpClients
             TimeSynchronizationData synchronizationData;
             try
             {
-                Func<UniTask<TimeSynchronizationData>> func = () => _clientSynchronizer.SynchronizeOnce(sessionToken, ct);
+                var clientSynchronizer = _clientSynchronizer!;
+                Func<UniTask<TimeSynchronizationData>> func = () => clientSynchronizer.SynchronizeOnce(sessionToken, ct);
                 synchronizationData = await func.WithRetry(Config.InitialSynchronizeMaxRetries,
                     onRetry: i => logger.LogInfo($"Could not perform initial synchronization, retrying... #{i}"), ct: linkedCts.Token);
             }
@@ -120,7 +159,7 @@ namespace MatchTcpClients
             }
 
             InvokeSafely(ConnectedAndSynchronized, synchronizationData, logger);
-            _clientSynchronizer.StartContinuousSynchronizingAsync(sessionToken, _clientDisconnectedCts.Token).Forget();
+            _clientSynchronizer!.StartContinuousSynchronizingAsync(sessionToken, _clientDisconnectedCts.Token).Forget();
         }
 
         protected abstract UniTask ConnectInternalAsync(CancellationToken ct = default);
@@ -177,7 +216,8 @@ namespace MatchTcpClients
             logger.LogInfo("Aborting connection.");
             cts.Cancel();
             cts.Dispose();
-            _clientSynchronizer.TimedOut -= OnTimeout;
+            if (_clientSynchronizer != null)
+                _clientSynchronizer.TimedOut -= OnTimeout;
         }
 
         private void SendReliableCommand(Command command) => NetworkClient?.ReliableChannel.Send(_serializer.Serialize(command));
@@ -207,10 +247,10 @@ namespace MatchTcpClients
                     RespondForPing();
                     break;
                 case MessageType.PingClientResponse when label == INetworkClient.ReliableLabel:
-                    _clientSynchronizer.ReliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
+                    _clientSynchronizer?.ReliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
                     break;
                 case MessageType.PingClientResponse when label == INetworkClient.UnreliableLabel:
-                    _clientSynchronizer.UnreliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
+                    _clientSynchronizer?.UnreliablePingReceived(_serializer.Deserialize<PingClientResponseMessage>(data));
                     break;
                 case MessageType.InGameData:
                     _ = InvokeReceivedMessageEvent<InGameDataMessage>(data, InvokeDataReceived);

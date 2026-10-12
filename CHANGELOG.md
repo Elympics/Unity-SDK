@@ -11,6 +11,7 @@
 * Clear the screen to black in the generated boot scene ([d8d7de2](https://github.com/Elympics/Unity-SDK/commit/d8d7de2a105e7d3c0d0f9428d71071ee211e37a2))
 * Copy errors to stderr only in server builds ([b431c22](https://github.com/Elympics/Unity-SDK/commit/b431c225829a5fab9e9a751c35598e0a2b797620))
 * Correctly clear CancellationTokenSource-type fields in WebGameServerClient after disposing of them ([b769c84](https://github.com/Elympics/Unity-SDK/commit/b769c84ca4fad99f749b08421a7583ca89814b0f))
+* Do not initialize a gameplay scene that activates during teardown ([b46867d](https://github.com/Elympics/Unity-SDK/commit/b46867db26c3dfb6e8fd5cf1028f7fe6c265898d))
 * Don't end the game when the server handler's start wait is cancelled ([a4d3e13](https://github.com/Elympics/Unity-SDK/commit/a4d3e137048e59435f954f229cf8fead942e9d54))
 * Don't tear down WebRTC connection on transient disconnected state ([0bf7d43](https://github.com/Elympics/Unity-SDK/commit/0bf7d43870c6b8ea6daf88471e087f825aa326b3))
 * dontdestroyonload for root object ([9edb933](https://github.com/Elympics/Unity-SDK/commit/9edb933a47b6226a5de1275f7cadceb6019917a9))
@@ -34,9 +35,11 @@
 * force snapshot fix ([150c58f](https://github.com/Elympics/Unity-SDK/commit/150c58f2bec28d5fbd30a785dc80a83b0eba285b))
 * Ignore EndGame calls after the game has ended ([0356fa8](https://github.com/Elympics/Unity-SDK/commit/0356fa8715d97c33c84573e0c8366fe81e3490dc))
 * In project clones, link the Packages dir instead of copying it ([4abc60d](https://github.com/Elympics/Unity-SDK/commit/4abc60d8a6207fb55bf7beaafbc077bf80c00119))
+* Initialize the replication pipeline in single player ([0c57feb](https://github.com/Elympics/Unity-SDK/commit/0c57febdfc802cac340b2b5ce894f0f063469309))
 * Initialize the replication pipeline once on the half-remote server ([3041499](https://github.com/Elympics/Unity-SDK/commit/304149923a80aaf5fe990e92ec9e2932f802d3eb))
 * Install missing meta files for Unity WebRTC package ([11861a8](https://github.com/Elympics/Unity-SDK/commit/11861a8d82e9abad3893156b7c1f8962f0937e49))
 * Keep the Match Launcher tabs one line high and let the log fill the window ([46cf488](https://github.com/Elympics/Unity-SDK/commit/46cf488d2c2b87a7247f341569512bd558471c20))
+* Let replay teardown release the replay controller's client ([34ed607](https://github.com/Elympics/Unity-SDK/commit/34ed607b7790c15b42efed276f66f70de9ca6401))
 * Log half-remote connection retries as one-line warnings ([4c85a57](https://github.com/Elympics/Unity-SDK/commit/4c85a576959f81bbc5c722b920cfa7ddb282f355))
 * Log snapshot collector disposal through ElympicsLogger ([9441d61](https://github.com/Elympics/Unity-SDK/commit/9441d6185e5911b10a2b889d9d31a11ee43e6661))
 * Log the missing boot scene warning on the first return to boot ([f6d13a2](https://github.com/Elympics/Unity-SDK/commit/f6d13a233dedc52bb6372ed43df6474c7a206708))
@@ -49,37 +52,40 @@
 * Make offer/answer/candidate JSON compatible with game server ([b89ecdd](https://github.com/Elympics/Unity-SDK/commit/b89ecdd219cd8ad1d3cf4b4b567576b1c4b63303))
 * make rtt more responsive ([43360c9](https://github.com/Elympics/Unity-SDK/commit/43360c984b3affb2dcc2d733c6882410c18ab570))
 * Make score timestamp be in milliseconds instead of seconds ([1c8b0d3](https://github.com/Elympics/Unity-SDK/commit/1c8b0d39965ef7cc6c05a73038a31a3e705a4fbd))
+* Move ElympicsGetHref jslib from PlayPad and implement it correctly ([dae9f53](https://github.com/Elympics/Unity-SDK/commit/dae9f53d16dc247bd579426336bf993eacbda71a))
 * Pass synchronization data to RoundTripTimeCalculator on every synchronization ([b130c5d](https://github.com/Elympics/Unity-SDK/commit/b130c5d5366e81b66a2e9b69d241d86d11014654))
 * Prevent dropped requests from crashing SimpliHttpSignalingServer ([42d41a0](https://github.com/Elympics/Unity-SDK/commit/42d41a0673b1a7e61fbaf20eb0d7ad988fcb380b))
 * Prevent ElympicsLobbyClient from creating its own instance of logger context, remove redundant prefix from webrtc.jslib logs ([8c2188f](https://github.com/Elympics/Unity-SDK/commit/8c2188f8c85541898365d63e5c2822dfdfaa7718))
 * Prevent fails in CI when quitting batchmode ([06cd43e](https://github.com/Elympics/Unity-SDK/commit/06cd43e7d0da6654dbdc4f54134f6266de5fdfbf))
-* Re-initialize ClientSynchronizer on every reconnect ([1ea0c09](https://github.com/Elympics/Unity-SDK/commit/1ea0c09cb9439b223f50cfccc820bb5f75e288ca))
+* Read replays whose snapshots contain unchanged states ([41ac658](https://github.com/Elympics/Unity-SDK/commit/41ac658c10e2bddbdc96e7f4268c20294c647d79))
 * Record each snapshot with its own tick end time ([f372fa9](https://github.com/Elympics/Unity-SDK/commit/f372fa9b1ebc2dd868deb5e67379f7ba911d97a6))
 * Refresh an expired developer token when entering Play mode ([4dc694e](https://github.com/Elympics/Unity-SDK/commit/4dc694ed4aea5946eff23010205536a1c3bf05b0))
+* Re-initialize ClientSynchronizer on every reconnect ([1ea0c09](https://github.com/Elympics/Unity-SDK/commit/1ea0c09cb9439b223f50cfccc820bb5f75e288ca))
+* Reject TCP/UDP launches on WebGL ([36bd767](https://github.com/Elympics/Unity-SDK/commit/36bd76759063af688ae8a11cb79e4592632dd76e))
+* Release the physics simulator's static instance on destroy ([3feeda3](https://github.com/Elympics/Unity-SDK/commit/3feeda3445e10a63bf24ca304f0c7ca719b08f14))
 * Remove DateTime.UtcNow call from GetGameplayTimeDelegate ([eae9405](https://github.com/Elympics/Unity-SDK/commit/eae9405937ddb434d64dc3865365a44cc9d84812))
 * Report a launch or spawn exception once instead of logging it before throwing ([da6c16b](https://github.com/Elympics/Unity-SDK/commit/da6c16b9777586f9326a3ed7a7d7d40f5e8b71dc))
 * Reset last received snapshot counter in ElympicsWorld.ActivatePlayer ([4873e89](https://github.com/Elympics/Unity-SDK/commit/4873e89ba8aa05f96e6282aee55ff7d5be33761a))
 * Restore the open scenes after a Match Launcher launch from edit mode ([2242ef7](https://github.com/Elympics/Unity-SDK/commit/2242ef78a0e9094361c1f137a9bfcae2b88553a9))
+* Return to a generated empty scene when the boot scene is unusable ([2496296](https://github.com/Elympics/Unity-SDK/commit/24962969ef3528f2d541a30c1c1ff41112c21c11))
 * Size Match Launcher event lines to their wrapped text ([bf95063](https://github.com/Elympics/Unity-SDK/commit/bf950635a8584e22d2b6f8218efb4b29805ee939))
 * Size the Match Launcher tabs by their labels ([940afe3](https://github.com/Elympics/Unity-SDK/commit/940afe3c0c172d91e360e5bd38334f38bd396d96))
 
 
-* refactor!: Simplify match launcher and remove obsolete leftovers ([7718732](https://github.com/Elympics/Unity-SDK/commit/7718732ecd68cad194909d139f2a3403de8007ed))
-* refactor!: Make ElympicsMatchLauncher an abstract class only the SDK implements ([529d11b](https://github.com/Elympics/Unity-SDK/commit/529d11baa3a9019553807086f35e87c93c67b8f3))
-* feat!: Leave server and half-remote code out of WebGL players ([2264e36](https://github.com/Elympics/Unity-SDK/commit/2264e36092dc06088fef10cddf7e7d45675365a4))
-* feat!: Warn about Newtonsoft.Json in runtime code ([e43824f](https://github.com/Elympics/Unity-SDK/commit/e43824f12f64a2c56292cef70b90db43d6bfebbd))
-* refactor!: Rename AbortMatchAsync to ReturnToBootAsync ([6d99f8e](https://github.com/Elympics/Unity-SDK/commit/6d99f8ec4c52ffc6ffb626fb1bdee257c2ba3aad))
-
-
 ### Features
 
-* Add 'Manage games...' section for uploading StreamingAssets bundles ([7abd46f](https://github.com/Elympics/Unity-SDK/commit/7abd46fda36e5a59328cffca53d24393ae0ef75f))
 * Add context menu entry for creating Weaver settings SO ([14457e5](https://github.com/Elympics/Unity-SDK/commit/14457e52d3a3d166e315c5c3fd73e87d0688c981))
 * Add context to WebRTC logs ([875bbb3](https://github.com/Elympics/Unity-SDK/commit/875bbb38ad0a2fc008308be17f01ac1e4ec0b209))
 * add custom date for score report ([e7c3ad9](https://github.com/Elympics/Unity-SDK/commit/e7c3ad94099ce563e02c09dbab9b32e44a5b0e64))
 * Add event on chosing WebRTC candidate pair, include UsesTurn in structured logs ([117f4b9](https://github.com/Elympics/Unity-SDK/commit/117f4b92d5906299f1a8edf699915ba227c09331))
+* Add host-driven ElympicsMatchLauncher ([54b5888](https://github.com/Elympics/Unity-SDK/commit/54b588850d48ea29982a87fbc5bc96b32190d424))
+* Add 'Manage games...' section for uploading StreamingAssets bundles ([7abd46f](https://github.com/Elympics/Unity-SDK/commit/7abd46fda36e5a59328cffca53d24393ae0ef75f))
+* Add match launch request protocol types ([9136a90](https://github.com/Elympics/Unity-SDK/commit/9136a900294341e07fda0399ed93b2801790041f))
+* Add match launcher build validation and Editor window ([947f81d](https://github.com/Elympics/Unity-SDK/commit/947f81d9d24a1d0eafe210e3088168456b622faf))
 * Add panel for choosing Elympics DEFINE symbols used ([e940214](https://github.com/Elympics/Unity-SDK/commit/e940214c57b07ba0553e630ab9506f80a43a0458))
+* Add WebGL and native host bridges for the match launcher ([2b17da7](https://github.com/Elympics/Unity-SDK/commit/2b17da7853adfd9700026a52080a42099305ed5a))
 * Assign Network IDs in automated way only ([4285dec](https://github.com/Elympics/Unity-SDK/commit/4285dec8386ac2a6196c088e313b889da0966a70))
+* Configure half-remote matches from launch data ([2527767](https://github.com/Elympics/Unity-SDK/commit/252776785ecb3de4baff93fd347a02cf0e0f6f70))
 * Expose internals to the PlayPad lobby assemblies ([4963728](https://github.com/Elympics/Unity-SDK/commit/4963728197000728fd10cb4264b06a27283a4da9))
 * Implement outlets for outputting logs in different formats ([3bd38b8](https://github.com/Elympics/Unity-SDK/commit/3bd38b86fc7521a95a6900dcde057068c3ea7a84))
 * Include network details in JSON breadcrumbs ([a5f1c1b](https://github.com/Elympics/Unity-SDK/commit/a5f1c1bb24ab6d2b47bb86f244b56517447a91a2))
@@ -87,13 +93,31 @@
 * Introduce intermediate score submission ([2958b72](https://github.com/Elympics/Unity-SDK/commit/2958b724b9f8a2e081baf9db8156d207f06fd886))
 * Launch a snapshot replay from a loaded retriever ([b0d7a46](https://github.com/Elympics/Unity-SDK/commit/b0d7a468ff909ffabc95ecea6ec34bdec2599f27))
 * Launch from the Match Launcher window with its own data, in UI Toolkit ([8929ba0](https://github.com/Elympics/Unity-SDK/commit/8929ba0f54326e572e9c60c41d258233b86561e7))
+* Launch matches with typed per-mode launch data ([7078795](https://github.com/Elympics/Unity-SDK/commit/7078795212dac61b74415e9bc02233c975dc7e83))
+* Launch snapshot replays from a path or URL ([7f4fffa](https://github.com/Elympics/Unity-SDK/commit/7f4fffa84c04f0e6535680afa7f023a9f5aa1106))
+* Leave server and half-remote code out of WebGL players ([2264e36](https://github.com/Elympics/Unity-SDK/commit/2264e36092dc06088fef10cddf7e7d45675365a4))
 * Log every emitted host event at debug level ([7c6a8cb](https://github.com/Elympics/Unity-SDK/commit/7c6a8cbb899e1ce6e61f2829d87de855ad31285f))
 * Make debug network logs always be sent to server with ELYMPICS_DEBUG define present ([ff098ff](https://github.com/Elympics/Unity-SDK/commit/ff098ff34b0584b4f509a2db241f81fe8b4ed6d4))
+* Make repeated match launches release their resources ([bf558a9](https://github.com/Elympics/Unity-SDK/commit/bf558a9426da39a62dd2921becfd527b702ab4be))
+* Per-mode launch commands on host bridges ([68f1eb4](https://github.com/Elympics/Unity-SDK/commit/68f1eb42c7888c275fbed24700aa07f5904b3536))
 * Pick the Match Launcher's game from a drop-down ([bca3583](https://github.com/Elympics/Unity-SDK/commit/bca35833bf13010a4a52705546b76653dce605ff))
 * Pick the Match Launcher's launch mode with tabs ([8070509](https://github.com/Elympics/Unity-SDK/commit/8070509b6711a4ce934eca5ed0c159ad9ee76a16))
 * Provide an explicit Seed getter in the server InitialMatchPlayerData list ([50cd230](https://github.com/Elympics/Unity-SDK/commit/50cd230e99bf4a7976354bfb588c8b919a2b944e))
+* Remove gameplay-scene debug modes in favour of the Match Launcher window ([2832fce](https://github.com/Elympics/Unity-SDK/commit/2832fcefdce937df1e1bee39d0ed66904198f416))
 * Restore the lobby, auth and client secret launch parameters ([8defc0c](https://github.com/Elympics/Unity-SDK/commit/8defc0c80c1f7353df13a9afd137f423029a8f0c))
+* Start a match from ELYMPICS_LAUNCH_MODE ([76ef753](https://github.com/Elympics/Unity-SDK/commit/76ef7534a258c63fb975ef8c9322d2a717c5eb8e))
+* Support bots in SinglePlayer mode ([bc6a3cf](https://github.com/Elympics/Unity-SDK/commit/bc6a3cf7f6b4e1c2aad46f503c18dfa59c618c9e))
 * Throw GameServerClosedException in case of HTTP 502 error ([8895219](https://github.com/Elympics/Unity-SDK/commit/889521998fead50128df0af7b511411c10747cb8))
+* Warn about Newtonsoft.Json in runtime code ([e43824f](https://github.com/Elympics/Unity-SDK/commit/e43824f12f64a2c56292cef70b90db43d6bfebbd))
+
+
+### Code Refactoring
+
+* Make ElympicsMatchLauncher an abstract class only the SDK implements ([529d11b](https://github.com/Elympics/Unity-SDK/commit/529d11baa3a9019553807086f35e87c93c67b8f3))
+* Remove orphaned lobby-era types and dead parameters ([8d3b3e8](https://github.com/Elympics/Unity-SDK/commit/8d3b3e8fd11cf360bf9cae6e8d3ffd246ab2e45a))
+* Rename AbortMatchAsync to ReturnToBootAsync ([6d99f8e](https://github.com/Elympics/Unity-SDK/commit/6d99f8ec4c52ffc6ffb626fb1bdee257c2ba3aad))
+* Replace AsyncEventsDispatcher with UniTask main-thread posting ([5f2088e](https://github.com/Elympics/Unity-SDK/commit/5f2088efb1515a022850a58740d6f4928d9769ee))
+* Simplify match launcher and remove obsolete leftovers ([7718732](https://github.com/Elympics/Unity-SDK/commit/7718732ecd68cad194909d139f2a3403de8007ed))
 
 
 ### Performance Improvements 🚀
@@ -102,31 +126,21 @@
 * Stop polling config and Build Settings in the Match Launcher window ([0a6e4d2](https://github.com/Elympics/Unity-SDK/commit/0a6e4d25e3af64a74f71a54d554fcb042d9d68f6))
 
 
+
 ### BREAKING CHANGES :warning:
 
-* StringBytesConverter is removed.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-* IElympicsMatchLauncher is removed. Use
-ElympicsMatchLauncher, which can no longer be implemented outside the
-SDK; mocking libraries built on Castle DynamicProxy still work.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-* WebGL players can no longer be half-remote clients
-unless the ELYMPICS_WEBGL_HALF_REMOTE scripting define is set.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-* the analyzer rule ELY001 (server-to-players RPC in IInitializable.Initialize) is
-renamed to ELW001. Update suppressions of ELY001.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-* IElympicsMatchLauncher.AbortMatchAsync is now ReturnToBootAsync and
-ElympicsAbortResult is ElympicsReturnToBootResult. Hosts send returnToBoot instead of abortMatch
-(native: ElympicsHost_ReturnToBoot; ElympicsHost_AbortMatch is removed) and receive
-returnToBootAccepted/returnToBootFailed instead of abortAccepted/abortFailed. The host protocol
-version is 3.0.0 and the native API version is 3.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+* **Launching matches.** Matches start through `ElympicsMatchLauncher.Instance` with typed per-mode launch data: `LaunchOnlineAsync`, `LaunchSinglePlayerAsync`, `LaunchHalfRemoteClientAsync`, `LaunchHalfRemoteServerAsync` and `LaunchSnapshotReplayAsync`. Return to the boot scene with `ReturnToBootAsync` and track progress with `State`, `IsCurrentlyInMatch`, `StateChanged`, `MatchEnded` and `Disconnected`. `ElympicsMatchLauncher` is an abstract class only the SDK implements (Castle DynamicProxy mocks still work). `IElympicsMatchLauncher`, `IMatchLauncher`, `ILobby`, `LobbyRegister`, `IGameplaySceneMonitor`, `ElympicsLaunchRequest`, `MatchmakingFinishedData`, `JoinedMatchMode` and `ElympicsLaunchErrorCode.ProtocolMismatch` are removed. `ElympicsLaunchDefaults.NoPostMatchTimeout` is renamed to `NoTimeout`.
+* **Removed launch paths.** Pressing Play in a gameplay scene no longer starts a match. Use **Tools > Elympics > Match Launcher**, or set `ELYMPICS_LAUNCH_MODE` / `--elympics-launch-mode`. `UNITY_SERVER` builds need `--elympics-launch-mode=halfRemoteServer` or a host launch. ParrelSync clones get `--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<N>` as their default arguments.
+* **Boot scene.** Set `ElympicsConfig > Boot scene` and add it and every gameplay scene to Build Settings. Without a boot scene, matches return to a generated empty scene.
+* **Host protocol 3.0.0 / native API 3.** There is one launch command per mode. `returnToBoot` replaces `abortMatch`, and `returnToBootAccepted`/`returnToBootFailed` replace `abortAccepted`/`abortFailed`. `ElympicsHost_LaunchMatch`, `ElympicsHost_AbortMatch`, `window.elympicsHost.launchMatch` and `window.elympicsLaunchData` are removed: pages call a launch method after the `ready` event. Native hosts must be rebuilt. See `Documentation~/MatchLauncher.md`.
+* **WebGL players** leave out server and half-remote server code. The half-remote client needs the `ELYMPICS_WEBGL_HALF_REMOTE` scripting define.
+* **Config.** `ElympicsConfig.currentGame` is removed: the active game is the first entry of `availableGames` (reorder games in Manage Games to pick another). The gameplay-scene debug modes are removed, together with `GameplaySceneDebugModeEnum`, `HalfRemoteModeEnum`, `GetHalfRemoteMode`, `GetHalfRemotePlayerIndex` and `IsOverridenInHalfRemoteByClone`. `LocalPlayerAndBots` is removed: SinglePlayer supports bots.
+* **Removed features:** Rooms, the lobby client (`ElympicsLobbyClient`), the auth service client, the legacy Matchmaker and the Debug Online mode, Respect, Leaderboards, SmartContractService, Web3/TON signers, the standalone bot build, the Tech Demo and Simple Menu samples, and the Guid-less `IClientHandler`/`IServerHandler`/`IBotHandler` (use the `I*HandlerGuid` interfaces). The lobby, auth and Rooms code moved to the PlayPad SDK (3.0.0).
+* **ElympicsScore** holds one value per player: index it with `score[playerIndex]`. It no longer enumerates per-player arrays.
+* `AsyncEventsDispatcher` and `IAsyncEventsDispatcher` are removed. Scenes that added the component outside the Elympics prefab show a missing script: remove it.
+* Also removed: `ElympicsClient.TimeSynchronized` (RTT is published through `CrossAssemblyEventBroadcaster`), `StringBytesConverter`, `ITelegramSigner`, `RegionData` and `MatchDetails`.
+* `IReplayManipulator` has a new `UnloadReplay` method that custom implementations must add.
+* Analyzer rule `ELY001` (server-to-players RPC in `IInitializable.Initialize`) is renamed to `ELW001`. Update its suppressions.
 
 
 

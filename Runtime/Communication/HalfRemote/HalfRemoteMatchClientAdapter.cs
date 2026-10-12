@@ -1,13 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using MatchTcpClients.Synchronizer;
 using MessagePack;
 using UnityConnectors.HalfRemote;
 using UnityConnectors.HalfRemote.Ntp;
-using UnityEngine;
 using Random = System.Random;
 
 namespace Elympics
@@ -19,13 +18,13 @@ namespace Elympics
         public event Action<TimeSynchronizationData> Synchronized;
         public event Action<ElympicsSnapshot> SnapshotReceived;
         public event Action<ElympicsRpcMessageList> RpcMessageListReceived;
-        public event Action<byte[]> InGameDataUnreliableReceived;
+        public event Action<Guid> MatchEnded;
+        public event Action Disconnected;
 
         private readonly RingBufferElympicsDataWithTick<ElympicsInput> _input;
         private readonly ElympicsInput[] _inputsBuffer;
         private readonly List<ElympicsInput> _inputsToSend;
 
-        private readonly WaitForSeconds _synchronizationDelay;
         private readonly HalfRemoteLagConfig _lagConfig;
         private readonly Random _lagRandom;
 
@@ -36,6 +35,7 @@ namespace Elympics
 
         public HalfRemoteMatchClientAdapter(ElympicsGameConfig config)
         {
+            _disposeToken = _disposeCts.Token;
             _input = new RingBufferElympicsDataWithTick<ElympicsInput>(config.InputsToSendBufferSize);
             _inputsBuffer = new ElympicsInput[config.InputsToSendBufferSize];
             _inputsToSend = new List<ElympicsInput>(config.InputsToSendBufferSize);
@@ -43,28 +43,52 @@ namespace Elympics
             _lagRandom = new Random(config.HalfRemoteLagConfig.RandomSeed);
         }
 
-        internal IEnumerator ConnectToServer(Action<bool> connectedCallback, string userId, HalfRemoteMatchClient client)
+        internal void SetupClientCallbacks(string userId, HalfRemoteMatchClient client)
         {
             _userId = userId;
 
             _client = client;
-            _client.ReliableReceivingError += ElympicsLogger.LogError;
+            _client.ReliableReceivingError += message => ElympicsLogger.LogError(message);
             _client.ReliableReceivingEnded += () =>
             {
-                _playerDisconnected = true;
-                ElympicsLogger.Log("Reliable receiving ended.");
+                ElympicsLogger.LogInfo("Reliable receiving ended.");
+                OnReceivingEnded();
             };
-            _client.UnreliableReceivingError += ElympicsLogger.LogError;
-            _client.UnreliableReceivingEnded += () => ElympicsLogger.Log("Unreliable receiving ended.");
-            _client.WebRtcUpgraded += () => ElympicsLogger.Log("Upgraded connection to WebRTC.");
+            _client.UnreliableReceivingError += message => ElympicsLogger.LogError(message);
+            _client.UnreliableReceivingEnded += () =>
+            {
+                ElympicsLogger.LogInfo("Unreliable receiving ended.");
+                OnReceivingEnded();
+            };
             _client.NtpReceived += OnNtpReceived;
             _client.InGameDataForPlayerOnReliableChannelGenerated += OnReliableInGameDataReceived;
             _client.InGameDataForPlayerOnUnreliableChannelGenerated += OnUnreliableInGameDataReceived;
+            _client.MatchEnded += OnMatchEnded;
 
-            ElympicsLogger.Log("Connected to a half remote server.");
-            connectedCallback?.Invoke(true);
+            ElympicsLogger.LogInfo("Connected to a half remote server.");
+        }
 
-            return Synchronization();
+        internal async UniTaskVoid StartSynchronization(CancellationToken ct = default)
+        {
+            try
+            {
+                while (NotDisconnected())
+                {
+                    _client.SendNtp();
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        private void OnMatchEnded(Guid matchId) => MatchEnded?.Invoke(matchId);
+
+        private void OnReceivingEnded()
+        {
+            var hasBeenAlreadyDisconnected = _playerDisconnected;
+            _playerDisconnected = true;
+            if (!hasBeenAlreadyDisconnected)
+                Disconnected?.Invoke();
         }
 
         public void SetLastReceivedSnapshot(long tick) => _lastReceivedSnapshotTick = tick;
@@ -73,14 +97,13 @@ namespace Elympics
         public void PlayerDisconnected() => _client?.PlayerDisconnected();
 
         public void AddInputToSendBuffer(ElympicsInput input) => _ = _input.TryAddData(input);
-        public async Task SendBufferInput(long tick)
+        public void SendBufferInput(long tick)
         {
-            if (_input.Count() > 0)
-            {
-                GetInputCollectionToSend();
-                var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
-                await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
-            }
+            if (_input.Count() <= 0)
+                return;
+            GetInputCollectionToSend();
+            var data = new ElympicsInputList { Values = _inputsToSend, LastReceivedSnapshot = _lastReceivedSnapshotTick };
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(data), false);
         }
 
         private void GetInputCollectionToSend()
@@ -93,21 +116,20 @@ namespace Elympics
                 _inputsToSend.Add(_inputsBuffer[i]);
         }
 
-        public async Task SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            await SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
+        public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
-        public async Task SendRawDataToServer(byte[] rawData, bool reliable)
+        public void SendRawDataToServer(byte[] rawData, bool reliable)
         {
             Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;
 
-            await RunWithLag(() => sendDataAsync(rawData));
+            RunWithLag(() => sendDataAsync(rawData)).Forget();
         }
 
         private void OnUnreliableInGameDataReceived(byte[] data, string userId)
         {
             if (userId != _userId)
                 return;
-            InGameDataUnreliableReceived?.Invoke(data);
             ProcessDataFromServer(data);
         }
 
@@ -139,13 +161,13 @@ namespace Elympics
             }
         }
 
-        private async UniTask RunWithLag(Action action)
+        private async UniTaskVoid RunWithLag(Action action)
         {
             GetNewLag(out var lost, out var lagMs);
             if (lost)
                 return;
-            if (lagMs != 0)
-                await UniTask.Delay(lagMs, DelayType.Realtime);
+            if (lagMs != 0 && await UniTask.Delay(lagMs, DelayType.Realtime, cancellationToken: _disposeToken).SuppressCancellationThrow())
+                return;
 
             action.Invoke();
         }
@@ -164,15 +186,6 @@ namespace Elympics
             var u2 = 1.0 - _lagRandom.NextDouble();
             var randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
             return mean + stdDev * randStdNormal;
-        }
-
-        private IEnumerator Synchronization()
-        {
-            while (NotDisconnected())
-            {
-                _client.SendNtp();
-                yield return _synchronizationDelay;
-            }
         }
 
         private void OnNtpReceived(NtpData ntpData)
@@ -198,6 +211,20 @@ namespace Elympics
         }
 
         private bool NotDisconnected() => !_playerDisconnected;
-        public void Dispose() => _input?.Dispose();
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            // Drops lag-delayed sends, which would otherwise fire after the match is torn down.
+            _disposeCts.Cancel();
+            _disposeCts.Dispose();
+            _input?.Dispose();
+        }
+
+        private readonly CancellationTokenSource _disposeCts = new();
+        // Cached: reading CancellationTokenSource.Token after Dispose throws, and late sends are expected.
+        private readonly CancellationToken _disposeToken;
+        private bool _disposed;
     }
 }

@@ -1,6 +1,6 @@
 using System;
-using System.Collections;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using MatchTcpClients.Synchronizer;
 
@@ -25,8 +25,8 @@ namespace Elympics
         event Action DisconnectedByServer;
         event Action DisconnectedByClient;
 
-        IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct);
-        IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct);
+        UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct);
+        UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct);
         void Disconnect();
     }
 }

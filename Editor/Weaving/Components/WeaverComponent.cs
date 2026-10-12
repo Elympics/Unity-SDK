@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using Mono.Cecil;
 
@@ -17,22 +18,22 @@ namespace Elympics.Editor.Weaving.Components
 
     internal abstract class WeaverComponent
     {
-        private ModuleDefinition _activeModule;
-
-        protected TypeSystem TypeSystem => _activeModule?.TypeSystem;
+        protected ModuleDefinition? Module { get; private set; }
+        protected AssemblyDefinition? Assembly => Module?.Assembly;
+        protected TypeSystem? TypeSystem => Module?.TypeSystem;
 
         public virtual DefinitionType AffectedDefinitions => DefinitionType.None;
 
         public void OnBeforeModuleEdited(ModuleDefinition moduleDefinition)
         {
-            _activeModule = moduleDefinition;
+            Module = moduleDefinition;
             StartVisiting(moduleDefinition);
         }
 
         public void OnModuleEditComplete(ModuleDefinition moduleDefinition)
         {
             FinishVisiting(moduleDefinition);
-            _activeModule = null;
+            Module = null;
         }
 
         protected virtual void StartVisiting(ModuleDefinition moduleDefinition) { }

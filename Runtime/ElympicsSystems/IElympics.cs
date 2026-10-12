@@ -1,6 +1,6 @@
-using System;
-using System.Collections;
 using System.Threading;
+using Cysharp.Threading.Tasks;
+using Elympics.Core;
 
 namespace Elympics
 {
@@ -42,13 +42,21 @@ namespace Elympics
 
         #region Client
 
-        IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback = null, CancellationToken ct = default);
-        IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback = null, CancellationToken ct = default);
+        UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct = default);
+        UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct = default);
         void Disconnect();
 
         #endregion
 
         #region Server
+
+        /// <summary>
+        /// Server-only live tracker of the current score.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ElympicsScore.Enable"/> must be called before setting/retrieving any score.
+        /// </remarks>
+        ElympicsScore Score { get; }
 
         void EndGame(ResultMatchPlayerDatas result = null);
 

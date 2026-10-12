@@ -7,6 +7,8 @@ namespace Elympics.SnapshotAnalysis
     {
         public void LoadReplay(IReplayManipulatorClient replayClient, ReplayData data) { }
 
+        public void UnloadReplay() { }
+
         public void SetCurrentTick(long tick) { }
     }
 }

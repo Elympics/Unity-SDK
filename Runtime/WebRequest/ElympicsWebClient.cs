@@ -1,11 +1,11 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Web;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Networking;
-
-#nullable enable
 
 namespace Elympics
 {

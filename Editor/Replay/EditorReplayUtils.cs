@@ -1,3 +1,4 @@
+using System.Globalization;
 using UnityEngine;
 
 namespace Elympics.Editor.Replay
@@ -29,6 +30,6 @@ namespace Elympics.Editor.Replay
             }
         }
 
-        public static string FormatFloatMilliseconds(float value) => value.ToString("00.0", System.Globalization.CultureInfo.InvariantCulture) + MillisecondsSuffix;
+        public static string FormatFloatMilliseconds(float value) => value.ToString("00.0", CultureInfo.InvariantCulture) + MillisecondsSuffix;
     }
 }

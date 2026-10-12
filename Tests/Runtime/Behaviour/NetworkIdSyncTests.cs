@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using MessagePack;
 using NUnit.Framework;
 
 namespace Elympics.Tests
@@ -83,7 +85,7 @@ namespace Elympics.Tests
                 _sut.SyncAllocatedId(id);
 
             // Allocate several more ids via the enumerator
-            var allocatedIndexes = new System.Collections.Generic.HashSet<int>();
+            var allocatedIndexes = new HashSet<int>();
             _ = allocatedIndexes.Add(ExtractIndex(_sut.GetCurrent())); // index 0 (from ctor)
 
             for (var i = 0; i < 20; i++)
@@ -522,8 +524,8 @@ namespace Elympics.Tests
         {
             var original = new DynamicElympicsBehaviourInstanceData(7, new[] { 1001, 1002, 1003 }, "my/prefab");
 
-            var bytes = MessagePack.MessagePackSerializer.Serialize(original);
-            var deserialized = MessagePack.MessagePackSerializer.Deserialize<DynamicElympicsBehaviourInstanceData>(bytes);
+            var bytes = MessagePackSerializer.Serialize(original);
+            var deserialized = MessagePackSerializer.Deserialize<DynamicElympicsBehaviourInstanceData>(bytes);
 
             Assert.That(deserialized.ID, Is.EqualTo(original.ID));
             Assert.That(deserialized.InstanceType, Is.EqualTo(original.InstanceType));

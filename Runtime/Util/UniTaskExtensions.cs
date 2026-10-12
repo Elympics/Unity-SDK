@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using Cysharp.Threading.Tasks;
-
-#nullable enable
 
 namespace Elympics
 {

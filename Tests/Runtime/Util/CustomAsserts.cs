@@ -1,8 +1,8 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using NUnit.Framework;
-
-#nullable enable
 
 namespace Elympics.Tests
 {

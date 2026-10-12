@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elympics.Core.Logger;
 
 namespace Elympics
 {
@@ -123,13 +124,13 @@ namespace Elympics
 
                 // Increment generation on reuse
                 if (currGen == ushort.MaxValue)
-                    throw ElympicsLogger.LogException(new OverflowException($"Cannot use new networkId generation. The pool of generations (min: {0}, max: {ushort.MaxValue}) has been used up."));
+                    throw new OverflowException($"Cannot use new networkId generation. The pool of generations (min: {0}, max: {ushort.MaxValue}) has been used up.");
                 generation = currGen + 1;
 
                 var candidateId = EncodeNetworkId(generation, index);
                 _generations[index] = (ushort)generation;
                 if (!_dynamicAllocatedIds.Add(candidateId))
-                    throw ElympicsLogger.LogException($"Generated network ID {candidateId} (index={index}, gen={generation}) is already in use.");
+                    throw new ElympicsException($"Generated network ID {candidateId} (index={index}, gen={generation}) is already in use.");
 
                 return candidateId;
             }
@@ -143,7 +144,7 @@ namespace Elympics
             var networkId = EncodeNetworkId(generation, index);
 
             if (!_dynamicAllocatedIds.Add(networkId))
-                throw ElympicsLogger.LogException($"Generated network ID {networkId} (index={index}, gen={generation}) is already in use.");
+                throw new ElympicsException($"Generated network ID {networkId} (index={index}, gen={generation}) is already in use.");
 
             return networkId;
         }
@@ -164,8 +165,8 @@ namespace Elympics
                         continue;
                     }
 
-                    throw ElympicsLogger.LogException(new OverflowException("Cannot generate a network ID. "
-                                                                            + $"The pool of indices between min: {_min} and max: {_max} has been used up."));
+                    throw new OverflowException("Cannot generate a network ID. "
+                        + $"The pool of indices between min: {_min} and max: {_max} has been used up.");
                 }
 
                 // Skip already-used indices

@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using JetBrains.Annotations;
-
-#nullable enable
 
 namespace Elympics
 {

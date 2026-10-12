@@ -1,4 +1,5 @@
 using System;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
@@ -11,11 +12,6 @@ namespace Elympics
         public IUpdatable[] Updatables { get; }
         public IReconciliationHandler[] ReconciliationHandlers { get; }
         public IInputHandler InputHandler { get; }
-#pragma warning disable CS0618
-        public IClientHandler[] ClientHandlers { get; }
-        public IServerHandler[] ServerHandlers { get; }
-        public IBotHandler[] BotHandlers { get; }
-#pragma warning restore CS0618
         public IClientHandlerGuid[] ClientHandlersGuid { get; }
         public IServerHandlerGuid[] ServerHandlersGuid { get; }
         public IBotHandlerGuid[] BotHandlersGuid { get; }
@@ -39,17 +35,13 @@ namespace Elympics
                     {
                         var inputHandler = inputHandlers[i];
                         var componentIndex = Array.IndexOf(allComponents, inputHandler);
-                        ElympicsLogger.LogError($"More than one {nameof(IInputHandler)} component found on "
-                            + $"{elympicsBehaviour.gameObject.name}! Ignoring component no. {componentIndex} of type "
-                            + $"{inputHandler.GetType().Name}", allComponents[componentIndex]);
+                        ElympicsLogger.WithUnityContext(allComponents[componentIndex])
+                            .LogError($"More than one {nameof(IInputHandler)} component found on "
+                                + $"{elympicsBehaviour.gameObject.name}! Ignoring component no. {componentIndex} of type "
+                                + $"{inputHandler.GetType().Name}");
                     }
                 }
             }
-#pragma warning disable CS0618
-            ClientHandlers = elympicsBehaviour.GetComponents<IClientHandler>();
-            ServerHandlers = elympicsBehaviour.GetComponents<IServerHandler>();
-            BotHandlers = elympicsBehaviour.GetComponents<IBotHandler>();
-#pragma warning restore CS0618
             ClientHandlersGuid = elympicsBehaviour.GetComponents<IClientHandlerGuid>();
             ServerHandlersGuid = elympicsBehaviour.GetComponents<IServerHandlerGuid>();
             BotHandlersGuid = elympicsBehaviour.GetComponents<IBotHandlerGuid>();

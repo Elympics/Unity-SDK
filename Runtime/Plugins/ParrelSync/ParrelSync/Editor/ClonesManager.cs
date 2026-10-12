@@ -104,9 +104,6 @@ namespace ParrelSync
             Debug.Log("Library copy: " + cloneProject.libraryPath);
             ClonesManager.CopyDirectoryWithProgressBar(sourceProject.libraryPath, cloneProject.libraryPath,
                 "Cloning Project Library '" + sourceProject.name + "'. ");
-            Debug.Log("Packages copy: " + cloneProject.libraryPath);
-            ClonesManager.CopyDirectoryWithProgressBar(sourceProject.packagesPath, cloneProject.packagesPath,
-              "Cloning Project Packages '" + sourceProject.name + "'. ");
 
 
             //Link Folders
@@ -114,6 +111,7 @@ namespace ParrelSync
             ClonesManager.LinkFolders(sourceProject.projectSettingsPath, cloneProject.projectSettingsPath);
             ClonesManager.LinkFolders(sourceProject.autoBuildPath, cloneProject.autoBuildPath);
             ClonesManager.LinkFolders(sourceProject.localPackages, cloneProject.localPackages);
+            ClonesManager.LinkFolders(sourceProject.packagesPath, cloneProject.packagesPath);
 
             ClonesManager.RegisterClone(cloneProject);
 
@@ -183,7 +181,7 @@ namespace ParrelSync
         }
 
         /// <summary>
-        /// Is this project being opened by an Unity editor?
+        /// Is this project being opened by a Unity editor?
         /// </summary>
         /// <param name="projectPath"></param>
         /// <returns></returns>
@@ -210,7 +208,7 @@ namespace ParrelSync
                 case (RuntimePlatform.LinuxEditor):
                     return File.Exists(UnityLockFilePath);
                 default:
-                    throw new System.NotImplementedException("IsCloneProjectRunning: Unsupport Platfrom: " + Application.platform);
+                    throw new System.NotImplementedException("IsCloneProjectRunning: Unsupported Platform: " + Application.platform);
             }
         }
 
@@ -285,25 +283,6 @@ namespace ParrelSync
             Directory.CreateDirectory(path);
         }
 
-        /// <summary>
-        /// Copies the full contents of the unity library. We want to do this to avoid the lengthy re-serialization of the whole project when it opens up the clone.
-        /// </summary>
-        /// <param name="sourceProject"></param>
-        /// <param name="destinationProject"></param>
-        [System.Obsolete]
-        public static void CopyLibraryFolder(Project sourceProject, Project destinationProject)
-        {
-            if (Directory.Exists(destinationProject.libraryPath))
-            {
-                Debug.LogWarning("Library copy: destination path already exists! ");
-                return;
-            }
-
-            Debug.Log("Library copy: " + destinationProject.libraryPath);
-            ClonesManager.CopyDirectoryWithProgressBar(sourceProject.libraryPath, destinationProject.libraryPath,
-                "Cloning project '" + sourceProject.name + "'. ");
-        }
-
         #endregion
 
         #region Creating symlinks
@@ -361,7 +340,7 @@ namespace ParrelSync
         //	out int pBytesReturned, System.IntPtr lpOverlapped);
 
         /// <summary>
-        /// Create a link / junction from the original project to it's clone.
+        /// Create a link / junction from the original project to its clone.
         /// </summary>
         /// <param name="sourcePath"></param>
         /// <param name="destinationPath"></param>
@@ -504,8 +483,8 @@ namespace ParrelSync
         /// <summary>
         /// Copies directory located at sourcePath to destinationPath. Displays a progress bar.
         /// </summary>
-        /// <param name="source">Directory to be copied.</param>
-        /// <param name="destination">Destination directory (created automatically if needed).</param>
+        /// <param name="sourcePath">Directory to be copied.</param>
+        /// <param name="destinationPath">Destination directory (created automatically if needed).</param>
         /// <param name="progressBarPrefix">Optional string added to the beginning of the progress bar window header.</param>
         public static void CopyDirectoryWithProgressBar(string sourcePath, string destinationPath,
             string progressBarPrefix = "")

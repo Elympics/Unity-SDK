@@ -2,6 +2,9 @@
     <ui:Label text="Elympics SDK version: X.X.X" display-tooltip-when-elided="true" name="sdk-version" style="margin-left: 3px; margin-right: 3px; margin-top: 1px; margin-bottom: 1px;" />
     <ui:TextField label="Web endpoint" name="web-endpoint" binding-path="elympicsWebEndpoint" readonly="true" />
     <ui:TextField label="Game servers endpoint" name="gs-endpoint" binding-path="elympicsGameServersEndpoint" readonly="true" />
+    <uie:ObjectField label="Boot scene" name="boot-scene-object" type="UnityEditor.SceneAsset, UnityEditor" binding-path="bootSceneAsset" allow-scene-objects="false" tooltip="Scene the match launcher returns to after a match. Must be in Build Settings." />
+    <ui:TextField label="Boot scene path" name="boot-scene-path" binding-path="bootScene" readonly="true" />
+    <ui:HelpBox display-tooltip-when-elided="true" message-type="Warning" name="launcher-build-problems" style="display: none;" />
     <ui:Button text="Manage games in Elympics" display-tooltip-when-elided="true" name="manage-games-button" />
     <ui:ListView focusable="true" name="available-games" binding-path="availableGames" header-title="Local game configurations" show-foldout-header="true" show-add-remove-footer="true" fixed-item-height="20" />
     <ui:Label text="The current active game config is the first non-null position from the list above" display-tooltip-when-elided="true" style="flex-wrap: nowrap; -unity-font-style: italic; white-space: normal;" />

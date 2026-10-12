@@ -1,8 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
@@ -26,7 +28,7 @@ namespace Elympics
 
         private TimeSpan _startGameTimeout;
         private DateTime _waitToStartFinishTime;
-        private readonly WaitForSeconds _checkInterval = new(5);
+        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(5);
 
         public virtual void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas)
         {
@@ -38,9 +40,9 @@ namespace Elympics
 
             PlayersNumber = initialMatchPlayerDatas.Count;
             var humansPlayers = initialMatchPlayerDatas.Count(x => !x.IsBot);
-            ElympicsLogger.Log(
+            ElympicsLogger.LogInfo(
                 $"Game initialized for {initialMatchPlayerDatas.Count} players(including {initialMatchPlayerDatas.Count - humansPlayers} bots).");
-            ElympicsLogger.Log($"Waiting for {humansPlayers} human players to connect.");
+            ElympicsLogger.LogInfo($"Waiting for {humansPlayers} human players to connect.");
 
             var sb = new StringBuilder()
                 .AppendLine($"MatchId: {initialMatchPlayerDatas.MatchId}")
@@ -54,29 +56,31 @@ namespace Elympics
                 _ = sb.AppendLine(
                     $"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
 
-            ElympicsLogger.Log(sb.ToString());
+            ElympicsLogger.LogInfo(sb.ToString());
 
             if (!autoTerminateServer)
                 return;
 
             _startGameTimeout = TimeSpan.FromSeconds(startGameTimeoutSeconds);
-            _ = StartCoroutine(WaitForGameStartOrEnd());
+            WaitForGameStartOrEndAsync(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
-        private IEnumerator WaitForGameStartOrEnd()
+        private async UniTaskVoid WaitForGameStartOrEndAsync(CancellationToken ct)
         {
             _waitToStartFinishTime = DateTime.Now + _startGameTimeout;
 
-            while (DateTime.Now < _waitToStartFinishTime)
+            while (!ct.IsCancellationRequested && DateTime.Now < _waitToStartFinishTime)
             {
                 if (GameStarted)
-                    yield break;
+                    return;
 
-                ElympicsLogger.Log("Not all players connected yet...");
-                yield return _checkInterval;
+                ElympicsLogger.LogInfo("Not all players connected yet...");
+                _ = await UniTask.Delay(_checkInterval, DelayType.Realtime, cancellationToken: ct).SuppressCancellationThrow();
             }
+            if (ct.IsCancellationRequested || GameStarted)
+                return;
             ElympicsLogger.LogWarning(
-                $"Forcing game server to quit because conditions for {nameof(TerminationOption)}.{autoTerminationOnLeft} were met.");
+                $"Forcing game server to quit because not all players connected within {startGameTimeoutSeconds} s.");
             Elympics.EndGame();
         }
 
@@ -86,7 +90,7 @@ namespace Elympics
                 return;
 
             _ = PlayersConnected.Remove(player);
-            ElympicsLogger.Log($"Player {player} disconnected.");
+            ElympicsLogger.LogInfo($"Player {player} disconnected.");
 
             switch (autoTerminationOnLeft)
             {
@@ -114,7 +118,7 @@ namespace Elympics
             if (!IsEnabledAndActive)
                 return;
 
-            ElympicsLogger.Log($"Player {player} connected.");
+            ElympicsLogger.LogInfo($"Player {player} connected.");
 
             _ = PlayersConnected.Add(player);
 
@@ -128,7 +132,7 @@ namespace Elympics
         protected virtual void OnGameStarted()
         {
             GameStarted = true;
-            ElympicsLogger.Log("All players have connected.");
+            ElympicsLogger.LogInfo("All players have connected.");
         }
 
 

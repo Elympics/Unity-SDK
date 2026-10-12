@@ -4,7 +4,6 @@ using System.Linq;
 using Elympics.Communication.Models.Public;
 using MatchTcpModels.Messages;
 
-
 namespace Elympics.Mappers
 {
     public static class MatchJoinedMessageToMatchInitialData

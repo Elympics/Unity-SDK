@@ -1,9 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using MessagePack;
 using MessagePack.Formatters;
-
-#nullable enable
 
 namespace Elympics.Resolvers
 {

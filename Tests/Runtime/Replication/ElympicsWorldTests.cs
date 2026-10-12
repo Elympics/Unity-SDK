@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Elympics.Replication;
 using NUnit.Framework;
@@ -36,14 +37,14 @@ namespace Elympics.Tests.Runtime.Replication
 
         private static ElympicsSnapshot CreateSnapshot(long tick, int entityCount)
         {
-            var data = new System.Collections.Generic.Dictionary<int, byte[]>();
+            var data = new Dictionary<int, byte[]>();
             for (var i = 0; i < entityCount; i++)
                 data[i] = new[] { (byte)i };
 
             return new ElympicsSnapshot(
                 tick,
                 DateTime.UtcNow,
-                new FactoryState(new System.Collections.Generic.Dictionary<int, FactoryPartState>()),
+                new FactoryState(new Dictionary<int, FactoryPartState>()),
                 data,
                 null);
         }
@@ -105,8 +106,10 @@ namespace Elympics.Tests.Runtime.Replication
             _sut = new ElympicsWorld(4, 256, 512);
 
             // Act
-            _sut.ActivatePlayer(0, ElympicsPlayer.FromIndex(0));
-            _sut.ActivatePlayer(2, ElympicsPlayer.FromIndex(2));
+            _sut.RegisterPlayer(0);
+            _sut.RegisterPlayer(2);
+            _sut.ActivatePlayer(0);
+            _sut.ActivatePlayer(2);
 
             // Assert
             Assert.That(_sut.ActivePlayersCount, Is.EqualTo(2));
@@ -123,11 +126,12 @@ namespace Elympics.Tests.Runtime.Replication
         {
             // Arrange
             _sut = new ElympicsWorld(4, 256, 512);
-            _sut.ActivatePlayer(1, ElympicsPlayer.FromIndex(1));
+            _sut.RegisterPlayer(1);
+            _sut.ActivatePlayer(1);
 
             // Act & Assert
             LogAssert.Expect(LogType.Warning, new Regex(@"\[ElympicsWorld\] Player at index 1 already active. Skipping."));
-            _sut.ActivatePlayer(1, ElympicsPlayer.FromIndex(1));
+            _sut.ActivatePlayer(1);
 
             Assert.That(_sut.ActivePlayersCount, Is.EqualTo(1));
         }
@@ -139,8 +143,10 @@ namespace Elympics.Tests.Runtime.Replication
             _sut = new ElympicsWorld(4, 256, 512);
 
             // Act & Assert
-            LogAssert.Expect(LogType.Error, new Regex(@"Cannot activate player at index 5"));
-            _sut.ActivatePlayer(5, ElympicsPlayer.FromIndex(5));
+            LogAssert.Expect(LogType.Error, new Regex("Cannot register player at index 5"));
+            _sut.RegisterPlayer(5);
+            LogAssert.Expect(LogType.Error, new Regex("Cannot activate player at index 5"));
+            _sut.ActivatePlayer(5);
 
             Assert.That(_sut.ActivePlayersCount, Is.EqualTo(0));
         }
@@ -152,8 +158,10 @@ namespace Elympics.Tests.Runtime.Replication
             _sut = new ElympicsWorld(4, 256, 512);
 
             // Act & Assert
+            LogAssert.Expect(LogType.Error, new Regex(@"Cannot register player at index -1"));
+            _sut.RegisterPlayer(-1);
             LogAssert.Expect(LogType.Error, new Regex(@"Cannot activate player at index -1"));
-            _sut.ActivatePlayer(-1, ElympicsPlayer.FromIndex(0));
+            _sut.ActivatePlayer(-1);
 
             Assert.That(_sut.ActivePlayersCount, Is.EqualTo(0));
         }

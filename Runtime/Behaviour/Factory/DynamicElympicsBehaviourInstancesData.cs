@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elympics.Core.Logger;
 
 namespace Elympics
 {
@@ -68,7 +69,7 @@ namespace Elympics
 
         internal void ApplyIncomingInstances()
         {
-            // Important - first remove obsolete instances as there could be same ids but other instance content, then add new
+            // Important - first remove outdated instances as there could be same ids but other instance content, then add new
             foreach (var (instanceId, _) in _instancesToRemove)
                 _ = _instances.Remove(instanceId);
 

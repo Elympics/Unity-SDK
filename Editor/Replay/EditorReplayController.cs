@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -88,7 +89,7 @@ namespace Elympics.Editor.Replay
             }
             catch (Exception e)
             {
-                _ = ElympicsLogger.LogException($"Error applying tick {snapshot.Tick}.", e);
+                ElympicsLogger.LogException(new ElympicsException($"Error applying tick {snapshot.Tick}.", e));
             }
         }
 
@@ -102,6 +103,13 @@ namespace Elympics.Editor.Replay
             _replayClient = replayClient;
             _replayClient.JumpToTick(data.Snapshots.Keys.Min());
             _replayClient.SetIsPlaying(false);
+        }
+
+        // The window outlives the match: keeping the client would keep the match's ElympicsBehavioursManager and ElympicsBase alive.
+        public void UnloadReplay()
+        {
+            _replayClient = null;
+            _currentTick = -1;
         }
 
         public void SetCurrentTick(long tick)

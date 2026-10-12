@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Elympics
 {
-    public class ServerLogBehaviour : ElympicsMonoBehaviour, IInitializable, IReconciliationHandler
+    public sealed class ServerLogBehaviour : ElympicsMonoBehaviour, IInitializable, IReconciliationHandler
     {
         [Tooltip("Minimum level of collected logs")]
         [SerializeField] private Verbosity verbosity = Verbosity.Log;
@@ -12,6 +12,7 @@ namespace Elympics
 
         private int _currentLog;  // server-only
         private bool _inReconciliation;  // client-only
+        private bool _subscribedToLogs;
 
         public void Initialize()
         {
@@ -19,7 +20,10 @@ namespace Elympics
                 return;
 
             if (Elympics.IsServer)
+            {
                 Application.logMessageReceived += HandleLogReceived;
+                _subscribedToLogs = true;
+            }
             else
                 foreach (var log in _logs.Values)
                     log.ValueChanged += HandleLogValueChanged;
@@ -61,6 +65,15 @@ namespace Elympics
         // ReSharper disable once Unity.RedundantEventFunction ~dsygocki
         private void Start()
         { }
+
+        // Application.logMessageReceived is process-wide: without this, every match would pin a destroyed behaviour.
+        private void OnDestroy()
+        {
+            if (!_subscribedToLogs)
+                return;
+            Application.logMessageReceived -= HandleLogReceived;
+            _subscribedToLogs = false;
+        }
 
         public void OnPreReconcile() => _inReconciliation = true;
         public void OnPostReconcile() => _inReconciliation = false;

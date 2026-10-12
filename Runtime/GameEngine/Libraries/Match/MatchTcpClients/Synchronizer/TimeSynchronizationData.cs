@@ -1,4 +1,5 @@
 using System;
+using MatchTcpLibrary.Ntp;
 
 namespace MatchTcpClients.Synchronizer
 {
@@ -15,5 +16,13 @@ namespace MatchTcpClients.Synchronizer
         public DateTime? UnreliableLastReceivedPingDateTime { get; set; }
         public TimeSpan? UnreliableLocalClockOffset { get; set; }
         public TimeSpan? UnreliableRoundTripDelay { get; set; }
+
+        public TimeSynchronizationData() { }
+
+        public TimeSynchronizationData(NtpData ntpResponse)
+        {
+            LocalClockOffset = ntpResponse.LocalClockOffset;
+            RoundTripDelay = ntpResponse.RoundTripDelay;
+        }
     }
 }

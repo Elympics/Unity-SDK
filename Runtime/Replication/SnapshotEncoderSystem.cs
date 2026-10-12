@@ -22,12 +22,12 @@ namespace Elympics.Replication
         /// <param name="denseToSparse">Array mapping dense index back to the sparse networkId; used to look up serialized state bytes in <paramref name="fullSnapshot"/> (input).</param>
         /// <param name="outputSnapshots">Dictionary keyed by <see cref="ElympicsPlayer"/> that receives the constructed per-player snapshot for each active player (output).</param>
         internal static void Execute(
-            ElympicsSnapshot fullSnapshot,
-            ElympicsPlayer[] playerIds,
-            PackedArray<int> activePlayers,
-            PackedArray2D<int> scheduled,
-            int[] denseToSparse,
-            Dictionary<ElympicsPlayer, ElympicsSnapshot> outputSnapshots)
+            in ElympicsSnapshot fullSnapshot,
+            IReadOnlyList<ElympicsPlayer> playerIds,
+            in PackedArray<int> activePlayers,
+            in PackedArray2D<int> scheduled,
+            IReadOnlyList<int> denseToSparse,
+            ref Dictionary<ElympicsPlayer, ElympicsSnapshot> outputSnapshots)
         {
             if (fullSnapshot?.Data == null)
                 return;

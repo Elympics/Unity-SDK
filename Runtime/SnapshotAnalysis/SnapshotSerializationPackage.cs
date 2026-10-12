@@ -1,4 +1,5 @@
 using MessagePack;
+
 namespace Elympics.SnapshotAnalysis.Serialization
 {
     [MessagePackObject]

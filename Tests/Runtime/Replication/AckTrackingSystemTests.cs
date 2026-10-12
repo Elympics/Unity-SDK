@@ -52,7 +52,7 @@ namespace Elympics.Tests.Runtime.Replication
             const long currentTick = 42;
 
             // Act
-            AckTrackingSystem.Execute(activePlayers, scheduled, lastSentTick, currentTick);
+            AckTrackingSystem.Execute(activePlayers, scheduled, ref lastSentTick, currentTick);
 
             // Assert
             Assert.That(lastSentTick[0][5], Is.EqualTo(42));
@@ -81,7 +81,7 @@ namespace Elympics.Tests.Runtime.Replication
             const long currentTick = 42;
 
             // Act
-            AckTrackingSystem.Execute(activePlayers, scheduled, lastSentTick, currentTick);
+            AckTrackingSystem.Execute(activePlayers, scheduled, ref lastSentTick, currentTick);
 
             // Assert - unscheduled entity remains unchanged
             Assert.That(lastSentTick[0][7], Is.EqualTo(10));
@@ -109,7 +109,7 @@ namespace Elympics.Tests.Runtime.Replication
             const long currentTick = 42;
 
             // Act
-            AckTrackingSystem.Execute(activePlayers, scheduled, lastSentTick, currentTick);
+            AckTrackingSystem.Execute(activePlayers, scheduled, ref lastSentTick, currentTick);
 
             // Assert - players 0 and 2 stamped; players 1 and 3 left at 0
             Assert.That(lastSentTick[0][0], Is.EqualTo(42));
@@ -135,7 +135,7 @@ namespace Elympics.Tests.Runtime.Replication
             const long currentTick = 500;
 
             // Act
-            AckTrackingSystem.Execute(activePlayers, scheduled, lastSentTick, currentTick);
+            AckTrackingSystem.Execute(activePlayers, scheduled, ref lastSentTick, currentTick);
 
             // Assert - old value replaced with currentTick exactly
             Assert.That(lastSentTick[0][0], Is.EqualTo(500));

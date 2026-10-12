@@ -2,22 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Communication.Models.Public;
-using Elympics.ElympicsSystems.Internal;
+using Elympics.Core.Logger;
 using Elympics.Mappers;
 
 namespace Elympics
 {
     internal class HalfRemoteGameClientInitializer : GameClientInitializer
     {
+        private readonly HalfRemoteClientLaunchData _data;
         private HalfRemoteMatchClientAdapter _halfRemoteMatchClient;
         private HalfRemoteMatchConnectClient _halfRemoteMatchConnectClient;
+
+        public HalfRemoteGameClientInitializer(HalfRemoteClientLaunchData data) => _data = data;
 
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
             const string gameModeName = "half remote";
-            var playerIndex = elympicsGameConfig.PlayerIndexForHalfRemoteMode;
-            var queueName = elympicsGameConfig.TestMatchData.queueName;
-            var regionName = elympicsGameConfig.TestMatchData.regionName;
+            var settings = HalfRemoteClientSettings.Resolve(_data, elympicsGameConfig);
+            var playerIndex = settings.PlayerIndex;
             var customRoomData = elympicsGameConfig.TestMatchData.roomCustomData;
             var customMatchmakingData = elympicsGameConfig.TestMatchData.customMatchmakingData;
 
@@ -27,23 +29,25 @@ namespace Elympics
                 throw new ElympicsException($"Current player amount {playersList.Count} is greater than maximum player amount {elympicsGameConfig.MaxPlayers} ");
 
             if (playersList.Count <= playerIndex)
-                throw ElympicsLogger.LogException("Half Remote client won't be initialized because "
-                                                  + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
-                                                  + $"The list has only {playersList.Count} entries. "
-                                                  + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
-            var logger = ElympicsLogger.CurrentContext ?? new ElympicsLoggerContext(Guid.NewGuid());
-            logger = logger.SetGameMode(gameModeName).WithApp(ElympicsLoggerContext.GameplayContextApp).SetElympicsContext(ElympicsConfig.SdkVersion, elympicsGameConfig.gameId);
+                throw new ElympicsException("Half Remote client won't be initialized because "
+                    + $"no data for player ID: {playerIndex} was found in \"Test players\" list. "
+                    + $"The list has only {playersList.Count} entries. "
+                    + $"Try increasing \"Players\" count in your {nameof(ElympicsGameConfig)}.");
+            ElympicsLogger.State.SetGameMode(gameModeName);
             var userId = playersList[playerIndex].UserId;
-            var matchmakerData = playersList[playerIndex].MatchmakerData;
-            var gameEngineData = playersList[playerIndex].GameEngineData;
+            var local = playersList[playerIndex];
+            local.MatchmakerData = settings.MatchmakerData ?? local.MatchmakerData ?? Array.Empty<float>();
+            local.GameEngineData = settings.GameEngineData ?? local.GameEngineData ?? Array.Empty<byte>();
+            var matchmakerData = local.MatchmakerData;
+            var gameEngineData = local.GameEngineData;
 
             _halfRemoteMatchClient = new HalfRemoteMatchClientAdapter(elympicsGameConfig);
             var halfRemoteMatchInitialData = new MatchInitialData
             {
                 MatchId = Guid.Empty,
                 IsReplay = false,
-                QueueName = queueName,
-                RegionName = regionName,
+                QueueName = settings.QueueName,
+                RegionName = settings.RegionName,
                 CustomRoomData = customRoomData.Select((x, index) =>
                 {
                     var roomId = new Guid(index, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -58,8 +62,8 @@ namespace Elympics
                     UserId = x.UserId,
                     IsBot = x.IsBot,
                     BotDifficulty = x.BotDifficulty,
-                    GameEngineData = x.GameEngineData,
-                    MatchmakerData = x.MatchmakerData,
+                    GameEngineData = x.GameEngineData ?? Array.Empty<byte>(),
+                    MatchmakerData = x.MatchmakerData ?? Array.Empty<float>(),
                     RoomId = x.RoomId,
                     TeamIndex = x.TeamIndex,
                     Nickname = x.Nickname,
@@ -67,7 +71,7 @@ namespace Elympics
                     CustomData = x.CustomData
                 }).ToList()
             };
-            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, userId, halfRemoteMatchInitialData);
+            _halfRemoteMatchConnectClient = new HalfRemoteMatchConnectClient(_halfRemoteMatchClient, elympicsGameConfig, settings.ServerEndPoint, settings.UseWeb, userId, halfRemoteMatchInitialData);
             client.InitializeInternal(elympicsGameConfig,
                 _halfRemoteMatchConnectClient,
                 _halfRemoteMatchClient,
@@ -77,7 +81,6 @@ namespace Elympics
                     IsBot = false,
                 },
                 ElympicsBehavioursManager,
-                logger,
                 elympicsGameConfig.MaxPlayers);
         }
 

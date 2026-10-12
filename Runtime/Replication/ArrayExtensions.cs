@@ -1,3 +1,5 @@
+using System;
+
 namespace Elympics.Replication
 {
     internal static class ArrayExtensions
@@ -5,11 +7,11 @@ namespace Elympics.Replication
         internal static T[] Resized<T>(this T[] array, int newCapacity, int copyCount)
         {
             if (copyCount > newCapacity)
-                throw new System.ArgumentOutOfRangeException(nameof(copyCount),
+                throw new ArgumentOutOfRangeException(nameof(copyCount),
                     $"copyCount ({copyCount}) exceeds newCapacity ({newCapacity}).");
             var newArray = new T[newCapacity];
             if (copyCount > 0)
-                System.Array.Copy(array, newArray, copyCount);
+                Array.Copy(array, newArray, copyCount);
             return newArray;
         }
     }

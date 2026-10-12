@@ -11,7 +11,7 @@ namespace Elympics
         private class ElympicsBehaviourFirstSnapshotTracker
         {
             /// <summary>
-            /// Every <see cref="ElympicsBehaviour.networkId"/> that was already present in a snapshot received from the server stored with its network ID as key.
+            /// Every <see cref="ElympicsBehaviour.NetworkId"/> that was already present in a snapshot received from the server stored with its network ID as key.
             /// Weak reference is used to check if same network ID was not reassigned to a different object.
             /// </summary>
             private readonly Dictionary<int, WeakReference<ElympicsBehaviour>> _knownBehaviours = new();
@@ -48,7 +48,7 @@ namespace Elympics
 
                 try
                 {
-                    foreach (var behaviour in _newBehaviours.OrderBy(x => x.networkId))
+                    foreach (var behaviour in _newBehaviours.OrderBy(x => x.NetworkId))
                         if (behaviour)
                             behaviour.InitializedByServer();
                 }

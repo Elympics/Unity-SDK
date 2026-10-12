@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "ProtoNtp";
+
+package grpc_server;
+
+message NtpMsg {
+  bytes data = 1;
+}

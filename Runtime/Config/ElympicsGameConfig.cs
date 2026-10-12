@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -26,8 +24,6 @@ namespace Elympics
         [SerializeField] internal SceneAsset? gameplaySceneAsset;
 #endif
 
-        [SerializeField] private bool botsInServer = true;
-
         [SerializeField] private bool useWeb;
         [SerializeField] private bool enableReconnect;
         [SerializeField] private ClientConnectionSettings connectionConfig = new();
@@ -47,9 +43,7 @@ namespace Elympics
 
         [SerializeField] private bool detailedNetworkLog;
 
-        [SerializeField] private GameplaySceneDebugModeEnum mode = GameplaySceneDebugModeEnum.HalfRemote;
-
-        [SerializeField] private HalfRemoteModeEnum halfRemoteMode = HalfRemoteModeEnum.Server;
+        // Launch defaults: used by the Match Launcher window, ELYMPICS_LAUNCH_MODE and launch data that leaves them unset.
         [SerializeField] private string ipForHalfRemoteMode = "127.0.0.1";
         [SerializeField] private ushort tcpPortForHalfRemoteMode = 9101;
         [SerializeField] private ushort webPortForHalfRemoteMode = 9102;
@@ -76,8 +70,6 @@ namespace Elympics
         public int MaxPlayers => Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
         public string GameplayScene => gameplayScene;
 
-        public bool BotsInServer => botsInServer;
-
         public bool UseWeb =>
 #if UNITY_WEBGL
             true;
@@ -97,10 +89,9 @@ namespace Elympics
         public int InputLagTicks => inputLagTicks;
 
         public bool DetailedNetworkLog => detailedNetworkLog;
-        internal GameplaySceneDebugModeEnum GameplaySceneDebugMode => mode;
-        internal HalfRemoteModeEnum HalfRemoteMode => GetHalfRemoteMode(halfRemoteMode);
         public string IpForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemoteIp.GetValue(IPAddress.Parse(ipForHalfRemoteMode)).ToString();
-        public ushort PortForHalfRemoteMode => ApplicationParameters.Parameters.HalfRemotePort.GetValue(UseWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
+        public ushort PortForHalfRemoteMode => GetPortForHalfRemoteMode(UseWeb);
+        internal ushort GetPortForHalfRemoteMode(bool useWeb) => ApplicationParameters.Parameters.HalfRemotePort.GetValue(useWeb ? WebPortForHalfRemoteMode : TcpPortForHalfRemoteMode);
         public ushort TcpPortForHalfRemoteMode => tcpPortForHalfRemoteMode;
         public ushort WebPortForHalfRemoteMode => webPortForHalfRemoteMode;
         public bool RecordSnapshots => recordSnapshots;
@@ -111,7 +102,7 @@ namespace Elympics
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
         public int PlayerIndexForHalfRemoteMode
         {
-            get => GetHalfRemotePlayerIndex(ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode));
+            get => ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode);
             internal set => playerIndexForHalfRemoteMode = value;
         }
         public InitialMatchData TestMatchData => testMatchData;
@@ -147,12 +138,6 @@ namespace Elympics
 #endif
         }
 
-        public static HalfRemoteModeEnum GetHalfRemoteMode(HalfRemoteModeEnum defaultHalfRemoteMode) => IsOverridenInHalfRemoteByClone() ? ElympicsClonesManager.IsBot() ? HalfRemoteModeEnum.Bot : HalfRemoteModeEnum.Client : defaultHalfRemoteMode;
-
-        public static bool IsOverridenInHalfRemoteByClone() => ElympicsClonesManager.IsClone();
-
-        public static int GetHalfRemotePlayerIndex(int defaultPlayerIndex) => IsOverridenInHalfRemoteByClone() ? ElympicsClonesManager.GetCloneNumber() : defaultPlayerIndex;
-
         public static bool IsOverridenByWebGL()
         {
 #if UNITY_WEBGL
@@ -174,22 +159,6 @@ namespace Elympics
             EditorUtility.SetDirty(this);
         }
 #endif
-        public enum GameplaySceneDebugModeEnum
-        {
-            LocalPlayerAndBots,
-            HalfRemote,
-            DebugOnlinePlayer,
-            SnapshotReplay,
-            SinglePlayer,
-        }
-
-        public enum HalfRemoteModeEnum
-        {
-            Server,
-            Client,
-            Bot,
-        }
-
         public enum ReconciliationFrequencyEnum
         {
             OnlyIfNeeded = 0,

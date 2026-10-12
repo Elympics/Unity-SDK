@@ -2,12 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using GameEngineCore.V1._1;
-using GameEngineCore.V1._3;
+using Elympics.Core.Logger;
+using Elympics.Replication;
+using GameEngineCore;
 using MessagePack;
 using UnityEngine.Assertions;
-using IGameEngine = GameEngineCore.V2._0.IGameEngine;
-using InitialMatchData = GameEngineCore.V1._4.InitialMatchData;
 
 #pragma warning disable CS0618
 #pragma warning disable CS0067
@@ -18,8 +17,6 @@ namespace Elympics
 {
     internal class GameEngineAdapter : IGameEngine
     {
-        internal PlayerData[] Players { get; private set; } = Array.Empty<PlayerData>();
-
         public event Action<byte[], string>? InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string>? InGameDataForPlayerOnUnreliableChannelGenerated;
         public event Action<byte[]>? InGameDataForSpectatorsOnReliableChannelGenerated;
@@ -40,42 +37,41 @@ namespace Elympics
         public event Action<ElympicsRpcMessageList>? RpcMessageListReceived;
 
         private InitialMatchData _initialMatchData = null!;
+        private int UserCount => _initialMatchData.UserData.Count;
         private Dictionary<Guid, ElympicsPlayer> _userIdsToPlayers = null!;
-        private Dictionary<ElympicsPlayer, Guid> _playersToUserIds = null!;
 
         private readonly int _playerInputBufferSize;
+
+        /// <summary>Network-thread callbacks can outlive the match and its world.</summary>
+        private static ElympicsWorld? LiveWorld => ElympicsWorld.Current is { IsDisposed: false } current ? current : null;
 
         internal readonly ConcurrentDictionary<ElympicsPlayer, ElympicsInput> LatestSimulatedTickInput = new();
         internal ConcurrentDictionary<ElympicsPlayer, ElympicsDataWithTickBuffer<ElympicsInput>> PlayerInputBuffers { get; } = new();
 
-
         internal GameEngineAdapter(ElympicsGameConfig elympicsGameConfig) =>
             _playerInputBufferSize = elympicsGameConfig.PredictionBufferSize;
-
-        public void Init(IGameEngineLogger logger, GameEngineCore.V1._1.InitialMatchData initialMatchData) => throw new NotSupportedException();
-        public void Init2(InitialMatchUserDatas initialMatchData) => throw new NotSupportedException();
 
         public void Initialize(InitialMatchData initialMatchData) => Initialize(initialMatchData, false);
 
         public void Initialize(InitialMatchData initialMatchData, bool isReplay)
         {
-            Players = Enumerable.Range(0, initialMatchData.UserData.Count).Select(i => new PlayerData(ElympicsPlayer.FromIndex(i))).ToArray();
+            _initialMatchData = initialMatchData;
+            ElympicsLogger.State.SetMatchId(initialMatchData.MatchId.ToString());
+            ElympicsLogger.State.SetRegion(initialMatchData.RegionName);
+            ElympicsLogger.State.SetQueue(initialMatchData.QueueName);
 
             var userIds = initialMatchData.UserData.Select(userData => userData.UserId).ToList();
-
-            _playersToUserIds = ElympicsPlayerAssociations.GetPlayersToUserIds(userIds);
             _userIdsToPlayers = ElympicsPlayerAssociations.GetUserIdsToPlayers(userIds);
 
             foreach (var userId in userIds)
                 PlayerInputBuffers[_userIdsToPlayers[userId]] = new ElympicsDataWithTickBuffer<ElympicsInput>(_playerInputBufferSize);
 
-            var world = Replication.ElympicsWorld.Current;
+            var world = LiveWorld;
             Assert.IsNotNull(world);
             if (world != null)
-                for (var i = 0; i < Players.Length; i++)
-                    world.ActivatePlayer(i, Players[i].Player);
+                for (var i = 0; i < UserCount; i++)
+                    world.RegisterPlayer(i);
 
-            _initialMatchData = initialMatchData;
             ReceivedInitialMatchPlayerDatas?.Invoke((new InitialMatchPlayerDatasGuid(initialMatchData, _userIdsToPlayers, isReplay), () => Initialized?.Invoke()));
         }
 
@@ -101,10 +97,11 @@ namespace Elympics
                     if ((int)player != sender)
                     {
                         rpcMessageList.RemoveAt(i);
-                        ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_playersToUserIds[ElympicsPlayer.FromIndex(sender)]}"
-                            + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
+                        ElympicsLogger.LogWarning($"[RPC] RPC from Tick {sentTick} Sender {sender} userId: {_initialMatchData.UserData[sender].UserId}"
+                                                  + $" is not the same as socket owner {player} userId: {userId}. RPC will be not invoked.");
                     }
                 }
+
                 if (rpcMessageList.Count > 0)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
             }
@@ -113,10 +110,8 @@ namespace Elympics
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)
         {
             var playerIndex = (int)player;
-            Players[playerIndex].LastReceivedSnapshot = inputList.LastReceivedSnapshot;
-
             // Enqueue update for thread-safe drain at tick start
-            var world = Replication.ElympicsWorld.Current;
+            var world = LiveWorld;
             world?.PlayerUpdateQueue.Enqueue(playerIndex, inputList.LastReceivedSnapshot);
 
             foreach (var value in inputList.Values)
@@ -140,23 +135,28 @@ namespace Elympics
 
         internal void AddBotsOrClientsInServerInputToBuffer(ElympicsInput input) => AddInputToBuffer(input, input.Player, true);
 
-        public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(_userIdsToPlayers[new Guid(userId)]);
+        public void OnPlayerConnected(string userId)
+        {
+            var player = _userIdsToPlayers[new Guid(userId)];
+            var world = LiveWorld;
+            world?.ActivatePlayer((int)player);
+            PlayerConnected?.Invoke(player);
+        }
+
         public void OnPlayerDisconnected(string userId)
         {
             var player = _userIdsToPlayers[new Guid(userId)];
             PlayerDisconnected?.Invoke(player);
-            var playerIndex = (int)player;
-            Players[playerIndex].LastReceivedSnapshot = -1;
-
-            // Enqueue update for thread-safe drain at tick start
-            var world = Replication.ElympicsWorld.Current;
-            world?.PlayerUpdateQueue.Enqueue(playerIndex, -1);
+            var world = LiveWorld;
+            world?.DeactivatePlayer((int)player);
         }
 
         public void Tick(long tick)
         {
             /* Using Unity Update instead. */
         }
+
+        public event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
 
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
         {
@@ -188,9 +188,15 @@ namespace Elympics
         private void SendDataToPlayer(IFromServer data, ElympicsPlayer player, bool reliable)
         {
             var sendData = reliable ? InGameDataForPlayerOnReliableChannelGenerated : InGameDataForPlayerOnUnreliableChannelGenerated;
-            var userId = _playersToUserIds[player];
+            var userId = _initialMatchData.UserData[(int)player].UserId;
             var serializedData = MessagePackSerializer.Serialize(data);
             sendData?.Invoke(serializedData, userId.ToString());
+        }
+
+        internal void SubmitIntermediateScore(float score, ElympicsPlayer player, DateTime utcTime, TimeSpan gameplayTime)
+        {
+            var userId = _initialMatchData.UserData[(int)player].UserId;
+            IntermediateScoreSubmitted?.Invoke((userId, score, utcTime, gameplayTime));
         }
 
         internal void EndGame(ResultMatchPlayerDatas? result = null)
@@ -201,9 +207,9 @@ namespace Elympics
                 return;
             }
 
-            if (result.Count != Players.Length)
+            if (result.Count != UserCount)
             {
-                ElympicsLogger.LogError($"Invalid length of match result: expected {Players.Length}, " + $"has {result.Count}.");
+                ElympicsLogger.LogError($"Invalid length of match result: expected {UserCount}, " + $"has {result.Count}.");
                 GameEnded?.Invoke(null);
                 return;
             }
@@ -211,7 +217,7 @@ namespace Elympics
             var matchResult = new ResultMatchUserDatas();
             for (var i = 0; i < result.Count; i++)
             {
-                var userId = _playersToUserIds[Players[i].Player];
+                var userId = _initialMatchData.UserData[i].UserId;
                 matchResult.Add(new ResultMatchUserData
                 {
                     UserId = userId.ToString(),
@@ -221,15 +227,6 @@ namespace Elympics
             }
 
             GameEnded?.Invoke(matchResult);
-        }
-
-        public event Action? GameStarted;
-        public event Action<List<GameEvent>>? GameEventsGathered;
-
-        event Action<MatchResult> GameEngineCore.V1._1.IGameEngine.GameEnded
-        {
-            add => throw new NotImplementedException();
-            remove => throw new NotImplementedException();
         }
     }
 }

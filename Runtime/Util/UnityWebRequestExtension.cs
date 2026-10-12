@@ -1,3 +1,4 @@
+using Elympics.Core.Logger;
 using UnityEngine.Networking;
 
 namespace Elympics
@@ -15,7 +16,7 @@ namespace Elympics
             if (request.uri.Scheme != TestCertificateHandler.SecureScheme || !request.uri.Host.EndsWith(TestCertificateHandler.TestDomain))
                 return;
 
-            ElympicsLogger.Log($"Test certificate handler set for domain: {request.uri.Host}");
+            ElympicsLogger.LogInfo($"Test certificate handler set for domain: {request.uri.Host}");
             request.certificateHandler = new TestCertificateHandler();
         }
 

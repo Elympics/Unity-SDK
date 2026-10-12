@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-
-#nullable enable
 
 namespace Elympics.Util
 {

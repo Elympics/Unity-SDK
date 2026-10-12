@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using Elympics.Core.Logger;
 using UnityEditor.Callbacks;
 using UnityEngine.SceneManagement;
 
@@ -16,7 +17,7 @@ namespace Elympics
             {
                 var type = customClass;
 
-                while (typeof(IObservable).IsAssignableFrom(type.BaseType))
+                while (type.BaseType is not null && typeof(IObservable).IsAssignableFrom(type.BaseType))
                 {
                     type = type.BaseType;
 

@@ -21,11 +21,11 @@ namespace Elympics.Replication
         /// <param name="lastModifiedTick">Array (indexed by dense index) that records the last tick on which each NetworkEntity's state changed; updated in-place (output).</param>
         /// <param name="sparseToDense">Array mapping sparse networkId slot index to dense index; negative value means the NetworkEntity is not registered.</param>
         internal static void Execute(
-            Dictionary<int, byte[]> currentData,
-            Dictionary<int, byte[]> previousData,
+            IReadOnlyDictionary<int, byte[]> currentData,
+            IReadOnlyDictionary<int, byte[]> previousData,
             long currentTick,
-            long[] lastModifiedTick,
-            int[] sparseToDense)
+            ref long[] lastModifiedTick,
+            IReadOnlyList<int> sparseToDense)
         {
 
             if (currentData == null)
@@ -52,9 +52,7 @@ namespace Elympics.Replication
                     };
 
                 if (changed)
-                {
                     lastModifiedTick[denseIndex] = currentTick;
-                }
             }
         }
     }

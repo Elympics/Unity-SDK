@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Elympics.Behaviour;
 using Elympics.Communication.Models.Public;
+using Elympics.Core.Logger;
 using Elympics.Replication;
 using MatchTcpClients.Synchronizer;
-using UnityEditor;
 using UnityEngine;
 
 namespace Elympics
@@ -13,7 +13,6 @@ namespace Elympics
     [DisallowMultipleComponent]
     public class ElympicsBehavioursManager : MonoBehaviour
     {
-        [SerializeField] internal ElympicsBehavioursSerializableDictionary elympicsBehavioursView = new();
         [SerializeField] internal ElympicsFactory factory;
 
         private ElympicsBehavioursContainer _elympicsBehaviours;
@@ -25,6 +24,10 @@ namespace Elympics
         private const int SceneObjectsReserved = NetworkIdConstants.TotalSceneObjectsReserved;
 
         internal static int IndicesPerPlayer { get; private set; }
+
+        internal static void ResetStatics() => IndicesPerPlayer = 0;
+
+        internal IElympicsMatchLifecycleSink LifecycleSink { get; set; }
 
         internal static int SceneObjectsMaxIndex => SceneObjectsReserved - 1;
         internal static int[] SpawnableSpecialPlayerIndices => ElympicsPlayer.SpawnableSpecialPlayerIndices;
@@ -42,24 +45,23 @@ namespace Elympics
             factory.Initialize(elympicsBase, AddNewBehaviour, RemoveBehaviour);
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
+            var foundElympicsBehaviours = FindElympicsBehavioursSorted();
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
                 var networkId = elympicsBehaviour.NetworkId;
                 if (networkId < 0) // there is no upper limit
                 {
-                    ElympicsLogger.LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
-                        + "Network ID must not be negative.",
-                        elympicsBehaviour);
+                    ElympicsLogger.WithUnityContext(elympicsBehaviour)
+                        .LogError($"Invalid network ID {networkId} for {elympicsBehaviour.gameObject.name} object. "
+                            + "Network ID must not be negative.");
                     return;
                 }
 
                 if (_elympicsBehaviours.Contains(networkId))
                 {
-                    ElympicsLogger.LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
-                        + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object",
-                        elympicsBehaviour);
+                    ElympicsLogger.WithUnityContext(elympicsBehaviour)
+                        .LogError($"Duplicated network ID {networkId} detected on {elympicsBehaviour.gameObject.name} object.\n"
+                            + $"Previous occurrence: {_elympicsBehaviours.Behaviours[networkId].gameObject.name} object");
                     return;
                 }
 
@@ -74,6 +76,13 @@ namespace Elympics
                 if (elympicsBehaviour.HasAnyState)
                     ElympicsWorld.Current.RegisterEntity(elympicsBehaviour.NetworkId, elympicsBehaviour.visibleFor, elympicsBehaviour.netUpdateIntervalInTicks);
             }
+        }
+
+        internal List<ElympicsBehaviour> FindElympicsBehavioursSorted()
+        {
+            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
+            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.NetworkId, b.NetworkId));
+            return foundElympicsBehaviours;
         }
 
         private void OnDestroy()
@@ -120,8 +129,7 @@ namespace Elympics
             ElympicsWorld.Current?.Reset();
 
             _elympicsBehaviours = new ElympicsBehavioursContainer(_elympics.Player);
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foundElympicsBehaviours.Sort((a, b) => Comparer<int>.Default.Compare(a.networkId, b.networkId));
+            var foundElympicsBehaviours = FindElympicsBehavioursSorted();
 
             foreach (var elympicsBehaviour in foundElympicsBehaviours)
             {
@@ -368,23 +376,6 @@ namespace Elympics
                 elympicsBehaviour.OnPredictionStatsChanged(isBlocked, results);
         }
 
-        internal void RefreshElympicsBehavioursView()
-        {
-            elympicsBehavioursView.Clear();
-            var foundElympicsBehaviours = gameObject.FindObjectsOfTypeOnScene<ElympicsBehaviour>(true);
-            foreach (var elympicsBehaviour in foundElympicsBehaviours)
-            {
-                var networkId = elympicsBehaviour.NetworkId;
-                if (elympicsBehavioursView.ContainsKey(networkId))
-                {
-                    ElympicsLogger.LogWarning($"Duplicated entry detected for network ID {networkId}!", elympicsBehaviour);
-                    continue;
-                }
-
-                elympicsBehavioursView.Add(networkId, elympicsBehaviour);
-            }
-        }
-
         #region ClientCallbacks
 
         internal void OnStandaloneClientInit(InitialMatchPlayerDataGuid data)
@@ -409,29 +400,27 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchJoinedFailed(errorMessage);
+            LifecycleSink?.JoinFailed($"Joining the match failed: {errorMessage}");
         }
 
         public void OnMatchJoinedWithInitData(MatchInitialData matchInitData)
         {
-            #region ObsoleteCalls
-            // Obsolete - to be removed in future versions. Leave for backward compatibility.
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchJoined(matchInitData.MatchId);
-            #endregion
-
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchJoinedWithInitData(matchInitData);
+            LifecycleSink?.MatchJoined();
         }
         internal void OnMatchEnded(Guid matchId)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnMatchEnded(matchId);
+            LifecycleSink?.MatchEnded(matchId);
         }
 
         internal void OnAuthenticatedFailed(string errorMessage)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnAuthenticatedFailed(errorMessage);
+            LifecycleSink?.JoinFailed($"Authenticating with the game server failed: {errorMessage}");
         }
 
         internal void OnAuthenticated(Guid userId)
@@ -444,12 +433,14 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnDisconnectedByServer();
+            LifecycleSink?.Disconnected(true);
         }
 
         internal void OnDisconnectedByClient()
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnDisconnectedByClient();
+            LifecycleSink?.Disconnected(false);
         }
 
         internal void OnConnected(TimeSynchronizationData data)
@@ -462,17 +453,12 @@ namespace Elympics
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
                 elympicsBehaviour.OnConnectingFailed();
+            LifecycleSink?.JoinFailed("Connecting to the game server failed.");
         }
 
         #endregion
 
         #region BotCallbacks
-
-        internal void OnStandaloneBotInit(InitialMatchPlayerDataGuid initialMatchData)
-        {
-            foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnStandaloneBotInit(initialMatchData);
-        }
 
         internal void OnBotsOnServerInit(InitialMatchPlayerDatasGuid initialMatchData)
         {

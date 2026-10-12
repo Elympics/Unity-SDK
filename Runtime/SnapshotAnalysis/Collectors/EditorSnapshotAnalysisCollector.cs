@@ -2,7 +2,9 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 using Elympics.SnapshotAnalysis.Serialization;
 
 namespace Elympics.SnapshotAnalysis
@@ -13,6 +15,8 @@ namespace Elympics.SnapshotAnalysis
         private readonly FileStream? _stream;
 
         private bool _initDataSaved;
+        /// <summary>All writes, chained, so none overlaps another and the stream is closed only after the last one.</summary>
+        private Task _writes = Task.CompletedTask;
 
         public EditorSnapshotAnalysisCollector(string path)
         {
@@ -57,31 +61,66 @@ namespace Elympics.SnapshotAnalysis
 
             _initDataSaved = true;
 
-            SerializeInitDataAsync(SerializationUtil.LatestVersion, initData).Forget();
+            var version = SerializationUtil.LatestVersion;
+            EnqueueWrite(async stream =>
+            {
+                await SnapshotSerializer.SerializeVersionToStream(stream, version).ConfigureAwait(false);
+                await SnapshotSerializer.SerializeToStream(stream, initData).ConfigureAwait(false);
+            });
         }
 
-        private async UniTaskVoid SerializeInitDataAsync(string version, SnapshotSaverInitData initData)
-        {
-            await SnapshotSerializer.SerializeVersionToStream(_stream, version);
-            await SnapshotSerializer.SerializeToStream(_stream, initData);
-        }
-        protected override async UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer)
+        protected override UniTaskVoid OnBufferLimit(ElympicsSnapshotWithMetadata[] buffer)
         {
             if (_stream == null)
-                return;
+                return default;
             if (!_initDataSaved)
                 throw new InvalidOperationException(
                     $"{nameof(SaveInitData)} has to be called once to initialize {nameof(EditorSnapshotAnalysisCollector)} before {nameof(CaptureSnapshot)} can be called.");
 
-            Package.Snapshots = buffer;
-            await SnapshotSerializer.SerializeToStream(_stream, Package);
+            // The buffer is reused once the other one fills up, so write a copy.
+            var snapshots = (ElympicsSnapshotWithMetadata[])buffer.Clone();
+            EnqueueWrite(stream => SerializeSnapshots(stream, snapshots));
+            return default;
         }
 
         protected override void SaveLastDataAndDispose(ElympicsSnapshotWithMetadata[] snapshots)
         {
-            Package.Snapshots = snapshots;
-            SnapshotSerializer.SerializeToStream(_stream, Package).Wait();
-            _stream?.Dispose();
+            if (_stream == null)
+                return;
+            EnqueueWrite(stream => SerializeSnapshots(stream, snapshots));
+            try
+            {
+                // Also on an aborted match: in-flight writes must finish before the stream is closed.
+                _writes.Wait();
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
+            }
+            _stream.Dispose();
+        }
+
+        private Task SerializeSnapshots(Stream stream, ElympicsSnapshotWithMetadata[] snapshots) =>
+            SnapshotSerializer.SerializeToStream(stream, new SnapshotSerializationPackage { Snapshots = snapshots });
+
+        private void EnqueueWrite(Func<Stream, Task> write)
+        {
+            var stream = _stream!;
+            var previous = _writes;
+            _writes = Chain();
+
+            async Task Chain()
+            {
+                try
+                {
+                    await previous.ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    ElympicsLogger.LogException(e);
+                }
+                await write(stream).ConfigureAwait(false);
+            }
         }
     }
 }

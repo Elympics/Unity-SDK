@@ -31,7 +31,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7529846740173844775}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1630649001
 MonoBehaviour:
@@ -57,25 +57,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 334c2a3facb248ac8c1a599797c52dae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forceNetworkId: 1
-  migratedAutoNetworkId: 1
-  autoAssignNetworkId: 1
   networkId: 0
   predictableFor:
     playerIndex: -3
   isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
-  stateFrequencyStages:
-  - stageDurationInMiliseconds: 500
-    frequencyInMiliseconds: 30
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 200
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 1000
-    maxStageDurationInMiliseconds: 5000
+  replicationPriority: 2
+  netUpdateIntervalInTicks: 1
 --- !u!1 &66269131989871612
 GameObject:
   m_ObjectHideFlags: 0
@@ -107,7 +96,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7529846740173844775}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &359210302102351433
 MonoBehaviour:
@@ -121,25 +110,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 334c2a3facb248ac8c1a599797c52dae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forceNetworkId: 1
-  migratedAutoNetworkId: 1
-  autoAssignNetworkId: 1
   networkId: 1
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
-  stateFrequencyStages:
-  - stageDurationInMiliseconds: 500
-    frequencyInMiliseconds: 30
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 200
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 1000
-    maxStageDurationInMiliseconds: 5000
+  replicationPriority: 2
+  netUpdateIntervalInTicks: 1
 --- !u!114 &2302576099153469726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -185,7 +163,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7529846740173844775}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7761056987631085800
 MonoBehaviour:
@@ -199,25 +177,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 334c2a3facb248ac8c1a599797c52dae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forceNetworkId: 1
-  migratedAutoNetworkId: 1
-  autoAssignNetworkId: 1
   networkId: 2
   predictableFor:
     playerIndex: -2
   isUpdatableForNonOwners: 0
   visibleFor:
     playerIndex: -3
-  stateFrequencyStages:
-  - stageDurationInMiliseconds: 500
-    frequencyInMiliseconds: 30
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 200
-    maxStageDurationInMiliseconds: 5000
-  - stageDurationInMiliseconds: 1000
-    frequencyInMiliseconds: 1000
-    maxStageDurationInMiliseconds: 5000
+  replicationPriority: 2
+  netUpdateIntervalInTicks: 1
 --- !u!114 &778477889166288857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,53 +200,6 @@ MonoBehaviour:
   autoTerminateServer: 1
   autoTerminationOnLeft: 1
   startGameTimeoutSeconds: 180
---- !u!1 &5110940247115840882
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6686085662220079548}
-  - component: {fileID: 5385409787458503955}
-  m_Layer: 0
-  m_Name: Bot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6686085662220079548
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5110940247115840882}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7529846740173844775}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5385409787458503955
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5110940247115840882}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8de2b35175db441419b3e866fbda94b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  asyncEventsDispatcher: {fileID: 8165584693659152778}
-  linkedLogic:
-  - {fileID: 0}
 --- !u!1 &7529846739748366657
 GameObject:
   m_ObjectHideFlags: 0
@@ -324,7 +244,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d38b60a0ea5c7fa478abfa1ffb6c05e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}
   connectOnStart: 1
@@ -341,7 +260,6 @@ GameObject:
   - component: {fileID: 6242262048872652232}
   - component: {fileID: 7529846740173844772}
   - component: {fileID: 1655228288893870731}
-  - component: {fileID: 8165584693659152778}
   m_Layer: 0
   m_Name: Elympics
   m_TagString: Untagged
@@ -363,7 +281,6 @@ Transform:
   m_Children:
   - {fileID: 7529846739748366656}
   - {fileID: 7529846741445686784}
-  - {fileID: 6686085662220079548}
   - {fileID: 1630649002}
   - {fileID: 980766705364734704}
   - {fileID: 4462764667887762435}
@@ -384,7 +301,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   elympicsBehavioursManager: {fileID: 7529846740173844772}
   elympicsClient: {fileID: 7529846739748366659}
-  elympicsBot: {fileID: 5385409787458503955}
   elympicsServer: {fileID: 7529846741445686787}
 --- !u!114 &7529846740173844772
 MonoBehaviour:
@@ -409,18 +325,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c5237200a7d7a7468bd615ba4ce10f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &8165584693659152778
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7529846740173844773}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd55e11dca40e6646982daee3830002a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &7529846741445686785
@@ -467,6 +371,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa050f8fe65dae745a8e115b4be8ae1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  asyncEventsDispatcher: {fileID: 8165584693659152778}
   linkedLogic:
   - {fileID: 0}

@@ -45,12 +45,6 @@ namespace Elympics
         { }
 
         /// <summary>Called when the client successfully joins a match on a game server.</summary>
-        /// <param name="matchId">Match ID. Can be empty.</param>
-        [Obsolete("Use OnMatchJoined(MatchInitialData) instead.")]
-        void OnMatchJoined(Guid matchId)
-        { }
-
-        /// <summary>Called when the client successfully joins a match on a game server.</summary>
         void OnMatchJoined(MatchInitialData matchInitialData)
         { }
 

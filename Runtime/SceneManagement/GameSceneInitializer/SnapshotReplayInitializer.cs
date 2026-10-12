@@ -5,14 +5,24 @@ using System.Linq;
 using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Retrievers;
-using GameEngineCore.V1._4;
+using GameEngineCore;
 
 namespace Elympics
 {
     internal abstract class SnapshotReplayInitializer : GameSceneInitializer
     {
+        public override bool ReportsMatchJoined => false;
+
+        private IReplayManipulator _replayManipulator;
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _replayManipulator?.UnloadReplay();
+            _replayManipulator = null;
+        }
+
         protected void InitializeInternal(
-            ElympicsBot bot,
             ElympicsServer server,
             ElympicsGameConfig gameConfig,
             ElympicsBehavioursManager behavioursManager,
@@ -30,8 +40,7 @@ namespace Elympics
                 behavioursManager,
                 new NullServerPlayerHandler(),
                 new NullSnapshotAnalysisCollector(),
-                updateLoop,
-                true);
+                updateLoop);
 
             // @formatter:off
             gameEngineAdapter.Initialize(new InitialMatchData
@@ -61,8 +70,8 @@ namespace Elympics
             true);
             // @formatter:on
             behavioursManager.InitializeInternal(server, gameConfig.MaxPlayers);
-            bot.Destroy();
 
+            _replayManipulator = replayManipulator;
             replayManipulator.LoadReplay(updateLoop, new ReplayData { InitData = initData, Snapshots = snapshots });
         }
     }

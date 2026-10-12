@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Elympics.Core.Logger;
 
 namespace Elympics
 {
     public static class ElympicsRegions
     {
+        public const string Default = Warsaw;
+
         public const string Warsaw = "warsaw";
         public const string Tokyo = "tokyo";
         public const string Dallas = "dallas";
@@ -64,14 +67,5 @@ namespace Elympics
                 }
             }
         }
-
-        [Obsolete("Call" + nameof(GetAvailableRegions) + "for updated list of available regions.")]
-        public static readonly List<string> AllAvailableRegions = new()
-        {
-            Warsaw,
-            Tokyo,
-            Dallas,
-            Mumbai
-        };
     }
 }

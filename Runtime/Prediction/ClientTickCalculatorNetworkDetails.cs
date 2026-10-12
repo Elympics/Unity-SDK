@@ -1,8 +1,10 @@
+using System;
 using System.Text;
+using UnityEngine;
 
 namespace Elympics
 {
-    public class ClientTickCalculatorNetworkDetails
+    internal class ClientTickCalculatorNetworkDetails
     {
         public bool CanPredict;
         public long DelayedInputTick;
@@ -22,21 +24,17 @@ namespace Elympics
         public double TicksToCatchup;
         public long NewTickFromCalculations;
 
-        public ClientTickCalculatorNetworkDetails(ElympicsGameConfig config)
-        {
+        public ClientTickCalculatorNetworkDetails(ElympicsGameConfig config) =>
             ElympicsUpdateTickRate = config.TickDuration;
-        }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             _ = sb.AppendLine("###Tick Calculation Summary###");
             if (!CanPredict)
-            {
                 _ = sb.AppendLine(NewTickFromCalculations > LastReceivedTick + PredictionLimit ?
                     $"Prediction limit achieved. Max Prediction Tick {LastReceivedTick + PredictionLimit} for Prediction limit {PredictionLimit}" :
                     "Prediction was blocked.");
-            }
 
             if (WasTickJumpForced)
                 _ = sb.AppendLine($"Tick Jump was forced by {TicksToCatchup} Ticks");
@@ -66,6 +64,52 @@ namespace Elympics
                 .AppendLine($"Round trip time - {RttTicks:F} ticks")
                 .AppendLine($"Local clock offset - {LcoTicks:F} ticks")
                 .ToString();
+        }
+
+        public string ToJson()
+        {
+            return JsonUtility.ToJson(new NetworkConditions
+            {
+                canPredict = CanPredict,
+                delayedInputTick = DelayedInputTick,
+                elympicsUpdateTickRate = ElympicsUpdateTickRate,
+                exactTickCalculated = ExactTickCalculated,
+                inputLagTicks = InputLagTicks,
+                lastInputTick = LastInputTick,
+                previousTick = PreviousTick,
+                lastReceivedTick = LastReceivedTick,
+                lcoTicks = LcoTicks,
+                currentTick = CurrentTick,
+                reconciliationPerformed = ReconciliationPerformed,
+                rttTicks = RttTicks,
+                wasTickJumpForced = WasTickJumpForced,
+                predictionLimit = PredictionLimit,
+                defaultTickRate = DefaultTickRate,
+                ticksToCatchup = TicksToCatchup,
+                newTickFromCalculations = NewTickFromCalculations,
+            });
+        }
+
+        [Serializable]
+        private struct NetworkConditions
+        {
+            public bool canPredict;
+            public long delayedInputTick;
+            public double elympicsUpdateTickRate;
+            public double exactTickCalculated;
+            public int inputLagTicks;
+            public long lastInputTick;
+            public long previousTick;
+            public long lastReceivedTick;
+            public double lcoTicks;
+            public long currentTick;
+            public bool reconciliationPerformed;
+            public double rttTicks;
+            public bool wasTickJumpForced;
+            public long predictionLimit;
+            public double defaultTickRate;
+            public double ticksToCatchup;
+            public long newTickFromCalculations;
         }
 
         public void Reset()

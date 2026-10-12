@@ -13,7 +13,7 @@ namespace Elympics
             if (a is null || b is null)
                 return float.PositiveInfinity;
 
-            return a.networkId == b.networkId ? 0f : float.PositiveInfinity;
+            return a.NetworkId == b.NetworkId ? 0f : float.PositiveInfinity;
         }
     }
 }

@@ -229,18 +229,6 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 1662540664021179433, guid: f96262bc694c229408688203398b88ed, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: f96262bc694c229408688203398b88ed, type: 3}
---- !u!114 &98656198 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8165584693659152778, guid: f96262bc694c229408688203398b88ed,
-    type: 3}
-  m_PrefabInstance: {fileID: 98656197}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd55e11dca40e6646982daee3830002a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &408033166
 GameObject:
   m_ObjectHideFlags: 0
@@ -461,7 +449,6 @@ MonoBehaviour:
   disconnectButton: {fileID: 796472765}
   endGameButton: {fileID: 688005166}
   gameLifecycleTester: {fileID: 620952418}
-  asyncEventsDispatcher: {fileID: 98656198}
 --- !u!114 &429481933
 MonoBehaviour:
   m_ObjectHideFlags: 0

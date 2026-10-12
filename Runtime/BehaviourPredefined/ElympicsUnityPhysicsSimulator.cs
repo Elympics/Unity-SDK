@@ -1,9 +1,10 @@
+using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
 {
     [DisallowMultipleComponent]
-    public class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
+    public sealed class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
     {
         private static ElympicsUnityPhysicsSimulator instance;
 
@@ -14,15 +15,20 @@ namespace Elympics
         private void OnEnable() => _isActive = true;
         private void OnDisable() => _isActive = false;
 
+        // The static would otherwise keep this component, and through it the match's ElympicsBase, alive after its scene unloads.
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(instance, this))
+                instance = null;
+        }
+
         public void Initialize()
         {
             if (instance != null && instance != this)
             {
-                ElympicsLogger.LogError("You can't use more than 1 instance of "
-                    + $"{nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
-                    + $"Previously detected on object: {instance.gameObject.name}, "
-                    + $"current object: {gameObject.name}",
-                    gameObject);
+                ElympicsLogger.WithUnityContext(gameObject)
+                    .LogError($"You can't use more than 1 instance of {nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
+                        + $"Previously detected on object: {instance.gameObject.name}, current object: {gameObject.name}");
                 return;
             }
             instance = this;
@@ -43,7 +49,8 @@ namespace Elympics
                 return;
             if (_currentPhysicsScene == null || _currentPhysicsScene2D == null)
             {
-                ElympicsLogger.LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!", gameObject);
+                ElympicsLogger.WithUnityContext(gameObject)
+                    .LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!");
                 return;
             }
             _currentPhysicsScene?.Simulate(deltaTime);

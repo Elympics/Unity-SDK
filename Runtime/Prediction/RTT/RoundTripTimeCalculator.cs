@@ -8,7 +8,7 @@ namespace Elympics
         public TimeSpan LastRoundTripTime { get; private set; }
         public TimeSpan LastLocalClockOffset { get; private set; }
 
-        private const int MaxRttSamples = 50;
+        private const int MaxRttSamples = 5;
         private readonly RunningAvg _rttRunningAvg = new(MaxRttSamples);
 
         private const int MaxLcoSamples = 5;

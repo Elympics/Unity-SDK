@@ -2,6 +2,7 @@
     <ui:Foldout text="&lt;b&gt;General settings&lt;/b&gt;" name="general-foldout" style="-unity-font-style: normal;">
         <ui:TextField picking-mode="Ignore" label="Game name" binding-path="gameName" name="game-name" />
         <ui:TextField picking-mode="Ignore" label="Game ID" binding-path="gameId" name="game-id" />
+        <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="game-id-error" text="Game ID has to be a GUID!" style="display: none;" />
         <ui:TextField picking-mode="Ignore" label="Game version" binding-path="gameVersion" name="game-version" />
         <ui:SliderInt picking-mode="Ignore" label="Max players" high-value="32" low-value="1" show-input-field="true" name="max-players" binding-path="maxPlayers" tooltip="Maximum number of players allowed in a match" />
         <ui:GroupBox name="scene-group" style="padding-left: 0; padding-top: 0; padding-bottom: 0; margin-left: 0; margin-right: 0; margin-top: 3px; margin-bottom: 3px;">
@@ -21,7 +22,7 @@
         <ui:Label text="Client ticks per second: from XX to XX ticks" display-tooltip-when-elided="true" name="tick-rate-summary" tooltip="This applies only to client. The exact value will be determined each tick based on network conditions." />
         <ui:SliderInt picking-mode="Ignore" label="Send snapshot every" high-value="120" low-value="1" show-input-field="true" name="snapshot-sending-interval" binding-path="snapshotSendingPeriodInTicks" tooltip="How often snapshots are sent from a server to its clients" />
         <ui:SliderInt picking-mode="Ignore" label="Input lag" high-value="15" name="input-lag" low-value="1" show-input-field="true" binding-path="inputLagTicks" tooltip="The amount of time clients should stay ahead of the server (half of the current RTT is always added to this value)" />
-        <ui:SliderInt picking-mode="Ignore" label="Input buffer size" high-value="100" name="input-buffer-size" low-value="1" show-input-field="true" binding-path="inputToSendBufferSize" tooltip="Number of ticks from which input shuld be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions" />
+        <ui:SliderInt picking-mode="Ignore" label="Input buffer size" high-value="100" name="input-buffer-size" low-value="1" show-input-field="true" binding-path="inputToSendBufferSize" tooltip="Number of ticks from which input should be locally stored by client and sent to server each time to decrease the risk of loosing input due to network conditions" />
         <ui:SliderInt picking-mode="Ignore" label="Max allowed lag" high-value="100" name="max-lag" show-input-field="true" binding-path="maxAllowedLagInTicks" tooltip="Limits the size of the prediction buffer" />
         <ui:SliderInt picking-mode="Ignore" label="Force jump threshold" high-value="100" name="force-jump-threshold" binding-path="forceJumpThresholdInTicks" show-input-field="true" tooltip="How far behind the desired tick client has to be to force a jump to that tick" />
         <ui:SliderInt picking-mode="Ignore" label="Prediction limit" high-value="100" name="prediction-limit" binding-path="predictionLimitInTicks" show-input-field="true" tooltip="How much further ahead of server than it is supposed to client can go before it stops to wait for server" />
@@ -31,11 +32,8 @@
     <ui:VisualElement class="separator" style="height: 9px;" />
     <ui:Foldout text="&lt;b&gt;Debug options&lt;/b&gt;" name="debug-foldout">
         <ui:Toggle label="Detailed network log" name="detailed-network-log" binding-path="detailedNetworkLog" tooltip="The log contains errors and warnings to differentiate between slight and serious throttle" />
-        <uie:EnumField label="Debug mode" binding-path="mode" name="debug-mode" type="Elympics.ElympicsGameConfig+GameplaySceneDebugModeEnum,Elympics" />
-        <ui:Label display-tooltip-when-elided="true" name="debug-mode-summary" style="-unity-font-style: italic; white-space: normal;" />
-        <ui:HelpBox display-tooltip-when-elided="true" message-type="Warning" name="debug-mode-warning" style="display: none;" />
+        <ui:Label text="Launch defaults, used by Tools &gt; Elympics &gt; Match Launcher, ELYMPICS_LAUNCH_MODE and launch data that leaves them unset." display-tooltip-when-elided="true" name="launch-defaults-summary" style="-unity-font-style: italic; white-space: normal;" />
         <ui:GroupBox name="half-remote-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
-            <uie:EnumField label="Half remote mode" name="half-remote-mode" type="Elympics.ElympicsGameConfig+HalfRemoteModeEnum,Elympics" binding-path="halfRemoteMode" />
             <ui:TextField picking-mode="Ignore" label="Server IP" name="half-remote-ip" tooltip="IP Address of server" binding-path="ipForHalfRemoteMode" />
             <uie:IntegerField label="Server TCP port" name="half-remote-tcp-port" tooltip="Port TCP server listens on" binding-path="tcpPortForHalfRemoteMode" />
             <uie:IntegerField label="Server Web port" name="half-remote-web-port" tooltip="Port Web server listens on" binding-path="webPortForHalfRemoteMode" />
@@ -56,22 +54,17 @@
                 </ui:GroupBox>
                 <uie:EnumField label="Reconcile" binding-path="reconciliationFrequency" style="margin-left: 0;" />
             </ui:GroupBox>
-        </ui:GroupBox>
-        <ui:GroupBox name="debug-online-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;">
-            <ui:HelpBox display-tooltip-when-elided="true" message-type="Info" name="debug-online-uploading-spinner" text="Checking if current game version is uploaded to the Elympics cloud..." style="display: flex;" />
-            <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="debug-online-not-uploaded" text="Current game version is not uploaded to the Elympics cloud! Upload your game first using &quot;Tools/Elympics/Manage games in Elympics&quot; window!" style="display: none;" />
-            <uie:PropertyField name="debug-online-match-data" binding-path="testMatchData" label="&lt;i&gt;Test match data&lt;/i&gt;" />
+            <ui:GroupBox name="half-remote-init-data">
+                <uie:PropertyField name="half-remote-match-data" binding-path="testMatchData" label="&lt;i&gt;Test match data&lt;/i&gt;" />
+                <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
+                    <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Match Init Data" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
+                </ui:Foldout>
+            </ui:GroupBox>
         </ui:GroupBox>
         <ui:GroupBox name="snapshot-replay-options" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;">
             <ui:Toggle label="Record snapshots" name="half-remote-record-snapshot" tooltip="Save snapshots to a file to analyze and replay them later" binding-path="recordSnapshots" />
             <ui:TextField label="Snapshot file path" name="snapshot-replay-path" tooltip="Path to a file or a folder where snapshots are stored." binding-path="snapshotFilePath" />
             <ui:HelpBox display-tooltip-when-elided="true" message-type="Error" name="snapshot-replay-error" style="display: none;" />
-        </ui:GroupBox>
-        <ui:GroupBox name="halfremote-init-data">
-            <uie:PropertyField name="match-init-data" binding-path="testMatchData" />
-            <ui:Foldout text="&lt;i&gt;Test players&lt;/i&gt;" name="test-players-foldout" value="false">
-                <ui:ListView focusable="true" reorderable="true" binding-path="testPlayers" name="test-player-data" label="Match Init Data" virtualization-method="DynamicHeight" show-add-remove-footer="true" />
-            </ui:Foldout>
         </ui:GroupBox>
     </ui:Foldout>
 </ui:UXML>

@@ -1,9 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using GameEngineCore.V1._4;
-
-#nullable enable
+using GameEngineCore;
 
 namespace Elympics
 {
@@ -17,6 +17,10 @@ namespace Elympics
         public IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>>? CustomRoomData { get; set; }
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; set; }
         public byte[]? ExternalGameData { get; set; }
+
+        public uint? Seed => CustomMatchmakingData != null
+            && CustomMatchmakingData.TryGetValue(TournamentConst.SeedKey, out var seed)
+            && uint.TryParse(seed, out var value) ? value : null;
 
         internal InitialMatchPlayerDatasGuid(IEnumerable<InitialMatchPlayerDataGuid> playerDatas) : base(playerDatas)
         { }

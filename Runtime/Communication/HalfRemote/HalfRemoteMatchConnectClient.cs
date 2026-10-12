@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -7,9 +6,11 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Communication.Models.Public;
-using Elympics.Libraries;
+using Elympics.Core.Logger;
+using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
+using MatchTcpLibrary.TransportLayer.Interfaces;
 using Proto.ProtoClient.NetworkClient;
 using UnityConnectors.HalfRemote;
 using UnityEngine;
@@ -21,9 +22,9 @@ namespace Elympics
     {
         private const int ConnectMaxRetries = 50;
         private const int WaitTimeToRetryConnectInSeconds = 1;
-        private static readonly WaitForSeconds WaitTimeToRetryConnect = new(WaitTimeToRetryConnectInSeconds);
+        private static readonly TimeSpan ServerReachingTimeout = TimeSpan.FromSeconds(1);
 
-        private static readonly WaitForSeconds OfferWaitingInterval = new(1);
+        private static readonly TimeSpan OfferWaitingInterval = TimeSpan.FromSeconds(1);
         private const int MaxOfferWaitingIntervals = 5;
 
         public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
@@ -33,16 +34,13 @@ namespace Elympics
         public event Action AuthenticatedAsSpectator;
         public event Action<string> AuthenticatedAsSpectatorWithError;
         public event Action<string> MatchJoinedWithError;
-        public event Action<Guid> MatchJoinedWithMatchId;
         public event Action<MatchInitialData> MatchJoinedWithMatchInitData;
         public event Action<Guid> MatchEndedWithMatchId;
         public event Action DisconnectedByServer;
         public event Action DisconnectedByClient;
 
-        private static readonly Guid MatchId = Guid.NewGuid();
-
         private readonly HalfRemoteMatchClientAdapter _halfRemoteMatchClientAdapter;
-        private readonly string _ip;
+        private readonly IPAddress _ip;
         private readonly int _port;
         private readonly Guid _userId;
         private readonly MatchInitialData _halfRemoteMatchInitialData;
@@ -54,184 +52,151 @@ namespace Elympics
         private TcpClient _tcpClient;
         private IWebRtcClient _webRtcClient;
 
-
-        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, Guid userId, MatchInitialData halfRemoteMatchInitialData)
+        /// <param name="serverEndPoint">The server's TCP endpoint, or its signaling endpoint if <paramref name="useWeb"/>.</param>
+        public HalfRemoteMatchConnectClient(HalfRemoteMatchClientAdapter halfRemoteMatchClientAdapter, ElympicsGameConfig gameConfig, IPEndPoint serverEndPoint, bool useWeb,
+            Guid userId, MatchInitialData halfRemoteMatchInitialData)
         {
             _halfRemoteMatchClientAdapter = halfRemoteMatchClientAdapter;
-            _ip = gameConfig.IpForHalfRemoteMode;
-            _port = gameConfig.PortForHalfRemoteMode;
+            _ip = serverEndPoint.Address;
+            _port = serverEndPoint.Port;
             _userId = userId;
             _halfRemoteMatchInitialData = halfRemoteMatchInitialData;
-            _useWeb = gameConfig.UseWeb;
+            _useWeb = useWeb;
             _connectionConfig = gameConfig.ConnectionConfig;
             if (_useWeb)
             {
                 var baseUri = new Uri($"http://{_ip}:{_port}");
-                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty);
+                _signalingClient = new HttpSignalingClient(new Uri(baseUri, "/v2"), Guid.Empty, _connectionConfig.GameServerClientConfig);
             }
+
+            halfRemoteMatchClientAdapter.MatchEnded += OnMatchEnded;
+            halfRemoteMatchClientAdapter.Disconnected += OnDisconnected;
         }
 
-        public IEnumerator ConnectAndJoinAsPlayer(Action<bool> connectedCallback, CancellationToken ct)
+        private void OnMatchEnded(Guid matchId)
         {
-            return _useWeb ? ConnectUsingWeb(OnConnectedCallback, ct) : ConnectUsingTcp(OnConnectedCallback, ct);
-
-            void OnConnectedCallback(bool connected)
-            {
-                connectedCallback?.Invoke(connected);
-
-                if (!connected)
-                    return;
-
-                _halfRemoteMatchClientAdapter.PlayerConnected();
-                ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
-                AuthenticatedUserMatchWithUserId?.Invoke(_userId);
-                MatchJoinedWithMatchId?.Invoke(MatchId);
-                MatchJoinedWithMatchInitData?.Invoke(_halfRemoteMatchInitialData);
-            }
+            ElympicsLogger.LogInfo($"Match {matchId} has ended!");
+            MatchEndedWithMatchId?.Invoke(matchId);
         }
 
-        private IEnumerator ConnectUsingTcp(Action<bool> connectedCallback, CancellationToken ct)
+        private void OnDisconnected()
         {
+            ElympicsLogger.LogInfo("Disconnected by server!");
+            DisconnectedByServer?.Invoke();
+        }
+
+        public async UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct)
+        {
+            var client = _useWeb ? await ConnectWebAsync(ct) : await ConnectTcpAsync(ct);
+
+            _halfRemoteMatchClientAdapter.SetupClientCallbacks(_userId.ToString(), client);
+
+            _halfRemoteMatchClientAdapter.PlayerConnected();
+            ConnectedWithSynchronizationData?.Invoke(TimeSynchronizationData.Localhost);
+            AuthenticatedUserMatchWithUserId?.Invoke(_userId);
+            MatchJoinedWithMatchInitData?.Invoke(_halfRemoteMatchInitialData);
+
+            _halfRemoteMatchClientAdapter.StartSynchronization(ct).Forget();
+        }
+
+        private async UniTask<HalfRemoteMatchClient> ConnectTcpAsync(CancellationToken ct)
+        {
+            Exception lastError = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
-                if (!Application.isPlaying
-                    || ct.IsCancellationRequested)
-                    yield break;
+                if (!Application.isPlaying || ct.IsCancellationRequested)
+                    throw new OperationCanceledException(ct);
+
+                if (i > 0)
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(WaitTimeToRetryConnectInSeconds), DelayType.Realtime, cancellationToken: ct);
+                    ElympicsLogger.LogInfo($"Retrying...\nConnecting to TCP server {_ip}:{_port}...");
+                }
+
+                var tcpClient = new TcpClient();
                 try
                 {
-                    _tcpClient = new TcpClient();
-                    _tcpClient.Connect(IPAddress.Parse(_ip), _port);
-                    ElympicsLogger.Log($"TCP connected to {_ip}:{_port}");
-                    break;
+                    await tcpClient.ConnectAsync(_ip, _port).AsUniTask().WithTimeout(ServerReachingTimeout, ct);
+                    ElympicsLogger.LogInfo($"TCP client successfully connected to {_ip}:{_port}");
+                    _tcpClient = tcpClient;
+                    return new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(tcpClient.GetStream()));
+                }
+                catch (OperationCanceledException)
+                {
+                    tcpClient.Dispose();
+                    throw;
                 }
                 catch (Exception e)
                 {
-                    _tcpClient = null;
-                    _ = ElympicsLogger.LogException(e);
+                    lastError = e;
+                    ElympicsLogger.LogWarning($"TCP attempt {i + 1}/{ConnectMaxRetries} to {_ip}:{_port} failed: {e.GetType().Name}: {e.Message}");
                 }
-
-                yield return WaitTimeToRetryConnect;
+                tcpClient.Dispose();
             }
 
-            if (_tcpClient == null)
-            {
-                connectedCallback.Invoke(false);
-                yield break;
-            }
-
-            var client = new HalfRemoteMatchClient(_userId.ToString(), new ProtoNetworkStreamClient(_tcpClient.GetStream()));
-            yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
+            throw new ElympicsException($"Failed to connect to TCP server {_ip}:{_port} after {ConnectMaxRetries} retries.", lastError);
         }
 
-        private IEnumerator ConnectUsingWeb(Action<bool> connectedCallback, CancellationToken ct)
+        private async UniTask<HalfRemoteMatchClient> ConnectWebAsync(CancellationToken ct)
         {
-            _webRtcClient = WebRtcFactory.CreateInstance(TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay));
-            string offer = null;
-            var offerSet = false;
-            _webRtcClient.OfferCreated += s =>
-            {
-                offer = s;
-                offerSet = true;
-            };
-            _webRtcClient.CreateOffer(false);
+            var webRtcConfig = WebRtcConfig.Default;
+            webRtcConfig.OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay);
+            _webRtcClient = WebRtcFactory.CreateClient(webRtcConfig);
 
-            for (var i = 0; i < MaxOfferWaitingIntervals; i++)
-            {
-                if (offerSet)
-                    break;
-                yield return OfferWaitingInterval;
-            }
+            var reliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
+            var unreliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
 
-            if (!offerSet)
-            {
-                ElympicsLogger.LogError("Offer not received from WebRTC client.");
-                yield break;
-            }
+            var offer = await _webRtcClient.CreateOffer(false).WithTimeout(MaxOfferWaitingIntervals * OfferWaitingInterval, ct);
+
             if (string.IsNullOrEmpty(offer))
-            {
-                ElympicsLogger.LogError("Offer is null or empty.");
-                yield break;
-            }
+                throw new ElympicsException("Offer not received from WebRTC client.");
 
+            Exception lastError = null;
             string answer = null;
             for (var i = 0; i < ConnectMaxRetries; i++)
             {
-                if (!Application.isPlaying)
-                    yield break;
+                if (!Application.isPlaying || ct.IsCancellationRequested)
+                    throw new OperationCanceledException(ct);
 
-                WebSignalingClientResponse result = null;
-                yield return _signalingClient.PostOfferAsync(offer, TimeSpan.FromSeconds(1), ct).ToCoroutine(x => result = x);
-                if (result?.IsError == false)
-                    try
-                    {
-                        var signalingResponse = JsonUtility.FromJson<SignalingResponse>(result.Text);
-                        answer = signalingResponse.answer;
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        ElympicsLogger.LogError($"Failed to deserialize signaling response: {ex.Message}");
-                    }
+                if (i > 0)
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(WaitTimeToRetryConnectInSeconds), DelayType.Realtime, cancellationToken: ct);
+                    ElympicsLogger.LogInfo("Retrying...\nSending the offer to the signaling server...");
+                }
 
-                yield return WaitTimeToRetryConnect;
-                ElympicsLogger.LogError(result?.IsError == true ? result.Text : "Response not received from WebRTC client.");
+                try
+                {
+                    var signalingResponse = await _signalingClient.PostOfferAsync(new OfferWithCandidates { offer = offer }, ServerReachingTimeout, ct);
+                    answer = signalingResponse.answer;
+                    break;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception e)
+                {
+                    lastError = e;
+                    ElympicsLogger.LogWarning($"Signaling server attempt {i + 1}/{ConnectMaxRetries} failed: {e.GetType().Name}: {e.Message}");
+                }
             }
 
             if (string.IsNullOrEmpty(answer))
-            {
-                ElympicsLogger.LogError("WebRTC answer is empty because of a connection error " + "or an issue with signaling server.");
-                connectedCallback.Invoke(false);
-                yield break;
-            }
+                throw new ElympicsException("WebRTC answer is empty because of a connection error or an issue with signaling server.", lastError);
 
+            var client = new HalfRemoteMatchClient(_userId.ToString(), reliableChannel, unreliableChannel);
+            await _webRtcClient.OnAnswer(answer);
 
-            var channelOpened = false;
-            var client = new HalfRemoteMatchClient(_userId.ToString(), _webRtcClient);
-
-            void OnChannelOpened(byte[] data, string playerId)
-            {
-                channelOpened = true;
-            }
-
-            client.InGameDataForPlayerOnUnreliableChannelGenerated += OnChannelOpened;
-
-            _webRtcClient.OnAnswer(answer);
-
-            for (var i = 0; i < ConnectMaxRetries; i++)
-            {
-                if (!Application.isPlaying)
-                    yield break;
-
-                if (channelOpened)
-                    break;
-                yield return WaitTimeToRetryConnect;
-            }
-
-            client.InGameDataForPlayerOnUnreliableChannelGenerated -= OnChannelOpened;
-
-            if (!channelOpened)
-            {
-                ElympicsLogger.LogError("WebRTC channel not open after " + $"{ConnectMaxRetries * WaitTimeToRetryConnectInSeconds} seconds.");
-                connectedCallback.Invoke(false);
-                yield break;
-            }
-
-            ElympicsLogger.Log("WebRTC received channel opened.");
-
-            yield return _halfRemoteMatchClientAdapter.ConnectToServer(connectedCallback, _userId.ToString(), client);
+            ElympicsLogger.LogInfo("WebRTC answer applied.");
+            return client;
         }
 
-        public IEnumerator ConnectAndJoinAsSpectator(Action<bool> connectedCallback, CancellationToken ct)
-        {
-            connectedCallback?.Invoke(false);
-            yield break;
-        }
+        public UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct) =>
+            UniTask.FromException(new ElympicsException("HalfRemote mode does not support spectator connections."));
 
         public void Disconnect()
         {
             _halfRemoteMatchClientAdapter.PlayerDisconnected();
             _tcpClient?.Dispose();
             _webRtcClient?.Dispose();
+            ElympicsLogger.LogInfo("Disconnected by client!");
             DisconnectedByClient?.Invoke();
         }
 

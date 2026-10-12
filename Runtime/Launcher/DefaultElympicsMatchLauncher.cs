@@ -72,6 +72,7 @@ namespace Elympics
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsMatchLauncher));
 
         private BootTarget? _boot;
+        private bool _bootNotSetLogged;
         private ElympicsMatchSession? _session;
         private UniTaskCompletionSource<ElympicsLaunchResult>? _launchCompletion;
         private CancellationTokenSource? _timerCts;
@@ -381,7 +382,14 @@ namespace Elympics
         {
             var bootScene = Boot.ScenePath;
             if (bootScene == null)
+            {
+                if (!_bootNotSetLogged && Boot.Warning == ElympicsBootScene.NotSetWarning)
+                {
+                    _bootNotSetLogged = true;
+                    _logger.LogWarning(Boot.Warning);
+                }
                 await _sceneLoader.ReturnToEmptySceneAsync();
+            }
             else if (_sceneLoader.ActiveScenePath == bootScene)
                 _logger.LogInfo("Still in the boot scene, not reloading it.");
             else if (await _sceneLoader.LoadSingleAsync(bootScene))
@@ -505,7 +513,9 @@ namespace Elympics
             var warning = ElympicsBootScene.FindProblem(config, _sceneLoader.IsInBuild);
             if (warning == null)
                 return BootTarget.Scene(config!.BootScene);
-            _logger.LogWarning(warning);
+            // A missing boot scene is a valid setup (e.g. a host that reloads the page after each match), so it's logged on the first return instead.
+            if (warning != ElympicsBootScene.NotSetWarning)
+                _logger.LogWarning(warning);
             return BootTarget.Empty(warning);
         }
 

@@ -326,6 +326,8 @@ create-changelog:
   needs:
     - job: get-package-version
     - job: get-branch-version
+  variables:
+    GIT_DEPTH: 0
   before_script:
     - npm install -g conventional-changelog-cli@2.2.2
     - git config user.email "bot@elympics.cc"
@@ -352,7 +354,7 @@ get-changelog-for-release:
   variables:
     GIT_DEPTH: 1
   before_script:
-    - npm install -g changelog-parser
+    - npm install -g changelog-parser@3
     - export NODE_PATH="$(npm root -g)"
   script:
     - echo $PACKAGE_VERSION

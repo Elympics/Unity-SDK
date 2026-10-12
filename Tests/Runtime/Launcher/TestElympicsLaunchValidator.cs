@@ -48,7 +48,7 @@ namespace Elympics.Tests
             return launch!;
         }
 
-        private ElympicsLaunchFailure ValidateFailure(LaunchData? data, ElympicsLaunchOptions? options = null, ElympicsLaunchPlatform? platform = null, string? gameId = GameId)
+        private ElympicsLaunchFailure GetValidateFailure(LaunchData? data, ElympicsLaunchOptions? options = null, ElympicsLaunchPlatform? platform = null, string? gameId = GameId)
         {
             var ok = ElympicsLaunchValidator.TryValidate("request", gameId, data, options, _games, platform ?? ElympicsLaunchPlatform.Unrestricted, out var launch, out var failure);
             Assert.That(ok, Is.False);
@@ -64,7 +64,7 @@ namespace Elympics.Tests
             return data!;
         }
 
-        private static ElympicsLaunchFailure ParseDataFailure(ElympicsHostLaunchKind kind, string json)
+        private static ElympicsLaunchFailure GetParseDataFailure(ElympicsHostLaunchKind kind, string json)
         {
             var ok = ElympicsLaunchValidator.TryParseData(kind, json, out var data, out var failure);
             Assert.That(ok, Is.False);
@@ -90,22 +90,22 @@ namespace Elympics.Tests
         [TestCase(null)]
         [TestCase("not-a-guid")]
         public void BadGameIdIsInvalidPayload(string? gameId) =>
-            Assert.That(ValidateFailure(new SinglePlayerLaunchData(), gameId: gameId).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new SinglePlayerLaunchData(), gameId: gameId).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void UnknownGameIdIsUnknownGame() =>
-            Assert.That(ValidateFailure(new SinglePlayerLaunchData(), gameId: Guid.NewGuid().ToString()).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnknownGame));
+            Assert.That(GetValidateFailure(new SinglePlayerLaunchData(), gameId: Guid.NewGuid().ToString()).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnknownGame));
 
         [Test]
         public void GameWithoutSceneIsUnknownGame()
         {
             _game.gameplayScene = "";
-            Assert.That(ValidateFailure(new SinglePlayerLaunchData()).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnknownGame));
+            Assert.That(GetValidateFailure(new SinglePlayerLaunchData()).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnknownGame));
         }
 
         [Test]
         public void MissingDataIsInvalidPayload() =>
-            Assert.That(ValidateFailure(null).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(null).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void TimeoutsDefaultAndOptOut()
@@ -127,9 +127,9 @@ namespace Elympics.Tests
         [TestCase(-3)]
         public void NonPositiveTimeoutIsInvalidPayload(int seconds)
         {
-            Assert.That(ValidateFailure(new SinglePlayerLaunchData(), new ElympicsLaunchOptions { LaunchTimeout = TimeSpan.FromSeconds(seconds) }).Code,
+            Assert.That(GetValidateFailure(new SinglePlayerLaunchData(), new ElympicsLaunchOptions { LaunchTimeout = TimeSpan.FromSeconds(seconds) }).Code,
                 Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
-            Assert.That(ValidateFailure(new SinglePlayerLaunchData(), new ElympicsLaunchOptions { PostMatchTimeout = TimeSpan.FromSeconds(seconds) }).Code,
+            Assert.That(GetValidateFailure(new SinglePlayerLaunchData(), new ElympicsLaunchOptions { PostMatchTimeout = TimeSpan.FromSeconds(seconds) }).Code,
                 Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
         }
 
@@ -227,7 +227,7 @@ namespace Elympics.Tests
 
         [TestCaseSource(nameof(BrokenOnlineWireData))]
         public void BrokenOnlineWireDataIsInvalidPayload(string json) =>
-            Assert.That(ParseDataFailure(ElympicsHostLaunchKind.Online, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.Online, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         private static IEnumerable<TestCaseData> BrokenOnlineData()
         {
@@ -243,20 +243,20 @@ namespace Elympics.Tests
 
         [TestCaseSource(nameof(BrokenOnlineData))]
         public void BrokenOnlineDataIsInvalidPayload(OnlineLaunchData data) =>
-            Assert.That(ValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void OnlineTcpUdpAddressWithoutPortIsInvalidPayload()
         {
-            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(Online(serverAddress: "127.0.0.1", useTcpUdp: true)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
             _ = Validate(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true));
         }
 
         [Test]
         public void TcpUdpOnWebGlIsUnsupportedMode()
         {
-            Assert.That(ValidateFailure(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
-            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData(useTcpUdpInsteadOfWebRtc: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(GetValidateFailure(Online(serverAddress: "127.0.0.1:9000", useTcpUdp: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(GetValidateFailure(new HalfRemoteClientLaunchData(useTcpUdpInsteadOfWebRtc: true), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
             _ = Validate(Online(serverAddress: "gs.example", useTcpUdp: false), platform: WebGlPlayer);
         }
 
@@ -316,7 +316,7 @@ namespace Elympics.Tests
         [TestCase("{\"userId\":\"x\"}")]
         [TestCase("{\"gameEngineData\":\"***\"}")]
         public void BrokenSinglePlayerWireDataIsInvalidPayload(string json) =>
-            Assert.That(ParseDataFailure(ElympicsHostLaunchKind.SinglePlayer, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.SinglePlayer, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         #endregion
 
@@ -355,15 +355,15 @@ namespace Elympics.Tests
 
         [Test]
         public void HalfRemoteClientPlayerIndexBelowSentinelIsInvalidPayload() =>
-            Assert.That(ParseDataFailure(ElympicsHostLaunchKind.HalfRemoteClient, "{\"playerIndex\":-2}").Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteClient, "{\"playerIndex\":-2}").Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void HalfRemoteClientBadAddressIsInvalidPayload() =>
-            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData("localhost")).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new HalfRemoteClientLaunchData("localhost")).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void HalfRemoteClientNegativePlayerIndexIsInvalidPayload() =>
-            Assert.That(ValidateFailure(new HalfRemoteClientLaunchData(playerIndex: -1)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new HalfRemoteClientLaunchData(playerIndex: -1)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         #endregion
 
@@ -383,7 +383,7 @@ namespace Elympics.Tests
         [TestCase("tcp")]
         [TestCase("Both")]
         public void UnknownHalfRemoteServerProtocolsAreInvalidPayload(string protocols) =>
-            Assert.That(ParseDataFailure(ElympicsHostLaunchKind.HalfRemoteServer, "{\"protocols\":\"" + protocols + "\"}").Code,
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteServer, "{\"protocols\":\"" + protocols + "\"}").Code,
                 Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
@@ -426,14 +426,14 @@ namespace Elympics.Tests
 
         [TestCaseSource(nameof(BrokenHalfRemoteServerData))]
         public void BrokenHalfRemoteServerDataIsInvalidPayload(HalfRemoteServerLaunchData data) =>
-            Assert.That(ValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(data).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void HalfRemoteServerWhereListeningIsImpossibleIsUnsupportedMode()
         {
             foreach (var platform in new[] { WebGlPlayer, IosPlayer })
             {
-                var failure = ValidateFailure(new HalfRemoteServerLaunchData(), platform: platform);
+                var failure = GetValidateFailure(new HalfRemoteServerLaunchData(), platform: platform);
                 Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
                 Assert.That(failure.message, Does.Contain(ElympicsLaunchPlatform.CannotListenMessage));
             }
@@ -446,7 +446,7 @@ namespace Elympics.Tests
         public void HalfRemoteClientWithoutItInThePlayerIsUnsupportedMode()
         {
             var platform = new ElympicsLaunchPlatform(canListen: false, canUseTcpUdp: false, hasLocalFiles: false, hasHalfRemoteClient: false);
-            var failure = ValidateFailure(new HalfRemoteClientLaunchData(), platform: platform);
+            var failure = GetValidateFailure(new HalfRemoteClientLaunchData(), platform: platform);
             Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
             Assert.That(failure.message, Does.Contain(ElympicsLaunchPlatform.NoHalfRemoteClientMessage));
         }
@@ -464,11 +464,11 @@ namespace Elympics.Tests
 
         [Test]
         public void SnapshotReplayWithoutPathIsInvalidPayload() =>
-            Assert.That(ValidateFailure(new SnapshotReplayLaunchData("")).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new SnapshotReplayLaunchData("")).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
 
         [Test]
         public void SnapshotReplayByPathWithoutLocalFilesIsUnsupportedMode() =>
-            Assert.That(ValidateFailure(new SnapshotReplayLaunchData("replays/match"), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
+            Assert.That(GetValidateFailure(new SnapshotReplayLaunchData("replays/match"), platform: WebGlPlayer).Code, Is.EqualTo(ElympicsLaunchErrorCode.UnsupportedMode));
 
         [TestCase("https://replays.example/match.snapshots")]
         [TestCase("http://localhost:8080/match")]
@@ -479,8 +479,8 @@ namespace Elympics.Tests
         public void SnapshotReplayOfMissingFileIsInvalidPayload()
         {
             var missing = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-            Assert.That(ValidateFailure(new SnapshotReplayLaunchData(missing)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
-            Assert.That(ValidateFailure(new SnapshotReplayLaunchData(missing + Path.DirectorySeparatorChar)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new SnapshotReplayLaunchData(missing)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetValidateFailure(new SnapshotReplayLaunchData(missing + Path.DirectorySeparatorChar)).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
         }
 
         #endregion

@@ -48,7 +48,7 @@ namespace Elympics.Editor.Tests
             _config.availableGames.Add(game);
         }
 
-        private List<string> Problems(params string[] buildScenes) =>
+        private List<string> GetProblems(params string[] buildScenes) =>
             ElympicsLauncherBuildValidation.FindProblems(_config, buildScenes);
 
         private static void AssertOneProblem(List<string> problems, string fragment) =>
@@ -56,20 +56,20 @@ namespace Elympics.Editor.Tests
 
         [Test]
         public void ValidConfigurationHasNoProblems() =>
-            Assert.That(Problems(Boot, GameplayA, GameplayB), Is.Empty);
+            Assert.That(GetProblems(Boot, GameplayA, GameplayB), Is.Empty);
 
         [Test]
         public void NullGameEntriesAreIgnored()
         {
             _config.availableGames.Add(null);
-            Assert.That(Problems(Boot, GameplayA, GameplayB), Is.Empty);
+            Assert.That(GetProblems(Boot, GameplayA, GameplayB), Is.Empty);
         }
 
         [Test]
         public void MissingBootSceneIsAWarningNotAProblem()
         {
             _config.bootScene = "";
-            Assert.That(Problems(GameplayA, GameplayB), Is.Empty);
+            Assert.That(GetProblems(GameplayA, GameplayB), Is.Empty);
             var warnings = ElympicsLauncherBuildValidation.FindWarnings(_config);
             Assert.That(warnings, Has.Count.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("no boot scene"));
@@ -82,7 +82,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void BootSceneNotInBuildIsReportedWithOptOut()
         {
-            var problems = Problems(GameplayA, GameplayB);
+            var problems = GetProblems(GameplayA, GameplayB);
             AssertOneProblem(problems, Boot + " is not enabled");
             Assert.That(problems.Single(), Does.Contain("clear"));
         }
@@ -90,7 +90,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void GameplaySceneNotInBuildIsReportedPerGame()
         {
-            var problems = Problems(Boot);
+            var problems = GetProblems(Boot);
             Assert.That(problems, Has.Count.EqualTo(2));
             AssertOneProblem(problems, GameplayA);
             AssertOneProblem(problems, GameplayB);
@@ -100,14 +100,14 @@ namespace Elympics.Editor.Tests
         public void GameWithoutGameplaySceneIsReported()
         {
             AddGame("C", "");
-            AssertOneProblem(Problems(Boot, GameplayA, GameplayB), "C has no gameplay scene");
+            AssertOneProblem(GetProblems(Boot, GameplayA, GameplayB), "C has no gameplay scene");
         }
 
         [Test]
         public void BootSceneThatIsAlsoAGameplaySceneIsReported()
         {
             _config.bootScene = GameplayA;
-            AssertOneProblem(Problems(GameplayA, GameplayB), "must be a separate scene");
+            AssertOneProblem(GetProblems(GameplayA, GameplayB), "must be a separate scene");
         }
     }
 }

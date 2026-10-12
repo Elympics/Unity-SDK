@@ -55,16 +55,16 @@ namespace Elympics.Editor.Launcher
         private void OnEnable()
         {
             if (string.IsNullOrEmpty(gameId))
-                gameId = DefaultGameId();
+                gameId = GetDefaultGameId();
             while (dataJsons.Count < LaunchKinds.Length)
-                dataJsons.Add(TemplateData((ElympicsHostLaunchKind)dataJsons.Count));
+                dataJsons.Add(GetTemplateData((ElympicsHostLaunchKind)dataJsons.Count));
             if (string.IsNullOrEmpty(optionsJson))
-                optionsJson = TemplateOptions();
+                optionsJson = GetTemplateOptions();
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorApplication.projectChanged += UpdateEnvironment;
             EditorBuildSettings.sceneListChanged += UpdateEnvironment;
             // After the domain reload of entering play mode, subscribe before the launch queue sends its launch.
-            Subscribe(CurrentLauncher());
+            Subscribe(CurrentLauncher);
         }
 
         private void OnDisable()
@@ -79,7 +79,7 @@ namespace Elympics.Editor.Launcher
 
         private void OnPlayModeStateChanged(PlayModeStateChange change)
         {
-            Subscribe(CurrentLauncher());
+            Subscribe(CurrentLauncher);
             UpdateEnvironment();
         }
 
@@ -124,13 +124,13 @@ namespace Elympics.Editor.Launcher
                 // A tab can't be closed by clicking it again: one tab is always open.
                 _ = tab.RegisterValueChangedCallback(change => SelectTab(change.newValue ? kind : editedKind));
             }
-            root.Q<Button>("data-template").clicked += () => _dataJson.value = TemplateData(editedKind);
+            root.Q<Button>("data-template").clicked += () => _dataJson.value = GetTemplateData(editedKind);
             root.Q<Button>("data-load").clicked += LoadDataFromFile;
 
             var optionsField = root.Q<TextField>("options-json");
             optionsField.SetValueWithoutNotify(optionsJson);
             _ = optionsField.RegisterValueChangedCallback(change => optionsJson = change.newValue);
-            root.Q<Button>("options-template").clicked += () => optionsField.value = TemplateOptions();
+            root.Q<Button>("options-template").clicked += () => optionsField.value = GetTemplateOptions();
 
             _launchButton = root.Q<Button>("launch");
             _launchButton.clicked += () => Launch(editedKind);
@@ -154,7 +154,7 @@ namespace Elympics.Editor.Launcher
 
         private void UpdateLauncherState()
         {
-            Subscribe(CurrentLauncher());
+            Subscribe(CurrentLauncher);
             if (_state == null)
                 return;
             var launcher = _subscribed;
@@ -168,13 +168,13 @@ namespace Elympics.Editor.Launcher
         {
             if (_state == null)
                 return;
-            var launchModeSource = LaunchModeParameterSource();
+            var launchModeSource = GetLaunchModeParameterSource();
             SetShown(_launchModeNote, launchModeSource != null);
             _launchModeNote.text = launchModeSource ?? "";
             _launchControls.SetEnabled(launchModeSource == null);
 
             UpdateGameChoices();
-            var game = SelectedGame();
+            var game = GetSelectedGame();
             _unknownGame.style.visibility = game == null ? Visibility.Visible : Visibility.Hidden;
             _unknownGame.text = $"No game with ID \"{gameId}\" in ElympicsConfig";
             SetShown(_buildSettingsError, game != null && !IsInBuildSettings(game.GameplayScene));
@@ -195,10 +195,10 @@ namespace Elympics.Editor.Launcher
 
         private static void SetShown(VisualElement element, bool shown) => element.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
 
-        private static ElympicsMatchLauncher? CurrentLauncher() => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
+        private static ElympicsMatchLauncher? CurrentLauncher => EditorApplication.isPlaying ? ElympicsMatchLauncher.Current : null;
 
         /// <summary>With the launch mode parameter set, the launcher rejects every launch.</summary>
-        private static string? LaunchModeParameterSource()
+        private static string? GetLaunchModeParameterSource()
         {
             const string argument = "--elympics-launch-mode";
             if (CloneArguments.Read().Any(arg => arg.StartsWith(argument)))
@@ -315,19 +315,19 @@ namespace Elympics.Editor.Launcher
             }
         }
 
-        private ElympicsGameConfig? SelectedGame() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null && config.GameId == gameId);
+        private ElympicsGameConfig? GetSelectedGame() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null && config.GameId == gameId);
 
-        private static string DefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";
+        private static string GetDefaultGameId() => ElympicsConfig.Load()?.AvailableGames.FirstOrDefault(config => config != null)?.GameId ?? "";
 
         /// <summary>Every field is unset, so the launch uses the game config's values.</summary>
-        private string TemplateData(ElympicsHostLaunchKind kind)
+        private string GetTemplateData(ElympicsHostLaunchKind kind)
         {
             var dto = ElympicsLaunchDtos.Create(kind);
-            if (dto is SnapshotReplayLaunchDataDto replay && SelectedGame() is { } game)
+            if (dto is SnapshotReplayLaunchDataDto replay && GetSelectedGame() is { } game)
                 replay.path = game.SnapshotFilePath;
             return JsonUtility.ToJson(dto, true);
         }
 
-        private static string TemplateOptions() => JsonUtility.ToJson(new ElympicsLaunchOptionsDto(), true);
+        private static string GetTemplateOptions() => JsonUtility.ToJson(new ElympicsLaunchOptionsDto(), true);
     }
 }

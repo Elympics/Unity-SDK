@@ -20,11 +20,11 @@ namespace Elympics.Editor.ParrelSync
                 return;
             var projectPath = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             if (TryRewriteDefault(projectPath, ElympicsClonesManager.GetCloneNumber()))
-                ElympicsLogger.LogInfo($"This clone's ParrelSync arguments are now \"{DefaultArguments(ElympicsClonesManager.GetCloneNumber())}\": "
+                ElympicsLogger.LogInfo($"This clone's ParrelSync arguments are now \"{GetDefaultArguments(ElympicsClonesManager.GetCloneNumber())}\": "
                     + "pressing Play in the gameplay scene joins the half-remote server. Edit them in the Clones Manager.");
         }
 
-        internal static string DefaultArguments(int cloneNumber) =>
+        internal static string GetDefaultArguments(int cloneNumber) =>
             $"--elympics-launch-mode={LaunchDataFromParameters.HalfRemoteClient} --half-remote-player-index={cloneNumber}";
 
         internal static bool TryRewriteDefault(string projectPath, int cloneNumber)
@@ -32,7 +32,7 @@ namespace Elympics.Editor.ParrelSync
             var path = Path.Combine(projectPath, CloneArguments.FileName);
             if (!File.Exists(path) || File.ReadAllText(path, Encoding.UTF8).Trim() != ParrelSyncDefault)
                 return false;
-            File.WriteAllText(path, DefaultArguments(cloneNumber), Encoding.UTF8);
+            File.WriteAllText(path, GetDefaultArguments(cloneNumber), Encoding.UTF8);
             return true;
         }
     }

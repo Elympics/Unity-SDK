@@ -75,7 +75,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void DefaultCloneArgumentsGiveHalfRemoteClientAndCloneNumber()
         {
-            Initialize(new[] { "Unity.exe" }, CloneArguments.Split(ElympicsCloneArguments.DefaultArguments(2)).ToArray());
+            Initialize(new[] { "Unity.exe" }, CloneArguments.Split(ElympicsCloneArguments.GetDefaultArguments(2)).ToArray());
 
             Assert.That(_parameters.LaunchMode.GetValue(), Is.EqualTo("halfRemoteClient"));
             Assert.That(_parameters.HalfRemotePlayerIndex.GetValue(), Is.EqualTo(2));

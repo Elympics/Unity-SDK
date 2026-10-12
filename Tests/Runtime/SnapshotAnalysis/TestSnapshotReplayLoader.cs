@@ -41,7 +41,7 @@ namespace Elympics.Tests.SnapshotAnalysis
             Directory.Delete(_directory, true);
         }
 
-        private static async UniTask<byte[]> ReplayBytes(string gameVersion)
+        private static async UniTask<byte[]> GetReplayBytesAsync(string gameVersion)
         {
             var serializer = new LatestMessagePackSerializer();
             using var stream = new MemoryStream();
@@ -53,7 +53,7 @@ namespace Elympics.Tests.SnapshotAnalysis
         private async UniTask<string> WriteReplay(string gameVersion, string name = "match")
         {
             var path = Path.Combine(_directory, name + EditorSnapshotAnalysisCollector.DefaultFileExtension);
-            File.WriteAllBytes(path, await ReplayBytes(gameVersion));
+            File.WriteAllBytes(path, await GetReplayBytesAsync(gameVersion));
             return path;
         }
 
@@ -105,7 +105,7 @@ namespace Elympics.Tests.SnapshotAnalysis
 
             public OneShotServer(int status, byte[] body)
             {
-                var port = FreePort();
+                var port = GetFreePort();
                 // 127.0.0.1, not localhost: the web request may resolve localhost to ::1, where the listener is not bound.
                 Url = $"http://127.0.0.1:{port}/replay{EditorSnapshotAnalysisCollector.DefaultFileExtension}";
                 _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
@@ -119,7 +119,7 @@ namespace Elympics.Tests.SnapshotAnalysis
                 });
             }
 
-            private static int FreePort()
+            private static int GetFreePort()
             {
                 var socket = new TcpListener(IPAddress.Loopback, 0);
                 socket.Start();
@@ -135,7 +135,7 @@ namespace Elympics.Tests.SnapshotAnalysis
         [UnityPlatform(RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor)]
         public IEnumerator ReplayFromUrlIsLoaded() => UniTask.ToCoroutine(async () =>
         {
-            using var server = new OneShotServer(200, await ReplayBytes(GameVersion));
+            using var server = new OneShotServer(200, await GetReplayBytesAsync(GameVersion));
 
             var result = await Load(server.Url);
 

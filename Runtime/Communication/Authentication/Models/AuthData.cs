@@ -8,8 +8,6 @@ namespace Elympics.Models.Authentication
         public string JwtToken { get; }
         public AuthType AuthType { get; }
 
-        internal string BearerAuthorization => $"Bearer {JwtToken}";
-
         public AuthData(Guid userId, string jwtToken, AuthType authType = AuthType.None)
         {
             UserId = userId;

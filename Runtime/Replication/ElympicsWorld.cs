@@ -235,7 +235,8 @@ namespace Elympics.Replication
             MaxPlayers = 0;
             CurrentTick = -1;
 
-            Current = null;
+            if (Current == this)
+                Current = null;
         }
 
         internal void BeginTick(ElympicsSnapshot fullSnapshot, long tick)

@@ -11,7 +11,7 @@ namespace Elympics
 {
     internal sealed class ElympicsWebGlHostBridge : IElympicsHostBridge
     {
-        public string Name => "webgl";
+        public string Name => ElympicsHostBridgeFactory.WebGl;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         private delegate void CommandCallback(int kind, IntPtr first, IntPtr second, IntPtr third);
@@ -34,15 +34,13 @@ namespace Elympics
         {
             try
             {
-                launcher?.HandleHostCommand((ElympicsHostCommandKind)kind, ToText(first), ToText(second), ToText(third));
+                launcher?.HandleHostCommand((ElympicsHostCommandKind)kind, HostBridgeText.FromUtf8(first), HostBridgeText.FromUtf8(second), HostBridgeText.FromUtf8(third));
             }
             catch (Exception e)
             {
                 ElympicsLogger.LogException(e);
             }
         }
-
-        private static string ToText(IntPtr pointer) => pointer == IntPtr.Zero ? string.Empty : Marshal.PtrToStringAuto(pointer) ?? string.Empty;
 
         public void DispatchEvent(string type, string requestId, string payloadJson) => ElympicsHost_DispatchEvent(type, requestId, payloadJson);
 

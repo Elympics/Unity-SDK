@@ -321,24 +321,7 @@ namespace Elympics
         #endregion
 
         /// <summary>Called from network threads. Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.</summary>
-        protected void Enqueue(Action action)
-        {
-            var matchToken = MatchToken;
-            UniTask.Post(() =>
-            {
-                // UniTask's queue is process-wide and outlives the scene: drop actions of a torn-down match.
-                if (matchToken.IsCancellationRequested || this == null)
-                    return;
-                try
-                {
-                    action.Invoke();
-                }
-                catch (Exception e)
-                {
-                    ElympicsLogger.LogException(e);
-                }
-            });
-        }
+        protected void Enqueue(Action action) => MainThread.Post(action, MatchToken, this);
 
         /// <summary>Resets the time accumulator so the next ElympicsFixedUpdate fires fresh after reconnect.</summary>
         internal void ResetTimer()

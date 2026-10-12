@@ -87,6 +87,8 @@ namespace Elympics
         /// </summary>
         internal abstract void HandleHostCommand(ElympicsHostCommandKind kind, string first, string second = "", string third = "");
 
+        internal abstract void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson);
+
         internal abstract void EmitReady();
 
         internal enum SceneAttachment

@@ -53,8 +53,9 @@ namespace Elympics
             launch = null;
             failure = null;
 
-            if (!Guid.TryParse(gameId ?? string.Empty, out var parsedGameId))
-                return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"The game ID must be a GUID, got \"{gameId}\".", out failure);
+            if (!ElympicsLaunchDtoParsing.TryParseGuid(gameId, nameof(gameId), true, out var parsedGameIdOrNull, out failure))
+                return false;
+            var parsedGameId = parsedGameIdOrNull!.Value;
             var gameConfig = availableGames.FirstOrDefault(game => game != null && Guid.TryParse(game.GameId, out var id) && id == parsedGameId);
             if (gameConfig == null)
                 return Fail(ElympicsLaunchErrorCode.UnknownGame, $"Game {parsedGameId} is not in the available games of ElympicsConfig.", out failure);
@@ -82,6 +83,10 @@ namespace Elympics
                 return false;
             return dto!.TryToOptions(out options, out failure);
         }
+
+        /// <summary>The request ID of options that failed validation, so the failure can still be matched to the request. Empty for malformed JSON.</summary>
+        public static string ReadRequestId(string? optionsJson) =>
+            TryFromJson(optionsJson, "options", new ElympicsLaunchOptionsDto(), out var dto, out _) ? dto!.requestId : string.Empty;
 
         public static bool TryParseData(ElympicsHostLaunchKind kind, string? dataJson, out LaunchData? data, out ElympicsLaunchFailure? failure)
         {

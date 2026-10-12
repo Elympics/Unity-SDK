@@ -24,8 +24,11 @@ namespace Elympics.Editor.ParrelSync
                     + "pressing Play in the gameplay scene joins the half-remote server. Edit them in the Clones Manager.");
         }
 
-        internal static string GetDefaultArguments(int cloneNumber) =>
-            $"--elympics-launch-mode={LaunchDataFromParameters.HalfRemoteClient} --half-remote-player-index={cloneNumber}";
+        internal static string GetDefaultArguments(int cloneNumber)
+        {
+            var parameters = ApplicationParameters.Parameters;
+            return $"--{parameters.LaunchMode.LongArgumentName}={LaunchDataFromParameters.HalfRemoteClient} --{parameters.HalfRemotePlayerIndex.LongArgumentName}={cloneNumber}";
+        }
 
         internal static bool TryRewriteDefault(string projectPath, int cloneNumber)
         {

@@ -26,16 +26,6 @@
       "displayName": "Match events [Game]",
       "description": "A sample to illustrate the lifecycle of Elympics match",
       "path": "Samples~/MatchEvents"
-    },
-    {
-      "displayName": "EGB test [Menu] [Game]",
-      "description": "A sample menu for setting Matchmaking and GameEngine data with a game for checking the response from External Game Backend",
-      "path": "Samples~/EgbTest"
-    },
-    {
-      "displayName": "Rooms-based menu [Menu]",
-      "description": "Showcase of the rooms feature",
-      "path": "Samples~/RoomsMenu"
     }
   ],
   "dependencies": {

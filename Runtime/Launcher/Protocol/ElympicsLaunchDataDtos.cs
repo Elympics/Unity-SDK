@@ -39,9 +39,7 @@ namespace Elympics
             };
             if (seconds >= ElympicsLaunchDefaults.NoTimeout)
                 return true;
-            failure = new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InvalidPayload,
-                $"{name} must be positive, 0 (default) or {ElympicsLaunchDefaults.NoTimeout} (never), got {seconds}.");
-            return false;
+            return ElympicsLaunchDtoParsing.Fail($"{name} must be positive, 0 (default) or {ElympicsLaunchDefaults.NoTimeout} (never), got {seconds}.", out failure);
         }
     }
 
@@ -115,7 +113,7 @@ namespace Elympics
 
         public static float[]? NullIfEmpty(float[]? values) => values is { Length: > 0 } ? values : null;
 
-        private static bool Fail(string message, out ElympicsLaunchFailure? failure)
+        internal static bool Fail(string message, out ElympicsLaunchFailure? failure)
         {
             failure = new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InvalidPayload, message);
             return false;
@@ -196,10 +194,7 @@ namespace Elympics
                 || !ElympicsLaunchDtoParsing.TryParseBase64(gameEngineData, nameof(gameEngineData), out var engineData, out failure))
                 return false;
             if (playerIndex < -1)
-            {
-                failure = new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(playerIndex)} must be -1 (default) or an index, got {playerIndex}.");
-                return false;
-            }
+                return ElympicsLaunchDtoParsing.Fail($"{nameof(playerIndex)} must be -1 (default) or an index, got {playerIndex}.", out failure);
             data = new HalfRemoteClientLaunchData(ElympicsLaunchDtoParsing.NullIfEmpty(serverAddress), useTcpUdp, playerIndex < 0 ? null : playerIndex,
                 ElympicsLaunchDtoParsing.NullIfEmpty(regionName), ElympicsLaunchDtoParsing.NullIfEmpty(queueName), engineData,
                 ElympicsLaunchDtoParsing.NullIfEmpty(matchmakerData));
@@ -240,9 +235,8 @@ namespace Elympics
                     parsedProtocols = ElympicsHalfRemoteProtocols.Both;
                     break;
                 default:
-                    failure = new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InvalidPayload,
-                        $"{nameof(protocols)} must be \"\", \"{ProtocolsTcpUdp}\", \"{ProtocolsWebRtc}\" or \"{ProtocolsBoth}\", got \"{protocols}\".");
-                    return false;
+                    return ElympicsLaunchDtoParsing.Fail(
+                        $"{nameof(protocols)} must be \"\", \"{ProtocolsTcpUdp}\", \"{ProtocolsWebRtc}\" or \"{ProtocolsBoth}\", got \"{protocols}\".", out failure);
             }
             data = new HalfRemoteServerLaunchData(parsedProtocols, ElympicsLaunchDtoParsing.NullIfEmpty(serverHostname),
                 tcpUdpPort == 0 ? null : tcpUdpPort, signalingPort == 0 ? null : signalingPort, maxPlayers == 0 ? null : maxPlayers);

@@ -25,7 +25,7 @@ namespace Elympics
         [DllImport(Library)] private static extern int ElympicsHost_DispatchEvent(byte[] type, byte[] requestId, byte[] payloadJson);
         [DllImport(Library)] private static extern IntPtr ElympicsHost_PollCommand(out int kind, out IntPtr second, out IntPtr third);
 
-        public string Name => "native";
+        public string Name => ElympicsHostBridgeFactory.Native;
 
         private readonly LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsNativeHostBridge));
         private ElympicsMatchLauncher? _launcher;
@@ -62,9 +62,9 @@ namespace Elympics
                 if ((ElympicsHostCommandKind)kind == ElympicsHostCommandKind.None)
                     return;
                 // Copied right away: the plugin reuses the buffers on the next poll.
-                var first = FromUtf8(firstPointer);
-                var second = FromUtf8(secondPointer);
-                var third = FromUtf8(thirdPointer);
+                var first = HostBridgeText.FromUtf8(firstPointer);
+                var second = HostBridgeText.FromUtf8(secondPointer);
+                var third = HostBridgeText.FromUtf8(thirdPointer);
                 try
                 {
                     _launcher.HandleHostCommand((ElympicsHostCommandKind)kind, first, second, third);
@@ -93,18 +93,6 @@ namespace Elympics
             var bytes = new byte[Encoding.UTF8.GetByteCount(value) + 1];
             _ = Encoding.UTF8.GetBytes(value, 0, value.Length, bytes, 0);
             return bytes;
-        }
-
-        private static string FromUtf8(IntPtr pointer)
-        {
-            if (pointer == IntPtr.Zero)
-                return string.Empty;
-            var length = 0;
-            while (Marshal.ReadByte(pointer, length) != 0)
-                length++;
-            var bytes = new byte[length];
-            Marshal.Copy(pointer, bytes, 0, length);
-            return Encoding.UTF8.GetString(bytes);
         }
     }
 }

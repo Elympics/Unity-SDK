@@ -31,7 +31,7 @@ namespace Elympics
             if (!ApplicationParameters.InitializeParameters())
                 ElympicsLogger.LogError("Could not initialize application parameters.");
 
-            ElympicsMatchLauncher.Current = new DefaultElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild,
+            ElympicsMatchLauncher.Current = new DefaultElympicsMatchLauncher(new ElympicsSceneLoader(), ElympicsConfig.Load, ElympicsLaunchPlatform.Current, _ => ExitUtility.ExitGame(), Debug.isDebugBuild && !Application.isEditor,
                 LaunchDataFromParameters.IsSet);
             Application.quitting -= Shutdown;
             Application.quitting += Shutdown;

@@ -110,7 +110,7 @@ namespace Elympics
             if (!ElympicsLaunchValidator.TryValidate(requestId, gameId, data, options, games, _platform, out var launch, out var failure))
                 return RejectLaunch(requestId, failure!.Code, failure.message);
 
-            var session = new ElympicsMatchSession(launch!, this);
+            var session = new ElympicsMatchSession(launch!, this, _verifyTeardown);
             var completion = new UniTaskCompletionSource<ElympicsLaunchResult>();
             _session = session;
             _launchCompletion = completion;
@@ -141,9 +141,7 @@ namespace Elympics
             {
                 if (session.Launch.Data is SnapshotReplayLaunchData replay)
                 {
-                    var result = replay.Preloaded != null
-                        ? SnapshotReplayLoader.Check(replay.Preloaded, session.Launch.GameConfig)
-                        : await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
+                    var result = await SnapshotReplayLoader.LoadAsync(replay, session.Launch.GameConfig, session.Token);
                     if (session != _session || State != MatchLauncherState.Loading)
                         return;
                     if (result.Failure != null)
@@ -229,43 +227,27 @@ namespace Elympics
 
         void IElympicsMatchLifecycleSink.MatchEnded(Guid matchId)
         {
-            switch (State)
+            if (State == MatchLauncherState.Loading)
+                FailLaunch(ElympicsLaunchErrorCode.ConnectionFailed, "The match ended before it was joined.");
+            else if (State == MatchLauncherState.Running)
             {
-                case MatchLauncherState.Loading:
-                    FailLaunch(ElympicsLaunchErrorCode.ConnectionFailed, "The match ended before it was joined.");
-                    return;
-                case MatchLauncherState.Running:
-                    var info = new ElympicsMatchEndedInfo { matchId = matchId.ToString() };
-                    EnterEnded();
-                    Emit(ElympicsHostProtocol.Events.MatchEnded, string.Empty, info);
-                    Raise(MatchEnded, info);
-                    return;
-                case MatchLauncherState.Idle:
-                case MatchLauncherState.Ended:
-                case MatchLauncherState.Unloading:
-                default:
-                    return;
+                var info = new ElympicsMatchEndedInfo { matchId = matchId.ToString() };
+                EnterEnded();
+                Emit(ElympicsHostProtocol.Events.MatchEnded, string.Empty, info);
+                Raise(MatchEnded, info);
             }
         }
 
         void IElympicsMatchLifecycleSink.Disconnected(bool byServer)
         {
-            switch (State)
+            if (State == MatchLauncherState.Loading)
+                FailLaunch(ElympicsLaunchErrorCode.ConnectionFailed, $"Disconnected by {(byServer ? "server" : "client")} before the match was joined.");
+            else if (State == MatchLauncherState.Running)
             {
-                case MatchLauncherState.Loading:
-                    FailLaunch(ElympicsLaunchErrorCode.ConnectionFailed, $"Disconnected by {(byServer ? "server" : "client")} before the match was joined.");
-                    return;
-                case MatchLauncherState.Running:
-                    var info = new ElympicsDisconnectedInfo { matchId = (_session?.Launch.MatchId ?? Guid.Empty).ToString(), byServer = byServer };
-                    EnterEnded();
-                    Emit(ElympicsHostProtocol.Events.Disconnected, string.Empty, info);
-                    Raise(Disconnected, info);
-                    return;
-                case MatchLauncherState.Idle:
-                case MatchLauncherState.Ended:
-                case MatchLauncherState.Unloading:
-                default:
-                    return;
+                var info = new ElympicsDisconnectedInfo { matchId = (_session?.Launch.MatchId ?? Guid.Empty).ToString(), byServer = byServer };
+                EnterEnded();
+                Emit(ElympicsHostProtocol.Events.Disconnected, string.Empty, info);
+                Raise(Disconnected, info);
             }
         }
 
@@ -314,11 +296,7 @@ namespace Elympics
                 BeginTeardown(requestId);
                 return await completion.Task.AttachExternalCancellation(ct);
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
                 _logger.LogException(e);
                 var message = $"{e.GetType().Name}: {e.Message}";
@@ -340,6 +318,7 @@ namespace Elympics
         private async UniTaskVoid TeardownAsync()
         {
             var session = _session;
+            session?.Cancel();
             try
             {
                 // A scene load cannot be cancelled; let it finish so the boot scene is loaded after it, not before.
@@ -354,20 +333,14 @@ namespace Elympics
             session?.Detach();
             _session = null;
             ElympicsMatchTeardown.ReleaseStatics();
-            try
-            {
-                _processGlobals?.Restore();
-            }
-            catch (Exception e)
-            {
-                _logger.LogException(e);
-            }
+            ElympicsMatchTeardown.Try("restore process globals", () => _processGlobals?.Restore());
             _processGlobals = null;
 
+            var bootSceneLoaded = false;
             try
             {
                 if (!_quitting)
-                    await LoadBootSceneAsync();
+                    bootSceneLoaded = await LoadBootSceneAsync();
             }
             catch (Exception e)
             {
@@ -376,7 +349,9 @@ namespace Elympics
 
             try
             {
-                await _sceneLoader.ReleaseMemoryAsync(_verifyTeardown);
+                // A single-mode scene load has already unloaded unused assets.
+                if (_verifyTeardown || !bootSceneLoaded)
+                    await _sceneLoader.ReleaseMemoryAsync(_verifyTeardown);
                 if (_verifyTeardown)
                     ElympicsMatchTeardown.AssertReleased(session?.Collectable ?? Array.Empty<WeakReference>(), ++_cycle);
             }
@@ -401,15 +376,19 @@ namespace Elympics
                 _ = completion.TrySetResult(ElympicsReturnToBootResult.Succeeded(requestId));
         }
 
-        private async UniTask LoadBootSceneAsync()
+        /// <summary>Returns true if the boot scene was loaded in single mode.</summary>
+        private async UniTask<bool> LoadBootSceneAsync()
         {
             var bootScene = Boot.ScenePath;
             if (bootScene == null)
                 await _sceneLoader.ReturnToEmptySceneAsync();
             else if (_sceneLoader.ActiveScenePath == bootScene)
                 _logger.LogInfo("Still in the boot scene, not reloading it.");
-            else if (!await _sceneLoader.LoadSingleAsync(bootScene))
+            else if (await _sceneLoader.LoadSingleAsync(bootScene))
+                return true;
+            else
                 _logger.LogError($"Could not load boot scene {bootScene}. Set {nameof(ElympicsConfig)}.bootScene and add it to Build Settings.");
+            return false;
         }
 
         #endregion
@@ -459,12 +438,12 @@ namespace Elympics
 
         #region Host commands
 
-        private void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
+        internal override void HandleHostLaunch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
             if (!ElympicsLaunchValidator.TryParseOptions(optionsJson, out var options, out var failure)
                 || !ElympicsLaunchValidator.TryParseData(kind, dataJson, out var data, out failure))
             {
-                _ = RejectLaunch(options?.RequestId ?? string.Empty, failure!.Code, failure.message);
+                _ = RejectLaunch(options?.RequestId ?? ElympicsLaunchValidator.ReadRequestId(optionsJson), failure!.Code, failure.message);
                 return;
             }
             LaunchAsync(gameId, data, options, CancellationToken.None).Forget();
@@ -490,13 +469,13 @@ namespace Elympics
                     HandleHostLaunch(ElympicsHostLaunchKind.SnapshotReplay, first, second, third);
                     break;
                 case ElympicsHostCommandKind.ReturnToBoot:
-                    HandleHostReturnToBoot(first);
+                    ReturnToBootAsync(first, CancellationToken.None).Forget();
                     break;
                 case ElympicsHostCommandKind.QuitApplication:
-                    HandleHostQuit(first);
+                    QuitApplication(first);
                     break;
                 case ElympicsHostCommandKind.Ping:
-                    HandleHostPing(first);
+                    Emit(ElympicsHostProtocol.Events.Pong, first);
                     break;
                 case ElympicsHostCommandKind.None:
                 default:
@@ -504,12 +483,6 @@ namespace Elympics
                     break;
             }
         }
-
-        private void HandleHostReturnToBoot(string requestId) => ReturnToBootAsync(requestId, CancellationToken.None).Forget();
-
-        private void HandleHostPing(string requestId) => Emit(ElympicsHostProtocol.Events.Pong, requestId);
-
-        private void HandleHostQuit(string reason) => QuitApplication(reason);
 
         internal override void EmitReady()
         {

@@ -36,6 +36,8 @@ namespace Elympics
         /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled during the download.</exception>
         public static async UniTask<Result> LoadAsync(SnapshotReplayLaunchData data, ElympicsGameConfig gameConfig, CancellationToken ct)
         {
+            if (data.Preloaded != null)
+                return Check(data.Preloaded, gameConfig);
             SnapshotAnalysisRetriever retriever;
             if (data.IsUrl)
             {
@@ -71,7 +73,7 @@ namespace Elympics
             return Check(retriever, gameConfig);
         }
 
-        public static Result Check(SnapshotAnalysisRetriever retriever, ElympicsGameConfig gameConfig) =>
+        private static Result Check(SnapshotAnalysisRetriever retriever, ElympicsGameConfig gameConfig) =>
             TryCheckVersion(retriever, gameConfig, out var failure) ? Result.Loaded(retriever) : Result.Failed(failure!.Code, failure.message);
 
         /// <summary>Inner exceptions carry the actual cause of a failed read.</summary>

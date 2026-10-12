@@ -46,16 +46,22 @@ namespace Elympics.Editor.Launcher
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        public static bool Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
+        /// <summary>Returns why the launch was refused, or null if it was sent or queued.</summary>
+        public static string? Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
         {
             var launch = new PendingLaunch { kind = kind, gameId = gameId, dataJson = dataJson, optionsJson = optionsJson };
             if (EditorApplication.isPlaying)
             {
                 LaunchNow(launch);
-                return true;
+                return null;
             }
+            // Unity would refuse to enter play mode, leaving the swapped scenes and the pending launch behind.
+            if (EditorApplication.isCompiling)
+                return "scripts are still compiling.";
+            if (EditorUtility.scriptCompilationFailed)
+                return "scripts have compile errors.";
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                return false;
+                return "the open scenes were not saved.";
             SaveSceneSetup();
             if (GetValidBootScene() is { } bootScene)
                 _ = EditorSceneManager.OpenScene(bootScene);
@@ -63,7 +69,7 @@ namespace Elympics.Editor.Launcher
                 _ = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
             SessionState.SetString(PendingKey, JsonUtility.ToJson(launch));
             EditorApplication.EnterPlaymode();
-            return true;
+            return null;
         }
 
         private static string? GetValidBootScene()
@@ -134,17 +140,7 @@ namespace Elympics.Editor.Launcher
                 return;
             }
             // The launcher reports the result, including a rejected JSON, as host events in the window.
-            launcher.HandleHostCommand(ToCommandKind(launch.kind), launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
+            launcher.HandleHostLaunch(launch.kind, launch.gameId ?? "", launch.dataJson ?? "", launch.optionsJson ?? "");
         }
-
-        private static ElympicsHostCommandKind ToCommandKind(ElympicsHostLaunchKind kind) => kind switch
-        {
-            ElympicsHostLaunchKind.Online => ElympicsHostCommandKind.LaunchOnline,
-            ElympicsHostLaunchKind.SinglePlayer => ElympicsHostCommandKind.LaunchSinglePlayer,
-            ElympicsHostLaunchKind.HalfRemoteClient => ElympicsHostCommandKind.LaunchHalfRemoteClient,
-            ElympicsHostLaunchKind.HalfRemoteServer => ElympicsHostCommandKind.LaunchHalfRemoteServer,
-            ElympicsHostLaunchKind.SnapshotReplay => ElympicsHostCommandKind.LaunchSnapshotReplay,
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
-        };
     }
 }

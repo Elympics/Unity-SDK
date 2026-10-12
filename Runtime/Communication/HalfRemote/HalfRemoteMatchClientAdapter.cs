@@ -35,6 +35,7 @@ namespace Elympics
 
         public HalfRemoteMatchClientAdapter(ElympicsGameConfig config)
         {
+            _disposeToken = _disposeCts.Token;
             _input = new RingBufferElympicsDataWithTick<ElympicsInput>(config.InputsToSendBufferSize);
             _inputsBuffer = new ElympicsInput[config.InputsToSendBufferSize];
             _inputsToSend = new List<ElympicsInput>(config.InputsToSendBufferSize);
@@ -165,7 +166,7 @@ namespace Elympics
             GetNewLag(out var lost, out var lagMs);
             if (lost)
                 return;
-            if (lagMs != 0 && await UniTask.Delay(lagMs, DelayType.Realtime, cancellationToken: _disposeCts.Token).SuppressCancellationThrow())
+            if (lagMs != 0 && await UniTask.Delay(lagMs, DelayType.Realtime, cancellationToken: _disposeToken).SuppressCancellationThrow())
                 return;
 
             action.Invoke();
@@ -212,6 +213,9 @@ namespace Elympics
         private bool NotDisconnected() => !_playerDisconnected;
         public void Dispose()
         {
+            if (_disposed)
+                return;
+            _disposed = true;
             // Drops lag-delayed sends, which would otherwise fire after the match is torn down.
             _disposeCts.Cancel();
             _disposeCts.Dispose();
@@ -219,5 +223,8 @@ namespace Elympics
         }
 
         private readonly CancellationTokenSource _disposeCts = new();
+        // Cached: reading CancellationTokenSource.Token after Dispose throws, and late sends are expected.
+        private readonly CancellationToken _disposeToken;
+        private bool _disposed;
     }
 }

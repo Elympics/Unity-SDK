@@ -19,13 +19,15 @@ namespace Elympics
         private readonly IElympicsMatchLifecycleSink _owner;
         private readonly List<(string Name, Action Step)> _teardownSteps = new();
         private readonly List<WeakReference> _collectable = new();
+        private readonly bool _trackCollectables;
 
         public IReadOnlyList<WeakReference> Collectable => _collectable;
 
-        public ElympicsMatchSession(ElympicsLaunch launch, IElympicsMatchLifecycleSink owner)
+        public ElympicsMatchSession(ElympicsLaunch launch, IElympicsMatchLifecycleSink owner, bool trackCollectables = false)
         {
             Launch = launch;
             _owner = owner;
+            _trackCollectables = trackCollectables;
             // Cached: reading CancellationTokenSource.Token after Dispose throws, and late readers are expected.
             Token = _cts.Token;
         }
@@ -45,7 +47,19 @@ namespace Elympics
                 _teardownSteps.Add((name, step));
         }
 
-        public void TrackCollectable(object target) => _collectable.Add(new WeakReference(target));
+        /// <summary>No-op unless teardown verification is on: each weak reference holds a GC handle.</summary>
+        public void TrackCollectable(object target)
+        {
+            if (_trackCollectables)
+                _collectable.Add(new WeakReference(target));
+        }
+
+        /// <summary>Stops work bound to <see cref="Token"/>, such as a replay download, before teardown waits for it.</summary>
+        public void Cancel()
+        {
+            if (!Detached)
+                ElympicsMatchTeardown.Try("cancel match token", _cts.Cancel);
+        }
 
         public void Detach()
         {

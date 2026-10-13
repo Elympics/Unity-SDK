@@ -1,6 +1,8 @@
 variables:
   NODE_VERSION: "18.13.0"
   DOTNET_VERSION: "8.0"
+  DOTNET_ROOT: /usr/share/dotnet
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
   MESSAGEPACK_VERSION: "2.5.124"
   PROTOC_VERSION: "34.1"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
@@ -188,6 +190,7 @@ create-testing-project:
 build:sample:
   extends:
     - .cond.license
+  timeout: 45m
   image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH
   stage: test
   needs: []
@@ -294,8 +297,10 @@ verify-formatting:
   variables:
     GIT_DEPTH: 1
   before_script:
-    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-    - apt-get update && apt-get install -y --no-install-recommends jq dotnet-sdk-$DOTNET_VERSION
+    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
+    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
+    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
+    - apt-get update && apt-get install -y --no-install-recommends jq
   script:
     - ./.scripts/ci/generate_formatting_report.sh
   artifacts:
@@ -305,6 +310,28 @@ verify-formatting:
     expire_in: 2 weeks
     reports:
       codequality: format-report.codequality.json
+
+audit:project-auditor:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: check
+  needs:
+    - job: create-testing-project
+  # Non-blocking until project-auditor-baseline.txt is filled from this job's first findings artifact.
+  allow_failure: true
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
+    - apt-get update && apt-get install -y --no-install-recommends jq
+  script:
+    - ./.scripts/ci/project_auditor.sh
+  artifacts:
+    when: always
+    paths:
+      - project-auditor-findings.txt
+    expire_in: 2 weeks
 
 verify-messagepack-generated:
   extends:
@@ -318,8 +345,9 @@ verify-messagepack-generated:
     ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
-    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-    - apt-get update && apt-get install -y --no-install-recommends dotnet-sdk-$DOTNET_VERSION
+    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
+    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
+    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
     - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
   script:
     - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'

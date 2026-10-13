@@ -1,4 +1,5 @@
-// CI only: build_sample.sh copies this into the testing project's Assets/Editor and calls CiBuild.Build.
+// CI only: build_sample.sh copies this into the testing project's Assets/Editor and calls CiBuild.Build with -quit.
+// Failures throw, which makes Unity exit with code 1; EditorApplication.Exit crashed 6.3 after a successful build.
 // It isn't part of the package.
 using System;
 using System.IO;
@@ -51,12 +52,7 @@ public static class CiBuild
         Debug.Log($"CiBuild: {report.summary.result} in {report.summary.totalTime}, {report.summary.totalSize / (1024 * 1024)} MB, {report.summary.totalErrors} errors");
         if (report.summary.result != BuildResult.Succeeded)
             Fail($"Build {report.summary.result}");
-        EditorApplication.Exit(0);
     }
 
-    private static void Fail(string message)
-    {
-        Debug.LogError("CiBuild: " + message);
-        EditorApplication.Exit(1);
-    }
+    private static void Fail(string message) => throw new BuildFailedException("CiBuild: " + message);
 }

@@ -20,6 +20,9 @@
     "./**/*.js",
     "./DoNotTryPuttingPatternsForOtherExtensionsLikeJslibHereAsTheyWillNotBeSupportedWhatsoever.js"
   ],
-  "exclude": [".scripts"],
+  "exclude": [
+    ".scripts",
+    "TestingProject"
+  ],
   "verbose": true
 }

@@ -1,10 +1,9 @@
-using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Elympics.Core.Logger;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -39,23 +38,7 @@ namespace Elympics
 
         internal static BuildReport BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 
-        private static bool? IsLinuxModuleInstalled()
-        {
-            var moduleManager = Type.GetType("UnityEditor.Modules.ModuleManager,UnityEditor.dll");
-            var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", BindingFlags.Static | BindingFlags.NonPublic);
-            return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
-        }
-
-        internal static BuildReport BuildElympicsServerLinux(BuildOptions additionalOptions)
-        {
-            // if (IsLinuxModuleInstalled() is false)
-            // {
-            //     ElympicsLogger.LogError(MissingModuleErrorMessage);
-            //     return false;
-            // }
-
-            return BuildServerLinux(additionalOptions);
-        }
+        internal static BuildReport BuildElympicsServerLinux(BuildOptions additionalOptions) => BuildServerLinux(additionalOptions);
 
         private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
@@ -69,9 +52,7 @@ namespace Elympics
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
-                const BuildTargetGroup buildTargetGroup = BuildTargetGroup.Standalone;
-                var oldScriptingBackend = PlayerSettings.GetScriptingBackend(buildTargetGroup);
-                PlayerSettings.SetScriptingBackend(buildTargetGroup, ScriptingImplementation.Mono2x);
+                SetUpServerScriptingBackend();
 
                 EditorUtility.DisplayProgressBar(title, "Removing old server build path", 0.3f);
                 if (Directory.Exists(ServerBuildPath))
@@ -83,7 +64,7 @@ namespace Elympics
                 {
                     scenes = sceneToBuild,
                     locationPathName = Path.Combine(ServerBuildPath, EngineSubdirectory, UnityBuildPath, appName),
-                    targetGroup = buildTargetGroup,
+                    targetGroup = BuildTargetGroup.Standalone,
                     target = target,
                     subtarget = (int)StandaloneBuildSubtarget.Server,
                     options = BuildOptions.CompressWithLz4HC | additionalOptions
@@ -91,9 +72,6 @@ namespace Elympics
 
                 var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
                 LogBuildResult(report);
-
-                // Restore
-                PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
 
                 if (report.summary.result != BuildResult.Succeeded)
                     return report;
@@ -106,6 +84,16 @@ namespace Elympics
             {
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        private static void SetUpServerScriptingBackend()
+        {
+#if UNITY_6000_8_OR_NEWER || UNITY_7000_0_OR_NEWER
+            var backend = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Server);
+            ElympicsLogger.LogWarning($"Elympics no longer forces a scripting backend for server builds. Using {backend} from the Dedicated Server player settings.");
+#else
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
+#endif
         }
 
         private static void LogBuildResult(BuildReport report)

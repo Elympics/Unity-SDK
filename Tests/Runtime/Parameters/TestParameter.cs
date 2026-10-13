@@ -9,23 +9,30 @@ namespace Elympics.Tests
     [TestFixture]
     internal class TestParameter
     {
-        private static List<Parameter> EmptyParameters => new()
+        // Kinds, not instances: NUnit keeps ValueSource objects for the lifetime of the test tree, which outlives a play mode
+        // session when domain reload is disabled, so shared instances would carry values between runs.
+        private static readonly string[] EmptyParameters = { nameof(ValueParameter<bool>), nameof(Parameter<string>) };
+
+        private static Parameter CreateEmpty(string kind) => kind switch
         {
-            new ValueParameter<bool>(parse: _ => true),
-            new Parameter<string>(parse: _ => ""),
+            nameof(ValueParameter<bool>) => new ValueParameter<bool>(parse: _ => true),
+            nameof(Parameter<string>) => new Parameter<string>(parse: _ => ""),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
         [Test]
-        public void EmptyParameterShouldHaveNoValueAndZeroPriority([ValueSource(nameof(EmptyParameters))] Parameter parameter)
+        public void EmptyParameterShouldHaveNoValueAndZeroPriority([ValueSource(nameof(EmptyParameters))] string kind)
         {
+            var parameter = CreateEmpty(kind);
             Assert.IsNull(parameter.GetRawValue());
             Assert.IsNull(parameter.GetValueAsString());
             Assert.Zero(parameter.Priority);
         }
 
         [Test]
-        public void EmptyParameterShouldHaveNoValueAndZeroPriorityAfterParsing([ValueSource(nameof(EmptyParameters))] Parameter parameter)
+        public void EmptyParameterShouldHaveNoValueAndZeroPriorityAfterParsing([ValueSource(nameof(EmptyParameters))] string kind)
         {
+            var parameter = CreateEmpty(kind);
             parameter.ValidateAndParseRawValue();
 
             Assert.IsNull(parameter.GetRawValue());
@@ -34,8 +41,9 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void SettingRawValueShouldHaveAnEffect([ValueSource(nameof(EmptyParameters))] Parameter parameter)
+        public void SettingRawValueShouldHaveAnEffect([ValueSource(nameof(EmptyParameters))] string kind)
         {
+            var parameter = CreateEmpty(kind);
             const string expectedValue = "example value";
             const int expectedPriority = 5;
             Assert.IsNull(parameter.GetRawValue());
@@ -79,8 +87,9 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ParameterShouldHaveNonNullValueAfterParsing([ValueSource(nameof(EmptyParameters))] Parameter parameter)
+        public void ParameterShouldHaveNonNullValueAfterParsing([ValueSource(nameof(EmptyParameters))] string kind)
         {
+            var parameter = CreateEmpty(kind);
             const string expectedValue = "example value";
             const int expectedPriority = 5;
             Assert.IsNull(parameter.GetRawValue());
@@ -94,8 +103,9 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ResettingParameterShouldClearValueAndPriority([ValueSource(nameof(EmptyParameters))] Parameter parameter)
+        public void ResettingParameterShouldClearValueAndPriority([ValueSource(nameof(EmptyParameters))] string kind)
         {
+            var parameter = CreateEmpty(kind);
             parameter.SetRawValue("example value", 5);
             parameter.ValidateAndParseRawValue();
 

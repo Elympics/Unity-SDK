@@ -1,5 +1,4 @@
 using System.Linq;
-using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -39,7 +38,7 @@ namespace Elympics
             _summaryLabelStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Italic, wordWrap = true };
             base.OnInspectorGUI();
 
-            var isPlayingOrClone = EditorApplication.isPlaying || ElympicsClonesManager.IsClone();
+            var isPlayingOrVirtualPlayer = EditorApplication.isPlaying || PlayModeInstance.IsVirtualPlayer;
 
             if (_animator == null)
             {
@@ -55,10 +54,10 @@ namespace Elympics
 
             if (EditorApplication.isPlaying)
                 EditorGUILayout.HelpBox(Label_PlayModeModificationWarning, MessageType.Warning);
-            if (ElympicsClonesManager.IsClone())
-                EditorGUILayout.HelpBox(Label_CloneModificationWarning, MessageType.Warning);
+            if (PlayModeInstance.IsVirtualPlayer)
+                EditorGUILayout.HelpBox(Label_VirtualPlayerModificationWarning, MessageType.Warning);
 
-            EditorGUI.BeginDisabledGroup(isPlayingOrClone);
+            EditorGUI.BeginDisabledGroup(isPlayingOrVirtualPlayer);
 
             if (GUILayout.Button(Label_RefreshButton))
                 UpdateLayersAndParameters();

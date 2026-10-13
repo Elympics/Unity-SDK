@@ -204,8 +204,9 @@ namespace Elympics.Editor.Launcher
         {
             var parameter = ApplicationParameters.Parameters.LaunchMode;
             var argument = "--" + parameter.LongArgumentName;
-            if (CloneArguments.Read().Any(arg => arg.StartsWith(argument)))
-                return "Launch mode is set by this clone's ParrelSync arguments (" + argument + "). Edit or clear them in the Clones Manager to launch from here.";
+            if (PlayModeArguments.Read().Any(arg => arg.StartsWith(argument)))
+                return "Launch mode is set for this Multiplayer Play Mode virtual player (" + argument + "). Give it the "
+                    + PlayModeArguments.TagPrefix + PlayModeArguments.ManualTag + " tag to launch from here.";
             if (Environment.GetCommandLineArgs().Any(arg => arg.StartsWith(argument)))
                 return "Launch mode is set by this Editor's command line (" + argument + "). Restart the Editor without it to launch from here.";
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(parameter.EnvironmentVariableName)))

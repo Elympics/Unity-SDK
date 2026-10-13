@@ -60,12 +60,12 @@ Two rules when a file starts using another assembly's types:
 
 ### Mode selection
 Matches are started by `ElympicsMatchLauncher` (`Runtime/Launcher/`).
-- `ElympicsMatchLauncherBootstrap` creates it before the first scene loads, after initializing `ApplicationParameters` (env vars, command-line args, the WebGL URL query and ParrelSync clone arguments; see `Runtime/Util/Parameters/`).
+- `ElympicsMatchLauncherBootstrap` creates it before the first scene loads, after initializing `ApplicationParameters` (env vars, command-line args, the WebGL URL query and Multiplayer Play Mode virtual-player arguments; see `Runtime/Util/Parameters/`).
 - Unless the process is passive (online server or `ELYMPICS_LAUNCH_MODE` set), the bootstrap also starts a host bridge (`Runtime/Launcher/Bridges/`: WebGL or native) and emits `ready`. A host, game code (`Launch*Async`) or the Editor's Match Launcher window then launches matches. Each launch loads the gameplay scene and returns to the boot scene afterwards.
 
 `GameSceneManager.ChooseDriver` (`Runtime/SceneManagement/GameSceneManager.cs`) picks what initializes a loaded gameplay scene. It checks in this order:
 1. **Online server:** set by `ApplicationParameters`.
-2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). ParrelSync clones get it from their default arguments (`Editor/ParrelSync/ElympicsCloneArguments.cs`) and run as half-remote clients.
+2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). Multiplayer Play Mode virtual players get it by default (`PlayModeArguments`, with `Elympics:` player tags as overrides) and run as half-remote clients.
 3. **Session:** the launcher's current launch. Its `LaunchData` (`Runtime/Launcher/LaunchData/`) creates the mode's `GameSceneInitializer`.
 4. **Suppressed:** the scene activated while its launch is being torn down.
 5. **None:** the scene waits for a launch.
@@ -125,12 +125,12 @@ Under `Runtime/GameEngine/Libraries/`:
 `Runtime/Util/ScriptingSymbols.cs` wraps these defines:
 - `ELYMPICS_DEBUG` / `ELYMPICS_TRACE`: `[Conditional]` logging.
 - `ELYMPICS_PRODUCTION`: strips dev-time checks.
-- `UNITY_WEBGL && !UNITY_EDITOR`, `UNITY_SERVER`, `ELYMPICS_UNITY_PIPELINE`.
+- `UNITY_WEBGL && !UNITY_EDITOR`, `UNITY_SERVER`.
 
 ## Conventions
 
 - **Vendored / generated code, do not edit:**
-  - `Runtime/Plugins/`: UniTask, MessagePack, ParrelSync, Google.Protobuf, websocket-sharp, etc.
+  - `Runtime/Plugins/`: UniTask, MessagePack, Google.Protobuf, websocket-sharp, etc.
   - `MessagePackGenerated.cs`, `ProtosCompiled/`.
   - `Elympics.Analyzers.dll`.
 - **Unity `.meta` files:** every new asset or folder needs one, and renames or moves must carry the `.meta` along so the GUID is kept.

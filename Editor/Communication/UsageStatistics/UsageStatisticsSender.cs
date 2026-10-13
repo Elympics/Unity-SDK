@@ -1,6 +1,5 @@
 using System;
 using Elympics.Core.Logger;
-using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 
 namespace Elympics.Editor.Communication.UsageStatistics
@@ -12,7 +11,7 @@ namespace Elympics.Editor.Communication.UsageStatistics
 
         static UsageStatisticsSender()
         {
-            if (ElympicsClonesManager.IsClone())
+            if (PlayModeInstance.IsVirtualPlayer)
                 return;
             if (Environment.GetEnvironmentVariable("CI") is not null)
                 return;

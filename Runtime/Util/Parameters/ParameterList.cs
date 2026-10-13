@@ -69,10 +69,10 @@ namespace Elympics
 
         private static Uri ParseUri(string rawValue) => new UriBuilder(rawValue).Uri;
 
-        /// <param name="cloneArgs">Named arguments of a ParrelSync clone (see <see cref="CloneArguments"/>). They beat environment variables
+        /// <param name="playModeArgs">Named arguments of a Multiplayer Play Mode virtual player (see <see cref="PlayModeArguments"/>). They beat environment variables
         /// and URL queries and lose to <paramref name="args"/>. They do not count for positional arguments.</param>
         public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery, NameValueCollection elympicsUrlQuery,
-            IList<string> cloneArgs = null)
+            IList<string> playModeArgs = null)
         {
             var (parameters, names) = FindParameters();
 
@@ -84,8 +84,8 @@ namespace Elympics
             CollectFromEnvironmentVariables(parameters, envVariables);
             CollectFromUrlQuery(parameters, urlQuery);
             CollectFromUrlQuery(parameters, elympicsUrlQuery);
-            if (cloneArgs != null)
-                CollectFromNamedArguments(parameters, cloneArgs);
+            if (playModeArgs != null)
+                CollectFromNamedArguments(parameters, playModeArgs);
             CollectFromPositionalArguments(parameters, args);
             CollectFromNamedArguments(parameters, args);
 

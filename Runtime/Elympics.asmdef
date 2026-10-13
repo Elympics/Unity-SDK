@@ -2,7 +2,6 @@
     "name": "Elympics",
     "rootNamespace": "Elympics",
     "references": [
-        "ParrelSync",
         "UniTask",
         "MessagePack",
         "MessagePack.Annotations",

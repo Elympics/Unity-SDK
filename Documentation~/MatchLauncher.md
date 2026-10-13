@@ -260,14 +260,26 @@ It is meant for processes started straight into the gameplay scene:
 
 Pressing Play in a gameplay scene without the parameter starts nothing. It logs that the scene awaits a launch call.
 
-### ParrelSync clones
+### Multiplayer Play Mode virtual players
 
-A clone Editor reads its ParrelSync arguments (the Arguments field in the Clones Manager) as command-line
-arguments. They beat environment variables and lose to the real command line. ParrelSync's default argument
-`client` is replaced with `--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<clone number>`.
+A Multiplayer Play Mode virtual player (an additional Editor instance, Window > Multiplayer > Multiplayer Play Mode)
+gets launch arguments from Elympics. They beat environment variables and lose to the real command line. By default it gets
+`--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<N - 2>`, where N comes from the `-name PlayerN`
+argument that Multiplayer Play Mode gives it, so Player2 is player 0, Player3 is player 1 and so on.
 
-So a clone pressing Play in the gameplay scene joins the half-remote server as that player, and exits play
-mode when the match ends. An edited argument is left alone.
+So a virtual player pressing Play in the gameplay scene joins the half-remote server as that player, and exits play
+mode when the match ends. Player tags (Project Settings > Multiplayer > Play Mode > Player Tags) with the `Elympics:`
+prefix change that:
+
+| Tag | Effect |
+|---|---|
+| `Elympics:manual` | No launch arguments; launch from the Match Launcher as in the main Editor. |
+| `Elympics:halfRemoteServer` (or another launch mode) | Sets the launch mode. |
+| `Elympics:PlayerIndex=2` | Sets the half-remote player index. |
+| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name. |
+
+Multiplayer Play Mode supports up to three virtual players, so the main Editor plus three virtual players can run a
+half-remote server and three clients.
 
 ## In the Editor: Tools > Elympics > Match Launcher
 
@@ -279,7 +291,7 @@ mode when the match ends. An edited argument is left alone.
   play mode it enters play mode first, from the boot scene or from an empty scene.
 - **Controls:** return to boot, ping and quit. The window logs every command and event as one selectable text; `Copy all`
   copies the whole log.
-- **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note
+- **With the launch mode parameter set** (e.g. in a virtual player): the launch controls are disabled, with a note
   naming the parameter's source.
 - **The gameplay scene must be enabled in Build Settings**, in the Editor too. The launcher loads it by path,
   so a launch fails with `SceneLoadFailed` otherwise. The window says so when the selected game's scene is missing.

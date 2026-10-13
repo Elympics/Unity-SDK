@@ -842,7 +842,7 @@ namespace Elympics
                 if (File.Exists(destinationFilePath))
                     File.Delete(destinationFilePath);
                 _ = Directory.CreateDirectory(buildPath);
-                ZipFile.CreateFromDirectory(buildPath, destinationFilePath, CompressionLevel.Optimal, false);
+                CreateZipFromDirectory(buildPath, destinationFilePath);
             }
             catch (Exception e)
             {
@@ -851,6 +851,30 @@ namespace Elympics
             }
 
             return true;
+        }
+
+        /// <summary>Like <c>ZipFile.CreateFromDirectory(source, destination, CompressionLevel.Optimal, false)</c>, which needs
+        /// the System.IO.Compression.FileSystem facade (missing on CoreCLR and from generated csprojs).</summary>
+        internal static void CreateZipFromDirectory(string sourceDirectory, string destinationFile)
+        {
+            var root = Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            using var archive = new ZipArchive(File.Create(destinationFile), ZipArchiveMode.Create);
+            foreach (var path in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories))
+            {
+                var name = path[(root.Length + 1)..].Replace('\\', '/');
+                if (Directory.Exists(path))
+                {
+                    if (!Directory.EnumerateFileSystemEntries(path).Any())
+                        _ = archive.CreateEntry(name + "/");
+                    continue;
+                }
+
+                var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
+                entry.LastWriteTime = File.GetLastWriteTime(path);
+                using var input = File.OpenRead(path);
+                using var output = entry.Open();
+                input.CopyTo(output);
+            }
         }
 
         private static void CheckAuthTokenAndRefreshIfNeeded(Action<bool> continuation)

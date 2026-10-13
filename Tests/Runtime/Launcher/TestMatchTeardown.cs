@@ -113,18 +113,18 @@ namespace Elympics.Tests
             var original = ElympicsProcessGlobals.Capture();
             var fixedDeltaTime = Time.fixedDeltaTime;
             var targetFrameRate = Application.targetFrameRate;
-            var autoSimulation = Physics.autoSimulation;
+            var simulationMode = Physics.simulationMode;
             try
             {
                 Time.fixedDeltaTime = 0.1234f;
                 Application.targetFrameRate = 7;
-                Physics.autoSimulation = !autoSimulation;
+                Physics.simulationMode = simulationMode == SimulationMode.Script ? SimulationMode.FixedUpdate : SimulationMode.Script;
 
                 original.Restore();
 
                 Assert.That(Time.fixedDeltaTime, Is.EqualTo(fixedDeltaTime));
                 Assert.That(Application.targetFrameRate, Is.EqualTo(targetFrameRate));
-                Assert.That(Physics.autoSimulation, Is.EqualTo(autoSimulation));
+                Assert.That(Physics.simulationMode, Is.EqualTo(simulationMode));
             }
             finally
             {

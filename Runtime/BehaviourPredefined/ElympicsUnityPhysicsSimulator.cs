@@ -37,7 +37,7 @@ namespace Elympics
             _currentPhysicsScene = currentScene.GetPhysicsScene();
             _currentPhysicsScene2D = currentScene.GetPhysicsScene2D();
 
-            Physics.autoSimulation = false;
+            Physics.simulationMode = SimulationMode.Script;
             Physics2D.simulationMode = SimulationMode2D.Script;
         }
 

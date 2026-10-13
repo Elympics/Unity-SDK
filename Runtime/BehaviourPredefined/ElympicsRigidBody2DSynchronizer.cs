@@ -84,13 +84,13 @@ namespace Elympics
             if (_rotation.EnabledSynchronization)
                 Rigidbody2D.rotation = _rotation.Value;
             if (_velocity.EnabledSynchronization)
-                Rigidbody2D.velocity = _velocity.Value;
+                Rigidbody2D.linearVelocity = _velocity.Value;
             if (_angularVelocity.EnabledSynchronization)
                 Rigidbody2D.angularVelocity = _angularVelocity.Value;
             if (_drag.EnabledSynchronization)
-                Rigidbody2D.drag = _drag.Value;
+                Rigidbody2D.linearDamping = _drag.Value;
             if (_angularDrag.EnabledSynchronization)
-                Rigidbody2D.angularDrag = _angularDrag.Value;
+                Rigidbody2D.angularDamping = _angularDrag.Value;
             if (_inertia.EnabledSynchronization)
                 Rigidbody2D.inertia = _inertia.Value;
             if (SynchronizeMass)
@@ -98,7 +98,7 @@ namespace Elympics
             if (_gravityScale.EnabledSynchronization)
                 Rigidbody2D.gravityScale = _gravityScale.Value;
             if (_isKinematic.EnabledSynchronization)
-                Rigidbody2D.isKinematic = _isKinematic.Value;
+                Rigidbody2D.bodyType = _isKinematic.Value ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
         }
 
         public void OnPreStateSerialize()
@@ -108,13 +108,13 @@ namespace Elympics
             if (_rotation.EnabledSynchronization)
                 _rotation.Value = Rigidbody2D.rotation;
             if (_velocity.EnabledSynchronization)
-                _velocity.Value = Rigidbody2D.velocity;
+                _velocity.Value = Rigidbody2D.linearVelocity;
             if (_angularVelocity.EnabledSynchronization)
                 _angularVelocity.Value = Rigidbody2D.angularVelocity;
             if (_drag.EnabledSynchronization)
-                _drag.Value = Rigidbody2D.drag;
+                _drag.Value = Rigidbody2D.linearDamping;
             if (_angularDrag.EnabledSynchronization)
-                _angularDrag.Value = Rigidbody2D.angularDrag;
+                _angularDrag.Value = Rigidbody2D.angularDamping;
             if (_inertia.EnabledSynchronization)
                 _inertia.Value = Rigidbody2D.inertia;
             if (SynchronizeMass)
@@ -122,7 +122,7 @@ namespace Elympics
             if (_gravityScale.EnabledSynchronization)
                 _gravityScale.Value = Rigidbody2D.gravityScale;
             if (_isKinematic.EnabledSynchronization)
-                _isKinematic.Value = Rigidbody2D.isKinematic;
+                _isKinematic.Value = Rigidbody2D.bodyType == RigidbodyType2D.Kinematic;
         }
     }
 }

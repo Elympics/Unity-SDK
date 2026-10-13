@@ -17,27 +17,27 @@ namespace Elympics
         private readonly float _fixedDeltaTime;
         private readonly float _maximumDeltaTime;
         private readonly int _targetFrameRate;
-        private readonly bool _physicsAutoSimulation;
+        private readonly SimulationMode _physicsSimulationMode;
         private readonly SimulationMode2D _physics2DSimulationMode;
 
-        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, bool physicsAutoSimulation, SimulationMode2D physics2DSimulationMode)
+        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, SimulationMode physicsSimulationMode, SimulationMode2D physics2DSimulationMode)
         {
             _fixedDeltaTime = fixedDeltaTime;
             _maximumDeltaTime = maximumDeltaTime;
             _targetFrameRate = targetFrameRate;
-            _physicsAutoSimulation = physicsAutoSimulation;
+            _physicsSimulationMode = physicsSimulationMode;
             _physics2DSimulationMode = physics2DSimulationMode;
         }
 
         public static ElympicsProcessGlobals Capture() =>
-            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.autoSimulation, Physics2D.simulationMode);
+            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.simulationMode, Physics2D.simulationMode);
 
         public void Restore()
         {
             Time.fixedDeltaTime = _fixedDeltaTime;
             Time.maximumDeltaTime = _maximumDeltaTime;
             Application.targetFrameRate = _targetFrameRate;
-            Physics.autoSimulation = _physicsAutoSimulation;
+            Physics.simulationMode = _physicsSimulationMode;
             Physics2D.simulationMode = _physics2DSimulationMode;
         }
     }

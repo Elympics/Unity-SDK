@@ -23,7 +23,7 @@ namespace Elympics.Editor.Replay
             InitializeTickList(tickEntryTemplate);
 
             // Register tick selection callback
-            TickListElement.onSelectionChange += selection => tickDataDisplayer.SetData(selection.FirstOrDefault() as TickEntryData, _expectedTime);
+            TickListElement.selectionChanged += selection => tickDataDisplayer.SetData(selection.FirstOrDefault() as TickEntryData, _expectedTime);
         }
 
         private void InitializeTickList(VisualTreeAsset listEntryTemplate)

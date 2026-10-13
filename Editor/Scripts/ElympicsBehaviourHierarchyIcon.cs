@@ -23,7 +23,7 @@ namespace Elympics
 
         private static void DrawIconOnWindowItem(int instanceID, Rect rect)
         {
-            var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+            var gameObject = EditorUtility.EntityIdToObject(instanceID) as GameObject;
 
             if (gameObject == null)
                 return;

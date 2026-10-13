@@ -624,7 +624,7 @@ namespace HybridWebSocket
         {
             if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
-                var errorMsg = Marshal.PtrToStringAuto(errorPtr);
+                var errorMsg = Marshal.PtrToStringUTF8(errorPtr);
                 instanceRef.DelegateOnErrorEvent(errorMsg);
             }
         }
@@ -634,7 +634,7 @@ namespace HybridWebSocket
         {
             if (Instances.TryGetValue(instanceId, out var instanceRef))
             {
-                var reason = Marshal.PtrToStringAuto(reasonPtr);
+                var reason = Marshal.PtrToStringUTF8(reasonPtr);
                 instanceRef.DelegateOnCloseEvent(closeCode, reason);
             }
         }

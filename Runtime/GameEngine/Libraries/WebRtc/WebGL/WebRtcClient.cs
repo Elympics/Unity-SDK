@@ -275,7 +275,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!instanceRef._channels.TryGetValue(channelId, out var channel))
                 return;
 
-            var errorMsg = Marshal.PtrToStringAuto(errorPtr);
+            var errorMsg = Marshal.PtrToStringUTF8(errorPtr);
             channel.OnError(errorMsg ?? "");
         }
 
@@ -289,7 +289,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var newState = Marshal.PtrToStringAuto(newStatePtr);
+            var newState = Marshal.PtrToStringUTF8(newStatePtr);
             instanceRef.OnIceConnectionStateChanged(newState ?? "");
         }
 
@@ -303,7 +303,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var newState = Marshal.PtrToStringAuto(newStatePtr);
+            var newState = Marshal.PtrToStringUTF8(newStatePtr);
             instanceRef.OnConnectionStateChanged(newState ?? "");
         }
 
@@ -317,7 +317,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var offerJson = Marshal.PtrToStringAuto(offerJsonPtr);
+            var offerJson = Marshal.PtrToStringUTF8(offerJsonPtr);
             instanceRef.OnOffer(offerJson ?? "");
         }
 
@@ -331,7 +331,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var candidateJson = Marshal.PtrToStringAuto(candidateJsonPtr);
+            var candidateJson = Marshal.PtrToStringUTF8(candidateJsonPtr);
             instanceRef.OnIceCandidate(candidateJson ?? "");
         }
 
@@ -345,8 +345,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var localCandidateJson = Marshal.PtrToStringAuto(localCandidateJsonPtr);
-            var remoteCandidateJson = Marshal.PtrToStringAuto(remoteCandidateJsonPtr);
+            var localCandidateJson = Marshal.PtrToStringUTF8(localCandidateJsonPtr);
+            var remoteCandidateJson = Marshal.PtrToStringUTF8(remoteCandidateJsonPtr);
             instanceRef.OnCandidatePairChosen(localCandidateJson ?? "", remoteCandidateJson ?? "");
         }
 
@@ -360,8 +360,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
-            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            var methodName = Marshal.PtrToStringUTF8(methodNamePtr);
+            var logMessage = Marshal.PtrToStringUTF8(logMessagePtr);
             instanceRef.OnLog(methodName ?? "", logMessage ?? "");
         }
 
@@ -373,8 +373,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
-            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            var methodName = Marshal.PtrToStringUTF8(methodNamePtr);
+            var logMessage = Marshal.PtrToStringUTF8(logMessagePtr);
             instanceRef.OnLogWarning(methodName ?? "", logMessage ?? "");
         }
 
@@ -386,8 +386,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             if (!Instances.TryGetValue(instanceId, out var instanceRef))
                 return;
 
-            var methodName = Marshal.PtrToStringAuto(methodNamePtr);
-            var logMessage = Marshal.PtrToStringAuto(logMessagePtr);
+            var methodName = Marshal.PtrToStringUTF8(methodNamePtr);
+            var logMessage = Marshal.PtrToStringUTF8(logMessagePtr);
             instanceRef.OnLogError(methodName ?? "", logMessage ?? "");
         }
 

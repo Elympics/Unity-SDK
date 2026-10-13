@@ -36,7 +36,7 @@ namespace Elympics.Core.Logger
             {
                 get => _unityContext?.Original;
                 set => _unityContext = value is not null
-                    ? (value, $"{value.GetType().FullName} {value.name} ({value.GetInstanceID()})")
+                    ? (value, $"{value.GetType().FullName} {value.name} ({value.GetEntityId()})")
                     : null;
             }
             private (Object Original, string Stringified)? _unityContext;  // for Unity Debug.Log with context

@@ -10,7 +10,7 @@ Use `.claude/MEMORY.md` as your memory for this package, instead of your local/a
 
 ## What this is
 
-`com.daftmobile.elympics` is the Elympics Unity SDK: a server-authoritative, deterministic-tick multiplayer netcode UPM package. It targets Unity 2021.3 and is published to GitHub as `Elympics/Unity-SDK`, with the version in `package.json`.
+`com.daftmobile.elympics` is the Elympics Unity SDK: a server-authoritative, deterministic-tick multiplayer netcode UPM package. It targets Unity 6.3 (`6000.3`) and is published to GitHub as `Elympics/Unity-SDK`, with the version in `package.json`.
 
 This repo is **only the package**. It doesn't contain a Unity project. A host Unity project uses it, either installed locally (embedded in `<project>/Packages/` or referenced with `file:` in `Packages/manifest.json`) or through UPM (cached in `<project>/Library/PackageCache/`). The host project's location isn't fixed, so find it by searching up from the package root for a dir that contains `ProjectSettings/` and `Packages/manifest.json`. If no parent matches (for example, a `file:` reference from outside the project), ask the user. The host project owns `Library/`, the generated `*.csproj`/`*.sln` and the Editor.
 
@@ -28,8 +28,9 @@ Unity owns compilation, so never run a plain `dotnet build` that writes into the
   - It uses `.editorconfig`, and IDE-style warnings fail CI.
   - This checks style only. It does **not** prove the code compiles.
 - **JS check (CI `verify-js`):** `bash .scripts/ci/check_js.sh`.
-  - It copies every `.jslib`/`.jspre` (outside `Samples~`) to a temp `.js` and runs strict `tsc -p jsconfig.json --noEmit`.
-  - JS must stay **ES2017** (Unity 2021.3 Emscripten): no `?.`, no `??`, no class fields.
+  - It copies every `.jslib`/`.jspre` (outside `Samples~`) to a temp `.js`, rewrites `{{{ makeDynCall('sig', 'ptr') }}}` to a plain call, runs strict `tsc -p jsconfig.json --noEmit`, then parses each file with acorn at ES2020 (`.scripts/js-check/parse.mjs`), because `tsc` doesn't reject newer syntax.
+  - JS must stay **ES2020** (Unity 6.3–6.4 ship Emscripten 3.1.39; 6.5+ ship 4.0.19): `?.` and `??` are fine; no class fields, no `||=`.
+  - Call C# callbacks with `{{{ makeDynCall('vii', 'callback') }}}(a, b)`, never `Module.dynCall_*`. Macros don't expand in `.jspre` files.
   - Emscripten globals are declared in `Runtime/Plugins/emscripten-globals.js`.
 - **Tests:** NUnit through the Unity Test Framework.
   - Locally, run them with Test Runner in the open Editor (EditMode / PlayMode). Batchmode needs a free Unity license seat.
@@ -50,7 +51,7 @@ The code is split across many asmdefs. The main ones:
 - `Elympics` (Runtime)
 - `Elympics.Core`
 - `Elympics.Editor`, `Elympics.Editor.Weaving`, `Unity.Elympics.Editor.CodeGen`
-- `Elympics.Editor.UnityCli` (compiles only when `com.unity.pipeline` is present)
+- `Elympics.Editor.UnityCli` (`[CliCommand]`s for com.unity.pipeline, a package dependency; compiles against pipeline 0.5+, so it references both `Unity.Pipeline` and `Unity.Pipeline.Attributes`)
 - `GameEngineCore`, `Elympics.Proto`, `Elympics.MatchConnection`, `UnityConnectors`
 - WebRtc: `Elympics.WebRtc`, `Elympics.WebRtc.Common`, `Elympics.WebRtc.Other`, `Elympics.WebRtc.WebGl`
 
@@ -130,7 +131,8 @@ Under `Runtime/GameEngine/Libraries/`:
 ## Conventions
 
 - **Vendored / generated code, do not edit:**
-  - `Runtime/Plugins/`: UniTask, MessagePack, Google.Protobuf, websocket-sharp, etc.
+  - `Runtime/Plugins/`: UniTask 2.5.10 (assemblies `Elympics.UniTask*`, namespace `Elympics.Cysharp.*`), MessagePack (assemblies `Elympics.MessagePack*`, namespace unchanged), Google.Protobuf, etc.
+  - Vendored source dependencies get `Elympics.`-prefixed assembly names and their own asset GUIDs, so they can't clash with the official package in a game. Reference them by name, not GUID (see `MEMORY.md`).
   - `MessagePackGenerated.cs`, `ProtosCompiled/`.
   - `Elympics.Analyzers.dll`.
 - **Unity `.meta` files:** every new asset or folder needs one, and renames or moves must carry the `.meta` along so the GUID is kept.

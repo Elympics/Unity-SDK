@@ -10,11 +10,11 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 
 ## Code
 
-### jslib/jspre are ES2017
-- **Rule:** no post-ES2017 syntax in `.jslib`/`.jspre` files: no class fields, `?.` or `??`.
-- **Reason:** Unity 2021.3's Emscripten/Closure toolchain targets ES2017, so newer syntax breaks the WebGL build. `.scripts/ci/check_js.sh` enforces it in CI.
-- **Example:** write `this.pc.sctp && this.pc.sctp.transport`, not `this.pc.sctp?.transport`.
-- **Time scope:** If the minimum supported Unity version is above 2021.3, rewrite this.
+### jslib/jspre are ES2020 and call C# through makeDynCall
+- **Rule:** no syntax newer than ES2020 in `.jslib`/`.jspre` files (no class fields, no `||=`; `?.` and `??` are fine). Call C# callbacks with `{{{ makeDynCall('vii', 'callback') }}}(a, b)`, never `Module.dynCall_*`. Don't put Emscripten macros in `.jspre` files.
+- **Reason:** Unity 6.3–6.4 ship Emscripten 3.1.39 (acorn and Closure at ES2020; Unity 6.5+ ship 4.0.19). `tsc` doesn't reject newer syntax, so `check_js.sh` also parses with acorn. `makeDynCall` works with "Use WebAssembly.Table" on and off, and Emscripten adds `getWasmTableEntry` automatically; `.jspre` files are inserted verbatim. With the Table off, a `dynCall_<sig>` that isn't exported turns the call into a silent no-op (only assertion builds throw), so WebGL callback changes need a run with the Table off and on.
+- **Example:** a canary `a ||= 1` passed `tsc` and failed the acorn step. The removed `dynamicCall.jspre` polyfilled `Module.dynCall_*` with `getWasmTableEntry`.
+- **Time scope:** If the minimum Unity version reaches 6.5 (Emscripten 4.x), raise the ES level and the acorn `ecmaVersion`.
 
 ### Cross-assembly use needs an asmdef reference
 - **Rule:** when a file starts using another assembly's types, add the source assembly (usually by GUID) to the consuming `.asmdef` `references`. `InternalsVisibleTo` alone doesn't make a type resolvable. When sweeping for affected files, also grep factory/constructor call sites, because `var`-inferred types never appear as text.
@@ -33,6 +33,18 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** binding runs after tree construction (`ManageGamesInElympicsWindow` calls `inspector.Bind(...)`, and Unity's inspector path does the same) and overwrites the write with no error. Writing after the bind instead dirties the asset just because a window was opened. Unbound fields set with `SetValueWithoutNotify` aren't affected.
 - **Example:** re-deriving `scenePath` next to the initial `Update*()` calls in `ElympicsGameConfigEditor` compiled, looked right, and did nothing.
 - **Time scope:** If `ElympicsGameConfigEditor` stops using UI Toolkit binding, remove this.
+
+### Multiplayer Play Mode's CurrentPlayer throws without the package
+- **Rule:** read Multiplayer Play Mode state only through `PlayModeInstance` (`IsVirtualPlayer`, `Tags`, `PlayerName`), never `CurrentPlayer` directly.
+- **Reason:** in 6.3, `Unity.Multiplayer.PlayMode.CurrentPlayer.IsMainEditor` and `Tags` throw a NullReferenceException (from `SystemDataStore.GetMain`) when `com.unity.multiplayer.playmode` isn't installed, which is most games. `PlayModeInstance` treats that as the main Editor and caches the process-constant answer, which also keeps inspector repaints cheap.
+- **Example:** `UsageStatisticsSender`'s `[InitializeOnLoad]` static constructor threw on Editor reload in a host without the package.
+- **Time scope:** If Unity stops throwing there, or Elympics starts depending on the package, simplify `PlayModeInstance`.
+
+### Vendored dependencies: Elympics names, own GUIDs, name references
+- **Rule:** a vendored source dependency gets `Elympics.`-prefixed assembly names and fresh asset GUIDs (never the upstream `.meta` files). Elympics and PlayPad asmdefs reference it by name, not GUID. When re-vendoring, regenerate the GUIDs again and keep the `.<name>.repo`/`.sha1` provenance files.
+- **Reason:** with upstream GUIDs, a game that also installs the official package can't import it ("GUID … conflicts … immutable folder"). Unity rejects duplicate asmdef names even when one is excluded by `defineConstraints`, so a "switch off our copy" approach is impossible. After an asmdef's GUID changes, Unity's compilation pipeline keeps resolving the old GUID (it survives refresh, a successful compile and a forced reimport), so GUID references to the new GUID fail in projects that upgrade.
+- **Example:** UniTask 2.5.10 is `Elympics.UniTask*` in `Elympics.Cysharp.*`; MessagePack is `Elympics.MessagePack*` with its namespace unchanged, so `mpc` output is identical.
+- **Time scope:** If Unity package management can share or isolate dependencies between packages, revisit.
 
 ## Backend contracts
 
@@ -55,6 +67,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** the SDK is pre-1.0, and releases on this track are breaking anyway. Below 1.0.0, the minor number is what signals a breaking change to consumers, so a breaking patch release would reach games that only expect fixes.
 - **Example:** `Runtime/Communication/Respect` was deleted without deprecation. Removing a serialized enum member renumbers the values in existing `ElympicsGameConfig.asset` files. The decision was a release-note reminder, not pinned enum values plus an `OnValidate` migration.
 - **Time scope:** If the version is 1.0.0 or above, remove this.
+
+### com.unity.pipeline: reference both Unity.Pipeline and Unity.Pipeline.Attributes
+- **Rule:** assemblies that declare `[CliCommand]`/`[CliArg]` reference both `Unity.Pipeline` and `Unity.Pipeline.Attributes`, and use `#if` on `versionDefines` (e.g. `ELYMPICS_UNITY_PIPELINE_0_8_OR_NEWER`) where the API really differs. Verify a command through the `unity command` listing, never by running an upload command.
+- **Reason:** 0.8.0-exp.1 moved the attributes into `Unity.Pipeline.Attributes` (same namespace). Projects may pin pipeline versions from 0.5 on, which overrides the package dependency. StreamingAssets uploads are write-once, and pipeline has no `dry_run` for custom commands.
+- **Example:** after updating the host to 0.8, `ElympicsStreamingAssetsCliCommands.cs` failed with `CS0246 CliCommandAttribute`.
+- **Time scope:** If pipeline leaves `-exp` or the supported range moves above 0.8, drop the old reference.
 
 ## Verification
 
@@ -99,6 +117,24 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** `ManagedStripped` is overwritten by the next build, and `ScriptingAssemblies.json` makes stripped assemblies look linked.
 - **Example:** `ScriptingAssemblies.json` listed 159 assemblies, including Nethereum and Newtonsoft. The metadata's string table matched `ManagedStripped` exactly, at 72 = 72.
 - **Time scope:** If the WebGL build format changes (e.g. a newer Unity's data packing), recheck this.
+
+### Domain reload off keeps NUnit ValueSource objects between runs
+- **Rule:** tests must not mutate objects that come from `[ValueSource]`/`[TestCaseSource]`. Pass kinds or factories and create the object inside the test.
+- **Reason:** NUnit builds those objects once per test tree, and with Enter Play Mode Options (Domain Reload disabled; the default for new 6.6+ projects and the CI `test:playmode:no-domain-reload` job) the tree outlives a play session.
+- **Example:** `TestParameter` failed 4 cases on the second run until each case created its own `Parameter`.
+- **Time scope:** Permanent while the tests use NUnit sources.
+
+### Unity's Mono HttpListener can't accept WebSockets
+- **Rule:** test WebSocket clients against a `TcpListener` echo server that does the RFC 6455 handshake itself and wraps the stream with `WebSocket.CreateFromStream`.
+- **Reason:** `HttpListenerContext.AcceptWebSocketAsync` throws NotImplementedException in Unity's Mono, so the client's `ConnectAsync` waits forever without an error.
+- **Example:** `TestNativeWebSocket` in PlayPad.
+- **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
+
+### Driving the Editor through the pipeline CLI
+- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection.
+- **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only.
+- **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters.
+- **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
 
 ## Configuration
 

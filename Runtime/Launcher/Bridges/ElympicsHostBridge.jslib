@@ -68,7 +68,7 @@ const elympicsHostLibrary = {
         send: function (commandCallback, kind, first, second, third) {
             const buffers = [first, second, third].map(function (text) { return elympicsUtils.stringToBuffer(text || ''); });
             try {
-                Module.dynCall_viiii(commandCallback, kind, buffers[0], buffers[1], buffers[2]);
+                {{{ makeDynCall('viiii', 'commandCallback') }}}(kind, buffers[0], buffers[1], buffers[2]);
             } finally {
                 buffers.forEach(function (buffer) { _free(buffer); });
             }

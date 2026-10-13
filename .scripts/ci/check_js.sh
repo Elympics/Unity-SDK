@@ -17,8 +17,10 @@ trap cleanup EXIT INT TERM
 
 while IFS= read -r -d '' file; do
     tmpfile="${file}.js"
-    cp "$file" "$tmpfile"
+    # {{{ makeDynCall('sig', 'ptr') }}} is an Emscripten macro; turn it into a plain call for tsc and acorn
+    sed -E "s/\{\{\{ *makeDynCall\('([a-z]+)', *'([^']+)'\) *\}\}\}/makeDynCall('\1', \2)/g" "$file" > "$tmpfile"
     TMPFILES+=("$tmpfile")
 done < <(find . \( -name "*.jslib" -o -name "*.jspre" \) -not -path "*/Samples~/*" -print0)
 
 tsc -p jsconfig.json --noEmit 2>&1 | sed 's/.jslib.js/.jslib/gi'
+node "$TOOLS_DIR/parse.mjs" "${TMPFILES[@]}"

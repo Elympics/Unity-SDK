@@ -153,7 +153,7 @@ const LibraryWebSocket = {
 				console.log("[JSLIB WebSocket] Connected.");
 
 			if (webSocketState.onOpen)
-				Module.dynCall_vi(webSocketState.onOpen, instanceId);
+				{{{ makeDynCall('vi', 'webSocketState.onOpen') }}}(instanceId);
 
 		};
 
@@ -173,7 +173,7 @@ const LibraryWebSocket = {
 				HEAPU8.set(dataBuffer, buffer);
 
 				try {
-                    Module.dynCall_viii(webSocketState.onMessage, instanceId, buffer, dataBuffer.length);
+                    {{{ makeDynCall('viii', 'webSocketState.onMessage') }}}(instanceId, buffer, dataBuffer.length);
                 } catch (e) {
                     console.log(e);
 				} finally {
@@ -198,7 +198,7 @@ const LibraryWebSocket = {
 				stringToUTF8(msg, buffer, bufferSize);
 
 				try {
-					Module.dynCall_vii(webSocketState.onError, instanceId, buffer);
+					{{{ makeDynCall('vii', 'webSocketState.onError') }}}(instanceId, buffer);
 				} finally {
 					_free(buffer);
 				}
@@ -220,7 +220,7 @@ const LibraryWebSocket = {
                 stringToUTF8(reason, buffer, bufferSize);
 
                 try {
-                    Module.dynCall_viii(webSocketState.onClose, instanceId, ev.code, buffer);
+                    {{{ makeDynCall('viii', 'webSocketState.onClose') }}}(instanceId, ev.code, buffer);
                 } finally {
                     _free(buffer);
                 }

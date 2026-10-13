@@ -375,7 +375,7 @@ const LibraryWebRtc = {
             }
 
             try {
-                Module.dynCall_vii(webRtcState.onChannelOpened, id, channelId);
+                {{{ makeDynCall('vii', 'webRtcState.onChannelOpened') }}}(id, channelId);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcChannelOpened', `${e}`);
             }
@@ -390,8 +390,7 @@ const LibraryWebRtc = {
             HEAPU8.set(msg, buffer);
 
             try {
-                Module.dynCall_viiii(
-                    webRtcState.onChannelReceived,
+                {{{ makeDynCall('viiii', 'webRtcState.onChannelReceived') }}}(
                     id,
                     channelId,
                     buffer,
@@ -415,7 +414,7 @@ const LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_viii(callback, id, channelId, msgBuffer);
+                {{{ makeDynCall('viii', 'callback') }}}(id, channelId, msgBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcChannelError', `${e}`);
             } finally {
@@ -429,7 +428,7 @@ const LibraryWebRtc = {
             }
 
             try {
-                Module.dynCall_vii(webRtcState.onChannelEnded, id, channelId);
+                {{{ makeDynCall('vii', 'webRtcState.onChannelEnded') }}}(id, channelId);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcChannelEnded', `${e}`);
             }
@@ -446,7 +445,7 @@ const LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(callback, id, msgBuffer);
+                {{{ makeDynCall('vii', 'callback') }}}(id, msgBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcOfferCallback', `${e}`);
             } finally {
@@ -462,7 +461,7 @@ const LibraryWebRtc = {
             }
             if (!msg) {
                 try {
-                    Module.dynCall_vii(callback, id, null);
+                    {{{ makeDynCall('vii', 'callback') }}}(id, 0);
                 } catch (e) {
                     WebRtcLogErrorCallback('WebRtcIceCandidateCallback', `${e}`);
                 }
@@ -474,7 +473,7 @@ const LibraryWebRtc = {
             stringToUTF8(msg, msgBuffer, msgBytes);
 
             try {
-                Module.dynCall_vii(callback, id, msgBuffer);
+                {{{ makeDynCall('vii', 'callback') }}}(id, msgBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcIceCandidateCallback', `${e}`);
             } finally {
@@ -495,7 +494,7 @@ const LibraryWebRtc = {
             stringToUTF8(remoteCandidate, remoteCandidateBuffer, remoteCandidateBytes);
 
             try {
-                Module.dynCall_viii(callback, id, localCandidateBuffer, remoteCandidateBuffer);
+                {{{ makeDynCall('viii', 'callback') }}}(id, localCandidateBuffer, remoteCandidateBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('WebRtcCandidatePairChosenCallback', `${e}`);
             } finally {
@@ -513,7 +512,7 @@ const LibraryWebRtc = {
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
-                Module.dynCall_vii(callback, id, msgBuffer);
+                {{{ makeDynCall('vii', 'callback') }}}(id, msgBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('IceConnectionStateChanged', `${e}`);
             } finally {
@@ -530,7 +529,7 @@ const LibraryWebRtc = {
             const msgBuffer = _malloc(msgBytes);
             stringToUTF8(state, msgBuffer, msgBytes);
             try {
-                Module.dynCall_vii(callback, id, msgBuffer);
+                {{{ makeDynCall('vii', 'callback') }}}(id, msgBuffer);
             } catch (e) {
                 WebRtcLogErrorCallback('ConnectionStateChanged', `${e}`);
             } finally {
@@ -550,7 +549,7 @@ const LibraryWebRtc = {
             stringToUTF8(logMessage, logMessageBuffer, logMessageBytes);
 
             try {
-                Module.dynCall_viii(callback, id, methodNameBuffer, logMessageBuffer);
+                {{{ makeDynCall('viii', 'callback') }}}(id, methodNameBuffer, logMessageBuffer);
             } catch (e) {
                 webRtcState.logToConsole(`WebRtcLogCallback failed to log from ${methodName}: ${logMessage}`);
             } finally {

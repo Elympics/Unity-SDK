@@ -7,7 +7,7 @@
         "Elympics",
         "Elympics.Editor",
         "Elympics.UniTask",
-        "MessagePack",
+        "Elympics.MessagePack",
         "Elympics.Tests",
         "Elympics.Editor.Weaving",
         "Elympics.Core"

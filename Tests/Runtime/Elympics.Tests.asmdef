@@ -5,7 +5,7 @@
         "UnityEngine.TestRunner",
         "Elympics",
         "Elympics.UniTask",
-        "MessagePack",
+        "Elympics.MessagePack",
         "Elympics.WebRtc",
         "Elympics.Proto",
         "GameEngineCore",

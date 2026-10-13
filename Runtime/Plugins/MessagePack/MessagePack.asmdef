@@ -1,8 +1,8 @@
 {
-    "name": "MessagePack",
+    "name": "Elympics.MessagePack",
     "rootNamespace": "",
     "references": [
-        "MessagePack.Annotations"
+        "Elympics.MessagePack.Annotations"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

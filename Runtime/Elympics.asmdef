@@ -3,8 +3,8 @@
     "rootNamespace": "Elympics",
     "references": [
         "Elympics.UniTask",
-        "MessagePack",
-        "MessagePack.Annotations",
+        "Elympics.MessagePack",
+        "Elympics.MessagePack.Annotations",
         "Elympics.Core",
         "Unity.Mathematics",
         "Elympics.WebRtc",

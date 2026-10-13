@@ -1,8 +1,8 @@
 {
-    "name": "MessagePack.UnityEditor",
+    "name": "Elympics.MessagePack.UnityEditor",
     "rootNamespace": "",
     "references": [
-        "MessagePack"
+        "Elympics.MessagePack"
     ],
     "includePlatforms": [
         "Editor"

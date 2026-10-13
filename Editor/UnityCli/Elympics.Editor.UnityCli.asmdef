@@ -4,7 +4,8 @@
     "references": [
         "Elympics",
         "Elympics.Editor",
-        "Unity.Pipeline"
+        "Unity.Pipeline",
+        "Unity.Pipeline.Attributes"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,14 +15,12 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [
-        "ELYMPICS_UNITY_PIPELINE"
-    ],
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.pipeline",
-            "expression": "",
-            "define": "ELYMPICS_UNITY_PIPELINE"
+            "expression": "0.8.0-exp.1",
+            "define": "ELYMPICS_UNITY_PIPELINE_0_8_OR_NEWER"
         }
     ],
     "noEngineReferences": false

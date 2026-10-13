@@ -260,6 +260,24 @@ test:editmode:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
 
+test:editmode:unity-versions:
+  extends: .test
+  # Compiles and runs EditMode tests around the version cut-offs: 6.4 (hierarchy EntityId event) and 6.5 (Unity's own Unsafe).
+  image: unityci/editor:ubuntu-$TEST_UNITY_VERSION-base-3
+  needs: []
+  timeout: 45m
+  variables:
+    TEST_PLATFORM: editmode
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+  parallel:
+    matrix:
+      - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1", "6000.6.4f1"]
+  script:
+    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - ./.scripts/ci/create_testing_project.sh
+    - ./.scripts/ci/test.sh
+
 create-coverage-report:
   extends:
     - .dotnet_image

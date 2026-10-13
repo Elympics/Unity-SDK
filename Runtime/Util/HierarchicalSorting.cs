@@ -11,21 +11,7 @@ namespace Elympics
     // source: https://gamedev.stackexchange.com/a/193912
     internal static class HierarchicalSorting
     {
-#if !(UNITY_2022_3 || UNITY_6000_1_OR_NEWER)
-        private static readonly List<Component> ComponentListCached = new();
-#endif
-
-        private static int GetComponentIndex(Component component)
-        {
-#if UNITY_2022_3 || UNITY_6000_1_OR_NEWER
-            return component.GetComponentIndex();
-#else
-            component.gameObject.GetComponents(ComponentListCached);
-            var index = ComponentListCached.IndexOf(component);
-            ComponentListCached.Clear();
-            return index;
-#endif
-        }
+        private static int GetComponentIndex(Component component) => component.GetComponentIndex();
 
         private static int Compare(Component? x, Component? y)
         {

@@ -24,7 +24,8 @@ fi
 
 echo "Removing default packages"
 
-echo '{ "dependencies": { } }' > "${PACKAGES_FOLDER}/manifest.json"
+# Rider: generate_solution_files.sh calls its SyncSolution
+echo '{ "dependencies": { "com.unity.ide.rider": "3.0.39" } }' > "${PACKAGES_FOLDER}/manifest.json"
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -projectPath "$UNITY_DIR" \

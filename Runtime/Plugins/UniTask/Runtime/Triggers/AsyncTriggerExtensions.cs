@@ -2,9 +2,9 @@
 
 using System.Threading;
 using UnityEngine;
-using Cysharp.Threading.Tasks.Triggers;
+using Elympics.Cysharp.Threading.Tasks.Triggers;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class UniTaskCancellationExtensions
     {
@@ -39,7 +39,7 @@ namespace Cysharp.Threading.Tasks
     }
 }
 
-namespace Cysharp.Threading.Tasks.Triggers
+namespace Elympics.Cysharp.Threading.Tasks.Triggers
 {
     public static partial class AsyncTriggerExtensions
     {

@@ -6,7 +6,7 @@
         "UnityEditor.TestRunner",
         "Elympics",
         "Elympics.Editor",
-        "UniTask",
+        "Elympics.UniTask",
         "MessagePack",
         "Elympics.Tests",
         "Elympics.Editor.Weaving",

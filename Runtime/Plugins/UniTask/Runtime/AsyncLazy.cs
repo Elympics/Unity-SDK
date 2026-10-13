@@ -3,7 +3,7 @@
 using System;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public class AsyncLazy
     {

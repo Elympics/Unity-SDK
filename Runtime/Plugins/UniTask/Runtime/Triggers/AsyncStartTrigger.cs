@@ -2,7 +2,7 @@
 
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Triggers
+namespace Elympics.Cysharp.Threading.Tasks.Triggers
 {
     public static partial class AsyncTriggerExtensions
     {

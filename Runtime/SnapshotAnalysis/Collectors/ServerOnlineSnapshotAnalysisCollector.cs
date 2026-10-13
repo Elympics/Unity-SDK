@@ -1,7 +1,7 @@
 #nullable enable
 using System.IO;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Elympics.SnapshotAnalysis

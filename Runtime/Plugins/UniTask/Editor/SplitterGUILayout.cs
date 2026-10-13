@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Editor
+namespace Elympics.Cysharp.Threading.Tasks.Editor
 {
     // reflection call of UnityEditor.SplitterGUILayout
     internal static class SplitterGUILayout

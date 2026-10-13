@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     // Add, Remove, Enumerate with sweep. All operations are thread safe(in spinlock).
     internal class WeakDictionary<TKey, TValue>

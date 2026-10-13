@@ -1,11 +1,11 @@
-﻿using Cysharp.Threading.Tasks;
-using Cysharp.Threading.Tasks.Internal;
-using Cysharp.Threading.Tasks.Linq;
+﻿using Elympics.Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Linq;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {

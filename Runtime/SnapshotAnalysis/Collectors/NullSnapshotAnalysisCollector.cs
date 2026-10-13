@@ -1,6 +1,6 @@
 #nullable enable
 
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 
 namespace Elympics.SnapshotAnalysis
 {

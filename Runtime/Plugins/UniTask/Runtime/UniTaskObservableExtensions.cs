@@ -3,9 +3,9 @@
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class UniTaskObservableExtensions
     {
@@ -50,7 +50,7 @@ namespace Cysharp.Threading.Tasks
         }
 
         /// <summary>
-        /// Ideally returns IObservabl[Unit] is best but Cysharp.Threading.Tasks does not have Unit so return AsyncUnit instead.
+        /// Ideally returns IObservabl[Unit] is best but global::Elympics.Cysharp.Threading.Tasks does not have Unit so return AsyncUnit instead.
         /// </summary>
         public static IObservable<AsyncUnit> ToObservable(this UniTask task)
         {
@@ -285,7 +285,7 @@ namespace Cysharp.Threading.Tasks
     }
 }
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     // Bridges for Rx.
 

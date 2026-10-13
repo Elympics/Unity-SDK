@@ -1,8 +1,8 @@
 using System;
 using System.Net.Http;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Elympics.Tests.UnityConnectors.HalfRemote

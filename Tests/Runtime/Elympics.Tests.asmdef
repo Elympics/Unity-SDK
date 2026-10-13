@@ -4,7 +4,7 @@
     "references": [
         "UnityEngine.TestRunner",
         "Elympics",
-        "UniTask",
+        "Elympics.UniTask",
         "MessagePack",
         "Elympics.WebRtc",
         "Elympics.Proto",

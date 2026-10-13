@@ -3,7 +3,7 @@
 using System;
 using System.Collections;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     // UnityEngine Bridges.
 

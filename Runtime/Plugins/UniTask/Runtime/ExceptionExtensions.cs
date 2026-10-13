@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class ExceptionExtensions
     {

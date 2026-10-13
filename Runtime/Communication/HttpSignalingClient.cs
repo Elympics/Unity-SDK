@@ -3,9 +3,9 @@
 using System;
 using System.Text;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using MatchTcpClients;
 using MatchTcpLibrary;
 using UnityEngine;

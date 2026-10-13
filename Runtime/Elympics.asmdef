@@ -2,7 +2,7 @@
     "name": "Elympics",
     "rootNamespace": "Elympics",
     "references": [
-        "UniTask",
+        "Elympics.UniTask",
         "MessagePack",
         "MessagePack.Annotations",
         "Elympics.Core",

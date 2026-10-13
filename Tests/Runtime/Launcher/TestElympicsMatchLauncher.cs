@@ -4,7 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.SnapshotAnalysis;
 using Elympics.SnapshotAnalysis.Retrievers;
 using NUnit.Framework;

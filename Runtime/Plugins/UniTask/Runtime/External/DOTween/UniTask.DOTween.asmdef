@@ -1,8 +1,7 @@
 {
-    "name": "UniTask.DOTween",
-    "rootNamespace": "",
+    "name": "Elympics.UniTask.DOTween",
     "references": [
-        "UniTask",
+        "Elympics.UniTask",
         "DOTween.Modules"
     ],
     "includePlatforms": [],

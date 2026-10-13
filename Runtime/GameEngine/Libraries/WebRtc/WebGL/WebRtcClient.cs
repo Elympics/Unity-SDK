@@ -5,7 +5,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using AOT;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using UnityEngine;

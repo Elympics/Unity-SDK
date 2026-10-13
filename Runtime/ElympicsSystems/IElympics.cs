@@ -1,6 +1,6 @@
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Core;
+using Elympics.Cysharp.Threading.Tasks;
 
 namespace Elympics
 {

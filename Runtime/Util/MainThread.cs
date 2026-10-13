@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Object = UnityEngine.Object;
 
 namespace Elympics

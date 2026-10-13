@@ -1,8 +1,7 @@
 {
-    "name": "UniTask.TextMeshPro",
-    "rootNamespace": "",
+    "name": "Elympics.UniTask.TextMeshPro",
     "references": [
-        "UniTask",
+        "Elympics.UniTask",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
@@ -16,6 +15,11 @@
         {
             "name": "com.unity.textmeshpro",
             "expression": "",
+            "define": "UNITASK_TEXTMESHPRO_SUPPORT"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
             "define": "UNITASK_TEXTMESHPRO_SUPPORT"
         }
     ],

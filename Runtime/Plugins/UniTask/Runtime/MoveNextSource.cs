@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public abstract class MoveNextSource : IUniTaskSource<bool>
     {

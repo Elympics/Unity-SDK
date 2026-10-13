@@ -1,7 +1,7 @@
 #nullable enable
 
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Elympics

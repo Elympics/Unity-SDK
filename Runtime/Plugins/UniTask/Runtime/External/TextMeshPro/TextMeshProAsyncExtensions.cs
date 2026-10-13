@@ -5,7 +5,7 @@ using System.Threading;
 using TMPro;
 using UnityEngine.Events;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static partial class TextMeshProAsyncExtensions
     {

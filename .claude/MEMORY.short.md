@@ -27,10 +27,12 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **WebGL linked assemblies: read the build, not ScriptingAssemblies.json:** use `ManagedStripped` right after the build, or the `.dll` names in the build's `global-metadata.dat`.
 - **Domain reload off keeps NUnit ValueSource objects between runs:** don't mutate source objects; create them inside the test.
 - **Unity's Mono HttpListener can't accept WebSockets:** test against a `TcpListener` echo server with a manual handshake and `WebSocket.CreateFromStream`.
-- **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only.
+- **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`.
+- **A newer Unity Editor rewrites package sources:** after an Editor upgrade, review `git status` in both packages (Script Updater edits are often incomplete).
 
 ## Configuration
 - **The active game is availableGames[0]; duplicate game IDs resolve to the first entry:** list order decides the gameplay scene when IDs repeat.
 
 ## Git
 - **Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing:** use `git show :path` / `HEAD:path`. Copy files with unstaged changes before editing.
+- **New CI scripts need git's executable bit:** `git update-index --chmod=+x`; check `git ls-files -s` shows `100755`.

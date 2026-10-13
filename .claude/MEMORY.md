@@ -131,10 +131,16 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
 
 ### Driving the Editor through the pipeline CLI
-- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection.
-- **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only.
+- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll.
+- **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.
 - **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters.
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
+
+### A newer Unity Editor rewrites package sources
+- **Rule:** after opening the host in a newer Unity version, check `git status` inside both packages before committing anything, and review what the Script Updater changed.
+- **Reason:** embedded packages are writable, so the API Updater rewrites obsolete calls in them on import without asking. The edits are usually right but incomplete (it skips APIs without a 1:1 replacement).
+- **Example:** opening the host in 6000.3 rewrote `velocity`/`drag`/`angularDrag` in both Rigidbody synchronizers but left `Rigidbody2D.isKinematic`, which needed `bodyType` by hand.
+- **Time scope:** Permanent; relevant at every minimum-version raise (next: 6.7 LTS).
 
 ## Configuration
 
@@ -150,3 +156,9 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Rule:** get old file content with `git show :path` (index) or `git show HEAD:path` (commit) into a scratch dir. Before editing a file that has unstaged changes, copy it.
 - **Reason:** the working tree is often fully staged with unstaged edits on top. `git stash push --keep-index` followed by `git stash pop` then conflicts and writes conflict markers into sources. Unstaged work has no git copy, so `git checkout -- <file>` destroys it along with your edit.
 - **Example:** a stash pop left `UU` conflicts in two edited files. Recovery was `git checkout stash@{0} -- <paths>` for the working tree, then `git reset stash@{0}^2 -- <paths>` for the index.
+
+### New CI scripts need git's executable bit
+- **Rule:** after adding a `.sh` that CI runs as `./script.sh`, set `git update-index --chmod=+x <file>` and check `git ls-files -s` shows `100755`.
+- **Reason:** on Windows `chmod +x` doesn't reach git (`core.filemode` is off), so the file lands as `100644` and the Linux CI job fails with "permission denied".
+- **Example:** `build_sample.sh`, `disable_domain_reload.sh` and PlayPad's copied `check_js.sh` all needed it.
+- **Time scope:** Permanent while CI runs on Linux and development happens on Windows.

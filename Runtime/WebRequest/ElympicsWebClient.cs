@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Web;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Networking;
 
@@ -39,12 +38,7 @@ namespace Elympics
             if (queryValues == null)
                 return url;
 
-            var uriBuilder = new UriBuilder(url);
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            foreach (var (name, value) in queryValues)
-                query.Add(name, value);
-            uriBuilder.Query = query.ToString();
-            return uriBuilder.Uri.ToString();
+            return QueryString.Append(url, queryValues);
         }
 
         public static Action<Result<TResult, Exception>> CreateResponseHandler<TResult>(UniTaskCompletionSource<TResult> tcs) =>

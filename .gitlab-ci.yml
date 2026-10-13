@@ -185,6 +185,34 @@ create-testing-project:
       - "./$TESTING_PROJECT_NAME"
     expire_in: 1 hour
 
+build:sample:
+  extends:
+    - .cond.license
+  image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH
+  stage: test
+  needs: []
+  variables:
+    GIT_DEPTH: 1
+    CI_BUILD_SCENES: "Assets/Samples/ButtonClicker/ButtonClicker.unity"
+  parallel:
+    matrix:
+      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
+        BUILD_TARGET: StandaloneLinux64
+        BUILD_UNITY_ARCH: base-3
+      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
+        BUILD_TARGET: WebGL
+        BUILD_UNITY_ARCH: webgl-3
+  cache:
+    key: library-$BUILD_UNITY_VERSION-$BUILD_TARGET
+    paths:
+      - "$TESTING_PROJECT_NAME/Library/"
+  before_script:
+    - *unity_default_before_script
+    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+  script:
+    - ./.scripts/ci/create_testing_project.sh
+    - ./.scripts/ci/build_sample.sh
+
 .test:
   extends:
     - .unity_image
@@ -212,6 +240,16 @@ test:playmode:
     TEST_PLATFORM: playmode
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
+
+test:playmode:no-domain-reload:
+  extends: .test
+  variables:
+    TEST_PLATFORM: playmode
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+  script:
+    - ./.scripts/ci/disable_domain_reload.sh
+    - ./.scripts/ci/test.sh
 
 test:editmode:
   extends: .test

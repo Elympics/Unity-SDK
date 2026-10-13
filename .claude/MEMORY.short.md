@@ -8,7 +8,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Create a handshake's completion source before connecting; build WebRtcConfig from Default:** set up the TCS/subscription before the call that triggers the reply. Use `WebRtcConfig.Default` + field assignments, never a bare initializer.
 - **UITK Bind() discards earlier .value writes:** don't set bound fields in `CreateInspectorGUI`/`PrepareInspectorTree`. Write the serialized property or use `OnValidate`.
 - **Multiplayer Play Mode's CurrentPlayer throws without the package:** read MPPM state only through `PlayModeInstance`.
-- **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files. Vendored BCL DLLs get `!UNITY_6000_5_OR_NEWER` (the Editor ships them from 6.5).
+- **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files. Vendored BCL DLLs get `!UNITY_6000_5_OR_NEWER` (the Editor ships them from 6.5); DLLs referencing them need a retargeted `Unity6000.5/` copy.
 
 ## Backend contracts
 - **StreamingAssets upload contract:** versions are write-once. The Content-Type map (json/xml/octet-stream) is a verified allowlist. Keep the bundles → catalogs → `variants.meta.json` order. Don't validate baked catalog URLs.

@@ -1,0 +1,10 @@
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/AssemblyCommunicator/BroadcastEventCollection.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/ElympicsLogger.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/PlaypadBreadcrumbOutlet.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/UnityConsoleOutlet.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/State/IStateVisitor.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/AssemblyCommunicator/CrossAssemblyEventBroadcaster.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/ElympicsLogger.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/PlaypadBreadcrumbOutlet.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/UnityConsoleOutlet.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/State/IStateVisitor.cs | Issue with AutoStaticsCleanup

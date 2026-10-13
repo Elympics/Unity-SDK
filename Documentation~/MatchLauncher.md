@@ -322,12 +322,6 @@ Teardown before a quit is best effort and lasts at most `ElympicsLaunchDefaults.
 - **Mixed games on iOS:** if a host mixes memory-heavy and light games in one page session, consider
   `unityInstance.Quit()` and a new instance when switching between them, not only for recovery. On desktop,
   the soft `returnToBoot → idle → launch` cycle is correct and quitting is unnecessary.
-- **Unity versions:** the SDK builds on Unity 2021.3, while games may ship on Unity 6. The two differ:
-
-| | Unity 2021.3 | Unity 6 |
-|---|---|---|
-| Heap ceiling | 2 GB | up to 16 GB |
-| Growth control | none in Player Settings. Emscripten grows in ~100 MB steps | Memory Growth Mode, and Initial / Maximum Memory Size |
-| `unityInstance.Quit()` reclaims the heap | yes | in release builds. A development-build regression prevents a full release |
-
-"Tune Initial Memory Size to the steady-state peak" is advice for games on Unity 6. It doesn't apply to 2021.3 builds.
+- **Unity 6 memory settings:** the heap can grow up to 16 GB. Use Memory Growth Mode and Initial / Maximum Memory Size
+  in Player Settings, and tune Initial Memory Size to the steady-state peak. `unityInstance.Quit()` reclaims the heap in
+  release builds; a development-build regression prevents a full release.

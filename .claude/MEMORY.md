@@ -43,7 +43,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### Vendored dependencies: Elympics names, own GUIDs, name references
 - **Rule:** a vendored source dependency gets `Elympics.`-prefixed assembly names and fresh asset GUIDs (never the upstream `.meta` files). Elympics and PlayPad asmdefs reference it by name, not GUID. When re-vendoring, regenerate the GUIDs again and keep the `.<name>.repo`/`.sha1` provenance files.
 - **Reason:** with upstream GUIDs, a game that also installs the official package can't import it ("GUID … conflicts … immutable folder"). Unity rejects duplicate asmdef names even when one is excluded by `defineConstraints`, so a "switch off our copy" approach is impossible. After an asmdef's GUID changes, Unity's compilation pipeline keeps resolving the old GUID (it survives refresh, a successful compile and a forced reimport), so GUID references to the new GUID fail in projects that upgrade.
-- **Example:** UniTask 2.5.10 is `Elympics.UniTask*` in `Elympics.Cysharp.*`; MessagePack is `Elympics.MessagePack*` with its namespace unchanged, so `mpc` output is identical.
+- **Example:** UniTask 2.5.10 is `Elympics.UniTask*` in `Elympics.Cysharp.*`; MessagePack is `Elympics.MessagePack*` with its namespace unchanged, so `mpc` output is identical. Vendored BCL DLLs are different: from Unity 6000.5 the Editor references its own `BCLExtensions` (Unsafe, System.Text.Json, System.Collections.Immutable, …) in every script assembly, so a vendored copy needs the plugin define constraint `!UNITY_6000_5_OR_NEWER` (CS0433 otherwise).
 - **Time scope:** If Unity package management can share or isolate dependencies between packages, revisit.
 
 ## Backend contracts
@@ -131,9 +131,9 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
 
 ### Driving the Editor through the pipeline CLI
-- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll.
+- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`).
 - **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.
-- **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters.
+- **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters. A `build --target WebGL` from a Linux-active Editor compiled without `UnityEngine.WebGLModule` and failed with CS0103 `WebGLInput` in PlayPad, which builds fine after a switch.
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
 
 ### A newer Unity Editor rewrites package sources

@@ -8,7 +8,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Create a handshake's completion source before connecting; build WebRtcConfig from Default:** set up the TCS/subscription before the call that triggers the reply. Use `WebRtcConfig.Default` + field assignments, never a bare initializer.
 - **UITK Bind() discards earlier .value writes:** don't set bound fields in `CreateInspectorGUI`/`PrepareInspectorTree`. Write the serialized property or use `OnValidate`.
 - **Multiplayer Play Mode's CurrentPlayer throws without the package:** read MPPM state only through `PlayModeInstance`.
-- **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files.
+- **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files. Vendored BCL DLLs get `!UNITY_6000_5_OR_NEWER` (the Editor ships them from 6.5).
 
 ## Backend contracts
 - **StreamingAssets upload contract:** versions are write-once. The Content-Type map (json/xml/octet-stream) is a verified allowlist. Keep the bundles → catalogs → `variants.meta.json` order. Don't validate baked catalog URLs.
@@ -27,7 +27,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **WebGL linked assemblies: read the build, not ScriptingAssemblies.json:** use `ManagedStripped` right after the build, or the `.dll` names in the build's `global-metadata.dat`.
 - **Domain reload off keeps NUnit ValueSource objects between runs:** don't mutate source objects; create them inside the test.
 - **Unity's Mono HttpListener can't accept WebSockets:** test against a `TcpListener` echo server with a manual handshake and `WebSocket.CreateFromStream`.
-- **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`.
+- **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`; `switch_build_target` before `build --target`; array args as JSON.
 - **A newer Unity Editor rewrites package sources:** after an Editor upgrade, review `git status` in both packages (Script Updater edits are often incomplete).
 
 ## Configuration

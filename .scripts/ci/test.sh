@@ -12,6 +12,9 @@ COVERAGE_RESULTS_PATH="$CI_PROJECT_DIR/coverage"
 PACKAGE_MANIFEST_PATH="$UNITY_DIR/Packages/manifest.json"
 CODE_COVERAGE_PACKAGE="com.unity.testtools.codecoverage"
 
+# CODE_COVERAGE=false runs without coverage instrumentation, which can keep objects alive (see ElympicsEventTests.RaiseAfterGC).
+COVERAGE_ARGS=()
+if [ "${CODE_COVERAGE:-true}" != "false" ]; then
 mv "$PACKAGE_MANIFEST_PATH" "$PACKAGE_MANIFEST_PATH.old"
 jq -r '.dependencies["'"$CODE_COVERAGE_PACKAGE"'"] = "1.3.0"' "$PACKAGE_MANIFEST_PATH.old" > "$PACKAGE_MANIFEST_PATH"
 
@@ -38,6 +41,14 @@ COVERAGE_PATH_FILTERS=(
 
 COVERAGE_ASSEMBLY_FILTERS_JOINED=$(IFS=, ; echo "${COVERAGE_ASSEMBLY_FILTERS[*]}")
 COVERAGE_PATH_FILTERS_JOINED=$(IFS=, ; echo "${COVERAGE_PATH_FILTERS[*]}")
+COVERAGE_ARGS=(
+  -enableCodeCoverage
+  -coverageResultsPath "$COVERAGE_RESULTS_PATH"
+  -coverageOptions "generateAdditionalReports;assemblyFilters:$COVERAGE_ASSEMBLY_FILTERS_JOINED;pathFilters:$COVERAGE_PATH_FILTERS_JOINED"
+  -debugCodeOptimization
+)
+fi
+
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -projectPath "$UNITY_DIR" \
   -runTests \
@@ -46,10 +57,7 @@ ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x2
   -logFile /dev/stdout \
   -batchmode \
   -nographics \
-  -enableCodeCoverage \
-  -coverageResultsPath "$COVERAGE_RESULTS_PATH" \
-  -coverageOptions "generateAdditionalReports;assemblyFilters:$COVERAGE_ASSEMBLY_FILTERS_JOINED;pathFilters:$COVERAGE_PATH_FILTERS_JOINED" \
-  -debugCodeOptimization
+  "${COVERAGE_ARGS[@]}"
 
 UNITY_EXIT_CODE=$?
 

@@ -282,6 +282,8 @@ test:playmode:no-domain-reload:
     TEST_PLATFORM: playmode
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
+    # Coverage comes from test:playmode; without instrumentation, garbage-collection tests (RaiseAfterGC) really run here.
+    CODE_COVERAGE: "false"
   script:
     - ./.scripts/ci/disable_domain_reload.sh
     - ./.scripts/ci/test.sh

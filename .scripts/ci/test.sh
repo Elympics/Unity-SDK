@@ -63,11 +63,21 @@ function process_test_results {
   fi
 }
 
+function print_failed_tests {
+  # Shows failed tests in the job log; otherwise they are only in the results artifact.
+  awk '
+    /<test-case / && /result="Failed"/ { match($0, /fullname="[^"]*"/); print "FAILED: " substr($0, RSTART + 10, RLENGTH - 11); inside = 1; next }
+    inside && /<\/failure>/ { inside = 0; next }
+    inside && !/^[[:space:]]*<\/?(properties|property|failure)[ >\/]/ { print "    " $0 }
+  ' "$RAW_TEST_RESULTS_PATH"
+}
+
 if [ $UNITY_EXIT_CODE -eq 0 ]; then
   echo "Run succeeded, no failures occurred"
   process_test_results
 elif [ $UNITY_EXIT_CODE -eq 2 ]; then
   echo "Run succeeded, some tests failed"
+  print_failed_tests
   process_test_results
 elif [ $UNITY_EXIT_CODE -eq 3 ]; then
   echo "Run failure (other failure)"

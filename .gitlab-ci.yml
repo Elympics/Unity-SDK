@@ -180,6 +180,12 @@ create-testing-project:
     - .unity_image
     - .cond.license
   stage: prepare-project
+  # Unity sometimes crashes on quit and then hangs; the setup normally takes a few minutes.
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - job_execution_timeout
   variables:
     GIT_DEPTH: 1
   before_script:

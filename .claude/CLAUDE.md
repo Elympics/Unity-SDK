@@ -54,6 +54,7 @@ The code is split across many asmdefs. The main ones:
 - `Elympics.Editor.UnityCli` (`[CliCommand]`s for com.unity.pipeline, a package dependency; compiles against pipeline 0.5+, so it references both `Unity.Pipeline` and `Unity.Pipeline.Attributes`)
 - `GameEngineCore`, `Elympics.Proto`, `Elympics.MatchConnection`, `UnityConnectors`
 - WebRtc: `Elympics.WebRtc`, `Elympics.WebRtc.Common`, `Elympics.WebRtc.Other`, `Elympics.WebRtc.WebGl`
+- Opt-in components: `Elympics.Physics2D` (Rigidbody2D synchronizer, 2D physics simulator) and `Elympics.Animation` (Animator synchronizer). Runtime code in the other assemblies must never reference them (only Editor code may), or every WebGL player links the 2D physics and Animation modules again.
 
 Two rules when a file starts using another assembly's types:
 - `InternalsVisibleTo` (in each `AssemblyInfo.cs`) is **not** enough. The consuming `.asmdef` `references` must also include the source assembly, usually by GUID.

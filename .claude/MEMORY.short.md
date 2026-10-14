@@ -10,6 +10,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Multiplayer Play Mode's CurrentPlayer throws without the package:** read MPPM state only through `PlayModeInstance`.
 - **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files. Vendored BCL DLLs get `!UNITY_6000_5_OR_NEWER` (the Editor ships them from 6.5); DLLs referencing them need a retargeted `Unity6000.5/` copy.
 - **com.unity.webrtc runs native threads in every Editor; ELYMPICS_LAZY_WEBRTC_CONTEXT stops them:** define it in Editor-only projects (CI); call `EditorWebRtcContext.EnsureInitialized()` before creating `RTCPeerConnection` in the Editor. A SIGSEGV in `libwebrtc.so` or a heap error on quit is this issue.
+- **WebGL size: unused components in a linked assembly keep their engine modules:** put optional module-using components in their own assembly that core runtime code never references, with no load-time hooks; reach them via interfaces; don't enable vendored features that add components. Measure in a fresh project.
 
 ## Backend contracts
 - **StreamingAssets upload contract:** versions are write-once. The Content-Type map (json/xml/octet-stream) is a verified allowlist. Keep the bundles → catalogs → `variants.meta.json` order. Don't validate baked catalog URLs.

@@ -52,6 +52,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** a PlayPad EditMode job on 6.6 crashed right after compiling, before any test ran (`Native stacktrace: … libwebrtc.so … Begin MonoManager ReloadAssembly`). With the define, the host Editor showed `s_context == null` after reloads, and the half-remote `WebRtcTest` still connected.
 - **Time scope:** If com.unity.webrtc fixes its Editor lifecycle, or Elympics stops depending on it, remove the define and this entry.
 
+### WebGL size: unused components in a linked assembly keep their engine modules
+- **Rule:** keep optional components that use an engine module (2D physics, Animation, uGUI…) in their own assembly that runtime code of the always-linked assemblies never references, and give that assembly no load-time hooks (`[RuntimeInitializeOnLoadMethod]`, static self-registration, `[Preserve]`). Core code reaches them only through interfaces they implement (e.g. `IReplayPhysicsStep`). Don't enable vendored-library features that add components (UniTask's uGUI/physics triggers). Measure size changes with a fresh project's WebGL build, not the host.
+- **Reason:** IL2CPP stripping keeps MonoBehaviour-derived types of a linked assembly even when no scene uses them, and each keeps its engine module and the module's dependencies. The host project can't show a minimal game's size: its config pulls in the samples, which link uGUI.
+- **Example:** UniTask's triggers kept uGUI, UI Toolkit, TextCore, IMGUI, Tilemap and 2D physics in every Elympics WebGL build (a minimal game went from 29.8 to 20.2 MB raw when they were disabled). Moving the 2D and Animator synchronizers to `Elympics.Physics2D`/`Elympics.Animation` took it to 18.5 MB; a scene with the 2D synchronizer links `Elympics.Physics2D` and the 2D module again. An empty 6.3 project is 13.9 MB.
+- **Time scope:** If Unity's linker stops preserving unused MonoBehaviours, or CoreCLR players change stripping, re-measure and update.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract

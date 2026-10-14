@@ -118,6 +118,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `ELYMPICS_LAZY_WEBRTC_CONTEXT` on Standalone left `EditorWebRtcContext` out of `Elympics.WebRtc.Other.dll` in the host (active target StandaloneLinux64, sub-target Server); on `NamedBuildTarget.Server` it compiled in. CI's `set_scripting_defines.sh` writes Standalone, Server and WebGL.
 - **Time scope:** If the host project stops using the Server sub-target, keep only the general rule.
 
+### Project Auditor skips assemblies it can't compile; NSubstitute breaks the ValueTask ones
+- **Rule:** before trusting a Project Auditor result (or a baseline), prove the target assemblies were analyzed: add a canary (e.g. a mutable public static) to a scratch copy and check it shows up, and grep the run's log for `error CS`. Audit a project without the `Tests` folders that ship NSubstitute (Elympics `Tests/Runtime/Plugins/NSubstitute.dll`).
+- **Reason:** the auditor recompiles each assembly with `AssemblyBuilder`, which references every precompiled DLL whatever its Auto Reference setting. NSubstitute 3.0 bundles its own `ValueTask<T>`, so MessagePack and UniTask fail with CS0433, and every assembly that depends on them is skipped without an error or a failed run.
+- **Example:** with Tests present, the Elympics audit found 10 issues (only small assemblies such as `Elympics.Core`) and PlayPad 0, even with a canary; without them, 79 and 35 (+3 for the canary). Turning off the DLL's Auto Reference (`isExplicitlyReferenced: 1`) didn't help.
+- **Time scope:** If Project Auditor stops passing unrelated precompiled DLLs, or the tests stop vendoring NSubstitute, drop the Tests removal and this entry.
+
 ### The running Editor caches EditorPrefs
 - **Rule:** to force Editor state for a manual test (e.g. an expired developer token), make a temporary, uncommitted code change inside the Editor, then revert it. Don't write EditorPrefs from outside Unity.
 - **Reason:** an open Editor caches EditorPrefs in memory, so an external registry write isn't seen, and the test silently checks nothing.

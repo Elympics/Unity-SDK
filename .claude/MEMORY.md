@@ -41,6 +41,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `UsageStatisticsSender`'s `[InitializeOnLoad]` static constructor threw on Editor reload in a host without the package.
 - **Time scope:** If Unity stops throwing there, or Elympics starts depending on the package, simplify `PlayModeInstance`.
 
+### Multiplayer Play Mode virtual players run the main Editor's scenes
+- **Rule:** don't assume a virtual player starts in the scene its role needs. Code that must run in a particular scene loads it itself (as `ElympicsMatchLauncherBootstrap` does for the gameplay scene). To check MPPM end to end, read the virtual players' `Library/VP/<id>/Logs/Editor.log`; the active players and tags are in `Library/VP/SystemData.json`.
+- **Reason:** MPPM opens in each virtual player the scenes open in the main Editor when play mode starts, and scenes loaded during play mode aren't mirrored. A Match Launcher launch first switches the main Editor to the boot scene, so virtual players got the lobby and their launch mode parameter, which starts a match only in the gameplay scene, never fired.
+- **Example:** on 2026-10-14, both virtual players logged `LaunchMode: halfRemoteClient` with indices 0/1 and then sat in the AsyncGame lobby. After the fix, both joined. The server waits for as many players as the game config's test players, so a 2-client check needs at least 2.
+- **Time scope:** If MPPM gets per-player scene setup, revisit.
+
 ### Vendored dependencies: Elympics names, own GUIDs, name references
 - **Rule:** a vendored source dependency gets `Elympics.`-prefixed assembly names and fresh asset GUIDs (never the upstream `.meta` files). Elympics and PlayPad asmdefs reference it by name, not GUID. When re-vendoring, regenerate the GUIDs again and keep the `.<name>.repo`/`.sha1` provenance files.
 - **Reason:** with upstream GUIDs, a game that also installs the official package can't import it ("GUID … conflicts … immutable folder"). Unity rejects duplicate asmdef names even when one is excluded by `defineConstraints`, so a "switch off our copy" approach is impossible. After an asmdef's GUID changes, Unity's compilation pipeline keeps resolving the old GUID (it survives refresh, a successful compile and a forced reimport), so GUID references to the new GUID fail in projects that upgrade.

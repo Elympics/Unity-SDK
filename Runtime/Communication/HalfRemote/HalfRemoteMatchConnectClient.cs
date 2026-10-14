@@ -87,7 +87,12 @@ namespace Elympics
 
         public async UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct)
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // WebGL players can't open sockets, so they don't link the TCP path.
+            var client = await ConnectWebAsync(ct);
+#else
             var client = _useWeb ? await ConnectWebAsync(ct) : await ConnectTcpAsync(ct);
+#endif
 
             _halfRemoteMatchClientAdapter.SetupClientCallbacks(_userId.ToString(), client);
 

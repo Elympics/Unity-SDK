@@ -66,10 +66,10 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ParameterWithRawValueMatchingRegexShouldPassValidation()
+        public void ParameterWithRawValuePassingValidationShouldBeParsed()
         {
             var expectedValue = new DateTime();
-            var parameter = new ValueParameter<DateTime>(validationRegex: new Regex(@"\d{4}-\d{2}-\d{2}"), parse: _ => expectedValue);
+            var parameter = new ValueParameter<DateTime>(validate: value => Regex.IsMatch(value, @"\d{4}-\d{2}-\d{2}"), parse: _ => expectedValue);
             parameter.SetRawValue("1994-02-27");
 
             parameter.ValidateAndParseRawValue();
@@ -77,9 +77,9 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ParameterWithRawValueNotMatchingRegexShouldNotPassValidation()
+        public void ParameterWithRawValueFailingValidationShouldThrow()
         {
-            var parameter = new ValueParameter<DateTime>(validationRegex: new Regex(@"^\d{4}-\d{2}-\d{2}$"), parse: _ => throw new NotImplementedException());
+            var parameter = new ValueParameter<DateTime>(validate: value => Regex.IsMatch(value, @"^\d{4}-\d{2}-\d{2}$"), parse: _ => throw new NotImplementedException());
             parameter.SetRawValue("09:23");
 
             var exc = Assert.Throws<ArgumentException>(() => parameter.ValidateAndParseRawValue());

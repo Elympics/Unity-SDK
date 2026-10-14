@@ -1,5 +1,4 @@
 using System;
-using System.Text.RegularExpressions;
 
 namespace Elympics.Tests
 {
@@ -10,8 +9,8 @@ namespace Elympics.Tests
         public override string GetValueAsString() => null;
 
         public FakeParameterThrowingWhenParsed(string envVarName = null, string queryKey = null, string longArgName = null,
-            char? shortArgName = null, int? argIndex = null, Regex validationRegex = null)
-            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validationRegex)
+            char? shortArgName = null, int? argIndex = null, Func<string, bool> validate = null)
+            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validate)
         { }
     }
 }

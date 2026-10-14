@@ -5,6 +5,8 @@ variables:
   MESSAGEPACK_VERSION: "2.5.124"
   PROTOC_VERSION: "34.1"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
+  YQ_VERSION: "v4.54.1"
+  YQ_SHA256: "8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f"
   UNITY_VERSION: 6000.3.10f1
   UNITY_ARCH: base-3
   TESTING_PROJECT_NAME: TestingProject
@@ -97,6 +99,12 @@ workflow:
   before_script: &unity_default_before_script
     - ./.scripts/ci/before_script.sh
 
+.install_yq:
+  script: &install_yq
+    - wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+      && echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
+      && chmod +x /usr/local/bin/yq
+
 get-package-version:
   extends:
     - .bash_image
@@ -176,7 +184,7 @@ create-testing-project:
     GIT_DEPTH: 1
   before_script:
     - *unity_default_before_script
-    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
@@ -210,7 +218,7 @@ build:sample:
       - "$TESTING_PROJECT_NAME/Library/"
   before_script:
     - *unity_default_before_script
-    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/build_sample.sh
@@ -274,7 +282,7 @@ test:editmode:unity-versions:
     matrix:
       - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1", "6000.6.4f1"]
   script:
-    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - *install_yq
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/test.sh
 

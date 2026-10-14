@@ -46,6 +46,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** UniTask 2.5.10 is `Elympics.UniTask*` in `Elympics.Cysharp.*`; MessagePack is `Elympics.MessagePack*` with its namespace unchanged, so `mpc` output is identical. Vendored BCL DLLs are different: from Unity 6000.5 the Editor references its own `BCLExtensions` (Unsafe, System.Text.Json, System.Collections.Immutable, …) in every script assembly, so a vendored copy needs the plugin define constraint `!UNITY_6000_5_OR_NEWER` (CS0433 otherwise). Precompiled DLLs that reference the renamed copy (`Elympics.Google.Protobuf`, `Elympics.Microsoft.NET.StringTools`) then fail in the player linker (compiles pass), so each has a `Unity6000.5/` copy whose reference was rewritten with Mono.Cecil to `System.Runtime.CompilerServices.Unsafe` 6.0.0.0; when re-vendoring either DLL, regenerate that copy.
 - **Time scope:** If Unity package management can share or isolate dependencies between packages, revisit.
 
+### com.unity.webrtc runs native threads in every Editor; ELYMPICS_LAZY_WEBRTC_CONTEXT stops them
+- **Rule:** in Unity projects that run Editor-only work (CI testing projects, measurement projects), define `ELYMPICS_LAZY_WEBRTC_CONTEXT` so the WebRTC context starts only when Elympics creates a peer connection. Code that creates `RTCPeerConnection` in the Editor must call `EditorWebRtcContext.EnsureInitialized()` first. Treat a SIGSEGV with `libwebrtc.so` frames, or a glibc heap error on quit, as this issue.
+- **Reason:** com.unity.webrtc 3.0.0 (the latest; no fix available) starts its native context after every assembly reload (`ContextManager`, `[InitializeOnLoad]`), even when nothing uses WebRTC. Its threads crashed Unity during `ReloadAssembly` (exit code 255) and probably on quit. The define is opt-in, because a game that uses com.unity.webrtc itself in the Editor needs the context running. `EditorWebRtcContext` uses webrtc internals (`s_context`, `InitializeInternal`, `DisposeInternal`, the `ContextManager` handlers); `TestEditorWebRtcContext` fails when they disappear.
+- **Example:** a PlayPad EditMode job on 6.6 crashed right after compiling, before any test ran (`Native stacktrace: … libwebrtc.so … Begin MonoManager ReloadAssembly`). With the define, the host Editor showed `s_context == null` after reloads, and the half-remote `WebRtcTest` still connected.
+- **Time scope:** If com.unity.webrtc fixes its Editor lifecycle, or Elympics stops depending on it, remove the define and this entry.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract
@@ -99,6 +105,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** Unity generates the csprojs, and runs Editor tests, with the active build target's defines. With WebGL selected, `UNITY_WEBGL` is defined in the Editor, so the `#else` branches are never compiled by a plain redirected build, and Editor tests take the WebGL paths.
 - **Example:** a `#if UNITY_WEBGL` TCP/UDP guard made two validation tests fail in the Editor, whose build target was WebGL. A global `DefineConstants` override then broke UniTask's `UnityWebRequest` extensions (CS8209/CS0246 in `GoogleCloudPingResultFactory.cs`).
 - **Time scope:** If CI or the host project stops generating csprojs per build target, rewrite this.
+
+### The host Editor may be on the Dedicated Server sub-target
+- **Rule:** before changing scripting defines in an Editor, check `EditorUserBuildSettings.standaloneBuildSubtarget`. With `Server`, set them on `NamedBuildTarget.Server`; `NamedBuildTarget.Standalone` has no effect on the compile. Check what the compiler gets with `CompilationPipeline.GetAssemblies(...).defines`.
+- **Reason:** the Editor compiles with the defines of its active (sub)target. A define set on the wrong target is stored and returned by `GetScriptingDefineSymbols`, so it looks applied.
+- **Example:** `ELYMPICS_LAZY_WEBRTC_CONTEXT` on Standalone left `EditorWebRtcContext` out of `Elympics.WebRtc.Other.dll` in the host (active target StandaloneLinux64, sub-target Server); on `NamedBuildTarget.Server` it compiled in. CI's `set_scripting_defines.sh` writes Standalone, Server and WebGL.
+- **Time scope:** If the host project stops using the Server sub-target, keep only the general rule.
 
 ### The running Editor caches EditorPrefs
 - **Rule:** to force Editor state for a manual test (e.g. an expired developer token), make a temporary, uncommitted code change inside the Editor, then revert it. Don't write EditorPrefs from outside Unity.

@@ -119,11 +119,11 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `ELYMPICS_LAZY_WEBRTC_CONTEXT` on Standalone left `EditorWebRtcContext` out of `Elympics.WebRtc.Other.dll` in the host (active target StandaloneLinux64, sub-target Server); on `NamedBuildTarget.Server` it compiled in. CI's `set_scripting_defines.sh` writes Standalone, Server and WebGL.
 - **Time scope:** If the host project stops using the Server sub-target, keep only the general rule.
 
-### Project Auditor skips assemblies it can't compile; NSubstitute breaks the ValueTask ones
-- **Rule:** before trusting a Project Auditor result (or a baseline), prove the target assemblies were analyzed: add a canary (e.g. a mutable public static) to a scratch copy and check it shows up, and grep the run's log for `error CS`. Audit a project without the `Tests` folders that ship NSubstitute (Elympics `Tests/Runtime/Plugins/NSubstitute.dll`).
-- **Reason:** the auditor recompiles each assembly with `AssemblyBuilder`, which references every precompiled DLL whatever its Auto Reference setting. NSubstitute 3.0 bundles its own `ValueTask<T>`, so MessagePack and UniTask fail with CS0433, and every assembly that depends on them is skipped without an error or a failed run.
-- **Example:** with Tests present, the Elympics audit found 10 issues (only small assemblies such as `Elympics.Core`) and PlayPad 0, even with a canary; without them, 79 and 35 (+3 for the canary). Turning off the DLL's Auto Reference (`isExplicitlyReferenced: 1`) didn't help.
-- **Time scope:** If Project Auditor stops passing unrelated precompiled DLLs, or the tests stop vendoring NSubstitute, drop the Tests removal and this entry.
+### Project Auditor skips assemblies it can't compile; keep test-only DLLs Editor-only
+- **Rule:** keep DLLs that only tests use (NSubstitute) enabled for the Editor only, never for player platforms. Before trusting a Project Auditor result or baseline, prove the target assemblies were analyzed: grep the run's log for `error CS`, and when in doubt add a canary (e.g. a mutable public static) to a scratch copy and check it shows up.
+- **Reason:** the auditor recompiles each player assembly with `AssemblyBuilder`, which references every precompiled DLL compatible with the target platform, whatever its Auto Reference setting. NSubstitute 3.0 bundles its own `ValueTask<T>`, so MessagePack and UniTask failed with CS0433, and every assembly built on them was skipped without an error or a failed run. Enabled for Standalone, the DLL was also copied into games' player builds (`Game_Data/Managed/NSubstitute.dll`).
+- **Example:** with the DLL enabled for Standalone, the Elympics audit found 10 issues (only small assemblies such as `Elympics.Core`) and PlayPad 0 even with a canary; Editor-only, 78 and 35, with the tests present. Turning off Auto Reference alone didn't help.
+- **Time scope:** If the tests stop vendoring NSubstitute, or Project Auditor stops referencing unrelated precompiled DLLs, shorten this to the canary check.
 
 ### The running Editor caches EditorPrefs
 - **Rule:** to force Editor state for a manual test (e.g. an expired developer token), make a temporary, uncommitted code change inside the Editor, then revert it. Don't write EditorPrefs from outside Unity.

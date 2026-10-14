@@ -82,6 +82,13 @@ workflow:
 
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
+  # Unity can crash natively (exit code 255; com.unity.webrtc threads during reloads) or hang after a crash on quit.
+  retry:
+    max: 1
+    when:
+      - job_execution_timeout
+    exit_codes:
+      - 255
 
 .dotnet_image:
   image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
@@ -180,12 +187,7 @@ create-testing-project:
     - .unity_image
     - .cond.license
   stage: prepare-project
-  # Unity sometimes crashes on quit and then hangs; the setup normally takes a few minutes.
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - job_execution_timeout
+  timeout: 30m
   variables:
     GIT_DEPTH: 1
   before_script:
@@ -206,7 +208,7 @@ compile:elympics-debug:
   needs:
     - job: create-testing-project
   # A separate job, so a Unity crash on quit here doesn't hold up the tests.
-  timeout: 15m
+  timeout: 30m
   variables:
     GIT_DEPTH: 1
   before_script:
@@ -217,6 +219,7 @@ compile:elympics-debug:
 
 build:sample:
   extends:
+    - .unity_image
     - .cond.license
   timeout: 45m
   image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH

@@ -11,7 +11,8 @@
         "Elympics.Tests",
         "Elympics.Editor.Weaving",
         "Elympics.Core",
-        "Elympics.WebRtc.Other"
+        "Elympics.WebRtc.Other",
+        "Elympics.Physics2D"
     ],
     "includePlatforms": [
         "Editor"

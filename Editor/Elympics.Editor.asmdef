@@ -5,7 +5,9 @@
         "Elympics",
         "Elympics.MessagePack",
         "Elympics.UniTask",
-        "Elympics.Core"
+        "Elympics.Core",
+        "Elympics.Physics2D",
+        "Elympics.Animation"
     ],
     "includePlatforms": [
         "Editor"

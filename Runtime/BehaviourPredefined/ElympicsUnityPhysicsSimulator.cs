@@ -3,13 +3,13 @@ using UnityEngine;
 
 namespace Elympics
 {
+    /// <summary>Steps the scene's 3D physics once per Elympics tick. 2D physics needs <c>ElympicsUnityPhysics2DSimulator</c> (assembly Elympics.Physics2D).</summary>
     [DisallowMultipleComponent]
     public sealed class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
     {
         private static ElympicsUnityPhysicsSimulator instance;
 
         private PhysicsScene? _currentPhysicsScene;
-        private PhysicsScene2D? _currentPhysicsScene2D;
         private bool _isActive;
 
         private void OnEnable() => _isActive = true;
@@ -35,10 +35,8 @@ namespace Elympics
 
             var currentScene = gameObject.scene;
             _currentPhysicsScene = currentScene.GetPhysicsScene();
-            _currentPhysicsScene2D = currentScene.GetPhysicsScene2D();
 
             Physics.simulationMode = SimulationMode.Script;
-            Physics2D.simulationMode = SimulationMode2D.Script;
         }
 
         public void ElympicsUpdate() => SimulatePhysics(Elympics.TickDuration);
@@ -47,14 +45,13 @@ namespace Elympics
         {
             if (!_isActive)
                 return;
-            if (_currentPhysicsScene == null || _currentPhysicsScene2D == null)
+            if (_currentPhysicsScene == null)
             {
                 ElympicsLogger.WithUnityContext(gameObject)
                     .LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!");
                 return;
             }
             _currentPhysicsScene?.Simulate(deltaTime);
-            _ = _currentPhysicsScene2D?.Simulate(deltaTime);
         }
     }
 }

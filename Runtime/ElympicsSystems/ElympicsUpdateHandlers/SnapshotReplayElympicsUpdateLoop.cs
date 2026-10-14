@@ -13,7 +13,7 @@ namespace Elympics.ElympicsSystems
         private readonly Dictionary<long, ElympicsSnapshotWithMetadata> _savedSnapshots;
         private readonly IReplayManipulator _replayManipulator;
         private readonly PhysicsScene _physicsScene;
-        private readonly PhysicsScene2D _physicsScene2D;
+        private readonly IReplayPhysicsStep[] _otherPhysicsSteps;
         private readonly long _endTick;
 
         private bool _isPlaying = true;
@@ -28,7 +28,9 @@ namespace Elympics.ElympicsSystems
             Tick = _savedSnapshots.Keys.Min();
             _endTick = _savedSnapshots.Keys.Max();
             _physicsScene = behavioursManager.gameObject.scene.GetPhysicsScene();
-            _physicsScene2D = behavioursManager.gameObject.scene.GetPhysicsScene2D();
+            _otherPhysicsSteps = behavioursManager.gameObject.scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<IReplayPhysicsStep>(true))
+                .ToArray();
         }
 
         public ElympicsSnapshot GenerateSnapshot()
@@ -38,7 +40,8 @@ namespace Elympics.ElympicsSystems
             _behavioursManager.ApplySnapshot(snapshot, ignoreTolerance: true);
             _behavioursManager.CommitVars();
             _physicsScene.Simulate(float.Epsilon);
-            _ = _physicsScene2D.Simulate(float.Epsilon);
+            foreach (var step in _otherPhysicsSteps)
+                step.StepForReplay();
             _replayManipulator.SetCurrentTick(Tick);
 
             return snapshot;

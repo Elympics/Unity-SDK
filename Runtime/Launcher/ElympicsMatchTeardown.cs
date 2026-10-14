@@ -18,27 +18,25 @@ namespace Elympics
         private readonly float _maximumDeltaTime;
         private readonly int _targetFrameRate;
         private readonly SimulationMode _physicsSimulationMode;
-        private readonly SimulationMode2D _physics2DSimulationMode;
 
-        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, SimulationMode physicsSimulationMode, SimulationMode2D physics2DSimulationMode)
+        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, SimulationMode physicsSimulationMode)
         {
             _fixedDeltaTime = fixedDeltaTime;
             _maximumDeltaTime = maximumDeltaTime;
             _targetFrameRate = targetFrameRate;
             _physicsSimulationMode = physicsSimulationMode;
-            _physics2DSimulationMode = physics2DSimulationMode;
         }
 
         public static ElympicsProcessGlobals Capture() =>
-            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.simulationMode, Physics2D.simulationMode);
+            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.simulationMode);
 
         public void Restore()
         {
             Time.fixedDeltaTime = _fixedDeltaTime;
             Time.maximumDeltaTime = _maximumDeltaTime;
             Application.targetFrameRate = _targetFrameRate;
+            // 2D physics is restored by ElympicsUnityPhysics2DSimulator, so this assembly doesn't link the 2D physics module.
             Physics.simulationMode = _physicsSimulationMode;
-            Physics2D.simulationMode = _physics2DSimulationMode;
         }
     }
 

@@ -87,11 +87,11 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `Runtime/Communication/Respect` was deleted without deprecation. Removing a serialized enum member renumbers the values in existing `ElympicsGameConfig.asset` files. The decision was a release-note reminder, not pinned enum values plus an `OnValidate` migration.
 - **Time scope:** If the version is 1.0.0 or above, remove this.
 
-### com.unity.pipeline: reference both Unity.Pipeline and Unity.Pipeline.Attributes
-- **Rule:** assemblies that declare `[CliCommand]`/`[CliArg]` reference both `Unity.Pipeline` and `Unity.Pipeline.Attributes`, and use `#if` on `versionDefines` (e.g. `ELYMPICS_UNITY_PIPELINE_0_8_OR_NEWER`) where the API really differs. Verify a command through the `unity command` listing, never by running an upload command.
-- **Reason:** 0.8.0-exp.1 moved the attributes into `Unity.Pipeline.Attributes` (same namespace). Projects may pin pipeline versions from 0.5 on, which overrides the package dependency. StreamingAssets uploads are write-once, and pipeline has no `dry_run` for custom commands.
-- **Example:** after updating the host to 0.8, `ElympicsStreamingAssetsCliCommands.cs` failed with `CS0246 CliCommandAttribute`.
-- **Time scope:** If pipeline leaves `-exp` or the supported range moves above 0.8, drop the old reference.
+### com.unity.pipeline 0.8 is the floor; UPM can't downgrade below a package dependency
+- **Rule:** keep `com.unity.pipeline` in `package.json` at the lowest version Elympics supports, and don't design for older versions than that: a project can't pin one. `[CliCommand]`/`[CliArg]` come from `Unity.Pipeline.Attributes` (0.8+). Verify a command through the `unity command` listing, never by running an upload command.
+- **Reason:** Unity 6's Package Manager treats a package's dependency version as a minimum ("Requested version X overridden by minimum version Y" in `upm.log`): a project manifest pin of 0.7 still resolved 0.8 (embedded and tarball installs, lock deleted). The command compiled against 0.5–0.8, but those versions were unreachable, so the user chose 0.8 as the floor: 0.8 binds its servers to loopback, 0.7+ keeps the Roslyn DLLs out of release players, and 0.5–0.7 likely don't compile on 6000.7. StreamingAssets uploads are write-once, and pipeline has no `dry_run` for custom commands.
+- **Example:** after updating the host to 0.8, `ElympicsStreamingAssetsCliCommands.cs` failed with `CS0246 CliCommandAttribute` until the asmdef referenced `Unity.Pipeline.Attributes`. Pipeline 0.4 lacks `CliCommandAttribute.Tags`.
+- **Time scope:** If Unity's Package Manager lets projects downgrade package dependencies, revisit.
 
 ## Verification
 

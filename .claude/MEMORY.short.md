@@ -19,7 +19,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 ## API and compatibility
 - **Shipped [PublicAPI]: add a sibling (inactive until 1.0.0):** from 1.0.0, add a sibling method instead of refactoring a `[PublicAPI]` one.
 - **Breaking changes are allowed before 1.0.0; ask before designing for compatibility:** no `[Obsolete]` cycles or migrations, but they must increase the minor version. Document in release notes. Ask before engineering compatibility.
-- **com.unity.pipeline: reference both Unity.Pipeline and Unity.Pipeline.Attributes:** supports pipeline 0.5+; `#if` on versionDefines where the API differs; verify commands by listing, never by running uploads.
+- **com.unity.pipeline 0.8 is the floor; UPM can't downgrade below a package dependency:** keep the `package.json` version at the supported minimum; attributes come from `Unity.Pipeline.Attributes`; verify commands by listing, never by running uploads.
 
 ## Verification
 - **dotnet format is not a compile check:** never cite its exit code as proof that code compiles.

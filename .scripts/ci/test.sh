@@ -72,11 +72,16 @@ function process_test_results {
 }
 
 function print_failed_tests {
-  # Shows failed tests in the job log; otherwise they are only in the results artifact.
+  # Shows failed and inconclusive tests, and fixtures whose setup or teardown failed, in the job log;
+  # otherwise they are only in the results artifact. Parents and children of a failure (site Child/Parent) would repeat it.
   awk '
-    /<test-case / && /result="Failed"/ { match($0, /fullname="[^"]*"/); print "FAILED: " substr($0, RSTART + 10, RLENGTH - 11); inside = 1; next }
-    inside && /<\/failure>/ { inside = 0; next }
-    inside && !/^[[:space:]]*<\/?(properties|property|failure)[ >\/]/ { print "    " $0 }
+    /<test-(case|suite) / && /result="(Failed|Inconclusive)"/ && !/site="(Child|Parent)"/ {
+      match($0, /fullname="[^"]*"/); name = substr($0, RSTART + 10, RLENGTH - 11)
+      match($0, /result="[^"]*"/); result = toupper(substr($0, RSTART + 8, RLENGTH - 9))
+      print result ": " name ($0 ~ /<test-suite / ? " (fixture)" : ""); inside = 1; next
+    }
+    inside && (/<\/(failure|reason)>/ || /<test-(case|suite) /) { inside = 0; next }
+    inside && !/^[[:space:]]*<\/?(properties|property|failure|reason)[ >\/]/ { print "    " $0 }
   ' "$RAW_TEST_RESULTS_PATH"
 }
 

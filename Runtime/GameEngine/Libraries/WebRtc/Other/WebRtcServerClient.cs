@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elympics.Core.Logger;
 using Elympics.Cysharp.Threading.Tasks;
@@ -23,6 +24,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
         private RTCDataChannel? _unreliableDc;
+        // Own channels replaced by the client's ones. com.unity.webrtc references channels weakly,
+        // and the close event of a collected channel throws a NullReferenceException inside the package.
+        private readonly List<RTCDataChannel> _replacedChannels = new();
 
         public event Action<byte[]>? ReliableReceived;
         public event Action<string>? ReliableReceivingError;
@@ -70,6 +74,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             logger.LogInfo($"[WebRTC] Data channel created: {channel.Label}");
             if (channel.Label == ReliableChannelLabel)
             {
+                KeepReplaced(_reliableDc);
                 _reliableDc = channel;
                 _reliableDc.OnOpen += OnReliableOpen;
                 _reliableDc.OnMessage += OnReliableReceived;
@@ -78,6 +83,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             else if (channel.Label == UnreliableChannelLabel)
             {
+                KeepReplaced(_unreliableDc);
                 _unreliableDc = channel;
                 _unreliableDc.OnOpen += OnUnreliableOpen;
                 _unreliableDc.OnMessage += OnUnreliableReceived;
@@ -86,6 +92,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
             else
                 logger.LogWarning($"[WebRTC] Unknown data channel: {channel.Label}");
+        }
+
+        private void KeepReplaced(RTCDataChannel? channel)
+        {
+            if (channel != null)
+                _replacedChannels.Add(channel);
         }
 
         private void OnReliableOpen() => OnChannel(ReliableChannelLabel, "opened");
@@ -239,6 +251,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         {
             _reliableDc?.Close();
             _unreliableDc?.Close();
+            foreach (var channel in _replacedChannels)
+                channel.Close();
             _peerConnection.Close();
         }
 
@@ -249,6 +263,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _reliableDc = null;
             _unreliableDc?.Dispose();
             _unreliableDc = null;
+            foreach (var channel in _replacedChannels)
+                channel.Dispose();
+            _replacedChannels.Clear();
             _peerConnection.Dispose();
         }
     }

@@ -184,15 +184,30 @@ create-testing-project:
     GIT_DEPTH: 1
   before_script:
     - *unity_default_before_script
-    - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
-    - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
     - ./.scripts/ci/generate_solution_files.sh
   artifacts:
     paths:
       - "./$TESTING_PROJECT_NAME"
     expire_in: 1 hour
+
+compile:elympics-debug:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: test
+  needs:
+    - job: create-testing-project
+  # A separate job, so a Unity crash on quit here doesn't hold up the tests.
+  timeout: 15m
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
+    - *install_yq
+  script:
+    - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
 
 build:sample:
   extends:
@@ -472,6 +487,8 @@ check-if-release-possible:
     - job: verify-formatting
       artifacts: false
     - job: verify-messagepack-generated
+      artifacts: false
+    - job: compile:elympics-debug
       artifacts: false
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends git

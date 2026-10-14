@@ -10,7 +10,8 @@
         "Elympics.MessagePack",
         "Elympics.Tests",
         "Elympics.Editor.Weaving",
-        "Elympics.Core"
+        "Elympics.Core",
+        "Elympics.WebRtc.Other"
     ],
     "includePlatforms": [
         "Editor"

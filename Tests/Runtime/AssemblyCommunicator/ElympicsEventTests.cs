@@ -113,7 +113,7 @@ namespace Elympics.Tests.AssemblyCommunicator
             GC.WaitForPendingFinalizers();
             GC.Collect();
             if (observerReference.IsAlive)
-                Assert.Inconclusive("The garbage collector didn't collect the observer, so there is nothing to test.");
+                Assert.Ignore("The garbage collector didn't collect the observer, so there is nothing to test.");
             elympicsEvent.Raise(argument);
             Assert.AreEqual(0, TestObserver.TotalCallCount);
         }

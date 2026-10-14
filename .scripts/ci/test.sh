@@ -13,7 +13,7 @@ PACKAGE_MANIFEST_PATH="$UNITY_DIR/Packages/manifest.json"
 CODE_COVERAGE_PACKAGE="com.unity.testtools.codecoverage"
 
 mv "$PACKAGE_MANIFEST_PATH" "$PACKAGE_MANIFEST_PATH.old"
-jq -r '.dependencies["'"$CODE_COVERAGE_PACKAGE"'"] = "1.2.4"' "$PACKAGE_MANIFEST_PATH.old" > "$PACKAGE_MANIFEST_PATH"
+jq -r '.dependencies["'"$CODE_COVERAGE_PACKAGE"'"] = "1.3.0"' "$PACKAGE_MANIFEST_PATH.old" > "$PACKAGE_MANIFEST_PATH"
 
 mkdir "$COVERAGE_RESULTS_PATH"
 

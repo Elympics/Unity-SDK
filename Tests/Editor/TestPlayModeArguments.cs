@@ -17,6 +17,18 @@ namespace Elympics.Editor.Tests
         public void PlayerNumberComesFromTheNameArgument(string[] commandLine, int? expected) =>
             Assert.That(PlayModeArguments.GetPlayerNumber(commandLine), Is.EqualTo(expected));
 
+        private const string Gameplay = "Assets/Gameplay.unity";
+
+        [TestCase(true, true, Gameplay, "Assets/Boot.unity", true)]
+        [TestCase(true, true, Gameplay, "", true)]
+        [TestCase(true, true, Gameplay, Gameplay, false)]
+        [TestCase(false, true, Gameplay, "Assets/Boot.unity", false)]
+        [TestCase(true, false, Gameplay, "Assets/Boot.unity", false)]
+        [TestCase(true, true, "", "Assets/Boot.unity", false)]
+        [TestCase(true, true, null, "Assets/Boot.unity", false)]
+        public void VirtualPlayerWithLaunchModeOpensTheGameplayScene(bool isVirtualPlayer, bool isLaunchModeSet, string gameplayScene, string activeScene, bool expected) =>
+            Assert.That(ElympicsMatchLauncherBootstrap.ShouldLoadGameplayScene(isVirtualPlayer, isLaunchModeSet, gameplayScene, activeScene), Is.EqualTo(expected));
+
         [Test]
         public void VirtualPlayerDefaultsToHalfRemoteClientWithIndexFromItsName() =>
             Assert.That(PlayModeArguments.Build(new[] { "Unity.exe", "-name", "Player2" }, NoTags),

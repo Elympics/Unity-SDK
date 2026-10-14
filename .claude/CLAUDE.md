@@ -67,7 +67,7 @@ Matches are started by `ElympicsMatchLauncher` (`Runtime/Launcher/`).
 
 `GameSceneManager.ChooseDriver` (`Runtime/SceneManagement/GameSceneManager.cs`) picks what initializes a loaded gameplay scene. It checks in this order:
 1. **Online server:** set by `ApplicationParameters`.
-2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). Multiplayer Play Mode virtual players get it by default (`PlayModeArguments`, with `Elympics:` player tags as overrides) and run as half-remote clients.
+2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). Multiplayer Play Mode virtual players get it by default (`PlayModeArguments`, with `Elympics:` player tags as overrides) and run as half-remote clients. MPPM gives them the main Editor's scenes, so the bootstrap opens the gameplay scene for them.
 3. **Session:** the launcher's current launch. Its `LaunchData` (`Runtime/Launcher/LaunchData/`) creates the mode's `GameSceneInitializer`.
 4. **Suppressed:** the scene activated while its launch is being torn down.
 5. **None:** the scene waits for a launch.

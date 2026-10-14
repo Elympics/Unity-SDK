@@ -3,6 +3,10 @@
 using Elympics.Core.Logger;
 using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+#endif
 
 namespace Elympics
 {
@@ -43,11 +47,35 @@ namespace Elympics
         private static void Start()
         {
             var launcher = ElympicsMatchLauncher.Current;
-            if (launcher == null || IsPassive || bridge != null)
+            if (launcher == null || bridge != null)
                 return;
+            if (IsPassive)
+            {
+#if UNITY_EDITOR
+                LoadGameplaySceneForVirtualPlayer();
+#endif
+                return;
+            }
             StartBridge(launcher);
             launcher.EmitReady();
         }
+
+#if UNITY_EDITOR
+        /// <summary>Multiplayer Play Mode gives virtual players the scenes open in the main Editor, e.g. the boot scene of a Match Launcher launch.
+        /// The launch mode parameter starts a match only in the gameplay scene, so a virtual player opens it itself.</summary>
+        private static void LoadGameplaySceneForVirtualPlayer()
+        {
+            var gameplayScene = ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplayScene;
+            if (!ShouldLoadGameplayScene(PlayModeInstance.IsVirtualPlayer, LaunchDataFromParameters.IsSet, gameplayScene, SceneManager.GetActiveScene().path))
+                return;
+            ElympicsLogger.LogInfo($"Loading the gameplay scene {gameplayScene} for the launch mode parameter of this virtual player.");
+            // Unlike SceneManager, this loads scenes missing from Build Settings.
+            _ = EditorSceneManager.LoadSceneAsyncInPlayMode(gameplayScene, new LoadSceneParameters(LoadSceneMode.Single));
+        }
+#endif
+
+        internal static bool ShouldLoadGameplayScene(bool isVirtualPlayer, bool isLaunchModeSet, string? gameplayScene, string activeScene) =>
+            isVirtualPlayer && isLaunchModeSet && !string.IsNullOrEmpty(gameplayScene) && gameplayScene != activeScene;
 
         private static void StartBridge(ElympicsMatchLauncher launcher)
         {

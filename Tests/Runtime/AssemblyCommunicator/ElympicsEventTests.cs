@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Elympics.AssemblyCommunicator;
 using NUnit.Framework;
 
@@ -101,15 +102,29 @@ namespace Elympics.Tests.AssemblyCommunicator
         {
             var elympicsEvent = new ElympicsEvent<TestEvent>();
             var argument = new TestEvent();
-            AddObserverInNewScope(elympicsEvent, argument); //Add observer, but don't save any references to it, so it will be eligible for garbage collection
+            // Mono scans stacks conservatively, so a stale stack slot could keep the observer alive.
+            // Creating it on a finished thread leaves no such slot.
+            WeakReference observerReference = null;
+            var thread = new Thread(() => observerReference = AddObserverInNewScope(elympicsEvent, argument));
+            thread.Start();
+            thread.Join();
             TestObserver.TotalCallCount = 0;
             GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            if (observerReference.IsAlive)
+                Assert.Inconclusive("The garbage collector didn't collect the observer, so there is nothing to test.");
             elympicsEvent.Raise(argument);
             Assert.AreEqual(0, TestObserver.TotalCallCount);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void AddObserverInNewScope(ElympicsEvent<TestEvent> elympicsEvent, TestEvent argument) => elympicsEvent.AddObserver(new TestObserver(argument));
+        private static WeakReference AddObserverInNewScope(ElympicsEvent<TestEvent> elympicsEvent, TestEvent argument)
+        {
+            var observer = new TestObserver(argument);
+            elympicsEvent.AddObserver(observer);
+            return new WeakReference(observer);
+        }
 
         [Test]
         public void AddSameManyTimes()

@@ -192,6 +192,7 @@ create-testing-project:
     GIT_DEPTH: 1
   before_script:
     - *unity_default_before_script
+    - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/generate_solution_files.sh
@@ -215,7 +216,7 @@ compile:elympics-debug:
     - *unity_default_before_script
     - *install_yq
   script:
-    - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
+    - ./.scripts/ci/run_with_defines.sh "ELYMPICS_DEBUG;ELYMPICS_LAZY_WEBRTC_CONTEXT"
 
 build:sample:
   extends:

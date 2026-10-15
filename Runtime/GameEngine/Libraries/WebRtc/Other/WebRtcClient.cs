@@ -60,9 +60,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                     username = s.username,
                 }).ToArray(),
             };
-#if UNITY_EDITOR && ELYMPICS_LAZY_WEBRTC_CONTEXT
             EditorWebRtcContext.EnsureInitialized();
-#endif
             _peerConnection = new RTCPeerConnection(ref configuration)
             {
                 OnNegotiationNeeded = OnNegotiationNeeded,

@@ -37,9 +37,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public WebRtcServerClient()
         {
-#if UNITY_EDITOR && ELYMPICS_LAZY_WEBRTC_CONTEXT
             EditorWebRtcContext.EnsureInitialized();
-#endif
             _peerConnection = new RTCPeerConnection();
 
             // The client creates both channels in its offer; the server only binds them here.

@@ -30,22 +30,22 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         static EditorWebRtcContext()
         {
-            var contextManagerHandlers = ContextManagerType == null
-                ? null
-                : new[] { "OnBeforeAssemblyReload", "OnAfterAssemblyReload", "Quit" }.Select(name => ContextManagerType.GetMethod(name, StaticMembers)).ToArray();
-            IsSupported = ContextField != null && InitializeMethod != null && DisposeMethod != null
-                && contextManagerHandlers != null && contextManagerHandlers.All(handler => handler != null);
-            if (!IsSupported)
+            var onBeforeAssemblyReload = ContextManagerType?.GetMethod("OnBeforeAssemblyReload", StaticMembers);
+            var onAfterAssemblyReload = ContextManagerType?.GetMethod("OnAfterAssemblyReload", StaticMembers);
+            var onQuit = ContextManagerType?.GetMethod("Quit", StaticMembers);
+            if (ContextField == null || InitializeMethod == null || DisposeMethod == null || ContextManagerType == null
+                || onBeforeAssemblyReload == null || onAfterAssemblyReload == null || onQuit == null)
             {
                 ElympicsLogger.LogWarning("ELYMPICS_LAZY_WEBRTC_CONTEXT has no effect: this com.unity.webrtc version doesn't have the expected internals.");
                 return;
             }
+            IsSupported = true;
 
             // Runs its static constructor now, so the handlers it subscribes there can be removed.
-            RuntimeHelpers.RunClassConstructor(ContextManagerType!.TypeHandle);
-            AssemblyReloadEvents.beforeAssemblyReload -= CreateDelegate<AssemblyReloadEvents.AssemblyReloadCallback>(contextManagerHandlers![0]!);
-            AssemblyReloadEvents.afterAssemblyReload -= CreateDelegate<AssemblyReloadEvents.AssemblyReloadCallback>(contextManagerHandlers[1]!);
-            EditorApplication.quitting -= CreateDelegate<Action>(contextManagerHandlers[2]!);
+            RuntimeHelpers.RunClassConstructor(ContextManagerType.TypeHandle);
+            AssemblyReloadEvents.beforeAssemblyReload -= CreateDelegate<AssemblyReloadEvents.AssemblyReloadCallback>(onBeforeAssemblyReload);
+            AssemblyReloadEvents.afterAssemblyReload -= CreateDelegate<AssemblyReloadEvents.AssemblyReloadCallback>(onAfterAssemblyReload);
+            EditorApplication.quitting -= CreateDelegate<Action>(onQuit);
 
             AssemblyReloadEvents.beforeAssemblyReload += Dispose;
             EditorApplication.quitting += Dispose;
@@ -67,6 +67,15 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         }
 
         private static T CreateDelegate<T>(MethodInfo method) where T : Delegate => (T)Delegate.CreateDelegate(typeof(T), method);
+    }
+}
+#else
+namespace Elympics.GameEngine.Libraries.WebRtc
+{
+    internal static class EditorWebRtcContext
+    {
+        internal static void EnsureInitialized()
+        { }
     }
 }
 #endif

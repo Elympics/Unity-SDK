@@ -82,13 +82,11 @@ workflow:
 
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
-  # Unity can crash natively (exit code 255; com.unity.webrtc threads during reloads) or hang after a crash on quit.
+  # Unity can hang after a crash on quit.
   retry:
     max: 1
     when:
       - job_execution_timeout
-    exit_codes:
-      - 255
 
 .dotnet_image:
   image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION

@@ -1,57 +1,22 @@
-using Elympics.Core.Logger;
 using UnityEngine;
 
 namespace Elympics
 {
     /// <summary>Steps the scene's 3D physics once per Elympics tick. 2D physics needs <c>ElympicsUnityPhysics2DSimulator</c> (assembly Elympics.Physics2D).</summary>
     [DisallowMultipleComponent]
-    public sealed class ElympicsUnityPhysicsSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable
+    public sealed class ElympicsUnityPhysicsSimulator : ElympicsPhysicsSimulatorBase<ElympicsUnityPhysicsSimulator>
     {
-        private static ElympicsUnityPhysicsSimulator instance;
+        private PhysicsScene _physicsScene;
 
-        private PhysicsScene? _currentPhysicsScene;
-        private bool _isActive;
-
-        private void OnEnable() => _isActive = true;
-        private void OnDisable() => _isActive = false;
-
-        // The static would otherwise keep this component, and through it the match's ElympicsBase, alive after its scene unloads.
-        private void OnDestroy()
+        private protected override void InitializeScene()
         {
-            if (ReferenceEquals(instance, this))
-                instance = null;
-        }
-
-        public void Initialize()
-        {
-            if (instance != null && instance != this)
-            {
-                ElympicsLogger.WithUnityContext(gameObject)
-                    .LogError($"You can't use more than 1 instance of {nameof(ElympicsUnityPhysicsSimulator)} in a single scene!\n"
-                        + $"Previously detected on object: {instance.gameObject.name}, current object: {gameObject.name}");
-                return;
-            }
-            instance = this;
-
-            var currentScene = gameObject.scene;
-            _currentPhysicsScene = currentScene.GetPhysicsScene();
-
+            _physicsScene = gameObject.scene.GetPhysicsScene();
             Physics.simulationMode = SimulationMode.Script;
         }
 
-        public void ElympicsUpdate() => SimulatePhysics(Elympics.TickDuration);
+        private protected override void Simulate(float deltaTime) => _physicsScene.Simulate(deltaTime);
 
-        private void SimulatePhysics(float deltaTime)
-        {
-            if (!_isActive)
-                return;
-            if (_currentPhysicsScene == null)
-            {
-                ElympicsLogger.WithUnityContext(gameObject)
-                    .LogError($"{nameof(ElympicsUnityPhysicsSimulator)} not initialized!");
-                return;
-            }
-            _currentPhysicsScene?.Simulate(deltaTime);
-        }
+        private protected override void OnInstanceDestroyed()
+        { }
     }
 }

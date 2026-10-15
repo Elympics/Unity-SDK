@@ -1,4 +1,3 @@
-using Elympics.Core.Logger;
 using Elympics.ElympicsSystems;
 using UnityEngine;
 
@@ -9,55 +8,30 @@ namespace Elympics
     /// (the Physics object of the Elympics System) in scenes that use 2D physics.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ElympicsUnityPhysics2DSimulator : ElympicsMonoBehaviour, IInitializable, IUpdatable, IReplayPhysicsStep
+    public sealed class ElympicsUnityPhysics2DSimulator : ElympicsPhysicsSimulatorBase<ElympicsUnityPhysics2DSimulator>, IReplayPhysicsStep
     {
-        private static ElympicsUnityPhysics2DSimulator instance;
-
-        private PhysicsScene2D? _currentPhysicsScene;
+        private PhysicsScene2D _physicsScene;
         private SimulationMode2D? _previousSimulationMode;
-        private bool _isActive;
 
-        private void OnEnable() => _isActive = true;
-        private void OnDisable() => _isActive = false;
-
-        private void OnDestroy()
+        private protected override void InitializeScene()
         {
-            if (!ReferenceEquals(instance, this))
-                return;
-            instance = null;
-            if (_previousSimulationMode is { } previousMode)
-                Physics2D.simulationMode = previousMode;
-        }
-
-        public void Initialize()
-        {
-            if (instance != null && instance != this)
-            {
-                ElympicsLogger.WithUnityContext(gameObject)
-                    .LogError($"You can't use more than 1 instance of {nameof(ElympicsUnityPhysics2DSimulator)} in a single scene!\n"
-                        + $"Previously detected on object: {instance.gameObject.name}, current object: {gameObject.name}");
-                return;
-            }
-            instance = this;
-
-            _currentPhysicsScene = gameObject.scene.GetPhysicsScene2D();
+            _physicsScene = gameObject.scene.GetPhysicsScene2D();
             _previousSimulationMode = Physics2D.simulationMode;
             Physics2D.simulationMode = SimulationMode2D.Script;
         }
 
-        public void ElympicsUpdate()
+        private protected override void Simulate(float deltaTime) => _ = _physicsScene.Simulate(deltaTime);
+
+        private protected override void OnInstanceDestroyed()
         {
-            if (!_isActive)
-                return;
-            if (_currentPhysicsScene is not { } physicsScene)
-            {
-                ElympicsLogger.WithUnityContext(gameObject)
-                    .LogError($"{nameof(ElympicsUnityPhysics2DSimulator)} not initialized!");
-                return;
-            }
-            _ = physicsScene.Simulate(Elympics.TickDuration);
+            if (_previousSimulationMode is { } previousMode)
+                Physics2D.simulationMode = previousMode;
         }
 
-        void IReplayPhysicsStep.StepForReplay() => _ = gameObject.scene.GetPhysicsScene2D().Simulate(float.Epsilon);
+        void IReplayPhysicsStep.StepForReplay()
+        {
+            if (IsInitialized)
+                Simulate(float.Epsilon);
+        }
     }
 }

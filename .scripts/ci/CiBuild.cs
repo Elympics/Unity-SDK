@@ -13,12 +13,14 @@ public static class CiBuild
     /// <summary>
     /// Builds the scenes in CI_BUILD_SCENES (';'-separated, relative to the project) for the active build target into CI_BUILD_OUTPUT,
     /// with settings that minimize build time. WebGL uses IL2CPP; the other targets use Mono.
+    /// Scripting defines in CI_BUILD_DEFINES (';'-separated) are added for this build only.
     /// </summary>
     public static void Build()
     {
         var target = EditorUserBuildSettings.activeBuildTarget;
         var namedTarget = NamedBuildTarget.FromBuildTargetGroup(BuildPipeline.GetBuildTargetGroup(target));
         var scenes = (Environment.GetEnvironmentVariable("CI_BUILD_SCENES") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var defines = (Environment.GetEnvironmentVariable("CI_BUILD_DEFINES") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries);
         var output = Environment.GetEnvironmentVariable("CI_BUILD_OUTPUT") ?? "Build";
         if (scenes.Length == 0 || scenes.Any(scene => !File.Exists(scene)))
             Fail($"CI_BUILD_SCENES must list existing scenes, got: [{string.Join(", ", scenes)}]");
@@ -47,8 +49,9 @@ public static class CiBuild
             locationPathName = output,
             target = target,
             options = BuildOptions.None,
+            extraScriptingDefines = defines,
         });
-        Debug.Log($"CiBuild: {report.summary.result} in {report.summary.totalTime}, {report.summary.totalSize / (1024 * 1024)} MB, {report.summary.totalErrors} errors");
+        Debug.Log($"CiBuild: [{string.Join(", ", defines)}] {report.summary.result} in {report.summary.totalTime}, {report.summary.totalSize / (1024 * 1024)} MB, {report.summary.totalErrors} errors");
         if (report.summary.result != BuildResult.Succeeded)
             Fail($"Build {report.summary.result}");
     }

@@ -39,7 +39,7 @@ namespace Elympics.Editor.Launcher
         private DropdownField _game = null!;
         private TextField _gameIdField = null!;
         private readonly List<string> _gameIds = new();
-        private Label _unknownGame = null!;
+        private HelpBox _unknownGame = null!;
         private HelpBox _buildSettingsError = null!;
         private HelpBox _runInBackgroundWarning = null!;
         private readonly Dictionary<ElympicsHostLaunchKind, ToolbarToggle> _tabs = new();
@@ -55,8 +55,8 @@ namespace Elympics.Editor.Launcher
 
         private void OnEnable()
         {
-            // The saved ID can be stale, e.g. after the game was removed from the config.
-            if (string.IsNullOrEmpty(gameId) || (ElympicsConfig.Load() is { } config && GetSelectedGame(config) == null))
+            // A saved ID missing from the config is kept (it may be typed on purpose); the window warns about it instead.
+            if (string.IsNullOrEmpty(gameId))
                 gameId = GetDefaultGameId();
             while (dataJsons.Count < LaunchKinds.Length)
                 dataJsons.Add(GetTemplateData((ElympicsHostLaunchKind)dataJsons.Count));
@@ -98,7 +98,7 @@ namespace Elympics.Editor.Launcher
             _state = root.Q<Label>("state");
             _launchModeNote = root.Q<HelpBox>("launch-mode-note");
             _launchControls = root.Q<VisualElement>("launch-controls");
-            _unknownGame = root.Q<Label>("unknown-game");
+            _unknownGame = root.Q<HelpBox>("unknown-game");
             _buildSettingsError = root.Q<HelpBox>("build-settings-error");
             _runInBackgroundWarning = root.Q<HelpBox>("run-in-background-warning");
             _matchControls = root.Q<VisualElement>("match-controls");
@@ -178,8 +178,8 @@ namespace Elympics.Editor.Launcher
             var config = ElympicsConfig.Load();
             UpdateGameChoices(config);
             var game = GetSelectedGame(config);
-            _unknownGame.style.visibility = game == null ? Visibility.Visible : Visibility.Hidden;
-            _unknownGame.text = $"No game with ID \"{gameId}\" in ElympicsConfig";
+            SetShown(_unknownGame, game == null);
+            _unknownGame.text = $"No game with ID \"{gameId}\" in ElympicsConfig, so launches fail with UnknownGame.";
             SetShown(_buildSettingsError, game != null && !IsInBuildSettings(game.GameplayScene));
             if (game != null)
                 _buildSettingsError.text = $"Gameplay scene {game.GameplayScene} is not enabled in Build Settings, so launches fail with SceneLoadFailed. "

@@ -22,6 +22,12 @@
     ],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.playmode",
+            "expression": "",
+            "define": "ELYMPICS_MPPM"
+        }
+    ],
     "noEngineReferences": false
 }

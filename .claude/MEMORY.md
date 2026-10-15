@@ -36,10 +36,10 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If `ElympicsGameConfigEditor` stops using UI Toolkit binding, remove this.
 
 ### Multiplayer Play Mode's CurrentPlayer throws without the package
-- **Rule:** read Multiplayer Play Mode state only through `PlayModeInstance` (`IsVirtualPlayer`, `Tags`, `PlayerName`), never `CurrentPlayer` directly.
-- **Reason:** in 6.3, `Unity.Multiplayer.PlayMode.CurrentPlayer.IsMainEditor` and `Tags` throw a NullReferenceException (from `SystemDataStore.GetMain`) when `com.unity.multiplayer.playmode` isn't installed, which is most games. `PlayModeInstance` treats that as the main Editor and caches the process-constant answer, which also keeps inspector repaints cheap.
-- **Example:** `UsageStatisticsSender`'s `[InitializeOnLoad]` static constructor threw on Editor reload in a host without the package.
-- **Time scope:** If Unity stops throwing there, or Elympics starts depending on the package, simplify `PlayModeInstance`.
+- **Rule:** read Multiplayer Play Mode state only through `PlayModeInstance` (`IsVirtualPlayer`, `Tags`, `PlayerName`), never `CurrentPlayer` directly. It reads `CurrentPlayer` only under `ELYMPICS_MPPM`, a `versionDefines` entry of `Runtime/Elympics.asmdef` set when `com.unity.multiplayer.playmode` is installed. That define exists only in the `Elympics` assembly, so MPPM code in other assemblies goes through `PlayModeInstance` too. Compile both sides of the define: CI testing projects don't have the package.
+- **Reason:** in 6.3, `Unity.Multiplayer.PlayMode.CurrentPlayer` (in the built-in `UnityEditor.MultiplayerModule`, so it always compiles) throws a NullReferenceException from `IsMainEditor` and `Tags` (from `SystemDataStore.GetMain`) when the package isn't installed, which is most games. Without the define, `PlayModeInstance` returns the main Editor's answers without calling it; with it, a narrow `catch (NullReferenceException)` stays as a safeguard. The answers are process-constant and cached, which also keeps inspector repaints cheap.
+- **Example:** `UsageStatisticsSender`'s `[InitializeOnLoad]` static constructor threw on Editor reload in a host without the package. A catch-all around every read used to hide that, with a throw on each reload.
+- **Time scope:** If Unity stops throwing there, drop the catch. If Elympics starts depending on the package, drop the define.
 
 ### Multiplayer Play Mode virtual players run the main Editor's scenes
 - **Rule:** don't assume a virtual player starts in the scene its role needs. Code that must run in a particular scene loads it itself (as `ElympicsMatchLauncherBootstrap` does for the gameplay scene whenever the launch mode parameter is set, in virtual players and builds alike). To check MPPM end to end, read the virtual players' `Library/VP/<id>/Logs/Editor.log`; the active players and tags are in `Library/VP/SystemData.json`.

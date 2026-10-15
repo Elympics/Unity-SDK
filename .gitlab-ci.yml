@@ -112,6 +112,14 @@ workflow:
       && echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
       && chmod +x /usr/local/bin/yq
 
+.install_dotnet:
+  script: &install_dotnet
+    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
+    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
+    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
+    # .NET needs ICU; invariant globalization would change mpc's culture-sorted output.
+    - apt-get update && apt-get install -y --no-install-recommends libicu-dev
+
 get-package-version:
   extends:
     - .bash_image
@@ -353,11 +361,8 @@ verify-formatting:
   variables:
     GIT_DEPTH: 1
   before_script:
-    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
-    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
-    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
-    # .NET needs ICU; invariant globalization would change mpc's culture-sorted output.
-    - apt-get update && apt-get install -y --no-install-recommends jq libicu-dev
+    - *install_dotnet
+    - apt-get install -y --no-install-recommends jq
   script:
     - ./.scripts/ci/generate_formatting_report.sh
   artifacts:
@@ -400,11 +405,7 @@ verify-messagepack-generated:
     ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
-    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
-    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
-    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
-    # .NET needs ICU; invariant globalization would change mpc's culture-sorted output.
-    - apt-get update && apt-get install -y --no-install-recommends libicu-dev
+    - *install_dotnet
     - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
   script:
     - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'

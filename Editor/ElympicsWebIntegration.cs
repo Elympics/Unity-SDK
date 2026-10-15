@@ -382,7 +382,7 @@ namespace Elympics
                     return;
                 }
 
-                if (!BuildTools.BuildServerLinux(BuildOptions.None))
+                if (BuildTools.BuildServerLinux(BuildOptions.None).summary.result != BuildResult.Succeeded)
                     return;
 
                 var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -777,7 +777,7 @@ namespace Elympics
         public static void BuildAndUploadServerInBatchmode(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             var result = BuildAndUploadServerInBatchmodeWithBuildReport(username, password, additionalOptions);
-            if (result.summary.result == BuildResult.Failed)
+            if (result.summary.result != BuildResult.Succeeded)
             {
                 foreach (var reportStep in result.steps)
                     foreach (var error in reportStep.messages.Where(m => m.type is LogType.Error or LogType.Exception))
@@ -792,7 +792,7 @@ namespace Elympics
         {
             LoginAsDeveloper(username, password);
             var buildReport = BuildTools.BuildServerLinux(additionalOptions);
-            if (buildReport.summary.result == BuildResult.Failed)
+            if (buildReport.summary.result != BuildResult.Succeeded)
                 return buildReport;
 
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");

@@ -34,7 +34,8 @@ namespace Elympics
             config.UpdateGameVersion(newGameVersion);
         }
 
-        internal static bool BuildServerWindows(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions);
+        internal static bool BuildServerWindows(BuildOptions additionalOptions) =>
+            BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions).summary.result == BuildResult.Succeeded;
 
         internal static BuildReport BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 

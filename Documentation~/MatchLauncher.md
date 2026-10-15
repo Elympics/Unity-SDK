@@ -253,7 +253,7 @@ It limits the process to that one match:
 
 If the process starts in another scene (for example a boot or lobby scene), Elympics loads the gameplay scene of
 the active game first. In a build, that scene must be in the build's scene list; otherwise an error is logged and
-no match starts. The Editor loads it even when it's missing from Build Settings.
+the player exits with code 1. The Editor loads it even when it's missing from Build Settings.
 
 Typical uses:
 

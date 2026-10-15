@@ -76,6 +76,8 @@ namespace Elympics
             if (!loader.IsInBuild(gameplayScene!))
             {
                 ElympicsLogger.LogError($"The gameplay scene {gameplayScene} isn't in this build, so the launch mode parameter can't start a match. Add it to the build's scene list.");
+                // The process is passive (no host bridge), so it would otherwise idle forever.
+                Application.Quit(1);
                 return;
             }
             loader.LoadSingleAsync(gameplayScene!).Forget();

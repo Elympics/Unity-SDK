@@ -38,10 +38,9 @@ namespace Elympics
 
         internal static BuildReport BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 
-        internal static BuildReport BuildElympicsServerLinux(BuildOptions additionalOptions) => BuildServerLinux(additionalOptions);
-
         private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
+            ScriptingImplementation? replacedBackend = null;
             try
             {
                 var title = $"Building server for {appName}";
@@ -52,7 +51,7 @@ namespace Elympics
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
-                SetUpServerScriptingBackend();
+                replacedBackend = SetUpServerScriptingBackend();
 
                 EditorUtility.DisplayProgressBar(title, "Removing old server build path", 0.3f);
                 if (Directory.Exists(ServerBuildPath))
@@ -82,17 +81,25 @@ namespace Elympics
             }
             finally
             {
+                if (replacedBackend is { } backend)
+                    PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, backend);
                 EditorUtility.ClearProgressBar();
             }
         }
 
-        private static void SetUpServerScriptingBackend()
+        /// <returns>The Dedicated Server backend to restore after the build, or null if it wasn't changed.</returns>
+        private static ScriptingImplementation? SetUpServerScriptingBackend()
         {
 #if UNITY_6000_8_OR_NEWER || UNITY_7000_0_OR_NEWER
             var backend = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Server);
             ElympicsLogger.LogWarning($"Elympics no longer forces a scripting backend for server builds. Using {backend} from the Dedicated Server player settings.");
+            return null;
 #else
+            var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Server);
+            if (previous == ScriptingImplementation.Mono2x)
+                return null;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
+            return previous;
 #endif
         }
 

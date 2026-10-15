@@ -382,7 +382,7 @@ namespace Elympics
                     return;
                 }
 
-                if (!BuildTools.BuildElympicsServerLinux(BuildOptions.None))
+                if (!BuildTools.BuildServerLinux(BuildOptions.None))
                     return;
 
                 var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -791,7 +791,7 @@ namespace Elympics
         public static BuildReport BuildAndUploadServerInBatchmodeWithBuildReport(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             LoginAsDeveloper(username, password);
-            var buildReport = BuildTools.BuildElympicsServerLinux(additionalOptions);
+            var buildReport = BuildTools.BuildServerLinux(additionalOptions);
             if (buildReport.summary.result == BuildResult.Failed)
                 return buildReport;
 

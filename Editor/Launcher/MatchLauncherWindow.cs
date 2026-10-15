@@ -55,7 +55,8 @@ namespace Elympics.Editor.Launcher
 
         private void OnEnable()
         {
-            if (string.IsNullOrEmpty(gameId))
+            // The saved ID can be stale, e.g. after the game was removed from the config.
+            if (string.IsNullOrEmpty(gameId) || GetSelectedGame(ElympicsConfig.Load()) == null)
                 gameId = GetDefaultGameId();
             while (dataJsons.Count < LaunchKinds.Length)
                 dataJsons.Add(GetTemplateData((ElympicsHostLaunchKind)dataJsons.Count));
@@ -243,10 +244,12 @@ namespace Elympics.Editor.Launcher
 
         private void Launch(ElympicsHostLaunchKind kind)
         {
-            var entering = EditorApplication.isPlaying ? "" : " (entering play mode)";
-            Append($"{DateTime.Now:HH:mm:ss.fff} → launch{kind} {gameId}{entering}");
+            var wasPlaying = EditorApplication.isPlaying;
+            Append($"{DateTime.Now:HH:mm:ss.fff} → launch{kind} {gameId}");
             if (EditorMatchLaunchQueue.Launch(kind, gameId, dataJsons[(int)kind], optionsJson) is { } refusal)
                 Append($"{DateTime.Now:HH:mm:ss.fff} Cancelled: {refusal}");
+            else if (!wasPlaying)
+                Append($"{DateTime.Now:HH:mm:ss.fff} Entering play mode");
         }
 
         private void Send(string command, Action send)

@@ -23,14 +23,6 @@ namespace Elympics
         private const string PlayerNamePrefix = "Player";
         private const int FirstVirtualPlayerNumber = 2;
 
-        private static readonly string[] LaunchModes =
-        {
-            LaunchDataFromParameters.HalfRemoteClient,
-            LaunchDataFromParameters.HalfRemoteServer,
-            LaunchDataFromParameters.SinglePlayer,
-            LaunchDataFromParameters.SnapshotReplay,
-        };
-
         public static IList<string> Read()
         {
             return PlayModeInstance.IsVirtualPlayer
@@ -56,12 +48,12 @@ namespace Elympics
                 var separator = tag.IndexOf('=');
                 if (separator < 0)
                 {
-                    var launchMode = LaunchModes.FirstOrDefault(mode => mode.Equals(tag, StringComparison.OrdinalIgnoreCase));
+                    var launchMode = LaunchDataFromParameters.Normalize(tag);
                     if (launchMode != null)
                         arguments.Add(LongArgument(parameters.LaunchMode.LongArgumentName, launchMode));
                     else
                         ElympicsLogger.LogWarning($"Ignoring the Multiplayer Play Mode tag \"{TagPrefix}{tag}\": "
-                            + $"expected {ManualTag}, a launch mode ({string.Join(", ", LaunchModes)}), {PlayerIndexKey}=<index> or <long-argument>=<value>.");
+                            + $"expected {ManualTag}, a launch mode ({string.Join(", ", LaunchDataFromParameters.All)}), {PlayerIndexKey}=<index> or <long-argument>=<value>.");
                     continue;
                 }
 

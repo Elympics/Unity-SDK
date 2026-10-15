@@ -58,5 +58,31 @@ namespace Elympics.Editor.Tests
 
             Assert.That(Physics2DSimulatorSceneCheck.LacksPhysics2DSimulator(_roots), Is.False);
         }
+
+        [Test]
+        public void SimulatorIsAddedNextToThe3DSimulator()
+        {
+            CreateRoot(typeof(ElympicsBehavioursManager));
+            CreateRoot(typeof(ElympicsUnityPhysicsSimulator));
+
+            Assert.That(Physics2DSimulatorSceneCheck.FindPhysics2DSimulatorTarget(_roots), Is.SameAs(_roots[1]));
+        }
+
+        [Test]
+        public void SimulatorIsNotAddedTwice()
+        {
+            CreateRoot(typeof(ElympicsUnityPhysicsSimulator), typeof(ElympicsUnityPhysics2DSimulator));
+
+            Assert.That(Physics2DSimulatorSceneCheck.FindPhysics2DSimulatorTarget(_roots), Is.Null);
+        }
+
+        [Test]
+        public void SimulatorIsNotAddedWithoutThe3DSimulator()
+        {
+            CreateRoot(typeof(ElympicsBehavioursManager));
+            CreateRoot(typeof(Rigidbody2D));
+
+            Assert.That(Physics2DSimulatorSceneCheck.FindPhysics2DSimulatorTarget(_roots), Is.Null);
+        }
     }
 }

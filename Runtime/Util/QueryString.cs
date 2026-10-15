@@ -30,16 +30,21 @@ namespace Elympics
             return result;
         }
 
-        public static string Append(string url, IEnumerable<KeyValuePair<string, string>> values)
+        public static string Append(string url, IEnumerable<KeyValuePair<string, string>> values) =>
+            Append(new UriBuilder(url), string.Join("&", values.Select(kv => EscapePair(kv.Key, kv.Value))));
+
+        public static string Append(UriBuilder uriBuilder, string key, string value) => Append(uriBuilder, EscapePair(key, value));
+
+        private static string Append(UriBuilder uriBuilder, string added)
         {
-            var uriBuilder = new UriBuilder(url);
-            var added = string.Join("&", values.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
             if (added.Length == 0)
                 return uriBuilder.Uri.AbsoluteUri;
             var existing = uriBuilder.Query.TrimStart('?');
             uriBuilder.Query = existing.Length == 0 ? added : $"{existing}&{added}";
             return uriBuilder.Uri.AbsoluteUri;
         }
+
+        private static string EscapePair(string key, string value) => $"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
 
         private static string Decode(string value) => Uri.UnescapeDataString(value.Replace('+', ' '));
     }

@@ -59,5 +59,13 @@ namespace Elympics.Tests
 
             Assert.That(url, Is.EqualTo("wss://example.com/ws?jwt_token=abc.def"));
         }
+
+        [Test]
+        public void AppendSinglePairToBuilder()
+        {
+            var url = QueryString.Append(new System.UriBuilder("wss://example.com/ws?existing=1"), "jwt_token", "a b");
+
+            Assert.That(url, Is.EqualTo("wss://example.com/ws?existing=1&jwt_token=a%20b"));
+        }
     }
 }

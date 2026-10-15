@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Elympics
@@ -48,7 +47,7 @@ namespace Elympics
         {
             var uriBuilder = new UriBuilder(uri);
             uriBuilder.Scheme = uriBuilder.Scheme == "https" ? "wss" : "ws";
-            var url = QueryString.Append(uriBuilder.Uri.ToString(), new[] { new KeyValuePair<string, string>(JwtProtocolAndQueryParameter, jwtToken) });
+            var url = QueryString.Append(uriBuilder, JwtProtocolAndQueryParameter, jwtToken);
             return (url, JwtProtocolAndQueryParameter);
         }
     }

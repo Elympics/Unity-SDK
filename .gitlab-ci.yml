@@ -308,6 +308,10 @@ test:editmode:unity-versions:
   parallel:
     matrix:
       - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1", "6000.6.4f1"]
+  cache:
+    key: library-editmode-$TEST_UNITY_VERSION
+    paths:
+      - "$TESTING_PROJECT_NAME/Library/"
   script:
     - *install_yq
     - ./.scripts/ci/create_testing_project.sh

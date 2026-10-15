@@ -56,7 +56,7 @@ namespace Elympics.Editor.Launcher
         private void OnEnable()
         {
             // The saved ID can be stale, e.g. after the game was removed from the config.
-            if (string.IsNullOrEmpty(gameId) || GetSelectedGame(ElympicsConfig.Load()) == null)
+            if (string.IsNullOrEmpty(gameId) || (ElympicsConfig.Load() is { } config && GetSelectedGame(config) == null))
                 gameId = GetDefaultGameId();
             while (dataJsons.Count < LaunchKinds.Length)
                 dataJsons.Add(GetTemplateData((ElympicsHostLaunchKind)dataJsons.Count));

@@ -251,12 +251,16 @@ It limits the process to that one match:
 - Every launch fails with `Busy`.
 - The process quits when the match ends or fails to start. In the Editor, play mode exits.
 
-It is meant for processes started straight into the gameplay scene:
+If the process starts in another scene (for example a boot or lobby scene), Elympics loads the gameplay scene of
+the active game first. In a build, that scene must be in the build's scene list; otherwise an error is logged and
+no match starts. The Editor loads it even when it's missing from Build Settings.
+
+Typical uses:
 
 - **Server builds:** a `UNITY_SERVER` build becomes a half-remote server only with
   `--elympics-launch-mode=halfRemoteServer`. Otherwise it waits for a host, like any build.
-- **Play in a gameplay scene in the Editor.**
-- **Client builds whose first scene is the gameplay scene.** With a separate boot scene first, no match starts.
+- **Play in the Editor.**
+- **Client builds.**
 
 Pressing Play in a gameplay scene without the parameter starts nothing. It logs that the scene awaits a launch call.
 
@@ -267,8 +271,8 @@ gets launch arguments from Elympics. They beat environment variables and lose to
 `--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<N - 2>`, where N comes from the `-name PlayerN`
 argument that Multiplayer Play Mode gives it, so Player2 is player 0, Player3 is player 1 and so on.
 
-So a virtual player pressing Play in the gameplay scene joins the half-remote server as that player, and exits play
-mode when the match ends. Player tags (Project Settings > Multiplayer > Play Mode > Player Tags) with the `Elympics:`
+So a virtual player joins the half-remote server as that player when play mode starts, and exits play mode when the
+match ends. It opens the gameplay scene itself, because Multiplayer Play Mode gives it the scenes open in the main Editor. Player tags (Project Settings > Multiplayer > Play Mode > Player Tags) with the `Elympics:`
 prefix change that:
 
 | Tag | Effect |

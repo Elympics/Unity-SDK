@@ -19,15 +19,13 @@ namespace Elympics.Editor.Tests
 
         private const string Gameplay = "Assets/Gameplay.unity";
 
-        [TestCase(true, true, Gameplay, "Assets/Boot.unity", true)]
-        [TestCase(true, true, Gameplay, "", true)]
-        [TestCase(true, true, Gameplay, Gameplay, false)]
-        [TestCase(false, true, Gameplay, "Assets/Boot.unity", false)]
-        [TestCase(true, false, Gameplay, "Assets/Boot.unity", false)]
-        [TestCase(true, true, "", "Assets/Boot.unity", false)]
-        [TestCase(true, true, null, "Assets/Boot.unity", false)]
-        public void VirtualPlayerWithLaunchModeOpensTheGameplayScene(bool isVirtualPlayer, bool isLaunchModeSet, string gameplayScene, string activeScene, bool expected) =>
-            Assert.That(ElympicsMatchLauncherBootstrap.ShouldLoadGameplayScene(isVirtualPlayer, isLaunchModeSet, gameplayScene, activeScene), Is.EqualTo(expected));
+        [TestCase(Gameplay, "Assets/Boot.unity", true)]
+        [TestCase(Gameplay, "", true)]
+        [TestCase(Gameplay, Gameplay, false)]
+        [TestCase("", "Assets/Boot.unity", false)]
+        [TestCase(null, "Assets/Boot.unity", false)]
+        public void LaunchModeOpensTheGameplaySceneUnlessItIsActive(string gameplayScene, string activeScene, bool expected) =>
+            Assert.That(ElympicsMatchLauncherBootstrap.ShouldLoadGameplayScene(gameplayScene, activeScene), Is.EqualTo(expected));
 
         [Test]
         public void VirtualPlayerDefaultsToHalfRemoteClientWithIndexFromItsName() =>

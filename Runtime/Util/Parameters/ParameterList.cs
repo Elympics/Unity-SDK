@@ -56,7 +56,13 @@ namespace Elympics
         /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
         public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
-        private static readonly HashSet<string> HostBridgeValues = new(StringComparer.OrdinalIgnoreCase) { "auto", "webgl", "native", "none" };
+        private static readonly HashSet<string> HostBridgeValues = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ElympicsHostBridgeFactory.Auto,
+            ElympicsHostBridgeFactory.WebGl,
+            ElympicsHostBridgeFactory.Native,
+            ElympicsHostBridgeFactory.None,
+        };
 
         private static bool IsDottedQuad(string value)
         {

@@ -32,6 +32,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **WebGL linked assemblies: read the build, not ScriptingAssemblies.json:** use `ManagedStripped` right after the build, or the `.dll` names in the build's `global-metadata.dat`.
 - **Domain reload off keeps NUnit ValueSource objects between runs:** don't mutate source objects; create them inside the test.
 - **Unity's Mono HttpListener can't accept WebSockets:** test against a `TcpListener` echo server with a manual handshake and `WebSocket.CreateFromStream`.
+- **Scratch Editors share the developer's Elympics login and can log it out:** login lives in machine-global EditorPrefs; an expired token plus a failed telemetry refresh at Editor start calls `SetAsLoggedOut()`. Give scratch configs a reachable endpoint, and check the login afterwards.
 - **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`; `switch_build_target` before `build --target`; array args as JSON.
 - **A newer Unity Editor rewrites package sources:** after an Editor upgrade, review `git status` in both packages (Script Updater edits are often incomplete).
 

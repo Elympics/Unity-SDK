@@ -161,6 +161,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `TestNativeWebSocket` in PlayPad.
 - **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
 
+### Scratch Editors share the developer's Elympics login and can log it out
+- **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at a reachable web endpoint, or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
+- **Reason:** the Elympics login (auth and refresh tokens) lives in machine-global EditorPrefs, so every Editor on the machine shares it. On each Editor start, `UsageStatisticsSender` (`[InitializeOnLoad]`) posts telemetry through `CheckAuthTokenAndRefreshIfNeeded`. When the stored token has expired and the refresh fails, that path calls `SetAsLoggedOut()`, which logs out every Editor. A successful refresh from a scratch Editor rotates the refresh token instead.
+- **Example:** on 2026-10-15, scratch projects whose config pointed at a dead endpoint (`127.0.0.1:9`) logged "Auth token expired. Refreshing…" at every launch. The refresh failed, and the developer's Editor was left logged out.
+- **Time scope:** If login state stops being machine-global, or a failed refresh stops clearing it, remove this.
+
 ### Driving the Editor through the pipeline CLI
 - **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`).
 - **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.

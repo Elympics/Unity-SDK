@@ -859,23 +859,30 @@ namespace Elympics
         {
             var root = Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             using var archive = new ZipArchive(File.Create(destinationFile), ZipArchiveMode.Create);
-            foreach (var path in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories))
+            foreach (var info in new DirectoryInfo(root).EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
             {
-                var name = path[(root.Length + 1)..].Replace('\\', '/');
-                if (Directory.Exists(path))
+                var name = info.FullName[(root.Length + 1)..].Replace('\\', '/');
+                if (info is DirectoryInfo directory)
                 {
-                    if (!Directory.EnumerateFileSystemEntries(path).Any())
+                    if (!directory.EnumerateFileSystemInfos().Any())
                         _ = archive.CreateEntry(name + "/");
                     continue;
                 }
 
                 var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
-                entry.LastWriteTime = File.GetLastWriteTime(path);
-                using var input = File.OpenRead(path);
+                entry.LastWriteTime = ClampToZipTimestamp(info.LastWriteTime);
+                using var input = ((FileInfo)info).OpenRead();
                 using var output = entry.Open();
                 input.CopyTo(output);
             }
         }
+
+        private static readonly DateTime MinZipTimestamp = new(1980, 1, 1);
+        private static readonly DateTime MaxZipTimestamp = new(2107, 12, 31, 23, 59, 58);
+
+        // Zip entries store DOS dates (1980-2107), and ZipArchiveEntry.LastWriteTime throws outside of that range.
+        private static DateTime ClampToZipTimestamp(DateTime time) =>
+            time < MinZipTimestamp ? MinZipTimestamp : time > MaxZipTimestamp ? MaxZipTimestamp : time;
 
         private static void CheckAuthTokenAndRefreshIfNeeded(Action<bool> continuation)
         {

@@ -35,5 +35,17 @@ namespace Elympics.Editor.Tests
             using var reader = new StreamReader(archive.GetEntry("Data/Nested/level0").Open());
             Assert.That(reader.ReadToEnd(), Is.EqualTo("scene"));
         }
+
+        [Test]
+        public void TimestampBeforeTheZipRangeIsClamped()
+        {
+            var zip = Path.Combine(_root, "pack.zip");
+            File.SetLastWriteTime(Path.Combine(_root, "source", "Unity"), new DateTime(1970, 1, 2));
+
+            ElympicsWebIntegration.CreateZipFromDirectory(Path.Combine(_root, "source"), zip);
+
+            using var archive = new ZipArchive(File.OpenRead(zip), ZipArchiveMode.Read);
+            Assert.That(archive.GetEntry("Unity").LastWriteTime.DateTime, Is.EqualTo(new DateTime(1980, 1, 1)));
+        }
     }
 }

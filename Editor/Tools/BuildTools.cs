@@ -48,6 +48,7 @@ namespace Elympics
                 var config = ElympicsConfig.LoadCurrentElympicsGameConfig()
                              ?? throw new ElympicsException("Elympics config not found");
 
+                config.RefreshGameplayScene();
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 

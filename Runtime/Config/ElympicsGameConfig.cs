@@ -151,6 +151,19 @@ namespace Elympics
         private void OnValidate()
         {
             maxPlayers = Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
+            RefreshGameplayScene();
+        }
+
+        /// <summary>Re-derives <see cref="GameplayScene"/> from the scene asset, whose path goes stale after a move or rename.</summary>
+        internal void RefreshGameplayScene()
+        {
+            if (gameplaySceneAsset == null)
+                return;
+            var path = AssetDatabase.GetAssetOrScenePath(gameplaySceneAsset);
+            if (path == gameplayScene)
+                return;
+            gameplayScene = path;
+            EditorUtility.SetDirty(this);
         }
 
         internal void UpdateGameVersion(string newGameVersion)

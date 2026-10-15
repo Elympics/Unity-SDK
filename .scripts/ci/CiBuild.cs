@@ -1,6 +1,5 @@
 // CI only: build_sample.sh copies this into the testing project's Assets/Editor and calls CiBuild.Build with -quit.
 // Failures throw, which makes Unity exit with code 1; EditorApplication.Exit crashed 6.3 after a successful build.
-// It isn't part of the package.
 using System;
 using System.IO;
 using System.Linq;

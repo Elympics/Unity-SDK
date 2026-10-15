@@ -1,6 +1,5 @@
 // CI only: project_auditor.sh copies this into the testing project's Assets/Editor and calls ProjectAuditorCi.Run with -quit.
 // New findings throw, which makes Unity exit with code 1 (EditorApplication.Exit crashed 6.3 batchmode).
-// It isn't part of the package.
 using System;
 using System.IO;
 using System.Linq;

@@ -6,7 +6,6 @@ namespace Elympics
 {
     internal static class LoadedAssemblies
     {
-        /// <summary>The managed assemblies currently loaded by Unity.</summary>
         /// <remarks><c>AppDomain.GetAssemblies</c> is discouraged on CoreCLR; Unity 6.6 adds <c>CurrentAssemblies</c> in its place.</remarks>
         public static IEnumerable<Assembly> Get()
         {

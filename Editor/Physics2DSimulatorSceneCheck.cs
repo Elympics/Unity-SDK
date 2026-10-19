@@ -33,20 +33,10 @@ namespace Elympics.Editor
                 ElympicsLogger.LogWarning(message);
         }
 
-        internal static bool LacksPhysics2DSimulator(IReadOnlyCollection<GameObject> roots)
-        {
-            var hasElympics = false;
-            var has2DPhysics = false;
-            foreach (var root in roots)
-                foreach (var component in root.GetComponentsInChildren<Component>(true))
-                {
-                    if (component is ElympicsUnityPhysics2DSimulator)
-                        return false;
-                    hasElympics |= component is ElympicsBehavioursManager;
-                    has2DPhysics |= component is Rigidbody2D or Collider2D;
-                }
-            return hasElympics && has2DPhysics;
-        }
+        internal static bool LacksPhysics2DSimulator(IReadOnlyCollection<GameObject> roots) =>
+            !HasInChildren<ElympicsUnityPhysics2DSimulator>(roots)
+            && HasInChildren<ElympicsBehavioursManager>(roots)
+            && (HasInChildren<Rigidbody2D>(roots) || HasInChildren<Collider2D>(roots));
 
         [MenuItem(ElympicsEditorMenuPaths.AddPhysics2DSimulator, priority = 6)]
         private static void AddPhysics2DSimulator()
@@ -69,16 +59,23 @@ namespace Elympics.Editor
         /// </returns>
         internal static GameObject? FindPhysics2DSimulatorTarget(IReadOnlyCollection<GameObject> roots)
         {
-            GameObject? target = null;
+            if (HasInChildren<ElympicsUnityPhysics2DSimulator>(roots))
+                return null;
             foreach (var root in roots)
-                foreach (var component in root.GetComponentsInChildren<Component>(true))
-                {
-                    if (component is ElympicsUnityPhysics2DSimulator)
-                        return null;
-                    if (target == null && component is ElympicsUnityPhysicsSimulator)
-                        target = component.gameObject;
-                }
-            return target;
+            {
+                var simulator = root.GetComponentInChildren<ElympicsUnityPhysicsSimulator>(true);
+                if (simulator != null)
+                    return simulator.gameObject;
+            }
+            return null;
+        }
+
+        private static bool HasInChildren<T>(IReadOnlyCollection<GameObject> roots) where T : Component
+        {
+            foreach (var root in roots)
+                if (root.GetComponentInChildren<T>(true) != null)
+                    return true;
+            return false;
         }
     }
 }

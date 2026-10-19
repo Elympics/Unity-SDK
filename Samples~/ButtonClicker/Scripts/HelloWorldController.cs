@@ -6,7 +6,7 @@ using MatchTcpClients.Synchronizer;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInputHandler, IUpdatable, IClientHandlerGuid
+public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInputHandler, IUpdatable, IClientHandlerGuid, IServerHandlerGuid
 {
     [SerializeField] private int secondsLimit = 15;
     [SerializeField] private Text mainLabel;
@@ -16,6 +16,8 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     private ElympicsInt _ticksLeft;
 
     private int _playerCount;
+    // A match can have fewer players than the config allows, and its result needs one entry per player.
+    private int _matchPlayerCount;
     private bool _clicked;
     private int _lastClickedCached;
     private bool _initialized;
@@ -70,7 +72,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
         if (_ticksLeft.Value <= 0)
         {
             if (Elympics.IsServer)
-                Elympics.EndGame(new ResultMatchPlayerDatas(_clickCount.Values.Select(
+                Elympics.EndGame(new ResultMatchPlayerDatas(_clickCount.Values.Take(_matchPlayerCount).Select(
                     x => new ResultMatchPlayerData { MatchmakerData = new float[] { x.Value } }).ToList()));
             return;
         }
@@ -102,4 +104,12 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     {
         _ended = true;
     }
+
+    public void OnServerInit(InitialMatchPlayerDatasGuid initialMatchPlayerDatas) => _matchPlayerCount = initialMatchPlayerDatas.Count;
+
+    public void OnPlayerDisconnected(ElympicsPlayer player)
+    { }
+
+    public void OnPlayerConnected(ElympicsPlayer player)
+    { }
 }

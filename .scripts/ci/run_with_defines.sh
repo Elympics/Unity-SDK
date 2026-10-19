@@ -1,24 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Running Testing Project with define directives $*"
+echo "Running Testing Project with define directives $1"
 
 PROJECT_SETTINGS_PATH=${UNITY_DIR}/ProjectSettings/ProjectSettings.asset
-PROJECT_SETTINGS_HEADER=$(sed -e '/^---/q' "$PROJECT_SETTINGS_PATH")
 
 cp "$PROJECT_SETTINGS_PATH" "${PROJECT_SETTINGS_PATH}.bak"
 
-sed -i -e '1,/^---/d' "$PROJECT_SETTINGS_PATH"
-yq e -i '.PlayerSettings.scriptingDefineSymbols = {}' "$PROJECT_SETTINGS_PATH"
-for DEFINE_SYMBOL in "$@"
-do
-    yq e -i '.PlayerSettings.scriptingDefineSymbols += {"Standalone": "'"$DEFINE_SYMBOL"'"}' "$PROJECT_SETTINGS_PATH"
-done
-
-mv "$PROJECT_SETTINGS_PATH" "${PROJECT_SETTINGS_PATH}.tmp"
-echo "$PROJECT_SETTINGS_HEADER" > "$PROJECT_SETTINGS_PATH"
-cat "${PROJECT_SETTINGS_PATH}.tmp" >> "$PROJECT_SETTINGS_PATH"
-rm -f "${PROJECT_SETTINGS_PATH}.tmp"
+"$(dirname "${BASH_SOURCE[0]}")/set_scripting_defines.sh" "$1"
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -projectPath "$UNITY_DIR" \

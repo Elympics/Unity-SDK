@@ -93,6 +93,7 @@ namespace UnityConnectors.HalfRemote
 
         private void OnGameEnded(ResultMatchUserDatas result)
         {
+            _stopped = true;
             var msg = new NullableGameEndedMsg();
             if (result == null)
                 msg.Null = NullValue.NullValue;
@@ -143,13 +144,18 @@ namespace UnityConnectors.HalfRemote
 
         private void OnReliableClientReceivingEnded(Guid clientId)
         {
-            GameEngineProtoClient client;
+            string userId = null;
             lock (_reliableClients)
-                _ = _reliableClients.Remove(clientId, out client);
+                if (_reliableClients.Remove(clientId, out var client))
+                {
+                    userId = client.PlayerUserId;
+                    // The player may have rejoined over another client before this one timed out (e.g. a refreshed browser tab).
+                    if (userId != null && _reliableClients.Values.Any(other => other.PlayerUserId == userId))
+                        userId = null;
+                }
             ReliableClientReceivingEnded?.Invoke(clientId);
 
             // A closed browser tab or a quitting player can't send PlayerDisconnectedMsg.
-            var userId = client?.PlayerUserId;
             if (userId != null && !_stopped)
                 _gameEngineAdapter.OnPlayerDisconnected(userId);
         }

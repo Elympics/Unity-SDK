@@ -190,6 +190,49 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
         }
 
         [UnityTest]
+        public IEnumerator WebMatchConnectClient_JoinsAndLeaves() => UniTask.ToCoroutine(async () =>
+        {
+            const int webPort = 7900;
+            var webEndPoint = new IPEndPoint(IPAddress.Loopback, webPort);
+            var gameEngine = new GameEngineStub();
+            var connectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            var disconnectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            gameEngine.PlayerConnected += connectedUserIds.Enqueue;
+            gameEngine.PlayerDisconnected += disconnectedUserIds.Enqueue;
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, null, webEndPoint, () => { });
+            using var signalingServerCts = new CancellationTokenSource();
+            var signalingServer = new SimpleHttpSignalingServer(connector, webEndPoint);
+            signalingServer.RunAsync(signalingServerCts.Token).Forget();
+            connector.Listen();
+
+            var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
+            var userId = Guid.NewGuid();
+            using var clientCts = new CancellationTokenSource();
+            var adapter = new HalfRemoteMatchClientAdapter(gameConfig);
+            var client = new HalfRemoteMatchConnectClient(adapter, gameConfig, webEndPoint, true, userId, default);
+            try
+            {
+                // Joining sends PlayerConnectedMsg right away, so the data channels must already be open.
+                await client.ConnectAndJoinAsPlayerAsync(clientCts.Token);
+                await WaitUntilOrTimeout(() => !connectedUserIds.IsEmpty);
+                client.Disconnect();
+                await WaitUntilOrTimeout(() => !disconnectedUserIds.IsEmpty);
+            }
+            finally
+            {
+                clientCts.Cancel();
+                adapter.Dispose();
+                connector.Dispose();
+                signalingServerCts.Cancel();
+                signalingServer.Dispose();
+                UnityEngine.Object.DestroyImmediate(gameConfig);
+            }
+
+            CollectionAssert.AreEqual(new[] { userId.ToString() }, connectedUserIds);
+            CollectionAssert.AreEqual(new[] { userId.ToString() }, disconnectedUserIds);
+        });
+
+        [UnityTest]
         public IEnumerator TcpClientClosedWithoutLeaving_IsReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
         {
             var (gameEngine, connector, tcpClient, _) = await ConnectTcpPlayer(7896);
@@ -217,6 +260,29 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             connector.Dispose();
 
             Assert.AreEqual(1, disconnected);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedAfterPlayerRejoined_IsNotReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            const int tcpPort = 7899;
+            var (gameEngine, connector, oldTcpClient, _) = await ConnectTcpPlayer(tcpPort);
+            var connections = 0;
+            gameEngine.PlayerConnected += _ => connections++;
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            var newTcpClient = new TcpClient();
+            await newTcpClient.ConnectAsync(IPAddress.Loopback, tcpPort);
+            new HalfRemoteMatchClient(UserId, new ProtoNetworkStreamClient(newTcpClient.GetStream())).PlayerConnected();
+            await WaitUntilOrTimeout(() => connections > 0);
+            oldTcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+            newTcpClient.Close();
+
+            Assert.AreEqual(1, connections);
+            Assert.AreEqual(0, disconnected);
         });
 
         [UnityTest]

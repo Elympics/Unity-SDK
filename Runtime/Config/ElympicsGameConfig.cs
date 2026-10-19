@@ -151,7 +151,6 @@ namespace Elympics
         private void OnValidate()
         {
             maxPlayers = Math.Clamp(maxPlayers, MinPlayersAllowed, MaxPlayersAllowed);
-            RefreshGameplayScene();
         }
 
         /// <summary>Re-derives <see cref="GameplayScene"/> from the scene asset, whose path goes stale after a move or rename.</summary>

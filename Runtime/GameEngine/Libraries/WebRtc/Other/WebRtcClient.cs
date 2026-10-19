@@ -60,11 +60,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                     username = s.username,
                 }).ToArray(),
             };
-            EditorWebRtcContext.EnsureInitialized();
-            _peerConnection = new RTCPeerConnection(ref configuration)
-            {
-                OnNegotiationNeeded = OnNegotiationNeeded,
-            };
+            _peerConnection = WebRtcNative.CreatePeerConnection(ref configuration);
+            _peerConnection.OnNegotiationNeeded = OnNegotiationNeeded;
 
             _peerConnection.OnIceCandidate += OnIceCandidate;
             _peerConnection.OnIceConnectionChange += OnIceConnectionStateChanged;
@@ -151,25 +148,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             public void Send(byte[] payload)
             {
-                try
+                WebRtcNative.IgnoreDisposed(() =>
                 {
-                    if (_dc.ReadyState is not RTCDataChannelState.Open)
-                        return;
-                    _dc.Send(payload);
-                }
-                // On Application.quitting, com.unity.webrtc disposes every native object, possibly before we disconnect.
-                catch (ObjectDisposedException)
-                { }
+                    if (_dc.ReadyState is RTCDataChannelState.Open)
+                        _dc.Send(payload);
+                });
             }
 
             public void Disconnect()
             {
-                try
-                {
-                    _dc.Close();
-                }
-                catch (ObjectDisposedException)
-                { }
+                WebRtcNative.IgnoreDisposed(_dc.Close);
                 IsConnected = false;
             }
 
@@ -185,13 +173,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Close()
         {
-            try
-            {
-                _peerConnection.Close();
-            }
-            // See WebRtcDataChannel.Send.
-            catch (ObjectDisposedException)
-            { }
+            WebRtcNative.IgnoreDisposed(_peerConnection.Close);
         }
 
         public void Dispose()

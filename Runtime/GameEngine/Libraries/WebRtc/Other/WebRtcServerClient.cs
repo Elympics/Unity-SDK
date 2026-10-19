@@ -39,8 +39,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public WebRtcServerClient()
         {
-            EditorWebRtcContext.EnsureInitialized();
-            _peerConnection = new RTCPeerConnection();
+            _peerConnection = WebRtcNative.CreatePeerConnection();
 
             // The client creates both channels in its offer; the server only binds them here.
             _peerConnection.OnDataChannel += OnDataChannel;
@@ -147,16 +146,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendReliable(byte[] data)
         {
-            if (_reliableDc?.ReadyState is not RTCDataChannelState.Open)
-                return;
-            _reliableDc.Send(data);
+            var channel = _reliableDc;
+            if (channel?.ReadyState is RTCDataChannelState.Open)
+                WebRtcNative.IgnoreDisposed(() => channel.Send(data));
         }
 
         public void SendUnreliable(byte[] data)
         {
-            if (_unreliableDc?.ReadyState is not RTCDataChannelState.Open)
-                return;
-            _unreliableDc.Send(data);
+            var channel = _unreliableDc;
+            if (channel?.ReadyState is RTCDataChannelState.Open)
+                WebRtcNative.IgnoreDisposed(() => channel.Send(data));
         }
 
         private async UniTask<string> CreateAnswer(string offerJson)
@@ -234,9 +233,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Close()
         {
-            _reliableDc?.Close();
-            _unreliableDc?.Close();
-            _peerConnection.Close();
+            WebRtcNative.IgnoreDisposed(() =>
+            {
+                _reliableDc?.Close();
+                _unreliableDc?.Close();
+                _peerConnection.Close();
+            });
         }
 
         public void Dispose()

@@ -65,6 +65,24 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** UniTask's triggers kept uGUI, UI Toolkit, TextCore, IMGUI, Tilemap and 2D physics in every Elympics WebGL build (a minimal game went from 29.8 to 20.2 MB raw when they were disabled). Moving the 2D and Animator synchronizers to `Elympics.Physics2D`/`Elympics.Animation` took it to 18.5 MB; a scene with the 2D synchronizer links `Elympics.Physics2D` and the 2D module again. An empty 6.3 project is 13.9 MB.
 - **Time scope:** If Unity's linker stops preserving unused MonoBehaviours, or CoreCLR players change stripping, re-measure and update.
 
+### com.unity.webrtc disposes every native object on Application.quitting in players
+- **Rule:** code that may run during player shutdown (`Disconnect`, `Dispose`, `OnDestroy`) must tolerate `ObjectDisposedException` from `RTCDataChannel`/`RTCPeerConnection` members such as `ReadyState`, `Send` and `Close`. Don't rely on a goodbye message sent at quit reaching the peer; the server has to detect the drop itself.
+- **Reason:** in players, `Context.Init` subscribes `Application.quitting` → `WebRTC.DisposeInternal()`, which disposes every object in its table, possibly before our handlers run. The Editor subscribes only `EditorApplication.quitting`, so play mode never shows it.
+- **Example:** `HalfRemoteMatchConnectClient.Disconnect` threw at quit from `WebRtcDataChannel.Send` → `ReadyState` → `GetSelfOrThrow()`, skipping "Disconnected by client" (R5, 2026-10-19).
+- **Time scope:** If com.unity.webrtc stops disposing on `Application.quitting`, remove this.
+
+### In the Editor, Application.runInBackground is the project's Player setting
+- **Rule:** setting `Application.runInBackground` in the Editor (also during play mode) changes `PlayerSettings.runInBackground`, which can be saved into `ProjectSettings.asset`. Say so wherever runtime code changes it.
+- **Reason:** the two properties mirror each other in the Editor; it isn't a play-mode-only override.
+- **Example:** `eval` setting `Application.runInBackground = false` made `PlayerSettings.runInBackground` read false at once (2026-10-19). The half-remote server enables it and warns (user decision: no restore).
+- **Time scope:** If Unity separates the two in the Editor, remove this.
+
+### BuildPlayer with a Server subtarget leaves the Editor's standalone subtarget on Server
+- **Rule:** a build helper that passes `BuildPlayerOptions.subtarget` must save `EditorUserBuildSettings.standaloneBuildSubtarget` before `BuildPipeline.BuildPlayer` and restore it in `finally`.
+- **Reason:** on 6000.3 `BuildPlayer` writes the subtarget into the Editor settings even when the build fails, so the next standalone player build becomes a Server build.
+- **Example:** a scratch batchmode check logged `start=Player`, `raw … after=Server`, and `BuildServerLinux … after=Player` once `BuildTools.BuildServer` restored it (R3, 2026-10-19).
+- **Time scope:** If Unity stops persisting the subtarget from `BuildPlayerOptions`, remove this.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract
@@ -168,9 +186,10 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If login state stops being machine-global, or a failed refresh stops clearing it, remove this.
 
 ### Driving the Editor through the pipeline CLI
-- **Rule:** put global flags before the subcommand (`unity --json command run_tests …`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`).
+- **Rule:** put `command`'s own flags (`--result-only`, `--timeout <s>`) right after `command` and before the subcommand (`unity command --result-only --timeout 300 run_tests …`); `unity --json` goes before `command`. New files only appear after `eval --code 'UnityEditor.AssetDatabase.Refresh(); return "ok";'` (then poll `recompile_status`). `run_tests --filter_type` takes `testName` (namespace/class prefix), `assembly` or `category`, not regex. PlayMode tests need `--async_tests true` and polling `test_status` (its result uses lowercase `summary`/`results`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`).
 - **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.
 - **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters. A `build --target WebGL` from a Linux-active Editor compiled without `UnityEngine.WebGLModule` and failed with CS0103 `WebGLInput` in PlayPad, which builds fine after a switch.
+- **Example (2026-10-19):** `unity --result-only command …` and `unity --timeout 120 command …` failed with "unknown option"; a synchronous PlayMode `run_tests` returned "entering play mode triggers a domain reload that drops the request".
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
 
 ### A newer Unity Editor rewrites package sources

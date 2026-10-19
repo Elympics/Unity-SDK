@@ -12,6 +12,9 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Vendored dependencies: Elympics names, own GUIDs, name references:** `Elympics.`-prefixed assemblies, fresh asset GUIDs (never upstream `.meta`), references by name; keep provenance files. Vendored BCL DLLs get `!UNITY_6000_5_OR_NEWER` (the Editor ships them from 6.5); DLLs referencing them need a retargeted `Unity6000.5/` copy.
 - **com.unity.webrtc runs native threads in every Editor; ELYMPICS_LAZY_WEBRTC_CONTEXT stops them:** define it in Editor-only projects (CI); call `EditorWebRtcContext.EnsureInitialized()` before creating `RTCPeerConnection` in the Editor. A SIGSEGV in `libwebrtc.so` or a heap error on quit is this issue.
 - **WebGL size: unused components in a linked assembly keep their engine modules:** put optional module-using components in their own assembly that core runtime code never references, with no load-time hooks; reach them via interfaces; don't enable vendored features that add components. Measure in a fresh project.
+- **com.unity.webrtc disposes every native object on Application.quitting in players:** tolerate `ObjectDisposedException` in shutdown paths; don't rely on a goodbye sent at quit.
+- **In the Editor, Application.runInBackground is the project's Player setting:** setting it changes `PlayerSettings.runInBackground`, which can be saved.
+- **BuildPlayer with a Server subtarget leaves the Editor's standalone subtarget on Server:** save `standaloneBuildSubtarget` before `BuildPlayer`, restore it in `finally`.
 
 ## Backend contracts
 - **StreamingAssets upload contract:** versions are write-once. The Content-Type map (json/xml/octet-stream) is a verified allowlist. Keep the bundles → catalogs → `variants.meta.json` order. Don't validate baked catalog URLs.
@@ -33,7 +36,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Domain reload off keeps NUnit ValueSource objects between runs:** don't mutate source objects; create them inside the test.
 - **Unity's Mono HttpListener can't accept WebSockets:** test against a `TcpListener` echo server with a manual handshake and `WebSocket.CreateFromStream`.
 - **Scratch Editors share the developer's Elympics login and can log it out:** login lives in machine-global EditorPrefs; an expired token plus a failed telemetry refresh at Editor start calls `SetAsLoggedOut()`. Give scratch configs a reachable endpoint, and check the login afterwards.
-- **Driving the Editor through the pipeline CLI:** global flags before `command`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`; `switch_build_target` before `build --target`; array args as JSON.
+- **Driving the Editor through the pipeline CLI:** `--result-only`/`--timeout` go after `command`, before the subcommand; `AssetDatabase.Refresh()` via `eval` for new files; `filter_type` is testName/assembly/category; PlayMode needs `--async_tests true` + `test_status`; `recompile` refuses while errors exist; `eval` has a ~5 s main-thread limit and sees public API only; synchronous commands stop after 30 s, so schedule long work via `run_script` + `EditorApplication.delayCall`; `switch_build_target` before `build --target`; array args as JSON.
 - **A newer Unity Editor rewrites package sources:** after an Editor upgrade, review `git status` in both packages (Script Updater edits are often incomplete).
 
 ## Configuration

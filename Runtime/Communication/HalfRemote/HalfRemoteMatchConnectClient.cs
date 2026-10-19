@@ -26,6 +26,7 @@ namespace Elympics
 
         private static readonly TimeSpan OfferWaitingInterval = TimeSpan.FromSeconds(1);
         private const int MaxOfferWaitingIntervals = 5;
+        private static readonly TimeSpan ChannelsOpeningTimeout = TimeSpan.FromSeconds(10);
 
         public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
         public event Action ConnectingFailed;
@@ -188,8 +189,21 @@ namespace Elympics
 
             var client = new HalfRemoteMatchClient(_userId.ToString(), reliableChannel, unreliableChannel);
             await _webRtcClient.OnAnswer(answer);
-
             ElympicsLogger.LogInfo("WebRTC answer applied.");
+
+            // Data channels drop sends until they open, and joining starts sending right away.
+            using var openingCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            try
+            {
+                await UniTask.WaitUntil(() => reliableChannel.IsConnected && unreliableChannel.IsConnected, cancellationToken: openingCts.Token)
+                    .Timeout(ChannelsOpeningTimeout, DelayType.Realtime, taskCancellationTokenSource: openingCts);
+            }
+            catch (TimeoutException e)
+            {
+                throw new ElympicsException($"WebRTC data channels didn't open within {ChannelsOpeningTimeout.TotalSeconds} s.", e);
+            }
+
+            ElympicsLogger.LogInfo("WebRTC data channels opened.");
             return client;
         }
 

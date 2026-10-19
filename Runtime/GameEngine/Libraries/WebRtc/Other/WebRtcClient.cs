@@ -151,14 +151,25 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             public void Send(byte[] payload)
             {
-                if (_dc.ReadyState is not RTCDataChannelState.Open)
-                    return;
-                _dc.Send(payload);
+                try
+                {
+                    if (_dc.ReadyState is not RTCDataChannelState.Open)
+                        return;
+                    _dc.Send(payload);
+                }
+                // On Application.quitting, com.unity.webrtc disposes every native object, possibly before we disconnect.
+                catch (ObjectDisposedException)
+                { }
             }
 
             public void Disconnect()
             {
-                _dc.Close();
+                try
+                {
+                    _dc.Close();
+                }
+                catch (ObjectDisposedException)
+                { }
                 IsConnected = false;
             }
 
@@ -172,7 +183,16 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
         }
 
-        public void Close() => _peerConnection.Close();
+        public void Close()
+        {
+            try
+            {
+                _peerConnection.Close();
+            }
+            // See WebRtcDataChannel.Send.
+            catch (ObjectDisposedException)
+            { }
+        }
 
         public void Dispose()
         {

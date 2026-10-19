@@ -46,6 +46,9 @@ namespace UnityConnectors.HalfRemote
 
         private readonly Action _onAfterGameEnded;
 
+        /// <summary>Set once the server disconnects its clients, which then aren't reported as leaving.</summary>
+        private volatile bool _stopped;
+
         /// <param name="tcpListenEndpoint">Where to listen for TCP/UDP clients, or null not to.</param>
         /// <param name="webListenEndpoint">Where to listen for WebRTC clients, or null not to.</param>
         public HalfRemoteGameEngineProtoConnector(IGameEngine gameEngineAdapter, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, Action onAfterGameEnded = null)
@@ -126,6 +129,7 @@ namespace UnityConnectors.HalfRemote
 
         private void DisconnectClients()
         {
+            _stopped = true;
             foreach (var listener in _listeners)
                 listener.Stop();
         }
@@ -139,9 +143,15 @@ namespace UnityConnectors.HalfRemote
 
         private void OnReliableClientReceivingEnded(Guid clientId)
         {
+            GameEngineProtoClient client;
             lock (_reliableClients)
-                _ = _reliableClients.Remove(clientId);
+                _ = _reliableClients.Remove(clientId, out client);
             ReliableClientReceivingEnded?.Invoke(clientId);
+
+            // A closed browser tab or a quitting player can't send PlayerDisconnectedMsg.
+            var userId = client?.PlayerUserId;
+            if (userId != null && !_stopped)
+                _gameEngineAdapter.OnPlayerDisconnected(userId);
         }
 
         private void OnReliableClientReceivingError(Guid clientId, string error)
@@ -216,6 +226,7 @@ namespace UnityConnectors.HalfRemote
             if (_listeners == null)
                 return;
 
+            _stopped = true;
             foreach (var listener in _listeners)
             {
                 listener.Stop();

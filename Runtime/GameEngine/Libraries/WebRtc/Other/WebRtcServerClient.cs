@@ -23,6 +23,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
         private RTCDataChannel? _unreliableDc;
+        private bool _reliableEnded;
+        private bool _unreliableEnded;
 
         public event Action<byte[]>? ReliableReceived;
         public event Action<string>? ReliableReceivingError;
@@ -104,6 +106,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnReliableEnded()
         {
+            if (_reliableEnded)
+                return;
+            _reliableEnded = true;
             var logger = _logger.WithMethodName();
             OnChannel(ReliableChannelLabel, "closed");
             try
@@ -118,6 +123,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnUnreliableEnded()
         {
+            if (_unreliableEnded)
+                return;
+            _unreliableEnded = true;
             var logger = _logger.WithMethodName();
             OnChannel(UnreliableChannelLabel, "closed");
             try
@@ -201,6 +209,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             catch (Exception e)
             {
                 logger.LogException(e);
+            }
+
+            // The data channels don't close when the peer goes away (e.g. a closed browser tab), only the connection fails.
+            if (newState is RTCPeerConnectionState.Failed or RTCPeerConnectionState.Closed)
+            {
+                OnReliableEnded();
+                OnUnreliableEnded();
             }
         }
 

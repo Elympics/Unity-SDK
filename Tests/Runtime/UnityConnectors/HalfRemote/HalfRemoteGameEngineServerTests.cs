@@ -188,5 +188,73 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             Assert.That(unreliableClientDataReceived, Is.GreaterThan(0));
             Assert.That(unreliableServerDataReceived, Is.GreaterThan(0));
         }
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedWithoutLeaving_IsReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, _) = await ConnectTcpPlayer(7896);
+            var disconnectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            gameEngine.PlayerDisconnected += disconnectedUserIds.Enqueue;
+
+            tcpClient.Close();
+            await WaitUntilOrTimeout(() => !disconnectedUserIds.IsEmpty);
+            connector.Dispose();
+
+            CollectionAssert.AreEqual(new[] { UserId }, disconnectedUserIds);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientLeavingBeforeClosing_IsReportedOnce() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, client) = await ConnectTcpPlayer(7897);
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            client.PlayerDisconnected();
+            await WaitUntilOrTimeout(() => disconnected > 0);
+            tcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+
+            Assert.AreEqual(1, disconnected);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedAfterGameEnded_IsNotReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, _) = await ConnectTcpPlayer(7898);
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            gameEngine.EndGame(null);
+            tcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+
+            Assert.AreEqual(0, disconnected);
+        });
+
+        private static async UniTask<(GameEngineStub, HalfRemoteGameEngineProtoConnector, TcpClient, HalfRemoteMatchClient)> ConnectTcpPlayer(int tcpPort)
+        {
+            var gameEngine = new GameEngineStub();
+            var connected = false;
+            gameEngine.PlayerConnected += _ => connected = true;
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, new IPEndPoint(IPAddress.Loopback, tcpPort), null, () => { });
+            connector.Listen();
+
+            var tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync(IPAddress.Loopback, tcpPort);
+            var client = new HalfRemoteMatchClient(UserId, new ProtoNetworkStreamClient(tcpClient.GetStream()));
+            client.PlayerConnected();
+            await WaitUntilOrTimeout(() => connected);
+            Assert.IsTrue(connected);
+            return (gameEngine, connector, tcpClient, client);
+        }
+
+        private static async UniTask WaitUntilOrTimeout(Func<bool> condition)
+        {
+            for (var i = 0; i < 50 && !condition(); i++)
+                await UniTask.Delay(100, DelayType.Realtime);
+        }
     }
 }

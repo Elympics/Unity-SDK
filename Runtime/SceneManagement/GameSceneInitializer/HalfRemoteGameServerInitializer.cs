@@ -6,6 +6,7 @@ using Elympics.ElympicsSystems;
 using Elympics.SnapshotAnalysis;
 using GameEngineCore;
 using UnityConnectors.HalfRemote;
+using UnityEngine;
 using SimpleHttpSignalingServer = Plugins.Elympics.Runtime.Communication.HalfRemote.SimpleHttpSignalingServer;
 
 namespace Elympics
@@ -17,12 +18,19 @@ namespace Elympics
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
         private CancellationTokenSource _systemToken;
+        private bool _previousRunInBackground = true;
 
         public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => _data = data;
 
         public override void Initialize(ElympicsClient client, ElympicsServer server, ElympicsGameConfig gameConfig, ElympicsBehavioursManager behavioursManager)
         {
-            server.IsHalfRemoteServer = true;
+            // The server has to simulate while its window is out of focus.
+            _previousRunInBackground = Application.runInBackground;
+            if (!_previousRunInBackground)
+            {
+                Application.runInBackground = true;
+                ElympicsLogger.LogInfo("Enabled \"Run In Background\" for the half-remote server.");
+            }
             base.Initialize(client, server, gameConfig, behavioursManager);
         }
 
@@ -89,6 +97,9 @@ namespace Elympics
             _signalingServerCts = null;
             _signalingServer?.Dispose();
             _signalingServer = null;
+            if (!_previousRunInBackground)
+                Application.runInBackground = false;
+            _previousRunInBackground = true;
         }
     }
 }

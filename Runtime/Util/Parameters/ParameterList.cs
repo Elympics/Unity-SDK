@@ -70,7 +70,6 @@ namespace Elympics
             return parts.Length == 4 && parts.All(part => part.Length > 0 && part.All(char.IsDigit));
         }
 
-        /// <summary>Matches <c>-k</c>.</summary>
         private static bool TryParseShortArgument(string arg, out char key)
         {
             key = arg.Length == 2 ? arg[1] : default;

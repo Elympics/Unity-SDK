@@ -18,18 +18,17 @@ namespace Elympics
         private CancellationTokenSource _signalingServerCts;
         private HalfRemoteGameEngineProtoConnector _halfRemoteGameEngineProtoConnector;
         private CancellationTokenSource _systemToken;
-        private bool _previousRunInBackground = true;
 
         public HalfRemoteGameServerInitializer(HalfRemoteServerLaunchData data) => _data = data;
 
         public override void Initialize(ElympicsClient client, ElympicsServer server, ElympicsGameConfig gameConfig, ElympicsBehavioursManager behavioursManager)
         {
             // The server has to simulate while its window is out of focus.
-            _previousRunInBackground = Application.runInBackground;
-            if (!_previousRunInBackground)
+            if (!Application.runInBackground)
             {
                 Application.runInBackground = true;
-                ElympicsLogger.LogInfo("Enabled \"Run In Background\" for the half-remote server.");
+                ElympicsLogger.LogWarning("\"Run In Background\" was disabled, but a half-remote server has to run while out of focus, so it has been enabled. "
+                    + "In the Editor, this changes the project's Player Settings.");
             }
             base.Initialize(client, server, gameConfig, behavioursManager);
         }
@@ -97,9 +96,6 @@ namespace Elympics
             _signalingServerCts = null;
             _signalingServer?.Dispose();
             _signalingServer = null;
-            if (!_previousRunInBackground)
-                Application.runInBackground = false;
-            _previousRunInBackground = true;
         }
     }
 }

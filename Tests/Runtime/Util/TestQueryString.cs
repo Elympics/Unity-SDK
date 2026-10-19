@@ -61,6 +61,14 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void AppendTreatsNullValueAsEmpty()
+        {
+            var url = QueryString.Append(new System.UriBuilder("wss://example.com/ws"), "jwt_token", null!);
+
+            Assert.That(url, Is.EqualTo("wss://example.com/ws?jwt_token="));
+        }
+
+        [Test]
         public void AppendSinglePairToBuilder()
         {
             var url = QueryString.Append(new System.UriBuilder("wss://example.com/ws?existing=1"), "jwt_token", "a b");

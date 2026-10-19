@@ -44,7 +44,7 @@ namespace Elympics
             return uriBuilder.Uri.AbsoluteUri;
         }
 
-        private static string EscapePair(string key, string value) => $"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
+        private static string EscapePair(string key, string? value) => $"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value ?? string.Empty)}";
 
         private static string Decode(string value) => Uri.UnescapeDataString(value.Replace('+', ' '));
     }

@@ -15,8 +15,5 @@ namespace Elympics
         }
 
         private protected override void Simulate(float deltaTime) => _physicsScene.Simulate(deltaTime);
-
-        private protected override void OnInstanceDestroyed()
-        { }
     }
 }

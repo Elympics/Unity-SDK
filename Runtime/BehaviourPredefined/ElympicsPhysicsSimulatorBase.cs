@@ -54,6 +54,7 @@ namespace Elympics
 
         private protected abstract void Simulate(float deltaTime);
 
-        private protected abstract void OnInstanceDestroyed();
+        private protected virtual void OnInstanceDestroyed()
+        { }
     }
 }

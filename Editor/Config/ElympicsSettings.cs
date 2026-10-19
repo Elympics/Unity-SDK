@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.Build;
@@ -16,6 +17,14 @@ namespace Elympics.Editor.Config
         private const string SdkPackagePath = "Packages/com.daftmobile.elympics/";
 
         public VisualTreeAsset? settingsUxml;
+
+        /// <summary>Every build target Unity knows, whether or not its build support is installed.</summary>
+        private static readonly NamedBuildTarget[] AllNamedBuildTargets = typeof(NamedBuildTarget)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.FieldType == typeof(NamedBuildTarget) && !field.IsDefined(typeof(ObsoleteAttribute)))
+            .Select(field => (NamedBuildTarget)field.GetValue(null))
+            .Where(target => target != NamedBuildTarget.Unknown)
+            .ToArray();
 
         [SettingsProvider]
         public static SettingsProvider CreateProvider()
@@ -52,9 +61,9 @@ namespace Elympics.Editor.Config
             static VisualElement CreateDefineRow(ElympicsDefineList.ElympicsDefineDescription define)
             {
                 var name = define.Name;
-                var usesActiveTarget = define.BuildTargets.Count == 0;
-                var targets = usesActiveTarget
-                    ? new[] { GetActiveNamedBuildTarget() }
+                var usesAllTargets = define.BuildTargets.Count == 0;
+                var targets = usesAllTargets
+                    ? AllNamedBuildTargets
                     : define.BuildTargets.Select(ParseNamedBuildTarget).OfType<NamedBuildTarget>().ToArray();
 
                 var toggle = new Toggle(name);
@@ -77,8 +86,7 @@ namespace Elympics.Editor.Config
                     }
                 });
 
-                var targetNames = string.Join(", ", targets.Select(target => target.TargetName));
-                var targetLabel = new Label(usesActiveTarget ? $"active target: {targetNames}" : targetNames);
+                var targetLabel = new Label(usesAllTargets ? "all build targets" : string.Join(", ", targets.Select(target => target.TargetName)));
                 targetLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
                 targetLabel.style.alignSelf = Align.Center;
                 targetLabel.style.marginLeft = 4;
@@ -107,15 +115,6 @@ namespace Elympics.Editor.Config
                     return NamedBuildTarget.FromBuildTargetGroup(group);
                 ElympicsLogger.LogWarning($"Unknown build target \"{targetName}\" in an {nameof(ElympicsDefineList)}.");
                 return null;
-            }
-
-            static NamedBuildTarget GetActiveNamedBuildTarget()
-            {
-                var target = EditorUserBuildSettings.activeBuildTarget;
-                var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(target);
-                return buildTargetGroup == BuildTargetGroup.Standalone && EditorUserBuildSettings.standaloneBuildSubtarget == StandaloneBuildSubtarget.Server
-                    ? NamedBuildTarget.Server
-                    : NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
             }
         }
     }

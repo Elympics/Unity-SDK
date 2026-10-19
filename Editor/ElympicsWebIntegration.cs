@@ -462,7 +462,7 @@ namespace Elympics
                 List<(string name, string extension)> validFiles;
                 try
                 {
-                    WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out validFiles);
+                    WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out validFiles);
                 }
                 catch (ElympicsException e)
                 {
@@ -595,6 +595,7 @@ namespace Elympics
             string version,
             StreamingAssetsLayout layout)
         {
+            ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
 
             WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out var relativePaths, out var generatedFiles);
@@ -726,9 +727,10 @@ namespace Elympics
             string clientGameVersion,
             string serverGameVersion)
         {
+            ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
 
-            WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out var validFiles);
+            WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out var validFiles);
 
             var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
             var initOp = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest);
@@ -811,13 +813,19 @@ namespace Elympics
         }
 
 
+        private static void ValidateGameId(string gameId)
+        {
+            if (!Guid.TryParse(gameId, out _))
+                throw new ArgumentException($"Game ID '{gameId}' is not a valid GUID. Pass the ID of an Elympics game.", nameof(gameId));
+        }
+
         private static void LoginAsDeveloper(string username, string password)
         {
             _ = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
-                throw new ArgumentNullException(nameof(username));
+                throw new ArgumentException("An Elympics developer account username is required for batch-mode uploads.", nameof(username));
             if (string.IsNullOrEmpty(password))
-                throw new ArgumentNullException(nameof(password));
+                throw new ArgumentException("An Elympics developer account password is required for batch-mode uploads.", nameof(password));
 
             var loginOp = Login(username, password);
 

@@ -187,8 +187,12 @@ namespace Elympics.Editor
         #endregion
 
 
+        internal const string BuildFolderName = "Build";
+
+        /// <param name="clientBuildPath">The WebGL build's <see cref="BuildFolderName"/> folder or the build root containing it.
+        /// Set to the folder that holds the files.</param>
         internal static void PrepareValidFiles(
-            string clientBuildPath,
+            ref string clientBuildPath,
             string clientGameVersion,
             out List<(string name, string extension)> validFiles)
         {
@@ -196,16 +200,31 @@ namespace Elympics.Editor
                 throw new ElympicsException($"Client build directory '{clientBuildPath}' does not exist.");
             ValidateVersionCharacters("Client game version", clientGameVersion);
 
-            var filePaths = Directory.GetFiles(clientBuildPath);
-            var fileNames = filePaths.Select(Path.GetFileName).ToArray();
+            var fileNames = GetFileNames(clientBuildPath);
             validFiles = GetValidFiles(fileNames, CompoundExtensions);
 
+            var buildFolderPath = Path.Combine(clientBuildPath, BuildFolderName);
+            if (validFiles.Count == 0 && Directory.Exists(buildFolderPath))
+            {
+                var buildFolderFileNames = GetFileNames(buildFolderPath);
+                var buildFolderValidFiles = GetValidFiles(buildFolderFileNames, CompoundExtensions);
+                if (buildFolderValidFiles.Count > 0)
+                {
+                    ElympicsLogger.LogInfo($"Using the client build files in '{buildFolderPath}'.");
+                    clientBuildPath = buildFolderPath;
+                    fileNames = buildFolderFileNames;
+                    validFiles = buildFolderValidFiles;
+                }
+            }
+
             if (validFiles.Count != CompoundExtensions.Length)
-                // TODO: make this exception more informative ~dsygocki 2026-09-11
-                throw new ElympicsException((validFiles.Count < CompoundExtensions.Length ? "Some required files are missing\n" : "There are too many files\n")
+                throw new ElympicsException((validFiles.Count < CompoundExtensions.Length ? "Some required files are missing" : "There are too many files")
+                    + $" in client build directory '{clientBuildPath}'. Pass the WebGL build's root or its {BuildFolderName} folder.\n"
                     + $"Required extensions: [{string.Join(", ", CompoundExtensions)}]\n"
                     + $"Files in directory: [{string.Join(", ", fileNames)}]\n"
                     + $"Validated files: [{string.Join(", ", validFiles)}]");
+
+            static string[] GetFileNames(string directory) => Directory.GetFiles(directory).Select(Path.GetFileName).ToArray();
         }
 
         internal static UploadInitRequest CreateInitRequest(

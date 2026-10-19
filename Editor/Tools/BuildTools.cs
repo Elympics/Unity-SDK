@@ -42,6 +42,8 @@ namespace Elympics
         private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
             ScriptingImplementation? replacedBackend = null;
+            // BuildPlayer leaves the Editor's standalone subtarget on Server, which breaks the next player build.
+            var previousSubtarget = EditorUserBuildSettings.standaloneBuildSubtarget;
             try
             {
                 var title = $"Building server for {appName}";
@@ -85,6 +87,8 @@ namespace Elympics
             {
                 if (replacedBackend is { } backend)
                     PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, backend);
+                if (EditorUserBuildSettings.standaloneBuildSubtarget != previousSubtarget)
+                    EditorUserBuildSettings.standaloneBuildSubtarget = previousSubtarget;
                 EditorUtility.ClearProgressBar();
             }
         }

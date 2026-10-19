@@ -200,6 +200,8 @@ namespace Elympics
             }
             catch (TimeoutException e)
             {
+                _webRtcClient.Dispose();
+                _webRtcClient = null;
                 throw new ElympicsException($"WebRTC data channels didn't open within {ChannelsOpeningTimeout.TotalSeconds} s.", e);
             }
 

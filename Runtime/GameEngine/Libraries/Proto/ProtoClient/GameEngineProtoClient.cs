@@ -14,7 +14,14 @@ namespace Proto.ProtoClient
         private readonly bool _allowUnreliable;
 
         /// <summary>The player who joined over this client and hasn't left yet, or null.</summary>
-        public string PlayerUserId { get; private set; }
+        public string PlayerUserId
+        {
+            get => _playerUserId;
+            private set => _playerUserId = value;
+        }
+
+        // Written on the receive thread, read from other threads.
+        private volatile string _playerUserId;
 
         public GameEngineProtoClient(IProtoNetworkClient networkClient, IGameEngineProtoReceiver receiver, IServerNtpReceiver serverNtpReceiver = null, bool allowReliable = true, bool allowUnreliable = true) : base(networkClient)
         {

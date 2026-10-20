@@ -21,7 +21,6 @@ stages:
   - build
   - test
   - verify
-  - trigger
   - pre-release
   - release
 
@@ -553,21 +552,3 @@ release:github:
     - job: get-changelog-for-release
   script:
     - gh release create "$CI_COMMIT_TAG" -t "$CI_COMMIT_TAG" -F ./release.description --repo "$GH_REPO" --verify-tag
-
-notify:slack-merged-to-develop:
-  stage: trigger
-  image: curlimages/curl:latest
-  needs: []
-  variables:
-    GIT_DEPTH: 1
-  script:
-    - |
-      PAYLOAD=$(cat <<EOF
-      {
-        "text": "*ELYMPICS SDK Merged to develop*\n\`\`\`\n$CI_COMMIT_MESSAGE\n\`\`\`"
-      }
-      EOF
-      )
-      curl -X POST -H 'Content-Type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_SDK_CHANNEL"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'

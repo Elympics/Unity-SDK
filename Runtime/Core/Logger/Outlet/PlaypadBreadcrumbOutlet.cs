@@ -3,6 +3,7 @@ using System;
 using System.Text;
 using Elympics.AssemblyCommunicator;
 using Elympics.Core.Logger.State;
+using Elympics.Core.Utils;
 using Elympics.Events;
 
 namespace Elympics.Core.Logger.Builder
@@ -40,13 +41,13 @@ namespace Elympics.Core.Logger.Builder
             lock (StringBuilderLock)
             {
                 _ = _stringBuilder.Clear()
-                    .Append('{');
-                AppendProperty(_stringBuilder, "level", (int)logLevel, isFirst: true);
-                AppendProperty(_stringBuilder, "message", message);
+                    .Append('{')
+                    .AppendJsonProperty("level", (int)logLevel, isFirst: true)
+                    .AppendJsonProperty("message", message);
                 if (stacktrace is not null)
-                    AppendProperty(_stringBuilder, nameof(stacktrace), stacktrace);
-                _ = _stringBuilder.Append(",\"data\":{");
-                AppendProperty(_stringBuilder, "time", isoTimestamp, isFirst: true);
+                    _ = _stringBuilder.AppendJsonProperty(nameof(stacktrace), stacktrace);
+                _ = _stringBuilder.Append(",\"data\":{")
+                    .AppendJsonProperty("time", isoTimestamp, isFirst: true);
                 _ = config.Context.Visit(_stateVisitor);
                 _ = state.Visit(_stateVisitor);
                 finalMessage = _stringBuilder.Append('}')
@@ -76,56 +77,10 @@ namespace Elympics.Core.Logger.Builder
 
             public void ProcessProperty(string name, string value, string? legacyName = null)
             {
-                AppendProperty(_stringBuilder, name, value);
+                _ = _stringBuilder.AppendJsonProperty(name, value);
                 if (legacyName is not null)
-                    AppendProperty(_stringBuilder, legacyName, value);
+                    _ = _stringBuilder.AppendJsonProperty(legacyName, value);
             }
-        }
-
-        private static void AppendProperty(StringBuilder sb, string key, string? value, bool isFirst = false)
-        {
-            if (!isFirst)
-                _ = sb.Append(',');
-            AppendEscaped(sb, key);
-            _ = sb.Append(':');
-            AppendEscaped(sb, value);
-        }
-
-        private static void AppendProperty(StringBuilder sb, string key, int value, bool isFirst = false)
-        {
-            if (!isFirst)
-                _ = sb.Append(',');
-            AppendEscaped(sb, key);
-            _ = sb.Append(':')
-                .Append(value.ToString());
-        }
-
-        private static void AppendEscaped(StringBuilder sb, string? value)
-        {
-            if (value is null)
-            {
-                _ = sb.Append("null");
-                return;
-            }
-
-            _ = sb.Append('"');
-            foreach (var c in value)
-                if (c is '"' or '\\' or '\n' or '\r' or '\t' or '\b' or '\f' or < ' ')
-                    _ = sb.Append(c switch
-                    {
-                        '"' => @"\""",
-                        '\\' => @"\\",
-                        '\n' => @"\n",
-                        '\r' => @"\r",
-                        '\t' => @"\t",
-                        '\b' => @"\b",
-                        '\f' => @"\f",
-                        _ => $"\\u{(int)c:x4}",
-                    });
-                else
-                    _ = sb.Append(c);
-
-            _ = sb.Append('"');
         }
     }
 }

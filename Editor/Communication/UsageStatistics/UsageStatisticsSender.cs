@@ -1,3 +1,4 @@
+#if !ELYMPICS_DISABLE_USAGE_STATISTICS
 using System;
 using Elympics.Core.Logger;
 using UnityEditor;
@@ -47,3 +48,4 @@ namespace Elympics.Editor.Communication.UsageStatistics
         }
     }
 }
+#endif

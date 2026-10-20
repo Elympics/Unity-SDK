@@ -1,7 +1,9 @@
 #nullable enable
 
 using System.Collections.Generic;
+#if !ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK
 using Elympics.Core.Logger;
+#endif
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -22,6 +24,7 @@ namespace Elympics.Editor
 
         public void OnProcessScene(Scene scene, BuildReport? report)
         {
+#if !ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK
             if (!LacksPhysics2DSimulator(scene.GetRootGameObjects()))
                 return;
             var message = $"Scene {scene.path} uses 2D physics but has no {nameof(ElympicsUnityPhysics2DSimulator)}, so its 2D physics doesn't follow Elympics ticks. "
@@ -31,6 +34,7 @@ namespace Elympics.Editor
                 ElympicsLogger.LogError(message);
             else
                 ElympicsLogger.LogWarning(message);
+#endif
         }
 
         internal static bool LacksPhysics2DSimulator(IReadOnlyCollection<GameObject> roots) =>

@@ -24,12 +24,17 @@ namespace Elympics
         public override void Initialize(ElympicsClient client, ElympicsServer server, ElympicsGameConfig gameConfig, ElympicsBehavioursManager behavioursManager)
         {
             // The server has to simulate while its window is out of focus.
+#if ELYMPICS_DISABLE_RUN_IN_BACKGROUND
+            if (!Application.runInBackground)
+                ElympicsLogger.LogWarning("\"Run In Background\" is disabled, so a half-remote server may stall while out of focus.");
+#else
             if (!Application.runInBackground)
             {
                 Application.runInBackground = true;
                 ElympicsLogger.LogWarning("\"Run In Background\" was disabled, but a half-remote server has to run while out of focus, so it has been enabled. "
                     + "In the Editor, this changes the project's Player Settings.");
             }
+#endif
             base.Initialize(client, server, gameConfig, behavioursManager);
         }
 

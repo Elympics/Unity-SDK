@@ -301,6 +301,22 @@ test:editmode:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
 
+test:disable-defines:
+  extends: .test
+  # The SDK's opt-out defines compile out code paths, so each variant of those tests has to run with them set.
+  variables:
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+    # Coverage comes from the default test jobs.
+    CODE_COVERAGE: "false"
+  parallel:
+    matrix:
+      - TEST_PLATFORM: [editmode, playmode]
+  script:
+    - *install_yq
+    - ./.scripts/ci/set_scripting_defines.sh "ELYMPICS_LAZY_WEBRTC_CONTEXT;ELYMPICS_DISABLE_USAGE_STATISTICS;ELYMPICS_DISABLE_BUILD_SCENE_VALIDATION;ELYMPICS_DISABLE_RUN_IN_BACKGROUND;ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK"
+    - ./.scripts/ci/test.sh
+
 test:editmode:unity-versions:
   extends: .test
   # Compiles and runs EditMode tests around the version cut-offs: 6.4 (hierarchy EntityId event) and 6.5 (Unity's own Unsafe).

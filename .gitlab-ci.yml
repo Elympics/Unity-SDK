@@ -17,9 +17,10 @@ variables:
 stages:
   - prepare-version
   - prepare-license
-  - prepare-project
+  - compile
+  - build
   - test
-  - check
+  - verify
   - trigger
   - pre-release
   - release
@@ -168,7 +169,7 @@ get-activation-file:
 check-commits:
   extends:
     - .alpine_image
-  stage: check
+  stage: verify
   needs: []
   variables:
     GIT_DEPTH: 0
@@ -180,7 +181,7 @@ check-commits:
 verify-js:
   extends:
     - .node_image
-  stage: check
+  stage: verify
   needs: []
   variables:
     GIT_DEPTH: 1
@@ -192,7 +193,7 @@ create-testing-project:
   extends:
     - .unity_image
     - .cond.license
-  stage: prepare-project
+  stage: compile
   timeout: 30m
   variables:
     GIT_DEPTH: 1
@@ -211,7 +212,7 @@ compile:elympics-debug:
   extends:
     - .unity_image
     - .cond.license
-  stage: test
+  stage: compile
   needs:
     - job: create-testing-project
   # A separate job, so a Unity crash on quit here doesn't hold up the tests.
@@ -230,7 +231,7 @@ build:sample:
     - .cond.license
   timeout: 45m
   image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH
-  stage: test
+  stage: build
   needs: []
   variables:
     GIT_DEPTH: 1
@@ -342,6 +343,7 @@ test:editmode:unity-versions:
 create-coverage-report:
   extends:
     - .dotnet_image
+  stage: test
   needs:
     - job: test:playmode
     - job: test:editmode
@@ -369,7 +371,7 @@ verify-formatting:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
@@ -391,7 +393,7 @@ audit:project-auditor:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
@@ -411,7 +413,7 @@ verify-messagepack-generated:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
@@ -434,7 +436,7 @@ verify-compiled-protos:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:

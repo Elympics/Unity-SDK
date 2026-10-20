@@ -34,7 +34,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             var onAfterAssemblyReload = ContextManagerType?.GetMethod("OnAfterAssemblyReload", StaticMembers);
             var onQuit = ContextManagerType?.GetMethod("Quit", StaticMembers);
             if (ContextField == null || InitializeMethod == null || DisposeMethod == null || ContextManagerType == null
-                || onBeforeAssemblyReload == null || onAfterAssemblyReload == null || onQuit == null)
+                || onBeforeAssemblyReload == null || onAfterAssemblyReload == null || onQuit == null
+                || !InitializeMethod.GetParameters().All(parameter => parameter.HasDefaultValue))
             {
                 ElympicsLogger.LogWarning("ELYMPICS_LAZY_WEBRTC_CONTEXT has no effect: this com.unity.webrtc version doesn't have the expected internals.");
                 return;

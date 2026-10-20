@@ -23,6 +23,12 @@ namespace Elympics
 
         public override void Initialize(ElympicsClient client, ElympicsServer server, ElympicsGameConfig gameConfig, ElympicsBehavioursManager behavioursManager)
         {
+            EnsureRunInBackground();
+            base.Initialize(client, server, gameConfig, behavioursManager);
+        }
+
+        internal static void EnsureRunInBackground()
+        {
             // The server has to simulate while its window is out of focus.
 #if ELYMPICS_DISABLE_RUN_IN_BACKGROUND
             if (!Application.runInBackground)
@@ -35,7 +41,6 @@ namespace Elympics
                     + "In the Editor, this changes the project's Player Settings.");
             }
 #endif
-            base.Initialize(client, server, gameConfig, behavioursManager);
         }
 
         protected override void InitializeGameServer(ElympicsGameConfig elympicsGameConfig, GameEngineAdapter gameEngineAdapter)

@@ -13,12 +13,12 @@ namespace Elympics.Editor.Tests
 {
     public class TestDisableDefines
     {
+        // In the Editor, runInBackground is the project's Player setting, so tests must restore it.
         private bool _runInBackground;
 
         [SetUp]
         public void SetUp() => _runInBackground = Application.runInBackground;
 
-        // In the Editor, runInBackground is the project's Player setting.
         [TearDown]
         public void TearDown() => Application.runInBackground = _runInBackground;
 

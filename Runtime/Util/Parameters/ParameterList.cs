@@ -20,7 +20,8 @@ namespace Elympics
         public readonly ValueParameter<int> HalfRemotePlayerIndex =
             new("ELYMPICS_HALF_REMOTE_PLAYER_INDEX", "playerIndex", "half-remote-player-index");
         public readonly Parameter<IPAddress> HalfRemoteIp = new("ELYMPICS_HALF_REMOTE_IP", "ip", "half-remote-ip",
-            parse: IPAddress.Parse, validate: IsDottedQuad);
+            parse: IPAddress.Parse, validate: IsDottedQuad)
+        { ExpectedFormat = "an IPv4 address" };
         public readonly ValueParameter<ushort> HalfRemotePort = new("ELYMPICS_HALF_REMOTE_PORT", "port", "half-remote-port");
 
         public readonly Parameter<Uri> ApiEndpoint = new("ELYMPICS_API", "elympicsApi", "elympics-api",
@@ -45,7 +46,8 @@ namespace Elympics
             parse: ParseBoolFlag);
 
         public readonly Parameter<string> HostBridge = new("ELYMPICS_HOST_BRIDGE", "elympicsHostBridge", "elympics-host-bridge",
-            validate: HostBridgeValues.Contains);
+            validate: HostBridgeValues.Contains)
+        { ExpectedFormat = $"one of: {string.Join(", ", HostBridgeValues)}" };
 
         /// <summary>
         /// Starts this match in the gameplay scene, without a launcher session: halfRemoteClient, halfRemoteServer, singlePlayer or snapshotReplay.
@@ -64,6 +66,7 @@ namespace Elympics
             ElympicsHostBridgeFactory.None,
         };
 
+        // Not a Regex: it would link System.Text.RegularExpressions into WebGL players.
         private static bool IsDottedQuad(string value)
         {
             var parts = value.Split('.');

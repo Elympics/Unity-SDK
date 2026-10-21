@@ -87,6 +87,16 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void ValidationErrorShouldNameExpectedFormat()
+        {
+            var parameter = new Parameter<string>(validate: _ => false) { ExpectedFormat = "a date" };
+            parameter.SetRawValue("09:23");
+
+            var exc = Assert.Throws<ArgumentException>(() => parameter.ValidateAndParseRawValue());
+            StringAssert.Contains("expected a date", exc.Message);
+        }
+
+        [Test]
         public void ParameterShouldHaveNonNullValueAfterParsing([ValueSource(nameof(EmptyParameters))] string kind)
         {
             var parameter = CreateEmpty(kind);

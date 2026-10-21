@@ -17,6 +17,8 @@ namespace Elympics
         public string LongArgumentName { get; init; }
         public char? ShortArgumentName { get; init; }
         public int? ArgumentIndex { get; init; }
+        /// <summary>Describes the values that pass validation, for the error message.</summary>
+        public string ExpectedFormat { get; init; }
 
         protected bool IsPresent { get; private set; }
         protected string RawValue { get; private set; }
@@ -48,7 +50,8 @@ namespace Elympics
         {
             if (_validate == null || _validate(RawValue))
                 return;
-            throw new ArgumentException($"Provided value: {RawValue} failed validation");
+            var expected = ExpectedFormat != null ? $" (expected {ExpectedFormat})" : string.Empty;
+            throw new ArgumentException($"Provided value: {RawValue} failed validation{expected}");
         }
 
         public void ValidateAndParseRawValue()

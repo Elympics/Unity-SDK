@@ -46,6 +46,15 @@ namespace Elympics.Tests.Runtime.Core
         }
 
         [Test]
+        public void EnablingMoreThanOneTimeShouldThrow()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable();
+
+            _ = Assert.Throws<InvalidOperationException>(() => score.Enable());
+        }
+
+        [Test]
         public void RetrievingScoreShouldReturnCorrectScore()
         {
             var score = new ElympicsScore(2);

@@ -59,6 +59,7 @@ namespace Elympics.Core
         /// The list of supported metadata keys. Assigning values to keys outside the list
         /// will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
+        /// <exception cref="InvalidOperationException">When <see cref="Enable"/> has been called before.</exception>
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
         {

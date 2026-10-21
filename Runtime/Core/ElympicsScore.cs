@@ -30,7 +30,6 @@ namespace Elympics.Core
         private readonly bool[] _changed;
 
         private readonly StringBuilder _sb = new();
-        private static readonly object SbLock = new();
 
         internal ElympicsScore(int playerCount)
         {
@@ -131,28 +130,14 @@ namespace Elympics.Core
             private readonly float? _readonlyScore;
 
             /// <summary>
-            /// Score accessor.
+            /// Score getter.
             /// </summary>
             /// <exception cref="InvalidOperationException">When the default constructor has been used.</exception>
             /// <exception cref="NotSupportedException">When the setter is used for a structure cast from a float score.</exception>
             [PublicAPI]
-            public float Score
-            {
-                get
-                {
-                    if (!_isInitialized)
-                        throw new InvalidOperationException(IncorrectlyInitializedMessage);
-                    return _readonlyScore ?? _parent!.GetScore(_playerIndex);
-                }
-                set
-                {
-                    if (!_isInitialized)
-                        throw new InvalidOperationException(IncorrectlyInitializedMessage);
-                    if (_readonlyScore.HasValue)
-                        throw new NotSupportedException();
-                    _parent!.SetScore(_playerIndex, value);
-                }
-            }
+            public float Score => _isInitialized
+                ? _readonlyScore ?? _parent!.GetScore(_playerIndex)
+                : throw new InvalidOperationException(IncorrectlyInitializedMessage);
 
             /// <summary>
             /// Metadata accessor.
@@ -209,7 +194,7 @@ namespace Elympics.Core
         {
             if (!_enabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            return _metadata[playerIndex].ContainsKey(key)
+            return _metadataKeys.Contains(key)
                 ? _metadata[playerIndex][key]
                 : throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
         }
@@ -219,7 +204,7 @@ namespace Elympics.Core
         {
             if (!_enabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            if (!_metadata[playerIndex].ContainsKey(key))
+            if (!_metadataKeys.Contains(key))
                 throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
             _metadata[playerIndex][key] = value;
             _changed[playerIndex] = true;
@@ -278,7 +263,7 @@ namespace Elympics.Core
                 _utcTime[i] = utcTime;
                 _gameplayTime[i] = _getGameplayTime(i, utcTime);
                 string metadata;
-                lock (SbLock)
+                lock (_sb)
                 {
                     _ = _sb.Clear()
                         .Append('{');

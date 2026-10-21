@@ -55,11 +55,15 @@ namespace Elympics.Core.Utils
 
         public static StringBuilder AppendJsonProperty(this StringBuilder sb, string key, double value, bool isFirst = false)
         {
+            if (double.IsNaN(value))
+                return sb.AppendJsonProperty(key, "NaN", isFirst);
+            if (!double.IsFinite(value))
+                return sb.AppendJsonProperty(key, double.IsPositiveInfinity(value) ? "Infinity" : "-Infinity", isFirst);
             if (!isFirst)
                 _ = sb.Append(',');
             return sb.AppendJsonEscaped(key)
                 .Append(':')
-                .Append(value.ToString(CultureInfo.InvariantCulture));
+                .Append(value.ToString(CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.'));
         }
 
         public static StringBuilder AppendJsonProperty(this StringBuilder sb, string key, bool value, bool isFirst = false)

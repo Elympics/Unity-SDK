@@ -11,9 +11,8 @@ using UnityEngine;
 public static class CiBuild
 {
     /// <summary>
-    /// Builds the scenes in CI_BUILD_SCENES (';'-separated, relative to the project) for the active build target into CI_BUILD_OUTPUT,
-    /// with settings that minimize build time. WebGL uses IL2CPP; the other targets use Mono.
-    /// Scripting defines in CI_BUILD_DEFINES (';'-separated) are added for this build only.
+    /// Builds CI_BUILD_SCENES (';'-separated, relative to the project) for the active build target into CI_BUILD_OUTPUT,
+    /// with settings that minimize build time. CI_BUILD_DEFINES (';'-separated) are added for this build only.
     /// </summary>
     public static void Build()
     {

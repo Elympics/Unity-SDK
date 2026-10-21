@@ -189,8 +189,7 @@ namespace Elympics.Editor
 
         internal const string BuildFolderName = "Build";
 
-        /// <param name="clientBuildPath">The WebGL build's <see cref="BuildFolderName"/> folder or the build root containing it.
-        /// Set to the folder that holds the files.</param>
+        /// <param name="clientBuildPath">The WebGL build's <see cref="BuildFolderName"/> folder or the build root containing it.</param>
         internal static void PrepareValidFiles(
             ref string clientBuildPath,
             string clientGameVersion,

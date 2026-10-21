@@ -57,9 +57,8 @@ namespace Elympics.Editor
             !EditorApplication.isPlaying && FindPhysics2DSimulatorTarget(SceneManager.GetActiveScene().GetRootGameObjects()) != null;
 
         /// <returns>
-        /// The object with <see cref="ElympicsUnityPhysicsSimulator"/> (the Physics object of the Elympics System), or null if there is none
-        /// or the scene already has <see cref="ElympicsUnityPhysics2DSimulator"/>. There's no fallback to another object, because the
-        /// simulator requires an <see cref="ElympicsBehaviour"/>, which would make that object networked.
+        /// The object with <see cref="ElympicsUnityPhysicsSimulator"/>, or null if there is none or the 2D simulator is already there.
+        /// No fallback to another object: the simulator requires an <see cref="ElympicsBehaviour"/>, which would make it networked.
         /// </returns>
         internal static GameObject? FindPhysics2DSimulatorTarget(IReadOnlyCollection<GameObject> roots)
         {

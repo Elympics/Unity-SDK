@@ -148,11 +148,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             public void Send(byte[] payload)
             {
-                WebRtcNative.IgnoreDisposed(() =>
-                {
-                    if (_dc.ReadyState is RTCDataChannelState.Open)
-                        _dc.Send(payload);
-                });
+                WebRtcNative.TrySend(_dc, payload);
             }
 
             public void Disconnect()

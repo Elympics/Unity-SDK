@@ -146,16 +146,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendReliable(byte[] data)
         {
-            var channel = _reliableDc;
-            if (channel?.ReadyState is RTCDataChannelState.Open)
-                WebRtcNative.IgnoreDisposed(() => channel.Send(data));
+            if (_reliableDc is { } channel)
+                WebRtcNative.TrySend(channel, data);
         }
 
         public void SendUnreliable(byte[] data)
         {
-            var channel = _unreliableDc;
-            if (channel?.ReadyState is RTCDataChannelState.Open)
-                WebRtcNative.IgnoreDisposed(() => channel.Send(data));
+            if (_unreliableDc is { } channel)
+                WebRtcNative.TrySend(channel, data);
         }
 
         private async UniTask<string> CreateAnswer(string offerJson)

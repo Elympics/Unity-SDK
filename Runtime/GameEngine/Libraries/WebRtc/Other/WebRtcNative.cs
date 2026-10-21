@@ -30,5 +30,17 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             catch (ObjectDisposedException)
             { }
         }
+
+        // The same guard without a capturing lambda, for the per-tick send paths.
+        internal static void TrySend(RTCDataChannel channel, byte[] data)
+        {
+            try
+            {
+                if (channel.ReadyState is RTCDataChannelState.Open)
+                    channel.Send(data);
+            }
+            catch (ObjectDisposedException)
+            { }
+        }
     }
 }

@@ -275,6 +275,7 @@ namespace Elympics.Core
                     continue;
                 _changed[i] = false;
                 _startingScoreUtcTime[i] ??= utcTime;
+                _utcTime[i] = utcTime;
                 _gameplayTime[i] = _getGameplayTime(i, utcTime);
                 string metadata;
                 lock (SbLock)

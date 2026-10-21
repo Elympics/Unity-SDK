@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using Elympics.Core;
 using Elympics.Core.Utils;
 using NUnit.Framework;
+using UnityEngine.TestTools;
 
 namespace Elympics.Tests.Runtime.Core
 {
@@ -63,7 +65,7 @@ namespace Elympics.Tests.Runtime.Core
             score[0] = 2.0f;
             score[0] = 5.0f;
 
-            Assert.That(score[0], Is.EqualTo(5.0f));
+            Assert.That((float)score[0], Is.EqualTo(5.0f));
         }
 
         [Test]
@@ -75,7 +77,7 @@ namespace Elympics.Tests.Runtime.Core
             score[0].Metadata["example-key"] = "example-value";
             score[0].Metadata["example-key"] = "example-value2";
 
-            Assert.That(score[0].Metadata["example-key"], Is.EqualTo("example-value2"));
+            Assert.That(score[0].Metadata["example-key"], Is.EqualTo((JsonValue)"example-value2"));
         }
 
         [Test]
@@ -108,7 +110,21 @@ namespace Elympics.Tests.Runtime.Core
         }
 
         [Test]
-        public void SettingScoreShouldCauseEventToBeEmitted()
+        public void SettingScoreOrMetadataShouldNotCauseEventToBeEmitted()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable(metadataKeys: new[] { "example-key" });
+            (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
+            score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
+
+            score[1] = 5.0f;
+            score[1].Metadata["example-key"] = "example-value";
+
+            Assert.That(updatedScore.HasValue, Is.False);
+        }
+
+        [Test]
+        public void SubmittingChangedScoreShouldCauseEventToBeEmitted()
         {
             var score = new ElympicsScore(2);
             score.Enable();
@@ -122,6 +138,39 @@ namespace Elympics.Tests.Runtime.Core
             Assert.That(updatedScore!.Value.PlayerIndex, Is.EqualTo(1));
             Assert.That(updatedScore!.Value.Score, Is.EqualTo(5.0f));
             Assert.That(updatedScore!.Value.Metadata, Is.EqualTo("{}"));
+        }
+
+        [Test]
+        public void SubmittingChangedMetadataShouldCauseEventToBeEmitted()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable(metadataKeys: new[] { "example-key" });
+            (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
+            score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
+
+            score[1].Metadata["example-key"] = "example-value";
+            score.Submit();
+
+            Assert.That(updatedScore.HasValue, Is.True);
+            Assert.That(updatedScore!.Value.PlayerIndex, Is.EqualTo(1));
+            Assert.That(updatedScore!.Value.Score, Is.EqualTo(0.0f));
+            Assert.That(updatedScore!.Value.Metadata, Is.EqualTo("{\"example-key\":\"example-value\"}"));
+        }
+
+        [Test]
+        public void SubmittingWithoutChangesShouldNotCauseEventToBeEmitted()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable(metadataKeys: new[] { "example-key" });
+            (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
+            score[1] = 5.0f;
+            score[1].Metadata["example-key"] = "example-value";
+            score.Submit();
+            score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
+
+            score.Submit();
+
+            Assert.That(updatedScore.HasValue, Is.False);
         }
 
         [Test]
@@ -145,8 +194,8 @@ namespace Elympics.Tests.Runtime.Core
             Assert.That(startingTime, Is.Null);
         }
 
-        [Test]
-        public void StartingScoreTimeShouldNotChange()
+        [UnityTest]
+        public IEnumerator StartingScoreTimeShouldNotChange()
         {
             var score = new ElympicsScore(1);
             score.Enable();
@@ -154,6 +203,7 @@ namespace Elympics.Tests.Runtime.Core
             score[0] = 1f;
             score.Submit();
             var firstTime = score.GetStartingScoreUtcTime(0);
+            yield return null;
             score[0] = 2f;
             score.Submit();
             var secondTime = score.GetStartingScoreUtcTime(0);
@@ -162,8 +212,8 @@ namespace Elympics.Tests.Runtime.Core
             Assert.That(firstTime, Is.EqualTo(secondTime));
         }
 
-        [Test]
-        public void DefaultGameplayTimeShouldBeCalculatedAsDiffToStartingTime()
+        [UnityTest]
+        public IEnumerator DefaultGameplayTimeShouldBeCalculatedAsDiffToStartingTime()
         {
             var score = new ElympicsScore(1);
             score.Enable();
@@ -171,6 +221,7 @@ namespace Elympics.Tests.Runtime.Core
             score[0] = 1f;
             score.Submit();
             var firstTime = score.GetCurrentScoreUtcTime(0);
+            yield return null;
             score[0] = 2f;
             score.Submit();
             var secondTime = score.GetCurrentScoreUtcTime(0);
@@ -179,8 +230,8 @@ namespace Elympics.Tests.Runtime.Core
             Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(secondTime - firstTime));
         }
 
-        [Test]
-        public void UnsubmittedScoreShouldNotChangeCurrentTime()
+        [UnityTest]
+        public IEnumerator UnsubmittedScoreShouldNotChangeCurrentTime()
         {
             var score = new ElympicsScore(1);
             score.Enable();
@@ -188,6 +239,7 @@ namespace Elympics.Tests.Runtime.Core
             score[0] = 1f;
             score.Submit();
             var firstTime = score.GetCurrentScoreUtcTime(0);
+            yield return null;
             score[0] = 2f;
             var secondTime = score.GetCurrentScoreUtcTime(0);
 

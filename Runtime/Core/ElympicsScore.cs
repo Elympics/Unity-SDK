@@ -71,7 +71,7 @@ namespace Elympics.Core
             foreach (var metadata in _metadata)
             {
                 metadata.Clear();
-                metadata.EnsureCapacity(_metadataKeys.Count);
+                _ = metadata.EnsureCapacity(_metadataKeys.Count);
                 foreach (var key in _metadataKeys)
                     metadata.Add(key, default);
             }
@@ -92,7 +92,7 @@ namespace Elympics.Core
 
         /// <summary>
         /// A helper class for accessing metadata.
-        /// Ensures no key outside the ones defined in <see cref="ElympicsScore.Enable"/> is used.
+        /// Ensures no key outside the ones defined in <see cref="Enable"/> is used.
         /// </summary>
         public class MetadataWrapper
         {
@@ -116,7 +116,7 @@ namespace Elympics.Core
 
         /// <summary>
         /// A helper structure for transferring both score and metadata accessors.
-        /// Allows for syntax sugar for assigning/reading a float score directly using <see cref="ElympicsScore.this[int]"/>,
+        /// Allows for syntax sugar for assigning/reading a float score directly using <see cref="this[int]"/>,
         /// e.g. <c>Elympics.Score[0] = 12.0f;</c>
         /// </summary>
         public readonly struct ScoreWithMetadata
@@ -163,7 +163,7 @@ namespace Elympics.Core
             [PublicAPI]
             public MetadataWrapper Metadata => _isInitialized
                 ? _metadata
-                :throw new InvalidOperationException(IncorrectlyInitializedMessage);
+                : throw new InvalidOperationException(IncorrectlyInitializedMessage);
 
             internal ScoreWithMetadata(ElympicsScore parent, int playerIndex)
             {

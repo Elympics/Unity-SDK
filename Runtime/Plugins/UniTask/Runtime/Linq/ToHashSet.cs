@@ -1,8 +1,8 @@
-﻿using Cysharp.Threading.Tasks.Internal;
+﻿using Elympics.Cysharp.Threading.Tasks.Internal;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {
@@ -10,7 +10,7 @@ namespace Cysharp.Threading.Tasks.Linq
         {
             Error.ThrowArgumentNullException(source, nameof(source));
 
-            return Cysharp.Threading.Tasks.Linq.ToHashSet.ToHashSetAsync(source, EqualityComparer<TSource>.Default, cancellationToken);
+            return global::Elympics.Cysharp.Threading.Tasks.Linq.ToHashSet.ToHashSetAsync(source, EqualityComparer<TSource>.Default, cancellationToken);
         }
 
         public static UniTask<HashSet<TSource>> ToHashSetAsync<TSource>(this IUniTaskAsyncEnumerable<TSource> source, IEqualityComparer<TSource> comparer, CancellationToken cancellationToken = default)
@@ -18,7 +18,7 @@ namespace Cysharp.Threading.Tasks.Linq
             Error.ThrowArgumentNullException(source, nameof(source));
             Error.ThrowArgumentNullException(comparer, nameof(comparer));
 
-            return Cysharp.Threading.Tasks.Linq.ToHashSet.ToHashSetAsync(source, comparer, cancellationToken);
+            return global::Elympics.Cysharp.Threading.Tasks.Linq.ToHashSet.ToHashSetAsync(source, comparer, cancellationToken);
         }
     }
 

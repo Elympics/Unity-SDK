@@ -62,7 +62,6 @@ namespace Elympics
             HandlingClientsInServer = handlingClientsOverride;
             _gameEngineAdapter = gameEngineAdapter;
             SetupCallbacks();
-            LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         private void SetupCallbacks()
@@ -151,29 +150,6 @@ namespace Elympics
         {
             _currentPlayer = player;
             _currentIsBot = false;
-        }
-
-        /// <summary>Set by the half-remote server initializer, which needs the simulation to run in out-of-focus windows.</summary>
-        internal bool IsHalfRemoteServer { get; set; }
-
-        private void LogHalfRemoteRunInBackgroundErrorIfApplicable()
-        {
-            if (!Application.runInBackground && IsHalfRemoteServer)
-                _logger.LogError("This is a half-remote server, but PlayerSettings \"Run In Background\" option is false, "
-                    + "hence network simulation will not be performed in out-of-focus windows. "
-                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
-        }
-
-        private void OnApplicationPause(bool pauseStatus)
-        {
-            if (pauseStatus)
-                LogHalfRemoteRunInBackgroundErrorIfApplicable();
-        }
-
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (!hasFocus)
-                LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         #region IElympics

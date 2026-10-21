@@ -3,7 +3,7 @@
 using System.Threading;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Triggers
+namespace Elympics.Cysharp.Threading.Tasks.Triggers
 {
     public static partial class AsyncTriggerExtensions
     {
@@ -32,13 +32,11 @@ namespace Cysharp.Threading.Tasks.Triggers
                 if (cancellationTokenSource == null)
                 {
                     cancellationTokenSource = new CancellationTokenSource();
+                    if (!awakeCalled)
+                    {
+                        PlayerLoopHelper.AddAction(PlayerLoopTiming.Update, new AwakeMonitor(this));
+                    }
                 }
-
-                if (!awakeCalled)
-                {
-                    PlayerLoopHelper.AddAction(PlayerLoopTiming.Update, new AwakeMonitor(this));
-                }
-
                 return cancellationTokenSource.Token;
             }
         }
@@ -83,7 +81,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 
             public bool MoveNext()
             {
-                if (trigger.called) return false;
+                if (trigger.called || trigger.awakeCalled) return false;
                 if (trigger == null)
                 {
                     trigger.OnDestroy();

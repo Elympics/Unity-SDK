@@ -1,5 +1,4 @@
 using System.Reflection;
-using Plugins.Elympics.Plugins.ParrelSync;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,7 +18,7 @@ namespace Elympics
         private ElympicsVarEqualityComparer _comparer;
 
         private const uint NumOfDisplayedProperties = 2U;
-        private const string EnabledTooltipForClone = "Synchronized contents selection should be performed only in the main window!";
+        private const string EnabledTooltipForVirtualPlayer = "Synchronized contents selection should be performed only in the main window!";
         private const string MultiObjectTooltip = "Multi-object editing is not supported.";
 
         private bool Initialize(SerializedProperty property)
@@ -68,11 +67,11 @@ namespace Elympics
             var generalLabel = new GUIContent((string)null, property.serializedObject.isEditingMultipleObjects ? MultiObjectTooltip : null);
 
             var enabledLabel = new GUIContent(generalLabel) { text = $"Synchronize {_varName}" };
-            if (enabledLabel.tooltip == null && ElympicsClonesManager.IsClone())
-                enabledLabel.tooltip = EnabledTooltipForClone;
+            if (enabledLabel.tooltip == null && PlayModeInstance.IsVirtualPlayer)
+                enabledLabel.tooltip = EnabledTooltipForVirtualPlayer;
             var currentRect = GetSingleLinePropertyRect(position.position, position.width, currentFieldIndex++);
             _ = EditorGUI.BeginProperty(currentRect, enabledLabel, _enabledProperty);
-            EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying || ElympicsClonesManager.IsClone());
+            EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying || PlayModeInstance.IsVirtualPlayer);
             var currentEnabledValue = EditorApplication.isPlaying ? _elympicsVar.EnabledSynchronization : _enabledProperty.boolValue;
             EditorGUI.BeginChangeCheck();
             var newEnabledValue = EditorGUI.ToggleLeft(currentRect, enabledLabel, currentEnabledValue);

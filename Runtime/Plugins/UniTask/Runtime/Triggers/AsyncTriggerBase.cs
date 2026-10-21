@@ -4,7 +4,7 @@ using System;
 using System.Threading;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Triggers
+namespace Elympics.Cysharp.Threading.Tasks.Triggers
 {
     public abstract class AsyncTriggerBase<T> : MonoBehaviour, IUniTaskAsyncEnumerable<T>
     {

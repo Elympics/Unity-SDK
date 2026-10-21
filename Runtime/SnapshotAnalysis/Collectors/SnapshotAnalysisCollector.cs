@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Cysharp.Threading.Tasks;
 using Elympics.Behaviour;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.SnapshotAnalysis.Serialization;
 using Plugins.Elympics.Runtime.SnapshotAnalysis.Utils;
 

@@ -117,7 +117,7 @@ namespace Elympics
                     + $"or {nameof(IInitializable.Initialize)}");
         }
 
-        private ElympicsFactory GetFactory() => _factory ??= FindObjectOfType<ElympicsFactory>();
+        private ElympicsFactory GetFactory() => _factory ??= FindAnyObjectByType<ElympicsFactory>();
 
         /// Retrieves data of this object's method of the given name.
         /// <param name="typeName">The full name of the declaring type of the method.</param>

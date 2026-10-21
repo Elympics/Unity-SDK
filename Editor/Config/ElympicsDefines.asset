@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53a71d9459a346fbb7a3667f57b4cf19, type: 3}
+  m_Name: ElympicsDefines
+  m_EditorClassIdentifier: 
+  list:
+  - name: ELYMPICS_DEBUG
+    description: "Compiles in Elympics debug-level logs and debug tools, such as writing the client's tick calculation details to a file. Leave it off in release builds."
+    buildTargets: []
+  - name: ELYMPICS_TRACE
+    description: "Compiles in Elympics trace-level logs. They are very verbose (e.g. every batch of RPCs sent), so use them only to diagnose netcode issues."
+    buildTargets: []
+  - name: ELYMPICS_PRODUCTION
+    description: "Strips development-time checks and diagnostics, such as the 'State not equal' reconciliation warnings and the value details of synchronized variables. Use it for release builds."
+    buildTargets: []
+  - name: ELYMPICS_WEBGL_HALF_REMOTE
+    description: "Keeps the half-remote client in WebGL players, so a browser build can join a half-remote server for testing. Without it, WebGL players leave out the half-remote client and its Protobuf stack (about 0.65 MB compressed) and reject half-remote launches with UnsupportedMode. Leave it off in release builds."
+    buildTargets:
+    - WebGL
+  - name: ELYMPICS_LAZY_WEBRTC_CONTEXT
+    description: "Editor only. Keeps com.unity.webrtc's native context and threads stopped until Elympics creates a WebRTC connection. Use it in Editor-only projects, such as CI, where those threads can crash the Editor (a SIGSEGV in libwebrtc or a heap error on quit)."
+    buildTargets: []
+  - name: ELYMPICS_DISABLE_USAGE_STATISTICS
+    description: "Editor only. Stops the SDK from sending usage statistics (Editor start and quit events), so no data is sent and no login token refresh is triggered by it. Leave it off to keep the default behavior."
+    buildTargets: []
+  - name: ELYMPICS_DISABLE_BUILD_SCENE_VALIDATION
+    description: "Editor only. Builds no longer fail when a boot or gameplay scene is missing or disabled in Build Settings; such builds fail at launch instead."
+    buildTargets: []
+  - name: ELYMPICS_DISABLE_RUN_IN_BACKGROUND
+    description: "Stops the half-remote server from enabling Run In Background (which changes the project's Player Settings in the Editor). The server may be throttled while out of focus unless Run In Background is enabled; a warning is logged in that case."
+    buildTargets: []
+  - name: ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK
+    description: "Editor only. Stops the automatic check that reports scenes using 2D physics without an Elympics 2D physics simulator, in builds and in Play Mode. The \"Add 2D Physics Simulator\" menu item keeps working; without the simulator, 2D physics runs on Unity's timer instead of Elympics ticks."
+    buildTargets: []

@@ -5,7 +5,7 @@ using System;
 using UnityEngine;
 #endif
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal static class RuntimeHelpersAbstraction
     {

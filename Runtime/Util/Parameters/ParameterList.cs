@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using Elympics.Core.Logger;
 
 namespace Elympics
@@ -21,7 +20,8 @@ namespace Elympics
         public readonly ValueParameter<int> HalfRemotePlayerIndex =
             new("ELYMPICS_HALF_REMOTE_PLAYER_INDEX", "playerIndex", "half-remote-player-index");
         public readonly Parameter<IPAddress> HalfRemoteIp = new("ELYMPICS_HALF_REMOTE_IP", "ip", "half-remote-ip",
-            parse: IPAddress.Parse, validationRegex: new Regex(@"\d+\.\d+\.\d+\.\d+", RegexOptions.Compiled));
+            parse: IPAddress.Parse, validate: IsDottedQuad)
+        { ExpectedFormat = "an IPv4 address" };
         public readonly ValueParameter<ushort> HalfRemotePort = new("ELYMPICS_HALF_REMOTE_PORT", "port", "half-remote-port");
 
         public readonly Parameter<Uri> ApiEndpoint = new("ELYMPICS_API", "elympicsApi", "elympics-api",
@@ -46,7 +46,8 @@ namespace Elympics
             parse: ParseBoolFlag);
 
         public readonly Parameter<string> HostBridge = new("ELYMPICS_HOST_BRIDGE", "elympicsHostBridge", "elympics-host-bridge",
-            validationRegex: new Regex("^(auto|webgl|native|none)$", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+            validate: HostBridgeValues.Contains)
+        { ExpectedFormat = $"one of: {string.Join(", ", HostBridgeValues)}" };
 
         /// <summary>
         /// Starts this match in the gameplay scene, without a launcher session: halfRemoteClient, halfRemoteServer, singlePlayer or snapshotReplay.
@@ -57,8 +58,45 @@ namespace Elympics
         /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
         public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
-        private static readonly Regex ShortArgRegex = new("^-([^-])$", RegexOptions.Compiled);
-        private static readonly Regex LongArgRegex = new("^--([^-][^=]*)(=([^=]*))?$", RegexOptions.Compiled);
+        private static readonly HashSet<string> HostBridgeValues = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ElympicsHostBridgeFactory.Auto,
+            ElympicsHostBridgeFactory.WebGl,
+            ElympicsHostBridgeFactory.Native,
+            ElympicsHostBridgeFactory.None,
+        };
+
+        // Not a Regex: it would link System.Text.RegularExpressions into WebGL players.
+        private static bool IsDottedQuad(string value)
+        {
+            var parts = value.Split('.');
+            return parts.Length == 4 && parts.All(part => part.Length > 0 && part.All(char.IsDigit));
+        }
+
+        private static bool TryParseShortArgument(string arg, out char key)
+        {
+            key = arg.Length == 2 ? arg[1] : default;
+            return arg.Length == 2 && arg[0] == '-' && arg[1] != '-';
+        }
+
+        /// <summary>Matches <c>--key</c> and <c>--key=value</c>; the key doesn't start with a dash, and neither part contains another <c>=</c>.</summary>
+        private static bool TryParseLongArgument(string arg, out string key, out string value)
+        {
+            key = value = null;
+            if (arg.Length < 3 || !arg.StartsWith("--", StringComparison.Ordinal) || arg[2] == '-')
+                return false;
+            var equalsIndex = arg.IndexOf('=', 3);
+            if (equalsIndex < 0)
+            {
+                key = arg[2..];
+                return true;
+            }
+            if (arg.IndexOf('=', equalsIndex + 1) >= 0)
+                return false;
+            key = arg[2..equalsIndex];
+            value = arg[(equalsIndex + 1)..];
+            return true;
+        }
 
         private static bool ParseBoolFlag(string rawValue)
         {
@@ -69,10 +107,10 @@ namespace Elympics
 
         private static Uri ParseUri(string rawValue) => new UriBuilder(rawValue).Uri;
 
-        /// <param name="cloneArgs">Named arguments of a ParrelSync clone (see <see cref="CloneArguments"/>). They beat environment variables
+        /// <param name="playModeArgs">Named arguments of a Multiplayer Play Mode virtual player (see <see cref="PlayModeArguments"/>). They beat environment variables
         /// and URL queries and lose to <paramref name="args"/>. They do not count for positional arguments.</param>
         public bool Initialize(IDictionary envVariables, IList<string> args, NameValueCollection urlQuery, NameValueCollection elympicsUrlQuery,
-            IList<string> cloneArgs = null)
+            IList<string> playModeArgs = null)
         {
             var (parameters, names) = FindParameters();
 
@@ -84,8 +122,8 @@ namespace Elympics
             CollectFromEnvironmentVariables(parameters, envVariables);
             CollectFromUrlQuery(parameters, urlQuery);
             CollectFromUrlQuery(parameters, elympicsUrlQuery);
-            if (cloneArgs != null)
-                CollectFromNamedArguments(parameters, cloneArgs);
+            if (playModeArgs != null)
+                CollectFromNamedArguments(parameters, playModeArgs);
             CollectFromPositionalArguments(parameters, args);
             CollectFromNamedArguments(parameters, args);
 
@@ -155,25 +193,17 @@ namespace Elympics
             {
                 var value = i + 1 < args.Count ? args[i + 1] : "";
 
-                var shortArgMatch = ShortArgRegex.Match(args[i]);
-                if (shortArgMatch.Success)
+                if (TryParseShortArgument(args[i], out var shortArgKey))
                 {
-                    var shortArgKey = shortArgMatch.Groups[1].Value[0];
                     parameters.FirstOrDefault(p => p.ShortArgumentName == shortArgKey)?
                         .SetRawValue(value, i, ValueSource.ShortCommandLineArgument);
                     continue;
                 }
 
-                var longArgMatch = LongArgRegex.Match(args[i]);
-                if (!longArgMatch.Success)
+                if (!TryParseLongArgument(args[i], out var longArgKey, out var inlineValue))
                     continue;
-                {
-                    var longArgKey = longArgMatch.Groups[1].Value;
-                    if (longArgMatch.Groups[3].Success)
-                        value = longArgMatch.Groups[3].Value;
-                    parameters.FirstOrDefault(p => p.LongArgumentName == longArgKey)?
-                        .SetRawValue(value, i, ValueSource.LongCommandLineArgument);
-                }
+                parameters.FirstOrDefault(p => p.LongArgumentName == longArgKey)?
+                    .SetRawValue(inlineValue ?? value, i, ValueSource.LongCommandLineArgument);
             }
         }
 

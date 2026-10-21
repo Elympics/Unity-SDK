@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEditor;
 #else
 using UnityEngine;

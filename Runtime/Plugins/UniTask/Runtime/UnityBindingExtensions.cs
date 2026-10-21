@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 #endif
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class UnityBindingExtensions
     {

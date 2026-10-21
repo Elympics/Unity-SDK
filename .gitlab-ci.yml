@@ -1,11 +1,14 @@
 variables:
   NODE_VERSION: "18.13.0"
   DOTNET_VERSION: "8.0"
+  DOTNET_ROOT: /usr/share/dotnet
   MESSAGEPACK_VERSION: "2.5.124"
   PROTOC_VERSION: "34.1"
   UNITY_ACTIVATION_FILE: ./unity3d.alf
-  UNITY_VERSION: 2021.3.16f1
-  UNITY_ARCH: linux-il2cpp-1.0.1
+  YQ_VERSION: "v4.54.1"
+  YQ_SHA256: "8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f"
+  UNITY_VERSION: 6000.3.10f1
+  UNITY_ARCH: base-3
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
   PACKAGE_DIR: ${UNITY_DIR}/Packages/com.daftmobile.elympics
@@ -14,10 +17,10 @@ variables:
 stages:
   - prepare-version
   - prepare-license
-  - prepare-project
+  - compile
+  - build
   - test
-  - check
-  - trigger
+  - verify
   - pre-release
   - release
 
@@ -79,6 +82,11 @@ workflow:
 
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
+  # Unity can hang after a crash on quit.
+  retry:
+    max: 1
+    when:
+      - job_execution_timeout
 
 .dotnet_image:
   image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
@@ -95,6 +103,20 @@ workflow:
 .unity_default:
   before_script: &unity_default_before_script
     - ./.scripts/ci/before_script.sh
+
+.install_yq:
+  script: &install_yq
+    - wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+      && echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
+      && chmod +x /usr/local/bin/yq
+
+.install_dotnet:
+  script: &install_dotnet
+    # The Unity 6 image is Ubuntu 22.04; Microsoft's install script avoids mixing its apt repo with Ubuntu's .NET packages.
+    - wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel $DOTNET_VERSION --install-dir "$DOTNET_ROOT"
+    - ln -sf "$DOTNET_ROOT/dotnet" /usr/local/bin/dotnet
+    # .NET needs ICU; invariant globalization would change mpc's culture-sorted output.
+    - apt-get update && apt-get install -y --no-install-recommends libicu-dev
 
 get-package-version:
   extends:
@@ -146,7 +168,7 @@ get-activation-file:
 check-commits:
   extends:
     - .alpine_image
-  stage: check
+  stage: verify
   needs: []
   variables:
     GIT_DEPTH: 0
@@ -158,7 +180,7 @@ check-commits:
 verify-js:
   extends:
     - .node_image
-  stage: check
+  stage: verify
   needs: []
   variables:
     GIT_DEPTH: 1
@@ -170,20 +192,67 @@ create-testing-project:
   extends:
     - .unity_image
     - .cond.license
-  stage: prepare-project
+  stage: compile
+  timeout: 30m
   variables:
     GIT_DEPTH: 1
   before_script:
     - *unity_default_before_script
-    - wget -O /usr/local/bin/yq 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64' && chmod +x /usr/local/bin/yq
+    - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
-    - ./.scripts/ci/run_with_defines.sh ELYMPICS_DEBUG
     - ./.scripts/ci/generate_solution_files.sh
   artifacts:
     paths:
       - "./$TESTING_PROJECT_NAME"
     expire_in: 1 hour
+
+compile:elympics-debug:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: compile
+  needs:
+    - job: create-testing-project
+  # A separate job, so a Unity crash on quit here doesn't hold up the tests.
+  timeout: 30m
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
+    - *install_yq
+  script:
+    - ./.scripts/ci/run_with_defines.sh "ELYMPICS_DEBUG;ELYMPICS_LAZY_WEBRTC_CONTEXT"
+
+build:sample:
+  extends:
+    - .unity_image
+    - .cond.license
+  timeout: 45m
+  image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH
+  stage: build
+  needs: []
+  variables:
+    GIT_DEPTH: 1
+    CI_BUILD_SCENES: "Assets/Samples/ButtonClicker/ButtonClicker.unity"
+  parallel:
+    matrix:
+      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
+        BUILD_TARGET: StandaloneLinux64
+        BUILD_UNITY_ARCH: base-3
+      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
+        BUILD_TARGET: WebGL
+        BUILD_UNITY_ARCH: webgl-3
+  cache:
+    key: library-$BUILD_UNITY_VERSION-$BUILD_TARGET
+    paths:
+      - "$TESTING_PROJECT_NAME/Library/"
+  before_script:
+    - *unity_default_before_script
+    - *install_yq
+  script:
+    - ./.scripts/ci/create_testing_project.sh
+    - ./.scripts/ci/build_sample.sh
 
 .test:
   extends:
@@ -213,6 +282,18 @@ test:playmode:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
 
+test:playmode:no-domain-reload:
+  extends: .test
+  variables:
+    TEST_PLATFORM: playmode
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+    # Coverage comes from test:playmode; without instrumentation, garbage-collection tests (RaiseAfterGC) really run here.
+    CODE_COVERAGE: "false"
+  script:
+    - ./.scripts/ci/disable_domain_reload.sh
+    - ./.scripts/ci/test.sh
+
 test:editmode:
   extends: .test
   variables:
@@ -220,9 +301,48 @@ test:editmode:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
 
+test:disable-defines:
+  extends: .test
+  # The SDK's opt-out defines compile out code paths, so each variant of those tests has to run with them set.
+  variables:
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+    # Coverage comes from the default test jobs.
+    CODE_COVERAGE: "false"
+  parallel:
+    matrix:
+      - TEST_PLATFORM: [editmode, playmode]
+  script:
+    - *install_yq
+    - ./.scripts/ci/set_scripting_defines.sh "ELYMPICS_LAZY_WEBRTC_CONTEXT;ELYMPICS_DISABLE_USAGE_STATISTICS;ELYMPICS_DISABLE_BUILD_SCENE_VALIDATION;ELYMPICS_DISABLE_RUN_IN_BACKGROUND;ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK"
+    - ./.scripts/ci/test.sh
+
+test:editmode:unity-versions:
+  extends: .test
+  # Compiles and runs EditMode tests around the version cut-offs: 6.4 (hierarchy EntityId event) and 6.5 (Unity's own Unsafe).
+  image: unityci/editor:ubuntu-$TEST_UNITY_VERSION-base-3
+  needs: []
+  timeout: 45m
+  variables:
+    TEST_PLATFORM: editmode
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+  parallel:
+    matrix:
+      - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1", "6000.6.4f1"]
+  cache:
+    key: library-editmode-$TEST_UNITY_VERSION
+    paths:
+      - "$TESTING_PROJECT_NAME/Library/"
+  script:
+    - *install_yq
+    - ./.scripts/ci/create_testing_project.sh
+    - ./.scripts/ci/test.sh
+
 create-coverage-report:
   extends:
     - .dotnet_image
+  stage: test
   needs:
     - job: test:playmode
     - job: test:editmode
@@ -250,14 +370,14 @@ verify-formatting:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
     GIT_DEPTH: 1
   before_script:
-    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-    - apt-get update && apt-get install -y --no-install-recommends jq dotnet-sdk-$DOTNET_VERSION
+    - *install_dotnet
+    - apt-get install -y --no-install-recommends jq
   script:
     - ./.scripts/ci/generate_formatting_report.sh
   artifacts:
@@ -268,11 +388,31 @@ verify-formatting:
     reports:
       codequality: format-report.codequality.json
 
+audit:project-auditor:
+  extends:
+    - .unity_image
+    - .cond.license
+  stage: verify
+  needs:
+    - job: create-testing-project
+  variables:
+    GIT_DEPTH: 1
+  before_script:
+    - *unity_default_before_script
+    - apt-get update && apt-get install -y --no-install-recommends jq
+  script:
+    - ./.scripts/ci/project_auditor.sh
+  artifacts:
+    when: always
+    paths:
+      - project-auditor-findings.txt
+    expire_in: 2 weeks
+
 verify-messagepack-generated:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
@@ -280,8 +420,7 @@ verify-messagepack-generated:
     ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
     CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
   before_script:
-    - wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-    - apt-get update && apt-get install -y --no-install-recommends dotnet-sdk-$DOTNET_VERSION
+    - *install_dotnet
     - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
   script:
     - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'
@@ -296,7 +435,7 @@ verify-compiled-protos:
   extends:
     - .unity_image
     - .cond.license
-  stage: check
+  stage: verify
   needs:
     - job: create-testing-project
   variables:
@@ -381,6 +520,8 @@ check-if-release-possible:
       artifacts: false
     - job: verify-messagepack-generated
       artifacts: false
+    - job: compile:elympics-debug
+      artifacts: false
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends git
   script:
@@ -411,21 +552,3 @@ release:github:
     - job: get-changelog-for-release
   script:
     - gh release create "$CI_COMMIT_TAG" -t "$CI_COMMIT_TAG" -F ./release.description --repo "$GH_REPO" --verify-tag
-
-notify:slack-merged-to-develop:
-  stage: trigger
-  image: curlimages/curl:latest
-  needs: []
-  variables:
-    GIT_DEPTH: 1
-  script:
-    - |
-      PAYLOAD=$(cat <<EOF
-      {
-        "text": "*ELYMPICS SDK Merged to develop*\n\`\`\`\n$CI_COMMIT_MESSAGE\n\`\`\`"
-      }
-      EOF
-      )
-      curl -X POST -H 'Content-Type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_SDK_CHANNEL"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'

@@ -2,11 +2,11 @@
 
 using System.Threading;
 using UnityEngine;
-using Cysharp.Threading.Tasks.Triggers;
+using Elympics.Cysharp.Threading.Tasks.Triggers;
 using System;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
 
     public static partial class CancellationTokenSourceExtensions

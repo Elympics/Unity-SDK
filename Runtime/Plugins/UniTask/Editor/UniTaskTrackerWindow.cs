@@ -7,9 +7,9 @@ using System.Linq;
 using System.Reflection;
 using System;
 using UnityEditor.IMGUI.Controls;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 
-namespace Cysharp.Threading.Tasks.Editor
+namespace Elympics.Cysharp.Threading.Tasks.Editor
 {
     public class UniTaskTrackerWindow : EditorWindow
     {
@@ -17,7 +17,6 @@ namespace Cysharp.Threading.Tasks.Editor
 
         static UniTaskTrackerWindow window;
 
-        [MenuItem("Window/UniTask Tracker")]
         public static void OpenWindow()
         {
             if (window != null)

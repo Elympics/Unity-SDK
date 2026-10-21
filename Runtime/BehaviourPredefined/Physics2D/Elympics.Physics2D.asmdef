@@ -1,0 +1,17 @@
+{
+    "name": "Elympics.Physics2D",
+    "rootNamespace": "Elympics",
+    "references": [
+        "Elympics",
+        "Elympics.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

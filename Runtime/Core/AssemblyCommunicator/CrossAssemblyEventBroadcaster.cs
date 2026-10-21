@@ -30,7 +30,7 @@ namespace Elympics.AssemblyCommunicator
         internal static void ValidateObservers()
         {
             //Skip test assemblies
-            var types = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !assembly.GetName().Name.StartsWith("Elympics.Tests")).SelectMany(assembly => assembly.GetTypes());
+            var types = LoadedAssemblies.Get().Where(assembly => !assembly.GetName().Name.StartsWith("Elympics.Tests")).SelectMany(assembly => assembly.GetTypes());
 
             //For each type that is not an interface get a list of all interfaces it implements
             //and look for variants of IElympicsObserver<T> with type arguments that are illegal in the assembly that defines this type.

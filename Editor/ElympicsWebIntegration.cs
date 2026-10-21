@@ -382,7 +382,7 @@ namespace Elympics
                     return;
                 }
 
-                if (!BuildTools.BuildElympicsServerLinux(BuildOptions.None))
+                if (BuildTools.BuildServerLinux(BuildOptions.None).summary.result != BuildResult.Succeeded)
                     return;
 
                 var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
@@ -462,7 +462,7 @@ namespace Elympics
                 List<(string name, string extension)> validFiles;
                 try
                 {
-                    WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out validFiles);
+                    WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out validFiles);
                 }
                 catch (ElympicsException e)
                 {
@@ -595,6 +595,7 @@ namespace Elympics
             string version,
             StreamingAssetsLayout layout)
         {
+            ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
 
             WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out var relativePaths, out var generatedFiles);
@@ -726,9 +727,10 @@ namespace Elympics
             string clientGameVersion,
             string serverGameVersion)
         {
+            ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
 
-            WebGLUploader.PrepareValidFiles(clientBuildPath, clientGameVersion, out var validFiles);
+            WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out var validFiles);
 
             var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
             var initOp = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest);
@@ -777,7 +779,7 @@ namespace Elympics
         public static void BuildAndUploadServerInBatchmode(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             var result = BuildAndUploadServerInBatchmodeWithBuildReport(username, password, additionalOptions);
-            if (result.summary.result == BuildResult.Failed)
+            if (result.summary.result != BuildResult.Succeeded)
             {
                 foreach (var reportStep in result.steps)
                     foreach (var error in reportStep.messages.Where(m => m.type is LogType.Error or LogType.Exception))
@@ -791,8 +793,8 @@ namespace Elympics
         public static BuildReport BuildAndUploadServerInBatchmodeWithBuildReport(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             LoginAsDeveloper(username, password);
-            var buildReport = BuildTools.BuildElympicsServerLinux(additionalOptions);
-            if (buildReport.summary.result == BuildResult.Failed)
+            var buildReport = BuildTools.BuildServerLinux(additionalOptions);
+            if (buildReport.summary.result != BuildResult.Succeeded)
                 return buildReport;
 
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
@@ -811,13 +813,19 @@ namespace Elympics
         }
 
 
+        private static void ValidateGameId(string gameId)
+        {
+            if (!Guid.TryParse(gameId, out _))
+                throw new ArgumentException($"Game ID '{gameId}' is not a valid GUID. Pass the ID of an Elympics game.", nameof(gameId));
+        }
+
         private static void LoginAsDeveloper(string username, string password)
         {
             _ = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("No Elympics game config found. Configure your game before trying to build a server.");
             if (string.IsNullOrEmpty(username))
-                throw new ArgumentNullException(nameof(username));
+                throw new ArgumentException("An Elympics developer account username is required for batch-mode uploads.", nameof(username));
             if (string.IsNullOrEmpty(password))
-                throw new ArgumentNullException(nameof(password));
+                throw new ArgumentException("An Elympics developer account password is required for batch-mode uploads.", nameof(password));
 
             var loginOp = Login(username, password);
 
@@ -842,7 +850,7 @@ namespace Elympics
                 if (File.Exists(destinationFilePath))
                     File.Delete(destinationFilePath);
                 _ = Directory.CreateDirectory(buildPath);
-                ZipFile.CreateFromDirectory(buildPath, destinationFilePath, CompressionLevel.Optimal, false);
+                CreateZipFromDirectory(buildPath, destinationFilePath);
             }
             catch (Exception e)
             {
@@ -852,6 +860,37 @@ namespace Elympics
 
             return true;
         }
+
+        /// <summary>Like <c>ZipFile.CreateFromDirectory(source, destination, CompressionLevel.Optimal, false)</c>, which needs
+        /// the System.IO.Compression.FileSystem facade (missing on CoreCLR and from generated csprojs).</summary>
+        internal static void CreateZipFromDirectory(string sourceDirectory, string destinationFile)
+        {
+            var root = Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            using var archive = new ZipArchive(File.Create(destinationFile), ZipArchiveMode.Create);
+            foreach (var info in new DirectoryInfo(root).EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
+            {
+                var name = info.FullName[(root.Length + 1)..].Replace('\\', '/');
+                if (info is DirectoryInfo directory)
+                {
+                    if (!directory.EnumerateFileSystemInfos().Any())
+                        _ = archive.CreateEntry(name + "/");
+                    continue;
+                }
+
+                var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
+                entry.LastWriteTime = ClampToZipTimestamp(info.LastWriteTime);
+                using var input = ((FileInfo)info).OpenRead();
+                using var output = entry.Open();
+                input.CopyTo(output);
+            }
+        }
+
+        private static readonly DateTime MinZipTimestamp = new(1980, 1, 1);
+        private static readonly DateTime MaxZipTimestamp = new(2107, 12, 31, 23, 59, 58);
+
+        // Zip entries store DOS dates (1980-2107), and ZipArchiveEntry.LastWriteTime throws outside of that range.
+        private static DateTime ClampToZipTimestamp(DateTime time) =>
+            time < MinZipTimestamp ? MinZipTimestamp : time > MaxZipTimestamp ? MaxZipTimestamp : time;
 
         private static void CheckAuthTokenAndRefreshIfNeeded(Action<bool> continuation)
         {

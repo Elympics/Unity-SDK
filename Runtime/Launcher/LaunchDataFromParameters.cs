@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Elympics
 {
@@ -11,26 +13,29 @@ namespace Elympics
         public const string SinglePlayer = "singlePlayer";
         public const string SnapshotReplay = "snapshotReplay";
 
+        public static readonly IReadOnlyList<string> All = new[] { HalfRemoteClient, HalfRemoteServer, SinglePlayer, SnapshotReplay };
+
+        /// <returns>The launch mode matching <paramref name="mode"/> case-insensitively, or null.</returns>
+        public static string? Normalize(string? mode) => All.FirstOrDefault(known => string.Equals(known, mode, StringComparison.OrdinalIgnoreCase));
+
         public static bool IsSet => !string.IsNullOrEmpty(ApplicationParameters.Parameters.LaunchMode.GetValue());
 
         public static bool TryCreate(string? mode, string? replayPath, ElympicsGameConfig gameConfig, out LaunchData? data, out string error)
         {
             error = string.Empty;
             // The half-remote endpoints and player index reach the settings through the ElympicsGameConfig getters, which read their parameters.
-            data = mode switch
+            data = Normalize(mode) switch
             {
-                _ when Is(mode, HalfRemoteClient) => new HalfRemoteClientLaunchData(),
-                _ when Is(mode, HalfRemoteServer) => new HalfRemoteServerLaunchData(),
-                _ when Is(mode, SinglePlayer) => new SinglePlayerLaunchData(),
-                _ when Is(mode, SnapshotReplay) => new SnapshotReplayLaunchData(string.IsNullOrEmpty(replayPath) ? gameConfig.SnapshotFilePath : replayPath!),
+                HalfRemoteClient => new HalfRemoteClientLaunchData(),
+                HalfRemoteServer => new HalfRemoteServerLaunchData(),
+                SinglePlayer => new SinglePlayerLaunchData(),
+                SnapshotReplay => new SnapshotReplayLaunchData(string.IsNullOrEmpty(replayPath) ? gameConfig.SnapshotFilePath : replayPath!),
                 _ => null,
             };
             if (data != null)
                 return true;
-            error = $"Unknown launch mode \"{mode}\". Use {HalfRemoteClient}, {HalfRemoteServer}, {SinglePlayer} or {SnapshotReplay}.";
+            error = $"Unknown launch mode \"{mode}\". Use {string.Join(", ", All)}.";
             return false;
         }
-
-        private static bool Is(string? value, string mode) => string.Equals(value, mode, StringComparison.OrdinalIgnoreCase);
     }
 }

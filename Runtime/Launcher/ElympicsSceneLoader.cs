@@ -1,7 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

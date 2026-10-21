@@ -1,8 +1,12 @@
 #nullable enable
 
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace Elympics
 {
@@ -43,11 +47,45 @@ namespace Elympics
         private static void Start()
         {
             var launcher = ElympicsMatchLauncher.Current;
-            if (launcher == null || IsPassive || bridge != null)
+            if (launcher == null || bridge != null)
                 return;
+            if (IsPassive)
+            {
+                LoadGameplaySceneForLaunchMode();
+                return;
+            }
             StartBridge(launcher);
             launcher.EmitReady();
         }
+
+        /// <summary>The launch mode parameter starts a match only in the gameplay scene, but the process may start elsewhere:
+        /// a build's first scene can be a boot or lobby scene, and Multiplayer Play Mode gives virtual players the scenes open in the main Editor.</summary>
+        private static void LoadGameplaySceneForLaunchMode()
+        {
+            if (ApplicationParameters.ShouldLoadElympicsOnlineServer || !LaunchDataFromParameters.IsSet)
+                return;
+            var gameplayScene = ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplayScene;
+            if (!ShouldLoadGameplayScene(gameplayScene, SceneManager.GetActiveScene().path))
+                return;
+            ElympicsLogger.LogInfo($"Loading the gameplay scene {gameplayScene} for the launch mode parameter.");
+#if UNITY_EDITOR
+            // Unlike SceneManager, this loads scenes missing from Build Settings.
+            _ = EditorSceneManager.LoadSceneAsyncInPlayMode(gameplayScene, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            var loader = new ElympicsSceneLoader();
+            if (!loader.IsInBuild(gameplayScene!))
+            {
+                ElympicsLogger.LogError($"The gameplay scene {gameplayScene} isn't in this build, so the launch mode parameter can't start a match. Add it to the build's scene list.");
+                // The process is passive (no host bridge), so it would otherwise idle forever.
+                Application.Quit(1);
+                return;
+            }
+            loader.LoadSingleAsync(gameplayScene!).Forget();
+#endif
+        }
+
+        internal static bool ShouldLoadGameplayScene(string? gameplayScene, string activeScene) =>
+            !string.IsNullOrEmpty(gameplayScene) && gameplayScene != activeScene;
 
         private static void StartBridge(ElympicsMatchLauncher launcher)
         {

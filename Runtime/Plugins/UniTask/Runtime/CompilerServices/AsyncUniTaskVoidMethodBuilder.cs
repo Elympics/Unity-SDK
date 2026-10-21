@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace Cysharp.Threading.Tasks.CompilerServices
+namespace Elympics.Cysharp.Threading.Tasks.CompilerServices
 {
     [StructLayout(LayoutKind.Auto)]
     public struct AsyncUniTaskVoidMethodBuilder

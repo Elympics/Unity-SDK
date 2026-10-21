@@ -13,6 +13,16 @@ namespace Proto.ProtoClient
         private readonly bool _allowReliable;
         private readonly bool _allowUnreliable;
 
+        /// <summary>The player who joined over this client and hasn't left yet, or null.</summary>
+        public string PlayerUserId
+        {
+            get => _playerUserId;
+            private set => _playerUserId = value;
+        }
+
+        // Written on the receive thread, read from other threads.
+        private volatile string _playerUserId;
+
         public GameEngineProtoClient(IProtoNetworkClient networkClient, IGameEngineProtoReceiver receiver, IServerNtpReceiver serverNtpReceiver = null, bool allowReliable = true, bool allowUnreliable = true) : base(networkClient)
         {
             _receiver = receiver;
@@ -30,9 +40,16 @@ namespace Proto.ProtoClient
                 else if (message.Is(TickMsg.Descriptor))
                     _receiver.Tick(message.Unpack<TickMsg>());
                 else if (message.Is(PlayerConnectedMsg.Descriptor))
-                    _receiver.PlayerConnected(message.Unpack<PlayerConnectedMsg>());
+                {
+                    var playerConnected = message.Unpack<PlayerConnectedMsg>();
+                    PlayerUserId = playerConnected.UserId;
+                    _receiver.PlayerConnected(playerConnected);
+                }
                 else if (message.Is(PlayerDisconnectedMsg.Descriptor))
+                {
+                    PlayerUserId = null;
                     _receiver.PlayerDisconnected(message.Unpack<PlayerDisconnectedMsg>());
+                }
                 else if (message.Is(InitialMatchDataMsg.Descriptor))
                     _receiver.Init(message.Unpack<InitialMatchDataMsg>());
             }

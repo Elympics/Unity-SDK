@@ -1,9 +1,9 @@
 {
-    "name": "UniTask.Addressables",
-    "rootNamespace": "",
+    "name": "Elympics.UniTask.Addressables",
     "references": [
-        "UniTask",
-        "Unity.ResourceManager"
+        "Elympics.UniTask",
+        "Unity.ResourceManager",
+        "Unity.Addressables"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

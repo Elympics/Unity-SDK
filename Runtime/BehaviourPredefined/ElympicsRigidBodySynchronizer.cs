@@ -76,15 +76,15 @@ namespace Elympics
             if (_rotation.EnabledSynchronization)
                 Rigidbody.rotation = _rotation.Value;
             if (_velocity.EnabledSynchronization)
-                Rigidbody.velocity = _velocity.Value;
+                Rigidbody.linearVelocity = _velocity.Value;
             if (_angularVelocity.EnabledSynchronization)
                 Rigidbody.angularVelocity = _angularVelocity.Value;
             if (_mass.EnabledSynchronization)
                 Rigidbody.mass = _mass.Value;
             if (_drag.EnabledSynchronization)
-                Rigidbody.drag = _drag.Value;
+                Rigidbody.linearDamping = _drag.Value;
             if (_angularDrag.EnabledSynchronization)
-                Rigidbody.angularDrag = _angularDrag.Value;
+                Rigidbody.angularDamping = _angularDrag.Value;
             if (_useGravity.EnabledSynchronization)
                 Rigidbody.useGravity = _useGravity.Value;
             if (_isKinematic.EnabledSynchronization)
@@ -98,15 +98,15 @@ namespace Elympics
             if (_rotation.EnabledSynchronization)
                 _rotation.Value = Rigidbody.rotation;
             if (_velocity.EnabledSynchronization)
-                _velocity.Value = Rigidbody.velocity;
+                _velocity.Value = Rigidbody.linearVelocity;
             if (_angularVelocity.EnabledSynchronization)
                 _angularVelocity.Value = Rigidbody.angularVelocity;
             if (_mass.EnabledSynchronization)
                 _mass.Value = Rigidbody.mass;
             if (_drag.EnabledSynchronization)
-                _drag.Value = Rigidbody.drag;
+                _drag.Value = Rigidbody.linearDamping;
             if (_angularDrag.EnabledSynchronization)
-                _angularDrag.Value = Rigidbody.angularDrag;
+                _angularDrag.Value = Rigidbody.angularDamping;
             if (_useGravity.EnabledSynchronization)
                 _useGravity.Value = Rigidbody.useGravity;
             if (_isKinematic.EnabledSynchronization)

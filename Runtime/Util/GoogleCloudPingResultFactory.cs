@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using UnityEngine.Networking;
 
 namespace Elympics

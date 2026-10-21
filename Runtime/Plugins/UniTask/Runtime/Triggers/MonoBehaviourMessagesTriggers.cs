@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 #endif
 
-namespace Cysharp.Threading.Tasks.Triggers
+namespace Elympics.Cysharp.Threading.Tasks.Triggers
 {
 #region FixedUpdate
 

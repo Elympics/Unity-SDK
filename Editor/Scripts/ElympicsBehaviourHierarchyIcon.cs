@@ -18,12 +18,20 @@ namespace Elympics
             IconForManager = Resources.Load<Texture2D>("Gizmos/elympics_icon_purple");
             IconForInput = Resources.Load<Texture2D>("Gizmos/elympics_icon_cyan");
 
+#if UNITY_6000_4_OR_NEWER
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI += DrawIconOnWindowItem;
+#else
             EditorApplication.hierarchyWindowItemOnGUI += DrawIconOnWindowItem;
+#endif
         }
 
-        private static void DrawIconOnWindowItem(int instanceID, Rect rect)
+#if UNITY_6000_4_OR_NEWER
+        private static void DrawIconOnWindowItem(EntityId entityId, Rect rect)
+#else
+        private static void DrawIconOnWindowItem(int entityId, Rect rect)
+#endif
         {
-            var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+            var gameObject = EditorUtility.EntityIdToObject(entityId) as GameObject;
 
             if (gameObject == null)
                 return;

@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {
         public static IUniTaskAsyncEnumerable<T> Empty<T>()
         {
-            return Cysharp.Threading.Tasks.Linq.Empty<T>.Instance;
+            return global::Elympics.Cysharp.Threading.Tasks.Linq.Empty<T>.Instance;
         }
     }
 

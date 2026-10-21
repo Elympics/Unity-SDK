@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal readonly struct ValueStopwatch
     {

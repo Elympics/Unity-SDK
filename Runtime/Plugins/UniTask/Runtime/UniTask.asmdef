@@ -1,5 +1,5 @@
 {
-    "name": "UniTask",
+    "name": "Elympics.UniTask",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
@@ -16,24 +16,9 @@
             "define": "UNITASK_ASSETBUNDLE_SUPPORT"
         },
         {
-            "name": "com.unity.modules.physics",
-            "expression": "",
-            "define": "UNITASK_PHYSICS_SUPPORT"
-        },
-        {
-            "name": "com.unity.modules.physics2d",
-            "expression": "",
-            "define": "UNITASK_PHYSICS2D_SUPPORT"
-        },
-        {
             "name": "com.unity.modules.particlesystem",
             "expression": "",
             "define": "UNITASK_PARTICLESYSTEM_SUPPORT"
-        },
-        {
-            "name": "com.unity.ugui",
-            "expression": "",
-            "define": "UNITASK_UGUI_SUPPORT"
         },
         {
             "name": "com.unity.modules.unitywebrequest",

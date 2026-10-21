@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models.Public;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Mappers;
 using MatchTcpClients;
 using MatchTcpClients.Synchronizer;

@@ -344,5 +344,60 @@ namespace Elympics.Tests
             Assert.True(parsedParameter.Parsed);
             Assert.False(emptyParameter.Parsed);
         }
+
+        [TestCase("---k")]
+        [TestCase("--k=a=b")]
+        [TestCase("-kk")]
+        [TestCase("--")]
+        public void MalformedCommandLineArgumentsShouldBeIgnored(string argument)
+        {
+            var longParameter = new FakeParameter(longArgName: "k");
+            var shortParameter = new FakeParameter(shortArgName: 'k');
+
+            ParameterList.CollectFromNamedArguments(new Parameter[] { longParameter, shortParameter }, new List<string> { argument, "value" });
+
+            Assert.Null(longParameter.GetRawValue());
+            Assert.Null(shortParameter.GetRawValue());
+        }
+
+        [Test]
+        public void LongCommandLineArgumentWithEmptyInlineValueShouldReadEmptyString()
+        {
+            var parameter = new FakeParameter(longArgName: "k");
+
+            ParameterList.CollectFromNamedArguments(new Parameter[] { parameter }, new List<string> { "--k=", "next" });
+
+            Assert.AreEqual("", parameter.GetRawValue());
+        }
+
+        [TestCase("127.0.0.1", true)]
+        [TestCase("localhost", false)]
+        [TestCase("1.2.3", false)]
+        [TestCase("1.2.3.4.5", false)]
+        [TestCase("1..3.4", false)]
+        public void HalfRemoteIpShouldBeValidatedAsDottedQuad(string value, bool isValid)
+        {
+            var parameter = new ParameterList().HalfRemoteIp;
+            parameter.SetRawValue(value);
+
+            if (isValid)
+                Assert.DoesNotThrow(parameter.ValidateAndParseRawValue);
+            else
+                _ = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
+        }
+
+        [TestCase("WebGL", true)]
+        [TestCase("none", true)]
+        [TestCase("browser", false)]
+        public void HostBridgeShouldAcceptOnlyKnownValuesIgnoringCase(string value, bool isValid)
+        {
+            var parameter = new ParameterList().HostBridge;
+            parameter.SetRawValue(value);
+
+            if (isValid)
+                Assert.DoesNotThrow(parameter.ValidateAndParseRawValue);
+            else
+                _ = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
+        }
     }
 }

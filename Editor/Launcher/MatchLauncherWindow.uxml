@@ -6,7 +6,7 @@
         <ui:VisualElement name="launch-controls">
             <ui:DropdownField name="game" label="Game" />
             <ui:TextField name="game-id" label="Game ID" />
-            <ui:Label name="unknown-game" class="hint single-line" />
+            <ui:HelpBox name="unknown-game" message-type="Warning" style="display: none;" />
             <ui:HelpBox name="build-settings-error" message-type="Error" style="display: none;" />
             <ui:HelpBox name="run-in-background-warning" message-type="Warning" text="PlayerSettings &quot;Run In Background&quot; is off: half-remote matches stop simulating in out-of-focus Editor windows." style="display: none;" />
             <ui:Label text="Launch data" class="section" />

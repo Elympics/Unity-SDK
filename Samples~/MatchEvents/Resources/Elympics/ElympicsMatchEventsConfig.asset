@@ -16,10 +16,9 @@ MonoBehaviour:
   gameId: 7f98ae1a-1df1-44ee-957a-465c7ff43fa7
   gameVersion: 9
   maxPlayers: 2
-  gameplayScene: Assets/Samples/MatchEvents/Scenes/MatchEventsGameplay.unity
+  gameplayScene: Assets/Samples/MatchEvents/MatchEventsGameplay.unity
   gameplaySceneAsset: {fileID: 102900000, guid: 2cda990e2423bbf4892e6590ba056729,
     type: 3}
-  botsInServer: 1
   useWeb: 0
   enableReconnect: 0
   connectionConfig:

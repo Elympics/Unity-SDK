@@ -1,0 +1,80 @@
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Behaviour/ElympicsBehavioursManager.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Behaviour/NetworkBehaviourFinder.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/BehaviourPredefined/ElympicsPhysicsSimulatorBase.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Communication/MissingTypesResolver.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Communication/ResolverRegistrator.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Config/ElympicsConfig.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/AssemblyCommunicator/BroadcastEventCollection.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/ElympicsLogger.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/PlaypadBreadcrumbOutlet.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/UnityConsoleOutlet.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/State/IStateVisitor.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/ElympicsSystems/ElympicsBase.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/ElympicsSystems/ElympicsBehaviourFirstSnapshotTracker.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/ErrorLogForwarder.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpClients/Synchronizer/TimeSynchronizationData.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/TransportLayer/Tcp/TcpDataChannel.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/TransportLayer/Udp/UdpDataChannel.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/UniTaskRetryExtensions.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/WebRtc/Common/WebRtcConfig.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/WebRtc/Other/WebRtcClient.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncher.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncherBootstrap.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Launcher/LaunchDataFromParameters.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Replication/ElympicsWorld.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Replication/ReplicationPipeline.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/SceneManagement/GameSceneInitializer/EditorSnapshotReplayInitializer.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/ElympicsCloudPing.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/ElympicsRegionToGCRegionMapper.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/MainThread.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/Parameters/ApplicationParameters.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/Parameters/ParameterList.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/Util/PlayModeInstance.cs | Issue with AutoStaticsCleanup
+UAL0010 | Packages/com.daftmobile.elympics/Runtime/WebRequest/ElympicsWebClient.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Behaviour/ElympicsBehavioursManager.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Behaviour/NetworkBehaviourFinder.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/BehaviourPredefined/ElympicsPhysicsSimulatorBase.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Communication/MissingTypesResolver.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Communication/ResolverRegistrator.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Config/ElympicsConfig.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/AssemblyCommunicator/CrossAssemblyEventBroadcaster.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/ElympicsLogger.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/PlaypadBreadcrumbOutlet.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/Outlet/UnityConsoleOutlet.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Core/Logger/State/IStateVisitor.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/ElympicsSystems/ElympicsBase.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/ElympicsSystems/ElympicsClient.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/ErrorLogForwarder.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpClients/Synchronizer/TimeSynchronizationData.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/TransportLayer/Tcp/TcpDataChannel.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/TransportLayer/Udp/UdpDataChannel.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/Match/MatchTcpLibrary/UniTaskRetryExtensions.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/WebRtc/Common/WebRtcConfig.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/WebRtc/Other/WebRtcClient.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncher.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncherBootstrap.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Launcher/LaunchDataFromParameters.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Replication/ElympicsWorld.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Replication/ReplicationPipeline.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/SceneManagement/GameSceneInitializer/EditorSnapshotReplayInitializer.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/ElympicsCloudPing.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/ElympicsRegionToGCRegionMapper.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/MainThread.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/Parameters/ApplicationParameters.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/Parameters/ParameterList.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/Util/PlayModeInstance.cs | Issue with AutoStaticsCleanup
+UAL0013 | Packages/com.daftmobile.elympics/Runtime/WebRequest/ElympicsWebClient.cs | Issue with AutoStaticsCleanup
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Behaviour/ElympicsBehavioursManager.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/BehaviourPredefined/ElympicsPhysicsSimulatorBase.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Config/ElympicsConfig.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/GameEngine/ErrorLogForwarder.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/GameEngine/Libraries/WebRtc/Other/WebRtcClient.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncher.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Replication/ElympicsWorld.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Replication/ReplicationPipeline.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/SceneManagement/GameSceneInitializer/EditorSnapshotReplayInitializer.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Util/ElympicsCloudPing.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/Util/PlayModeInstance.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0001 | Packages/com.daftmobile.elympics/Runtime/WebRequest/ElympicsWebClient.cs | No method with RuntimeInitializeOnLoadMethod attribute
+UDR0004 | Packages/com.daftmobile.elympics/Runtime/BehaviourPredefined/ServerLogs/ServerLogBehaviour.cs | Non-static method subscribed to static event in Initialize is not deregistered. Deregister it in OnDisable.
+UDR0005 | Packages/com.daftmobile.elympics/Runtime/Launcher/ElympicsMatchLauncherBootstrap.cs | More than one method with RuntimeInitializeOnLoadMethod attribute

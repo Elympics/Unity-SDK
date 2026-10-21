@@ -11,28 +11,6 @@
 
 /**
  * @typedef {{
- *   dynCall_vi: (
- *     func: FunctionPointer,
- *     arg1: number | null,
- *   ) => void,
- *   dynCall_vii: (
- *     func: FunctionPointer,
- *     arg1: number | null,
- *     arg2: number | null,
- *   ) => void,
- *   dynCall_viii: (
- *     func: FunctionPointer,
- *     arg1: number | null,
- *     arg2: number | null,
- *     arg3: number | null,
- *   ) => void,
- *   dynCall_viiii: (
- *     func: FunctionPointer,
- *     arg1: number | null,
- *     arg2: number | null,
- *     arg3: number | null,
- *     arg4: number | null,
- *   ) => void,
  *   preRun: (() => void)[],
  *   SendMessage: (gameObjectName: string, methodName: string, parameter?: string | number) => void,
  * }} EmscriptenModule
@@ -82,11 +60,13 @@ function stringToUTF8(str, outPtr, maxBytesToWrite) {}
 function lengthBytesUTF8(str) { String(str); return Number(); }
 
 /**
- * Converts a function pointer to a callable JS function.
- * @param {number} functionPtr Function pointer.
- * @returns {function} Callable JS function.
+ * Stand-in for the `{{{ makeDynCall(sig, funcPtr) }}}` Emscripten macro, which `check_js.sh` rewrites into a call of
+ * this function before type checking. In a real build Emscripten expands the macro at link time.
+ * @param {string} signature Wasm signature, e.g. `vii` (void return, two int arguments).
+ * @param {FunctionPointer} functionPtr Function pointer.
+ * @returns {(...args: number[]) => void} Callable JS function.
  */
-function getWasmTableEntry(functionPtr) { Number(functionPtr); return Function(); }
+function makeDynCall(signature, functionPtr) { String(signature); Number(functionPtr); return () => {}; }
 
 /**
  * Registers the dependency identified by `dependencyName` within the function library.

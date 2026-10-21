@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal static class DiagnosticsExtensions
     {
@@ -182,7 +182,7 @@ namespace Cysharp.Threading.Tasks.Internal
             {
                 return "(" + string.Join(", ", t.GetGenericArguments().Select(x => BeautifyType(x, true))) + ")";
             }
-            if (!t.IsGenericType) return shortName ? t.Name : t.FullName.Replace("Cysharp.Threading.Tasks.Triggers.", "").Replace("Cysharp.Threading.Tasks.Internal.", "").Replace("Cysharp.Threading.Tasks.", "") ?? t.Name;
+            if (!t.IsGenericType) return shortName ? t.Name : t.FullName.Replace("Elympics.Cysharp.Threading.Tasks.Triggers.", "").Replace("Elympics.Cysharp.Threading.Tasks.Internal.", "").Replace("Elympics.Cysharp.Threading.Tasks.", "") ?? t.Name;
 
             var innerFormat = string.Join(", ", t.GetGenericArguments().Select(x => BeautifyType(x, true)));
 
@@ -192,7 +192,7 @@ namespace Cysharp.Threading.Tasks.Internal
                 genericType = "Task";
             }
 
-            return typeBeautifyRegex.Replace(genericType, "").Replace("Cysharp.Threading.Tasks.Triggers.", "").Replace("Cysharp.Threading.Tasks.Internal.", "").Replace("Cysharp.Threading.Tasks.", "") + "<" + innerFormat + ">";
+            return typeBeautifyRegex.Replace(genericType, "").Replace("Elympics.Cysharp.Threading.Tasks.Triggers.", "").Replace("Elympics.Cysharp.Threading.Tasks.Internal.", "").Replace("Elympics.Cysharp.Threading.Tasks.", "") + "<" + innerFormat + ">";
         }
 
         static bool IgnoreLine(MethodBase methodInfo)
@@ -206,7 +206,7 @@ namespace Cysharp.Threading.Tasks.Internal
             {
                 return true;
             }
-            else if (declareType.StartsWith("Cysharp.Threading.Tasks.CompilerServices"))
+            else if (declareType.StartsWith("Elympics.Cysharp.Threading.Tasks.CompilerServices"))
             {
                 return true;
             }
@@ -218,11 +218,11 @@ namespace Cysharp.Threading.Tasks.Internal
             {
                 return true;
             }
-            else if (declareType.StartsWith("Cysharp.Threading.Tasks.UniTaskCompletionSourceCore"))
+            else if (declareType.StartsWith("Elympics.Cysharp.Threading.Tasks.UniTaskCompletionSourceCore"))
             {
                 return true;
             }
-            else if (declareType.StartsWith("Cysharp.Threading.Tasks.AwaiterActions"))
+            else if (declareType.StartsWith("Elympics.Cysharp.Threading.Tasks.AwaiterActions"))
             {
                 return true;
             }

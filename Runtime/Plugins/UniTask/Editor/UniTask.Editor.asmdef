@@ -1,8 +1,7 @@
 {
-    "name": "UniTask.Editor",
-    "rootNamespace": "",
+    "name": "Elympics.UniTask.Editor",
     "references": [
-        "UniTask"
+        "Elympics.UniTask"
     ],
     "includePlatforms": [
         "Editor"

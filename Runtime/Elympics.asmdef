@@ -2,10 +2,9 @@
     "name": "Elympics",
     "rootNamespace": "Elympics",
     "references": [
-        "ParrelSync",
-        "UniTask",
-        "MessagePack",
-        "MessagePack.Annotations",
+        "Elympics.UniTask",
+        "Elympics.MessagePack",
+        "Elympics.MessagePack.Annotations",
         "Elympics.Core",
         "Unity.Mathematics",
         "Elympics.WebRtc",
@@ -20,10 +19,15 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "websocket-sharp.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.playmode",
+            "expression": "",
+            "define": "ELYMPICS_MPPM"
+        }
+    ],
     "noEngineReferences": false
 }

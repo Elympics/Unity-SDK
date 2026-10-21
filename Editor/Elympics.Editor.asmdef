@@ -3,9 +3,11 @@
     "rootNamespace": "Elympics",
     "references": [
         "Elympics",
-        "MessagePack",
-        "UniTask",
-        "Elympics.Core"
+        "Elympics.MessagePack",
+        "Elympics.UniTask",
+        "Elympics.Core",
+        "Elympics.Physics2D",
+        "Elympics.Animation"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,8 +16,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Newtonsoft.Json.dll",
-        "NSubstitute.dll"
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

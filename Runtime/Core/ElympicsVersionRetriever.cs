@@ -9,7 +9,7 @@ namespace Elympics
 
         public static Version GetVersionFromAssembly()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = LoadedAssemblies.Get();
             return assemblies.Select(x => x.GetName())
                 .FirstOrDefault(x => x.Name.ToLowerInvariant() == ElympicsName)?
                 .Version;

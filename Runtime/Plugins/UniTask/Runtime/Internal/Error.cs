@@ -3,7 +3,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal static class Error
     {
@@ -39,7 +39,7 @@ namespace Cysharp.Threading.Tasks.Internal
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void ThrowArgumentException<T>(string message)
+        public static void ThrowArgumentException(string message)
         {
             throw new ArgumentException(message);
         }

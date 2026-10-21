@@ -6,11 +6,13 @@
         "UnityEditor.TestRunner",
         "Elympics",
         "Elympics.Editor",
-        "UniTask",
-        "MessagePack",
+        "Elympics.UniTask",
+        "Elympics.MessagePack",
         "Elympics.Tests",
         "Elympics.Editor.Weaving",
-        "Elympics.Core"
+        "Elympics.Core",
+        "Elympics.WebRtc.Other",
+        "Elympics.Physics2D"
     ],
     "includePlatforms": [
         "Editor"

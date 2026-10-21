@@ -2,8 +2,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc.Other;
 using Unity.WebRTC;
 using UnityEngine;
@@ -23,6 +23,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
         private readonly RTCPeerConnection _peerConnection;
         private RTCDataChannel? _reliableDc;
         private RTCDataChannel? _unreliableDc;
+        private bool _reliableEnded;
+        private bool _unreliableEnded;
 
         public event Action<byte[]>? ReliableReceived;
         public event Action<string>? ReliableReceivingError;
@@ -37,26 +39,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public WebRtcServerClient()
         {
-            _peerConnection = new RTCPeerConnection();
+            _peerConnection = WebRtcNative.CreatePeerConnection();
 
+            // The client creates both channels in its offer; the server only binds them here.
             _peerConnection.OnDataChannel += OnDataChannel;
-            _reliableDc = _peerConnection.CreateDataChannel(ReliableChannelLabel);
-            _reliableDc.OnOpen += OnReliableOpen;
-            _reliableDc.OnMessage += OnReliableReceived;
-            _reliableDc.OnClose += OnReliableEnded;
-            _reliableDc.OnError += OnReliableError;
-
-            _unreliableDc = _peerConnection.CreateDataChannel(UnreliableChannelLabel,
-                new RTCDataChannelInit
-                {
-                    maxRetransmits = 0,
-                    ordered = false,
-                });
-            _unreliableDc.OnOpen += OnUnreliableOpen;
-            _unreliableDc.OnMessage += OnUnreliableReceived;
-            _unreliableDc.OnClose += OnUnreliableEnded;
-            _unreliableDc.OnError += OnUnreliableError;
-
             _peerConnection.OnIceConnectionChange += OnIceConnectionStateChanged;
             _peerConnection.OnConnectionStateChange += OnConnectionStateChanged;
         }
@@ -119,6 +105,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnReliableEnded()
         {
+            if (_reliableEnded)
+                return;
+            _reliableEnded = true;
             var logger = _logger.WithMethodName();
             OnChannel(ReliableChannelLabel, "closed");
             try
@@ -133,6 +122,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         private void OnUnreliableEnded()
         {
+            if (_unreliableEnded)
+                return;
+            _unreliableEnded = true;
             var logger = _logger.WithMethodName();
             OnChannel(UnreliableChannelLabel, "closed");
             try
@@ -154,16 +146,14 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void SendReliable(byte[] data)
         {
-            if (_reliableDc?.ReadyState is not RTCDataChannelState.Open)
-                return;
-            _reliableDc.Send(data);
+            if (_reliableDc is { } channel)
+                WebRtcNative.TrySend(channel, data);
         }
 
         public void SendUnreliable(byte[] data)
         {
-            if (_unreliableDc?.ReadyState is not RTCDataChannelState.Open)
-                return;
-            _unreliableDc.Send(data);
+            if (_unreliableDc is { } channel)
+                WebRtcNative.TrySend(channel, data);
         }
 
         private async UniTask<string> CreateAnswer(string offerJson)
@@ -217,6 +207,13 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             {
                 logger.LogException(e);
             }
+
+            // The data channels don't close when the peer goes away (e.g. a closed browser tab), only the connection fails.
+            if (newState is RTCPeerConnectionState.Failed or RTCPeerConnectionState.Closed)
+            {
+                OnReliableEnded();
+                OnUnreliableEnded();
+            }
         }
 
         #region Unused
@@ -234,9 +231,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
         public void Close()
         {
-            _reliableDc?.Close();
-            _unreliableDc?.Close();
-            _peerConnection.Close();
+            WebRtcNative.IgnoreDisposed(() =>
+            {
+                _reliableDc?.Close();
+                _unreliableDc?.Close();
+                _peerConnection.Close();
+            });
         }
 
         public void Dispose()

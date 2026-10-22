@@ -5,6 +5,7 @@
         "Elympics",
         "Elympics.Core",
         "Elympics.Editor",
+        "Elympics.Physics2D",
         "Elympics.UniTask",
         "Unity.Pipeline",
         "Unity.Pipeline.Attributes"

@@ -110,9 +110,10 @@ namespace Elympics
             {
                 var id = GetNextNetworkId();
                 if (behaviour.NetworkId == id)
-                    return;
-                Undo.RecordObject(behaviour, "Assign predefined network ID");
+                    continue;
+                Undo.RecordObject(behaviour, "Assign network ID");
                 behaviour.NetworkId = id;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
             }
         }
     }

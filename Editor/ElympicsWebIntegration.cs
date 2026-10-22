@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor;
+using Elympics.Editor.Communication;
 using Elympics.Editor.Models.UsageStatistics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -136,11 +139,6 @@ namespace Elympics
         }
 
 
-        [Serializable]
-        private class JwtMidPart
-        {
-            public long exp;
-        }
 
 
         private static UnityWebRequestAsyncOperation Login(string username, string password, Action<UnityWebRequest> completed = null)
@@ -169,7 +167,7 @@ namespace Elympics
 
                     ElympicsLogger.LogInfo($"Logged to ElympicsWeb as {responseModel.UserName}.");
                     ElympicsConfig.AuthToken = authToken;
-                    ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+                    ElympicsConfig.AuthTokenExp = ElympicsEditorApi.ReadTokenExpiration(authToken).ToString();
                     ElympicsConfig.RefreshToken = responseModel.RefreshToken;
                     ElympicsConfig.IsLogin = true;
                 }
@@ -180,122 +178,75 @@ namespace Elympics
             }
         }
 
-        private static JwtMidPart GetAuthTokenMid(string authToken)
-        {
-            var authTokenParts = authToken.Split('.');
-            var authTokenMidPadded = authTokenParts[1].PadRight(4 * ((authTokenParts[1].Length + 3) / 4), '=');
-            var authTokenMidStr =
-                Encoding.ASCII.GetString(Convert.FromBase64String(authTokenMidPadded.Replace('-', '+').Replace('_', '/'))); // JWT is encoded as URL-safe base64, some characters have to be replaced
-            var authTokenMid = JsonConvert.DeserializeObject<JwtMidPart>(authTokenMidStr);
-            return authTokenMid;
-        }
 
         internal static void GetAvailableRegionsForGameId(string gameId, Action<List<RegionResponseModel>> updateProperty, Action onFailure)
         {
             ElympicsLogger.LogInfo("Getting available regions...");
-
-            var uri = string.IsNullOrEmpty(gameId) ? Config.ElympicsAvailableRegionsUrl : Config.GameAvailableRegionsUrl(gameId);
-
-            _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
-            return;
-
-            void OnCompleted(UnityWebRequest webRequest) => GetAvailableRegionsHandler(updateProperty, webRequest, onFailure);
+            RunAndLogErrors(async () =>
+            {
+                List<RegionResponseModel> regions;
+                try
+                {
+                    regions = await ElympicsEditorApi.GetRegionsAsync(gameId);
+                }
+                catch
+                {
+                    onFailure?.Invoke();
+                    throw;
+                }
+                updateProperty?.Invoke(regions);
+            });
         }
 
-        private static UnityWebRequest gameVersionsWebRequest;
+        private static CancellationTokenSource gameVersionsCancellation;
 
         public static void GetGameVersions(Action<GameVersionsResponseModel> updateProperty, bool silent = false)
         {
-            CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
-
-            void OnContinuation(bool success)
-            {
-                if (!success)
-                    return; // TODO: error handling ~dsygocki 2025-07-10
-                var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-                if (gameConfig == null)
-                    return; // TODO: error handling ~dsygocki 2025-07-10
-                var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameConfig.gameId, GamesRoutes.GameVersionsRoute);
-
-                var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
-                if (gameVersionsWebRequest is { isDone: false })
-                    gameVersionsWebRequest.Abort();
-                gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
-
-                void OnCompleted(UnityWebRequest webRequest)
-                {
-                    gameVersionsWebRequest = null;
-                    if (TryDeserializeResponse(webRequest, nameof(GetGameVersions), out GameVersionsResponseModel gameVersions, silent))
-                        updateProperty?.Invoke(gameVersions);
-                }
-            }
+            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
+            if (gameConfig == null)
+                return; // TODO: error handling ~dsygocki 2025-07-10
+            GetGameVersionsForGameId(gameConfig.gameId, updateProperty, silent);
         }
 
+        /// <remarks>A new call cancels the previous one. Nothing is called back on failure.</remarks>
         public static void GetGameVersionsForGameId(string gameId, Action<GameVersionsResponseModel> updateProperty, bool silent = false)
         {
-            CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
-
-            void OnContinuation(bool success)
+            gameVersionsCancellation?.Cancel();
+            var cancellation = gameVersionsCancellation = new CancellationTokenSource();
+            RunAndLogErrors(async () =>
             {
-                if (!success)
-                    return; // TODO: error handling ~dsygocki 2025-07-10
-
-                var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute);
-
-                var unityWebRequestAsyncOperation = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted, silent);
-                if (gameVersionsWebRequest is { isDone: false })
-                    gameVersionsWebRequest.Abort();
-                gameVersionsWebRequest = unityWebRequestAsyncOperation.webRequest;
-
-                void OnCompleted(UnityWebRequest webRequest)
-                {
-                    gameVersionsWebRequest = null;
-                    if (TryDeserializeResponse(webRequest, nameof(GetGameVersionsForGameId), out GameVersionsResponseModel gameVersions, silent))
-                        updateProperty?.Invoke(gameVersions);
-                }
-            }
+                var gameVersions = await ElympicsEditorApi.GetGameVersionsAsync(gameId, cancellation.Token);
+                updateProperty?.Invoke(gameVersions);
+            }, silent);
         }
 
+        /// <remarks>Nothing is called back on failure.</remarks>
         public static void GetGames(Action<List<GameResponseModel>> updateProperty)
         {
             ElympicsLogger.LogInfo("Getting available games...");
-
-            CheckAuthTokenAndRefreshIfNeeded(OnContinuation);
-
-            void OnContinuation(bool success)
+            RunAndLogErrors(async () =>
             {
-                if (!success)
-                    return;
-
-                var uri = GetCombinedUrl(ElympicsWebEndpoint, GamesRoutes.BaseRoute);
-                _ = ElympicsEditorWebClient.SendJsonGetRequestApi(uri, OnCompleted);
-
-                void OnCompleted(UnityWebRequest webRequest)
-                {
-                    GetAvailableGamesHandler(updateProperty, webRequest);
-                }
-            }
+                var games = await ElympicsEditorApi.GetGamesAsync();
+                ElympicsLogger.LogInfo("Received available games.");
+                updateProperty.Invoke(games);
+            });
         }
 
-        private static void GetAvailableGamesHandler(Action<List<GameResponseModel>> updateProperty, UnityWebRequest webRequest)
-        {
-            ElympicsLogger.LogInfo($"Received available games.\nResponse code: {webRequest.responseCode}.");
-            if (!TryDeserializeResponse(webRequest, "GetAvailableGames", out List<GameResponseModel> availableGames))
-                return;
+        private static void RunAndLogErrors(Func<UniTask> action, bool silent = false) => RunAndLogErrorsAsync(action, silent).Forget();
 
-            updateProperty.Invoke(availableGames);
-        }
-
-        private static void GetAvailableRegionsHandler(Action<List<RegionResponseModel>> updateProperty, UnityWebRequest webRequest, Action onFailure)
+        private static async UniTask RunAndLogErrorsAsync(Func<UniTask> action, bool silent)
         {
-            ElympicsLogger.LogInfo($"Received available regions.\nResponse code: {webRequest.responseCode}.");
-            if (TryDeserializeResponse(webRequest, "GetAvailableRegions", out AvailableRegionsResponseModel availableRegions))
+            try
             {
-                updateProperty?.Invoke(availableRegions.Regions.ToList());
-                return;
+                await action();
             }
-
-            onFailure?.Invoke();
+            catch (OperationCanceledException)
+            { }
+            catch (Exception e)
+            {
+                if (!silent)
+                    ElympicsLogger.LogError(e.Message);
+            }
         }
 
         public static void GetElympicsEndpoints(Action<ElympicsEndpointsModel> updateProperty)
@@ -446,143 +397,88 @@ namespace Elympics
 
         public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion)
         {
-            CheckAuthTokenAndRefreshIfNeeded(OnCheckAuthTokenAndRefreshIfNeededContinuation);
             const string title = "Uploading client build to Elympics cloud";
-
-            void OnCheckAuthTokenAndRefreshIfNeededContinuation(bool success)
+            RunUploadWithProgressBar(title, async progress =>
             {
-                if (!success)
-                {
-                    FailUpload(title, "Authentication failed, check login state.");
-                    return;
-                }
-
-                EditorUtility.DisplayProgressBar(title, "Gathering files", 0f);
-
-                List<(string name, string extension)> validFiles;
-                try
-                {
-                    WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out validFiles);
-                }
-                catch (ElympicsException e)
-                {
-                    FailUpload(title, e.Message);
-                    return;
-                }
-
-                EditorUtility.DisplayProgressBar(title, "Initializing upload", 0.1f);
-
-                var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
-                _ = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest, webRequest =>
-                {
-                    try
-                    {
-                        if (TryDeserializeResponse<WebGLUploader.UploadInitResponse>(webRequest, ClientBuildInitAction, out var response, out var error))
-                            OnClientBuildUploadInitResponse(response, validFiles);
-                        else
-                            throw new ElympicsException(DescribeFailure(ClientBuildInitAction, error));
-                    }
-                    catch (ElympicsException e)
-                    {
-                        FailWithException(e);
-                    }
-                });
-            }
-
-            void OnClientBuildUploadInitResponse(WebGLUploader.UploadInitResponse response, List<(string name, string extension)> validFiles)
-            {
-                try
-                {
-                    WebGLUploader.UploadFilesToGcs(clientBuildPath, response, validFiles,
-                        (fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.2f + progress * 0.7f));
-                }
-                catch (ElympicsException e)
-                {
-                    ElympicsLogger.LogError(e.Message);
-                    if (!Application.isBatchMode)
-                        _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{e.Message}", "OK");
-
-                    _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, false);
-                    return;
-                }
-                finally
-                {
-                    EditorUtility.ClearProgressBar();
-                }
-
-                _ = WebGLUploader.SendCompleteRequest(ElympicsWebEndpoint, response.UploadId, true);
-
+                _ = await ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, progress);
                 ElympicsLogger.LogInfo("Client build uploaded successfully.");
-            }
-
-            void FailWithException(Exception exception)
-            {
-                EditorUtility.ClearProgressBar();
-                ElympicsLogger.LogException(exception);
-                if (!Application.isBatchMode)
-                    _ = EditorUtility.DisplayDialog(title, $"Upload failed: \n{exception.Message}", "OK");
-            }
+            });
         }
 
         public static void UploadStreamingAssets(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout)
         {
-            CheckAuthTokenAndRefreshIfNeeded(OnCheckAuthTokenAndRefreshIfNeededContinuation);
             const string title = "Uploading StreamingAssets to Elympics cloud";
+            RunUploadWithProgressBar(title, async progress =>
+                _ = await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, progress));
+        }
 
-            void OnCheckAuthTokenAndRefreshIfNeededContinuation(bool success)
+        private static void RunUploadWithProgressBar(string title, Func<Action<string, float>, UniTask> upload) => RunUploadWithProgressBarAsync(title, upload).Forget();
+
+        private static async UniTask RunUploadWithProgressBarAsync(string title, Func<Action<string, float>, UniTask> upload)
+        {
+            EditorUtility.DisplayProgressBar(title, "Gathering files", 0f);
+            try
             {
-                if (!success)
-                {
-                    FailUpload(title, "Authentication failed, check login state.");
-                    return;
-                }
-
-                EditorUtility.DisplayProgressBar(title, "Gathering files", 0f);
-
-                List<string> relativePaths;
-                Dictionary<string, byte[]> generatedFiles;
-                try
-                {
-                    WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out relativePaths, out generatedFiles);
-                }
-                catch (ElympicsException e)
-                {
-                    FailUpload(title, e.Message);
-                    return;
-                }
-
-                EditorUtility.DisplayProgressBar(title, "Initializing upload", 0.1f);
-
-                var initRequest = WebGLUploader.CreateStreamingAssetsInitRequest(gameId, version, relativePaths);
-                _ = WebGLUploader.SendStreamingAssetsInitRequest(ElympicsWebEndpoint,
-                    initRequest,
-                    webRequest =>
-                    {
-                        if (!TryDeserializeResponse<WebGLUploader.StreamingAssetsUploadInitResponse>(webRequest, StreamingAssetsInitAction, out var response, out var error))
-                        {
-                            FailUpload(title, DescribeFailure(StreamingAssetsInitAction, error));
-                            EditorUtility.ClearProgressBar();
-                            return;
-                        }
-
-                        try
-                        {
-                            WebGLUploader.UploadStreamingAssetsToGcs(streamingAssetsPath,
-                                response,
-                                generatedFiles,
-                                (fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.2f + progress * 0.7f));
-                            ElympicsLogger.LogInfo(DescribeUploadSuccess(relativePaths.Count, version));
-                        }
-                        catch (ElympicsException e)
-                        {
-                            FailUpload(title, e.Message);
-                        }
-                        finally
-                        {
-                            EditorUtility.ClearProgressBar();
-                        }
-                    });
+                await upload((fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.1f + progress * 0.9f));
             }
+            catch (Exception e) when (e is ElympicsException or IOException)
+            {
+                FailUpload(title, e.Message);
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
+                FailUpload(title, e.Message);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        /// <summary>Like <see cref="UploadStreamingAssetsUsingCurrentLogin"/>, without blocking the Editor.</summary>
+        /// <returns>The number of uploaded files.</returns>
+        [PublicAPI]
+        public static Task<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
+            CancellationToken ct = default)
+        {
+            ValidateGameId(gameId);
+            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct).AsTask();
+        }
+
+        /// <summary>Uploads a WebGL client build with the Editor's current login, without dialogs and without blocking the Editor.</summary>
+        /// <param name="clientBuildPath">The WebGL build's root or its Build folder.</param>
+        /// <returns>The number of uploaded files.</returns>
+        [PublicAPI]
+        public static Task<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
+            CancellationToken ct = default)
+        {
+            ValidateGameId(gameId);
+            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, ct).AsTask();
+        }
+
+        /// <summary>
+        /// Builds the Linux server of the active game and uploads it as the game's current version with the Editor's current login,
+        /// without dialogs. The upload doesn't block the Editor.
+        /// </summary>
+        /// <returns>The build report. A failed build is returned without uploading.</returns>
+        [PublicAPI]
+        public static async Task<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)
+        {
+            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+            await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+
+            var buildReport = BuildTools.BuildServerLinux(additionalOptions);
+            if (buildReport.summary.result != BuildResult.Succeeded)
+                return buildReport;
+
+            if (!TryPack(currentGameConfig.GameId, currentGameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
+                throw new ElympicsException("Problem with packing engine");
+
+            await ElympicsEditorApi.UploadServerAsync(currentGameConfig.GameId, currentGameConfig.GameVersion, enginePath, ct);
+            ElympicsLogger.LogInfo($"Uploaded game {currentGameConfig.GameName} with version {currentGameConfig.GameVersion}.");
+            GameUploadedToTheCloud?.Invoke();
+            return buildReport;
         }
 
 
@@ -667,7 +563,7 @@ namespace Elympics
 
             var authToken = responseModel.AuthToken;
             ElympicsConfig.AuthToken = authToken;
-            ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+            ElympicsConfig.AuthTokenExp = ElympicsEditorApi.ReadTokenExpiration(authToken).ToString();
             ElympicsConfig.RefreshToken = responseModel.RefreshToken;
         }
 
@@ -730,7 +626,8 @@ namespace Elympics
             ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
 
-            WebGLUploader.PrepareValidFiles(ref clientBuildPath, clientGameVersion, out var validFiles);
+            var (resolvedBuildPath, validFiles) = WebGLUploader.ResolveClientBuildFiles(clientBuildPath, clientGameVersion);
+            clientBuildPath = resolvedBuildPath;
 
             var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
             var initOp = WebGLUploader.SendInitRequest(ElympicsWebEndpoint, initRequest);
@@ -921,7 +818,7 @@ namespace Elympics
                 {
                     var authToken = responseModel.AuthToken;
                     ElympicsConfig.AuthToken = authToken;
-                    ElympicsConfig.AuthTokenExp = GetAuthTokenMid(authToken).exp.ToString();
+                    ElympicsConfig.AuthTokenExp = ElympicsEditorApi.ReadTokenExpiration(authToken).ToString();
                     ElympicsConfig.RefreshToken = responseModel.RefreshToken;
                 }
                 else

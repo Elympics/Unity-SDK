@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace Elympics.Editor.Tests
 {
-    public class TestPrepareValidFiles
+    public class TestResolveClientBuildFiles
     {
         private const string ClientGameVersion = "v1";
 
@@ -32,9 +32,7 @@ namespace Elympics.Editor.Tests
         public void KeepsPath_WhenItIsTheBuildFolder()
         {
             CreateBuildFiles();
-            var path = _buildFolder;
-
-            WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out var validFiles);
+            var (path, validFiles) = WebGLUploader.ResolveClientBuildFiles(_buildFolder, ClientGameVersion);
 
             Assert.AreEqual(_buildFolder, path);
             Assert.AreEqual(WebGLUploader.CompoundExtensions.Length, validFiles.Count);
@@ -44,9 +42,7 @@ namespace Elympics.Editor.Tests
         public void UsesBuildFolder_WhenPathIsTheBuildRoot()
         {
             CreateBuildFiles();
-            var path = _buildRoot;
-
-            WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out var validFiles);
+            var (path, validFiles) = WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion);
 
             Assert.AreEqual(_buildFolder, path);
             Assert.AreEqual(WebGLUploader.CompoundExtensions.Length, validFiles.Count);
@@ -55,12 +51,9 @@ namespace Elympics.Editor.Tests
         [Test]
         public void Throws_WhenNeitherPathNorBuildFolderHasTheFiles()
         {
-            var path = _buildRoot;
-
-            var exception = Assert.Throws<ElympicsException>(() => WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out _));
+            var exception = Assert.Throws<ElympicsException>(() => WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion));
 
             StringAssert.Contains("missing", exception.Message);
-            Assert.AreEqual(_buildRoot, path);
         }
     }
 }

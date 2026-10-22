@@ -141,7 +141,7 @@ namespace Elympics.Editor
         }
 
         /// <param name="extension">Extension with a dot. May be compound.</param>
-        private static string FetchEncoding(string extension)
+        internal static string FetchEncoding(string extension)
         {
             if (extension.EndsWith(".br"))
                 return "br";
@@ -150,7 +150,7 @@ namespace Elympics.Editor
             return string.Empty;
         }
 
-        private static string FetchContentType(string fileExtension)
+        internal static string FetchContentType(string fileExtension)
         {
             for (var i = 0; i < CompoundExtensions.Length; i++)
             {
@@ -190,17 +190,15 @@ namespace Elympics.Editor
         internal const string BuildFolderName = "Build";
 
         /// <param name="clientBuildPath">The WebGL build's <see cref="BuildFolderName"/> folder or the build root containing it.</param>
-        internal static void PrepareValidFiles(
-            ref string clientBuildPath,
-            string clientGameVersion,
-            out List<(string name, string extension)> validFiles)
+        /// <returns>The folder that holds the build files, and the files.</returns>
+        internal static (string path, List<(string name, string extension)> validFiles) ResolveClientBuildFiles(string clientBuildPath, string clientGameVersion)
         {
             if (string.IsNullOrWhiteSpace(clientBuildPath) || !Directory.Exists(clientBuildPath))
                 throw new ElympicsException($"Client build directory '{clientBuildPath}' does not exist.");
             ValidateVersionCharacters("Client game version", clientGameVersion);
 
             var fileNames = GetFileNames(clientBuildPath);
-            validFiles = GetValidFiles(fileNames, CompoundExtensions);
+            var validFiles = GetValidFiles(fileNames, CompoundExtensions);
 
             var buildFolderPath = Path.Combine(clientBuildPath, BuildFolderName);
             if (validFiles.Count == 0 && Directory.Exists(buildFolderPath))
@@ -222,6 +220,8 @@ namespace Elympics.Editor
                     + $"Required extensions: [{string.Join(", ", CompoundExtensions)}]\n"
                     + $"Files in directory: [{string.Join(", ", fileNames)}]\n"
                     + $"Validated files: [{string.Join(", ", validFiles)}]");
+
+            return (clientBuildPath, validFiles);
 
             static string[] GetFileNames(string directory) => Directory.GetFiles(directory).Select(Path.GetFileName).ToArray();
         }
@@ -462,7 +462,7 @@ namespace Elympics.Editor
             return fileName.StartsWith(CatalogFileNamePrefix, StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         }
 
-        private static string FetchStreamingAssetsContentType(string extension) =>
+        internal static string FetchStreamingAssetsContentType(string extension) =>
             StreamingAssetsContentTypes.GetValueOrDefault(extension ?? string.Empty, DefaultContentType);
 
         internal static void UploadStreamingAssetsToGcs(

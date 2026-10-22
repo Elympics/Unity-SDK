@@ -23,7 +23,7 @@ namespace Elympics
         private static readonly Regex MissingModuleRegex = new(
             @"build target (was )?unsupported|LinuxStandalone|scripting backend (\(\w+\) )?(is )?not installed",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private const string MissingModuleErrorMessage =
+        internal const string MissingModuleErrorMessage =
             "Installation of Unity modules is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
 
         public static void UpdateElympicsGameVersion(string newGameVersion)
@@ -125,8 +125,11 @@ namespace Elympics
             if (report.summary.totalErrors == 0)
                 return;
 
-            if (report.steps.SelectMany(step => step.messages).Any(m => m.type is LogType.Error or LogType.Exception && MissingModuleRegex.IsMatch(m.content)))
+            if (HasMissingModuleError(report))
                 ElympicsLogger.LogError(MissingModuleErrorMessage);
         }
+
+        internal static bool HasMissingModuleError(BuildReport report) =>
+            report.steps.SelectMany(step => step.messages).Any(m => m.type is LogType.Error or LogType.Exception && MissingModuleRegex.IsMatch(m.content));
     }
 }

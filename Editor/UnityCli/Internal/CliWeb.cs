@@ -10,10 +10,13 @@ namespace Elympics.Editor.UnityCli
     {
         public const int DefaultTimeoutSeconds = 20;
 
-        /// <summary>Runs a backend call with the current login and a timeout, mapping web errors to CLI error codes.</summary>
-        public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body) => CliRun.Async(async () =>
+        /// <summary>
+        /// Runs backend calls with the current login and a timeout, mapping web errors to CLI error codes. The login is checked by the first request,
+        /// so argument errors are reported before a missing login.
+        /// </summary>
+        public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
+            CliRun.Async(async () =>
         {
-            CliGames.RequireLogin();
             if (timeoutSeconds <= 0)
                 throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 20.");
 
@@ -29,11 +32,11 @@ namespace Elympics.Editor.UnityCli
             }
             catch (ElympicsEditorApiException e)
             {
-                throw Map(e);
+                throw Map(e, requestFailedCode);
             }
         });
 
-        public static ElympicsCliException Map(ElympicsEditorApiException exception) => exception.Kind switch
+        public static ElympicsCliException Map(ElympicsEditorApiException exception, string requestFailedCode = ElympicsCliErrors.RequestFailed) => exception.Kind switch
         {
             EditorApiErrorKind.NotLoggedIn or EditorApiErrorKind.Unauthorized =>
                 new ElympicsCliException(ElympicsCliErrors.NotLoggedIn, exception.Message, CliGames.LoginFix, exception),
@@ -49,7 +52,7 @@ namespace Elympics.Editor.UnityCli
             EditorApiErrorKind.Network =>
                 new ElympicsCliException(ElympicsCliErrors.RequestFailed, exception.Message,
                     "check the Internet connection and the endpoints reported by elympics_status, then retry.", exception),
-            _ => new ElympicsCliException(ElympicsCliErrors.RequestFailed, exception.Message,
+            _ => new ElympicsCliException(requestFailedCode, exception.Message,
                 "read the backend's message above, correct the arguments and retry.", exception),
         };
     }

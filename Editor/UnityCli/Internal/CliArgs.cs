@@ -1,0 +1,87 @@
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Elympics.Editor.UnityCli
+{
+    internal static class CliArgs
+    {
+        private const string VersionPattern = "^[0-9-a-zA-Z.]+$";
+        private const int MaxVersionLength = 63;
+
+        public static string Require(string value, string argumentName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw ElympicsCliErrors.InvalidArgumentException($"Missing required argument --{argumentName}.", $"pass --{argumentName} <value>.");
+            return value.Trim();
+        }
+
+        public static void RequireConfirm(bool confirm, string action)
+        {
+            if (!confirm)
+                throw new ElympicsCliException(ElympicsCliErrors.ConfirmRequired,
+                    $"{action} can't be undone, so it needs an explicit confirmation.",
+                    "check the arguments, then repeat the call with --confirm true.");
+        }
+
+        public static string ValidateVersion(string version, string argumentName)
+        {
+            version = Require(version, argumentName);
+            if (version.Length > MaxVersionLength || !Regex.IsMatch(version, VersionPattern))
+                throw ElympicsCliErrors.InvalidArgumentException(
+                    $"--{argumentName} '{version}' is invalid: use 1-{MaxVersionLength} Latin letters, digits, dashes and dots.",
+                    $"pass a --{argumentName} such as 1.2.0 or 2026-10-22.1.");
+            return version;
+        }
+
+        public static string ValidateGuid(string value, string argumentName)
+        {
+            value = Require(value, argumentName);
+            if (!Guid.TryParse(value, out _))
+                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} '{value}' is not a GUID.",
+                    "pass an ID from elympics_games_list (or elympics_queues_list for queues).");
+            return value;
+        }
+
+        public static List<string> ParseStringArray(string json, string argumentName)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new List<string>();
+            try
+            {
+                return JArray.Parse(json).ToObject<List<string>>() ?? new List<string>();
+            }
+            catch (Exception e) when (e is JsonException or ArgumentException or InvalidCastException)
+            {
+                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} must be a JSON array of strings: {e.Message}",
+                    $"pass e.g. --{argumentName} '[\"a\",\"b\"]'.");
+            }
+        }
+
+        public static Dictionary<string, string> ParseStringObject(string json, string argumentName)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new Dictionary<string, string>();
+            try
+            {
+                return JObject.Parse(json).ToObject<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+            }
+            catch (Exception e) when (e is JsonException or ArgumentException or InvalidCastException)
+            {
+                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} must be a JSON object with string values: {e.Message}",
+                    $"pass e.g. --{argumentName} '{{\"key\":\"value\"}}'.");
+            }
+        }
+
+        public static TEnum ParseEnum<TEnum>(string value, string argumentName) where TEnum : struct, Enum
+        {
+            value = Require(value, argumentName);
+            if (Enum.TryParse<TEnum>(value.Replace("_", string.Empty), true, out var parsed) && Enum.IsDefined(typeof(TEnum), parsed))
+                return parsed;
+            throw ElympicsCliErrors.InvalidArgumentException($"Unknown --{argumentName} '{value}'.",
+                $"use one of: {string.Join(", ", Enum.GetNames(typeof(TEnum)))}.");
+        }
+    }
+}

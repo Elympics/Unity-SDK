@@ -21,7 +21,7 @@ namespace Elympics.Editor.UnityCli
             + "Versions are write-once - a burnt version name cannot be reused, and the upload is not undoable. "
             + "Blocks the Editor main thread for the whole upload, so raise the client timeout "
             + "or run it as a detached job for large bundles.",
-            Tags = new[] { "build" })]
+            Tags = new[] { "elympics", "build" })]
         public static object UploadStreamingAssets(
             [CliArg("streaming_assets_path", "Local directory to upload. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
             [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. Only Latin letters, digits, dashes, and dots are allowed.", Required = true)] string versionName,

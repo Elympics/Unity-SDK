@@ -1,0 +1,45 @@
+using System;
+using System.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
+
+namespace Elympics.Editor.UnityCli
+{
+    /// <summary>Keeps every failure inside the error contract: unexpected exceptions become <see cref="ElympicsCliErrors.Internal"/>.</summary>
+    internal static class CliRun
+    {
+        private const string CheckArgumentsFix = "check the command's arguments in its listing (unity command --query elympics).";
+
+        public static object Sync(Func<object> body)
+        {
+            try
+            {
+                return body();
+            }
+            catch (Exception e) when (!IsInContract(e))
+            {
+                throw Wrap(e);
+            }
+        }
+
+        public static async Task<object> Async(Func<UniTask<object>> body)
+        {
+            try
+            {
+                return await body();
+            }
+            catch (Exception e) when (!IsInContract(e))
+            {
+                throw Wrap(e);
+            }
+        }
+
+        private static bool IsInContract(Exception exception) =>
+            exception is ElympicsCliException or OperationCanceledException
+            || (exception is ArgumentException && exception.Message.StartsWith(ElympicsCliErrors.Prefix, StringComparison.Ordinal));
+
+        private static Exception Wrap(Exception exception) =>
+            exception is ArgumentException
+                ? ElympicsCliErrors.InvalidArgumentException(exception.Message, CheckArgumentsFix)
+                : new ElympicsCliException(ElympicsCliErrors.Internal, $"{exception.GetType().Name}: {exception.Message}", null, exception);
+    }
+}

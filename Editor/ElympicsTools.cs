@@ -17,7 +17,7 @@ namespace Elympics.Editor
             _ = ManageGamesInElympicsWindow.ShowWindow(serializedElympicsConfig);
         }
 
-        private static ElympicsConfig LoadOrCreateConfig() => ElympicsConfig.Load() ?? CreateNewConfig();
+        private static ElympicsConfig LoadOrCreateConfig() => ElympicsConfig.Load() ?? CreateConfigAsset();
 
         [MenuItem(ElympicsEditorMenuPaths.SetupMenuPath, priority = 2)]
         public static void SelectOrCreateConfig()
@@ -41,7 +41,7 @@ namespace Elympics.Editor
             ElympicsLogger.LogInfo("Elympics resources directory created successfully.");
         }
 
-        private static ElympicsConfig CreateNewConfig()
+        internal static ElympicsConfig CreateConfigAsset()
         {
             EnsureElympicsResourcesDirectoryExists();
 

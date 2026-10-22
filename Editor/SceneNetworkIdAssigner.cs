@@ -70,6 +70,24 @@ namespace Elympics
             ReassignAutoIds(behaviours);
         }
 
+        /// <returns>The network IDs <see cref="ResetAllIds"/> would assign, without changing anything.</returns>
+        internal static Dictionary<ElympicsBehaviour, int> ComputeIds(List<ElympicsBehaviour> behaviours)
+        {
+            var ids = new Dictionary<ElympicsBehaviour, int>();
+            var autoBehaviours = new List<ElympicsBehaviour>();
+            foreach (var behaviour in behaviours)
+                if (TryGetPredefinedIdFor(behaviour) is { } predefinedId)
+                    ids[behaviour] = predefinedId;
+                else
+                    autoBehaviours.Add(behaviour);
+
+            HierarchicalSorting.Sort(autoBehaviours);
+            var id = NetworkIdConstants.PredefinedBehaviourCount;
+            foreach (var behaviour in autoBehaviours)
+                ids[behaviour] = id++;
+            return ids;
+        }
+
         private static void AssignPredefinedNetworkIds(List<ElympicsBehaviour> behaviours)
         {
             // TODO: set it up so that the components from the Elympics prefab cannot be used in other places, seal the classes etc. ~dsygocki 2026-03-05

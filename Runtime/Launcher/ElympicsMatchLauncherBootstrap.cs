@@ -67,6 +67,12 @@ namespace Elympics
             var gameplayScene = ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplayScene;
             if (!ShouldLoadGameplayScene(gameplayScene, SceneManager.GetActiveScene().path))
                 return;
+            if (!LoadsGameplaySceneForLaunchMode)
+            {
+                ElympicsLogger.LogInfo($"ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD is defined, so the gameplay scene {gameplayScene} isn't loaded for the launch mode parameter. "
+                    + "The match starts once the game loads it.");
+                return;
+            }
             ElympicsLogger.LogInfo($"Loading the gameplay scene {gameplayScene} for the launch mode parameter.");
 #if UNITY_EDITOR
             // Unlike SceneManager, this loads scenes missing from Build Settings.
@@ -83,6 +89,14 @@ namespace Elympics
             loader.LoadSingleAsync(gameplayScene!).Forget();
 #endif
         }
+
+        /// <summary>False when ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD leaves loading the gameplay scene to the game.</summary>
+        internal static bool LoadsGameplaySceneForLaunchMode =>
+#if ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD
+            false;
+#else
+            true;
+#endif
 
         internal static bool ShouldLoadGameplayScene(string? gameplayScene, string activeScene) =>
             !string.IsNullOrEmpty(gameplayScene) && gameplayScene != activeScene;

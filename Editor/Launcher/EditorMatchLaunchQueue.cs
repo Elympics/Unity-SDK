@@ -7,6 +7,7 @@ using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Elympics.Editor.Launcher
 {
@@ -46,8 +47,19 @@ namespace Elympics.Editor.Launcher
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
+        /// <summary>What to do with modified open scenes before entering play mode.</summary>
+        public enum UnsavedScenePolicy
+        {
+            /// <summary>Ask the user in a dialog.</summary>
+            Prompt,
+            /// <summary>Refuse the launch.</summary>
+            Refuse,
+            /// <summary>Save them without asking. Untitled scenes are refused, as saving them needs a path.</summary>
+            Save,
+        }
+
         /// <summary>Returns why the launch was refused, or null if it was sent or queued.</summary>
-        public static string? Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson)
+        public static string? Launch(ElympicsHostLaunchKind kind, string gameId, string dataJson, string optionsJson, UnsavedScenePolicy unsavedScenes = UnsavedScenePolicy.Prompt)
         {
             var launch = new PendingLaunch { kind = kind, gameId = gameId, dataJson = dataJson, optionsJson = optionsJson };
             if (EditorApplication.isPlaying)
@@ -60,8 +72,8 @@ namespace Elympics.Editor.Launcher
                 return "scripts are still compiling.";
             if (EditorUtility.scriptCompilationFailed)
                 return "scripts have compile errors.";
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                return "the open scenes were not saved.";
+            if (HandleUnsavedScenes(unsavedScenes) is { } refusal)
+                return refusal;
             SaveSceneSetup();
             if (GetValidBootScene() is { } bootScene)
                 _ = EditorSceneManager.OpenScene(bootScene);
@@ -71,6 +83,26 @@ namespace Elympics.Editor.Launcher
             EditorApplication.EnterPlaymode();
             return null;
         }
+
+        private static string? HandleUnsavedScenes(UnsavedScenePolicy policy)
+        {
+            if (policy == UnsavedScenePolicy.Prompt)
+                return EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo() ? null : "the open scenes were not saved.";
+
+            var dirty = GetDirtyScenes();
+            if (dirty.Length == 0)
+                return null;
+            if (policy == UnsavedScenePolicy.Refuse)
+                return $"the open scenes have unsaved changes: {string.Join(", ", dirty.Select(DescribeScene))}.";
+            if (dirty.Any(scene => string.IsNullOrEmpty(scene.path)))
+                return "an untitled scene has unsaved changes, and saving it needs a path.";
+            return EditorSceneManager.SaveScenes(dirty) ? null : "the open scenes could not be saved.";
+        }
+
+        internal static Scene[] GetDirtyScenes() =>
+            Enumerable.Range(0, SceneManager.sceneCount).Select(SceneManager.GetSceneAt).Where(scene => scene.isDirty).ToArray();
+
+        internal static string DescribeScene(Scene scene) => string.IsNullOrEmpty(scene.path) ? "(untitled)" : scene.path;
 
         private static string? GetValidBootScene()
         {

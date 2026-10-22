@@ -30,6 +30,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.playmode",
+            "expression": "",
+            "define": "ELYMPICS_MPPM"
+        }
+    ],
     "noEngineReferences": false
 }

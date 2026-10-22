@@ -48,6 +48,26 @@ namespace Elympics
         private static readonly object LastReceivedSnapshotLock = new();
         private ElympicsSnapshot? _lastReceivedSnapshot;
         private long _latestReconciliationBaseSnapshotTick;
+        private int _reanchoredCount;
+        private int _replayedCount;
+
+        /// <summary>A read-only snapshot of prediction and reconciliation state for Editor tools.</summary>
+        internal ClientDiagnostics Diagnostics
+        {
+            get
+            {
+                var results = _clientTickCalculator?.Results;
+                var lastSnapshotTick = _latestReconciliationBaseSnapshotTick;
+                return new ClientDiagnostics(
+                    results?.RttTicks ?? 0,
+                    (results?.RttTicks ?? 0) * Config.TickDuration * 1000,
+                    results?.CanPredict ?? false,
+                    lastSnapshotTick,
+                    lastSnapshotTick >= 0 ? Tick - lastSnapshotTick : null,
+                    _reanchoredCount,
+                    _replayedCount);
+            }
+        }
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
         private DateTime? _lastClientPrintNetworkConditions;
@@ -256,6 +276,8 @@ namespace Elympics
             _lastReceivedSnapshot = null;
             _rxSnapshotTicksTracker.Clear();
             _latestReconciliationBaseSnapshotTick = -1;
+            _reanchoredCount = 0;
+            _replayedCount = 0;
             _serverWorldState.ResetToEmpty();
             _currentTicksWithoutPrediction = 0;
             _previousTick = 0;
@@ -289,6 +311,10 @@ namespace Elympics
                     ? null
                     : _serverWorldState);
             _latestReconciliationBaseSnapshotTick = _serverWorldState.Tick;
+            if (reconciliationResult.Kind == ReconciliationResult.Outcome.Reanchored)
+                _reanchoredCount++;
+            else if (reconciliationResult.Kind == ReconciliationResult.Outcome.Replayed)
+                _replayedCount++;
 
             _clientTickCalculator.CalculateNextTick(_serverWorldState.Tick, _previousTick, _lastDelayedInputTick, _serverWorldState.TickStartUtc, TickStartUtc, reconciliationResult);
 

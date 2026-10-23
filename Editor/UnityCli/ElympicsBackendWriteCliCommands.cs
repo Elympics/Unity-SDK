@@ -14,7 +14,6 @@ namespace Elympics.Editor.UnityCli
     /// <summary>Elympics backend changes. They use the Editor's current login, need --confirm true and aren't undoable from the CLI.</summary>
     public static class ElympicsBackendWriteCliCommands
     {
-        private const string TimeoutDescription = "Seconds to wait for the backend.";
         private const string ConfirmDescription = "Must be true: the change is applied to the Elympics backend right away.";
         private const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
 
@@ -34,15 +33,14 @@ namespace Elympics.Editor.UnityCli
             [CliArg("region", "Initial region name (deprecated by the backend; prefer leaving it empty).")] string region = "",
             [CliArg("create_config", "Create, register and activate an ElympicsGameConfig for the new game.")] bool createConfig = false,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 name = CliArgs.Require(name, "name");
                 if (name.Length > 63)
                     throw ElympicsCliErrors.InvalidArgumentException("--name is longer than 63 characters.", "pass a shorter name.");
                 CliArgs.RequireConfirm(confirm, "Creating an Elympics game");
-                var created = await ElympicsEditorApi.CreateGameAsync(name, string.IsNullOrWhiteSpace(region) ? null : region.Trim(),
-                    string.IsNullOrWhiteSpace(fleetId) ? null : fleetId.Trim(), ct);
+                var created = await ElympicsEditorApi.CreateGameAsync(name, CliArgs.Optional(region), CliArgs.Optional(fleetId), ct);
                 var gameId = (string)created?["Id"];
                 await UniTask.SwitchToMainThread();
                 string configAsset = null;
@@ -80,7 +78,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("event_queue_join_url", "Event queue join URL; an empty string clears it.")] string eventQueueJoinUrl = null,
             [CliArg("event_queue_leave_url", "Event queue leave URL; an empty string clears it.")] string eventQueueLeaveUrl = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
@@ -112,7 +110,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("debug_mode", "Run matches of this version in debug mode.")] bool? debugMode = null,
             [CliArg("debug_mode_with_bots", "Run debug matches of this version with bots.")] bool? debugModeWithBots = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 version = CliArgs.Require(version, "version");
@@ -133,7 +131,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("version", "Version name or version ID from elympics_game_versions.", Required = true)] string version,
             [CliArg("game_id", GameIdDescription)] string gameId = "",
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 version = CliArgs.Require(version, "version");
@@ -169,7 +167,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("max_wait_time", "Maximum wait in seconds; -1 for no limit.")] int? maxWaitTime = null,
             [CliArg("min_players_to_match", "Minimum players to start a match.")] int? minPlayersToMatch = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
@@ -212,7 +210,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("max_wait_time", "Maximum wait in seconds; -1 for no limit.")] int? maxWaitTime = null,
             [CliArg("min_players_to_match", "Minimum players to start a match.")] int? minPlayersToMatch = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 queue = CliArgs.Require(queue, "queue");
@@ -259,7 +257,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("queue", "Queue ID or name from elympics_queues_list.", Required = true)] string queue,
             [CliArg("game_id", GameIdDescription)] string gameId = "",
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 queue = CliArgs.Require(queue, "queue");

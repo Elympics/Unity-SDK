@@ -12,7 +12,6 @@ namespace Elympics.Editor.UnityCli
     public static class ElympicsBuildCliCommands
     {
         private const int UploadTimeoutSeconds = 1800;
-        private const string UploadTimeoutDescription = "Seconds to wait for the whole upload.";
 
         [CliCommand("elympics_build_server",
             "Build the active game's Linux dedicated server into serverbuild/Engine (the Linux Dedicated Server module must be installed). "
@@ -44,7 +43,7 @@ namespace Elympics.Editor.UnityCli
         public static Task<object> UploadServer(
             [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
             [CliArg("development", "Upload a development build.")] bool development = false,
-            [CliArg("timeout_seconds", UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 CliArgs.RequireConfirm(confirm, "Uploading a server version");
@@ -75,13 +74,13 @@ namespace Elympics.Editor.UnityCli
             [CliArg("game_id", "Elympics game ID. Defaults to the active game config's ID.")] string gameId = "",
             [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
             [CliArg("allow_external_path", "Must be true to upload a build outside the project.")] bool allowExternalPath = false,
-            [CliArg("timeout_seconds", UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedPath = CliArgs.ResolveProjectPath(CliArgs.Require(clientBuildPath, "client_build_path"), "client_build_path", allowExternalPath);
                 clientGameVersion = CliArgs.ValidateVersion(clientGameVersion, "client_game_version");
                 CliArgs.RequireConfirm(confirm, "Uploading a client build");
-                var game = CliGames.ResolveGame(string.IsNullOrWhiteSpace(gameId) ? string.Empty : CliArgs.ValidateGuid(gameId, "game_id"));
+                var game = CliGames.ResolveGame(gameId);
                 serverGameVersion = string.IsNullOrWhiteSpace(serverGameVersion) ? game.GameVersion : CliArgs.ValidateVersion(serverGameVersion, "server_game_version");
                 if (!Directory.Exists(resolvedPath))
                     throw new ElympicsCliException(ElympicsCliErrors.BuildDirNotFound, $"The client build directory {resolvedPath} doesn't exist.",
@@ -106,8 +105,7 @@ namespace Elympics.Editor.UnityCli
 
         private static void RequireReadyToBuild()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-                throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "Builds can't run in Play mode.", "stop Play mode (editor_stop), then retry.");
+            CliRun.RequireNotPlaying("Builds can't run in Play mode.");
             if (EditorUtility.scriptCompilationFailed)
                 throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors.", "fix the errors listed by console --level error, then retry.");
         }

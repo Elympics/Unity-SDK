@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Editor.Launcher;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
@@ -22,6 +21,7 @@ namespace Elympics.Editor.UnityCli
 
         private const string MppmPackage = "com.unity.multiplayer.playmode";
         private const string TagPrefix = PlayModeArguments.TagPrefix;
+        private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
 
         [CliCommand("elympics_launch",
             "Launch a match in the Editor like the Match Launcher window: single_player, half_remote_server (virtual players from elympics_virtual_players_set "
@@ -223,8 +223,7 @@ namespace Elympics.Editor.UnityCli
                 + "Replaces only the Elympics: tags of the listed players.")]
             string tags = "") => CliRun.Sync(() =>
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-                throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "Virtual players can't be changed in Play mode.", "stop Play mode (editor_stop), then retry.");
+            CliRun.RequireNotPlaying("Virtual players can't be changed in Play mode.");
             var tagsByPlayer = ParseTags(tags);
             var players = MppmReflection.GetPlayers();
             var virtualCount = players.Count - 1;
@@ -242,21 +241,11 @@ namespace Elympics.Editor.UnityCli
             return new { status = "updated", count, players = MppmReflection.GetPlayers() };
         });
 
-        private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
-
         private static List<(int number, List<string> tags)> ParseTags(string json)
         {
-            if (string.IsNullOrWhiteSpace(json))
+            var parsed = CliArgs.ParseJsonObject(json, "tags", "a JSON object", TagsFix, JObject.Parse);
+            if (parsed == null)
                 return new List<(int, List<string>)>();
-            JObject parsed;
-            try
-            {
-                parsed = JObject.Parse(json);
-            }
-            catch (JsonException e)
-            {
-                throw ElympicsCliErrors.InvalidArgumentException($"--tags must be a JSON object: {e.Message}", TagsFix);
-            }
 
             var result = new List<(int, List<string>)>();
             foreach (var property in parsed.Properties())

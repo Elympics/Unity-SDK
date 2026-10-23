@@ -99,6 +99,34 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.Throws(() => CliArgs.ParseStringObject("[\"a\"]", "pin"), ElympicsCliErrors.InvalidArgument);
         }
 
+        [Test]
+        public void OptionalArgumentIsTrimmedOrNull()
+        {
+            Assert.That(CliArgs.Optional("  x "), Is.EqualTo("x"));
+            Assert.That(CliArgs.Optional(" "), Is.Null);
+            Assert.That(CliArgs.Optional(string.Empty), Is.Null);
+            Assert.That(CliArgs.Optional(null), Is.Null);
+        }
+
+        [Test]
+        public void OptionalBoolArgument()
+        {
+            Assert.That(CliArgs.ParseOptionalBool("auto", "x"), Is.Null);
+            Assert.That(CliArgs.ParseOptionalBool("", "x"), Is.Null);
+            Assert.That(CliArgs.ParseOptionalBool(null, "x"), Is.Null);
+            Assert.That(CliArgs.ParseOptionalBool(" True ", "x"), Is.True);
+            Assert.That(CliArgs.ParseOptionalBool("false", "x"), Is.False);
+            CliAssert.Throws(() => CliArgs.ParseOptionalBool("maybe", "x"), ElympicsCliErrors.InvalidArgument);
+        }
+
+        [Test]
+        public void LayoutDefaultsToAddressableVariants()
+        {
+            Assert.That(ElympicsStreamingAssetsCliCommands.ParseLayout(""), Is.EqualTo(StreamingAssetsLayout.AddressableVariants));
+            Assert.That(ElympicsStreamingAssetsCliCommands.ParseLayout("unstructuredassets"), Is.EqualTo(StreamingAssetsLayout.UnstructuredAssets));
+            CliAssert.Throws(() => ElympicsStreamingAssetsCliCommands.ParseLayout("other"), ElympicsCliErrors.InvalidArgument);
+        }
+
         private enum Mode { SinglePlayer, HalfRemoteServer }
 
         [Test]

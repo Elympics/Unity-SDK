@@ -145,7 +145,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "write" })]
         public static object ResetNetworkIds([CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Sync(() =>
         {
-            RequireEditMode();
+            CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
             var scene = ResolveOpenScene(string.Empty);
             var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(scene, true);
             var before = behaviours.ToDictionary(behaviour => behaviour, behaviour => behaviour.NetworkId);
@@ -169,14 +169,8 @@ namespace Elympics.Editor.UnityCli
             [CliArg("add_physics2d_simulator", "auto (add it if the scene has 2D colliders or rigidbodies), true or false.")] string addPhysics2DSimulator = "auto",
             [CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Sync(() =>
         {
-            RequireEditMode();
-            var addSimulator = addPhysics2DSimulator?.Trim().ToLowerInvariant() switch
-            {
-                "auto" or "" or null => (bool?)null,
-                "true" => true,
-                "false" => false,
-                _ => throw ElympicsCliErrors.InvalidArgumentException($"Unknown --add_physics2d_simulator '{addPhysics2DSimulator}'.", "use auto, true or false."),
-            };
+            CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
+            var addSimulator = CliArgs.ParseOptionalBool(addPhysics2DSimulator, "add_physics2d_simulator");
             var target = ResolveOpenScene(scene);
             if (SceneObjectsFinder.FindObjectsOfType<GameSceneManager>(target, true).Count > 0)
                 throw new ElympicsCliException(ElympicsCliErrors.SystemAlreadyPresent, $"The scene {target.path} already has an Elympics system.",
@@ -230,6 +224,7 @@ namespace Elympics.Editor.UnityCli
         });
 
         private const string ElympicsSystemPrefabPath = "Elympics";
+        private const string SceneChangesLostInPlayMode = "The Editor is in Play mode, where scene changes are lost.";
 
         private static bool Uses2DPhysics(UnityEngine.GameObject[] roots) =>
             roots.Any(root => root.GetComponentInChildren<UnityEngine.Rigidbody2D>(true) != null || root.GetComponentInChildren<UnityEngine.Collider2D>(true) != null);
@@ -255,13 +250,6 @@ namespace Elympics.Editor.UnityCli
                 throw ElympicsCliErrors.InvalidArgumentException("The scene has never been saved, so --save true has no path to save it to.",
                     "save it with save_scene and a path instead.");
             return EditorSceneManager.SaveScene(scene);
-        }
-
-        private static void RequireEditMode()
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-                throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "The Editor is in Play mode, where scene changes are lost.",
-                    "stop Play mode (editor_stop), then retry.");
         }
 
         internal static Scene ResolveOpenScene(string scenePath)

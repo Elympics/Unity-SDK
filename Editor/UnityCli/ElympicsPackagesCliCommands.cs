@@ -25,8 +25,8 @@ namespace Elympics.Editor.UnityCli
             [CliArg("track", "JSON object of explicit branches, e.g. '{\"com.daftmobile.elympics\":\"develop\"}'.")] string track = "",
             [CliArg("operation_id", "Return the state of an earlier apply instead of planning (read-only).")] string operationId = "") => CliRun.Async(async () =>
         {
-            if (!string.IsNullOrWhiteSpace(operationId))
-                return Describe(Updater.ReadOperation(operationId.Trim()), false);
+            if (CliArgs.Optional(operationId) is { } existingOperationId)
+                return Describe(Updater.ReadOperation(existingOperationId), false);
 
             var packageNames = CliArgs.ParseStringArray(packages, "packages");
             var pins = CliArgs.ParseStringObject(pin, "pin");
@@ -48,9 +48,7 @@ namespace Elympics.Editor.UnityCli
                 }, true);
             }
 
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-                throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "Updating packages reloads scripts, which Play mode doesn't allow.",
-                    "stop Play mode (editor_stop), then retry.");
+            CliRun.RequireNotPlaying("Updating packages reloads scripts, which Play mode doesn't allow.");
             await UniTask.SwitchToMainThread();
             return Describe(Updater.Apply(updates), false);
         });

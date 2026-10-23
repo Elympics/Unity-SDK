@@ -9,12 +9,11 @@ namespace Elympics.Editor.UnityCli
     /// <summary>Elympics backend calls. They use the Editor's current login.</summary>
     public static class ElympicsBackendCliCommands
     {
-        private const string TimeoutDescription = "Seconds to wait for the backend.";
         private const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
 
         [CliCommand("elympics_games_list", "List the Elympics games the logged-in account can access, marking the ones in ElympicsConfig and the active one.",
             Tags = new[] { "elympics", "read" })]
-        public static Task<object> GamesList([CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+        public static Task<object> GamesList([CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var games = await ElympicsEditorApi.GetGamesAsync(ct);
@@ -32,7 +31,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "read" })]
         public static Task<object> GameVersions(
             [CliArg("game_id", GameIdDescription)] string gameId = "",
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
@@ -58,7 +57,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_queues_list", "List the matchmaking queues of an Elympics game as the backend returns them.", Tags = new[] { "elympics", "read" })]
         public static Task<object> QueuesList(
             [CliArg("game_id", GameIdDescription)] string gameId = "",
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
@@ -70,7 +69,7 @@ namespace Elympics.Editor.UnityCli
         public static Task<object> RegionsList(
             [CliArg("game_id", GameIdDescription)] string gameId = "",
             [CliArg("all", "List every region of the Elympics cloud instead of the game's.")] bool all = false,
-            [CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = all ? null : CliGames.ResolveGameId(gameId);
@@ -80,7 +79,7 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_fleets_list", "List the server fleets available to the logged-in account, for elympics_game_create --fleet_id.",
             Tags = new[] { "elympics", "read" })]
-        public static Task<object> FleetsList([CliArg("timeout_seconds", TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
+        public static Task<object> FleetsList([CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct => new { status = "ok", fleets = await ElympicsEditorApi.GetFleetsAsync(ct) });
     }
 }

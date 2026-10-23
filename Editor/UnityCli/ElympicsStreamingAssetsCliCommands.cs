@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Unity.Pipeline.Commands;
@@ -30,7 +29,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("allow_external_path", "Must be true to upload a directory outside the project.")] bool allowExternalPath = false,
             [CliArg("username", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string username = "",
             [CliArg("password", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string password = "",
-            [CliArg("timeout_seconds", "Seconds to wait for the whole upload.")] int timeoutSeconds = 1800) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = 1800) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
@@ -71,16 +70,7 @@ namespace Elympics.Editor.UnityCli
                 };
             }, ElympicsCliErrors.UploadFailed);
 
-        private static StreamingAssetsLayout ParseLayout(string layout)
-        {
-            if (string.IsNullOrWhiteSpace(layout))
-                return StreamingAssetsLayout.AddressableVariants;
-
-            if (Enum.TryParse<StreamingAssetsLayout>(layout.Trim(), ignoreCase: true, out var parsed) && Enum.IsDefined(typeof(StreamingAssetsLayout), parsed))
-                return parsed;
-
-            throw ElympicsCliErrors.InvalidArgumentException($"Unknown --layout '{layout}'.",
-                $"use one of: {string.Join(", ", Enum.GetNames(typeof(StreamingAssetsLayout)))}.");
-        }
+        internal static StreamingAssetsLayout ParseLayout(string layout) =>
+            string.IsNullOrWhiteSpace(layout) ? StreamingAssetsLayout.AddressableVariants : CliArgs.ParseEnum<StreamingAssetsLayout>(layout, "layout");
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
+using UnityEditor;
 
 namespace Elympics.Editor.UnityCli
 {
@@ -31,6 +32,12 @@ namespace Elympics.Editor.UnityCli
             {
                 throw Wrap(e);
             }
+        }
+
+        public static void RequireNotPlaying(string reason)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, reason, "stop Play mode (editor_stop), then retry.");
         }
 
         private static bool IsInContract(Exception exception) =>

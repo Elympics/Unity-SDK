@@ -62,33 +62,36 @@ namespace Elympics.Editor.UnityCli
             return value;
         }
 
-        public static List<string> ParseStringArray(string json, string argumentName)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return new List<string>();
-            try
-            {
-                return JArray.Parse(json).ToObject<List<string>>() ?? new List<string>();
-            }
-            catch (Exception e) when (e is JsonException or ArgumentException or InvalidCastException)
-            {
-                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} must be a JSON array of strings: {e.Message}",
-                    $"pass e.g. --{argumentName} '[\"a\",\"b\"]'.");
-            }
-        }
+        public static string Optional(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-        public static Dictionary<string, string> ParseStringObject(string json, string argumentName)
+        public static bool? ParseOptionalBool(string value, string argumentName) => value?.Trim().ToLowerInvariant() switch
+        {
+            "auto" or "" or null => null,
+            "true" => true,
+            "false" => false,
+            _ => throw ElympicsCliErrors.InvalidArgumentException($"Unknown --{argumentName} '{value}'.", "use auto, true or false."),
+        };
+
+        public static List<string> ParseStringArray(string json, string argumentName) =>
+            ParseJsonObject(json, argumentName, "a JSON array of strings", $"pass e.g. --{argumentName} '[\"a\",\"b\"]'.",
+                text => JArray.Parse(text).ToObject<List<string>>()) ?? new List<string>();
+
+        public static Dictionary<string, string> ParseStringObject(string json, string argumentName) =>
+            ParseJsonObject(json, argumentName, "a JSON object with string values", $"pass e.g. --{argumentName} '{{\"key\":\"value\"}}'.",
+                text => JObject.Parse(text).ToObject<Dictionary<string, string>>()) ?? new Dictionary<string, string>();
+
+        /// <returns>Null for blank <paramref name="json"/>, so the caller picks the empty value.</returns>
+        public static T ParseJsonObject<T>(string json, string argumentName, string expectation, string fix, Func<string, T> parse) where T : class
         {
             if (string.IsNullOrWhiteSpace(json))
-                return new Dictionary<string, string>();
+                return null;
             try
             {
-                return JObject.Parse(json).ToObject<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+                return parse(json);
             }
             catch (Exception e) when (e is JsonException or ArgumentException or InvalidCastException)
             {
-                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} must be a JSON object with string values: {e.Message}",
-                    $"pass e.g. --{argumentName} '{{\"key\":\"value\"}}'.");
+                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} must be {expectation}: {e.Message}", fix);
             }
         }
 

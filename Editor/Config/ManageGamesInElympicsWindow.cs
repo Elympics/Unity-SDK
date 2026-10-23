@@ -377,7 +377,12 @@ namespace Elympics.Editor.Config
                 ElympicsWebIntegration.Login();
             };
 
-            elements.LogoutButton.clicked += ElympicsWebIntegration.Logout;
+            elements.LogoutButton.clicked += () =>
+            {
+                ElympicsWebIntegration.Logout();
+                username.SetValueWithoutNotify(ElympicsConfig.Username);
+                password.SetValueWithoutNotify(ElympicsConfig.Password);
+            };
         }
 
         #endregion

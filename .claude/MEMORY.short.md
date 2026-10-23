@@ -33,6 +33,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - StreamingAssets upload contract
 - runInBackground = PlayerSetting
 - BuildPlayer Server subtarget
+- 6.5+ re-reports scripts
 - Project Auditor skips asms
 - Editor caches EditorPrefs
 - Test Runner TestResults.xml

@@ -86,6 +86,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** a scratch batchmode check logged `start=Player`, `raw … after=Server`, and `BuildServerLinux … after=Player` once `BuildTools.BuildServer` restored it (R3, 2026-10-19).
 - **Time scope:** If Unity stops persisting the subtarget from `BuildPlayerOptions`, remove this.
 
+### Unity 6.5+ reports unchanged scripts again after a requested recompile
+- **Rule:** an `AssetPostprocessor` that calls `CompilationPipeline.RequestScriptCompilation` for some scripts in `importedAssets` must skip scripts it has already requested for (e.g. path plus write time in `SessionState`, as `Editor/Weaving/Weaver.cs` does). `didDomainReload` can't tell the two cases apart.
+- **Reason:** after the domain reload that follows the requested compile, 6000.5 and 6000.6 call `OnPostprocessAllAssets` again with the same unchanged scripts (6000.4 doesn't), so each request starts a second clean compile. `didDomainReload` is true on the first, real import too. `-runTests` then runs the tests while that second compile is in progress, so `EditorApplication.isCompiling` is true.
+- **Example:** on MR !604, the 6000.5/6000.6 CI jobs failed `RefusedLaunchIsRecordedAsFailed` with `ELYMPICS_COMPILING` until Weaver skipped repeat reports (2026-10-23). Two "Requested through public api" log lines in one run are the symptom.
+- **Time scope:** If Unity stops re-reporting the scripts, or Weaver no longer requests compiles, remove this.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract

@@ -7,7 +7,7 @@ namespace Elympics.Editor.Tests.UnityCli
 {
     internal static class CliAssert
     {
-        /// <summary>Asserts the error contract: the message starts with the code and carries a non-empty fix hint.</summary>
+        /// <summary>Also asserts a non-empty fix hint.</summary>
         public static void HasCodeAndFix(Exception exception, string code)
         {
             Assert.That(exception, Is.Not.Null, $"Expected {code}.");

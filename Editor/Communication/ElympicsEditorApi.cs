@@ -349,7 +349,6 @@ namespace Elympics.Editor.Communication
 
         #region Uploads
 
-        /// <summary>Uploads a packed server build as a new game version.</summary>
         public static async UniTask UploadServerAsync(string gameId, string gameVersion, string packPath, CancellationToken ct = default)
         {
             var form = new List<IMultipartFormSection>
@@ -365,7 +364,6 @@ namespace Elympics.Editor.Communication
             }, true, ct);
         }
 
-        /// <returns>The number of uploaded files.</returns>
         public static async UniTask<int> UploadClientBuildAsync(
             string gameId,
             string clientBuildPath,
@@ -424,7 +422,6 @@ namespace Elympics.Editor.Communication
                 TimeoutSeconds = JsonTimeoutSeconds,
             }, true, ct);
 
-        /// <returns>The number of uploaded files.</returns>
         public static async UniTask<int> UploadStreamingAssetsAsync(
             string gameId,
             string streamingAssetsPath,

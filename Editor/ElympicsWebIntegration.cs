@@ -329,7 +329,6 @@ namespace Elympics
         }
 
         /// <summary>Like <see cref="UploadStreamingAssetsUsingCurrentLogin"/>, without blocking the Editor.</summary>
-        /// <returns>The number of uploaded files.</returns>
         [PublicAPI]
         public static Task<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
             CancellationToken ct = default)
@@ -340,7 +339,6 @@ namespace Elympics
 
         /// <summary>Uploads a WebGL client build with the Editor's current login, without dialogs and without blocking the Editor.</summary>
         /// <param name="clientBuildPath">The WebGL build's root or its Build folder.</param>
-        /// <returns>The number of uploaded files.</returns>
         [PublicAPI]
         public static Task<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
             CancellationToken ct = default)

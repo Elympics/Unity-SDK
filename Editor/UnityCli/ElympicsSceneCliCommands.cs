@@ -229,7 +229,6 @@ namespace Elympics.Editor.UnityCli
         private static bool Uses2DPhysics(UnityEngine.GameObject[] roots) =>
             roots.Any(root => root.GetComponentInChildren<UnityEngine.Rigidbody2D>(true) != null || root.GetComponentInChildren<UnityEngine.Collider2D>(true) != null);
 
-        /// <returns>Whether Build Settings changed.</returns>
         private static bool AddToBuildSettings(string scenePath)
         {
             var scenes = EditorBuildSettings.scenes.ToList();

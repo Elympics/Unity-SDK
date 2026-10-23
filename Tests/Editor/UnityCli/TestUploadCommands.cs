@@ -59,6 +59,20 @@ namespace Elympics.Editor.Tests.UnityCli
             AssertFails(() => ElympicsBackendWriteCliCommands.QueueDelete("solo", Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
+        public void StreamingAssetsUploadRejectsCredentials() =>
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("Assets", "1.0", username: "user", password: "secret", confirm: true),
+                ElympicsCliErrors.CredentialsArgsRemoved);
+
+        [Test]
+        public void StreamingAssetsUploadNeedsConfirm() =>
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.GetTempPath(), "1.0"), ElympicsCliErrors.ConfirmRequired);
+
+        [Test]
+        public void StreamingAssetsUploadNeedsAnExistingDirectory() =>
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("NoSuchContent_" + Guid.NewGuid().ToString("N"), "1.0", confirm: true),
+                ElympicsCliErrors.BuildDirNotFound);
+
+        [Test]
         public void GameIdsMustBeGuids() =>
             AssertFails(() => ElympicsBackendCliCommands.QueuesList("not-a-guid"), ElympicsCliErrors.InvalidArgument);
     }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Unity.Pipeline.Commands;
 
 namespace Elympics.Editor.UnityCli
@@ -9,81 +10,65 @@ namespace Elympics.Editor.UnityCli
         private const string CommandName = "elympics_upload_streaming_assets";
 
         /// <summary>
-        /// Unity CLI equivalent of <see cref="ElympicsWebIntegration.UploadStreamingAssetsInBatchmode"/>.
+        /// Unity CLI equivalent of <see cref="ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync"/>.
         /// </summary>
-        /// <remarks>
-        /// A large bundle can outrun the default HTTP timeout. Raise the timeout
-        /// or run the command as a detached job (<c>"job": true</c>) for big uploads.
-        /// </remarks>
         [CliCommand(CommandName,
-            "Upload a directory of StreamingAssets variants to the Elympics cloud as a new content version. "
-            + "Uses the Editor's current login and active game config unless username/password/game_id are given. "
-            + "Versions are write-once - a burnt version name cannot be reused, and the upload is not undoable. "
-            + "Blocks the Editor main thread for the whole upload, so raise the client timeout "
-            + "or run it as a detached job for large bundles.",
-            Tags = new[] { "elympics", "build" })]
-        public static object UploadStreamingAssets(
+            "Upload a directory of StreamingAssets variants to the Elympics cloud as a new content version, with the Editor's current login and "
+            + "the active game config unless --game_id is given. Versions are write-once - a burnt version name cannot be reused, and the upload "
+            + "is not undoable, so it needs --confirm true. Large bundles take minutes: run it with --detach.",
+            Tags = new[] { "elympics", "upload" })]
+        public static Task<object> UploadStreamingAssets(
             [CliArg("streaming_assets_path", "Local directory to upload. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
-            [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. Only Latin letters, digits, dashes, and dots are allowed.", Required = true)] string versionName,
+            [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. "
+                + "Only Latin letters, digits, dashes, and dots are allowed.", Required = true)]
+            string versionName,
             [CliArg("game_id", "Target game ID. Defaults to the active Elympics game config's ID.")] string gameId = "",
-            [CliArg("username", "Elympics account username. Omit to upload as the currently logged in account. Must be paired with password.")] string username = "",
-            [CliArg("password", "Elympics account password. Omit to upload as the currently logged in account. Must be paired with username.")] string password = "",
             [CliArg("layout", "Directory layout: AddressableVariants (default, one Addressables build per variant, generating a manifest file) "
                 + "or UnstructuredAssets (every file below the path, unvalidated).")]
-            string layout = nameof(StreamingAssetsLayout.AddressableVariants))
-        {
-            RequireArgument(streamingAssetsPath, "streaming_assets_path");
-            RequireArgument(versionName, "version_name");
-
-            var parsedLayout = ParseLayout(layout);
-            var resolvedPath = Path.GetFullPath(streamingAssetsPath);
-            if (!Directory.Exists(resolvedPath))
-                throw new ArgumentException($"StreamingAssets directory not found: {resolvedPath}");
-
-            var hasUsername = !string.IsNullOrWhiteSpace(username);
-            var hasPassword = !string.IsNullOrWhiteSpace(password);
-
-            if (hasUsername != hasPassword)
-                throw new ArgumentException("--username and --password must be supplied together. Omit both to upload as the currently logged in account.");
-
-            var usedActiveGameConfig = ResolveGameId(ref gameId);
-
-            if (hasUsername)
-                ElympicsWebIntegration.UploadStreamingAssetsInBatchmode(username, password, gameId, streamingAssetsPath, versionName, parsedLayout);
-            else
-                ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLogin(gameId, streamingAssetsPath, versionName, parsedLayout);
-
-            return new
+            string layout = nameof(StreamingAssetsLayout.AddressableVariants),
+            [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("username", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string username = "",
+            [CliArg("password", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string password = "",
+            [CliArg("timeout_seconds", "Seconds to wait for the whole upload.")] int timeoutSeconds = 1800) =>
+            CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
-                status = "uploaded",
-                gameId,
-                versionName,
-                layout = parsedLayout.ToString(),
-                streamingAssetsPath,
-                usedCurrentLogin = !hasUsername,
-                usedActiveGameConfig,
-            };
-        }
+                if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
+                    throw new ElympicsCliException(ElympicsCliErrors.CredentialsArgsRemoved,
+                        "--username and --password were removed: a password in arguments leaks into shell history, process lists and logs.",
+                        "log in once via Tools > Elympics > Manage games in Elympics, then call the command without credentials.");
+                streamingAssetsPath = CliArgs.Require(streamingAssetsPath, "streaming_assets_path");
+                versionName = CliArgs.ValidateVersion(versionName, "version_name");
+                var parsedLayout = ParseLayout(layout);
+                var resolvedPath = Path.GetFullPath(streamingAssetsPath);
+                if (!Directory.Exists(resolvedPath))
+                    throw new ElympicsCliException(ElympicsCliErrors.BuildDirNotFound, $"The StreamingAssets directory {resolvedPath} doesn't exist.",
+                        "build the Addressables content first, then pass its output folder.");
+                CliArgs.RequireConfirm(confirm, "Uploading a StreamingAssets version");
+                var usedActiveGameConfig = string.IsNullOrWhiteSpace(gameId);
+                var resolvedGameId = CliGames.ResolveGameId(gameId);
 
-        /// <returns><c>true</c> if the fallback (the active Elympics game config's ID) was taken.</summary>
-        private static bool ResolveGameId(ref string gameId)
-        {
-            if (!string.IsNullOrWhiteSpace(gameId))
-                return false;
+                int fileCount;
+                try
+                {
+                    fileCount = await ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync(resolvedGameId, resolvedPath, versionName, parsedLayout, ct);
+                }
+                catch (ElympicsException e) when (e is not Communication.ElympicsEditorApiException)
+                {
+                    throw new ElympicsCliException(ElympicsCliErrors.InvalidArgument, e.Message,
+                        "fix the directory layout described above (or pass --layout UnstructuredAssets to upload it as-is), then retry with a new --version_name.");
+                }
 
-            var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
-            if (gameConfig == null || string.IsNullOrWhiteSpace(gameConfig.GameId))
-                throw new ArgumentException("No active Elympics game config with a game ID was found. Select one in the Elympics config, or pass --game_id.");
-
-            gameId = gameConfig.GameId;
-            return true;
-        }
-
-        private static void RequireArgument(string value, string argumentName)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException($"Missing required argument --{argumentName}.");
-        }
+                return new
+                {
+                    status = "uploaded",
+                    gameId = resolvedGameId,
+                    versionName,
+                    layout = parsedLayout.ToString(),
+                    streamingAssetsPath = resolvedPath,
+                    fileCount,
+                    usedActiveGameConfig,
+                };
+            }, ElympicsCliErrors.UploadFailed);
 
         private static StreamingAssetsLayout ParseLayout(string layout)
         {
@@ -93,7 +78,8 @@ namespace Elympics.Editor.UnityCli
             if (Enum.TryParse<StreamingAssetsLayout>(layout.Trim(), ignoreCase: true, out var parsed) && Enum.IsDefined(typeof(StreamingAssetsLayout), parsed))
                 return parsed;
 
-            throw new ArgumentException($"Unknown layout '{layout}'. Valid values: {string.Join(", ", Enum.GetNames(typeof(StreamingAssetsLayout)))}.");
+            throw ElympicsCliErrors.InvalidArgumentException($"Unknown --layout '{layout}'.",
+                $"use one of: {string.Join(", ", Enum.GetNames(typeof(StreamingAssetsLayout)))}.");
         }
     }
 }

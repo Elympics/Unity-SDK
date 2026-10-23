@@ -53,16 +53,16 @@ namespace Elympics.Editor.UnityCli
                 }
                 else
                 {
-                    if (EditorApplication.isCompiling)
-                        throw new ElympicsCliException(ElympicsCliErrors.Compiling, "Scripts are compiling.", "wait until recompile_status reports completion, then retry.");
-                    if (EditorUtility.scriptCompilationFailed)
-                        throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors, so Play mode can't start.",
-                            "fix the errors listed by console --level error, recompile, then retry.");
                     var dirty = EditorMatchLaunchQueue.GetDirtyScenes();
                     if (dirty.Length > 0 && !saveScenes)
                         throw new ElympicsCliException(ElympicsCliErrors.UnsavedScenes,
                             $"These open scenes have unsaved changes: {string.Join(", ", dirty.Select(EditorMatchLaunchQueue.DescribeScene))}.",
                             "save them (save_all), or repeat with --save_scenes true to save them before launching.");
+                    if (EditorApplication.isCompiling)
+                        throw new ElympicsCliException(ElympicsCliErrors.Compiling, "Scripts are compiling.", "wait until recompile_status reports completion, then retry.");
+                    if (EditorUtility.scriptCompilationFailed)
+                        throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors, so Play mode can't start.",
+                            "fix the errors listed by console --level error, recompile, then retry.");
                 }
 
                 var game = CliGames.ResolveGame(gameId);

@@ -41,6 +41,8 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void RefusedLaunchIsRecordedAsFailed()
         {
+            // The launch resolves the active game before the queue can refuse it.
+            Assume.That(ElympicsConfig.Load()?.GetCurrentGameConfig(), Is.Not.Null);
             var previous = EditorLaunchRecord.Last;
             try
             {

@@ -41,9 +41,13 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void RefusedLaunchIsRecordedAsFailed()
         {
-            // The launch resolves the active game before the queue can refuse it.
-            Assume.That(ElympicsConfig.Load()?.GetCurrentGameConfig(), Is.Not.Null);
             var previous = EditorLaunchRecord.Last;
+            var game = ScriptableObject.CreateInstance<ElympicsGameConfig>();
+            game.gameId = "cc856fff-25e0-4595-a9cd-290cc99b774e";
+            var config = ScriptableObject.CreateInstance<ElympicsConfig>();
+            config.availableGames.Add(game);
+            // The launch resolves the active game before the queue can refuse it, and the CI project has no ElympicsConfig.
+            CliGames.LoadConfig = () => config;
             try
             {
                 using var scene = new AdditiveTestScene();
@@ -57,6 +61,9 @@ namespace Elympics.Editor.Tests.UnityCli
             }
             finally
             {
+                CliGames.LoadConfig = ElympicsConfig.Load;
+                Object.DestroyImmediate(config);
+                Object.DestroyImmediate(game);
                 EditorLaunchRecord.Restore(previous);
             }
         }

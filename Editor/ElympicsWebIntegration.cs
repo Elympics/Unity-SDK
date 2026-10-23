@@ -102,6 +102,7 @@ namespace Elympics
 
         private static async UniTask LoginAsync(string username, string password, CancellationToken ct = default)
         {
+            ElympicsEditorApi.RequireTrustedApiEndpoint();
             ElympicsLogger.LogInfo($"Logging in as {username}");
             var userName = await ElympicsEditorApi.LoginAsync(username, password, ct);
             ElympicsLogger.LogInfo($"Logged to ElympicsWeb as {userName}.");

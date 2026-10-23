@@ -89,6 +89,8 @@ namespace Elympics.Editor.Communication
             ?? ElympicsConfig.Load()?.ElympicsApiEndpoint
             ?? throw new ElympicsException($"No ElympicsConfig found in Resources/{ElympicsConfig.PathInResources}.");
 
+        internal static void RequireTrustedApiEndpoint() => ElympicsApiHostPolicy.Require(new Uri(ApiEndpoint));
+
         private static string Url(params string[] segments) => string.Join("/", new[] { ApiEndpoint.TrimEnd('/') }.Concat(segments.Select(Uri.EscapeDataString)));
 
         #region Blocking calls

@@ -33,6 +33,7 @@ namespace Elympics.Editor.Tests.UnityCli
                 Outputs.TryGetValue(url, out var output) ? Task.FromResult(output) : Task.FromException<string>(new InvalidOperationException("unreachable"));
         }
 
+        private TempDirectory _temp;
         private string _directory;
         private PackageUpdater _updater;
         private FakeGit _git;
@@ -41,8 +42,8 @@ namespace Elympics.Editor.Tests.UnityCli
         [SetUp]
         public void SetUp()
         {
-            _directory = Path.Combine(Path.GetTempPath(), "ElympicsTestPackageUpdater_" + Path.GetRandomFileName());
-            _ = Directory.CreateDirectory(_directory);
+            _temp = new TempDirectory("ElympicsTestPackageUpdater");
+            _directory = _temp.Path;
             _git = new FakeGit();
             _git.Outputs[SdkUrl] = $"{TagCommit}\trefs/tags/v0.28.0\n{TagCommit}\trefs/tags/v0.29.0\n{DevelopHead}\trefs/heads/develop\n";
             _git.Outputs[PlayPadUrl] = $"{TagCommit}\trefs/tags/v3.0.0\n{TagCommit}\trefs/tags/v4.0.0\n";
@@ -68,7 +69,7 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [TearDown]
-        public void TearDown() => Directory.Delete(_directory, true);
+        public void TearDown() => _temp.Dispose();
 
         private void WriteManifest(string sdk, string playPad) =>
             File.WriteAllText(_updater.ManifestPath, new JObject

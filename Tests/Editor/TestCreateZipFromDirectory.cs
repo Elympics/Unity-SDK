@@ -8,12 +8,14 @@ namespace Elympics.Editor.Tests
 {
     public class TestCreateZipFromDirectory
     {
+        private TempDirectory _temp;
         private string _root;
 
         [SetUp]
         public void SetUp()
         {
-            _root = Path.Combine(Path.GetTempPath(), "ElympicsZipTests-" + Guid.NewGuid().ToString("N"));
+            _temp = new TempDirectory("ElympicsZipTests");
+            _root = _temp.Path;
             _ = Directory.CreateDirectory(Path.Combine(_root, "source", "Data", "Nested"));
             _ = Directory.CreateDirectory(Path.Combine(_root, "source", "Empty"));
             File.WriteAllText(Path.Combine(_root, "source", "Unity"), "binary");
@@ -21,7 +23,7 @@ namespace Elympics.Editor.Tests
         }
 
         [TearDown]
-        public void TearDown() => Directory.Delete(_root, true);
+        public void TearDown() => _temp.Dispose();
 
         [Test]
         public void ArchiveHasRelativeForwardSlashEntriesWithoutTheBaseDirectory()

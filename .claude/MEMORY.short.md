@@ -16,11 +16,11 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **com.unity.pipeline 0.8 is the floor:** keep it as the minimum; verify commands by listing, never by uploading.
 
 ## Verification
-- **Compile and test evidence:** redirected `dotnet build`; tests via batchmode, `unity command`, or the open Editor.
+- **Compile and test evidence:** redirected `dotnet build`; tests via `unity command`, batchmode, or the open Editor.
 - **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
 - **Scratch Editors share the Elympics login:** give them a reachable endpoint; check the login afterwards.
-- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`. See entry.
+- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; 2+ Editors: `UNITY_PROJECT_PATH`; tests total > 0.
 
 ## Configuration
 - **Active game is availableGames[0]:** duplicate game IDs resolve to the first entry.

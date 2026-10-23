@@ -8,11 +8,19 @@ namespace Elympics.Editor.Config
 {
     internal static class GameConfigAssets
     {
-        private const string PackageTestsPath = "Packages/com.daftmobile.elympics/Tests/";
+        private const string ElympicsPackagesPrefix = "Packages/com.daftmobile.";
 
-        /// <summary>Finds the project's <see cref="ElympicsGameConfig"/> assets, without the SDK's test fixtures.</summary>
+        /// <summary>Finds the project's <see cref="ElympicsGameConfig"/> assets, without the test fixtures of Elympics packages.</summary>
         public static string[] FindGuids() => AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}")
-            .Where(guid => !AssetDatabase.GUIDToAssetPath(guid).StartsWith(PackageTestsPath, StringComparison.Ordinal))
+            .Where(guid => !IsPackageTestAsset(AssetDatabase.GUIDToAssetPath(guid)))
             .ToArray();
+
+        private static bool IsPackageTestAsset(string path)
+        {
+            if (!path.StartsWith(ElympicsPackagesPrefix, StringComparison.Ordinal))
+                return false;
+            var packageRootEnd = path.IndexOf('/', ElympicsPackagesPrefix.Length);
+            return packageRootEnd >= 0 && path.AsSpan(packageRootEnd).StartsWith("/Tests/", StringComparison.Ordinal);
+        }
     }
 }

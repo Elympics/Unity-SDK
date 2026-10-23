@@ -115,6 +115,50 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(plan.Single(update => update.name == Sdk).error, Is.Null);
         });
 
+        [UnityTest]
+        public IEnumerator AnUnsupportedRemoteIsNeverPassedToGit() => UniTask.ToCoroutine(async () =>
+        {
+            WriteManifest("git+ext::sh -c touch% pwned", PlayPadUrl + "#v3.0.0");
+            var urls = new List<string>();
+            _updater.Git = new RecordingGit(urls, _git);
+
+            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+
+            Assert.That(plan.Single(update => update.name == Sdk).error.code, Is.EqualTo(PackageUpdater.UnsupportedRemote));
+            Assert.That(urls, Is.EqualTo(new[] { PlayPadUrl }));
+        });
+
+        [UnityTest]
+        public IEnumerator CredentialsAreRemovedFromRemoteErrors() => UniTask.ToCoroutine(async () =>
+        {
+            WriteManifest("https://user:glpat-secret@gitlab.example.com/sdk/unity-sdk-package.git#develop", PlayPadUrl + "#v3.0.0");
+
+            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+
+            var error = plan.Single(update => update.name == Sdk).error;
+            Assert.That(error.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
+            Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
+        });
+
+        private sealed class RecordingGit : IGitProcess
+        {
+            private readonly List<string> _urls;
+            private readonly IGitProcess _inner;
+
+            public RecordingGit(List<string> urls, IGitProcess inner)
+            {
+                _urls = urls;
+                _inner = inner;
+            }
+
+            public Task<string> LsRemoteAsync(string url, TimeSpan timeout)
+            {
+                lock (_urls)
+                    _urls.Add(url);
+                return _inner.LsRemoteAsync(url, timeout);
+            }
+        }
+
         [Test]
         public void UnknownPackagesAreRejected()
         {

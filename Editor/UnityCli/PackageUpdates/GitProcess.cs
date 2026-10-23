@@ -20,9 +20,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     {
         public Task<string> LsRemoteAsync(string url, TimeSpan timeout) => Task.Run(() =>
         {
-            if (url.Any(char.IsControl) || url.Contains('"'))
-                throw new InvalidOperationException($"Unsupported git URL: {url}");
-            var startInfo = new ProcessStartInfo("git", $"ls-remote --tags --heads \"{url}\"")
+            if (url.Any(char.IsControl) || url.Contains('"') || url.StartsWith("-", StringComparison.Ordinal) || url.Contains("::"))
+                throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");
+            var startInfo = new ProcessStartInfo("git", $"ls-remote --tags --heads -- \"{url}\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -30,6 +30,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 RedirectStandardError = true,
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             };
+            startInfo.Environment["GIT_ALLOW_PROTOCOL"] = "https:ssh";
             startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
             startInfo.Environment["GCM_INTERACTIVE"] = "never";
             startInfo.Environment["GIT_ASKPASS"] = string.Empty;

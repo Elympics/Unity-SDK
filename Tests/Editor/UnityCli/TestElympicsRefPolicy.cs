@@ -167,7 +167,24 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(dependency.RemoteUrl, Is.EqualTo(remoteUrl));
             Assert.That(dependency.Ref, Is.EqualTo(reference));
             Assert.That(dependency.WithRef(dependency.Ref), Is.EqualTo(spec));
+            Assert.That(dependency.HasSupportedRemote, Is.True);
         }
+
+        [TestCase("git+ext::sh -c touch% /tmp/pwned")]
+        [TestCase("git+--upload-pack=touch /tmp/pwned")]
+        [TestCase("git+-uhttps://example.com/a.git")]
+        [TestCase("git+file:///C:/repos/a.git")]
+        [TestCase("git+fd::17")]
+        [TestCase("http://gitlab.example.com/a/b.git")]
+        [TestCase("ssh://-oProxyCommand=touch%20pwned/a.git")]
+        [TestCase("git@-oProxyCommand=x:a/b.git")]
+        [TestCase("git+https://example.com/a::b.git")]
+        public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.Parse(spec).HasSupportedRemote, Is.False);
+
+        [Test]
+        public void CredentialsAreRedacted() =>
+            Assert.That(GitDependency.RedactCredentials("fatal: unable to access 'https://user:glpat-secret@gitlab.example.com/a.git/'"),
+                Is.EqualTo("fatal: unable to access 'https://gitlab.example.com/a.git/'"));
 
         [TestCase("1.2.3")] // 22
         [TestCase("file:../x")]

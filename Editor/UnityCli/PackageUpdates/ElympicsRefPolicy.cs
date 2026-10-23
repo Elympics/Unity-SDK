@@ -58,6 +58,18 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         /// <summary>The URL <c>git ls-remote</c> accepts (UPM's <c>git+</c> prefix removed).</summary>
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
+
+        /// <summary>
+        /// Whether <see cref="RemoteUrl"/> is an https, ssh or scp-like URL. Anything else (<c>ext::</c>, <c>file://</c>, a value starting with <c>-</c>)
+        /// could make <c>git ls-remote</c> run a command taken from the manifest.
+        /// </summary>
+        public bool HasSupportedRemote => SupportedRemote.IsMatch(RemoteUrl) && !RemoteUrl.Contains("::");
+
+        private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");
+        private static readonly Regex UserInfo = new(@"(?<=://)[^/@\s]+@");
+
+        /// <summary>Removes the user and password (or token) parts of the URLs in <paramref name="text"/>.</summary>
+        public static string RedactCredentials(string text) => UserInfo.Replace(text, string.Empty);
     }
 
     internal sealed class RemoteRefs

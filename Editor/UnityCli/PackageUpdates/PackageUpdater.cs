@@ -54,6 +54,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     {
         public const string Prefix = "com.daftmobile.";
         public const string RemoteUnreachable = "ELYMPICS_REMOTE_UNREACHABLE";
+        public const string UnsupportedRemote = "ELYMPICS_UNSUPPORTED_GIT_URL";
         private static readonly TimeSpan LsRemoteTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan StaleOperation = TimeSpan.FromMinutes(10);
 
@@ -102,6 +103,18 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 oldVersion = InstalledVersion(name),
             };
 
+            if (!dependency.HasSupportedRemote)
+            {
+                update.action = "error";
+                update.error = new PackageUpdateError
+                {
+                    code = UnsupportedRemote,
+                    message = $"{GitDependency.RedactCredentials(dependency.RemoteUrl)} isn't an https, ssh or git@host: URL, so git isn't run for it.",
+                    fix = "change the package's URL in Packages/manifest.json to its https:// or git@host: form.",
+                };
+                return update;
+            }
+
             RemoteRefs remote;
             try
             {
@@ -113,7 +126,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 update.error = new PackageUpdateError
                 {
                     code = RemoteUnreachable,
-                    message = $"Can't read the refs of {dependency.RemoteUrl}: {e.Message}",
+                    message = GitDependency.RedactCredentials($"Can't read the refs of {dependency.RemoteUrl}: {e.Message}"),
                     fix = "check that git is installed and that `git ls-remote <url>` works in a terminal without prompting (stored credentials or an SSH agent), then retry.",
                 };
                 return update;

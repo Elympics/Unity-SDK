@@ -195,10 +195,22 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             else
                 operation.finishedAt = operation.startedAt;
 
+            RedactCredentials(updates);
             Save(operation);
             if (changes.Count > 0)
                 Resolve();
             return operation;
+        }
+
+        /// <summary>Strips credentials from the URLs shown in results and saved in records; call it once the manifest no longer needs them.</summary>
+        public static void RedactCredentials(IEnumerable<PackageUpdate> updates)
+        {
+            foreach (var update in updates)
+            {
+                update.urlBase = update.urlBase == null ? null : GitDependency.RedactCredentials(update.urlBase);
+                update.oldSpec = update.oldSpec == null ? null : GitDependency.RedactCredentials(update.oldSpec);
+                update.newSpec = update.newSpec == null ? null : GitDependency.RedactCredentials(update.newSpec);
+            }
         }
 
         public PackageUpdateOperation ReadOperation(string operationId)

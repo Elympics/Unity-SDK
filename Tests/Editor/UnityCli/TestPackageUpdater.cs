@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.UnityCli;
 using Elympics.Editor.UnityCli.PackageUpdates;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityEngine.TestTools;
@@ -138,6 +139,20 @@ namespace Elympics.Editor.Tests.UnityCli
             var error = plan.Single(update => update.name == Sdk).error;
             Assert.That(error.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
             Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
+        });
+
+        [UnityTest]
+        public IEnumerator CredentialsStayInTheManifestButNotInResultsOrRecords() => UniTask.ToCoroutine(async () =>
+        {
+            const string tokenUrl = "https://user:glpat-secret@gitlab.example.com/sdk/playpad-sdk.git";
+            _git.Outputs[tokenUrl] = _git.Outputs[PlayPadUrl];
+            WriteManifest(SdkUrl + "#develop", tokenUrl + "#v3.0.0");
+
+            var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+
+            Assert.That(File.ReadAllText(_updater.ManifestPath), Does.Contain(tokenUrl + "#v4.0.0"));
+            Assert.That(JsonConvert.SerializeObject(operation), Does.Not.Contain("glpat-secret"));
+            Assert.That(Directory.GetFiles(_updater.OperationsDirectory).Select(File.ReadAllText), Has.None.Contain("glpat-secret"));
         });
 
         private sealed class RecordingGit : IGitProcess

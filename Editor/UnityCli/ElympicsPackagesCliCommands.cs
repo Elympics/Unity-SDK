@@ -39,11 +39,14 @@ namespace Elympics.Editor.UnityCli
                 throw new ElympicsCliException(explicitError.error.code, $"{explicitError.name}: {explicitError.error.message}.", explicitError.error.fix);
 
             if (dryRun)
+            {
+                PackageUpdater.RedactCredentials(updates);
                 return Describe(new PackageUpdateOperation
                 {
                     status = updates.All(update => update.action == "keep") ? "up_to_date" : "planned",
                     packages = updates,
                 }, true);
+            }
 
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "Updating packages reloads scripts, which Play mode doesn't allow.",

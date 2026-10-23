@@ -381,12 +381,15 @@ namespace Elympics.Editor.Communication
 
             try
             {
+                if (initResponse.Files == null || initResponse.Files.Length != validFiles.Count)
+                    throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse,
+                        $"Elympics cloud returned {initResponse.Files?.Length ?? 0} upload URLs for {validFiles.Count} client build files.");
                 for (var index = 0; index < initResponse.Files.Length; index++)
                 {
                     var fileUploadInfo = initResponse.Files[index];
                     var expectedFile = validFiles[index];
                     if (!WebGLUploader.DoesFileHaveGivenCompoundExtension(fileUploadInfo.FilePath, expectedFile.extension))
-                        throw new ElympicsException($"Uploaded file '{fileUploadInfo.FilePath}' does not match expected extension '{expectedFile.extension}'.");
+                        throw new ElympicsException($"Uploaded file '{Sanitize(fileUploadInfo.FilePath)}' does not match expected extension '{expectedFile.extension}'.");
 
                     var localFile = expectedFile.name + expectedFile.extension;
                     progress?.Invoke(localFile, (float)index / initResponse.Files.Length);
@@ -438,6 +441,12 @@ namespace Elympics.Editor.Communication
             if (initResponse.Files == null || initResponse.Files.Length == 0)
                 throw new ElympicsException("Elympics cloud returned no files to upload.");
 
+            var localPaths = new HashSet<string>(relativePaths, StringComparer.Ordinal);
+            foreach (var file in initResponse.Files)
+                if (file.FilePath == null || !localPaths.Remove(file.FilePath))
+                    throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse,
+                        $"Elympics cloud requested '{Sanitize(file.FilePath)}', which isn't one of the files to upload or was requested twice.");
+
             var files = WebGLUploader.SortStreamingAssetsFilesForUpload(initResponse.Files);
             for (var index = 0; index < files.Count; index++)
             {
@@ -463,6 +472,8 @@ namespace Elympics.Editor.Communication
         /// <param name="extension">The file's extension with a dot, which may be compound. It selects the Content-Encoding.</param>
         private static async UniTask UploadFileAsync(string fileName, string signedUrl, byte[] payload, string contentType, string extension, CancellationToken ct)
         {
+            if (!Uri.TryCreate(signedUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"Elympics cloud returned a non-https upload URL for '{fileName}'.");
             var response = await Transport.SendAsync(new EditorApiRequest
             {
                 Method = UnityWebRequest.kHttpVerbPUT,
@@ -474,7 +485,7 @@ namespace Elympics.Editor.Communication
             }, ct);
             if (!response.Succeeded)
                 throw new ElympicsEditorApiException(response.IsConnectionError ? EditorApiErrorKind.Network : EditorApiErrorKind.RequestFailed,
-                    $"Failed to upload file '{fileName}': {response.Error}\n{response.Text}", response.StatusCode);
+                    $"Failed to upload file '{fileName}': {response.Error}\n{Sanitize(response.Text)}", response.StatusCode);
         }
 
         #endregion
@@ -574,10 +585,34 @@ namespace Elympics.Editor.Communication
             { }
 
             if (errorModel?.Errors is { Count: > 0 })
-                return $"Received error response code {statusCode} with errors:\n{string.Join("\n", errorModel.Errors.SelectMany(r => (r.Value ?? Array.Empty<string>()).Select(x => $"[{r.Key}] {x}")))}";
+            {
+                var errors = errorModel.Errors.SelectMany(r => (r.Value ?? Array.Empty<string>()).Select(x => $"[{Sanitize(r.Key)}] {Sanitize(x)}")).ToList();
+                var shown = errors.Take(MaxShownErrors);
+                if (errors.Count > MaxShownErrors)
+                    shown = shown.Append($"(and {errors.Count - MaxShownErrors} more)");
+                return $"Received error response code {statusCode} with errors:\n{string.Join("\n", shown)}";
+            }
             if (!string.IsNullOrEmpty(errorModel?.Detail ?? errorModel?.Title))
-                return $"Received error response code {statusCode}: {errorModel.Detail ?? errorModel.Title}";
-            return $"Received error response code {statusCode} with error:\n{text}";
+                return $"Received error response code {statusCode}: {Sanitize(errorModel.Detail ?? errorModel.Title)}";
+            return $"Received error response code {statusCode} with error:\n{Sanitize(text)}";
+        }
+
+        private const int MaxBackendTextLength = 500;
+        private const int MaxShownErrors = 10;
+
+        /// <summary>Makes backend text safe to show in logs and CLI results: no control characters (e.g. terminal escapes) and a bounded length.</summary>
+        internal static string Sanitize(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+            var builder = new StringBuilder(Math.Min(text.Length, MaxBackendTextLength));
+            foreach (var c in text)
+            {
+                if (builder.Length == MaxBackendTextLength)
+                    return builder.Append("… (truncated)").ToString();
+                _ = builder.Append(char.IsControl(c) ? ' ' : c);
+            }
+            return builder.ToString();
         }
 
         #endregion

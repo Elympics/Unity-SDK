@@ -373,5 +373,87 @@ namespace Elympics.Editor.Tests
             Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
         });
+
+        [Test]
+        public void AClientBuildIsNotSentToANonHttpsUrl()
+        {
+            var buildRoot = CreateClientBuild();
+            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse().Replace("https://gcs.test/", "http://gcs.test/")) : Ok("");
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        }
+
+        [Test]
+        public void AClientBuildInitWithTheWrongNumberOfUrlsFails()
+        {
+            var buildRoot = CreateClientBuild();
+            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok("{\"UploadId\":\"u1\",\"Files\":[]}") : Ok("");
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        }
+
+        private string CreateStreamingAssets()
+        {
+            _buildDirectory = Path.Combine(Path.GetTempPath(), "ElympicsTestEditorApi_" + Path.GetRandomFileName());
+            _ = Directory.CreateDirectory(_buildDirectory);
+            File.WriteAllText(Path.Combine(_buildDirectory, "a.txt"), "a");
+            return _buildDirectory;
+        }
+
+        private static string StreamingAssetsInitResponse(params string[] paths) =>
+            "{\"Files\":[" + string.Join(",", paths.Select(path => $"{{\"FilePath\":\"{path}\",\"SignedUrl\":\"https://gcs.test/{path}\"}}")) + "]}";
+
+        [UnityTest]
+        public IEnumerator StreamingAssetsUploadOnlyTheRequestedLocalFiles() => UniTask.ToCoroutine(async () =>
+        {
+            var root = CreateStreamingAssets();
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
+
+            _ = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
+
+            var put = _transport.Requests.Single(request => request.Method == "PUT");
+            Assert.That(put.Url, Is.EqualTo("https://gcs.test/a.txt"));
+            Assert.That(put.ContentType, Is.EqualTo("text/plain"));
+        });
+
+        [TestCase("../outside.txt")]
+        [TestCase("b.txt")]
+        [TestCase("a.txt,a.txt")]
+        public void StreamingAssetsRequestedOutsideTheLocalFilesAreRejected(string serverPaths)
+        {
+            var root = CreateStreamingAssets();
+            var init = StreamingAssetsInitResponse(serverPaths.Split(','));
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets)).Kind,
+                Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+        }
+
+        [Test]
+        public void BackendErrorTextHasNoControlCharactersAndIsTruncated()
+        {
+            _transport.Respond = _ => Status(500, "\u001b[2J\rcleared" + new string('x', 2000));
+
+            var message = CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Message;
+
+            Assert.That(message.Any(c => char.IsControl(c) && c != '\n'), Is.False);
+            Assert.That(message, Does.Contain("(truncated)"));
+            Assert.That(message.Length, Is.LessThan(700));
+        }
+
+        [Test]
+        public void OnlyTheFirstValidationErrorsAreListed()
+        {
+            var errors = string.Join(",", Enumerable.Range(0, 15).Select(i => $"\"F{i}\":[\"bad\"]"));
+            _transport.Respond = _ => Status(400, $"{{\"errors\":{{{errors}}}}}");
+
+            var message = CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Message;
+
+            Assert.That(message, Does.Contain("[F9] bad").And.Not.Contain("[F10]").And.Contain("(and 5 more)"));
+        }
     }
 }

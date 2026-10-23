@@ -51,7 +51,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void Throws_WhenNeitherPathNorBuildFolderHasTheFiles()
         {
-            var exception = Assert.Throws<ElympicsException>(() => WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion));
+            var exception = Assert.Throws<ElympicsClientBuildFilesException>(() => WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion));
 
             StringAssert.Contains("missing", exception.Message);
         }

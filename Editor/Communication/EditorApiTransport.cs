@@ -66,11 +66,13 @@ namespace Elympics.Editor.Communication
             }
             ct.ThrowIfCancellationRequested();
 
-            return new EditorApiResponse(webRequest.responseCode, webRequest.downloadHandler?.text, webRequest.error,
-                webRequest.IsConnectionError(), webRequest.IsProtocolError());
+            return ReadResponse(webRequest);
         }
 
-        private static UnityWebRequest Create(EditorApiRequest request)
+        internal static EditorApiResponse ReadResponse(UnityWebRequest webRequest) =>
+            new(webRequest.responseCode, webRequest.downloadHandler?.text, webRequest.error, webRequest.IsConnectionError(), webRequest.IsProtocolError());
+
+        internal static UnityWebRequest Create(EditorApiRequest request)
         {
             var uri = new Uri(request.Url);
             UnityWebRequest webRequest;
@@ -100,6 +102,36 @@ namespace Elympics.Editor.Communication
                 webRequest.SetTestCertificateHandlerIfNeeded();
             }
             return webRequest;
+        }
+    }
+
+    /// <summary>
+    /// Sends the request and polls it on the calling thread, so it completes without the Editor's player loop ticking.
+    /// Only for <see cref="ElympicsEditorApi.RunBlocking{T}"/>: it blocks the main thread.
+    /// </summary>
+    internal sealed class BusyWaitEditorApiTransport : IEditorApiTransport
+    {
+        private const int PollIntervalMilliseconds = 5;
+
+        public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
+        {
+            using var webRequest = UnityWebRequestEditorApiTransport.Create(request);
+            if (request.ElympicsApi)
+                ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
+
+            ct.ThrowIfCancellationRequested();
+            var operation = webRequest.SendWebRequest();
+            while (!operation.isDone)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    webRequest.Abort();
+                    ct.ThrowIfCancellationRequested();
+                }
+                Thread.Sleep(PollIntervalMilliseconds);
+            }
+
+            return UniTask.FromResult(UnityWebRequestEditorApiTransport.ReadResponse(webRequest));
         }
     }
 }

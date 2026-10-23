@@ -92,10 +92,14 @@ namespace Elympics.Editor.UnityCli
                 {
                     fileCount = await ElympicsWebIntegration.UploadClientBuildUsingCurrentLoginAsync(game.GameId, resolvedPath, clientGameVersion, serverGameVersion, ct);
                 }
-                catch (ElympicsException e) when (e is not Communication.ElympicsEditorApiException && e.Message.Contains("client build directory"))
+                catch (ElympicsClientBuildFilesException e)
                 {
                     throw new ElympicsCliException(ElympicsCliErrors.BuildDirNotFound, e.Message,
                         "pass the root of a complete WebGL build (or its Build folder) with the .data, .wasm, .framework.js, .loader.js and .elympicsmeta.json files.");
+                }
+                catch (ElympicsUploadInputException e)
+                {
+                    throw new ElympicsCliException(ElympicsCliErrors.InvalidArgument, e.Message, "fix the argument named in the message, then retry.");
                 }
                 return new { status = "uploaded", gameId = game.GameId, clientGameVersion, serverGameVersion, fileCount, usedCurrentLogin = true };
             }, ElympicsCliErrors.UploadFailed);

@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 
 namespace Elympics.Editor.UnityCli
@@ -10,11 +9,9 @@ namespace Elympics.Editor.UnityCli
         private const string AddGameFix = "import a sample (elympics_import_sample) or create a game (elympics_game_create --create_config true), "
             + "then select it with elympics_config_select_game.";
 
-        internal static Func<ElympicsConfig> LoadConfig = ElympicsConfig.Load;
-
         public static ElympicsConfig RequireConfig(bool createIfMissing = false)
         {
-            var config = LoadConfig();
+            var config = ElympicsConfig.Load();
             if (config != null)
                 return config;
             if (createIfMissing)

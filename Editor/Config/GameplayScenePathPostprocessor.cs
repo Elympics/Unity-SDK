@@ -15,7 +15,7 @@ namespace Elympics.Editor.Config
         {
             if (!importedAssets.Concat(movedAssets).Any(IsScene))
                 return;
-            foreach (var guid in AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}"))
+            foreach (var guid in GameConfigAssets.FindGuids())
             {
                 AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(guid))?.RefreshGameplayScene();
             }

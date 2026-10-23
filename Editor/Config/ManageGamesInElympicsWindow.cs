@@ -517,7 +517,7 @@ namespace Elympics.Editor.Config
             UpdateChosenGameConfig();
         }
 
-        private static string[] FindGameConfigGuids() => AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}");
+        private static string[] FindGameConfigGuids() => GameConfigAssets.FindGuids();
 
         private void ImportExistingGameConfigs()
         {

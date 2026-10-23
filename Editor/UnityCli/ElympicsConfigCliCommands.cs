@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Elympics.Editor.Config;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
@@ -70,7 +71,7 @@ namespace Elympics.Editor.UnityCli
             var listed = config.AvailableGames.FirstOrDefault(game => game != null && game.GameId == gameId);
             if (listed != null)
                 return listed;
-            var asset = AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}")
+            var asset = GameConfigAssets.FindGuids()
                 .Select(guid => AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(guid)))
                 .FirstOrDefault(game => game != null && game.GameId == gameId);
             return asset ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound, $"No ElympicsGameConfig asset in the project has the game ID {gameId}.",

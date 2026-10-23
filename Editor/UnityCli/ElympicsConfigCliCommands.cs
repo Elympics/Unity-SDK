@@ -25,11 +25,10 @@ namespace Elympics.Editor.UnityCli
                 throw ElympicsCliErrors.InvalidArgumentException("Pass exactly one of --game_id, --index and --config_asset.",
                     "pass e.g. --game_id <id from elympics_status> or --config_asset Assets/.../GameConfig.asset.");
 
+            var assetGameConfig = !string.IsNullOrWhiteSpace(configAsset) ? LoadGameConfigAsset(configAsset) : null;
             var config = CliGames.RequireConfig(createIfMissing);
             var previousGameId = config.GetCurrentGameConfig()?.GameId;
-            var gameConfig = !string.IsNullOrWhiteSpace(configAsset) ? LoadGameConfigAsset(configAsset)
-                : index >= 0 ? GetByIndex(config, index)
-                : FindByGameId(config, gameId.Trim());
+            var gameConfig = assetGameConfig ?? (index >= 0 ? GetByIndex(config, index) : FindByGameId(config, gameId.Trim()));
 
             Undo.RecordObject(config, "Select Elympics game");
             var registered = false;

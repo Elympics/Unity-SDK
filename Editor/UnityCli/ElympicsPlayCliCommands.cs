@@ -43,7 +43,6 @@ namespace Elympics.Editor.UnityCli
                     LaunchMode.HalfRemoteClient => ElympicsHostLaunchKind.HalfRemoteClient,
                     _ => ElympicsHostLaunchKind.SinglePlayer,
                 };
-                var game = CliGames.ResolveGame(gameId);
                 var playing = EditorApplication.isPlaying;
                 if (playing)
                 {
@@ -66,6 +65,7 @@ namespace Elympics.Editor.UnityCli
                             "save them (save_all), or repeat with --save_scenes true to save them before launching.");
                 }
 
+                var game = CliGames.ResolveGame(gameId);
                 var requestId = "cli-" + Guid.NewGuid().ToString("N")[..12];
                 var dataJson = JsonUtility.ToJson(ElympicsLaunchDtos.Create(kind));
                 var optionsJson = JsonUtility.ToJson(new ElympicsLaunchOptionsDto
@@ -222,11 +222,14 @@ namespace Elympics.Editor.UnityCli
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, "Virtual players can't be changed in Play mode.", "stop Play mode (editor_stop), then retry.");
+            var tagsByPlayer = ParseTags(tags);
             var players = MppmReflection.GetPlayers();
             var virtualCount = players.Count - 1;
             if (count < 0 || count > virtualCount)
                 throw ElympicsCliErrors.InvalidArgumentException($"--count must be from 0 to {virtualCount}.", $"pass e.g. --count 1.");
-            var tagsByPlayer = ParseTags(tags, players.Count);
+            var highestTagged = tagsByPlayer.Select(entry => entry.number).DefaultIfEmpty(0).Max();
+            if (highestTagged > players.Count)
+                throw ElympicsCliErrors.InvalidArgumentException($"--tags lists player {highestTagged}, but there are only {players.Count} players.", TagsFix);
 
             foreach (var (number, playerTags) in tagsByPlayer)
                 MppmReflection.ReplaceTags(number, TagPrefix, playerTags);
@@ -236,9 +239,10 @@ namespace Elympics.Editor.UnityCli
             return new { status = "updated", count, players = MppmReflection.GetPlayers() };
         });
 
-        private static List<(int number, List<string> tags)> ParseTags(string json, int playerCount)
+        private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
+
+        private static List<(int number, List<string> tags)> ParseTags(string json)
         {
-            const string fix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
             if (string.IsNullOrWhiteSpace(json))
                 return new List<(int, List<string>)>();
             JObject parsed;
@@ -248,18 +252,18 @@ namespace Elympics.Editor.UnityCli
             }
             catch (JsonException e)
             {
-                throw ElympicsCliErrors.InvalidArgumentException($"--tags must be a JSON object: {e.Message}", fix);
+                throw ElympicsCliErrors.InvalidArgumentException($"--tags must be a JSON object: {e.Message}", TagsFix);
             }
 
             var result = new List<(int, List<string>)>();
             foreach (var property in parsed.Properties())
             {
-                if (!int.TryParse(property.Name, out var number) || number < 2 || number > playerCount || property.Value is not JArray array)
-                    throw ElympicsCliErrors.InvalidArgumentException($"--tags has an invalid entry \"{property.Name}\".", fix);
+                if (!int.TryParse(property.Name, out var number) || number < 2 || property.Value is not JArray array)
+                    throw ElympicsCliErrors.InvalidArgumentException($"--tags has an invalid entry \"{property.Name}\".", TagsFix);
                 var playerTags = array.Select(tag => (string)tag).ToList();
                 var foreign = playerTags.FirstOrDefault(tag => string.IsNullOrWhiteSpace(tag) || !tag.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
                 if (foreign != null)
-                    throw ElympicsCliErrors.InvalidArgumentException($"The tag \"{foreign}\" doesn't start with {TagPrefix}.", fix);
+                    throw ElympicsCliErrors.InvalidArgumentException($"The tag \"{foreign}\" doesn't start with {TagPrefix}.", TagsFix);
                 result.Add((number, playerTags));
             }
             return result;

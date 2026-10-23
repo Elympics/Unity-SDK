@@ -25,7 +25,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void UploadClientBuildNeedsAConfiguredGame() =>
             AssertFails(() => ElympicsBuildCliCommands.UploadClientBuild("NoSuchBuild_" + Guid.NewGuid().ToString("N"), "1.0", gameId: Guid.NewGuid().ToString(), confirm: true),
-                ElympicsCliErrors.GameNotFound);
+                ElympicsConfig.Load() == null ? ElympicsCliErrors.NoConfig : ElympicsCliErrors.GameNotFound);
 
         [Test]
         public void GameCreateNeedsConfirm() => AssertFails(() => ElympicsBackendWriteCliCommands.GameCreate("Game"), ElympicsCliErrors.ConfirmRequired);

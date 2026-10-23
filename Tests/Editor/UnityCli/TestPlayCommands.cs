@@ -39,6 +39,27 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [Test]
+        public void RefusedLaunchIsRecordedAsFailed()
+        {
+            var previous = EditorLaunchRecord.Last;
+            try
+            {
+                using var scene = new AdditiveTestScene();
+                _ = scene.Create("Changed");
+                _ = UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene.Scene);
+                // Saving an untitled scene needs a path, so the launch queue refuses before entering Play mode.
+                Assume.That(scene.Scene.path, Is.Empty);
+
+                CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", saveScenes: true), ElympicsCliErrors.LaunchRefused);
+                Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Failed));
+            }
+            finally
+            {
+                EditorLaunchRecord.Restore(previous);
+            }
+        }
+
+        [Test]
         public void VirtualPlayerTagsMustBeElympicsTags() =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.VirtualPlayersSet(0, "{\"2\":[\"Red\"]}"), ElympicsCliErrors.InvalidArgument);
 

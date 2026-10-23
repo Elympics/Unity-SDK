@@ -57,6 +57,15 @@ namespace Elympics.Editor.Launcher
         public static void Start(string requestId, string mode, string gameId) =>
             Save(new Record { requestId = requestId, mode = mode, gameId = gameId, result = Pending });
 
+        public static void Fail(string requestId, string message)
+        {
+            if (Last is not { } record || record.requestId != requestId)
+                return;
+            record.result = Failed;
+            record.message = message;
+            Save(record);
+        }
+
         internal static void Restore(Record? record)
         {
             if (record == null)

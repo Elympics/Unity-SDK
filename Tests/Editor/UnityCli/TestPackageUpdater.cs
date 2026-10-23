@@ -156,6 +156,25 @@ namespace Elympics.Editor.Tests.UnityCli
         });
 
         [UnityTest]
+        public IEnumerator ApplyFinalizesAResolveThatFinishedWithoutADomainReload() => UniTask.ToCoroutine(async () =>
+        {
+            var first = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            File.WriteAllText(_updater.LockPath, new JObject
+            {
+                ["dependencies"] = new JObject
+                {
+                    [Sdk] = new JObject { ["hash"] = DevelopHead },
+                    [PlayPad] = new JObject { ["hash"] = TagCommit },
+                },
+            }.ToString());
+
+            var second = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+
+            Assert.That(second.operationId, Is.Not.EqualTo(first.operationId));
+            Assert.That(_updater.ReadOperation(first.operationId).status, Is.EqualTo("done"));
+        });
+
+        [UnityTest]
         public IEnumerator NothingToChangeIsUpToDate() => UniTask.ToCoroutine(async () =>
         {
             WriteManifest(SdkUrl + "#v0.29.0", PlayPadUrl + "#v4.0.0");

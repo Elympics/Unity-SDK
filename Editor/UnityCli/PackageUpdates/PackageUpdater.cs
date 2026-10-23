@@ -149,6 +149,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         /// <summary>Writes the new refs, drops their lock entries and starts a resolve.</summary>
         public PackageUpdateOperation Apply(List<PackageUpdate> updates)
         {
+            FinalizePending();
             var pending = ReadOperations().FirstOrDefault(operation => operation.status == "started" && UtcNow() - operation.startedAt < StaleOperation);
             if (pending != null)
                 throw new ElympicsCliException(ElympicsCliErrors.UpdateInProgress, $"The package update {pending.operationId} is still resolving.",

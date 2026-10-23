@@ -169,6 +169,16 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
+        public void ValidationErrorsWithoutMessagesAreDescribed()
+        {
+            _transport.Respond = _ => Status(400, "{\"errors\":{\"Name\":null,\"Size\":[\"Size is too big.\"]}}");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new Newtonsoft.Json.Linq.JObject()));
+
+            Assert.That(exception.Message, Does.Contain("[Size] Size is too big."));
+        }
+
+        [Test]
         public void ATimeoutIsReportedAsSuch()
         {
             _transport.Respond = _ => ConnectionError("Request timeout");

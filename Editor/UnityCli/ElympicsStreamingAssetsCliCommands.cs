@@ -52,7 +52,7 @@ namespace Elympics.Editor.UnityCli
                 {
                     fileCount = await ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync(resolvedGameId, resolvedPath, versionName, parsedLayout, ct);
                 }
-                catch (ElympicsException e) when (e is not Communication.ElympicsEditorApiException)
+                catch (ElympicsUploadInputException e)
                 {
                     throw new ElympicsCliException(ElympicsCliErrors.InvalidArgument, e.Message,
                         "fix the directory layout described above (or pass --layout UnstructuredAssets to upload it as-is), then retry with a new --version_name.");

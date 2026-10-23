@@ -10,6 +10,14 @@ using UnityEngine.Networking;
 
 namespace Elympics.Editor
 {
+    /// <summary>The files or arguments to upload are invalid, so nothing was sent.</summary>
+    internal sealed class ElympicsUploadInputException : ElympicsException
+    {
+        public ElympicsUploadInputException(string message)
+            : base(message)
+        { }
+    }
+
     public static class WebGLUploader
     {
         private const string ContentEncodingKey = "Content-Encoding";
@@ -165,7 +173,7 @@ namespace Elympics.Editor
         private static void ValidateVersionCharacters(string label, string version)
         {
             if (!Regex.IsMatch(version, NamePattern))
-                throw new ElympicsException($"{label} '{version}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.");
+                throw new ElympicsUploadInputException($"{label} '{version}' contains invalid characters. Only alphanumeric characters, \"-\" and \".\" are allowed.");
         }
 
         internal static List<(string name, string extension)> GetValidFiles(string[] filenames, string[] knownCompoundExtensions)
@@ -299,7 +307,7 @@ namespace Elympics.Editor
 
         #region StreamingAssets content upload
 
-        /// <exception cref="ElympicsException">The content cannot be uploaded; the message says why.</exception>
+        /// <exception cref="ElympicsUploadInputException">The content cannot be uploaded; the message says why.</exception>
         internal static void PrepareStreamingAssetsFiles(
             string rootPath,
             string version,
@@ -310,15 +318,15 @@ namespace Elympics.Editor
             generatedFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
             if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
-                throw new ElympicsException($"Content directory '{rootPath}' does not exist.");
+                throw new ElympicsUploadInputException($"Content directory '{rootPath}' does not exist.");
 
             if (string.IsNullOrEmpty(version))
-                throw new ElympicsException("Content version cannot be empty.");
+                throw new ElympicsUploadInputException("Content version cannot be empty.");
 
             ValidateVersionCharacters("Content version", version);
 
             if (version.Length > MaxStreamingAssetsVersionLength)
-                throw new ElympicsException($"Content version '{version}' is too long - {version.Length} characters, maximum is {MaxStreamingAssetsVersionLength}.");
+                throw new ElympicsUploadInputException($"Content version '{version}' is too long - {version.Length} characters, maximum is {MaxStreamingAssetsVersionLength}.");
 
             var root = Path.GetFullPath(rootPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
@@ -333,11 +341,11 @@ namespace Elympics.Editor
                     files = CollectFilesRecursively(root, root);
                     break;
                 default:
-                    throw new ElympicsException($"Unknown content layout '{layout}'.");
+                    throw new ElympicsUploadInputException($"Unknown content layout '{layout}'.");
             }
 
             if (files.Count == 0)
-                throw new ElympicsException($"No files found in '{rootPath}'.");
+                throw new ElympicsUploadInputException($"No files found in '{rootPath}'.");
 
             files.Sort(StringComparer.OrdinalIgnoreCase);
 
@@ -356,7 +364,7 @@ namespace Elympics.Editor
             return Encoding.UTF8.GetBytes(JsonUtility.ToJson(manifest));
         }
 
-        /// <exception cref="ElympicsException">
+        /// <exception cref="ElympicsUploadInputException">
         /// The directory is not a set of Addressables variant builds. The message lists every problem found, not just the first.
         /// </exception>
         private static void CollectAddressableVariants(string root, out List<string> relativePaths, out List<string> variantNames)
@@ -369,7 +377,7 @@ namespace Elympics.Editor
 
             var variantDirectories = Directory.GetDirectories(root);
             if (variantDirectories.Length == 0)
-                throw new ElympicsException(
+                throw new ElympicsUploadInputException(
                     $"Content directory '{root}' contains no variant directories. The {nameof(StreamingAssetsLayout.AddressableVariants)} layout expects one directory per variant, "
                     + $"each containing its own \"{AddressablesDirectoryName}\" directory. Use {nameof(StreamingAssetsLayout.UnstructuredAssets)} to upload a path as-is.");
 
@@ -420,7 +428,7 @@ namespace Elympics.Editor
                     + "This is usually an ENABLE_JSON_CATALOG mismatch between content builds; the client can only load the format it was built for.");
 
             if (errors.Count > 0)
-                throw new ElympicsException(string.Join(Environment.NewLine, errors));
+                throw new ElympicsUploadInputException(string.Join(Environment.NewLine, errors));
 
             relativePaths = files;
             variantNames = names;

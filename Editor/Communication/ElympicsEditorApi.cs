@@ -421,7 +421,7 @@ namespace Elympics.Editor.Communication
             { }
 
             if (errorModel?.Errors is { Count: > 0 })
-                return $"Received error response code {statusCode} with errors:\n{string.Join("\n", errorModel.Errors.SelectMany(r => r.Value.Select(x => $"[{r.Key}] {x}")))}";
+                return $"Received error response code {statusCode} with errors:\n{string.Join("\n", errorModel.Errors.SelectMany(r => (r.Value ?? Array.Empty<string>()).Select(x => $"[{r.Key}] {x}")))}";
             if (!string.IsNullOrEmpty(errorModel?.Detail ?? errorModel?.Title))
                 return $"Received error response code {statusCode}: {errorModel.Detail ?? errorModel.Title}";
             return $"Received error response code {statusCode} with error:\n{text}";

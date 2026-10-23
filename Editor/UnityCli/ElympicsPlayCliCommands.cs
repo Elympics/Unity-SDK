@@ -77,8 +77,11 @@ namespace Elympics.Editor.UnityCli
                 var modeName = ToSnakeCase(launchMode.ToString());
                 EditorLaunchRecord.Start(requestId, modeName, game.GameId);
                 if (EditorMatchLaunchQueue.Launch(kind, game.GameId, dataJson, optionsJson, EditorMatchLaunchQueue.UnsavedScenePolicy.Save) is { } refusal)
+                {
+                    EditorLaunchRecord.Fail(requestId, $"The launch was refused: {refusal}");
                     throw new ElympicsCliException(ElympicsCliErrors.LaunchRefused, $"The launch was refused: {refusal}",
                         "resolve the reason above (compile errors, unsaved untitled scenes), then retry.");
+                }
 
                 return new { status = "launch_queued", requestId, mode = modeName, gameId = game.GameId, enteringPlayMode = !playing };
             });

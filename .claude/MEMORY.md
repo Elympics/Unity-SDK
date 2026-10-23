@@ -6,7 +6,10 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - Every entry has **Rule**, **Reason**, **Example** and **Time scope** (the condition under which to rewrite or remove it). Remove or rewrite entries whose time scope has passed.
 - No personal or machine-specific data (user names, home-dir paths, local tool locations).
 - Entries are grouped under `## Category` headings, each entry a `### Title`. Put a new entry under the category that fits, or add a new category if none does.
-- After every edit, regenerate `MEMORY.short.md`: the same category headings, one bullet per entry with its title and a condensed Rule, no Reason/Example/Time scope. CLAUDE.md imports that file.
+- After every edit, regenerate `MEMORY.short.md` (CLAUDE.md imports it, so every character is paid on every request):
+  - The same category headings, one bullet per entry: its title and the core of its Rule, at most ~120 characters. No Reason/Example/Time scope.
+  - Leave out entries whose rule `CLAUDE.md` already states.
+  - Situational entries (needed only in one kind of task) go under the final `## Situational (see MEMORY.md)` heading as a title-only label of at most 30 characters.
 
 ## Code
 

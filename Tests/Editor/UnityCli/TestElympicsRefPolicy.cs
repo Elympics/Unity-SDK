@@ -33,6 +33,24 @@ namespace Elympics.Editor.Tests.UnityCli
                 Assert.That(plan.Ref, Is.EqualTo(reference));
         }
 
+        [Test]
+        public void PlanKindDescribesThePlannedRef()
+        {
+            Assert.That(Plan(Sdk + "#v0.28.0").Kind, Is.EqualTo(GitRefKind.Tag));
+            Assert.That(Plan(Sdk + "#feature/gone").Kind, Is.EqualTo(GitRefKind.Branch));
+            Assert.That(Plan(Sdk + "#v0.28.0", track: "develop").Kind, Is.EqualTo(GitRefKind.Branch));
+            Assert.That(Plan(Sdk + "#develop", pin: "v0.9.0").Kind, Is.EqualTo(GitRefKind.Tag));
+        }
+
+        [Test]
+        public void ChangeActionsAreMoveAndRefresh()
+        {
+            Assert.That(new PackageUpdate { action = "move" }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = "refresh" }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = "keep" }.IsChange(), Is.False);
+            Assert.That(new PackageUpdate { action = "error" }.IsChange(), Is.False);
+        }
+
         [Test] // 1
         public void TagMovesToTheNewestVersionTag() => AssertPlan(Plan(Sdk + "#v0.28.0"), RefAction.Move, "v0.29.0");
 

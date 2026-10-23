@@ -26,6 +26,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public bool? lockHashMatchesHead;
         public List<string> warnings = new();
         public PackageUpdateError error;
+
+        public bool IsChange() => action is "move" or "refresh";
     }
 
     internal sealed class PackageUpdateError
@@ -145,7 +147,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
 
             update.newSpec = dependency.WithRef(plan.Ref);
-            update.newVersion = ElympicsRefPolicy.VersionTag.IsMatch(plan.Ref ?? string.Empty) ? plan.Ref.TrimStart('v') : null;
+            update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref.TrimStart('v') : null;
             if (plan.Action == RefAction.Refresh && update.oldCommit != null && update.oldCommit == plan.Head)
                 update.action = "keep";
             return update;
@@ -168,7 +170,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 throw new ElympicsCliException(ElympicsCliErrors.UpdateInProgress, $"The package update {pending.operationId} is still resolving.",
                     $"poll it with elympics_update_packages --operation_id {pending.operationId} and retry when it's done.");
 
-            var changes = updates.Where(update => update.action is "move" or "refresh").ToList();
+            var changes = updates.Where(update => update.IsChange()).ToList();
             var operation = new PackageUpdateOperation
             {
                 operationId = UtcNow().ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
@@ -178,14 +180,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             };
             if (changes.Count > 0)
             {
-                var manifest = JObject.Parse(File.ReadAllText(ManifestPath));
+                var manifest = ReadJson(ManifestPath);
                 foreach (var change in changes)
                     manifest["dependencies"]![change.name] = change.newSpec;
                 File.WriteAllText(ManifestPath, manifest.ToString(Formatting.Indented) + "\n");
 
                 if (File.Exists(LockPath))
                 {
-                    var lockFile = JObject.Parse(File.ReadAllText(LockPath));
+                    var lockFile = ReadJson(LockPath);
                     if (lockFile["dependencies"] is JObject lockedDependencies)
                         foreach (var change in changes)
                             _ = lockedDependencies.Remove(change.name);
@@ -236,7 +238,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             if (operation.status != "started")
                 return;
             var locked = ReadLockHashes();
-            var changed = operation.packages.Where(update => update.action is "move" or "refresh").ToList();
+            var changed = operation.packages.Where(update => update.IsChange()).ToList();
             if (changed.Any(update => !locked.ContainsKey(update.name)))
             {
                 if (UtcNow() - operation.startedAt < StaleOperation)
@@ -259,11 +261,13 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             Save(operation);
         }
 
+        private static JObject ReadJson(string path) => JObject.Parse(File.ReadAllText(path));
+
         private Dictionary<string, string> ReadDependencies()
         {
             if (!File.Exists(ManifestPath))
                 throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"{ManifestPath} doesn't exist.", "run the command in a Unity project.");
-            var manifest = JObject.Parse(File.ReadAllText(ManifestPath));
+            var manifest = ReadJson(ManifestPath);
             return (manifest["dependencies"] as JObject)?.Properties().ToDictionary(property => property.Name, property => (string)property.Value)
                 ?? new Dictionary<string, string>();
         }
@@ -272,7 +276,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             if (!File.Exists(LockPath))
                 return new Dictionary<string, string>();
-            var lockFile = JObject.Parse(File.ReadAllText(LockPath));
+            var lockFile = ReadJson(LockPath);
             return (lockFile["dependencies"] as JObject)?.Properties()
                 .Where(property => property.Value["hash"] != null)
                 .ToDictionary(property => property.Name, property => (string)property.Value["hash"])

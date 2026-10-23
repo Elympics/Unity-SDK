@@ -17,6 +17,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     internal sealed class GitDependency
     {
         private static readonly Regex GitUrl = new("^(https?://|ssh://|git@|git\\+)");
+        public static readonly Regex VersionTag = new("^v?\\d+\\.\\d+\\.\\d+$");
+        public static readonly Regex Commit = new("^[0-9a-f]{7,40}$");
         private const string PathQuery = "?path=";
 
         public string Spec { get; }
@@ -31,11 +33,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             Base = baseUrl;
             Path = path;
             Ref = reference;
-            Kind = string.IsNullOrEmpty(reference) ? GitRefKind.None
-                : ElympicsRefPolicy.VersionTag.IsMatch(reference) ? GitRefKind.Tag
-                : ElympicsRefPolicy.Commit.IsMatch(reference) ? GitRefKind.Commit
-                : GitRefKind.Branch;
+            Kind = KindOf(reference);
         }
+
+        public static GitRefKind KindOf(string reference) =>
+            string.IsNullOrEmpty(reference) ? GitRefKind.None
+            : VersionTag.IsMatch(reference) ? GitRefKind.Tag
+            : Commit.IsMatch(reference) ? GitRefKind.Commit
+            : GitRefKind.Branch;
 
         /// <returns>Null for a value that isn't a git URL (a plain version, a <c>file:</c> path).</returns>
         public static GitDependency Parse(string spec)
@@ -121,6 +126,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     {
         public RefAction Action { get; set; }
         public string Ref { get; set; }
+        /// <summary>The kind of <see cref="Ref"/>.</summary>
+        public GitRefKind Kind { get; set; }
         /// <summary>The commit the new ref points at, when known.</summary>
         public string Head { get; set; }
         public string Warning { get; set; }
@@ -135,9 +142,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     /// </summary>
     internal static class ElympicsRefPolicy
     {
-        public static readonly Regex VersionTag = new("^v?\\d+\\.\\d+\\.\\d+$");
-        public static readonly Regex Commit = new("^[0-9a-f]{7,40}$");
-
         public const string Develop = "develop";
         public const string TagNotFound = "ELYMPICS_TAG_NOT_FOUND";
         public const string BranchNotFound = "ELYMPICS_BRANCH_NOT_FOUND";
@@ -159,9 +163,16 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         }
 
         public static string NewestVersionTag(RemoteRefs remote) =>
-            remote.Tags.Where(tag => VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(VersionCompare)).LastOrDefault();
+            remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(VersionCompare)).LastOrDefault();
 
         public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string pin = null, string track = null)
+        {
+            var plan = PlanCore(dependency, remote, pin, track);
+            plan.Kind = GitDependency.KindOf(plan.Ref);
+            return plan;
+        }
+
+        private static RefPlan PlanCore(GitDependency dependency, RemoteRefs remote, string pin, string track)
         {
             var newestTag = NewestVersionTag(remote);
             if (!string.IsNullOrEmpty(pin))

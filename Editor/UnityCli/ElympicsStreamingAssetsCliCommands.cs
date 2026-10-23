@@ -18,7 +18,7 @@ namespace Elympics.Editor.UnityCli
             + "is not undoable, so it needs --confirm true. Large bundles take minutes: run it with --detach.",
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> UploadStreamingAssets(
-            [CliArg("streaming_assets_path", "Local directory to upload. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
+            [CliArg("streaming_assets_path", "Local directory to upload, inside the project unless --allow_external_path true. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
             [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. "
                 + "Only Latin letters, digits, dashes, and dots are allowed.", Required = true)]
             string versionName,
@@ -27,6 +27,7 @@ namespace Elympics.Editor.UnityCli
                 + "or UnstructuredAssets (every file below the path, unvalidated).")]
             string layout = nameof(StreamingAssetsLayout.AddressableVariants),
             [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("allow_external_path", "Must be true to upload a directory outside the project.")] bool allowExternalPath = false,
             [CliArg("username", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string username = "",
             [CliArg("password", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string password = "",
             [CliArg("timeout_seconds", "Seconds to wait for the whole upload.")] int timeoutSeconds = 1800) =>
@@ -39,7 +40,7 @@ namespace Elympics.Editor.UnityCli
                 streamingAssetsPath = CliArgs.Require(streamingAssetsPath, "streaming_assets_path");
                 versionName = CliArgs.ValidateVersion(versionName, "version_name");
                 var parsedLayout = ParseLayout(layout);
-                var resolvedPath = Path.GetFullPath(streamingAssetsPath);
+                var resolvedPath = CliArgs.ResolveProjectPath(streamingAssetsPath, "streaming_assets_path", allowExternalPath);
                 if (!Directory.Exists(resolvedPath))
                     throw new ElympicsCliException(ElympicsCliErrors.BuildDirNotFound, $"The StreamingAssets directory {resolvedPath} doesn't exist.",
                         "build the Addressables content first, then pass its output folder.");

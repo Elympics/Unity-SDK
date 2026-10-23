@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
@@ -16,6 +18,21 @@ namespace Elympics.Editor.UnityCli
             if (string.IsNullOrWhiteSpace(value))
                 throw ElympicsCliErrors.InvalidArgumentException($"Missing required argument --{argumentName}.", $"pass --{argumentName} <value>.");
             return value.Trim();
+        }
+
+        internal static Func<string> ProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
+
+        /// <summary>Resolves a path relative to the project root. Unless <paramref name="allowExternal"/>, it must stay inside the project.</summary>
+        public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
+        {
+            var root = Path.GetFullPath(ProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var resolved = Path.GetFullPath(Path.Combine(root, path));
+            var inside = resolved.Equals(root, StringComparison.OrdinalIgnoreCase)
+                || resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            if (!inside && !allowExternal)
+                throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} {resolved} is outside the project {root}, so its files could be anything on this machine.",
+                    $"pass a folder inside the project, or add --allow_external_path true if uploading {resolved} is intended.");
+            return resolved;
         }
 
         public static void RequireConfirm(bool confirm, string action)

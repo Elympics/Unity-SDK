@@ -69,20 +69,20 @@ namespace Elympics.Editor.UnityCli
             + "Irreversible: needs --confirm true. Large builds take minutes: run it with --detach.",
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> UploadClientBuild(
-            [CliArg("client_build_path", "The WebGL build's root or its Build folder; absolute or relative to the project.", Required = true)] string clientBuildPath,
+            [CliArg("client_build_path", "The WebGL build's root or its Build folder, inside the project unless --allow_external_path true; absolute or relative to the project.", Required = true)] string clientBuildPath,
             [CliArg("client_game_version", "Client version name: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string clientGameVersion,
             [CliArg("server_game_version", "Server version the client connects to. Defaults to the game config's version.")] string serverGameVersion = "",
             [CliArg("game_id", "Elympics game ID. Defaults to the active game config's ID.")] string gameId = "",
             [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("allow_external_path", "Must be true to upload a build outside the project.")] bool allowExternalPath = false,
             [CliArg("timeout_seconds", UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
-                clientBuildPath = CliArgs.Require(clientBuildPath, "client_build_path");
+                var resolvedPath = CliArgs.ResolveProjectPath(CliArgs.Require(clientBuildPath, "client_build_path"), "client_build_path", allowExternalPath);
                 clientGameVersion = CliArgs.ValidateVersion(clientGameVersion, "client_game_version");
                 CliArgs.RequireConfirm(confirm, "Uploading a client build");
                 var game = CliGames.ResolveGame(string.IsNullOrWhiteSpace(gameId) ? string.Empty : CliArgs.ValidateGuid(gameId, "game_id"));
                 serverGameVersion = string.IsNullOrWhiteSpace(serverGameVersion) ? game.GameVersion : CliArgs.ValidateVersion(serverGameVersion, "server_game_version");
-                var resolvedPath = Path.GetFullPath(clientBuildPath);
                 if (!Directory.Exists(resolvedPath))
                     throw new ElympicsCliException(ElympicsCliErrors.BuildDirNotFound, $"The client build directory {resolvedPath} doesn't exist.",
                         "build the WebGL client first (build --target WebGL), then pass its output folder.");

@@ -22,6 +22,39 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(new ElympicsCliException(ElympicsCliErrors.Internal, "Boom.", null).Message, Is.EqualTo("ELYMPICS_INTERNAL: Boom."));
         }
 
+        [TestCase("Builds/WebGL", false, ExpectedResult = "Proj/Builds/WebGL")]
+        [TestCase(".", false, ExpectedResult = "Proj")]
+        [TestCase("../Proj2/Build", true, ExpectedResult = "Proj2/Build")]
+        public string ProjectPathsResolveAgainstTheProjectRoot(string path, bool allowExternal) => WithProjectRoot(root =>
+            System.IO.Path.GetRelativePath(System.IO.Path.GetDirectoryName(root), CliArgs.ResolveProjectPath(path, "p", allowExternal)).Replace('\\', '/'));
+
+        [TestCase("../Proj2/Build")]
+        [TestCase("..")]
+        [TestCase("Assets/../../Other")]
+        public void ProjectPathsOutsideTheProjectNeedTheOptIn(string path) =>
+            WithProjectRoot(_ => CliAssert.Throws(() => CliArgs.ResolveProjectPath(path, "p", false), ElympicsCliErrors.InvalidArgument));
+
+        private static T WithProjectRoot<T>(Func<string, T> body)
+        {
+            var original = CliArgs.ProjectRoot;
+            var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Proj");
+            CliArgs.ProjectRoot = () => root;
+            try
+            {
+                return body(root);
+            }
+            finally
+            {
+                CliArgs.ProjectRoot = original;
+            }
+        }
+
+        private static void WithProjectRoot(Action<string> body) => WithProjectRoot<object>(root =>
+        {
+            body(root);
+            return null;
+        });
+
         [Test]
         public void MissingRequiredArgument() => CliAssert.Throws(() => CliArgs.Require(" ", "version"), ElympicsCliErrors.InvalidArgument);
 

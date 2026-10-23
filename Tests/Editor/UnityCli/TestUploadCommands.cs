@@ -65,7 +65,21 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [Test]
         public void StreamingAssetsUploadNeedsConfirm() =>
-            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.GetTempPath(), "1.0"), ElympicsCliErrors.ConfirmRequired);
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("Assets", "1.0"), ElympicsCliErrors.ConfirmRequired);
+
+        [Test]
+        public void StreamingAssetsUploadRejectsADirectoryOutsideTheProject() =>
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.GetTempPath(), "1.0", confirm: true), ElympicsCliErrors.InvalidArgument);
+
+        [Test]
+        public void StreamingAssetsUploadAllowsAnExternalDirectoryWhenAsked() =>
+            AssertFails(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NoSuchContent_" + Guid.NewGuid().ToString("N")),
+                "1.0", confirm: true, allowExternalPath: true), ElympicsCliErrors.BuildDirNotFound);
+
+        [TestCase("../NoSuchBuild")]
+        [TestCase("Builds/../../NoSuchBuild")]
+        public void UploadClientBuildRejectsADirectoryOutsideTheProject(string path) =>
+            AssertFails(() => ElympicsBuildCliCommands.UploadClientBuild(path, "1.0", gameId: Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void StreamingAssetsUploadNeedsAnExistingDirectory() =>

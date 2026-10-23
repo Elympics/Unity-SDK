@@ -63,6 +63,7 @@ namespace Elympics.Editor
         {
             [".json"] = "application/json",
             [".xml"] = "application/xml",
+            [".txt"] = "text/plain",
         };
 
         #region Models

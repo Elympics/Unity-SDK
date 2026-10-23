@@ -19,6 +19,7 @@ namespace Elympics.Editor.UnityCli
         public const string NotLoggedIn = "ELYMPICS_NOT_LOGGED_IN";
         public const string NetworkTimeout = "ELYMPICS_NETWORK_TIMEOUT";
         public const string RequestFailed = "ELYMPICS_REQUEST_FAILED";
+        public const string UntrustedHost = "ELYMPICS_UNTRUSTED_HOST";
 
         public const string EditorPlaying = "ELYMPICS_EDITOR_PLAYING";
         public const string Compiling = "ELYMPICS_COMPILING";

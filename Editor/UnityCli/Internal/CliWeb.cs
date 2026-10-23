@@ -52,6 +52,7 @@ namespace Elympics.Editor.UnityCli
             EditorApiErrorKind.Network =>
                 new ElympicsCliException(ElympicsCliErrors.RequestFailed, exception.Message,
                     "check the Internet connection and the endpoints reported by elympics_status, then retry.", exception),
+            EditorApiErrorKind.UntrustedHost => new ElympicsCliException(ElympicsCliErrors.UntrustedHost, exception.Problem, exception.Fix, exception),
             _ => new ElympicsCliException(requestFailedCode, exception.Message,
                 "read the backend's message above, correct the arguments and retry.", exception),
         };

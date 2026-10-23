@@ -75,6 +75,8 @@ namespace Elympics.Editor.Communication
         internal static UnityWebRequest Create(EditorApiRequest request)
         {
             var uri = new Uri(request.Url);
+            if (request.ElympicsApi)
+                ElympicsApiHostPolicy.Require(uri);
             UnityWebRequest webRequest;
             if (request.Form != null)
                 webRequest = UnityWebRequest.Post(uri, request.Form);

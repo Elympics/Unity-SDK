@@ -27,17 +27,23 @@ namespace Elympics.Editor.Communication
         Timeout,
         RequestFailed,
         InvalidResponse,
+        UntrustedHost,
     }
 
     internal sealed class ElympicsEditorApiException : ElympicsException
     {
         public EditorApiErrorKind Kind { get; }
         public long StatusCode { get; }
+        public string Problem { get; }
+        public string Fix { get; }
 
-        public ElympicsEditorApiException(EditorApiErrorKind kind, string message, long statusCode = 0) : base(message)
+        public ElympicsEditorApiException(EditorApiErrorKind kind, string message, long statusCode = 0, string fix = null)
+            : base(fix == null ? message : $"{message} Fix: {fix}")
         {
             Kind = kind;
             StatusCode = statusCode;
+            Problem = message;
+            Fix = fix;
         }
     }
 

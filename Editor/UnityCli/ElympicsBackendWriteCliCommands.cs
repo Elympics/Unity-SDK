@@ -36,22 +36,33 @@ namespace Elympics.Editor.UnityCli
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
-                name = CliArgs.Require(name, "name");
-                if (name.Length > 63)
-                    throw ElympicsCliErrors.InvalidArgumentException("--name is longer than 63 characters.", "pass a shorter name.");
+                name = ValidateGameName(name);
                 CliArgs.RequireConfirm(confirm, "Creating an Elympics game");
+                var config = createConfig ? CliGames.RequireConfig(true) : null;
                 var created = await ElympicsEditorApi.CreateGameAsync(name, CliArgs.Optional(region), CliArgs.Optional(fleetId), ct);
                 var gameId = (string)created?["Id"];
                 await UniTask.SwitchToMainThread();
                 string configAsset = null;
-                if (createConfig && !string.IsNullOrEmpty(gameId))
-                    configAsset = CreateAndSelectGameConfig(gameId, (string)created["Name"] ?? name);
+                if (createConfig)
+                {
+                    if (string.IsNullOrEmpty(gameId))
+                        throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, "The game was created, but the backend's response has no game ID, so no game config was created.",
+                            "find the game with elympics_games_list and create its config in Tools > Elympics > Manage games in Elympics.");
+                    configAsset = CreateAndSelectGameConfig(config, gameId, (string)created["Name"] ?? name);
+                }
                 return new { status = "created", gameId, game = created, configAsset };
             });
 
-        private static string CreateAndSelectGameConfig(string gameId, string name)
+        private static string ValidateGameName(string name)
         {
-            var config = CliGames.RequireConfig(true);
+            name = CliArgs.Require(name, "name");
+            if (name.Length > 63)
+                throw ElympicsCliErrors.InvalidArgumentException("--name is longer than 63 characters.", "pass a shorter name.");
+            return name;
+        }
+
+        private static string CreateAndSelectGameConfig(ElympicsConfig config, string gameId, string name)
+        {
             var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
             gameConfig.gameId = gameId;
             gameConfig.gameName = name;
@@ -84,6 +95,8 @@ namespace Elympics.Editor.UnityCli
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
                 if (new[] { name, fleetId, externalBackend, eventQueueJoinUrl, eventQueueLeaveUrl }.All(value => value == null))
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one of --name, --fleet_id, --external_backend, --event_queue_join_url, --event_queue_leave_url.");
+                if (name != null)
+                    name = ValidateGameName(name);
                 CliArgs.RequireConfirm(confirm, "Changing an Elympics game");
                 var current = await ElympicsEditorApi.GetGameAsync(resolvedGameId, ct) as JObject ?? new JObject();
                 var body = new JObject

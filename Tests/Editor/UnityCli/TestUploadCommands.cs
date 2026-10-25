@@ -1,7 +1,12 @@
 using System;
+using System.Collections;
+using System.Threading;
 using System.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
+using Elympics.Editor.Communication;
 using Elympics.Editor.UnityCli;
 using NUnit.Framework;
+using UnityEngine.TestTools;
 
 namespace Elympics.Editor.Tests.UnityCli
 {
@@ -33,6 +38,61 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void GameUpdateNeedsAChange() =>
             AssertFails(() => ElympicsBackendWriteCliCommands.GameUpdate(Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
+
+        [TestCase("")]
+        [TestCase("0123456789012345678901234567890123456789012345678901234567890123")]
+        public void GameUpdateValidatesTheName(string name) =>
+            AssertFails(() => ElympicsBackendWriteCliCommands.GameUpdate(Guid.NewGuid().ToString(), name, confirm: true), ElympicsCliErrors.InvalidArgument);
+
+        private sealed class FakeLoginStore : IEditorLoginStore
+        {
+            public bool IsLogin { get; set; } = true;
+            public string AuthToken { get; set; } = "token";
+            public string AuthTokenExp { get; set; } = long.MaxValue.ToString();
+            public string RefreshToken { get; set; } = "refresh";
+        }
+
+        private sealed class FakeTransport : IEditorApiTransport
+        {
+            public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct) =>
+                UniTask.FromResult(new EditorApiResponse(200, "{}", null, false, false));
+        }
+
+        [UnityTest]
+        public IEnumerator GameCreateWithAConfigFailsWhenTheResponseHasNoGameId() => UniTask.ToCoroutine(async () =>
+        {
+            var config = ElympicsConfig.Load();
+            if (config == null)
+                Assert.Ignore("The host project has no ElympicsConfig, and creating one would change the project.");
+            var gamesBefore = config.availableGames.Count;
+            var originalTransport = ElympicsEditorApi.Transport;
+            var originalLogin = ElympicsEditorApi.LoginStore;
+            var originalEndpoint = ElympicsEditorApi.ApiEndpointOverride;
+            ElympicsEditorApi.Transport = new FakeTransport();
+            ElympicsEditorApi.LoginStore = new FakeLoginStore();
+            ElympicsEditorApi.ApiEndpointOverride = () => "https://api.test/v2/api";
+            try
+            {
+                Exception caught = null;
+                try
+                {
+                    _ = await ElympicsBackendWriteCliCommands.GameCreate("Game", createConfig: true, confirm: true).AsUniTask();
+                }
+                catch (Exception e)
+                {
+                    caught = e;
+                }
+                Assert.That(caught, Is.Not.Null);
+                CliAssert.HasCodeAndFix(caught, ElympicsCliErrors.RequestFailed);
+                Assert.That(config.availableGames, Has.Count.EqualTo(gamesBefore));
+            }
+            finally
+            {
+                ElympicsEditorApi.Transport = originalTransport;
+                ElympicsEditorApi.LoginStore = originalLogin;
+                ElympicsEditorApi.ApiEndpointOverride = originalEndpoint;
+            }
+        });
 
         [Test]
         public void GameVersionUpdateNeedsAChange() =>

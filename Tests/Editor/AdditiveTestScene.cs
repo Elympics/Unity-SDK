@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,14 +9,14 @@ using Object = UnityEngine.Object;
 namespace Elympics.Editor.Tests
 {
     /// <summary>
-    /// A scene for test objects that never replaces or dirties the developer's scenes. The Test Runner already runs EditMode tests
-    /// in its own untitled scene (and can't add another untitled one), so that scene is used when it is active; otherwise an empty
-    /// scene is opened additively. Created objects are destroyed and an opened scene is closed on dispose.
+    /// The Test Runner's untitled scene is reused when active (another untitled scene can't be added); otherwise an empty scene is opened additively.
+    /// Dispose destroys the created objects and restores the dirty state of a reused scene.
     /// </summary>
     internal sealed class AdditiveTestScene : IDisposable
     {
         private readonly List<GameObject> _created = new();
         private readonly bool _opened;
+        private readonly bool _wasDirty;
         private readonly Scene _previousActive;
 
         public Scene Scene { get; }
@@ -26,6 +27,7 @@ namespace Elympics.Editor.Tests
             if (string.IsNullOrEmpty(_previousActive.path))
             {
                 Scene = _previousActive;
+                _wasDirty = Scene.isDirty;
                 return;
             }
 
@@ -47,8 +49,12 @@ namespace Elympics.Editor.Tests
             return gameObject;
         }
 
-        /// <summary>Registers a root object created elsewhere (e.g. an instantiated prefab) for cleanup.</summary>
         public void Track(GameObject gameObject) => _created.Add(gameObject);
+
+        // Not public API; without it the scene just stays dirty.
+        private static void ClearDirtiness(Scene scene) => typeof(EditorSceneManager)
+            .GetMethod("ClearSceneDirtiness", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, new[] { typeof(Scene) }, null)
+            ?.Invoke(null, new object[] { scene });
 
         public void Dispose()
         {
@@ -56,7 +62,11 @@ namespace Elympics.Editor.Tests
                 if (gameObject != null)
                     Object.DestroyImmediate(gameObject);
             if (!_opened)
+            {
+                if (!_wasDirty && Scene.IsValid())
+                    ClearDirtiness(Scene);
                 return;
+            }
             if (_previousActive.IsValid() && _previousActive.isLoaded)
                 _ = SceneManager.SetActiveScene(_previousActive);
             if (Scene.IsValid())

@@ -17,20 +17,12 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void StatusWorksWithoutAConfig()
         {
-            var original = ElympicsConfig.PathInResources;
-            ElympicsConfig.PathInResources = "Elympics/NoSuchConfig_" + Guid.NewGuid().ToString("N");
-            try
-            {
-                var status = ToJson(ElympicsStatusCliCommands.Status());
-                Assert.That((string)status["status"], Is.EqualTo("ok"));
-                Assert.That((bool)status["config"]!["present"], Is.False);
-                Assert.That(status["activeGame"]!.Type, Is.EqualTo(JTokenType.Null));
-                Assert.That((string)status["sdk"]!["version"], Is.Not.Empty);
-            }
-            finally
-            {
-                ElympicsConfig.PathInResources = original;
-            }
+            using var _ = ConfigPathScope.Missing();
+            var status = ToJson(ElympicsStatusCliCommands.Status());
+            Assert.That((string)status["status"], Is.EqualTo("ok"));
+            Assert.That((bool)status["config"]!["present"], Is.False);
+            Assert.That(status["activeGame"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That((string)status["sdk"]!["version"], Is.Not.Empty);
         }
 
         [Test]
@@ -43,17 +35,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ConfigCommandsReportAMissingConfig()
         {
-            var original = ElympicsConfig.PathInResources;
-            ElympicsConfig.PathInResources = "Elympics/NoSuchConfig_" + Guid.NewGuid().ToString("N");
-            try
-            {
-                CliAssert.Throws(() => CliGames.RequireConfig(), ElympicsCliErrors.NoConfig);
-                CliAssert.Throws(() => CliGames.ResolveGameId(""), ElympicsCliErrors.NoConfig);
-            }
-            finally
-            {
-                ElympicsConfig.PathInResources = original;
-            }
+            using var _ = ConfigPathScope.Missing();
+            CliAssert.Throws(() => CliGames.RequireConfig(), ElympicsCliErrors.NoConfig);
+            CliAssert.Throws(() => CliGames.ResolveGameId(""), ElympicsCliErrors.NoConfig);
         }
 
         [Test]

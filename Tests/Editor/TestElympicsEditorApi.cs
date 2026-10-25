@@ -43,7 +43,7 @@ namespace Elympics.Editor.Tests
         private IEditorLoginStore _originalLogin;
         private Func<long> _originalNow;
         private Func<IEditorApiTransport> _originalBlockingTransportFactory;
-        private string _buildDirectory;
+        private readonly List<TempDirectory> _temps = new();
 
         private static EditorApiResponse Ok(string text) => new(200, text, null, false, false);
         private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", false, true);
@@ -77,8 +77,16 @@ namespace Elympics.Editor.Tests
             ElympicsEditorApi.UtcNowSeconds = _originalNow;
             ElympicsEditorApi.BlockingTransportFactory = _originalBlockingTransportFactory;
             ElympicsEditorApi.ApiEndpointOverride = null;
-            if (_buildDirectory != null && Directory.Exists(_buildDirectory))
-                Directory.Delete(_buildDirectory, true);
+            foreach (var temp in _temps)
+                temp.Dispose();
+            _temps.Clear();
+        }
+
+        private TempDirectory NewTempDirectory()
+        {
+            var temp = new TempDirectory("ElympicsTestEditorApi");
+            _temps.Add(temp);
+            return temp;
         }
 
         private static ElympicsEditorApiException CatchApiException(Func<UniTask> action) =>
@@ -359,12 +367,12 @@ namespace Elympics.Editor.Tests
 
         private string CreateClientBuild()
         {
-            _buildDirectory = Path.Combine(Path.GetTempPath(), "ElympicsTestEditorApi_" + Path.GetRandomFileName());
-            var buildFolder = Path.Combine(_buildDirectory, WebGLUploader.BuildFolderName);
+            var root = NewTempDirectory().Path;
+            var buildFolder = Path.Combine(root, WebGLUploader.BuildFolderName);
             _ = Directory.CreateDirectory(buildFolder);
             foreach (var extension in WebGLUploader.CompoundExtensions)
                 File.WriteAllText(Path.Combine(buildFolder, "Build" + extension), extension);
-            return _buildDirectory;
+            return root;
         }
 
         private static string InitResponse() =>
@@ -433,10 +441,9 @@ namespace Elympics.Editor.Tests
 
         private string CreateStreamingAssets()
         {
-            _buildDirectory = Path.Combine(Path.GetTempPath(), "ElympicsTestEditorApi_" + Path.GetRandomFileName());
-            _ = Directory.CreateDirectory(_buildDirectory);
-            File.WriteAllText(Path.Combine(_buildDirectory, "a.txt"), "a");
-            return _buildDirectory;
+            var root = NewTempDirectory().Path;
+            File.WriteAllText(Path.Combine(root, "a.txt"), "a");
+            return root;
         }
 
         private static string StreamingAssetsInitResponse(params string[] paths) =>

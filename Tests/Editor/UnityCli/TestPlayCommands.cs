@@ -42,9 +42,8 @@ namespace Elympics.Editor.Tests.UnityCli
         public void RefusedLaunchIsRecordedAsFailed()
         {
             var previous = EditorLaunchRecord.Last;
-            var originalConfigPath = ElympicsConfig.PathInResources;
             // The launch resolves the active game before the queue can refuse it, and the CI project has no ElympicsConfig.
-            ElympicsConfig.PathInResources = "ElympicsTests/ElympicsConfig";
+            using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
             try
             {
                 using var scene = new AdditiveTestScene();
@@ -58,7 +57,6 @@ namespace Elympics.Editor.Tests.UnityCli
             }
             finally
             {
-                ElympicsConfig.PathInResources = originalConfigPath;
                 EditorLaunchRecord.Restore(previous);
             }
         }

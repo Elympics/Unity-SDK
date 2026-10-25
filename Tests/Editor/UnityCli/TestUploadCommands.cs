@@ -10,7 +10,6 @@ using UnityEngine.TestTools;
 
 namespace Elympics.Editor.Tests.UnityCli
 {
-    /// <summary>Argument validation only: these commands must fail before any request when arguments or --confirm are missing.</summary>
     [Category("UnityCli")]
     public class TestUploadCommands
     {

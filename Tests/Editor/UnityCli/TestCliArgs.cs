@@ -31,8 +31,11 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("../Proj2/Build")]
         [TestCase("..")]
         [TestCase("Assets/../../Other")]
-        public void ProjectPathsOutsideTheProjectNeedTheOptIn(string path) =>
-            WithProjectRoot(_ => CliAssert.Throws(() => CliArgs.ResolveProjectPath(path, "p", false), ElympicsCliErrors.InvalidArgument));
+        public void ProjectPathsOutsideTheProjectNeedTheOptIn(string path) => WithProjectRoot(_ =>
+        {
+            CliAssert.Throws(() => CliArgs.ResolveProjectPath(path, "p", false), ElympicsCliErrors.InvalidArgument);
+            return 0;
+        });
 
         private static T WithProjectRoot<T>(Func<string, T> body)
         {
@@ -48,12 +51,6 @@ namespace Elympics.Editor.Tests.UnityCli
                 CliArgs.ProjectRoot = original;
             }
         }
-
-        private static void WithProjectRoot(Action<string> body) => WithProjectRoot<object>(root =>
-        {
-            body(root);
-            return null;
-        });
 
         [Test]
         public void MissingRequiredArgument() => CliAssert.Throws(() => CliArgs.Require(" ", "version"), ElympicsCliErrors.InvalidArgument);

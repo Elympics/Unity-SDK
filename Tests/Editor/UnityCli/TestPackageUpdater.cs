@@ -58,15 +58,15 @@ namespace Elympics.Editor.Tests.UnityCli
                 InstalledVersion = name => name == Sdk ? "0.28.0" : null,
             };
             WriteManifest(SdkUrl + "#develop", PlayPadUrl + "#v3.0.0");
-            File.WriteAllText(_updater.LockPath, new JObject
-            {
-                ["dependencies"] = new JObject
-                {
-                    [Sdk] = new JObject { ["version"] = SdkUrl + "#develop", ["hash"] = OldHead },
-                    [PlayPad] = new JObject { ["version"] = PlayPadUrl + "#v3.0.0", ["hash"] = TagCommit },
-                },
-            }.ToString());
+            WriteLock(new JObject { ["version"] = SdkUrl + "#develop", ["hash"] = OldHead },
+                new JObject { ["version"] = PlayPadUrl + "#v3.0.0", ["hash"] = TagCommit });
         }
+
+        private void WriteLock(JObject sdk, JObject playPad) =>
+            File.WriteAllText(_updater.LockPath, new JObject { ["dependencies"] = new JObject { [Sdk] = sdk, [PlayPad] = playPad } }.ToString());
+
+        private void WriteLockHashes(string sdkHash, string playPadHash) =>
+            WriteLock(new JObject { ["hash"] = sdkHash }, new JObject { ["hash"] = playPadHash });
 
         [TearDown]
         public void TearDown() => _temp.Dispose();
@@ -202,14 +202,7 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.HasCodeAndFix(again, ElympicsCliErrors.UpdateInProgress);
             Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo("started"));
 
-            File.WriteAllText(_updater.LockPath, new JObject
-            {
-                ["dependencies"] = new JObject
-                {
-                    [Sdk] = new JObject { ["hash"] = DevelopHead },
-                    [PlayPad] = new JObject { ["hash"] = TagCommit },
-                },
-            }.ToString());
+            WriteLockHashes(DevelopHead, TagCommit);
             var done = _updater.ReadOperation(operation.operationId);
             Assert.That(done.status, Is.EqualTo("done"));
             Assert.That(done.packages.All(update => update.lockHashMatchesHead == true), Is.True);
@@ -219,14 +212,7 @@ namespace Elympics.Editor.Tests.UnityCli
         public IEnumerator ApplyFinalizesAResolveThatFinishedWithoutADomainReload() => UniTask.ToCoroutine(async () =>
         {
             var first = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
-            File.WriteAllText(_updater.LockPath, new JObject
-            {
-                ["dependencies"] = new JObject
-                {
-                    [Sdk] = new JObject { ["hash"] = DevelopHead },
-                    [PlayPad] = new JObject { ["hash"] = TagCommit },
-                },
-            }.ToString());
+            WriteLockHashes(DevelopHead, TagCommit);
 
             var second = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 

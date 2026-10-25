@@ -214,8 +214,6 @@ namespace Elympics
         private static void PostTelemetryEvent(string route, object requestBody) =>
             RunAndLogErrors(() => ElympicsEditorApi.PostUsageEventAsync(route, requestBody, true), true);
 
-        /// <summary>Build and upload the game server.</summary>
-        /// <param name="completed">Called when the flow ends, with whether the server was built and uploaded.</param>
         public static void BuildAndUploadGame(Action<bool> completed = null) => BuildAndUploadGameAsync(completed).Forget();
 
         private static async UniTask BuildAndUploadGameAsync(Action<bool> completed)
@@ -267,7 +265,6 @@ namespace Elympics
             }
         }
 
-        /// <summary>Builds the Linux server, packs its engine and uploads it as a new game version. A failed build is returned without uploading.</summary>
         private static async UniTask<BuildReport> BuildPackAndUploadServerAsync(ElympicsGameConfig gameConfig, BuildOptions options, Action<string, float> progress, CancellationToken ct)
         {
             var buildReport = BuildTools.BuildServerLinux(options);
@@ -284,9 +281,6 @@ namespace Elympics
             GameUploadedToTheCloud?.Invoke();
             return buildReport;
         }
-
-        internal static List<(string name, string extension)> GetValidFiles(string[] fileNames, string[] knownCompoundExtensions)
-            => WebGLUploader.GetValidFiles(fileNames, knownCompoundExtensions);
 
         public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion)
         {
@@ -329,7 +323,6 @@ namespace Elympics
             }
         }
 
-        /// <summary>Like <see cref="UploadStreamingAssetsUsingCurrentLogin"/>, without blocking the Editor.</summary>
         [PublicAPI]
         public static Task<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
             CancellationToken ct = default)
@@ -338,8 +331,6 @@ namespace Elympics
             return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct).AsTask();
         }
 
-        /// <summary>Uploads a WebGL client build with the Editor's current login, without dialogs and without blocking the Editor.</summary>
-        /// <param name="clientBuildPath">The WebGL build's root or its Build folder.</param>
         [PublicAPI]
         public static Task<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
             CancellationToken ct = default)
@@ -348,10 +339,6 @@ namespace Elympics
             return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, ct).AsTask();
         }
 
-        /// <summary>
-        /// Builds the Linux server of the active game and uploads it as the game's current version with the Editor's current login,
-        /// without dialogs. The upload doesn't block the Editor.
-        /// </summary>
         /// <returns>The build report. A failed build is returned without uploading.</returns>
         [PublicAPI]
         public static async Task<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)

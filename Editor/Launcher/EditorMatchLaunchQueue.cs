@@ -47,12 +47,9 @@ namespace Elympics.Editor.Launcher
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        /// <summary>What to do with modified open scenes before entering play mode.</summary>
         public enum UnsavedScenePolicy
         {
-            /// <summary>Ask the user in a dialog.</summary>
             Prompt,
-            /// <summary>Refuse the launch.</summary>
             Refuse,
             /// <summary>Save them without asking. Untitled scenes are refused, as saving them needs a path.</summary>
             Save,

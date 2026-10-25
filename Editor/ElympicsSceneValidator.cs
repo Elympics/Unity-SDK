@@ -31,7 +31,7 @@ namespace Elympics.Editor
         }
     }
 
-    /// <summary>Checks an Elympics gameplay scene without changing it. Every finding names what to do next.</summary>
+    /// <summary>Checks an Elympics gameplay scene without changing it.</summary>
     internal static class ElympicsSceneValidator
     {
         public const string NoActiveGameConfig = "NO_ACTIVE_GAME_CONFIG";
@@ -82,15 +82,19 @@ namespace Elympics.Editor
             if (activeGame == null)
                 return;
             var gameplayScene = activeGame.GameplayScene;
-            if (!string.IsNullOrEmpty(gameplayScene) && gameplayScene != scene.path)
-                findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Warning,
-                    $"The scene isn't the gameplay scene of the active game {activeGame.GameName} ({gameplayScene}).",
-                    "validate the gameplay scene instead, or make this scene the gameplay scene (elympics_scene_setup --set_gameplay_scene true)."));
             if (string.IsNullOrEmpty(gameplayScene))
+            {
                 findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Error,
                     $"The active game {activeGame.GameName} has no gameplay scene.",
                     "set it in the game config, or run elympics_scene_setup --set_gameplay_scene true on the gameplay scene."));
-            else if (!enabledBuildScenes.Contains(gameplayScene))
+                return;
+            }
+
+            if (gameplayScene != scene.path)
+                findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Warning,
+                    $"The scene isn't the gameplay scene of the active game {activeGame.GameName} ({gameplayScene}).",
+                    "validate the gameplay scene instead, or make this scene the gameplay scene (elympics_scene_setup --set_gameplay_scene true)."));
+            if (!enabledBuildScenes.Contains(gameplayScene))
                 findings.Add(new SceneFinding(SceneNotInBuild, SceneFindingSeverity.Error,
                     $"The gameplay scene {gameplayScene} isn't enabled in Build Settings.",
                     $"add it with add_scene_to_build --scene_path {gameplayScene} (or elympics_scene_setup --add_to_build true)."));

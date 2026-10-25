@@ -17,7 +17,6 @@ namespace Elympics.Editor.Communication
         public byte[] RawBody;
         public string ContentType;
         public string ContentEncoding;
-        /// <summary>Elympics API requests carry the Bearer token, the SDK version header and the test certificate handler.</summary>
         public bool ElympicsApi = true;
         public bool Auth = true;
         public int TimeoutSeconds;
@@ -53,9 +52,6 @@ namespace Elympics.Editor.Communication
         public async UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
         {
             using var webRequest = Create(request);
-            if (request.ElympicsApi)
-                ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
-
             var operation = webRequest.SendWebRequest();
             if (!operation.isDone)
             {
@@ -102,15 +98,13 @@ namespace Elympics.Editor.Communication
                     webRequest.SetRequestHeader("Authorization", $"Bearer {token}");
                 webRequest.SetSdkVersionHeader();
                 webRequest.SetTestCertificateHandlerIfNeeded();
+                ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
             }
             return webRequest;
         }
     }
 
-    /// <summary>
-    /// Sends the request and polls it on the calling thread, so it completes without the Editor's player loop ticking.
-    /// Only for <see cref="ElympicsEditorApi.RunBlocking{T}"/>: it blocks the main thread.
-    /// </summary>
+    /// <summary>Blocks the main thread; only for <see cref="ElympicsEditorApi.RunBlocking{T}"/>.</summary>
     internal sealed class BusyWaitEditorApiTransport : IEditorApiTransport
     {
         private const int PollIntervalMilliseconds = 5;
@@ -118,9 +112,6 @@ namespace Elympics.Editor.Communication
         public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
         {
             using var webRequest = UnityWebRequestEditorApiTransport.Create(request);
-            if (request.ElympicsApi)
-                ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
-
             ct.ThrowIfCancellationRequested();
             var operation = webRequest.SendWebRequest();
             while (!operation.isDone)

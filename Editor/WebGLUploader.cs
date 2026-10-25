@@ -9,7 +9,6 @@ using UnityEngine;
 
 namespace Elympics.Editor
 {
-    /// <summary>The files or arguments to upload are invalid, so nothing was sent.</summary>
     internal class ElympicsUploadInputException : ElympicsException
     {
         public ElympicsUploadInputException(string message)
@@ -17,7 +16,6 @@ namespace Elympics.Editor
         { }
     }
 
-    /// <summary>The client build directory is missing or doesn't hold exactly the expected build files.</summary>
     internal sealed class ElympicsClientBuildFilesException : ElympicsUploadInputException
     {
         public ElympicsClientBuildFilesException(string message)
@@ -25,7 +23,6 @@ namespace Elympics.Editor
         { }
     }
 
-    /// <summary>Packing the built server engine into the upload archive failed.</summary>
     internal sealed class ElympicsPackFailedException : ElympicsException
     {
         public ElympicsPackFailedException(string message)
@@ -211,7 +208,6 @@ namespace Elympics.Editor
         internal const string BuildFolderName = "Build";
 
         /// <param name="clientBuildPath">The WebGL build's <see cref="BuildFolderName"/> folder or the build root containing it.</param>
-        /// <returns>The folder that holds the build files, and the files.</returns>
         internal static (string path, List<(string name, string extension)> validFiles) ResolveClientBuildFiles(string clientBuildPath, string clientGameVersion)
         {
             if (string.IsNullOrWhiteSpace(clientBuildPath) || !Directory.Exists(clientBuildPath))
@@ -264,7 +260,6 @@ namespace Elympics.Editor
 
         #region StreamingAssets content upload
 
-        /// <exception cref="ElympicsUploadInputException">The content cannot be uploaded; the message says why.</exception>
         internal static void PrepareStreamingAssetsFiles(
             string rootPath,
             string version,

@@ -7,8 +7,7 @@ using UnityEngine;
 namespace Elympics.Editor.Launcher
 {
     /// <summary>
-    /// The outcome of the last launch started by a tool (e.g. a CLI command), kept in <see cref="SessionState"/> so that it survives the domain reload
-    /// of entering play mode. Callers poll it, because the launch finishes after the call that started it has returned.
+    /// The outcome of the last launch started by a tool, kept in <see cref="SessionState"/> to survive the domain reload of entering play mode.
     /// </summary>
     [InitializeOnLoad]
     internal static class EditorLaunchRecord
@@ -71,14 +70,16 @@ namespace Elympics.Editor.Launcher
             if (record == null)
                 SessionState.EraseString(Key);
             else
-                SessionState.SetString(Key, JsonUtility.ToJson(record));
+                Write(record);
         }
 
         private static void Save(Record record)
         {
             record.updatedAt = DateTime.UtcNow.ToString("o");
-            SessionState.SetString(Key, JsonUtility.ToJson(record));
+            Write(record);
         }
+
+        private static void Write(Record record) => SessionState.SetString(Key, JsonUtility.ToJson(record));
 
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {

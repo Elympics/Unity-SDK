@@ -92,30 +92,13 @@ namespace Elympics
         {
             // TODO: set it up so that the components from the Elympics prefab cannot be used in other places, seal the classes etc. ~dsygocki 2026-03-05
             foreach (var behaviour in behaviours)
-                if (behaviour.GetComponent<ElympicsUnityPhysicsSimulator>() is not null)
-                {
-                    if (behaviour.NetworkId == NetworkIdConstants.PhysicsSimulatorNetworkId)
-                        continue;
-                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
-                    behaviour.NetworkId = NetworkIdConstants.PhysicsSimulatorNetworkId;
-                }
-                else if (behaviour.GetComponent<ServerLogBehaviour>() is not null)
-                {
-                    if (behaviour.NetworkId == NetworkIdConstants.ServerLogNetworkId)
-                        continue;
-                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
-                    behaviour.NetworkId = NetworkIdConstants.ServerLogNetworkId;
-                }
-                else if (behaviour.GetComponent<DefaultServerHandler>()?.GetType() == typeof(DefaultServerHandler))
-                {
-                    if (behaviour.NetworkId == NetworkIdConstants.DefaultServerHandlerNetworkId)
-                        continue;
-                    Undo.RecordObject(behaviour, "Re-assign predefined network ID");
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
-                    behaviour.NetworkId = NetworkIdConstants.DefaultServerHandlerNetworkId;
-                }
+            {
+                if (TryGetPredefinedIdFor(behaviour) is not { } predefinedId || behaviour.NetworkId == predefinedId)
+                    continue;
+                Undo.RecordObject(behaviour, "Re-assign predefined network ID");
+                PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
+                behaviour.NetworkId = predefinedId;
+            }
         }
 
         private static void ReassignAutoIds(List<ElympicsBehaviour> behaviours)

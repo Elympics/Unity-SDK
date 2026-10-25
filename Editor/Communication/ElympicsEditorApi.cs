@@ -109,13 +109,7 @@ namespace Elympics.Editor.Communication
             return task.GetAwaiter().GetResult();
         }
 
-        internal static void RunBlocking(Func<CancellationToken, UniTask> call)
-        {
-            using var scope = new BlockingScope();
-            var task = call(scope.Token);
-            scope.ThrowIfPending(task.Status);
-            task.GetAwaiter().GetResult();
-        }
+        internal static void RunBlocking(Func<CancellationToken, UniTask> call) => _ = RunBlocking(ct => call(ct).AsAsyncUnitUniTask());
 
         private sealed class BlockingScope : IDisposable
         {
@@ -164,8 +158,6 @@ namespace Elympics.Editor.Communication
             // ReSharper restore InconsistentNaming
         }
 
-        /// <summary>Logs in with the developer account's credentials and stores the tokens in the login store.</summary>
-        /// <returns>The logged-in user's name.</returns>
         public static async UniTask<string> LoginAsync(string username, string password, CancellationToken ct = default)
         {
             var response = await SendAsync("Login", new EditorApiRequest
@@ -201,7 +193,6 @@ namespace Elympics.Editor.Communication
             public long exp;
         }
 
-        /// <summary>Refreshes the auth token when it expires within <paramref name="expirationMarginSeconds"/>.</summary>
         /// <remarks>Logs out only when the backend rejects the refresh token, not when it can't be reached.</remarks>
         public static async UniTask EnsureLoggedInAsync(long expirationMarginSeconds = 0, CancellationToken ct = default)
         {
@@ -289,7 +280,6 @@ namespace Elympics.Editor.Communication
             SendJsonAsync<ElympicsWebIntegration.ElympicsEndpointsModel>("Get Elympics Endpoints", UnityWebRequest.kHttpVerbGET, Url(UsersRoutes.BaseRoute, UsersRoutes.EndpointRoutes), null, ct);
 
         /// <summary>Posts a usage statistics event. Failures of the request are ignored, since losing an event must never disturb the Editor.</summary>
-        /// <param name="requireLogin">Send only when logged in, refreshing the auth token first. Otherwise the event goes out with the stored login, if any.</param>
         public static async UniTask PostUsageEventAsync(string route, object body, bool requireLogin, int timeoutSeconds = JsonTimeoutSeconds, CancellationToken ct = default)
         {
             if (requireLogin && !LoginStore.IsLogin)
@@ -483,7 +473,6 @@ namespace Elympics.Editor.Communication
             return relativePaths.Count;
         }
 
-        /// <param name="extension">The file's extension with a dot, which may be compound. It selects the Content-Encoding.</param>
         private static async UniTask UploadFileAsync(string fileName, string signedUrl, byte[] payload, string contentType, string extension, CancellationToken ct)
         {
             if (!Uri.TryCreate(signedUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)

@@ -31,7 +31,6 @@ namespace Elympics
                 : Array.Empty<string>();
         }
 
-        /// <summary>False when ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH makes virtual players manual unless a tag sets a launch mode.</summary>
         internal const bool LaunchesByDefault =
 #if ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH
             false;

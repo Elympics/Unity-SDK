@@ -51,16 +51,16 @@ namespace Elympics
         private int _reanchoredCount;
         private int _replayedCount;
 
-        /// <summary>A read-only snapshot of prediction and reconciliation state for Editor tools.</summary>
         internal ClientDiagnostics Diagnostics
         {
             get
             {
                 var results = _clientTickCalculator?.Results;
+                var rttTicks = results?.RttTicks ?? 0;
                 var lastSnapshotTick = _latestReconciliationBaseSnapshotTick;
                 return new ClientDiagnostics(
-                    results?.RttTicks ?? 0,
-                    (results?.RttTicks ?? 0) * Config.TickDuration * 1000,
+                    rttTicks,
+                    rttTicks * Config.TickDuration * 1000,
                     results?.CanPredict ?? false,
                     lastSnapshotTick,
                     lastSnapshotTick >= 0 ? Tick - lastSnapshotTick : null,

@@ -90,7 +90,6 @@ namespace Elympics
 #endif
         }
 
-        /// <summary>False when ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD leaves loading the gameplay scene to the game.</summary>
         internal static bool LoadsGameplaySceneForLaunchMode =>
 #if ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD
             false;

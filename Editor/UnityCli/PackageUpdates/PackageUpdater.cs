@@ -292,8 +292,20 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         private IEnumerable<PackageUpdateOperation> ReadOperations() =>
             Directory.Exists(OperationsDirectory)
-                ? Directory.GetFiles(OperationsDirectory, "*.json").Select(file => JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(file)))
+                ? Directory.GetFiles(OperationsDirectory, "*.json").Select(TryReadOperation).Where(operation => operation != null)
                 : Enumerable.Empty<PackageUpdateOperation>();
+
+        private static PackageUpdateOperation TryReadOperation(string file)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(file));
+            }
+            catch (Exception e) when (e is JsonException or IOException)
+            {
+                return null;
+            }
+        }
 
         private void Save(PackageUpdateOperation operation)
         {

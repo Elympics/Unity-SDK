@@ -245,6 +245,18 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(_resolves, Is.Zero);
         });
 
+        [UnityTest]
+        public IEnumerator CorruptOperationRecordsAreSkipped() => UniTask.ToCoroutine(async () =>
+        {
+            _ = Directory.CreateDirectory(_updater.OperationsDirectory);
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "corrupt.json"), "{ not json");
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "null.json"), "null");
+
+            var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+
+            Assert.That(operation.status, Is.EqualTo("started"));
+        });
+
         [Test]
         public void AMissingOperationIsReported() =>
             CliAssert.Throws(() => _updater.ReadOperation("20260101000000-abcdef12"), ElympicsCliErrors.OperationNotFound);

@@ -77,6 +77,7 @@ namespace Elympics.Editor.Communication
         private const string ClientBuildCompleteRoute = "complete";
         private const string StreamingAssetsRoute = "streaming-assets";
         private const int JsonTimeoutSeconds = 30;
+        private const int FileUploadTimeoutSeconds = 1800;
 
         internal static IEditorApiTransport Transport = new UnityWebRequestEditorApiTransport();
         internal static Func<IEditorApiTransport> BlockingTransportFactory = () => new BusyWaitEditorApiTransport();
@@ -177,15 +178,7 @@ namespace Elympics.Editor.Communication
             }, false, ct);
 
             var tokens = Deserialize<LoginResponseModel>("Login", response);
-            long expiration;
-            try
-            {
-                expiration = ReadTokenExpiration(tokens.AuthToken);
-            }
-            catch (Exception e) when (e is FormatException or JsonException or IndexOutOfRangeException or NullReferenceException)
-            {
-                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, "Login failed: the auth token is malformed.", response.StatusCode);
-            }
+            var expiration = ReadTokenExpiration("Login", tokens.AuthToken, response.StatusCode);
 
             LoginStore.AuthToken = tokens.AuthToken;
             LoginStore.AuthTokenExp = expiration.ToString();
@@ -245,9 +238,22 @@ namespace Elympics.Editor.Communication
             }
 
             var tokens = Deserialize<ElympicsWebIntegration.RefreshedTokensResponseModel>("Refresh auth token", response);
+            var newExpiration = ReadTokenExpiration("Refresh auth token", tokens.AuthToken, response.StatusCode);
             LoginStore.AuthToken = tokens.AuthToken;
-            LoginStore.AuthTokenExp = ReadTokenExpiration(tokens.AuthToken).ToString();
+            LoginStore.AuthTokenExp = newExpiration.ToString();
             LoginStore.RefreshToken = tokens.RefreshToken;
+        }
+
+        private static long ReadTokenExpiration(string action, string authToken, long statusCode)
+        {
+            try
+            {
+                return ReadTokenExpiration(authToken);
+            }
+            catch (Exception e) when (e is FormatException or JsonException or IndexOutOfRangeException or NullReferenceException)
+            {
+                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"{action} failed: the auth token is malformed.", statusCode);
+            }
         }
 
         internal static long ReadTokenExpiration(string authToken)
@@ -286,29 +292,38 @@ namespace Elympics.Editor.Communication
         /// <param name="requireLogin">Send only when logged in, refreshing the auth token first. Otherwise the event goes out with the stored login, if any.</param>
         public static async UniTask PostUsageEventAsync(string route, object body, bool requireLogin, int timeoutSeconds = JsonTimeoutSeconds, CancellationToken ct = default)
         {
-            if (requireLogin)
+            if (requireLogin && !LoginStore.IsLogin)
+                return;
+            try
             {
-                if (!LoginStore.IsLogin)
-                    return;
-                try
+                if (requireLogin)
                 {
-                    await EnsureLoggedInAsync(0, ct);
+                    try
+                    {
+                        await EnsureLoggedInAsync(0, ct);
+                    }
+                    catch (ElympicsEditorApiException)
+                    { }
                 }
-                catch (ElympicsEditorApiException)
-                { }
-            }
 
-            var response = await Transport.SendAsync(new EditorApiRequest
+                var response = await Transport.SendAsync(new EditorApiRequest
+                {
+                    Method = UnityWebRequest.kHttpVerbPOST,
+                    Url = Url(UsageStatisticsRoutes.Base, route),
+                    JsonBody = JsonConvert.SerializeObject(body),
+                    Auth = LoginStore.IsLogin && !IsAuthTokenExpired(),
+                    TimeoutSeconds = timeoutSeconds,
+                }, ct);
+                if (!response.Succeeded)
+                    ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {response.Error}");
+            }
+            catch (ElympicsEditorApiException e)
             {
-                Method = UnityWebRequest.kHttpVerbPOST,
-                Url = Url(UsageStatisticsRoutes.Base, route),
-                JsonBody = JsonConvert.SerializeObject(body),
-                Auth = LoginStore.IsLogin,
-                TimeoutSeconds = timeoutSeconds,
-            }, ct);
-            if (!response.Succeeded)
-                ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {response.Error}");
+                ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {e.Message}");
+            }
         }
+
+        private static bool IsAuthTokenExpired() => !long.TryParse(LoginStore.AuthTokenExp, out var expiration) || UtcNowSeconds() > expiration;
 
         public static UniTask<JToken> GetFleetsAsync(CancellationToken ct = default) =>
             CallAsync("Get fleets", UnityWebRequest.kHttpVerbGET, null, ct, GamesRoutes.BaseRoute, FleetsRoute);
@@ -481,6 +496,7 @@ namespace Elympics.Editor.Communication
                 ContentType = contentType,
                 ContentEncoding = WebGLUploader.FetchEncoding(extension),
                 ElympicsApi = false,
+                TimeoutSeconds = FileUploadTimeoutSeconds,
             }, ct);
             if (!response.Succeeded)
                 throw new ElympicsEditorApiException(response.IsConnectionError ? EditorApiErrorKind.Network : EditorApiErrorKind.RequestFailed,

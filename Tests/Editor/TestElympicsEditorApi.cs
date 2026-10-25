@@ -250,6 +250,42 @@ namespace Elympics.Editor.Tests
         });
 
         [UnityTest]
+        public IEnumerator AUsageEventToAnUntrustedHostIsIgnored() => UniTask.ToCoroutine(async () =>
+        {
+            _transport.Respond = _ => throw new ElympicsEditorApiException(EditorApiErrorKind.UntrustedHost, "untrusted");
+
+            await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
+            await ElympicsEditorApi.PostUsageEventAsync("start", new { gameId = "g1" }, true);
+
+            Assert.That(_transport.Requests, Has.Count.EqualTo(2));
+        });
+
+        [UnityTest]
+        public IEnumerator AUsageEventThatNeedsNoLoginIsSentWithoutAnExpiredToken() => UniTask.ToCoroutine(async () =>
+        {
+            _login.AuthTokenExp = (Now - 1).ToString();
+
+            await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
+
+            Assert.That(_transport.Requests.Single().Auth, Is.False);
+        });
+
+        [Test]
+        public void ARefreshedMalformedTokenIsRejectedAndNotStored()
+        {
+            _login.AuthTokenExp = (Now - 1).ToString();
+            _transport.Respond = request => request.Url.EndsWith("auth/refresh")
+                ? Ok("{\"AuthToken\":\"not-a-jwt\",\"RefreshToken\":\"refresh2\"}")
+                : Ok("[]");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_login.AuthToken, Is.EqualTo("old"));
+            Assert.That(_login.RefreshToken, Is.EqualTo("refresh"));
+        }
+
+        [UnityTest]
         public IEnumerator RegionsRoutesAreNotEscaped() => UniTask.ToCoroutine(async () =>
         {
             _transport.Respond = _ => Ok("{\"Regions\":[]}");
@@ -347,7 +383,7 @@ namespace Elympics.Editor.Tests
             Assert.That(fileCount, Is.EqualTo(WebGLUploader.CompoundExtensions.Length));
             var puts = _transport.Requests.Where(request => request.Url.StartsWith("https://gcs.test/")).ToList();
             Assert.That(puts, Has.Count.EqualTo(fileCount));
-            Assert.That(puts.All(request => request.Method == "PUT" && !request.ElympicsApi), Is.True);
+            Assert.That(puts.All(request => request.Method == "PUT" && !request.ElympicsApi && request.TimeoutSeconds > 0), Is.True);
             Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":true"));
         });

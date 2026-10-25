@@ -44,13 +44,28 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void TheCustomHostTrustedOnThisMachineIsAllowedOnAnyScheme()
+        public void TheCustomHostTrustedOnThisMachineIsAllowedOnHttpsAndLocalhostHttp()
         {
             _customHost = "localhost";
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("http://localhost:5000/api")), Is.True);
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://LOCALHOST")), Is.True);
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("http://localhost.evil.com")), Is.False);
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://api.elympics.cc")), Is.True);
+        }
+
+        [TestCase("127.0.0.1", "http://127.0.0.1:5000", true)]
+        [TestCase("[::1]", "http://[::1]:5000", true)]
+        [TestCase("[::1]", "https://[::1]:5000", true)]
+        [TestCase("example.com", "https://example.com", true)]
+        [TestCase("example.com", "http://example.com", false)]
+        [TestCase("192.168.0.5", "http://192.168.0.5:5000", false)]
+        public void AHttpCustomHostIsTrustedOnlyOnLoopback(string customHost, string url, bool expected)
+        {
+            _customHost = customHost;
+            var uri = new Uri(url);
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(uri), Is.EqualTo(expected));
+            if (!expected)
+                _ = Assert.Throws<ElympicsEditorApiException>(() => ElympicsApiHostPolicy.Require(uri));
         }
 
         [Test]

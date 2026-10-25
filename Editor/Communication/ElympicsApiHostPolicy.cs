@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Elympics.Editor.Communication
 {
     /// <summary>
-    /// The Editor sends the Elympics login only to https Elympics hosts, or to one custom host trusted on this machine (EditorPrefs, never the project).
+    /// The Editor sends the Elympics login only to https Elympics hosts, or to one custom host trusted on this machine (EditorPrefs, never the project), which must use https unless it is localhost.
     /// </summary>
     internal static class ElympicsApiHostPolicy
     {
@@ -19,7 +19,7 @@ namespace Elympics.Editor.Communication
             var host = uri.Host;
             var customHost = TrustedCustomHost();
             if (!string.IsNullOrEmpty(customHost) && string.Equals(host, customHost, StringComparison.OrdinalIgnoreCase))
-                return true;
+                return uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && IsLoopback(host));
             if (uri.Scheme != Uri.UriSchemeHttps)
                 return false;
             foreach (var domain in TrustedDomains)
@@ -29,11 +29,14 @@ namespace Elympics.Editor.Communication
             return false;
         }
 
+        private static bool IsLoopback(string host) =>
+            host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host == "127.0.0.1" || host == "::1" || host == "[::1]";
+
         public static void Require(Uri uri)
         {
             if (!IsTrusted(uri))
                 throw new ElympicsEditorApiException(EditorApiErrorKind.UntrustedHost,
-                    $"{uri.Scheme}://{uri.Host} isn't an https Elympics host (*.elympics.cc, *.elympics.ai), so the Editor won't send the Elympics login to it.",
+                    $"{uri.Scheme}://{uri.Host} isn't an https Elympics host (*.elympics.cc, *.elympics.ai) or a trusted custom host (https, or http on localhost only), so the Editor won't send the Elympics login to it.",
                     fix: $"correct the API endpoint in ElympicsConfig or its command-line override, or, if you trust this server, use {ElympicsEditorMenuPaths.TrustCustomApiHost}.");
         }
 

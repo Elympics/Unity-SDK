@@ -25,6 +25,14 @@ namespace Elympics.Editor
         { }
     }
 
+    /// <summary>Packing the built server engine into the upload archive failed.</summary>
+    internal sealed class ElympicsPackFailedException : ElympicsException
+    {
+        public ElympicsPackFailedException(string message)
+            : base(message)
+        { }
+    }
+
     public static class WebGLUploader
     {
         private const string NamePattern = "^[0-9-a-zA-Z.]+$";

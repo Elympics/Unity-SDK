@@ -276,7 +276,7 @@ namespace Elympics
 
             progress?.Invoke("Packing engine", 0.2f);
             if (!TryPack(gameConfig.GameId, gameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
-                throw new ElympicsException("Problem with packing engine");
+                throw new ElympicsPackFailedException("Problem with packing engine");
 
             progress?.Invoke("Uploading...", 0.8f);
             await ElympicsEditorApi.UploadServerAsync(gameConfig.GameId, gameConfig.GameVersion, enginePath, ct);

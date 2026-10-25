@@ -55,7 +55,7 @@ namespace Elympics.Editor.UnityCli
                 {
                     report = await ElympicsWebIntegration.BuildAndUploadServerUsingCurrentLoginAsync(development ? BuildOptions.Development : BuildOptions.None, ct);
                 }
-                catch (ElympicsException e) when (e is not Communication.ElympicsEditorApiException && e.Message.Contains("packing"))
+                catch (ElympicsPackFailedException e)
                 {
                     throw new ElympicsCliException(ElympicsCliErrors.PackFailed, e.Message, "check that serverbuild/Engine isn't locked by another process and that the disk has space, then retry.");
                 }

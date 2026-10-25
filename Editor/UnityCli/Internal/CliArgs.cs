@@ -22,7 +22,7 @@ namespace Elympics.Editor.UnityCli
 
         internal static Func<string> ProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
 
-        /// <summary>Resolves a path relative to the project root. Unless <paramref name="allowExternal"/>, it must stay inside the project.</summary>
+        /// <summary>Resolves a path relative to the project root. Unless <paramref name="allowExternal"/>, it must stay inside the project (a lexical check: links and junctions are followed).</summary>
         public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
         {
             var root = Path.GetFullPath(ProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

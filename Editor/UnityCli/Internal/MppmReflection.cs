@@ -132,19 +132,20 @@ namespace Elympics.Editor.UnityCli
                     error == "CompileErrors" ? "fix the compile errors first (console --level error)." : "open Window > Multiplayer > Multiplayer Play Mode to see the player's state, then retry.");
         }
 
-        /// <summary>Replaces the player's tags that start with <paramref name="prefix"/>, registering new tags project-wide first.</summary>
+        /// <summary>Replaces the player's tags that start with <paramref name="prefix"/>, registering and adding the new tags first so that a failure keeps the old ones.</summary>
         public static void ReplaceTags(int number, string prefix, IReadOnlyCollection<string> tags)
         {
             var members = Require();
             var player = GetPlayer(members, number);
             var registry = members.PlayerTags.GetValue(null);
-            foreach (var tag in ((string[])members.Tags.GetValue(player) ?? Array.Empty<string>()).Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-                Invoke(members.RemoveTag, player, tag, "Removing", number);
-            foreach (var tag in tags)
+            var current = (string[])members.Tags.GetValue(player) ?? Array.Empty<string>();
+            foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.OrdinalIgnoreCase)))
             {
                 _ = members.RegisterTag.Invoke(registry, new object[] { tag, null });
                 Invoke(members.AddTag, player, tag, "Adding", number);
             }
+            foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase)))
+                Invoke(members.RemoveTag, player, tag, "Removing", number);
         }
 
         private static void Invoke(MethodInfo method, object player, string tag, string verb, int number)

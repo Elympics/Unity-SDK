@@ -6,11 +6,8 @@ using Unity.Pipeline.Commands;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>Elympics backend calls. They use the Editor's current login.</summary>
     public static class ElympicsBackendCliCommands
     {
-        private const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
-
         [CliCommand("elympics_games_list", "List the Elympics games the logged-in account can access, marking the ones in ElympicsConfig and the active one.",
             Tags = new[] { "elympics", "read" })]
         public static Task<object> GamesList([CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
@@ -30,7 +27,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_game_versions", "List the uploaded server versions of an Elympics game, with the IDs that elympics_game_version_update and _delete take.",
             Tags = new[] { "elympics", "read" })]
         public static Task<object> GameVersions(
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
@@ -56,7 +53,7 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_queues_list", "List the matchmaking queues of an Elympics game as the backend returns them.", Tags = new[] { "elympics", "read" })]
         public static Task<object> QueuesList(
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
@@ -67,7 +64,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_regions_list", "List the regions an Elympics game can run in, or every region of the Elympics cloud with --all true.",
             Tags = new[] { "elympics", "read" })]
         public static Task<object> RegionsList(
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("all", "List every region of the Elympics cloud instead of the game's.")] bool all = false,
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>

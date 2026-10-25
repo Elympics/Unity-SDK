@@ -77,7 +77,7 @@ namespace Elympics.Editor.Communication
         private const string ClientBuildCompleteRoute = "complete";
         private const string StreamingAssetsRoute = "streaming-assets";
         private const int JsonTimeoutSeconds = 30;
-        private const int FileUploadTimeoutSeconds = 1800;
+        internal const int FileUploadTimeoutSeconds = 1800;
 
         internal static IEditorApiTransport Transport = new UnityWebRequestEditorApiTransport();
         internal static Func<IEditorApiTransport> BlockingTransportFactory = () => new BusyWaitEditorApiTransport();

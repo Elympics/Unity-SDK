@@ -11,11 +11,10 @@ using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>Elympics backend changes. They use the Editor's current login, need --confirm true and aren't undoable from the CLI.</summary>
+    /// <summary>These change the Elympics backend right away and need --confirm true.</summary>
     public static class ElympicsBackendWriteCliCommands
     {
         private const string ConfirmDescription = "Must be true: the change is applied to the Elympics backend right away.";
-        private const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
 
         internal static readonly string[] MatchTypes = { "PAIR", "GROUP", "TEAM", "SOLO" };
         internal static readonly string[] MatchmakingStrategies = { "RANDOM", "HUNGARIAN_PAIR", "GALE_SHAPLEY_PAIR", "RANDOM_SAMPLER_PAIR", "WORST_GAME_ANNEALING", "IMBALANCE_ANNEALING" };
@@ -70,11 +69,7 @@ namespace Elympics.Editor.UnityCli
             var safeName = new string(name.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
             var path = AssetDatabase.GenerateUniqueAssetPath($"{ElympicsConfig.ElympicsResourcesPath}/{safeName}GameConfig.asset");
             AssetDatabase.CreateAsset(gameConfig, path);
-            Undo.RecordObject(config, "Register Elympics game");
-            config.availableGames.Add(gameConfig);
-            config.SwitchGame(config.availableGames.Count - 1);
-            EditorUtility.SetDirty(config);
-            AssetDatabase.SaveAssets();
+            _ = CliGames.RegisterAndActivate(config, gameConfig);
             return path;
         }
 
@@ -82,7 +77,7 @@ namespace Elympics.Editor.UnityCli
             "Change an Elympics game's settings. Only the given fields change: the others are read from the backend and sent back. Needs --confirm true.",
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> GameUpdate(
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("name", "New game name, 1-63 characters.")] string name = null,
             [CliArg("fleet_id", "New server fleet ID from elympics_fleets_list.")] string fleetId = null,
             [CliArg("external_backend", "External backend URL; an empty string clears it.")] string externalBackend = null,
@@ -118,7 +113,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> GameVersionUpdate(
             [CliArg("version", "Version name (as set by elympics_config_set_version) or version ID from elympics_game_versions.", Required = true)] string version,
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("blocked", "Block (true) or unblock (false) the version for new matches.")] bool? blocked = null,
             [CliArg("debug_mode", "Run matches of this version in debug mode.")] bool? debugMode = null,
             [CliArg("debug_mode_with_bots", "Run debug matches of this version with bots.")] bool? debugModeWithBots = null,
@@ -142,7 +137,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> GameVersionDelete(
             [CliArg("version", "Version name or version ID from elympics_game_versions.", Required = true)] string version,
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
@@ -171,7 +166,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.", Required = true)] string matchType,
             [CliArg("number_of_teams", "Number of teams.", Required = true)] int numberOfTeams,
             [CliArg("players_in_team", "Players in each team.", Required = true)] int playersInTeam,
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("matchmaking_strategy", "RANDOM (default), HUNGARIAN_PAIR, GALE_SHAPLEY_PAIR, RANDOM_SAMPLER_PAIR, WORST_GAME_ANNEALING or IMBALANCE_ANNEALING.")] string matchmakingStrategy = "RANDOM",
             [CliArg("sampling_strategy", "RANDOM (default), ALL_COMBINATIONS, ALL_UNIQUE_COMBINATIONS, EACH_BEST_PARTITIONING, MEAN_GROUP_PARTITIONING or TEAM_PARTITIONING.")] string samplingStrategy = "RANDOM",
             [CliArg("prediction_strategy", "RANDOM (default), DUMMY, ELO or BAYESIAN.")] string predictionStrategy = "RANDOM",
@@ -210,7 +205,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> QueueUpdate(
             [CliArg("queue", "Queue ID or name from elympics_queues_list.", Required = true)] string queue,
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("name", "New queue name.")] string name = null,
             [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.")] string matchType = null,
             [CliArg("number_of_teams", "Number of teams.")] int? numberOfTeams = null,
@@ -228,37 +223,30 @@ namespace Elympics.Editor.UnityCli
             {
                 queue = CliArgs.Require(queue, "queue");
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
+                var fields = new (string Key, object Value)[]
+                {
+                    ("Name", name == null ? null : CliArgs.ValidateVersion(name, "name")),
+                    ("MatchType", matchType == null ? null : ValidateEnum(matchType, "match_type", MatchTypes)),
+                    ("MatchmakingStrategy", matchmakingStrategy == null ? null : ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies)),
+                    ("SamplingStrategy", samplingStrategy == null ? null : ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies)),
+                    ("PredictionStrategy", predictionStrategy == null ? null : ValidateEnum(predictionStrategy, "prediction_strategy", PredictionStrategies)),
+                    ("MatchmakingMode", matchmakingMode == null ? null : ValidateEnum(matchmakingMode, "matchmaking_mode", MatchmakingModes)),
+                    ("NumberOfTeams", numberOfTeams),
+                    ("PlayersInTeam", playersInTeam),
+                    ("MatchWithBots", matchWithBots),
+                    ("MaxWaitTime", maxWaitTime),
+                    ("MinPlayersToMatch", minPlayersToMatch),
+                };
                 var changes = new JObject();
-                if (name != null)
-                    changes["Name"] = CliArgs.ValidateVersion(name, "name");
-                if (matchType != null)
-                    changes["MatchType"] = ValidateEnum(matchType, "match_type", MatchTypes);
-                if (matchmakingStrategy != null)
-                    changes["MatchmakingStrategy"] = ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies);
-                if (samplingStrategy != null)
-                    changes["SamplingStrategy"] = ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies);
-                if (predictionStrategy != null)
-                    changes["PredictionStrategy"] = ValidateEnum(predictionStrategy, "prediction_strategy", PredictionStrategies);
-                if (matchmakingMode != null)
-                    changes["MatchmakingMode"] = ValidateEnum(matchmakingMode, "matchmaking_mode", MatchmakingModes);
-                if (numberOfTeams != null)
-                    changes["NumberOfTeams"] = numberOfTeams;
-                if (playersInTeam != null)
-                    changes["PlayersInTeam"] = playersInTeam;
-                if (matchWithBots != null)
-                    changes["MatchWithBots"] = matchWithBots;
-                if (maxWaitTime != null)
-                    changes["MaxWaitTime"] = maxWaitTime;
-                if (minPlayersToMatch != null)
-                    changes["MinPlayersToMatch"] = minPlayersToMatch;
+                foreach (var (key, value) in fields.Where(field => field.Value != null))
+                    changes[key] = JToken.FromObject(value);
                 if (!changes.HasValues)
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one field to change, e.g. --max_wait_time 30.");
                 CliArgs.RequireConfirm(confirm, "Changing a queue");
 
                 var current = await FindQueueAsync(resolvedGameId, queue, ct);
                 var body = new JObject();
-                foreach (var field in new[] { "Name", "MatchType", "MatchmakingStrategy", "SamplingStrategy", "PredictionStrategy", "NumberOfTeams", "PlayersInTeam",
-                             "MatchWithBots", "MaxWaitTime", "MinPlayersToMatch", "MatchmakingMode", "SmartContractDeploymentId" })
+                foreach (var field in fields.Select(candidate => candidate.Key).Append("SmartContractDeploymentId"))
                     body[field] = changes[field] ?? current[field];
                 var queueId = (string)current["Id"];
                 var updated = await ElympicsEditorApi.UpdateQueueAsync(resolvedGameId, queueId, body, ct);
@@ -268,7 +256,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_queue_delete", "Delete a matchmaking queue. Needs --confirm true.", Tags = new[] { "elympics", "upload" })]
         public static Task<object> QueueDelete(
             [CliArg("queue", "Queue ID or name from elympics_queues_list.", Required = true)] string queue,
-            [CliArg("game_id", GameIdDescription)] string gameId = "",
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>

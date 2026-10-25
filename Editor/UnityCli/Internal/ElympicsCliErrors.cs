@@ -41,6 +41,8 @@ namespace Elympics.Editor.UnityCli
         public const string UnsupportedMode = "ELYMPICS_UNSUPPORTED_MODE";
         public const string LauncherBusy = "ELYMPICS_LAUNCHER_BUSY";
         public const string LaunchRefused = "ELYMPICS_LAUNCH_REFUSED";
+        public const string LaunchTimeout = "ELYMPICS_LAUNCH_TIMEOUT";
+        public const string LaunchFailed = "ELYMPICS_LAUNCH_FAILED";
         public const string MppmUnavailable = "ELYMPICS_MPPM_UNAVAILABLE";
         public const string MppmFailed = "ELYMPICS_MPPM_FAILED";
 

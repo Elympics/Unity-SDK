@@ -6,8 +6,8 @@ using System.Reflection;
 namespace Elympics.Editor.UnityCli
 {
     /// <summary>
-    /// Multiplayer Play Mode has no public API for its virtual players, so its internal one (in the engine's UnityEditor.MultiplayerModule) is used
-    /// through reflection. Any missing member fails closed with <see cref="ElympicsCliErrors.MppmUnavailable"/>; a test checks that every member resolves.
+    /// Multiplayer Play Mode has no public API for its virtual players, so its internal one is used through reflection.
+    /// A missing member fails closed with <see cref="ElympicsCliErrors.MppmUnavailable"/>.
     /// </summary>
     internal static class MppmReflection
     {
@@ -41,16 +41,12 @@ namespace Elympics.Editor.UnityCli
 
         private static Members cached;
 
-        /// <returns>The resolved members, or null with the reason.</returns>
         internal static Members TryResolve(out string problem)
         {
-            if (cached != null)
-            {
-                problem = null;
-                return cached;
-            }
-
             problem = null;
+            if (cached != null)
+                return cached;
+
             var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(candidate => candidate.GetName().Name == AssemblyName);
             if (assembly == null)
             {
@@ -92,11 +88,7 @@ namespace Elympics.Editor.UnityCli
             return cached = members;
         }
 
-        private static Members Require()
-        {
-            var members = TryResolve(out var problem) ?? throw Unavailable(problem);
-            return members;
-        }
+        private static Members Require() => TryResolve(out var problem) ?? throw Unavailable(problem);
 
         private static ElympicsCliException Unavailable(string problem) =>
             new(ElympicsCliErrors.MppmUnavailable, $"Multiplayer Play Mode's virtual players can't be reached: {problem}.",
@@ -132,7 +124,7 @@ namespace Elympics.Editor.UnityCli
                     error == "CompileErrors" ? "fix the compile errors first (console --level error)." : "open Window > Multiplayer > Multiplayer Play Mode to see the player's state, then retry.");
         }
 
-        /// <summary>Replaces the player's tags that start with <paramref name="prefix"/>, registering and adding the new tags first so that a failure keeps the old ones.</summary>
+        /// <summary>Adds the new tags before removing the old ones that start with <paramref name="prefix"/>, so a failure keeps the old ones.</summary>
         public static void ReplaceTags(int number, string prefix, IReadOnlyCollection<string> tags)
         {
             var members = Require();

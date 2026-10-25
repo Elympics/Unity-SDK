@@ -120,7 +120,7 @@ namespace Elympics.Editor.UnityCli
                         record.result,
                         error = string.IsNullOrEmpty(record.code) && string.IsNullOrEmpty(record.message)
                             ? null
-                            : ElympicsCliErrors.Format(record.result == EditorLaunchRecord.TimedOut ? "ELYMPICS_LAUNCH_TIMEOUT" : "ELYMPICS_LAUNCH_FAILED",
+                            : ElympicsCliErrors.Format(record.result == EditorLaunchRecord.TimedOut ? ElympicsCliErrors.LaunchTimeout : ElympicsCliErrors.LaunchFailed,
                                 $"{record.code} {record.message}".Trim(), LaunchFailureFix(record.code)),
                         matchId = string.IsNullOrEmpty(record.matchId) ? null : record.matchId,
                         record.updatedAt,

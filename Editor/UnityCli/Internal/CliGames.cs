@@ -1,4 +1,5 @@
 using System.Linq;
+using UnityEditor;
 
 namespace Elympics.Editor.UnityCli
 {
@@ -24,21 +25,35 @@ namespace Elympics.Editor.UnityCli
             config.GetCurrentGameConfig()
             ?? throw new ElympicsCliException(ElympicsCliErrors.NoActiveGame, "ElympicsConfig lists no game configs.", AddGameFix);
 
-        /// <param name="gameId">Empty for the active game, else a GUID.</param>
         public static ElympicsGameConfig ResolveGame(string gameId)
         {
-            if (string.IsNullOrWhiteSpace(gameId))
-                return RequireActiveGame(RequireConfig());
-            gameId = CliArgs.ValidateGuid(gameId, "game_id");
+            var explicitId = ExplicitGameId(gameId);
             var config = RequireConfig();
-            return config.AvailableGames.FirstOrDefault(game => game != null && game.GameId == gameId)
+            if (explicitId == null)
+                return RequireActiveGame(config);
+            return config.AvailableGames.FirstOrDefault(game => game != null && game.GameId == explicitId)
                 ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound,
-                    $"No game config in ElympicsConfig has the game ID {gameId}.",
+                    $"No game config in ElympicsConfig has the game ID {explicitId}.",
                     "list the configured games with elympics_status, or register one with elympics_config_select_game --config_asset <path>.");
         }
 
-        /// <param name="gameId">Empty for the active game's ID.</param>
         public static string ResolveGameId(string gameId) =>
-            string.IsNullOrWhiteSpace(gameId) ? RequireActiveGame(RequireConfig()).GameId : CliArgs.ValidateGuid(gameId, "game_id");
+            ExplicitGameId(gameId) ?? RequireActiveGame(RequireConfig()).GameId;
+
+        /// <returns>True if the game config wasn't in <paramref name="config"/> yet.</returns>
+        public static bool RegisterAndActivate(ElympicsConfig config, ElympicsGameConfig gameConfig)
+        {
+            Undo.RecordObject(config, "Select Elympics game");
+            var registered = !config.availableGames.Contains(gameConfig);
+            if (registered)
+                config.availableGames.Add(gameConfig);
+            config.SwitchGame(config.availableGames.IndexOf(gameConfig));
+            EditorUtility.SetDirty(config);
+            AssetDatabase.SaveAssets();
+            return registered;
+        }
+
+        /// <returns>Null for a blank <paramref name="gameId"/> (the active game).</returns>
+        private static string ExplicitGameId(string gameId) => string.IsNullOrWhiteSpace(gameId) ? null : CliArgs.ValidateGuid(gameId, "game_id");
     }
 }

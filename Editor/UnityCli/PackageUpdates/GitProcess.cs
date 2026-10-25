@@ -7,20 +7,19 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 {
     internal interface IGitProcess
     {
-        /// <returns>The output of <c>git ls-remote --tags --heads</c>.</returns>
         /// <exception cref="InvalidOperationException">git failed, timed out or isn't installed; the message says which.</exception>
         Task<string> LsRemoteAsync(string url, TimeSpan timeout);
     }
 
     /// <summary>
-    /// Runs git without ever prompting: a credential window would block the command for its whole timeout. Stored credentials still apply.
+    /// Runs git without ever prompting: a credential window would block the command for its whole timeout.
     /// git runs from the home directory with current-directory lookup off, so a project can't plant its own git executable.
     /// </summary>
     internal sealed class GitProcess : IGitProcess
     {
         public Task<string> LsRemoteAsync(string url, TimeSpan timeout) => Task.Run(() =>
         {
-            if (url.Any(char.IsControl) || url.Contains('"') || url.StartsWith("-", StringComparison.Ordinal) || url.Contains("::"))
+            if (!GitDependency.IsSupportedRemote(url) || url.Any(char.IsControl) || url.Contains('"'))
                 throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");
             var startInfo = new ProcessStartInfo("git", $"ls-remote --tags --heads -- \"{url}\"")
             {

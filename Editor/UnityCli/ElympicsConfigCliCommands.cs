@@ -31,16 +31,7 @@ namespace Elympics.Editor.UnityCli
             var previousGameId = config.GetCurrentGameConfig()?.GameId;
             var gameConfig = assetGameConfig ?? (index >= 0 ? GetByIndex(config, index) : FindByGameId(config, gameId.Trim()));
 
-            Undo.RecordObject(config, "Select Elympics game");
-            var registered = false;
-            if (!config.availableGames.Contains(gameConfig))
-            {
-                config.availableGames.Add(gameConfig);
-                registered = true;
-            }
-            config.SwitchGame(config.availableGames.IndexOf(gameConfig));
-            EditorUtility.SetDirty(config);
-            AssetDatabase.SaveAssets();
+            var registered = CliGames.RegisterAndActivate(config, gameConfig);
 
             return new
             {
@@ -137,7 +128,7 @@ namespace Elympics.Editor.UnityCli
         private static string ToAssetPath(string path)
         {
             var fullPath = Path.GetFullPath(path).Replace('\\', '/');
-            var projectPath = Path.GetFullPath(".").Replace('\\', '/').TrimEnd('/') + "/";
+            var projectPath = Path.GetFullPath(CliArgs.ProjectRoot()).Replace('\\', '/').TrimEnd('/') + "/";
             return fullPath.StartsWith(projectPath, StringComparison.OrdinalIgnoreCase) ? fullPath[projectPath.Length..] : fullPath;
         }
     }

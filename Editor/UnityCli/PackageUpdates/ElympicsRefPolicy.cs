@@ -13,7 +13,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         Branch,
     }
 
-    /// <summary>A UPM git dependency value: <c>base[?path=…][#ref]</c>.</summary>
     internal sealed class GitDependency
     {
         private static readonly Regex GitUrl = new("^(https?://|ssh://|git@|git\\+)");
@@ -61,25 +60,21 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         public string WithRef(string reference) => Format(Base, Path, reference);
 
-        /// <summary>The URL <c>git ls-remote</c> accepts (UPM's <c>git+</c> prefix removed).</summary>
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
 
-        /// <summary>
-        /// Whether <see cref="RemoteUrl"/> is an https, ssh or scp-like URL. Anything else (<c>ext::</c>, <c>file://</c>, a value starting with <c>-</c>)
-        /// could make <c>git ls-remote</c> run a command taken from the manifest.
-        /// </summary>
-        public bool HasSupportedRemote => SupportedRemote.IsMatch(RemoteUrl) && !RemoteUrl.Contains("::");
+        /// <summary><c>ext::</c>, <c>file://</c> or a value starting with <c>-</c> could make <c>git ls-remote</c> run a command taken from the manifest.</summary>
+        public bool HasSupportedRemote => IsSupportedRemote(RemoteUrl);
+
+        public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::");
 
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");
         private static readonly Regex UserInfo = new(@"(?<=://)[^/@\s]+@");
 
-        /// <summary>Removes the user and password (or token) parts of the URLs in <paramref name="text"/>.</summary>
-        public static string RedactCredentials(string text) => UserInfo.Replace(text, string.Empty);
+        public static string RedactCredentials(string text) => text == null ? null : UserInfo.Replace(text, string.Empty);
     }
 
     internal sealed class RemoteRefs
     {
-        /// <summary>Tag names in the order <c>ls-remote</c> lists them.</summary>
         public List<string> Tags { get; } = new();
 
         /// <summary>The commit of each tag: the peeled commit for annotated tags.</summary>
@@ -126,20 +121,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     {
         public RefAction Action { get; set; }
         public string Ref { get; set; }
-        /// <summary>The kind of <see cref="Ref"/>.</summary>
         public GitRefKind Kind { get; set; }
-        /// <summary>The commit the new ref points at, when known.</summary>
         public string Head { get; set; }
         public string Warning { get; set; }
         public string ErrorCode { get; set; }
         public string Reason { get; set; }
     }
 
-    /// <summary>
-    /// The SDK ref policy for <c>com.daftmobile.*</c> git packages: a version tag moves to the newest version tag, a branch is refreshed to its
-    /// head (or falls back to develop when deleted), a missing ref pins the newest tag and a commit is kept. Explicit pins and tracks override the kind.
-    /// A port of the elympics-unity plugin's <c>planRefUpdate</c>; keep them identical.
-    /// </summary>
+    /// <summary>A port of the elympics-unity plugin's <c>planRefUpdate</c>; keep them identical.</summary>
     internal static class ElympicsRefPolicy
     {
         public const string Develop = "develop";

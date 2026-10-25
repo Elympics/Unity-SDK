@@ -3,8 +3,8 @@ using System;
 namespace Elympics.Editor.UnityCli
 {
     /// <summary>
-    /// A command failure with a stable code. The pipeline reports only the message, so the code and the fix hint are part of it:
-    /// <c>"ELYMPICS_&lt;CODE&gt;: &lt;what happened&gt; Fix: &lt;next step&gt;"</c>.
+    /// A command failure with a stable code. The pipeline reports only the message, so the code and the fix hint are part of it
+    /// (see <see cref="ElympicsCliErrors.Format"/>).
     /// </summary>
     internal sealed class ElympicsCliException : InvalidOperationException
     {

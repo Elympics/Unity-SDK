@@ -13,6 +13,8 @@ namespace Elympics.Editor.UnityCli
         private const string VersionPattern = "^[0-9-a-zA-Z.]+$";
         private const int MaxVersionLength = 63;
 
+        internal static Func<string> ProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
+
         public static string Require(string value, string argumentName)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -20,9 +22,7 @@ namespace Elympics.Editor.UnityCli
             return value.Trim();
         }
 
-        internal static Func<string> ProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
-
-        /// <summary>Resolves a path relative to the project root. Unless <paramref name="allowExternal"/>, it must stay inside the project (a lexical check: links and junctions are followed).</summary>
+        /// <summary>Unless <paramref name="allowExternal"/>, the path must stay inside the project (a lexical check: links and junctions are followed).</summary>
         public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
         {
             var root = Path.GetFullPath(ProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

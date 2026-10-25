@@ -8,9 +8,6 @@ namespace Elympics.Editor.UnityCli
     {
         private const string CommandName = "elympics_upload_streaming_assets";
 
-        /// <summary>
-        /// Unity CLI equivalent of <see cref="ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync"/>.
-        /// </summary>
         [CliCommand(CommandName,
             "Upload a directory of StreamingAssets variants to the Elympics cloud as a new content version, with the Editor's current login and "
             + "the active game config unless --game_id is given. Versions are write-once - a burnt version name cannot be reused, and the upload "
@@ -25,11 +22,11 @@ namespace Elympics.Editor.UnityCli
             [CliArg("layout", "Directory layout: AddressableVariants (default, one Addressables build per variant, generating a manifest file) "
                 + "or UnstructuredAssets (every file below the path, unvalidated).")]
             string layout = nameof(StreamingAssetsLayout.AddressableVariants),
-            [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("allow_external_path", "Must be true to upload a directory outside the project.")] bool allowExternalPath = false,
             [CliArg("username", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string username = "",
             [CliArg("password", "Removed: credentials are never passed on the command line. Log in in the Editor instead.")] string password = "",
-            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = 1800) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))

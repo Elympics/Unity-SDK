@@ -8,11 +8,9 @@ using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>Server builds and uploads. Uploads use the Editor's current login and are irreversible: versions are write-once.</summary>
+    /// <summary>Uploads are irreversible (versions are write-once) and need --confirm true.</summary>
     public static class ElympicsBuildCliCommands
     {
-        private const int UploadTimeoutSeconds = 1800;
-
         [CliCommand("elympics_build_server",
             "Build the active game's Linux dedicated server into serverbuild/Engine (the Linux Dedicated Server module must be installed). "
             + "Takes minutes: run it with --detach, or raise the CLI's --timeout.",
@@ -41,9 +39,9 @@ namespace Elympics.Editor.UnityCli
             + "Irreversible: a version name can't be uploaded again. Needs --confirm true. Takes minutes: run it with --detach.",
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> UploadServer(
-            [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("development", "Upload a development build.")] bool development = false,
-            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 CliArgs.RequireConfirm(confirm, "Uploading a server version");
@@ -71,10 +69,10 @@ namespace Elympics.Editor.UnityCli
             [CliArg("client_build_path", "The WebGL build's root or its Build folder, inside the project unless --allow_external_path true; absolute or relative to the project.", Required = true)] string clientBuildPath,
             [CliArg("client_game_version", "Client version name: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string clientGameVersion,
             [CliArg("server_game_version", "Server version the client connects to. Defaults to the game config's version.")] string serverGameVersion = "",
-            [CliArg("game_id", "Elympics game ID. Defaults to the active game config's ID.")] string gameId = "",
-            [CliArg("confirm", "Must be true: the upload can't be undone.")] bool confirm = false,
+            [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
+            [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("allow_external_path", "Must be true to upload a build outside the project.")] bool allowExternalPath = false,
-            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = UploadTimeoutSeconds) =>
+            [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedPath = CliArgs.ResolveProjectPath(CliArgs.Require(clientBuildPath, "client_build_path"), "client_build_path", allowExternalPath);

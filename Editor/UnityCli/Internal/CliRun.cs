@@ -5,7 +5,6 @@ using UnityEditor;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>Keeps every failure inside the error contract: unexpected exceptions become <see cref="ElympicsCliErrors.Internal"/>.</summary>
     internal static class CliRun
     {
         private const string CheckArgumentsFix = "check the command's arguments in its listing (unity command --query elympics).";

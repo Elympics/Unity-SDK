@@ -70,13 +70,16 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         public async Task<List<PackageUpdate>> PlanAsync(ICollection<string> packages, IDictionary<string, string> pins, IDictionary<string, string> tracks)
         {
-            var dependencies = ReadDependencies();
-            var selected = dependencies.Where(entry => entry.Key.StartsWith(Prefix, StringComparison.Ordinal) && GitDependency.Parse(entry.Value) != null)
+            var gitDependencies = ReadDependencies()
+                .Select(entry => (name: entry.Key, dependency: GitDependency.Parse(entry.Value)))
+                .Where(entry => entry.dependency != null)
+                .ToDictionary(entry => entry.name, entry => entry.dependency);
+            var selected = gitDependencies.Where(entry => entry.Key.StartsWith(Prefix, StringComparison.Ordinal))
                 .Where(entry => packages.Count == 0 || packages.Contains(entry.Key))
                 .ToList();
 
             foreach (var requested in packages.Concat(pins.Keys).Concat(tracks.Keys).Distinct())
-                if (!dependencies.ContainsKey(requested) || GitDependency.Parse(dependencies[requested]) == null)
+                if (!gitDependencies.ContainsKey(requested))
                     throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't a git dependency in Packages/manifest.json.",
                         "list the Elympics git packages with a dry run without --packages, and pass only those names.");
             foreach (var name in pins.Keys.Intersect(tracks.Keys))
@@ -90,9 +93,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return (await Task.WhenAll(plans)).ToList();
         }
 
-        private async Task<PackageUpdate> PlanOneAsync(string name, string spec, Dictionary<string, string> locked, IDictionary<string, string> pins, IDictionary<string, string> tracks)
+        private async Task<PackageUpdate> PlanOneAsync(string name, GitDependency dependency, Dictionary<string, string> locked, IDictionary<string, string> pins, IDictionary<string, string> tracks)
         {
-            var dependency = GitDependency.Parse(spec);
             var update = new PackageUpdate
             {
                 name = name,
@@ -100,7 +102,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 path = dependency.Path,
                 oldRef = dependency.Ref,
                 refKind = dependency.Kind.ToString().ToLowerInvariant(),
-                oldSpec = spec,
+                oldSpec = dependency.Spec,
                 oldCommit = locked.TryGetValue(name, out var hash) ? hash : null,
                 oldVersion = InstalledVersion(name),
             };
@@ -161,7 +163,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             _ => "check the package's git URL in Packages/manifest.json.",
         };
 
-        /// <summary>Writes the new refs, drops their lock entries and starts a resolve.</summary>
         public PackageUpdateOperation Apply(List<PackageUpdate> updates)
         {
             FinalizePending();
@@ -204,14 +205,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return operation;
         }
 
-        /// <summary>Strips credentials from the URLs shown in results and saved in records; call it once the manifest no longer needs them.</summary>
+        /// <summary>Call it once the manifest no longer needs the credentials in the URLs.</summary>
         public static void RedactCredentials(IEnumerable<PackageUpdate> updates)
         {
             foreach (var update in updates)
             {
-                update.urlBase = update.urlBase == null ? null : GitDependency.RedactCredentials(update.urlBase);
-                update.oldSpec = update.oldSpec == null ? null : GitDependency.RedactCredentials(update.oldSpec);
-                update.newSpec = update.newSpec == null ? null : GitDependency.RedactCredentials(update.newSpec);
+                update.urlBase = GitDependency.RedactCredentials(update.urlBase);
+                update.oldSpec = GitDependency.RedactCredentials(update.oldSpec);
+                update.newSpec = GitDependency.RedactCredentials(update.newSpec);
             }
         }
 
@@ -226,7 +227,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return operation;
         }
 
-        /// <summary>Completes started operations whose packages are all locked again; called after domain reloads and when polled.</summary>
+        /// <summary>Called after domain reloads and when polled.</summary>
         public void FinalizePending()
         {
             foreach (var operation in ReadOperations().Where(operation => operation.status == "started"))

@@ -193,7 +193,7 @@ namespace Elympics.Editor.Communication
             public long exp;
         }
 
-        /// <remarks>Logs out only when the backend rejects the refresh token, not when it can't be reached.</remarks>
+        /// <remarks>Logs out only when the backend rejects the refresh token (400, 401 or 403), not when it can't be reached or fails (5xx, 429).</remarks>
         public static async UniTask EnsureLoggedInAsync(long expirationMarginSeconds = 0, CancellationToken ct = default)
         {
             if (!LoginStore.IsLogin)
@@ -220,12 +220,11 @@ namespace Elympics.Editor.Communication
 
             if (!response.Succeeded)
             {
-                if (response.IsProtocolError)
-                    LoginStore.IsLogin = false;
                 var error = ToException("Refresh auth token", response);
-                throw response.IsProtocolError
-                    ? new ElympicsEditorApiException(EditorApiErrorKind.NotLoggedIn, $"{error.Message} Log in to Elympics again.", response.StatusCode)
-                    : error;
+                if (response.StatusCode is not (400 or 401 or 403))
+                    throw error;
+                LoginStore.IsLogin = false;
+                throw new ElympicsEditorApiException(EditorApiErrorKind.NotLoggedIn, $"{error.Message} Log in to Elympics again.", response.StatusCode);
             }
 
             var tokens = Deserialize<ElympicsWebIntegration.RefreshedTokensResponseModel>("Refresh auth token", response);
@@ -368,6 +367,7 @@ namespace Elympics.Editor.Communication
                 Method = UnityWebRequest.kHttpVerbPOST,
                 Url = Url(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute),
                 Form = form,
+                TimeoutSeconds = FileUploadTimeoutSeconds,
             }, true, ct);
         }
 

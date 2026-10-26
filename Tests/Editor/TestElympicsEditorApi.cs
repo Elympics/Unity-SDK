@@ -99,6 +99,20 @@ namespace Elympics.Editor.Tests
             Assert.That(_login.IsLogin, Is.True);
         }
 
+        [TestCase(503)]
+        [TestCase(429)]
+        public void AServerErrorOnRefreshDoesNotLogOut(long statusCode)
+        {
+            _login.AuthTokenExp = (Now - 1).ToString();
+            _transport.Respond = _ => Status(statusCode, "");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.Not.EqualTo(EditorApiErrorKind.NotLoggedIn));
+            Assert.That(_login.IsLogin, Is.True);
+            Assert.That(_transport.Requests, Has.Count.EqualTo(1));
+        }
+
         [Test]
         public void NothingIsSentWhenLoggedOut()
         {
@@ -418,6 +432,9 @@ namespace Elympics.Editor.Tests
         });
 
         [TestCase("../outside.txt")]
+        [TestCase("..\\\\outside.txt")]
+        [TestCase("/etc/a.txt")]
+        [TestCase("C:/a.txt")]
         [TestCase("b.txt")]
         [TestCase("a.txt,a.txt")]
         public void StreamingAssetsRequestedOutsideTheLocalFilesAreRejected(string serverPaths)
@@ -431,6 +448,32 @@ namespace Elympics.Editor.Tests
                 Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
         }
+
+        [Test]
+        public void StreamingAssetsAreNotSentToANonHttpsUrl()
+        {
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var root = CreateStreamingAssets(temp.Path);
+            var init = StreamingAssetsInitResponse("a.txt").Replace("https://gcs.test/", "http://gcs.test/");
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets)).Kind,
+                Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AServerUploadHasTheFileUploadTimeout() => UniTask.ToCoroutine(async () =>
+        {
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var pack = Path.Combine(temp.Path, "pack.zip");
+            File.WriteAllText(pack, "zip");
+            _transport.Respond = _ => Ok("");
+
+            await ElympicsEditorApi.UploadServerAsync("g1", "v1", pack);
+
+            Assert.That(_transport.Requests.Single().TimeoutSeconds, Is.EqualTo(ElympicsEditorApi.FileUploadTimeoutSeconds));
+        });
 
         [Test]
         public void BackendErrorTextHasNoControlCharactersAndIsTruncated()

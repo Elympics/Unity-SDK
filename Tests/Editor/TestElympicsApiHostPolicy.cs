@@ -34,6 +34,10 @@ namespace Elympics.Editor.Tests
         [TestCase("https://elympics.cc.evil.com")]
         [TestCase("https://evilelympics.ai")]
         [TestCase("http://localhost:5000")]
+        [TestCase("https://x@evil.com/api")]
+        [TestCase("https://api.elympics.cc@evil.com/")]
+        [TestCase("https://api.elympics.cc:pw@evil.com/")]
+        [TestCase("https://api.elympics.cc./")]
         public void OtherHostsAreRejected(string url)
         {
             var uri = new Uri(url);
@@ -66,6 +70,33 @@ namespace Elympics.Editor.Tests
             Assert.That(ElympicsApiHostPolicy.IsTrusted(uri), Is.EqualTo(expected));
             if (!expected)
                 _ = Assert.Throws<ElympicsEditorApiException>(() => ElympicsApiHostPolicy.Require(uri));
+        }
+
+        [Test]
+        public void ATrustedHostIsTrustedOnAnyPort() =>
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://api.elympics.cc:8443/v2")), Is.True);
+
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        public void TheLoginIsSentOnlyToElympicsApiRequestsThatNeedAuth(bool elympicsApi, bool auth, bool expectedHeader)
+        {
+            var original = ElympicsEditorApi.LoginStore;
+            ElympicsEditorApi.LoginStore = new FakeLoginStore { AuthToken = "secret" };
+            try
+            {
+                using var webRequest = UnityWebRequestEditorApiTransport.Create(new EditorApiRequest
+                {
+                    Url = elympicsApi ? "https://api.elympics.cc/v2" : "https://storage.example.com/signed",
+                    ElympicsApi = elympicsApi,
+                    Auth = auth,
+                });
+                Assert.That(webRequest.GetRequestHeader("Authorization"), expectedHeader ? Is.EqualTo("Bearer secret") : Is.Null.Or.Empty);
+            }
+            finally
+            {
+                ElympicsEditorApi.LoginStore = original;
+            }
         }
 
         [Test]

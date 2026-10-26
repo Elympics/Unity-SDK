@@ -49,7 +49,15 @@ namespace Elympics.Editor.UnityCli
                     if (string.IsNullOrEmpty(gameId))
                         throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, "The game was created, but the backend's response has no game ID, so no game config was created.",
                             "find the game with elympics_games_list and create its config in Tools > Elympics > Manage games in Elympics.");
-                    configAsset = CreateAndSelectGameConfig(config, gameId, (string)created["Name"] ?? name);
+                    try
+                    {
+                        configAsset = CreateAndSelectGameConfig(config, gameId, (string)created["Name"] ?? name);
+                    }
+                    catch (Exception exception) when (exception is not ElympicsCliException)
+                    {
+                        throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, $"The game {gameId} was created, but creating its game config failed: {exception.Message}",
+                            $"do not retry elympics_game_create (it would create a duplicate game); create the config for game ID {gameId} in Tools > Elympics > Manage games in Elympics.");
+                    }
                 }
                 return new { status = "created", gameId, game = created, configAsset };
             });
@@ -95,7 +103,9 @@ namespace Elympics.Editor.UnityCli
                 if (name != null)
                     name = ValidateGameName(name);
                 CliArgs.RequireConfirm(confirm, "Changing an Elympics game");
-                var current = await ElympicsEditorApi.GetGameAsync(resolvedGameId, ct) as JObject ?? new JObject();
+                var current = await ElympicsEditorApi.GetGameAsync(resolvedGameId, ct) as JObject
+                    ?? throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, $"The backend returned no settings for game {resolvedGameId}, so nothing was changed.",
+                        "check the game ID with elympics_games_list and try again.");
                 var body = new JObject
                 {
                     ["GameName"] = name ?? (string)current["Name"],
@@ -181,8 +191,7 @@ namespace Elympics.Editor.UnityCli
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
-                if (numberOfTeams < 1 || playersInTeam < 1)
-                    throw ElympicsCliErrors.InvalidArgumentException("--number_of_teams and --players_in_team must be at least 1.", "pass e.g. --number_of_teams 1 --players_in_team 1 for solo.");
+                ValidateTeamSizes(numberOfTeams, playersInTeam);
                 var body = new JObject
                 {
                     ["Name"] = CliArgs.ValidateVersion(name, "name"),
@@ -201,6 +210,12 @@ namespace Elympics.Editor.UnityCli
                 var created = await ElympicsEditorApi.CreateQueueAsync(resolvedGameId, body, ct);
                 return new { status = "created", gameId = resolvedGameId, queue = created ?? body };
             });
+
+        private static void ValidateTeamSizes(int? numberOfTeams, int? playersInTeam)
+        {
+            if (numberOfTeams < 1 || playersInTeam < 1)
+                throw ElympicsCliErrors.InvalidArgumentException("--number_of_teams and --players_in_team must be at least 1.", "pass e.g. --number_of_teams 1 --players_in_team 1 for solo.");
+        }
 
         [CliCommand("elympics_queue_update",
             "Change a matchmaking queue. Only the given fields change: the others are read from the backend and sent back. Needs --confirm true.",
@@ -225,6 +240,7 @@ namespace Elympics.Editor.UnityCli
             {
                 queue = CliArgs.Require(queue, "queue");
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
+                ValidateTeamSizes(numberOfTeams, playersInTeam);
                 var fields = new (string Key, object Value)[]
                 {
                     ("Name", name == null ? null : CliArgs.ValidateVersion(name, "name")),

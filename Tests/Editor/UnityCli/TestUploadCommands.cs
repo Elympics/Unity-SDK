@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Elympics.Cysharp.Threading.Tasks;
+using Elympics.Editor.Communication;
 using Elympics.Editor.UnityCli;
 using NUnit.Framework;
 using UnityEngine.TestTools;
@@ -39,6 +40,25 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.GameUpdate(Guid.NewGuid().ToString(), name, confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [UnityTest]
+        public IEnumerator GameUpdateFailsWithoutChangingWhenTheGameReplyIsNotAnObject([Values("", "[]")] string reply) => UniTask.ToCoroutine(async () =>
+        {
+            var transport = new FakeTransport { Respond = _ => new EditorApiResponse(200, reply, null, false, false) };
+            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+            Exception caught = null;
+            try
+            {
+                _ = await ElympicsBackendWriteCliCommands.GameUpdate(Guid.NewGuid().ToString(), "Renamed", confirm: true).AsUniTask();
+            }
+            catch (Exception e)
+            {
+                caught = e;
+            }
+            Assert.That(caught, Is.Not.Null);
+            CliAssert.HasCodeAndFix(caught, ElympicsCliErrors.RequestFailed);
+            Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.All.EqualTo("GET"));
+        });
+
+        [UnityTest]
         public IEnumerator GameCreateWithAConfigFailsWhenTheResponseHasNoGameId() => UniTask.ToCoroutine(async () =>
         {
             var config = ElympicsConfig.Load();
@@ -75,6 +95,15 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void QueueCreateNeedsConfirm() =>
             CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.QueueCreate("solo", "solo", 1, 1, Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
+
+        [TestCase(0, null)]
+        [TestCase(null, -1)]
+        public void QueueUpdateRejectsNonPositiveTeamSizes(int? numberOfTeams, int? playersInTeam)
+        {
+            using var scope = new EditorApiScope(new FakeLoginStore(), new FakeTransport());
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.QueueUpdate("solo", Guid.NewGuid().ToString(), numberOfTeams: numberOfTeams, playersInTeam: playersInTeam, confirm: true),
+                ElympicsCliErrors.InvalidArgument);
+        }
 
         [Test]
         public void QueueUpdateNeedsAChange() =>

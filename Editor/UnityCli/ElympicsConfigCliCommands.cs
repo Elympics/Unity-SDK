@@ -84,12 +84,13 @@ namespace Elympics.Editor.UnityCli
         });
 
         [CliCommand("elympics_import_sample",
-            "Import a sample of the Elympics package into Assets/Samples. Refuses a sample that is already imported unless --force true. "
+            "Import a sample of the Elympics package into Assets/Samples. Refuses a sample that is already imported unless --force true --confirm true. "
             + "Doesn't change ElympicsConfig: select an imported game config with elympics_config_select_game --config_asset.",
             Tags = new[] { "elympics", "write" })]
         public static object ImportSample(
             [CliArg("sample", "Sample display name or directory name, case-insensitive (e.g. \"Button Clicker [Game]\" or ButtonClicker).", Required = true)] string sample,
-            [CliArg("force", "Import again over an already imported sample.")] bool force = false) => CliRun.Sync(() =>
+            [CliArg("force", "Import again over an already imported sample, discarding changes to it. Needs --confirm true.")] bool force = false,
+            [CliArg("confirm", "Must be true with --force true for an already imported sample: its changed files are overwritten.")] bool confirm = false) => CliRun.Sync(() =>
         {
             sample = CliArgs.Require(sample, "sample");
             var package = PackageInfo.FindForAssembly(typeof(ElympicsConfig).Assembly);
@@ -101,7 +102,10 @@ namespace Elympics.Editor.UnityCli
                     $"use one of: {string.Join(", ", samples.Select(candidate => $"\"{candidate.displayName}\""))}.");
             if (match.isImported && !force)
                 throw new ElympicsCliException(ElympicsCliErrors.SampleAlreadyImported, $"The sample \"{match.displayName}\" is already imported at {ToAssetPath(match.importPath)}.",
-                    "use the imported copy, or repeat with --force true to import it again over it.");
+                    "use the imported copy, or repeat with --force true --confirm true to import it again over it.");
+            var alreadyImported = match.isImported;
+            if (alreadyImported)
+                CliArgs.RequireConfirm(confirm, $"Importing the sample \"{match.displayName}\" over its imported copy");
 
             if (!match.Import(force ? Sample.ImportOptions.OverridePreviousImports : Sample.ImportOptions.None))
                 throw new ElympicsCliException(ElympicsCliErrors.SampleImportFailed, $"Importing the sample \"{match.displayName}\" failed.",
@@ -118,7 +122,7 @@ namespace Elympics.Editor.UnityCli
                 status = "imported",
                 sample = match.displayName,
                 importPath,
-                alreadyImported = false,
+                alreadyImported,
                 fileCount = files.Count,
                 files = files.Take(50).ToArray(),
                 gameConfigs = AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}", new[] { importPath }).Select(AssetDatabase.GUIDToAssetPath).ToArray(),

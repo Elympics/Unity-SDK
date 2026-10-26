@@ -46,7 +46,7 @@ namespace Elympics
         {
             if (ElympicsEditorApi.LoginStore.IsLogin)
                 return true;
-            ElympicsLogger.LogError("Not logged in to Elympics cloud. " + "Check your Internet connection, configured credentials and Elympics endpoints.");
+            ElympicsLogger.LogError("Not logged in to Elympics cloud. Check your Internet connection, configured credentials and Elympics endpoints.");
             return false;
         }
 
@@ -308,13 +308,10 @@ namespace Elympics
             {
                 await upload((fileName, progress) => EditorUtility.DisplayProgressBar(title, $"Uploading file '{fileName}'", 0.1f + progress * 0.9f));
             }
-            catch (Exception e) when (e is ElympicsException or IOException)
-            {
-                FailUpload(title, e.Message);
-            }
             catch (Exception e)
             {
-                ElympicsLogger.LogException(e);
+                if (e is not (ElympicsException or IOException))
+                    ElympicsLogger.LogException(e);
                 FailUpload(title, e.Message);
             }
             finally
@@ -365,8 +362,11 @@ namespace Elympics
         [PublicAPI]
         public static void UploadStreamingAssetsUsingCurrentLogin(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout)
         {
-            ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.EnsureLoggedInAsync(0, ct));
-            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct));
+            _ = ElympicsEditorApi.RunBlocking(async ct =>
+            {
+                await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+                return await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct);
+            });
         }
 
         // Play-mode code (e.g. the PlayPad extension handshake) sends the stored token as is,

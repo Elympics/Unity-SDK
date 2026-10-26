@@ -16,11 +16,13 @@ namespace Elympics.Editor.UnityCli
     {
         private const string ConfirmDescription = "Must be true: the change is applied to the Elympics backend right away.";
 
-        internal static readonly string[] MatchTypes = { "PAIR", "GROUP", "TEAM", "SOLO" };
-        internal static readonly string[] MatchmakingStrategies = { "RANDOM", "HUNGARIAN_PAIR", "GALE_SHAPLEY_PAIR", "RANDOM_SAMPLER_PAIR", "WORST_GAME_ANNEALING", "IMBALANCE_ANNEALING" };
-        internal static readonly string[] SamplingStrategies = { "ALL_COMBINATIONS", "ALL_UNIQUE_COMBINATIONS", "EACH_BEST_PARTITIONING", "MEAN_GROUP_PARTITIONING", "RANDOM", "TEAM_PARTITIONING" };
-        internal static readonly string[] PredictionStrategies = { "RANDOM", "DUMMY", "ELO", "BAYESIAN" };
-        internal static readonly string[] MatchmakingModes = { "ACCEPT_ALL", "FASTEST_MATCHING", "FAST_MATCHING", "BALANCED", "FAIR_MATCHING", "MOST_FAIR_MATCHING" };
+        private const string SmartContractDeploymentIdKey = "SmartContractDeploymentId";
+
+        private static readonly string[] MatchTypes = { "PAIR", "GROUP", "TEAM", "SOLO" };
+        private static readonly string[] MatchmakingStrategies = { "RANDOM", "HUNGARIAN_PAIR", "GALE_SHAPLEY_PAIR", "RANDOM_SAMPLER_PAIR", "WORST_GAME_ANNEALING", "IMBALANCE_ANNEALING" };
+        private static readonly string[] SamplingStrategies = { "ALL_COMBINATIONS", "ALL_UNIQUE_COMBINATIONS", "EACH_BEST_PARTITIONING", "MEAN_GROUP_PARTITIONING", "RANDOM", "TEAM_PARTITIONING" };
+        private static readonly string[] PredictionStrategies = { "RANDOM", "DUMMY", "ELO", "BAYESIAN" };
+        private static readonly string[] MatchmakingModes = { "ACCEPT_ALL", "FASTEST_MATCHING", "FAST_MATCHING", "BALANCED", "FAIR_MATCHING", "MOST_FAIR_MATCHING" };
 
         [CliCommand("elympics_game_create",
             "Create an Elympics game in the logged-in account's organization. With --create_config true, also create its ElympicsGameConfig in "
@@ -246,7 +248,7 @@ namespace Elympics.Editor.UnityCli
 
                 var current = await FindQueueAsync(resolvedGameId, queue, ct);
                 var body = new JObject();
-                foreach (var field in fields.Select(candidate => candidate.Key).Append("SmartContractDeploymentId"))
+                foreach (var field in fields.Select(candidate => candidate.Key).Append(SmartContractDeploymentIdKey))
                     body[field] = changes[field] ?? current[field];
                 var queueId = (string)current["Id"];
                 var updated = await ElympicsEditorApi.UpdateQueueAsync(resolvedGameId, queueId, body, ct);
@@ -278,7 +280,7 @@ namespace Elympics.Editor.UnityCli
                     "list the queues with elympics_queues_list and pass an ID or name from it.");
         }
 
-        internal static string ValidateEnum(string value, string argumentName, string[] allowed)
+        private static string ValidateEnum(string value, string argumentName, string[] allowed)
         {
             value = CliArgs.Require(value, argumentName).ToUpperInvariant();
             if (!allowed.Contains(value))

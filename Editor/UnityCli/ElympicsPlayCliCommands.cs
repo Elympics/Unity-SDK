@@ -228,7 +228,7 @@ namespace Elympics.Editor.UnityCli
             var players = MppmReflection.GetPlayers();
             var virtualCount = players.Count - 1;
             if (count < 0 || count > virtualCount)
-                throw ElympicsCliErrors.InvalidArgumentException($"--count must be from 0 to {virtualCount}.", $"pass e.g. --count 1.");
+                throw ElympicsCliErrors.InvalidArgumentException($"--count must be from 0 to {virtualCount}.", "pass e.g. --count 1.");
             var highestTagged = tagsByPlayer.Select(entry => entry.number).DefaultIfEmpty(0).Max();
             if (highestTagged > players.Count)
                 throw ElympicsCliErrors.InvalidArgumentException($"--tags lists player {highestTagged}, but there are only {players.Count} players.", TagsFix);

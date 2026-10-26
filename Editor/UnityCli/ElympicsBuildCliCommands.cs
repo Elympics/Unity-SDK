@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,7 +48,9 @@ namespace Elympics.Editor.UnityCli
                 CliArgs.RequireConfirm(confirm, "Uploading a server version");
                 RequireReadyToBuild();
                 var game = CliGames.RequireActiveGame(CliGames.RequireConfig());
-                _ = CliArgs.ValidateGuid(game.GameId, "game_id");
+                if (!Guid.TryParse(game.GameId, out _))
+                    throw ElympicsCliErrors.InvalidArgumentException($"The active game config's GameId '{game.GameId}' is not a GUID.",
+                        "set the active game's GameId in the Elympics config to an ID from elympics_games_list.");
                 BuildReport report;
                 try
                 {

@@ -271,15 +271,27 @@ namespace Elympics
             if (buildReport.summary.result != BuildResult.Succeeded)
                 return buildReport;
 
+            await PackAndUploadServerAsync(gameConfig, progress, ct);
+            return buildReport;
+        }
+
+        /// <summary>Packs and uploads the server already built into <see cref="BuildTools.EnginePath"/>, using the current login.</summary>
+        internal static async UniTask PackAndUploadServerUsingCurrentLoginAsync(CancellationToken ct)
+        {
+            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+            await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+            await PackAndUploadServerAsync(currentGameConfig, null, ct);
+        }
+
+        private static async UniTask PackAndUploadServerAsync(ElympicsGameConfig gameConfig, Action<string, float> progress, CancellationToken ct)
+        {
             progress?.Invoke("Packing engine", 0.2f);
-            if (!TryPack(gameConfig.GameId, gameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory, out var enginePath))
-                throw new ElympicsPackFailedException("Problem with packing engine");
+            var enginePath = Pack(gameConfig.GameId, gameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory);
 
             progress?.Invoke("Uploading...", 0.8f);
             await ElympicsEditorApi.UploadServerAsync(gameConfig.GameId, gameConfig.GameVersion, enginePath, ct);
             ElympicsLogger.LogInfo($"Uploaded game {gameConfig.GameName} with version {gameConfig.GameVersion}.");
             GameUploadedToTheCloud?.Invoke();
-            return buildReport;
         }
 
         public static void UploadClientBuild(string clientBuildPath, string gameId, string clientGameVersion, string serverGameVersion)
@@ -452,15 +464,14 @@ namespace Elympics
             ElympicsEditorApi.RunBlocking(ct => LoginAsync(username, password, ct));
         }
 
-        private static bool TryPack(string gameId, string gameVersion, string buildPath, string targetSubdirectory, out string destinationFilePath)
+        private static string Pack(string gameId, string gameVersion, string buildPath, string targetSubdirectory)
         {
             var destinationDirectoryPath = Path.Combine(DirectoryNameToUpload, gameId, gameVersion, targetSubdirectory);
-            destinationFilePath = Path.Combine(destinationDirectoryPath, PackFileName);
-
-            _ = Directory.CreateDirectory(destinationDirectoryPath);
+            var destinationFilePath = Path.Combine(destinationDirectoryPath, PackFileName);
             try
             {
                 ElympicsLogger.LogInfo($"Trying to pack {targetSubdirectory}...");
+                _ = Directory.CreateDirectory(destinationDirectoryPath);
                 if (File.Exists(destinationFilePath))
                     File.Delete(destinationFilePath);
                 _ = Directory.CreateDirectory(buildPath);
@@ -468,11 +479,9 @@ namespace Elympics
             }
             catch (Exception e)
             {
-                ElympicsLogger.LogError(e.Message);
-                return false;
+                throw new ElympicsPackFailedException($"Packing {targetSubdirectory} into {destinationFilePath} failed: {e.Message}", e);
             }
-
-            return true;
+            return destinationFilePath;
         }
 
         /// <summary>Like <c>ZipFile.CreateFromDirectory(source, destination, CompressionLevel.Optimal, false)</c>, which needs

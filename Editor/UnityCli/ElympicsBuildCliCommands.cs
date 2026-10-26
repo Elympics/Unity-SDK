@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Elympics.Editor.Communication;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -43,26 +44,36 @@ namespace Elympics.Editor.UnityCli
             [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("development", "Upload a development build.")] bool development = false,
             [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
-            CliWeb.RunAsync(timeoutSeconds, async ct =>
+            CliRun.Async(async () =>
             {
+                if (timeoutSeconds <= 0)
+                    throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 1800.");
                 CliArgs.RequireConfirm(confirm, "Uploading a server version");
                 RequireReadyToBuild();
                 var game = CliGames.RequireActiveGame(CliGames.RequireConfig());
                 if (!Guid.TryParse(game.GameId, out _))
                     throw ElympicsCliErrors.InvalidArgumentException($"The active game config's GameId '{game.GameId}' is not a GUID.",
                         "set the active game's GameId in the Elympics config to an ID from elympics_games_list.");
-                BuildReport report;
-                try
+                _ = await CliWeb.RunAsync(CliWeb.DefaultTimeoutSeconds, async ct =>
                 {
-                    report = await ElympicsWebIntegration.BuildAndUploadServerUsingCurrentLoginAsync(development ? BuildOptions.Development : BuildOptions.None, ct);
-                }
-                catch (ElympicsPackFailedException e)
-                {
-                    throw new ElympicsCliException(ElympicsCliErrors.PackFailed, e.Message, "check that serverbuild/Engine isn't locked by another process and that the disk has space, then retry.");
-                }
+                    await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+                    return null;
+                }, ElympicsCliErrors.UploadFailed);
+                var report = BuildTools.BuildServerLinux(development ? BuildOptions.Development : BuildOptions.None);
                 ThrowIfFailed(report);
-                return new { status = "uploaded", gameId = game.GameId, gameVersion = game.GameVersion, usedCurrentLogin = true, buildResult = report.summary.result.ToString() };
-            }, ElympicsCliErrors.UploadFailed);
+                return await CliWeb.RunAsync(timeoutSeconds, async ct =>
+                {
+                    try
+                    {
+                        await ElympicsWebIntegration.PackAndUploadServerUsingCurrentLoginAsync(ct);
+                    }
+                    catch (ElympicsPackFailedException e)
+                    {
+                        throw new ElympicsCliException(ElympicsCliErrors.PackFailed, e.Message, "check that serverbuild/Engine isn't locked by another process and that the disk has space, then retry.");
+                    }
+                    return new { status = "uploaded", gameId = game.GameId, gameVersion = game.GameVersion, usedCurrentLogin = true, buildResult = report.summary.result.ToString() };
+                }, ElympicsCliErrors.UploadFailed);
+            });
 
         [CliCommand("elympics_upload_client_build",
             "Upload a WebGL client build (its root or Build folder) to the Elympics cloud as a client version linked to a server version. "

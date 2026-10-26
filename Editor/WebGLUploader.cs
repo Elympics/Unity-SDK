@@ -25,8 +25,8 @@ namespace Elympics.Editor
 
     internal sealed class ElympicsPackFailedException : ElympicsException
     {
-        public ElympicsPackFailedException(string message)
-            : base(message)
+        public ElympicsPackFailedException(string message, Exception innerException)
+            : base(message, innerException)
         { }
     }
 

@@ -28,8 +28,11 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void StatusNeverReportsCredentials()
         {
+            var login = new FakeLoginStore { AuthToken = "secret-auth-7f3a", RefreshToken = "secret-refresh-9c1d" };
+            using var _ = new EditorApiScope(login, new FakeTransport());
             var json = ToJson(ElympicsStatusCliCommands.Status()).ToString();
             Assert.That(json, Does.Not.Contain("token").IgnoreCase.And.Not.Contain("password").IgnoreCase.And.Not.Contain("username").IgnoreCase);
+            Assert.That(json, Does.Not.Contain("secret-auth-7f3a").And.Not.Contain("secret-refresh-9c1d"));
         }
 
         [Test]

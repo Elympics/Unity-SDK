@@ -37,6 +37,15 @@ namespace Elympics.Editor.Tests.UnityCli
             return 0;
         });
 
+        [Test]
+        public void AnAbsolutePathOutsideTheProjectNeedsTheOptIn() => WithProjectRoot(root =>
+        {
+            var outside = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(root), "Other", "Build");
+            CliAssert.Throws(() => CliArgs.ResolveProjectPath(outside, "p", false), ElympicsCliErrors.InvalidArgument);
+            Assert.That(CliArgs.ResolveProjectPath(outside, "p", true), Is.EqualTo(outside));
+            return 0;
+        });
+
         private static T WithProjectRoot<T>(Func<string, T> body)
         {
             var original = CliArgs.ProjectRoot;

@@ -78,10 +78,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 .Where(entry => packages.Count == 0 || packages.Contains(entry.Key))
                 .ToList();
 
-            foreach (var requested in packages.Concat(pins.Keys).Concat(tracks.Keys).Distinct())
+            foreach (var requested in packages.Distinct())
                 if (!gitDependencies.ContainsKey(requested))
                     throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't a git dependency in Packages/manifest.json.",
                         "list the Elympics git packages with a dry run without --packages, and pass only those names.");
+            foreach (var requested in pins.Keys.Concat(tracks.Keys).Distinct())
+                if (!selected.Any(entry => entry.Key == requested))
+                    throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't among the selected git packages in Packages/manifest.json.",
+                        "list the Elympics git packages with a dry run without --packages, and pass only those names (and include them in --packages if it's set).");
             foreach (var name in pins.Keys.Intersect(tracks.Keys))
                 throw ElympicsCliErrors.InvalidArgumentException($"{name} is both pinned and tracked.", "pass it in --pin or in --track, not both.");
             if (selected.Count == 0)
@@ -222,7 +226,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             if (!File.Exists(path))
                 throw new ElympicsCliException(ElympicsCliErrors.OperationNotFound, $"No package update operation {operationId} in {OperationsDirectory}.",
                     "pass the operationId an apply returned; records live in the project's Library folder.");
-            var operation = JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(path));
+            var operation = TryReadOperation(path)
+                ?? throw new ElympicsCliException(ElympicsCliErrors.OperationNotFound, $"The package update record {operationId} in {OperationsDirectory} is unreadable.",
+                    "delete the record file and run a dry run to plan the update again.");
             TryFinalize(operation);
             return operation;
         }
@@ -238,6 +244,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             if (operation.status != "started")
                 return;
+            operation.packages ??= new List<PackageUpdate>();
+            operation.warnings ??= new List<string>();
             var locked = ReadLockHashes();
             var changed = operation.packages.Where(update => update.IsChange()).ToList();
             if (changed.Any(update => !locked.ContainsKey(update.name)))
@@ -245,7 +253,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 if (UtcNow() - operation.startedAt < StaleOperation)
                     return;
                 operation.status = "failed";
-                operation.warnings.Add("The Package Manager didn't lock every updated package within 10 minutes; check the Console for resolve errors.");
+                operation.warnings.Add($"The Package Manager didn't lock every updated package within {StaleOperation.TotalMinutes:0} minutes; check the Console for resolve errors.");
             }
             else
                 operation.status = "done";

@@ -65,7 +65,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         /// <summary><c>ext::</c>, <c>file://</c> or a value starting with <c>-</c> could make <c>git ls-remote</c> run a command taken from the manifest.</summary>
         public bool HasSupportedRemote => IsSupportedRemote(RemoteUrl);
 
-        public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::");
+        public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::") && !url.Any(character => char.IsControl(character) || character is '"' or '\\');
 
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");
         private static readonly Regex UserInfo = new(@"(?<=://)[^/@\s]+@");

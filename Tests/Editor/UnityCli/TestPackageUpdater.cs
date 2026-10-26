@@ -28,12 +28,15 @@ namespace Elympics.Editor.Tests.UnityCli
         private sealed class FakeGit : IGitProcess
         {
             public readonly Dictionary<string, string> Outputs = new();
+            public readonly Dictionary<string, string> Errors = new();
             public readonly List<string> Requested = new();
 
             public Task<string> LsRemoteAsync(string url, TimeSpan timeout)
             {
                 lock (Requested)
                     Requested.Add(url);
+                if (Errors.TryGetValue(url, out var error))
+                    return Task.FromException<string>(new InvalidOperationException(error));
                 return Outputs.TryGetValue(url, out var output) ? Task.FromResult(output) : Task.FromException<string>(new InvalidOperationException("unreachable"));
             }
         }
@@ -144,6 +147,37 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(error.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
             Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
         });
+
+        [UnityTest]
+        public IEnumerator CredentialsAreRemovedFromGitFailureMessages() => UniTask.ToCoroutine(async () =>
+        {
+            const string tokenUrl = "https://user:glpat-secret@gitlab.example.com/sdk/unity-sdk-package.git";
+            WriteManifest(tokenUrl + "#develop", PlayPadUrl + "#v3.0.0");
+            _git.Errors[tokenUrl] = $"git ls-remote exited with 128: fatal: unable to access '{tokenUrl}'";
+
+            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+
+            var error = plan.Single(update => update.name == Sdk).error;
+            Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
+        });
+
+        [Test]
+        public void PinAndTrackKeysOutsideTheSelectedPackagesAreRejected()
+        {
+            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" }), ElympicsCliErrors.InvalidArgument);
+        }
+
+        [Test]
+        public void ACorruptOperationRecordIsReportedNotThrownAsANullReference()
+        {
+            _ = Directory.CreateDirectory(_updater.OperationsDirectory);
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "nullrecord.json"), "null");
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "garbage.json"), "{not json");
+
+            CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("nullrecord")), ElympicsCliErrors.OperationNotFound);
+            CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("garbage")), ElympicsCliErrors.OperationNotFound);
+        }
 
         [UnityTest]
         public IEnumerator CredentialsStayInTheManifestButNotInResultsOrRecords() => UniTask.ToCoroutine(async () =>

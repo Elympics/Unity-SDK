@@ -199,6 +199,12 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("git+https://example.com/a::b.git")]
         public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.Parse(spec).HasSupportedRemote, Is.False);
 
+        [TestCase("https://example.com/a\\")]
+        [TestCase("https://example.com/a\\b.git")]
+        [TestCase("https://example.com/a\".git")]
+        [TestCase("https://example.com/a\u0001.git")]
+        public void RemotesThatBreakArgumentQuotingAreUnsupported(string url) => Assert.That(GitDependency.IsSupportedRemote(url), Is.False);
+
         [Test]
         public void CredentialsAreRedacted() =>
             Assert.That(GitDependency.RedactCredentials("fatal: unable to access 'https://user:glpat-secret@gitlab.example.com/a.git/'"),

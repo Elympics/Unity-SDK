@@ -49,7 +49,16 @@ namespace Elympics.Editor.Launcher
             get
             {
                 var json = SessionState.GetString(Key, "");
-                return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<Record>(json);
+                if (string.IsNullOrEmpty(json))
+                    return null;
+                try
+                {
+                    return JsonUtility.FromJson<Record>(json);
+                }
+                catch (ArgumentException)
+                {
+                    return null;
+                }
             }
         }
 
@@ -81,7 +90,7 @@ namespace Elympics.Editor.Launcher
 
         private static void Write(Record record) => SessionState.SetString(Key, JsonUtility.ToJson(record));
 
-        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        internal static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.EnteredPlayMode)
                 // The launch queue sends the pending launch in a delay call too; subscribing first is enough, as events are emitted later.
@@ -94,6 +103,12 @@ namespace Elympics.Editor.Launcher
                     record.result = Failed;
                     record.message = "Play mode stopped before the match started.";
                     Save(record);
+                }
+                else if (Last is { result: Running } running)
+                {
+                    running.result = Ended;
+                    running.message = "Play mode stopped before the match ended.";
+                    Save(running);
                 }
             }
         }

@@ -95,6 +95,22 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(error, Does.StartWith("ELYMPICS_LAUNCH_TIMEOUT: Timeout The match didn't start.").And.Contain(" Fix: "));
         }
 
+        [Test]
+        public void ARunningLaunchEndsWhenPlayModeStops()
+        {
+            var previous = EditorLaunchRecord.Last;
+            try
+            {
+                EditorLaunchRecord.Restore(new EditorLaunchRecord.Record { requestId = "cli-test", result = EditorLaunchRecord.Running });
+                EditorLaunchRecord.OnPlayModeStateChanged(UnityEditor.PlayModeStateChange.ExitingPlayMode);
+                Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Ended));
+            }
+            finally
+            {
+                EditorLaunchRecord.Restore(previous);
+            }
+        }
+
 #if ELYMPICS_MPPM
         [Test]
         [Category("MultiplayerPlayMode")]

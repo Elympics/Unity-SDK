@@ -173,7 +173,7 @@ namespace Elympics.Editor.UnityCli
                 var players = MppmReflection.GetPlayers().Where(player => player.number > 1).ToList();
                 return new { active = players.Count(player => player.state != "NotLaunched"), launched = players.Count(player => player.state == "Launched") };
             }
-            catch (ElympicsCliException)
+            catch (Exception)
             {
                 return null;
             }

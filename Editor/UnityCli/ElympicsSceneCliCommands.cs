@@ -93,11 +93,18 @@ namespace Elympics.Editor.UnityCli
             public VarResult[] vars;
         }
 
+        private static IEnumerable<FieldInfo> GetInstanceFields(Type type)
+        {
+            for (; type != null && type != typeof(UnityEngine.MonoBehaviour) && type != typeof(object); type = type.BaseType)
+                foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                    yield return field;
+        }
+
         private static BehaviourResult DescribeBehaviour(ElympicsBehaviour behaviour)
         {
             var vars = new List<VarResult>();
             foreach (var observable in behaviour.GetComponents<IObservable>())
-                foreach (var field in observable.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                foreach (var field in GetInstanceFields(observable.GetType()))
                 {
                     if (!typeof(ElympicsVar).IsAssignableFrom(field.FieldType) || field.GetValue(observable) is not ElympicsVar value || !value.EnabledSynchronization)
                         continue;

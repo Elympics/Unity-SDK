@@ -119,9 +119,14 @@ namespace Elympics.Editor.UnityCli
             var player = GetPlayer(members, number);
             var arguments = active ? new object[] { null, null } : new object[] { null };
             var succeeded = (bool)(active ? members.Activate : members.Deactivate).Invoke(player, arguments);
-            if (!succeeded && arguments[0]?.ToString() is { } error && error != "None")
+            if (!succeeded)
+            {
+                var error = arguments[0]?.ToString();
+                if (string.IsNullOrEmpty(error) || error == "None")
+                    error = "unknown error";
                 throw new ElympicsCliException(ElympicsCliErrors.MppmFailed, $"{(active ? "Activating" : "Deactivating")} Player {number} failed: {error}.",
                     error == "CompileErrors" ? "fix the compile errors first (console --level error)." : "open Window > Multiplayer > Multiplayer Play Mode to see the player's state, then retry.");
+            }
         }
 
         /// <summary>Adds the new tags before removing the old ones that start with <paramref name="prefix"/>, so a failure keeps the old ones.</summary>

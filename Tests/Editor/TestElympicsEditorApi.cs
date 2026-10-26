@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,33 +16,9 @@ namespace Elympics.Editor.Tests
         private const string Api = "https://api.test/v2/api";
         private const long Now = 1_800_000_000;
 
-        private sealed class FakeLoginStore : IEditorLoginStore
-        {
-            public bool IsLogin { get; set; }
-            public string AuthToken { get; set; }
-            public string AuthTokenExp { get; set; }
-            public string RefreshToken { get; set; }
-        }
-
-        private sealed class FakeTransport : IEditorApiTransport
-        {
-            public readonly List<EditorApiRequest> Requests = new();
-            public Func<EditorApiRequest, EditorApiResponse> Respond = _ => Ok("{}");
-
-            public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
-            {
-                Requests.Add(request);
-                return UniTask.FromResult(Respond(request));
-            }
-        }
-
         private FakeTransport _transport;
         private FakeLoginStore _login;
-        private IEditorApiTransport _originalTransport;
-        private IEditorLoginStore _originalLogin;
-        private Func<long> _originalNow;
-        private Func<IEditorApiTransport> _originalBlockingTransportFactory;
-        private readonly List<TempDirectory> _temps = new();
+        private EditorApiScope _scope;
 
         private static EditorApiResponse Ok(string text) => new(200, text, null, false, false);
         private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", false, true);
@@ -58,36 +33,13 @@ namespace Elympics.Editor.Tests
         [SetUp]
         public void SetUp()
         {
-            _originalTransport = ElympicsEditorApi.Transport;
-            _originalLogin = ElympicsEditorApi.LoginStore;
-            _originalNow = ElympicsEditorApi.UtcNowSeconds;
-            _originalBlockingTransportFactory = ElympicsEditorApi.BlockingTransportFactory;
-            ElympicsEditorApi.Transport = _transport = new FakeTransport();
-            ElympicsEditorApi.BlockingTransportFactory = () => _transport;
-            ElympicsEditorApi.LoginStore = _login = new FakeLoginStore { IsLogin = true, AuthToken = "old", AuthTokenExp = (Now + 100).ToString(), RefreshToken = "refresh" };
-            ElympicsEditorApi.UtcNowSeconds = () => Now;
-            ElympicsEditorApi.ApiEndpointOverride = () => Api;
+            _transport = new FakeTransport();
+            _login = new FakeLoginStore { IsLogin = true, AuthToken = "old", AuthTokenExp = (Now + 100).ToString(), RefreshToken = "refresh" };
+            _scope = new EditorApiScope(_login, _transport, Api, Now);
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            ElympicsEditorApi.Transport = _originalTransport;
-            ElympicsEditorApi.LoginStore = _originalLogin;
-            ElympicsEditorApi.UtcNowSeconds = _originalNow;
-            ElympicsEditorApi.BlockingTransportFactory = _originalBlockingTransportFactory;
-            ElympicsEditorApi.ApiEndpointOverride = null;
-            foreach (var temp in _temps)
-                temp.Dispose();
-            _temps.Clear();
-        }
-
-        private TempDirectory NewTempDirectory()
-        {
-            var temp = new TempDirectory("ElympicsTestEditorApi");
-            _temps.Add(temp);
-            return temp;
-        }
+        public void TearDown() => _scope.Dispose();
 
         private static ElympicsEditorApiException CatchApiException(Func<UniTask> action) =>
             Assert.ThrowsAsync<ElympicsEditorApiException>(async () => await action());
@@ -365,9 +317,8 @@ namespace Elympics.Editor.Tests
             Assert.That(_transport.Requests, Is.Empty);
         }
 
-        private string CreateClientBuild()
+        private static string CreateClientBuild(string root)
         {
-            var root = NewTempDirectory().Path;
             var buildFolder = Path.Combine(root, WebGLUploader.BuildFolderName);
             _ = Directory.CreateDirectory(buildFolder);
             foreach (var extension in WebGLUploader.CompoundExtensions)
@@ -383,7 +334,8 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AClientBuildIsInitializedUploadedAndCompleted() => UniTask.ToCoroutine(async () =>
         {
-            var buildRoot = CreateClientBuild();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var buildRoot = CreateClientBuild(temp.Path);
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse()) : Ok("OK");
 
             var fileCount = await ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1");
@@ -399,7 +351,8 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AFailedFileUploadMarksTheClientBuildUploadAsFailed() => UniTask.ToCoroutine(async () =>
         {
-            var buildRoot = CreateClientBuild();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var buildRoot = CreateClientBuild(temp.Path);
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse())
                 : request.Url.StartsWith("https://gcs.test/") ? Status(403, "denied")
                 : Ok("");
@@ -421,7 +374,8 @@ namespace Elympics.Editor.Tests
         [Test]
         public void AClientBuildIsNotSentToANonHttpsUrl()
         {
-            var buildRoot = CreateClientBuild();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var buildRoot = CreateClientBuild(temp.Path);
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse().Replace("https://gcs.test/", "http://gcs.test/")) : Ok("");
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
@@ -432,16 +386,16 @@ namespace Elympics.Editor.Tests
         [Test]
         public void AClientBuildInitWithTheWrongNumberOfUrlsFails()
         {
-            var buildRoot = CreateClientBuild();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var buildRoot = CreateClientBuild(temp.Path);
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok("{\"UploadId\":\"u1\",\"Files\":[]}") : Ok("");
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
         }
 
-        private string CreateStreamingAssets()
+        private static string CreateStreamingAssets(string root)
         {
-            var root = NewTempDirectory().Path;
             File.WriteAllText(Path.Combine(root, "a.txt"), "a");
             return root;
         }
@@ -452,7 +406,8 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator StreamingAssetsUploadOnlyTheRequestedLocalFiles() => UniTask.ToCoroutine(async () =>
         {
-            var root = CreateStreamingAssets();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var root = CreateStreamingAssets(temp.Path);
             _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
 
             _ = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
@@ -467,7 +422,8 @@ namespace Elympics.Editor.Tests
         [TestCase("a.txt,a.txt")]
         public void StreamingAssetsRequestedOutsideTheLocalFilesAreRejected(string serverPaths)
         {
-            var root = CreateStreamingAssets();
+            using var temp = new TempDirectory("ElympicsTestEditorApi");
+            var root = CreateStreamingAssets(temp.Path);
             var init = StreamingAssetsInitResponse(serverPaths.Split(','));
             _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
 

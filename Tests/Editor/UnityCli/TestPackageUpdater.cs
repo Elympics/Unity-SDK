@@ -28,9 +28,14 @@ namespace Elympics.Editor.Tests.UnityCli
         private sealed class FakeGit : IGitProcess
         {
             public readonly Dictionary<string, string> Outputs = new();
+            public readonly List<string> Requested = new();
 
-            public Task<string> LsRemoteAsync(string url, TimeSpan timeout) =>
-                Outputs.TryGetValue(url, out var output) ? Task.FromResult(output) : Task.FromException<string>(new InvalidOperationException("unreachable"));
+            public Task<string> LsRemoteAsync(string url, TimeSpan timeout)
+            {
+                lock (Requested)
+                    Requested.Add(url);
+                return Outputs.TryGetValue(url, out var output) ? Task.FromResult(output) : Task.FromException<string>(new InvalidOperationException("unreachable"));
+            }
         }
 
         private TempDirectory _temp;
@@ -121,13 +126,11 @@ namespace Elympics.Editor.Tests.UnityCli
         public IEnumerator AnUnsupportedRemoteIsNeverPassedToGit() => UniTask.ToCoroutine(async () =>
         {
             WriteManifest("git+ext::sh -c touch% pwned", PlayPadUrl + "#v3.0.0");
-            var urls = new List<string>();
-            _updater.Git = new RecordingGit(urls, _git);
 
             var plan = await _updater.PlanAsync(new List<string>(), None, None);
 
             Assert.That(plan.Single(update => update.name == Sdk).error.code, Is.EqualTo(PackageUpdater.UnsupportedRemote));
-            Assert.That(urls, Is.EqualTo(new[] { PlayPadUrl }));
+            Assert.That(_git.Requested, Is.EqualTo(new[] { PlayPadUrl }));
         });
 
         [UnityTest]
@@ -156,31 +159,9 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(Directory.GetFiles(_updater.OperationsDirectory).Select(File.ReadAllText), Has.None.Contain("glpat-secret"));
         });
 
-        private sealed class RecordingGit : IGitProcess
-        {
-            private readonly List<string> _urls;
-            private readonly IGitProcess _inner;
-
-            public RecordingGit(List<string> urls, IGitProcess inner)
-            {
-                _urls = urls;
-                _inner = inner;
-            }
-
-            public Task<string> LsRemoteAsync(string url, TimeSpan timeout)
-            {
-                lock (_urls)
-                    _urls.Add(url);
-                return _inner.LsRemoteAsync(url, timeout);
-            }
-        }
-
         [Test]
-        public void UnknownPackagesAreRejected()
-        {
-            var exception = Assert.CatchAsync(async () => await _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None));
-            CliAssert.HasCodeAndFix(exception, ElympicsCliErrors.InvalidArgument);
-        }
+        public void UnknownPackagesAreRejected() =>
+            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None), ElympicsCliErrors.InvalidArgument);
 
         [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>

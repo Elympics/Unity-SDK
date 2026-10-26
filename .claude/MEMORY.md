@@ -188,6 +188,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `TestNativeWebSocket` in PlayPad.
 - **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
 
+### Editor API tests that can reach the backend need EditorApiScope
+- **Rule:** any Editor test whose code under test could send an `ElympicsEditorApi` request, even only when a check it tests regresses, runs inside `EditorApiScope` with `FakeLoginStore` and `FakeTransport` (`Tests/Editor/EditorApiFakes.cs`).
+- **Reason:** `CliAssert.ThrowsAsync` and other `[Test]` helpers block the main thread on the task. The real transport completes `UnityWebRequest`s only on the Editor's player loop, so the wait deadlocks and freezes the Editor. The Test Runner's timeout doesn't unfreeze it, so the Editor has to be killed. Without the fakes, the test also uses the developer's real login and backend.
+- **Example:** on 2026-10-26, `QueueUpdateRejectsNonPositiveTeamSizes` without the fakes froze the Editor once the fix it guards was undone: `queue_update` went on to refresh the real token.
+- **Time scope:** If the real transport stops depending on the player loop, or tests stop blocking on tasks, remove this.
+
 ### Scratch Editors share the developer's Elympics login and can log it out
 - **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at a reachable web endpoint, or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
 - **Reason:** the Elympics login (auth and refresh tokens) lives in machine-global EditorPrefs, so every Editor on the machine shares it. On each Editor start, `UsageStatisticsSender` (`[InitializeOnLoad]`) posts telemetry through `CheckAuthTokenAndRefreshIfNeeded`. When the stored token has expired and the refresh fails, that path calls `SetAsLoggedOut()`, which logs out every Editor. A successful refresh from a scratch Editor rotates the refresh token instead.

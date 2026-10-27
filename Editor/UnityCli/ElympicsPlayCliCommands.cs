@@ -254,11 +254,10 @@ namespace Elympics.Editor.UnityCli
             {
                 if (!int.TryParse(property.Name, out var number) || number < 2 || property.Value is not JArray array)
                     throw ElympicsCliErrors.InvalidArgumentException($"--tags has an invalid entry \"{property.Name}\".", TagsFix);
-                var playerTags = array.Select(tag => (string?)tag).ToList();
-                var foreign = playerTags.FirstOrDefault(tag => string.IsNullOrWhiteSpace(tag) || !tag!.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
+                var foreign = array.FirstOrDefault(tag => tag.Type != JTokenType.String || !((string)tag!).StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
                 if (foreign != null)
-                    throw ElympicsCliErrors.InvalidArgumentException($"The tag \"{foreign}\" doesn't start with {TagPrefix}.", TagsFix);
-                result.Add((number, playerTags)!);
+                    throw ElympicsCliErrors.InvalidArgumentException($"The tag {foreign.ToString(Newtonsoft.Json.Formatting.None)} isn't a string that starts with {TagPrefix}.", TagsFix);
+                result.Add((number, array.Select(tag => (string)tag!).ToList()));
             }
             return result;
         }

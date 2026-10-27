@@ -49,7 +49,7 @@ namespace Elympics.Editor.UnityCli
             if (cached != null)
                 return cached;
 
-            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(candidate => candidate.GetName().Name == AssemblyName);
+            var assembly = LoadedAssemblies.Get().FirstOrDefault(candidate => candidate.GetName().Name == AssemblyName);
             if (assembly == null)
             {
                 problem = $"the {AssemblyName} assembly isn't loaded";
@@ -94,7 +94,7 @@ namespace Elympics.Editor.UnityCli
 
         private static ElympicsCliException CreateUnavailableException(string? problem) =>
             new(ElympicsCliErrors.MppmUnavailable, $"Multiplayer Play Mode's virtual players can't be reached: {problem}.",
-                "install com.unity.multiplayer.playmode 2.x, or manage virtual players in Window > Multiplayer > Multiplayer Play Mode; "
+                "install com.unity.multiplayer.playmode, or manage virtual players in Window > Multiplayer > Multiplayer Play Mode; "
                 + "if MPPM is installed, this Unity version changed its internals (report it to Elympics).");
 
         private static object[] GetPlayerObjects(Members members) =>

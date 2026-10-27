@@ -12,8 +12,8 @@ namespace Elympics.Editor.UnityCli
     {
         public const int DefaultTimeoutSeconds = 20;
         public const string TimeoutDescription = "Seconds to wait for the backend.";
-        public const string UploadTimeoutDescription = "Seconds to wait for the whole upload.";
         public const int DefaultUploadTimeoutSeconds = ElympicsEditorApi.FileUploadTimeoutSeconds;
+        public const string UploadTimeoutDescription = "Seconds to wait for the whole upload.";
         public const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
         public const string UploadConfirmDescription = "Must be true: the upload can't be undone.";
 

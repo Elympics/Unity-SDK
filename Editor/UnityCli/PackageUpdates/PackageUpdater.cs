@@ -296,10 +296,13 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         private string GetOperationPath(string operationId)
         {
-            if (string.IsNullOrWhiteSpace(operationId) || operationId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || operationId.Contains(".."))
+            if (!IsValidOperationId(operationId))
                 throw ElympicsCliErrors.InvalidArgumentException($"--operation_id '{operationId}' is invalid.", "pass the operationId an apply returned.");
             return Path.Combine(OperationsDirectory, operationId + ".json");
         }
+
+        private static bool IsValidOperationId(string? operationId) =>
+            !string.IsNullOrWhiteSpace(operationId) && operationId!.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !operationId.Contains("..");
 
         private IEnumerable<PackageUpdateOperation> ReadOperations() =>
             Directory.Exists(OperationsDirectory)
@@ -310,7 +313,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             try
             {
-                return JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(file));
+                var operation = JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(file));
+                // Only records Save could have written: the ID names this file and every package has a name.
+                return operation != null && IsValidOperationId(operation.operationId) && operation.operationId == Path.GetFileNameWithoutExtension(file)
+                    && operation.packages?.All(update => update?.name != null) != false
+                        ? operation
+                        : null;
             }
             catch (Exception e) when (e is JsonException or IOException)
             {

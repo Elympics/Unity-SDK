@@ -63,9 +63,11 @@ namespace Elympics.Editor.Tests.UnityCli
             }
         }
 
-        [Test]
-        public void VirtualPlayerTagsMustBeElympicsTags() =>
-            CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, "{\"2\":[\"Red\"]}"), ElympicsCliErrors.InvalidArgument);
+        [TestCase("{\"2\":[\"Red\"]}")]
+        [TestCase("{\"2\":[null]}")]
+        [TestCase("{\"2\":[{\"tag\":\"Elympics:Red\"}]}")]
+        public void VirtualPlayerTagsMustBeElympicsTags(string tags) =>
+            CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, tags), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void LaunchOutcomesAreRecorded()

@@ -254,6 +254,10 @@ namespace Elympics.Editor.Tests.UnityCli
             _ = Directory.CreateDirectory(_updater.OperationsDirectory);
             File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "corrupt.json"), "{ not json");
             File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "null.json"), "null");
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "escape.json"), "{\"operationId\":\"../escape\",\"status\":\"started\"}");
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "renamed.json"), "{\"operationId\":\"other\",\"status\":\"started\"}");
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "unnamed.json"),
+                "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}");
 
             var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 

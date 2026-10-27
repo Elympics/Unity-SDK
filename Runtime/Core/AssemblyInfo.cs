@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Tests.AssemblyCommunicator")]
 [assembly: InternalsVisibleTo("Elympics.Editor")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
+[assembly: InternalsVisibleTo("Elympics.Editor.UnityCli")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
 [assembly: InternalsVisibleTo("Elympics.Physics2D")]
 [assembly: InternalsVisibleTo("Elympics.WebRtc")]

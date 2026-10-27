@@ -22,9 +22,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             if (!GitDependency.IsSupportedRemote(url))
                 throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");
-            var startInfo = CreateStartInfo($"ls-remote --tags --heads -- \"{url}\"");
+            var stopwatch = Stopwatch.StartNew();
+            var startInfo = CreateStartInfo("ls-remote", "--tags", "--heads", "--", url);
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH_COMMAND")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH"))
-                && string.IsNullOrWhiteSpace(ReadConfig("core.sshCommand")))
+                && string.IsNullOrWhiteSpace(ReadConfig("core.sshCommand", timeout)))
                 startInfo.Environment["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes";
 
             var process = Start(startInfo);
@@ -33,25 +34,17 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 var output = process.StandardOutput.ReadToEndAsync();
                 var error = process.StandardError.ReadToEndAsync();
-                if (!process.WaitForExit((int)timeout.TotalMilliseconds))
-                {
-                    try
-                    {
-                        process.Kill();
-                    }
-                    catch (InvalidOperationException)
-                    { }
+                if (!WaitOrKill(process, timeout - stopwatch.Elapsed))
                     throw new InvalidOperationException($"git ls-remote didn't finish within {timeout.TotalSeconds:0} s.");
-                }
                 if (process.ExitCode != 0)
                     throw new InvalidOperationException($"git ls-remote exited with {process.ExitCode}: {GitDependency.RedactCredentials(error.Result.Trim())}");
                 return output.Result;
             }
         });
 
-        private static ProcessStartInfo CreateStartInfo(string arguments)
+        private static ProcessStartInfo CreateStartInfo(params string[] arguments)
         {
-            var startInfo = new ProcessStartInfo("git", arguments)
+            var startInfo = new ProcessStartInfo("git")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -59,6 +52,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 RedirectStandardError = true,
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             };
+            foreach (var argument in arguments)
+                startInfo.ArgumentList.Add(argument);
             startInfo.Environment["GIT_ALLOW_PROTOCOL"] = "https:ssh";
             startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
             startInfo.Environment["GCM_INTERACTIVE"] = "never";
@@ -80,22 +75,27 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
         }
 
-        private static string? ReadConfig(string key)
+        private static string? ReadConfig(string key, TimeSpan timeout)
         {
-            using var process = Start(CreateStartInfo($"config --get {key}"));
+            using var process = Start(CreateStartInfo("config", "--get", key));
             var output = process.StandardOutput.ReadToEndAsync();
             _ = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit(5000))
-            {
-                try
-                {
-                    process.Kill();
-                }
-                catch (InvalidOperationException)
-                { }
+            if (!WaitOrKill(process, timeout))
                 return null;
-            }
             return process.ExitCode == 0 ? output.Result : null;
+        }
+
+        private static bool WaitOrKill(Process process, TimeSpan timeout)
+        {
+            if (process.WaitForExit((int)Math.Max(0, timeout.TotalMilliseconds)))
+                return true;
+            try
+            {
+                process.Kill();
+            }
+            catch (InvalidOperationException)
+            { }
+            return false;
         }
     }
 }

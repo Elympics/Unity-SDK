@@ -57,7 +57,7 @@ namespace Elympics.Editor.Communication
             {
                 var completion = new UniTaskCompletionSource();
                 operation.completed += _ => completion.TrySetResult();
-                using (ct.Register(webRequest.Abort))
+                using (ct.Register(webRequest.Abort, useSynchronizationContext: true))
                     await completion.Task;
             }
             ct.ThrowIfCancellationRequested();

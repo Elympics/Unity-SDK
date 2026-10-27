@@ -25,7 +25,7 @@ namespace Elympics.Tests.AssemblyCommunicator
         public bool IsValidEventArgumentTypeForObserverInAssembly(Type type, bool thisAssembly)
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
-            var assembly = thisAssembly ? executingAssembly : AppDomain.CurrentDomain.GetAssemblies().First(a => a != executingAssembly);
+            var assembly = thisAssembly ? executingAssembly : LoadedAssemblies.Get().First(a => a != executingAssembly);
             return CrossAssemblyEventBroadcaster.IsValidEventArgumentTypeForObserverInAssembly(assembly, type);
         }
     }

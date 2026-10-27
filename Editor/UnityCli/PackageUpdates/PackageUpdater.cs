@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -70,7 +70,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public Func<string, string?> GetInstalledVersion = name => UnityEditor.PackageManager.PackageInfo.FindForPackageName(name)?.version;
         public Func<DateTime> GetUtcNow = () => DateTime.UtcNow;
 
-        public async Task<List<PackageUpdate>> PlanAsync(ICollection<string> packages, IDictionary<string, string> pins, IDictionary<string, string> tracks)
+        public async UniTask<List<PackageUpdate>> PlanAsync(ICollection<string> packages, IDictionary<string, string> pins, IDictionary<string, string> tracks)
         {
             var gitDependencies = ReadDependencies()
                 .Select(entry => (name: entry.Key, dependency: GitDependency.Parse(entry.Value)))
@@ -96,10 +96,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
             var locked = ReadLockHashes();
             var plans = selected.Select(entry => PlanOneAsync(entry.Key, entry.Value, locked, pins, tracks)).ToList();
-            return (await Task.WhenAll(plans)).ToList();
+            return (await UniTask.WhenAll(plans)).ToList();
         }
 
-        private async Task<PackageUpdate> PlanOneAsync(string name, GitDependency dependency, Dictionary<string, string> locked, IDictionary<string, string> pins, IDictionary<string, string> tracks)
+        private async UniTask<PackageUpdate> PlanOneAsync(string name, GitDependency dependency, Dictionary<string, string> locked, IDictionary<string, string> pins, IDictionary<string, string> tracks)
         {
             var update = new PackageUpdate
             {

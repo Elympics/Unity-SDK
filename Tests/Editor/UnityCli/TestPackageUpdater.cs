@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.UnityCli;
 using Elympics.Editor.UnityCli.PackageUpdates;
@@ -33,13 +32,13 @@ namespace Elympics.Editor.Tests.UnityCli
             public readonly Dictionary<string, string> Errors = new();
             public readonly List<string> Requested = new();
 
-            public Task<string> ListRemoteRefsAsync(string url, TimeSpan timeout)
+            public UniTask<string> ListRemoteRefsAsync(string url, TimeSpan timeout)
             {
                 lock (Requested)
                     Requested.Add(url);
                 if (Errors.TryGetValue(url, out var error))
-                    return Task.FromException<string>(new InvalidOperationException(error));
-                return Outputs.TryGetValue(url, out var output) ? Task.FromResult(output) : Task.FromException<string>(new InvalidOperationException("unreachable"));
+                    return UniTask.FromException<string>(new InvalidOperationException(error));
+                return Outputs.TryGetValue(url, out var output) ? UniTask.FromResult(output) : UniTask.FromException<string>(new InvalidOperationException("unreachable"));
             }
         }
 

@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Elympics.Core.Logger;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor;
@@ -333,24 +332,24 @@ namespace Elympics
         }
 
         [PublicAPI]
-        public static Task<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
+        public static UniTask<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, timeoutSeconds, ct).AsTask();
+            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, timeoutSeconds, ct);
         }
 
         [PublicAPI]
-        public static Task<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
+        public static UniTask<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, timeoutSeconds, ct).AsTask();
+            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, timeoutSeconds, ct);
         }
 
         /// <returns>The build report. A failed build is returned without uploading.</returns>
         [PublicAPI]
-        public static async Task<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)
+        public static async UniTask<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)
         {
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
             await ElympicsEditorApi.EnsureLoggedInAsync(0, ct: ct);

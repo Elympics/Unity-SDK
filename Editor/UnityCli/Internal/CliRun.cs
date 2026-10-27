@@ -47,6 +47,7 @@ namespace Elympics.Editor.UnityCli
                 throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors.", "fix the errors listed by console --level error, recompile, then retry.");
         }
 
+        // Errors already shaped as ELYMPICS_* codes pass through unchanged; anything else gets wrapped.
         private static bool IsInContract(Exception exception) =>
             exception is ElympicsCliException or OperationCanceledException
             || (exception is ArgumentException && exception.Message.StartsWith(ElympicsCliErrors.Prefix, StringComparison.Ordinal));

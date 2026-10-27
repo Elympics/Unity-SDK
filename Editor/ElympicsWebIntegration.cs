@@ -142,11 +142,11 @@ namespace Elympics
         {
             var gameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig();
             if (gameConfig == null)
-                return; // TODO: error handling ~dsygocki 2025-07-10
+                return;
             GetGameVersionsForGameId(gameConfig.gameId, updateProperty, silent);
         }
 
-        /// <remarks>A new call cancels the previous one. Nothing is called back on failure.</remarks>
+        /// <remarks>A new call cancels the previous one.</remarks>
         public static void GetGameVersionsForGameId(string gameId, Action<GameVersionsResponseModel> updateProperty, bool silent = false)
         {
             gameVersionsCancellation?.Cancel();
@@ -158,7 +158,6 @@ namespace Elympics
             }, silent);
         }
 
-        /// <remarks>Nothing is called back on failure.</remarks>
         public static void GetGames(Action<List<GameResponseModel>> updateProperty)
         {
             ElympicsLogger.LogInfo("Getting available games...");

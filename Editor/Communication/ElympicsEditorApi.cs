@@ -67,7 +67,7 @@ namespace Elympics.Editor.Communication
 
     /// <summary>
     /// Async core of the Editor's Elympics web API calls. Every method throws <see cref="ElympicsEditorApiException"/> (or
-    /// <see cref="ElympicsException"/> for invalid local input) instead of logging and skipping its callback, and none blocks the main thread.
+    /// <see cref="ElympicsException"/> for invalid local input) instead of logging and skipping its callback. Only RunBlocking blocks the main thread.
     /// </summary>
     internal static class ElympicsEditorApi
     {
@@ -77,7 +77,7 @@ namespace Elympics.Editor.Communication
         private const string ClientBuildInitRoute = "init";
         private const string ClientBuildCompleteRoute = "complete";
         private const string StreamingAssetsRoute = "streaming-assets";
-        // Defaults for calls without timeoutSeconds. A caller's timeoutSeconds applies to every request of the call instead.
+        // Per-request defaults; a caller's timeoutSeconds replaces them for every request of the call.
         internal const int JsonTimeoutSeconds = 30;
         internal const int FileUploadTimeoutSeconds = 1800;
 
@@ -318,7 +318,6 @@ namespace Elympics.Editor.Communication
         public static UniTask<List<FleetModel>> GetFleetsAsync(int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallAsync<List<FleetModel>>("Get fleets", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, FleetsRoute);
 
-        /// <returns>The created game, or null if the backend's response was empty.</returns>
         public static UniTask<GameModel?> CreateGameAsync(string name, string? initialRegionName, string? fleetId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<GameModel>("Create game", UnityWebRequest.kHttpVerbPOST,
                 new CreateGameRequestModel { GameName = name, InitialRegionName = initialRegionName, FleetId = string.IsNullOrEmpty(fleetId) ? null : fleetId },
@@ -327,7 +326,6 @@ namespace Elympics.Editor.Communication
         public static UniTask<GameModel> GetGameAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallAsync<GameModel>("Get game", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
-        /// <returns>The updated game, or null if the backend's response was empty.</returns>
         public static UniTask<GameModel?> UpdateGameAsync(string gameId, UpdateGameRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<GameModel>("Update game", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
@@ -345,11 +343,9 @@ namespace Elympics.Editor.Communication
         public static UniTask<List<QueueModel>> GetQueuesAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallAsync<List<QueueModel>>("Get queues", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
-        /// <returns>The created queue, or null if the backend's response was empty.</returns>
         public static UniTask<QueueModel?> CreateQueueAsync(string gameId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<QueueModel>("Create queue", UnityWebRequest.kHttpVerbPOST, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
-        /// <returns>The updated queue, or null if the backend's response was empty.</returns>
         public static UniTask<QueueModel?> UpdateQueueAsync(string gameId, string queueId, UpdateQueueRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<QueueModel>("Update queue", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 

@@ -140,6 +140,7 @@ namespace Elympics.Editor.UnityCli
             var current = (string[]?)members.Tags.GetValue(player) ?? Array.Empty<string>();
             foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.OrdinalIgnoreCase)))
             {
+                // Makes the tag known to MPPM before it is added; the return value only says whether it was new.
                 _ = members.RegisterTag.Invoke(registry, new object?[] { tag, null });
                 Invoke(members.AddTag, player, tag, "Adding", number);
             }

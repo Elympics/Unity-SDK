@@ -163,6 +163,7 @@ namespace Elympics.Editor
             behaviour.TryGetComponent<ElympicsTransformSynchronizer>(out _)
             && (behaviour.TryGetComponent<ElympicsRigidBodySynchronizer>(out _) || behaviour.TryGetComponent<ElympicsRigidBody2DSynchronizer>(out _));
 
+        // Update runs only on the server for such a behaviour, so clients never predict it.
         internal static bool IsUpdatableButNotPredictable(ElympicsBehaviour behaviour) =>
             behaviour.TryGetComponent<IUpdatable>(out _)
             && (behaviour.predictableFor == ElympicsPlayer.World || behaviour.predictableFor == ElympicsPlayer.Invalid)

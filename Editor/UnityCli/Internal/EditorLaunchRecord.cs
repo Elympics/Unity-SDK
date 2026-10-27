@@ -93,7 +93,6 @@ namespace Elympics.Editor.UnityCli
         internal static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.EnteredPlayMode)
-                // The launch queue sends the pending launch in a delay call too; subscribing first is enough, as events are emitted later.
                 Subscribe();
             else if (change == PlayModeStateChange.ExitingPlayMode)
             {

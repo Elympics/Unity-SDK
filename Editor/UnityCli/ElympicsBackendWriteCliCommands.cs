@@ -67,9 +67,9 @@ namespace Elympics.Editor.UnityCli
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("name", "New game name, 1-63 characters.")] string? name = null,
             [CliArg("fleet_id", "New server fleet ID from elympics_list_fleets.")] string? fleetId = null,
-            [CliArg("external_backend", "External backend URL; an empty string clears it.")] string? externalBackend = null,
-            [CliArg("event_queue_join_url", "Event queue join URL; an empty string clears it.")] string? eventQueueJoinUrl = null,
-            [CliArg("event_queue_leave_url", "Event queue leave URL; an empty string clears it.")] string? eventQueueLeaveUrl = null,
+            [CliArg("external_backend", "External backend URL; an empty string clears it (the backend then reports \"\" instead of null).")] string? externalBackend = null,
+            [CliArg("event_queue_join_url", "Event queue join URL; an empty string clears it (the backend then reports \"\" instead of null).")] string? eventQueueJoinUrl = null,
+            [CliArg("event_queue_leave_url", "Event queue leave URL; an empty string clears it (the backend then reports \"\" instead of null).")] string? eventQueueLeaveUrl = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>

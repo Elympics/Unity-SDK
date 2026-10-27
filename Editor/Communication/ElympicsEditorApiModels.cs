@@ -37,7 +37,7 @@ namespace Elympics.Editor.Communication
         public string? FleetId { get; set; }
     }
 
-    /// <summary>A null field stays unchanged; an empty string clears it.</summary>
+    /// <summary>A null field stays unchanged; an empty string clears a URL, which the backend then reports as "" rather than null.</summary>
     internal class UpdateGameRequestModel
     {
         public string? GameName { get; set; }

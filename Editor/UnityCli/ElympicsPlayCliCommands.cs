@@ -23,6 +23,7 @@ namespace Elympics.Editor.UnityCli
         }
 
         private const string MppmPackage = "com.unity.multiplayer.playmode";
+        private const string NotLaunched = "NotLaunched";
         private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
 
         [CliCommand("elympics_launch",
@@ -178,7 +179,7 @@ namespace Elympics.Editor.UnityCli
             try
             {
                 var players = MppmReflection.GetPlayers().Where(player => player.number > 1).ToList();
-                return new { active = players.Count(player => player.state != "NotLaunched"), launched = players.Count(player => player.state == "Launched") };
+                return new { active = players.Count(player => player.state != NotLaunched), launched = players.Count(player => player.state == "Launched") };
             }
             catch (Exception)
             {
@@ -231,7 +232,7 @@ namespace Elympics.Editor.UnityCli
             for (var number = 2; number <= players.Count; number++)
             {
                 var wanted = number - 1 <= count;
-                if (wanted != (players[number - 1].state != "NotLaunched"))
+                if (wanted != (players[number - 1].state != NotLaunched))
                     MppmReflection.SetActive(number, wanted);
             }
 

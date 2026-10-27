@@ -60,7 +60,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 if (File.Exists(candidate))
                     return candidate;
             }
-            return "git";
+            throw new InvalidOperationException("git isn't available: it isn't on PATH.");
         }
 
         private static ProcessStartInfo CreateStartInfo(params string[] arguments)

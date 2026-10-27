@@ -295,7 +295,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             try
             {
-                return JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(path))) { DateParseHandling = DateParseHandling.None });
+                using var reader = new JsonTextReader(new StringReader(File.ReadAllText(path))) { DateParseHandling = DateParseHandling.None };
+                var json = JObject.Load(reader);
+                if (reader.Read() && reader.TokenType != JsonToken.Comment)
+                    throw new JsonReaderException("Additional text found after the JSON object.");
+                return json;
             }
             catch (JsonException e)
             {

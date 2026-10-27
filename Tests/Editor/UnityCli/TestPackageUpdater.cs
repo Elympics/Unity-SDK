@@ -177,6 +177,9 @@ namespace Elympics.Editor.Tests.UnityCli
 
             File.WriteAllText(_updater.ManifestPath, "{ not json");
             await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
+
+            File.WriteAllText(_updater.ManifestPath, "{ \"dependencies\": {} } trailing");
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
         });
 
         [UnityTest]

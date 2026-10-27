@@ -55,7 +55,7 @@ namespace Elympics.Editor.Communication
         public bool? DebugModeWithBots { get; set; }
     }
 
-    /// <summary>A null field stays unchanged. The backend rejects any change of the smart contract deployment ID.</summary>
+    /// <summary>A null field stays unchanged. There is no smart contract deployment ID: once a queue has one, the backend rejects any non-null value, even the same ID.</summary>
     internal class UpdateQueueRequestModel
     {
         public string? Name { get; set; }

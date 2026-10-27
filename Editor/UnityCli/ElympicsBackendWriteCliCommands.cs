@@ -201,7 +201,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("queue", "Queue ID or name from elympics_list_queues.", Required = true)] string queue,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("name", "New queue name.")] string? name = null,
-            [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.")] string? matchType = null,
+            [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO. Changing it resets the strategies you don't pass to the new type's defaults.")] string? matchType = null,
             [CliArg("number_of_teams", "Number of teams.")] int? numberOfTeams = null,
             [CliArg("players_in_team", "Players in each team.")] int? playersInTeam = null,
             [CliArg("matchmaking_strategy", "Matchmaking strategy, as in elympics_create_queue.")] string? matchmakingStrategy = null,

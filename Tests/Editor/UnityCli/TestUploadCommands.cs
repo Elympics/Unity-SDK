@@ -110,16 +110,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var config = ElympicsConfig.Load()!;
             var gamesBefore = config.availableGames.Count;
             using var scope = new EditorApiScope(new FakeTransport());
-            Exception? caught = null;
-            try
-            {
-                _ = await ElympicsBackendWriteCliCommands.CreateGame("Game", createConfig: true, confirm: true).AsUniTask();
-            }
-            catch (Exception e)
-            {
-                caught = e;
-            }
-            Assert.That(caught, Is.Not.Null);
+            var caught = await CliAssert.CatchAsync(() => ElympicsBackendWriteCliCommands.CreateGame("Game", createConfig: true, confirm: true).AsUniTask());
             CliAssert.HasCodeAndFix(caught, ElympicsCliErrors.RequestFailed);
             Assert.That(config.availableGames, Has.Count.EqualTo(gamesBefore));
         });

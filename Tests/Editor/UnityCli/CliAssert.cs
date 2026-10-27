@@ -3,6 +3,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.UnityCli;
 using NUnit.Framework;
 
@@ -27,5 +28,19 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         public static void ThrowsAsync(Func<Task<object>> command, string errorCode) => HasCodeAndFix(Assert.CatchAsync(async () => await command()), errorCode);
+
+        /// <summary>Awaits instead of blocking like <see cref="Assert.CatchAsync(AsyncTestDelegate)"/>, so UniTask work that needs the player loop can finish.</summary>
+        public static async UniTask<Exception?> CatchAsync(Func<UniTask> code)
+        {
+            try
+            {
+                await code();
+            }
+            catch (Exception e)
+            {
+                return e;
+            }
+            return null;
+        }
     }
 }

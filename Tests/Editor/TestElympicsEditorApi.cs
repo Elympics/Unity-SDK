@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
+using Elympics.Editor.Tests.UnityCli;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -23,6 +24,7 @@ namespace Elympics.Editor.Tests
         private FakeTransport _transport = null!;
         private FakeLoginStore _login = null!;
         private EditorApiScope _scope = null!;
+        private TempDirectory _temp = null!;
 
         private void ExpireToken() => _login.AuthTokenExp = (Now - 1).ToString();
 
@@ -38,10 +40,15 @@ namespace Elympics.Editor.Tests
             _transport = new FakeTransport();
             _login = new FakeLoginStore { IsLogin = true, AuthToken = "old", AuthTokenExp = (Now + 100).ToString(), RefreshToken = "refresh" };
             _scope = new EditorApiScope(_login, _transport, Api, Now);
+            _temp = new TempDirectory("ElympicsTestEditorApi");
         }
 
         [TearDown]
-        public void TearDown() => _scope.Dispose();
+        public void TearDown()
+        {
+            _scope.Dispose();
+            _temp.Dispose();
+        }
 
         private static ElympicsEditorApiException CatchApiException(Func<UniTask> action) =>
             Assert.ThrowsAsync<ElympicsEditorApiException>(async () => await action());
@@ -333,13 +340,13 @@ namespace Elympics.Editor.Tests
             Assert.That(_transport.Requests, Is.Empty);
         }
 
-        private static string CreateClientBuild(string root)
+        private string CreateClientBuild()
         {
-            var buildFolder = Path.Combine(root, WebGLUploader.BuildFolderName);
+            var buildFolder = Path.Combine(_temp.Path, WebGLUploader.BuildFolderName);
             _ = Directory.CreateDirectory(buildFolder);
             foreach (var extension in WebGLUploader.CompoundExtensions)
                 File.WriteAllText(Path.Combine(buildFolder, "Build" + extension), extension);
-            return root;
+            return _temp.Path;
         }
 
         private static string InitResponse() =>
@@ -350,8 +357,7 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AClientBuildIsInitializedUploadedAndCompleted() => UniTask.ToCoroutine(async () =>
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var buildRoot = CreateClientBuild(temp.Path);
+            var buildRoot = CreateClientBuild();
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse()) : Ok("OK");
 
             var fileCount = await ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1");
@@ -367,21 +373,15 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AFailedFileUploadMarksTheClientBuildUploadAsFailed() => UniTask.ToCoroutine(async () =>
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var buildRoot = CreateClientBuild(temp.Path);
+            var buildRoot = CreateClientBuild();
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse())
                 : request.Url.StartsWith("https://gcs.test/") ? Status(403, "denied")
                 : Ok("");
 
-            try
-            {
-                _ = await ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1");
-                Assert.Fail("Expected the upload to fail.");
-            }
-            catch (ElympicsEditorApiException e)
-            {
-                Assert.That(e.Message, Does.Contain("Failed to upload file"));
-            }
+            var exception = await CliAssert.CatchAsync(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1"));
+
+            Assert.That(exception, Is.InstanceOf<ElympicsEditorApiException>());
+            Assert.That(exception!.Message, Does.Contain("Failed to upload file"));
 
             Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
@@ -390,8 +390,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void AClientBuildIsNotSentToANonHttpsUrl()
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var buildRoot = CreateClientBuild(temp.Path);
+            var buildRoot = CreateClientBuild();
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse().Replace("https://gcs.test/", "http://gcs.test/")) : Ok("");
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
@@ -402,18 +401,17 @@ namespace Elympics.Editor.Tests
         [Test]
         public void AClientBuildInitWithTheWrongNumberOfUrlsFails()
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var buildRoot = CreateClientBuild(temp.Path);
+            var buildRoot = CreateClientBuild();
             _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok("{\"UploadId\":\"u1\",\"Files\":[]}") : Ok("");
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
         }
 
-        private static string CreateStreamingAssets(string root)
+        private string CreateStreamingAssets()
         {
-            File.WriteAllText(Path.Combine(root, "a.txt"), "a");
-            return root;
+            File.WriteAllText(Path.Combine(_temp.Path, "a.txt"), "a");
+            return _temp.Path;
         }
 
         private static string StreamingAssetsInitResponse(params string[] paths) =>
@@ -422,8 +420,7 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator StreamingAssetsUploadOnlyTheRequestedLocalFiles() => UniTask.ToCoroutine(async () =>
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var root = CreateStreamingAssets(temp.Path);
+            var root = CreateStreamingAssets();
             _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
 
             _ = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
@@ -441,8 +438,7 @@ namespace Elympics.Editor.Tests
         [TestCase("a.txt,a.txt")]
         public void StreamingAssetsRequestedOutsideTheLocalFilesAreRejected(string serverPaths)
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var root = CreateStreamingAssets(temp.Path);
+            var root = CreateStreamingAssets();
             var init = StreamingAssetsInitResponse(serverPaths.Split(','));
             _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
 
@@ -454,8 +450,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void StreamingAssetsAreNotSentToANonHttpsUrl()
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var root = CreateStreamingAssets(temp.Path);
+            var root = CreateStreamingAssets();
             var init = StreamingAssetsInitResponse("a.txt").Replace("https://gcs.test/", "http://gcs.test/");
             _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
 
@@ -467,8 +462,7 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AServerUploadHasTheFileUploadTimeout() => UniTask.ToCoroutine(async () =>
         {
-            using var temp = new TempDirectory("ElympicsTestEditorApi");
-            var pack = Path.Combine(temp.Path, "pack.zip");
+            var pack = Path.Combine(_temp.Path, "pack.zip");
             File.WriteAllText(pack, "zip");
             _transport.Respond = _ => Ok("");
 

@@ -163,9 +163,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator PinAndTrackKeysOutsideTheSelectedPackagesAreRejected() => UniTask.ToCoroutine(async () =>
         {
-            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None)),
+            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None)),
                 ElympicsCliErrors.InvalidArgument);
-            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" })),
+            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" })),
                 ElympicsCliErrors.InvalidArgument);
         });
 
@@ -195,20 +195,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [UnityTest]
         public IEnumerator UnknownPackagesAreRejected() => UniTask.ToCoroutine(async () =>
-            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None)), ElympicsCliErrors.InvalidArgument));
-
-        private static async UniTask<Exception?> CatchAsync(Func<UniTask> code)
-        {
-            try
-            {
-                await code();
-            }
-            catch (Exception e)
-            {
-                return e;
-            }
-            return null;
-        }
+            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None)), ElympicsCliErrors.InvalidArgument));
 
         [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>

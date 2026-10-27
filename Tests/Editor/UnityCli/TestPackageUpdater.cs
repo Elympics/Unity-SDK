@@ -172,9 +172,8 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ACorruptOperationRecordIsReportedNotThrownAsANullReference()
         {
-            _ = Directory.CreateDirectory(_updater.OperationsDirectory);
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "nullrecord.json"), "null");
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "garbage.json"), "{not json");
+            WriteOperationFile("nullrecord", "null");
+            WriteOperationFile("garbage", "{not json");
 
             CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("nullrecord")), ElympicsCliErrors.OperationNotFound);
             CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("garbage")), ElympicsCliErrors.OperationNotFound);
@@ -263,13 +262,11 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator CorruptOperationRecordsAreSkipped() => UniTask.ToCoroutine(async () =>
         {
-            _ = Directory.CreateDirectory(_updater.OperationsDirectory);
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "corrupt.json"), "{ not json");
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "null.json"), "null");
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "escape.json"), "{\"operationId\":\"../escape\",\"status\":\"started\"}");
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "renamed.json"), "{\"operationId\":\"other\",\"status\":\"started\"}");
-            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, "unnamed.json"),
-                "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}");
+            WriteOperationFile("corrupt", "{ not json");
+            WriteOperationFile("null", "null");
+            WriteOperationFile("escape", "{\"operationId\":\"../escape\",\"status\":\"started\"}");
+            WriteOperationFile("renamed", "{\"operationId\":\"other\",\"status\":\"started\"}");
+            WriteOperationFile("unnamed", "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}");
 
             var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 
@@ -279,5 +276,11 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void AMissingOperationIsReported() =>
             CliAssert.Throws(() => _updater.ReadOperation("20260101000000-abcdef12"), ElympicsCliErrors.OperationNotFound);
+
+        private void WriteOperationFile(string operationId, string json)
+        {
+            _ = Directory.CreateDirectory(_updater.OperationsDirectory);
+            File.WriteAllText(Path.Combine(_updater.OperationsDirectory, operationId + ".json"), json);
+        }
     }
 }

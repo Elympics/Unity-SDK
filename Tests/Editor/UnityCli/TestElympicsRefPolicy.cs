@@ -45,15 +45,6 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [Test]
-        public void ChangeActionsAreMoveAndRefresh()
-        {
-            Assert.That(new PackageUpdate { action = RefAction.Move }.IsChange(), Is.True);
-            Assert.That(new PackageUpdate { action = RefAction.Refresh }.IsChange(), Is.True);
-            Assert.That(new PackageUpdate { action = RefAction.Keep }.IsChange(), Is.False);
-            Assert.That(new PackageUpdate { action = RefAction.Error }.IsChange(), Is.False);
-        }
-
-        [Test]
         public void TagMovesToTheNewestVersionTag() => AssertPlan(Plan(Sdk + "#v0.28.0"), RefAction.Move, "v0.29.0");
 
         [TestCase("v0.29.0")]
@@ -213,6 +204,10 @@ namespace Elympics.Editor.Tests.UnityCli
         public void CredentialsAreRedacted() =>
             Assert.That(GitDependency.RedactCredentials("fatal: unable to access 'https://user:glpat-secret@gitlab.example.com/a.git/'"),
                 Is.EqualTo("fatal: unable to access 'https://gitlab.example.com/a.git/'"));
+
+        [Test]
+        public void CredentialsContainingAtSignsAreRedactedCompletely() =>
+            Assert.That(GitDependency.RedactCredentials("https://user:p@ss@host/a.git"), Is.EqualTo("https://host/a.git"));
 
         [TestCase("1.2.3")]
         [TestCase("file:../x")]

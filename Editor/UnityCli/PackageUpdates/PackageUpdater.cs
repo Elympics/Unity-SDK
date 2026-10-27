@@ -61,10 +61,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public List<string> warnings = new();
     }
 
-    /// <summary>
-    /// Plans and applies ref updates of the project's <c>com.daftmobile.*</c> git packages (<see cref="ElympicsRefPolicy"/>).
-    /// The resolve it starts may reload the domain, so the result is an operation record that a later call finalizes.
-    /// </summary>
+    /// <summary>The resolve it starts may reload the domain, so the result is an operation record that a later call finalizes.</summary>
     internal sealed class PackageUpdater
     {
         public const string PackagePrefix = "com.daftmobile.";
@@ -217,15 +214,15 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 WriteJson(ManifestPath, manifest);
                 if (lockFile != null)
                     WriteJson(LockPath, lockFile);
+                Resolve();
             }
-            catch (IOException)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
                 operation.status = PackageUpdateStatus.Failed;
                 operation.finishedAt = GetUtcNow();
                 Save(operation);
                 throw;
             }
-            Resolve();
             return operation;
         }
 
@@ -253,7 +250,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return operation;
         }
 
-        /// <summary>Called after domain reloads and when polled.</summary>
         public void FinalizePending()
         {
             foreach (var operation in ReadOperations().Where(operation => operation.status == PackageUpdateStatus.Started))
@@ -299,7 +295,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             try
             {
-                return JObject.Parse(File.ReadAllText(path));
+                return JObject.Load(new JsonTextReader(new StringReader(File.ReadAllText(path))) { DateParseHandling = DateParseHandling.None });
             }
             catch (JsonException e)
             {

@@ -71,7 +71,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::") && !url.Any(character => char.IsControl(character) || character is '"' or '\\');
 
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");
-        private static readonly Regex UserInfo = new(@"(?<=://)[^/@\s]+@");
+        private static readonly Regex UserInfo = new(@"(?<=://)[^/\s]*@");
 
         [return: NotNullIfNotNull("text")]
         public static string? RedactCredentials(string? text) => text == null ? null : UserInfo.Replace(text, string.Empty);

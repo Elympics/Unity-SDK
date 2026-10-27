@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var startInfo = CreateStartInfo("ls-remote", "--tags", "--heads", "--", url);
             // BatchMode keeps ssh from prompting, but only where the user has no ssh command of their own to override.
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH_COMMAND")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH"))
-                && string.IsNullOrWhiteSpace(ReadConfig("core.sshCommand", timeout)))
+                && !HasConfiguredSshCommand(timeout))
                 startInfo.Environment["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes";
 
             using var process = Start(startInfo);
@@ -41,9 +42,30 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return output.Result;
         });
 
+        private bool? _hasConfiguredSshCommand;
+
+        private bool HasConfiguredSshCommand(TimeSpan timeout) =>
+            _hasConfiguredSshCommand ??= !string.IsNullOrWhiteSpace(ReadConfig("core.sshCommand", timeout));
+
+        // On Windows, Process.Start looks in the current directory (often the project root) before PATH.
+        private static string ResolveGit()
+        {
+            var fileName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "git.exe" : "git";
+            foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator))
+            {
+                var trimmed = directory.Trim().Trim('"');
+                if (trimmed.Length == 0 || !Path.IsPathRooted(trimmed))
+                    continue;
+                var candidate = Path.Combine(trimmed, fileName);
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+            return "git";
+        }
+
         private static ProcessStartInfo CreateStartInfo(params string[] arguments)
         {
-            var startInfo = new ProcessStartInfo("git")
+            var startInfo = new ProcessStartInfo(ResolveGit())
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,

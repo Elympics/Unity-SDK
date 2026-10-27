@@ -323,6 +323,27 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(done.packages.All(update => update.lockHashMatchesHead == true), Is.True);
         });
 
+        [Test]
+        public void ChangeActionsAreMoveAndRefresh()
+        {
+            Assert.That(new PackageUpdate { action = RefAction.Move }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = RefAction.Refresh }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = RefAction.Keep }.IsChange(), Is.False);
+            Assert.That(new PackageUpdate { action = RefAction.Error }.IsChange(), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator ApplyMarksTheOperationFailedWhenTheResolveThrows() => UniTask.ToCoroutine(async () =>
+        {
+            var plan = await PlanAllAsync();
+            _updater.Resolve = () => throw new InvalidOperationException("resolve failed");
+
+            _ = Assert.Throws<InvalidOperationException>(() => _updater.Apply(plan));
+
+            var record = Directory.GetFiles(_updater.OperationsDirectory, "*.json").Single();
+            Assert.That((string?)JObject.Parse(File.ReadAllText(record))["status"], Is.EqualTo("failed"));
+        });
+
         [UnityTest]
         public IEnumerator ApplyFinalizesAResolveThatFinishedWithoutADomainReload() => UniTask.ToCoroutine(async () =>
         {

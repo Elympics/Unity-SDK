@@ -87,20 +87,28 @@ namespace Elympics.Editor.Communication
                 }
             }
 
-            if (!string.IsNullOrEmpty(request.ContentEncoding))
-                webRequest.SetRequestHeader("Content-Encoding", request.ContentEncoding);
-            if (request.TimeoutSeconds > 0)
-                webRequest.timeout = request.TimeoutSeconds;
-
-            if (request.ElympicsApi)
+            try
             {
-                webRequest.SetRequestHeader("Accept", "application/json");
-                var token = ElympicsEditorApi.LoginStore.AuthToken;
-                if (request.Auth && !string.IsNullOrEmpty(token))
-                    webRequest.SetRequestHeader("Authorization", $"Bearer {token}");
-                webRequest.SetSdkVersionHeader();
-                webRequest.SetTestCertificateHandlerIfNeeded();
-                ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
+                if (!string.IsNullOrEmpty(request.ContentEncoding))
+                    webRequest.SetRequestHeader("Content-Encoding", request.ContentEncoding);
+                if (request.TimeoutSeconds > 0)
+                    webRequest.timeout = request.TimeoutSeconds;
+
+                if (request.ElympicsApi)
+                {
+                    webRequest.SetRequestHeader("Accept", "application/json");
+                    var token = ElympicsEditorApi.LoginStore.AuthToken;
+                    if (request.Auth && !string.IsNullOrEmpty(token))
+                        webRequest.SetRequestHeader("Authorization", $"Bearer {token}");
+                    webRequest.SetSdkVersionHeader();
+                    webRequest.SetTestCertificateHandlerIfNeeded();
+                    ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
+                }
+            }
+            catch
+            {
+                webRequest.Dispose();
+                throw;
             }
             return webRequest;
         }

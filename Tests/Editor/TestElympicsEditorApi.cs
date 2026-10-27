@@ -5,6 +5,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
@@ -407,6 +408,19 @@ namespace Elympics.Editor.Tests
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        }
+
+        [TestCase(@"\{""FilePath""[^}]*\}", "null")]
+        [TestCase(@"""SignedUrl"":""[^""]*""", "\"SignedUrl\":null")]
+        [TestCase(@"""FilePath"":""[^""]*""", "\"FilePath\":null")]
+        [TestCase(@"""UploadId"":""u1"",", "")]
+        public void AClientBuildInitWithAnIncompleteEntryFails(string pattern, string replacement)
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit(new Regex(pattern).Replace(InitResponse(), replacement, 1));
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
         }
 
         private string CreateStreamingAssets()

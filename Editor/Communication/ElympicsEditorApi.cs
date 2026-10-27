@@ -65,7 +65,7 @@ namespace Elympics.Editor.Communication
         public string RefreshToken { get => ElympicsConfig.RefreshToken; set => ElympicsConfig.RefreshToken = value; }
     }
 
-    /// <summary>Async Elympics web API calls of the Editor. They throw <see cref="ElympicsEditorApiException"/> (or <see cref="ElympicsException"/> for invalid local input).</summary>
+    /// <summary>Throws <see cref="ElympicsEditorApiException"/>, or <see cref="ElympicsException"/> for invalid local input.</summary>
     internal static class ElympicsEditorApi
     {
         private const string QueuesRoute = "queues";
@@ -91,7 +91,13 @@ namespace Elympics.Editor.Communication
 
         internal static void RequireTrustedApiEndpoint() => ElympicsApiHostPolicy.Require(new Uri(ApiEndpoint));
 
-        private static string BuildUrl(params string[] segments) => string.Join("/", new[] { ApiEndpoint.TrimEnd('/') }.Concat(segments.Select(Uri.EscapeDataString)));
+        private static string BuildUrl(params string[] segments)
+        {
+            foreach (var segment in segments)
+                if (segment is "." or "..")
+                    throw new ArgumentException($"'{segment}' is not a valid URL path segment.", nameof(segments));
+            return string.Join("/", new[] { ApiEndpoint.TrimEnd('/') }.Concat(segments.Select(Uri.EscapeDataString)));
+        }
 
         #region Blocking calls
 
@@ -318,9 +324,6 @@ namespace Elympics.Editor.Communication
                 new CreateGameRequestModel { GameName = name, InitialRegionName = initialRegionName, FleetId = string.IsNullOrEmpty(fleetId) ? null : fleetId },
                 timeoutSeconds, ct, GamesRoutes.BaseRoute);
 
-        public static UniTask<GameModel> GetGameAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
-            CallAsync<GameModel>("Get game", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
-
         public static UniTask<GameModel?> UpdateGameAsync(string gameId, UpdateGameRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<GameModel>("Update game", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
@@ -393,6 +396,9 @@ namespace Elympics.Editor.Communication
             var initResponse = await CallAsync<WebGLUploader.UploadInitResponse>("Initialize client build upload", UnityWebRequest.kHttpVerbPOST, initRequest, timeoutSeconds, ct,
                 ClientBuildsRoute, ClientBuildInitRoute);
 
+            if (string.IsNullOrEmpty(initResponse.UploadId))
+                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, "Elympics cloud returned no upload ID for the client build.");
+
             try
             {
                 if (initResponse.Files == null || initResponse.Files.Length != validFiles.Count)
@@ -401,6 +407,8 @@ namespace Elympics.Editor.Communication
                 for (var index = 0; index < initResponse.Files.Length; index++)
                 {
                     var fileUploadInfo = initResponse.Files[index];
+                    if (fileUploadInfo.FilePath == null || fileUploadInfo.SignedUrl == null)
+                        throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"Elympics cloud returned an incomplete upload entry for client build file {index + 1}.");
                     var expectedFile = validFiles[index];
                     if (!WebGLUploader.DoesFileHaveGivenCompoundExtension(fileUploadInfo.FilePath, expectedFile.extension))
                         throw new ElympicsException($"Uploaded file '{Sanitize(fileUploadInfo.FilePath)}' does not match expected extension '{expectedFile.extension}'.");
@@ -543,7 +551,7 @@ namespace Elympics.Editor.Communication
 
         internal static ElympicsEditorApiException ToException(string action, EditorApiResponse response)
         {
-            if (response.Result == UnityWebRequest.Result.ConnectionError)
+            if (response.Result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.DataProcessingError)
             {
                 var kind = response.Error?.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0 ? EditorApiErrorKind.Timeout : EditorApiErrorKind.Network;
                 return new ElympicsEditorApiException(kind, $"{action} failed: {response.Error}", response.StatusCode);
@@ -600,7 +608,6 @@ namespace Elympics.Editor.Communication
         private const int MaxBackendTextLength = 500;
         private const int MaxShownErrors = 10;
 
-        /// <summary>Replaces control characters and truncates backend text before it is logged.</summary>
         internal static string? Sanitize(string? text)
         {
             if (string.IsNullOrEmpty(text))

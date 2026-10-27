@@ -341,19 +341,19 @@ namespace Elympics
         }
 
         [PublicAPI]
-        public static UniTask<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
+        public static async UniTask<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, timeoutSeconds, ct);
+            return await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, timeoutSeconds, ct);
         }
 
         [PublicAPI]
-        public static UniTask<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
+        public static async UniTask<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, timeoutSeconds, ct);
+            return await ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, timeoutSeconds, ct);
         }
 
         /// <returns>The build report. A failed build is returned without uploading.</returns>

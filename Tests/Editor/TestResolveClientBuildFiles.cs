@@ -14,7 +14,7 @@ namespace Elympics.Editor.Tests
         [SetUp]
         public void SetUp()
         {
-            _temp = new TempDirectory("ElympicsTestPrepareValidFiles");
+            _temp = new TempDirectory("ElympicsTestResolveClientBuildFiles");
             _buildRoot = _temp.Path;
             _buildFolder = Path.Combine(_buildRoot, WebGLUploader.BuildFolderName);
             _ = Directory.CreateDirectory(_buildFolder);

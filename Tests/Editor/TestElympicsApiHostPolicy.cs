@@ -76,6 +76,29 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
+        public void AnIdnHostIsComparedInItsPunycodeForm()
+        {
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://münchen.elympics.cc")), Is.True);
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://еlympics.cc")), Is.False);
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://еlympics.ai/api")), Is.False);
+
+            _customHost = new Uri("https://münchen.example").Host;
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://münchen.example")), Is.True);
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("http://münchen.example")), Is.False);
+        }
+
+        [TestCase("elympics.ai", "https://elympics.ai", true)]
+        [TestCase("elympics.cc", "https://elympics.cc/v2", true)]
+        [TestCase("elympics.ai", "http://elympics.ai", false)]
+        [TestCase("elympics.cc", "http://elympics.cc", false)]
+        [TestCase("elympics.cc", "https://api.elympics.cc", true)]
+        public void ACustomHostEqualToATrustedDomainDoesNotChangeThePolicy(string customHost, string url, bool expected)
+        {
+            _customHost = customHost;
+            Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri(url)), Is.EqualTo(expected));
+        }
+
+        [Test]
         public void ATrustedHostIsTrustedOnAnyPort() =>
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://api.elympics.cc:8443/v2")), Is.True);
 

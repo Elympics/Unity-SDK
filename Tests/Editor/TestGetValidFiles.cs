@@ -44,14 +44,6 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void ParsesAllValidFilesTogether()
-        {
-            var result = WebGLUploader.GetValidFiles(ValidFileNames, CompoundExtensions);
-
-            Assert.AreEqual(CompoundExtensions.Length, result.Count);
-        }
-
-        [Test]
         public void FiltersOutInvalidFiles()
         {
             var mixed = ValidFileNames.Concat(InvalidFileNames).ToArray();
@@ -75,44 +67,14 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void UsesFirstDotSegmentAsName([ValueSource(nameof(CompoundExtensions))] string extension)
+        public void ParsesPrefix(
+            [Values("MyGame", DefaultPrefix + "-1", DefaultPrefix + ".1")] string prefix,
+            [ValueSource(nameof(CompoundExtensions))] string extension)
         {
-            const string customPrefix = "MyGame";
-            var fileName = customPrefix + extension;
-            var fileNames = new[] { fileName };
-
-            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(new[] { prefix + extension }, CompoundExtensions);
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(customPrefix, result[0].name);
-            Assert.AreEqual(extension, result[0].extension);
-        }
-
-        [Test]
-        public void ParsesPrefixWithHyphenAndNumber([ValueSource(nameof(CompoundExtensions))] string extension)
-        {
-            const string prefixWithHyphen = DefaultPrefix + "-1";
-            var fileName = prefixWithHyphen + extension;
-            var fileNames = new[] { fileName };
-
-            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(prefixWithHyphen, result[0].name);
-            Assert.AreEqual(extension, result[0].extension);
-        }
-
-        [Test]
-        public void ParsesPrefixWithDot([ValueSource(nameof(CompoundExtensions))] string extension)
-        {
-            const string prefixWithDot = DefaultPrefix + ".1";
-            var fileName = prefixWithDot + extension;
-            var fileNames = new[] { fileName };
-
-            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(prefixWithDot, result[0].name);
+            Assert.AreEqual(prefix, result[0].name);
             Assert.AreEqual(extension, result[0].extension);
         }
 

@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Elympics.Editor.Config
 {
-    /// <summary>A section added by another package to the "Manage game in Elympics" part of <see cref="ManageGamesInElympicsWindow" />.</summary>
+    /// <summary>A section another package adds to <see cref="ManageGamesInElympicsWindow" />.</summary>
     internal interface IManageGameSection
     {
         /// <summary>Sections are shown in ascending order.</summary>

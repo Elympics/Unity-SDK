@@ -7,7 +7,7 @@ using UnityEditor;
 namespace Elympics.Editor.Communication
 {
     /// <summary>
-    /// The Editor sends the Elympics login only to https Elympics hosts, or to one custom host trusted on this machine (EditorPrefs, never the project), which must use https unless it is localhost.
+    /// Decides which hosts get the Elympics login: https Elympics hosts, or one custom host trusted in EditorPrefs.
     /// </summary>
     internal static class ElympicsApiHostPolicy
     {
@@ -22,7 +22,7 @@ namespace Elympics.Editor.Communication
             var host = uri.Host;
             var customHost = GetTrustedCustomHost();
             if (!string.IsNullOrEmpty(customHost) && string.Equals(host, customHost, StringComparison.OrdinalIgnoreCase))
-                return uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback);
+                return IsAllowedScheme(uri);
             if (uri.Scheme != Uri.UriSchemeHttps)
                 return false;
             foreach (var domain in TrustedDomains)
@@ -31,6 +31,9 @@ namespace Elympics.Editor.Communication
                     return true;
             return false;
         }
+
+        private static bool IsAllowedScheme(Uri uri) =>
+            uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback);
 
         public static void Require(Uri uri)
         {
@@ -61,7 +64,7 @@ namespace Elympics.Editor.Communication
                     EditorPrefs.DeleteKey(CustomHostPrefsKey);
                 return;
             }
-            if (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))
+            if (!IsAllowedScheme(uri))
             {
                 _ = EditorUtility.DisplayDialog(title, $"The API endpoint \"{endpoint}\" doesn't use https, so the Editor won't send the login to it. Use an https endpoint (http works on localhost only).", "OK");
                 return;

@@ -81,8 +81,10 @@ namespace Elympics.Editor.Communication
                 webRequest = new UnityWebRequest(uri, request.Method) { downloadHandler = new DownloadHandlerBuffer() };
                 var body = request.RawBody ?? (request.JsonBody != null ? Encoding.UTF8.GetBytes(request.JsonBody) : null);
                 if (body != null)
+                {
                     webRequest.uploadHandler = new UploadHandlerRaw(body);
-                webRequest.SetRequestHeader("Content-Type", request.ContentType ?? "application/json");
+                    webRequest.SetRequestHeader("Content-Type", request.ContentType ?? "application/json");
+                }
             }
 
             if (!string.IsNullOrEmpty(request.ContentEncoding))

@@ -71,7 +71,6 @@ namespace Elympics.Editor.Communication
         public int? MinPlayersToMatch { get; set; }
     }
 
-    /// <summary>The body of the create queue request.</summary>
     internal class QueueSettingsModel
     {
         public string Name { get; set; } = null!;

@@ -346,7 +346,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         }
 
         private static bool IsValidOperationId(string? operationId) =>
-            !string.IsNullOrWhiteSpace(operationId) && operationId!.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !operationId.Contains("..");
+            !string.IsNullOrEmpty(operationId) && operationId!.All(character => character is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_');
 
         private IEnumerable<PackageUpdateOperation> ReadOperations() =>
             Directory.Exists(OperationsDirectory)

@@ -340,6 +340,7 @@ namespace Elympics
             }
         }
 
+        // Both upload methods are async so an invalid game ID faults the task instead of throwing synchronously.
         [PublicAPI]
         public static async UniTask<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
             int? timeoutSeconds = null, CancellationToken ct = default)

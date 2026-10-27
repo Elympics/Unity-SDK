@@ -86,10 +86,98 @@ namespace Elympics.Editor.Tests.UnityCli
 
         private static readonly Dictionary<string, string> None = new();
 
+        private UniTask<List<PackageUpdate>> PlanAllAsync() => _updater.PlanAsync(new List<string>(), None, None);
+
+        [TestCase("../x")]
+        [TestCase("a/b")]
+        [TestCase("a\\b")]
+        [TestCase("/etc/x")]
+        [TestCase("C:/x")]
+        [TestCase("")]
+        [TestCase("  ")]
+        public void OperationIdsThatCouldLeaveTheRecordsFolderAreRejected(string operationId) =>
+            CliAssert.Throws(() => _updater.ReadOperation(operationId), ElympicsCliErrors.InvalidArgument);
+
+        [UnityTest]
+        public IEnumerator AnOperationStaysStartedUntilItIsStale() => UniTask.ToCoroutine(async () =>
+        {
+            var now = DateTime.UtcNow;
+            _updater.GetUtcNow = () => now;
+            var operation = _updater.Apply(await PlanAllAsync());
+
+            now += TimeSpan.FromMinutes(9);
+            Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo(PackageUpdateStatus.Started));
+
+            now += TimeSpan.FromMinutes(2);
+            var stale = _updater.ReadOperation(operation.operationId);
+            Assert.That(stale.status, Is.EqualTo(PackageUpdateStatus.Failed));
+            Assert.That(stale.finishedAt, Is.EqualTo(now));
+            Assert.That(stale.warnings, Has.Exactly(1).Contain("didn't lock"));
+        });
+
+        [UnityTest]
+        public IEnumerator AStaleOperationDoesNotBlockTheNextApply() => UniTask.ToCoroutine(async () =>
+        {
+            var now = DateTime.UtcNow;
+            _updater.GetUtcNow = () => now;
+            var first = _updater.Apply(await PlanAllAsync());
+            now += TimeSpan.FromMinutes(11);
+
+            var second = _updater.Apply(await PlanAllAsync());
+
+            Assert.That(second.operationId, Is.Not.EqualTo(first.operationId));
+            Assert.That(_updater.ReadOperation(first.operationId).status, Is.EqualTo(PackageUpdateStatus.Failed));
+        });
+
+        [UnityTest]
+        public IEnumerator AStalePlanCanStillFinishWhenEveryPackageIsLocked() => UniTask.ToCoroutine(async () =>
+        {
+            var now = DateTime.UtcNow;
+            _updater.GetUtcNow = () => now;
+            var operation = _updater.Apply(await PlanAllAsync());
+            now += TimeSpan.FromMinutes(11);
+            WriteLockHashes(DevelopHead, TagCommit);
+
+            Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo(PackageUpdateStatus.Done));
+        });
+
+        [UnityTest]
+        public IEnumerator APinMustBeAVersionTagOrACommit() => UniTask.ToCoroutine(async () =>
+        {
+            foreach (var pin in new[] { "feature/x", "v0.30.0-rc.1", "" })
+                await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [Sdk] = pin }, None),
+                    ElympicsCliErrors.InvalidArgument);
+
+            var commit = new string('d', 40);
+            var plan = await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [Sdk] = commit }, None);
+
+            Assert.That(plan.Single().action, Is.EqualTo(RefAction.Move));
+            Assert.That(plan.Single().newSpec, Is.EqualTo(SdkUrl + "#" + commit));
+        });
+
+        [UnityTest]
+        public IEnumerator ACorruptManifestOrLockIsAPackageManagerError() => UniTask.ToCoroutine(async () =>
+        {
+            var plan = await PlanAllAsync();
+            File.WriteAllText(_updater.LockPath, "{ not json");
+            CliAssert.Throws(() => _updater.Apply(plan), ElympicsCliErrors.PackageManagerFailed);
+
+            File.WriteAllText(_updater.ManifestPath, "{ not json");
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
+        });
+
+        [UnityTest]
+        public IEnumerator ApplyLeavesNoTemporaryFiles() => UniTask.ToCoroutine(async () =>
+        {
+            _ = _updater.Apply(await PlanAllAsync());
+
+            Assert.That(Directory.GetFiles(_temp.Path, "*.tmp"), Is.Empty);
+        });
+
         [UnityTest]
         public IEnumerator PlanCoversOnlyGitElympicsPackages() => UniTask.ToCoroutine(async () =>
         {
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             Assert.That(plan.Select(update => update.name), Is.EquivalentTo(new[] { Sdk, PlayPad }));
             var sdk = plan.Single(update => update.name == Sdk);
@@ -118,7 +206,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             _ = _git.Outputs.Remove(PlayPadUrl);
 
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             Assert.That(plan.Single(update => update.name == PlayPad).error!.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
             Assert.That(plan.Single(update => update.name == Sdk).error, Is.Null);
@@ -129,7 +217,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             WriteManifest("git+ext::sh -c touch% pwned", PlayPadUrl + "#v3.0.0");
 
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             Assert.That(plan.Single(update => update.name == Sdk).error!.code, Is.EqualTo(PackageUpdater.UnsupportedRemote));
             Assert.That(_git.Requested, Is.EqualTo(new[] { PlayPadUrl }));
@@ -140,7 +228,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             WriteManifest("https://user:glpat-secret@gitlab.example.com/sdk/unity-sdk-package.git#develop", PlayPadUrl + "#v3.0.0");
 
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             var error = plan.Single(update => update.name == Sdk).error;
             Assert.That(error!.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
@@ -154,7 +242,7 @@ namespace Elympics.Editor.Tests.UnityCli
             WriteManifest(tokenUrl + "#develop", PlayPadUrl + "#v3.0.0");
             _git.Errors[tokenUrl] = $"git ls-remote exited with 128: fatal: unable to access '{tokenUrl}'";
 
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             var error = plan.Single(update => update.name == Sdk).error;
             Assert.That(error!.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
@@ -163,9 +251,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator PinAndTrackKeysOutsideTheSelectedPackagesAreRejected() => UniTask.ToCoroutine(async () =>
         {
-            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None)),
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None),
                 ElympicsCliErrors.InvalidArgument);
-            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" })),
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" }),
                 ElympicsCliErrors.InvalidArgument);
         });
 
@@ -175,8 +263,8 @@ namespace Elympics.Editor.Tests.UnityCli
             WriteOperationFile("nullrecord", "null");
             WriteOperationFile("garbage", "{not json");
 
-            CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("nullrecord")), ElympicsCliErrors.OperationNotFound);
-            CliAssert.HasCodeAndFix(Assert.Catch(() => _updater.ReadOperation("garbage")), ElympicsCliErrors.OperationNotFound);
+            CliAssert.Throws(() => _updater.ReadOperation("nullrecord"), ElympicsCliErrors.OperationNotFound);
+            CliAssert.Throws(() => _updater.ReadOperation("garbage"), ElympicsCliErrors.OperationNotFound);
         }
 
         [UnityTest]
@@ -186,7 +274,7 @@ namespace Elympics.Editor.Tests.UnityCli
             _git.Outputs[tokenUrl] = _git.Outputs[PlayPadUrl];
             WriteManifest(SdkUrl + "#develop", tokenUrl + "#v3.0.0");
 
-            var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            var operation = _updater.Apply(await PlanAllAsync());
 
             Assert.That(File.ReadAllText(_updater.ManifestPath), Does.Contain(tokenUrl + "#v4.0.0"));
             Assert.That(JsonConvert.SerializeObject(operation), Does.Not.Contain("glpat-secret"));
@@ -194,13 +282,13 @@ namespace Elympics.Editor.Tests.UnityCli
         });
 
         [UnityTest]
-        public IEnumerator UnknownPackagesAreRejected() => UniTask.ToCoroutine(async () =>
-            CliAssert.HasCodeAndFix(await CliAssert.CatchAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None)), ElympicsCliErrors.InvalidArgument));
+        public IEnumerator UnknownPackagesAreRejected() => UniTask.ToCoroutine(() =>
+            CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None), ElympicsCliErrors.InvalidArgument));
 
         [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>
         {
-            var plan = await _updater.PlanAsync(new List<string>(), None, None);
+            var plan = await PlanAllAsync();
 
             var operation = _updater.Apply(plan);
 
@@ -213,8 +301,7 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(lockFile["dependencies"]![Sdk], Is.Null);
             Assert.That(lockFile["dependencies"]![PlayPad], Is.Null);
 
-            var again = Assert.Catch(() => _updater.Apply(plan));
-            CliAssert.HasCodeAndFix(again, ElympicsCliErrors.UpdateInProgress);
+            CliAssert.Throws(() => _updater.Apply(plan), ElympicsCliErrors.UpdateInProgress);
             Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo(PackageUpdateStatus.Started));
 
             WriteLockHashes(DevelopHead, TagCommit);
@@ -226,10 +313,10 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator ApplyFinalizesAResolveThatFinishedWithoutADomainReload() => UniTask.ToCoroutine(async () =>
         {
-            var first = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            var first = _updater.Apply(await PlanAllAsync());
             WriteLockHashes(DevelopHead, TagCommit);
 
-            var second = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            var second = _updater.Apply(await PlanAllAsync());
 
             Assert.That(second.operationId, Is.Not.EqualTo(first.operationId));
             Assert.That(_updater.ReadOperation(first.operationId).status, Is.EqualTo(PackageUpdateStatus.Done));
@@ -240,7 +327,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             WriteManifest(SdkUrl + "#v0.29.0", PlayPadUrl + "#v4.0.0");
 
-            var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            var operation = _updater.Apply(await PlanAllAsync());
 
             Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.UpToDate));
             Assert.That(_resolves, Is.Zero);
@@ -255,7 +342,7 @@ namespace Elympics.Editor.Tests.UnityCli
             WriteOperationFile("renamed", "{\"operationId\":\"other\",\"status\":\"started\"}");
             WriteOperationFile("unnamed", "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}");
 
-            var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
+            var operation = _updater.Apply(await PlanAllAsync());
 
             Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Started));
         });

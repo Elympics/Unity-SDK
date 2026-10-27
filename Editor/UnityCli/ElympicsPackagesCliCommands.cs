@@ -15,15 +15,14 @@ namespace Elympics.Editor.UnityCli
         internal static PackageUpdater Updater = new();
 
         [CliCommand("elympics_update_packages",
-            "Update the project's com.daftmobile.* git packages by the SDK ref policy: a version tag moves to the newest version tag, a branch to its head "
-            + "(a deleted branch falls back to develop), no ref pins the newest tag, a commit is kept; --pin and --track override that. "
-            + "Reads refs with git ls-remote (never prompts). Applying rewrites Packages/manifest.json and starts a resolve that may reload the Editor: "
-            + "it returns status \"started\" with an operationId to poll with --operation_id until \"done\". Versions are reported, not compared.",
+            "Update the project's com.daftmobile.* git packages: a version tag moves to the newest tag, a branch to its head (a deleted branch falls back to develop), "
+            + "no ref pins the newest tag, a commit is kept; --pin and --track override that. Applying rewrites Packages/manifest.json and starts a resolve "
+            + "that may reload the Editor: it returns status \"started\" with an operationId to poll with --operation_id until \"done\".",
             Tags = new[] { "elympics/packages" })]
         public static Task<object> UpdatePackages(
             [CliArg("dry_run", "Only plan: report what would change.")] bool dryRun = false,
             [CliArg("packages", "JSON array of package names to update. Defaults to every com.daftmobile.* git package.")] string packages = "",
-            [CliArg("pin", "JSON object of explicit tags, e.g. '{\"com.daftmobile.elympics\":\"v0.29.0\"}'.")] string pin = "",
+            [CliArg("pin", "JSON object of explicit version tags or commits, e.g. '{\"com.daftmobile.elympics\":\"v0.29.0\"}'.")] string pin = "",
             [CliArg("track", "JSON object of explicit branches, e.g. '{\"com.daftmobile.elympics\":\"develop\"}'.")] string track = "",
             [CliArg("operation_id", "Return the state of an earlier apply instead of planning (read-only).")] string operationId = "") => CliRun.RunAsync(async () =>
         {

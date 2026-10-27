@@ -62,16 +62,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return new GitDependency(spec, baseUrl, path, reference);
         }
 
-        public static string Format(string baseUrl, string? path, string? reference) =>
-            baseUrl + (string.IsNullOrEmpty(path) ? string.Empty : PathQuery + path) + (string.IsNullOrEmpty(reference) ? string.Empty : "#" + reference);
-
-        public string FormatWithRef(string? reference) => Format(Base, Path, reference);
+        public string FormatWithRef(string? reference) =>
+            Base + (string.IsNullOrEmpty(Path) ? string.Empty : PathQuery + Path) + (string.IsNullOrEmpty(reference) ? string.Empty : "#" + reference);
 
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
 
-        /// <summary><c>ext::</c>, <c>file://</c> or a value starting with <c>-</c> could make <c>git ls-remote</c> run a command taken from the manifest.</summary>
-        public bool HasSupportedRemote => IsSupportedRemote(RemoteUrl);
-
+        /// <summary>Rejects <c>ext::</c>, <c>file://</c> and values starting with <c>-</c>, which could make <c>git ls-remote</c> run a command from the manifest.</summary>
         public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::") && !url.Any(character => char.IsControl(character) || character is '"' or '\\');
 
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");

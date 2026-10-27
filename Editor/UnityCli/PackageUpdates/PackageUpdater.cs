@@ -63,12 +63,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
     /// <summary>
     /// Plans and applies ref updates of the project's <c>com.daftmobile.*</c> git packages (<see cref="ElympicsRefPolicy"/>).
-    /// Applying rewrites <c>manifest.json</c>, drops the packages' lock entries (UPM keeps a branch's locked commit otherwise) and starts one resolve.
-    /// The resolve may reload the domain running the command, so the result is an operation record that a later call finalizes.
+    /// The resolve it starts may reload the domain, so the result is an operation record that a later call finalizes.
     /// </summary>
     internal sealed class PackageUpdater
     {
-        public const string Prefix = "com.daftmobile.";
+        public const string PackagePrefix = "com.daftmobile.";
         public const string RemoteUnreachable = "ELYMPICS_REMOTE_UNREACHABLE";
         public const string UnsupportedRemote = "ELYMPICS_UNSUPPORTED_GIT_URL";
         private static readonly TimeSpan LsRemoteTimeout = TimeSpan.FromSeconds(10);
@@ -88,7 +87,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 .Select(entry => (name: entry.Key, dependency: GitDependency.Parse(entry.Value)))
                 .Where(entry => entry.dependency != null)
                 .ToDictionary(entry => entry.name, entry => entry.dependency!);
-            var selected = gitDependencies.Where(entry => entry.Key.StartsWith(Prefix, StringComparison.Ordinal))
+            var selected = gitDependencies.Where(entry => entry.Key.StartsWith(PackagePrefix, StringComparison.Ordinal))
                 .Where(entry => packages.Count == 0 || packages.Contains(entry.Key))
                 .ToList();
 
@@ -103,6 +102,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var pinnedAndTracked = pins.Keys.Intersect(tracks.Keys).FirstOrDefault();
             if (pinnedAndTracked != null)
                 throw ElympicsCliErrors.InvalidArgumentException($"{pinnedAndTracked} is both pinned and tracked.", "pass it in --pin or in --track, not both.");
+            var badPin = pins.FirstOrDefault(entry => GitDependency.GetKind(entry.Value) is not (GitRefKind.Tag or GitRefKind.Commit));
+            if (badPin.Key != null)
+                throw ElympicsCliErrors.InvalidArgumentException($"--pin '{badPin.Value}' for {badPin.Key} isn't a version tag or a commit.",
+                    "pin a tag like v0.29.0 or a commit hash (7-40 hex characters); use --track for a branch.");
             if (selected.Count == 0)
                 throw new ElympicsCliException(ElympicsCliErrors.NoElympicsPackages, "Packages/manifest.json has no com.daftmobile.* git dependencies.",
                     "add the Elympics SDK as a git dependency (package_add with its git URL); embedded, local and registry packages aren't updated by this command.");
@@ -126,7 +129,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 oldVersion = GetInstalledVersion(name),
             };
 
-            if (!dependency.HasSupportedRemote)
+            if (!GitDependency.IsSupportedRemote(dependency.RemoteUrl))
                 return Fail(update, UnsupportedRemote, $"{GitDependency.RedactCredentials(dependency.RemoteUrl)} isn't an https, ssh or git@host: URL, so git isn't run for it.",
                     "change the package's URL in Packages/manifest.json to its https:// or git@host: form.");
 
@@ -141,7 +144,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     "check that git is installed and that `git ls-remote <url>` works in a terminal without prompting (stored credentials or an SSH agent), then retry.");
             }
 
-            var plan = ElympicsRefPolicy.Plan(dependency, remote, pins.TryGetValue(name, out var pin) ? pin : null, tracks.TryGetValue(name, out var track) ? track : null);
+            var plan = pins.TryGetValue(name, out var pin) && GitDependency.GetKind(pin) == GitRefKind.Commit
+                ? new RefPlan { Action = pin == dependency.Ref ? RefAction.Keep : RefAction.Move, Ref = pin, Head = pin }
+                : ElympicsRefPolicy.Plan(dependency, remote, pin, tracks.TryGetValue(name, out var track) ? track : null);
             update.newRef = plan.Ref;
             update.newCommit = plan.Head;
             if (plan.Warning != null)
@@ -181,36 +186,46 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     $"poll it with elympics_update_packages --operation_id {pending.operationId} and retry when it's done.");
 
             var changes = updates.Where(update => update.IsChange()).ToList();
+            var startedAt = GetUtcNow();
             var operation = new PackageUpdateOperation
             {
-                operationId = GetUtcNow().ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
+                operationId = startedAt.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
                 status = changes.Count == 0 ? PackageUpdateStatus.UpToDate : PackageUpdateStatus.Started,
-                startedAt = GetUtcNow(),
+                startedAt = startedAt,
+                finishedAt = changes.Count == 0 ? startedAt : null,
                 packages = updates,
             };
-            if (changes.Count > 0)
+            if (changes.Count == 0)
             {
-                var manifest = ReadJson(ManifestPath);
-                foreach (var change in changes)
-                    manifest["dependencies"]![change.name] = change.newSpec;
-                WriteJson(ManifestPath, manifest);
-
-                if (File.Exists(LockPath))
-                {
-                    var lockFile = ReadJson(LockPath);
-                    if (lockFile["dependencies"] is JObject lockedDependencies)
-                        foreach (var change in changes)
-                            _ = lockedDependencies.Remove(change.name);
-                    WriteJson(LockPath, lockFile);
-                }
+                RedactCredentials(updates);
+                Save(operation);
+                return operation;
             }
-            else
-                operation.finishedAt = operation.startedAt;
+
+            var manifest = ReadJson(ManifestPath);
+            foreach (var change in changes)
+                manifest["dependencies"]![change.name] = change.newSpec;
+            var lockFile = File.Exists(LockPath) ? ReadJson(LockPath) : null;
+            if (lockFile?["dependencies"] is JObject lockedDependencies)
+                foreach (var change in changes)
+                    _ = lockedDependencies.Remove(change.name);
 
             RedactCredentials(updates);
             Save(operation);
-            if (changes.Count > 0)
-                Resolve();
+            try
+            {
+                WriteJson(ManifestPath, manifest);
+                if (lockFile != null)
+                    WriteJson(LockPath, lockFile);
+            }
+            catch (IOException)
+            {
+                operation.status = PackageUpdateStatus.Failed;
+                operation.finishedAt = GetUtcNow();
+                Save(operation);
+                throw;
+            }
+            Resolve();
             return operation;
         }
 
@@ -253,15 +268,20 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             operation.warnings ??= new List<string>();
             var locked = ReadLockHashes();
             var changed = operation.packages.Where(update => update.IsChange()).ToList();
+            var now = GetUtcNow();
             if (changed.Any(update => !locked.ContainsKey(update.name)))
             {
-                if (GetUtcNow() - operation.startedAt < StaleOperation)
+                if (now - operation.startedAt < StaleOperation)
                     return;
                 operation.status = PackageUpdateStatus.Failed;
+                operation.finishedAt = now;
                 operation.warnings.Add($"The Package Manager didn't lock every updated package within {StaleOperation.TotalMinutes:0} minutes; check the Console for resolve errors.");
             }
             else
+            {
                 operation.status = PackageUpdateStatus.Done;
+                operation.finishedAt = now;
+            }
 
             foreach (var update in changed)
             {
@@ -271,13 +291,31 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 if (hash != null)
                     update.newCommit ??= hash;
             }
-            operation.finishedAt = GetUtcNow();
             Save(operation);
         }
 
-        private static JObject ReadJson(string path) => JObject.Parse(File.ReadAllText(path));
+        private static JObject ReadJson(string path)
+        {
+            try
+            {
+                return JObject.Parse(File.ReadAllText(path));
+            }
+            catch (JsonException e)
+            {
+                throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"{path} isn't valid JSON: {e.Message}",
+                    "fix or restore the file (version control has the last good copy), then retry.");
+            }
+        }
 
-        private static void WriteJson(string path, JObject json) => File.WriteAllText(path, json.ToString(Formatting.Indented) + "\n");
+        private static void WriteJson(string path, JObject json)
+        {
+            var temp = path + ".tmp";
+            File.WriteAllText(temp, json.ToString(Formatting.Indented) + "\n");
+            if (File.Exists(path))
+                File.Replace(temp, path, null);
+            else
+                File.Move(temp, path);
+        }
 
         private Dictionary<string, string?> ReadDependencies()
         {

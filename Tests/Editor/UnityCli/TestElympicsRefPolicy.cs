@@ -56,11 +56,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void TagMovesToTheNewestVersionTag() => AssertPlan(Plan(Sdk + "#v0.28.0"), RefAction.Move, "v0.29.0");
 
-        [Test]
-        public void NewestTagIsKept() => AssertPlan(Plan(Sdk + "#v0.29.0"), RefAction.Keep, "v0.29.0");
-
-        [Test]
-        public void TagNewerThanTheRemoteIsKept() => AssertPlan(Plan(Sdk + "#v0.31.0"), RefAction.Keep, "v0.31.0");
+        [TestCase("v0.29.0")]
+        [TestCase("v0.31.0")]
+        public void ATagAtOrAboveTheNewestIsKept(string tag) => AssertPlan(Plan(Sdk + "#" + tag), RefAction.Keep, tag);
 
         [Test]
         public void TagWithoutVKeepsTheRepositorySpelling() => AssertPlan(Plan(Sdk + "#0.28.0", Remote(new[] { "0.28.0", "0.29.0" })), RefAction.Move, "0.29.0");
@@ -124,22 +122,14 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(plan.Warning, Is.Null);
         }
 
-        [Test]
-        public void PathIsPreserved()
+        [TestCase("#v0.5.0", false)]
+        [TestCase("", true)]
+        public void PathIsPreserved(string reference, bool warns)
         {
-            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template#v0.5.0")!;
+            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template" + reference)!;
             var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
             AssertPlan(plan, RefAction.Move, "v0.6.0");
-            Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
-        }
-
-        [Test]
-        public void PathWithoutRefPinsTheNewestTag()
-        {
-            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template")!;
-            var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
-            AssertPlan(plan, RefAction.Move, "v0.6.0");
-            Assert.That(plan.Warning, Is.Not.Null);
+            Assert.That(plan.Warning != null, Is.EqualTo(warns));
             Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
         }
 
@@ -149,12 +139,32 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void PinEqualToTheCurrentRefIsKept() => AssertPlan(Plan(Sdk + "#v0.28.0", pin: "v0.28.0"), RefAction.Keep, "v0.28.0");
 
-        [Test]
-        public void PinOfAMissingTagIsAnError()
+        [TestCase("v9.9.9", null, ElympicsRefPolicy.TagNotFound)]
+        [TestCase(null, "nope", ElympicsRefPolicy.BranchNotFound)]
+        public void AMissingPinOrTrackIsAnError(string? pin, string? track, string code)
         {
-            var plan = Plan(Sdk + "#develop", pin: "v9.9.9");
+            var plan = Plan(Sdk + "#develop", pin: pin, track: track);
             AssertPlan(plan, RefAction.Error);
-            Assert.That(plan.ErrorCode, Is.EqualTo(ElympicsRefPolicy.TagNotFound));
+            Assert.That(plan.ErrorCode, Is.EqualTo(code));
+        }
+
+        [Test]
+        public void PinWinsOverTrack() => AssertPlan(Plan(Sdk + "#develop", pin: "v0.28.0", track: "develop"), RefAction.Move, "v0.28.0");
+
+        [Test]
+        public void APrereleaseTagCanBePlannedButIsNotAVersionTag()
+        {
+            var plan = Plan(Sdk + "#develop", pin: "v0.30.0-rc.1");
+            AssertPlan(plan, RefAction.Move, "v0.30.0-rc.1");
+            Assert.That(plan.Kind, Is.EqualTo(GitRefKind.Branch));
+        }
+
+        [Test]
+        public void AHexLookingBranchNameIsTreatedAsACommit()
+        {
+            var plan = Plan(Sdk + "#cafe1234", Remote(branches: new Dictionary<string, string> { ["cafe1234"] = Feature }));
+            AssertPlan(plan, RefAction.Keep, "cafe1234");
+            Assert.That(plan.Head, Is.EqualTo("cafe1234"));
         }
 
         [Test]
@@ -168,14 +178,6 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void TrackEqualToTheCurrentRefRefreshes() => AssertPlan(Plan(Sdk + "#develop", track: "develop"), RefAction.Refresh, "develop");
 
-        [Test]
-        public void TrackOfAMissingBranchIsAnError()
-        {
-            var plan = Plan(Sdk + "#develop", track: "nope");
-            AssertPlan(plan, RefAction.Error);
-            Assert.That(plan.ErrorCode, Is.EqualTo(ElympicsRefPolicy.BranchNotFound));
-        }
-
         [TestCase("https://gitlab.example.com/a/b.git#v1.0.0", "https://gitlab.example.com/a/b.git", "https://gitlab.example.com/a/b.git", "v1.0.0")]
         [TestCase("ssh://git@gitlab.example.com/a/b.git#develop", "ssh://git@gitlab.example.com/a/b.git", "ssh://git@gitlab.example.com/a/b.git", "develop")]
         [TestCase("git@gitlab.example.com:a/b.git", "git@gitlab.example.com:a/b.git", "git@gitlab.example.com:a/b.git", null)]
@@ -187,7 +189,7 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(dependency.RemoteUrl, Is.EqualTo(remoteUrl));
             Assert.That(dependency.Ref, Is.EqualTo(reference));
             Assert.That(dependency.FormatWithRef(dependency.Ref), Is.EqualTo(spec));
-            Assert.That(dependency.HasSupportedRemote, Is.True);
+            Assert.That(GitDependency.IsSupportedRemote(dependency.RemoteUrl), Is.True);
         }
 
         [TestCase("git+ext::sh -c touch% /tmp/pwned")]
@@ -199,7 +201,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("ssh://-oProxyCommand=touch%20pwned/a.git")]
         [TestCase("git@-oProxyCommand=x:a/b.git")]
         [TestCase("git+https://example.com/a::b.git")]
-        public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.Parse(spec)!.HasSupportedRemote, Is.False);
+        public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.IsSupportedRemote(GitDependency.Parse(spec)!.RemoteUrl), Is.False);
 
         [TestCase("https://example.com/a\\")]
         [TestCase("https://example.com/a\\b.git")]

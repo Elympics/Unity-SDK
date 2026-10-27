@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,31 +19,31 @@ namespace Elympics.Editor.UnityCli
 
         internal sealed class Members
         {
-            public PropertyInfo Players;
-            public PropertyInfo PlayerTags;
-            public MethodInfo RegisterTag;
-            public PropertyInfo Name;
-            public PropertyInfo Type;
-            public PropertyInfo State;
-            public PropertyInfo Tags;
-            public MethodInfo Activate;
-            public MethodInfo Deactivate;
-            public MethodInfo AddTag;
-            public MethodInfo RemoveTag;
+            public PropertyInfo Players = null!;
+            public PropertyInfo PlayerTags = null!;
+            public MethodInfo RegisterTag = null!;
+            public PropertyInfo Name = null!;
+            public PropertyInfo Type = null!;
+            public PropertyInfo State = null!;
+            public PropertyInfo Tags = null!;
+            public MethodInfo Activate = null!;
+            public MethodInfo Deactivate = null!;
+            public MethodInfo AddTag = null!;
+            public MethodInfo RemoveTag = null!;
         }
 
         public sealed class VirtualPlayer
         {
             public int number;
-            public string name;
-            public string type;
-            public string state;
-            public string[] tags;
+            public string? name;
+            public string? type;
+            public string? state;
+            public string[] tags = null!;
         }
 
-        private static Members cached;
+        private static Members? cached;
 
-        internal static Members TryResolve(out string problem)
+        internal static Members? TryResolve(out string? problem)
         {
             problem = null;
             if (cached != null)
@@ -67,17 +69,17 @@ namespace Elympics.Editor.UnityCli
 
             var members = new Members
             {
-                Players = playmode.GetProperty("Players", Flags),
-                PlayerTags = playmode.GetProperty("PlayerTags", Flags),
-                RegisterTag = tagsType.GetMethod("Add", Flags, null, new[] { typeof(string), tagError }, null),
-                Name = player.GetProperty("Name", Flags),
-                Type = player.GetProperty("Type", Flags),
-                State = player.GetProperty("PlayerState", Flags),
-                Tags = player.GetProperty("Tags", Flags),
-                Activate = player.GetMethod("Activate", Flags, null, new[] { activationError, typeof(List<string>) }, null),
-                Deactivate = player.GetMethod("Deactivate", Flags, null, new[] { activationError }, null),
-                AddTag = player.GetMethod("AddTag", Flags, null, new[] { typeof(string), tagError }, null),
-                RemoveTag = player.GetMethod("RemoveTag", Flags, null, new[] { typeof(string), tagError }, null),
+                Players = playmode.GetProperty("Players", Flags)!,
+                PlayerTags = playmode.GetProperty("PlayerTags", Flags)!,
+                RegisterTag = tagsType.GetMethod("Add", Flags, null, new[] { typeof(string), tagError }, null)!,
+                Name = player.GetProperty("Name", Flags)!,
+                Type = player.GetProperty("Type", Flags)!,
+                State = player.GetProperty("PlayerState", Flags)!,
+                Tags = player.GetProperty("Tags", Flags)!,
+                Activate = player.GetMethod("Activate", Flags, null, new[] { activationError, typeof(List<string>) }, null)!,
+                Deactivate = player.GetMethod("Deactivate", Flags, null, new[] { activationError }, null)!,
+                AddTag = player.GetMethod("AddTag", Flags, null, new[] { typeof(string), tagError }, null)!,
+                RemoveTag = player.GetMethod("RemoveTag", Flags, null, new[] { typeof(string), tagError }, null)!,
             };
             var missing = typeof(Members).GetFields().Where(field => field.GetValue(members) == null).Select(field => field.Name).ToList();
             if (missing.Count > 0)
@@ -90,7 +92,7 @@ namespace Elympics.Editor.UnityCli
 
         private static Members Require() => TryResolve(out var problem) ?? throw CreateUnavailableException(problem);
 
-        private static ElympicsCliException CreateUnavailableException(string problem) =>
+        private static ElympicsCliException CreateUnavailableException(string? problem) =>
             new(ElympicsCliErrors.MppmUnavailable, $"Multiplayer Play Mode's virtual players can't be reached: {problem}.",
                 "install com.unity.multiplayer.playmode 2.x, or manage virtual players in Window > Multiplayer > Multiplayer Play Mode; "
                 + "if MPPM is installed, this Unity version changed its internals (report it to Elympics).");
@@ -105,10 +107,10 @@ namespace Elympics.Editor.UnityCli
             return GetPlayerObjects(members).Select((player, index) => new VirtualPlayer
             {
                 number = index + 1,
-                name = (string)members.Name.GetValue(player),
+                name = (string?)members.Name.GetValue(player),
                 type = members.Type.GetValue(player)?.ToString(),
                 state = members.State.GetValue(player)?.ToString(),
-                tags = (string[])members.Tags.GetValue(player) ?? Array.Empty<string>(),
+                tags = (string[]?)members.Tags.GetValue(player) ?? Array.Empty<string>(),
             }).ToList();
         }
 
@@ -117,8 +119,8 @@ namespace Elympics.Editor.UnityCli
         {
             var members = Require();
             var player = GetPlayer(members, number);
-            var arguments = active ? new object[] { null, null } : new object[] { null };
-            var succeeded = (bool)(active ? members.Activate : members.Deactivate).Invoke(player, arguments);
+            var arguments = active ? new object?[] { null, null } : new object?[] { null };
+            var succeeded = (bool)(active ? members.Activate : members.Deactivate).Invoke(player, arguments)!;
             if (!succeeded)
             {
                 var error = arguments[0]?.ToString();
@@ -135,10 +137,10 @@ namespace Elympics.Editor.UnityCli
             var members = Require();
             var player = GetPlayer(members, number);
             var registry = members.PlayerTags.GetValue(null);
-            var current = (string[])members.Tags.GetValue(player) ?? Array.Empty<string>();
+            var current = (string[]?)members.Tags.GetValue(player) ?? Array.Empty<string>();
             foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.OrdinalIgnoreCase)))
             {
-                _ = members.RegisterTag.Invoke(registry, new object[] { tag, null });
+                _ = members.RegisterTag.Invoke(registry, new object?[] { tag, null });
                 Invoke(members.AddTag, player, tag, "Adding", number);
             }
             foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase)))
@@ -147,8 +149,8 @@ namespace Elympics.Editor.UnityCli
 
         private static void Invoke(MethodInfo method, object player, string tag, string verb, int number)
         {
-            var arguments = new object[] { tag, null };
-            if (!(bool)method.Invoke(player, arguments))
+            var arguments = new object?[] { tag, null };
+            if (!(bool)method.Invoke(player, arguments)!)
                 throw new ElympicsCliException(ElympicsCliErrors.MppmFailed, $"{verb} the tag {tag} on Player {number} failed: {arguments[1]}.",
                     arguments[1]?.ToString() == "InPlayMode" ? "stop Play mode (editor_stop), then retry." : "check the tag in Window > Multiplayer > Multiplayer Play Mode, then retry.");
         }

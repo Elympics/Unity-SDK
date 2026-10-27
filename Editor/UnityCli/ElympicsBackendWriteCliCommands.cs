@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -40,7 +42,7 @@ namespace Elympics.Editor.UnityCli
                 var created = await ElympicsEditorApi.CreateGameAsync(name, CliArgs.TrimToNull(region), CliArgs.TrimToNull(fleetId), timeoutSeconds, ct);
                 var gameId = created?.Id;
                 await UniTask.SwitchToMainThread();
-                string configAsset = null;
+                string? configAsset = null;
                 if (createConfig)
                 {
                     if (string.IsNullOrEmpty(gameId))
@@ -48,7 +50,7 @@ namespace Elympics.Editor.UnityCli
                             "find the game with elympics_list_games and create its config in Tools > Elympics > Manage games in Elympics.");
                     try
                     {
-                        configAsset = CreateAndSelectGameConfig(config, gameId, created.Name ?? name);
+                        configAsset = CreateAndSelectGameConfig(config!, gameId!, created!.Name ?? name);
                     }
                     catch (Exception exception) when (exception is not ElympicsCliException)
                     {
@@ -85,11 +87,11 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> UpdateGame(
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
-            [CliArg("name", "New game name, 1-63 characters.")] string name = null,
-            [CliArg("fleet_id", "New server fleet ID from elympics_list_fleets.")] string fleetId = null,
-            [CliArg("external_backend", "External backend URL; an empty string clears it.")] string externalBackend = null,
-            [CliArg("event_queue_join_url", "Event queue join URL; an empty string clears it.")] string eventQueueJoinUrl = null,
-            [CliArg("event_queue_leave_url", "Event queue leave URL; an empty string clears it.")] string eventQueueLeaveUrl = null,
+            [CliArg("name", "New game name, 1-63 characters.")] string? name = null,
+            [CliArg("fleet_id", "New server fleet ID from elympics_list_fleets.")] string? fleetId = null,
+            [CliArg("external_backend", "External backend URL; an empty string clears it.")] string? externalBackend = null,
+            [CliArg("event_queue_join_url", "Event queue join URL; an empty string clears it.")] string? eventQueueJoinUrl = null,
+            [CliArg("event_queue_leave_url", "Event queue leave URL; an empty string clears it.")] string? eventQueueLeaveUrl = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
@@ -110,10 +112,10 @@ namespace Elympics.Editor.UnityCli
                     EventQueueLeaveUrl = ToNullIfEmpty(eventQueueLeaveUrl ?? current.EventQueueLeaveUrl),
                 };
                 var updated = await ElympicsEditorApi.UpdateGameAsync(resolvedGameId, body, timeoutSeconds, ct);
-                return new { status = "updated", gameId = resolvedGameId, game = (object)updated ?? body };
+                return new { status = "updated", gameId = resolvedGameId, game = (object?)updated ?? body };
             });
 
-        private static string ToNullIfEmpty(string value) => string.IsNullOrEmpty(value) ? null : value;
+        private static string? ToNullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 
         [CliCommand("elympics_update_game_version",
             "Block or unblock an uploaded server version, or change its debug flags. Only the given flags change. Needs --confirm true.",
@@ -219,14 +221,14 @@ namespace Elympics.Editor.UnityCli
         public static Task<object> UpdateQueue(
             [CliArg("queue", "Queue ID or name from elympics_list_queues.", Required = true)] string queue,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
-            [CliArg("name", "New queue name.")] string name = null,
-            [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.")] string matchType = null,
+            [CliArg("name", "New queue name.")] string? name = null,
+            [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.")] string? matchType = null,
             [CliArg("number_of_teams", "Number of teams.")] int? numberOfTeams = null,
             [CliArg("players_in_team", "Players in each team.")] int? playersInTeam = null,
-            [CliArg("matchmaking_strategy", "Matchmaking strategy, as in elympics_create_queue.")] string matchmakingStrategy = null,
-            [CliArg("sampling_strategy", "Sampling strategy, as in elympics_create_queue.")] string samplingStrategy = null,
-            [CliArg("prediction_strategy", "Prediction strategy, as in elympics_create_queue.")] string predictionStrategy = null,
-            [CliArg("matchmaking_mode", "Matchmaking mode, as in elympics_create_queue.")] string matchmakingMode = null,
+            [CliArg("matchmaking_strategy", "Matchmaking strategy, as in elympics_create_queue.")] string? matchmakingStrategy = null,
+            [CliArg("sampling_strategy", "Sampling strategy, as in elympics_create_queue.")] string? samplingStrategy = null,
+            [CliArg("prediction_strategy", "Prediction strategy, as in elympics_create_queue.")] string? predictionStrategy = null,
+            [CliArg("matchmaking_mode", "Matchmaking mode, as in elympics_create_queue.")] string? matchmakingMode = null,
             [CliArg("match_with_bots", "Fill missing players with bots.")] bool? matchWithBots = null,
             [CliArg("max_wait_time", "Maximum wait in seconds; -1 for no limit.")] int? maxWaitTime = null,
             [CliArg("min_players_to_match", "Minimum players to start a match.")] int? minPlayersToMatch = null,
@@ -237,7 +239,7 @@ namespace Elympics.Editor.UnityCli
                 queue = CliArgs.Require(queue, "queue");
                 var resolvedGameId = CliGames.ResolveGameId(gameId);
                 ValidateTeamSizes(numberOfTeams, playersInTeam);
-                if (new object[] { name, matchType, numberOfTeams, playersInTeam, matchmakingStrategy, samplingStrategy, predictionStrategy, matchmakingMode, matchWithBots, maxWaitTime, minPlayersToMatch }
+                if (new object?[] { name, matchType, numberOfTeams, playersInTeam, matchmakingStrategy, samplingStrategy, predictionStrategy, matchmakingMode, matchWithBots, maxWaitTime, minPlayersToMatch }
                     .All(value => value == null))
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one field to change, e.g. --max_wait_time 30.");
                 name = name == null ? null : CliArgs.ValidateVersion(name, "name");

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,10 +11,10 @@ namespace Elympics.Editor.Tests.UnityCli
     internal static class CliAssert
     {
         /// <summary>Also asserts a non-empty fix hint.</summary>
-        public static void HasCodeAndFix(Exception exception, string code)
+        public static void HasCodeAndFix(Exception? exception, string code)
         {
             Assert.That(exception, Is.Not.Null, $"Expected {code}.");
-            Assert.That(exception.Message, Does.StartWith(code + ": "));
+            Assert.That(exception!.Message, Does.StartWith(code + ": "));
             var fix = Regex.Match(exception.Message, Regex.Escape(ElympicsCliErrors.FixMarker) + "(.+)$", RegexOptions.Singleline);
             Assert.That(fix.Success && fix.Groups[1].Value.Trim().Length > 0, $"No fix hint in: {exception.Message}");
         }

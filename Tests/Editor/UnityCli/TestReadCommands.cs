@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using Elympics.Editor.UnityCli;
@@ -12,17 +14,17 @@ namespace Elympics.Editor.Tests.UnityCli
     {
         private static JObject ToJson(object result) => JObject.FromObject(result);
 
-        private static string[] Codes(JObject result, string list = "findings") => result[list]!.Select(finding => (string)finding["code"]).ToArray();
+        private static string?[] Codes(JObject result, string list = "findings") => result[list]!.Select(finding => (string?)finding["code"]).ToArray();
 
         [Test]
         public void StatusWorksWithoutAConfig()
         {
             using var _ = ConfigPathScope.Missing();
             var status = ToJson(ElympicsStatusCliCommands.GetStatus());
-            Assert.That((string)status["status"], Is.EqualTo("ok"));
-            Assert.That((bool)status["config"]!["present"], Is.False);
+            Assert.That((string?)status["status"], Is.EqualTo("ok"));
+            Assert.That((bool)status["config"]!["present"]!, Is.False);
             Assert.That(status["activeGame"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That((string)status["sdk"]!["version"], Is.Not.Empty);
+            Assert.That((string?)status["sdk"]!["version"], Is.Not.Empty);
         }
 
         [Test]
@@ -60,7 +62,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var result = ToJson(ElympicsSceneCliCommands.Validate(scene.Scene, Array.Empty<string>()));
 
-            Assert.That((string)result["status"], Is.EqualTo("issues"));
+            Assert.That((string?)result["status"], Is.EqualTo("issues"));
             Assert.That(Codes(result), Is.SupersetOf(new[]
             {
                 ElympicsSceneValidator.NoElympicsSystem,
@@ -69,8 +71,8 @@ namespace Elympics.Editor.Tests.UnityCli
                 ElympicsSceneValidator.NetworkIdsStale,
                 ElympicsSceneValidator.TransformRigidbodySyncConflict,
             }));
-            Assert.That(result["findings"]!.All(finding => !string.IsNullOrWhiteSpace((string)finding["fix"])), Is.True);
-            Assert.That(result["findings"]!.First(finding => (string)finding["code"] == ElympicsSceneValidator.TransformRigidbodySyncConflict)["objectPath"]!.ToString(),
+            Assert.That(result["findings"]!.All(finding => !string.IsNullOrWhiteSpace((string?)finding["fix"])), Is.True);
+            Assert.That(result["findings"]!.First(finding => (string?)finding["code"] == ElympicsSceneValidator.TransformRigidbodySyncConflict)["objectPath"]!.ToString(),
                 Is.EqualTo("Synchronized"));
         }
 
@@ -83,7 +85,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             Assert.That(Codes(result), Does.Not.Contain(ElympicsSceneValidator.NoElympicsSystem));
             Assert.That(Codes(result, "ignored"), Does.Contain(ElympicsSceneValidator.NoElympicsSystem));
-            Assert.That((int)result["summary"]!["ignored"], Is.EqualTo(1));
+            Assert.That((int)result["summary"]!["ignored"]!, Is.EqualTo(1));
         }
 
         [Test]

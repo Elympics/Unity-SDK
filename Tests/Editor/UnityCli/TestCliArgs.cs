@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using Elympics.Editor.UnityCli;
 using NUnit.Framework;

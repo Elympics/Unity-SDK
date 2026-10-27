@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 
 namespace Elympics.Editor.UnityCli
@@ -52,7 +54,7 @@ namespace Elympics.Editor.UnityCli
         public const string BuildDirNotFound = "ELYMPICS_BUILD_DIR_NOT_FOUND";
         public const string UploadFailed = "ELYMPICS_UPLOAD_FAILED";
 
-        public static string Format(string code, string message, string fix) =>
+        public static string Format(string code, string message, string? fix) =>
             string.IsNullOrWhiteSpace(fix) ? $"{code}: {message}" : $"{code}: {message}{FixMarker}{fix}";
 
         public static ArgumentException InvalidArgumentException(string message, string fix) => new(Format(InvalidArgument, message, fix));

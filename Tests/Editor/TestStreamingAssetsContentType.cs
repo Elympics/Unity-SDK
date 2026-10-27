@@ -1,3 +1,5 @@
+#nullable enable
+
 using NUnit.Framework;
 
 namespace Elympics.Editor.Tests
@@ -12,7 +14,7 @@ namespace Elympics.Editor.Tests
         [TestCase(".hash", "application/octet-stream")]
         [TestCase("", "application/octet-stream")]
         [TestCase(null, "application/octet-stream")]
-        public void ContentTypeMatchesTheOneTheBackendSigns(string extension, string expected) =>
+        public void ContentTypeMatchesTheOneTheBackendSigns(string? extension, string expected) =>
             Assert.That(WebGLUploader.FetchStreamingAssetsContentType(extension), Is.EqualTo(expected));
     }
 }

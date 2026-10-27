@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,7 +38,7 @@ namespace Elympics.Editor.UnityCli
             var explicitError = updates.FirstOrDefault(update => update.error != null && update.error.code != PackageUpdater.RemoteUnreachable
                 && (pins.ContainsKey(update.name) || tracks.ContainsKey(update.name)));
             if (explicitError != null)
-                throw new ElympicsCliException(explicitError.error.code, $"{explicitError.name}: {explicitError.error.message}.", explicitError.error.fix);
+                throw new ElympicsCliException(explicitError.error!.code, $"{explicitError.name}: {explicitError.error.message}.", explicitError.error.fix);
 
             if (dryRun)
             {

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -78,22 +80,22 @@ namespace Elympics.Editor.UnityCli
 
         private sealed class VarResult
         {
-            public string component;
-            public string field;
-            public string type;
+            public string component = null!;
+            public string field = null!;
+            public string type = null!;
             public int? bytes;
             public bool variableLength;
         }
 
         private sealed class BehaviourResult
         {
-            public string objectPath;
+            public string objectPath = null!;
             public int networkId;
             public int totalBytes;
-            public VarResult[] vars;
+            public VarResult[] vars = null!;
         }
 
-        private static IEnumerable<FieldInfo> GetInstanceFields(Type type)
+        private static IEnumerable<FieldInfo> GetInstanceFields(Type? type)
         {
             for (; type != null && type != typeof(UnityEngine.MonoBehaviour) && type != typeof(object); type = type.BaseType)
                 foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))

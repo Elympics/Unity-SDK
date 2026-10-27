@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using Elympics.Cysharp.Threading.Tasks;
@@ -46,7 +48,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             var transport = new FakeTransport { Respond = _ => new EditorApiResponse(200, reply, null, UnityWebRequest.Result.Success) };
             using var scope = new EditorApiScope(new FakeLoginStore(), transport);
-            Exception caught = null;
+            Exception? caught = null;
             try
             {
                 _ = await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", confirm: true).AsUniTask();
@@ -72,13 +74,13 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", confirm: true).AsUniTask());
 
-            var body = JObject.Parse(transport.Requests.Find(r => r.Method == "PUT").JsonBody);
-            Assert.That((string)body["GameName"], Is.EqualTo("Renamed"));
-            Assert.That((string)body["FleetId"], Is.EqualTo("f1"));
-            Assert.That((string)body["ExternalBackend"], Is.EqualTo("https://backend.test"));
+            var body = JObject.Parse(transport.Requests.Find(r => r.Method == "PUT")!.JsonBody!);
+            Assert.That((string?)body["GameName"], Is.EqualTo("Renamed"));
+            Assert.That((string?)body["FleetId"], Is.EqualTo("f1"));
+            Assert.That((string?)body["ExternalBackend"], Is.EqualTo("https://backend.test"));
             Assert.That(body.ContainsKey("CreatedAt"), Is.False);
-            Assert.That((string)result["game"]!["Name"], Is.EqualTo("Renamed"));
-            Assert.That((string)result["game"]!["CreatedAt"], Is.EqualTo("2026-10-26"));
+            Assert.That((string?)result["game"]!["Name"], Is.EqualTo("Renamed"));
+            Assert.That((string?)result["game"]!["CreatedAt"], Is.EqualTo("2026-10-26"));
         });
 
         [UnityTest]
@@ -93,13 +95,13 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var put = transport.Requests.Find(r => r.Method == "PUT");
             Assert.That(put.Url, Does.EndWith("/queues/q1"));
-            var body = JObject.Parse(put.JsonBody);
-            Assert.That((int)body["MaxWaitTime"], Is.EqualTo(30));
-            Assert.That((string)body["Name"], Is.EqualTo("solo"));
-            Assert.That((int)body["PlayersInTeam"], Is.EqualTo(1));
-            Assert.That((string)body["SmartContractDeploymentId"], Is.EqualTo("sc1"));
+            var body = JObject.Parse(put.JsonBody!);
+            Assert.That((int)body["MaxWaitTime"]!, Is.EqualTo(30));
+            Assert.That((string?)body["Name"], Is.EqualTo("solo"));
+            Assert.That((int)body["PlayersInTeam"]!, Is.EqualTo(1));
+            Assert.That((string?)body["SmartContractDeploymentId"], Is.EqualTo("sc1"));
             Assert.That(body.ContainsKey("Id") || body.ContainsKey("Undeclared"), Is.False);
-            Assert.That((string)result["queueId"], Is.EqualTo("q1"));
+            Assert.That((string?)result["queueId"], Is.EqualTo("q1"));
         });
 
         [UnityTest]
@@ -108,9 +110,9 @@ namespace Elympics.Editor.Tests.UnityCli
             var config = ElympicsConfig.Load();
             if (config == null)
                 Assert.Ignore("The host project has no ElympicsConfig, and creating one would change the project.");
-            var gamesBefore = config.availableGames.Count;
+            var gamesBefore = config!.availableGames.Count;
             using var scope = new EditorApiScope(new FakeLoginStore(), new FakeTransport());
-            Exception caught = null;
+            Exception? caught = null;
             try
             {
                 _ = await ElympicsBackendWriteCliCommands.CreateGame("Game", createConfig: true, confirm: true).AsUniTask();
@@ -145,8 +147,8 @@ namespace Elympics.Editor.Tests.UnityCli
 
             Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.EqualTo(new[] { "GET", "PUT", "GET" }));
             Assert.That(transport.Requests[2].Url, Does.EndWith("/versions/v1"));
-            Assert.That((string)result["version"]!["Id"], Is.EqualTo("v1"));
-            Assert.That((bool)result["version"]!["Blocked"], Is.True);
+            Assert.That((string?)result["version"]!["Id"], Is.EqualTo("v1"));
+            Assert.That((bool)result["version"]!["Blocked"]!, Is.True);
         });
 
         [Test]

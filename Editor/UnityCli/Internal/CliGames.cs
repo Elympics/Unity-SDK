@@ -1,3 +1,5 @@
+#nullable enable
+
 using System.Linq;
 using UnityEditor;
 
@@ -25,7 +27,7 @@ namespace Elympics.Editor.UnityCli
             config.GetCurrentGameConfig()
             ?? throw new ElympicsCliException(ElympicsCliErrors.NoActiveGame, "ElympicsConfig lists no game configs.", AddGameFix);
 
-        public static ElympicsGameConfig ResolveGame(string gameId)
+        public static ElympicsGameConfig ResolveGame(string? gameId)
         {
             var explicitId = GetExplicitGameId(gameId);
             var config = RequireConfig();
@@ -37,7 +39,7 @@ namespace Elympics.Editor.UnityCli
                     "list the configured games with elympics_status, or register one with elympics_select_game --config_asset <path>.");
         }
 
-        public static string ResolveGameId(string gameId) =>
+        public static string ResolveGameId(string? gameId) =>
             GetExplicitGameId(gameId) ?? RequireActiveGame(RequireConfig()).GameId;
 
         /// <returns>True if the game config wasn't in <paramref name="config"/> yet.</returns>
@@ -54,6 +56,6 @@ namespace Elympics.Editor.UnityCli
         }
 
         /// <returns>Null for a blank <paramref name="gameId"/> (the active game).</returns>
-        private static string GetExplicitGameId(string gameId) => string.IsNullOrWhiteSpace(gameId) ? null : CliArgs.ValidateGuid(gameId, "game_id");
+        private static string? GetExplicitGameId(string? gameId) => string.IsNullOrWhiteSpace(gameId) ? null : CliArgs.ValidateGuid(gameId, "game_id");
     }
 }

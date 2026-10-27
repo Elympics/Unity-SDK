@@ -1,3 +1,5 @@
+#nullable enable
+
 using Elympics.Editor.Launcher;
 using Elympics.Editor.UnityCli;
 using Newtonsoft.Json.Linq;
@@ -14,9 +16,9 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             var state = JObject.FromObject(ElympicsPlayCliCommands.GetMatchState());
 
-            Assert.That((string)state["status"], Is.EqualTo("ok"));
-            Assert.That((bool)state["inPlayMode"], Is.False);
-            Assert.That((bool)state["launcher"]!["exists"], Is.False);
+            Assert.That((string?)state["status"], Is.EqualTo("ok"));
+            Assert.That((bool)state["inPlayMode"]!, Is.False);
+            Assert.That((bool)state["launcher"]!["exists"]!, Is.False);
             Assert.That(state["match"]!.Type, Is.EqualTo(JTokenType.Null));
         }
 
@@ -91,7 +93,7 @@ namespace Elympics.Editor.Tests.UnityCli
                 JsonUtility.ToJson(new ElympicsLaunchFailure(ElympicsLaunchErrorCode.Timeout, "The match didn't start.")));
             Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.TimedOut));
 
-            var error = (string)JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!["error"];
+            var error = (string?)JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!["error"];
             Assert.That(error, Does.StartWith("ELYMPICS_LAUNCH_TIMEOUT: Timeout The match didn't start.").And.Contain(" Fix: "));
         }
 

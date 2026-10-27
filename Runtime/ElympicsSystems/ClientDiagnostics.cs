@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace Elympics
 {
     internal readonly struct ClientDiagnostics

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 
 namespace Elympics.Editor.Tests.UnityCli

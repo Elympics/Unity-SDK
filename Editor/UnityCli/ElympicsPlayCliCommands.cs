@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -164,7 +166,7 @@ namespace Elympics.Editor.UnityCli
             replayedReconciliations = diagnostics.ReplayedCount,
         };
 
-        private static object TryDescribeVirtualPlayers()
+        private static object? TryDescribeVirtualPlayers()
         {
             if (MppmReflection.TryResolve(out _) == null || PackageInfo.FindForPackageName(MppmPackage) == null)
                 return null;
@@ -252,11 +254,11 @@ namespace Elympics.Editor.UnityCli
             {
                 if (!int.TryParse(property.Name, out var number) || number < 2 || property.Value is not JArray array)
                     throw ElympicsCliErrors.InvalidArgumentException($"--tags has an invalid entry \"{property.Name}\".", TagsFix);
-                var playerTags = array.Select(tag => (string)tag).ToList();
-                var foreign = playerTags.FirstOrDefault(tag => string.IsNullOrWhiteSpace(tag) || !tag.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
+                var playerTags = array.Select(tag => (string?)tag).ToList();
+                var foreign = playerTags.FirstOrDefault(tag => string.IsNullOrWhiteSpace(tag) || !tag!.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
                 if (foreign != null)
                     throw ElympicsCliErrors.InvalidArgumentException($"The tag \"{foreign}\" doesn't start with {TagPrefix}.", TagsFix);
-                result.Add((number, playerTags));
+                result.Add((number, playerTags)!);
             }
             return result;
         }

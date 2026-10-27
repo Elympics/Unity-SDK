@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using Elympics.Editor.Communication;
 using Elympics.Editor.UnityCli;
@@ -7,8 +9,8 @@ namespace Elympics.Editor.Tests
 {
     public class TestElympicsApiHostPolicy
     {
-        private Func<string> _originalCustomHost;
-        private string _customHost;
+        private Func<string> _originalCustomHost = null!;
+        private string _customHost = null!;
 
         [SetUp]
         public void SetUp()

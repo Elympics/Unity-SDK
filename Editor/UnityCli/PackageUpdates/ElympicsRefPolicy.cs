@@ -1,5 +1,8 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -22,11 +25,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         public string Spec { get; }
         public string Base { get; }
-        public string Path { get; }
-        public string Ref { get; }
+        public string? Path { get; }
+        public string? Ref { get; }
         public GitRefKind Kind { get; }
 
-        private GitDependency(string spec, string baseUrl, string path, string reference)
+        private GitDependency(string spec, string baseUrl, string? path, string? reference)
         {
             Spec = spec;
             Base = baseUrl;
@@ -35,14 +38,14 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             Kind = GetKind(reference);
         }
 
-        public static GitRefKind GetKind(string reference) =>
+        public static GitRefKind GetKind(string? reference) =>
             string.IsNullOrEmpty(reference) ? GitRefKind.None
             : VersionTag.IsMatch(reference) ? GitRefKind.Tag
             : Commit.IsMatch(reference) ? GitRefKind.Commit
             : GitRefKind.Branch;
 
         /// <returns>Null for a value that isn't a git URL (a plain version, a <c>file:</c> path).</returns>
-        public static GitDependency Parse(string spec)
+        public static GitDependency? Parse(string? spec)
         {
             if (spec == null || !GitUrl.IsMatch(spec))
                 return null;
@@ -55,10 +58,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return new GitDependency(spec, baseUrl, path, reference);
         }
 
-        public static string Format(string baseUrl, string path, string reference) =>
+        public static string Format(string baseUrl, string? path, string? reference) =>
             baseUrl + (string.IsNullOrEmpty(path) ? string.Empty : PathQuery + path) + (string.IsNullOrEmpty(reference) ? string.Empty : "#" + reference);
 
-        public string FormatWithRef(string reference) => Format(Base, Path, reference);
+        public string FormatWithRef(string? reference) => Format(Base, Path, reference);
 
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
 
@@ -70,7 +73,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");
         private static readonly Regex UserInfo = new(@"(?<=://)[^/@\s]+@");
 
-        public static string RedactCredentials(string text) => text == null ? null : UserInfo.Replace(text, string.Empty);
+        [return: NotNullIfNotNull("text")]
+        public static string? RedactCredentials(string? text) => text == null ? null : UserInfo.Replace(text, string.Empty);
     }
 
     internal sealed class RemoteRefs
@@ -85,7 +89,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         private static readonly Regex Line = new("^([0-9a-f]{40})\\s+refs/(tags|heads)/(.+)$");
         private const string Peeled = "^{}";
 
-        public static RemoteRefs Parse(string lsRemoteOutput)
+        public static RemoteRefs Parse(string? lsRemoteOutput)
         {
             var refs = new RemoteRefs();
             foreach (var line in (lsRemoteOutput ?? string.Empty).Split('\n'))
@@ -120,12 +124,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     internal sealed class RefPlan
     {
         public RefAction Action { get; set; }
-        public string Ref { get; set; }
+        public string? Ref { get; set; }
         public GitRefKind Kind { get; set; }
-        public string Head { get; set; }
-        public string Warning { get; set; }
-        public string ErrorCode { get; set; }
-        public string Reason { get; set; }
+        public string? Head { get; set; }
+        public string? Warning { get; set; }
+        public string? ErrorCode { get; set; }
+        public string? Reason { get; set; }
     }
 
     /// <summary>A port of the elympics-unity plugin's <c>planRefUpdate</c>; keep them identical.</summary>
@@ -151,26 +155,26 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return 0;
         }
 
-        public static string FindNewestVersionTag(RemoteRefs remote) =>
+        public static string? FindNewestVersionTag(RemoteRefs remote) =>
             remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(CompareVersions)).LastOrDefault();
 
-        public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string pin = null, string track = null)
+        public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string? pin = null, string? track = null)
         {
             var plan = PlanCore(dependency, remote, pin, track);
             plan.Kind = GitDependency.GetKind(plan.Ref);
             return plan;
         }
 
-        private static RefPlan PlanCore(GitDependency dependency, RemoteRefs remote, string pin, string track)
+        private static RefPlan PlanCore(GitDependency dependency, RemoteRefs remote, string? pin, string? track)
         {
             var newestTag = FindNewestVersionTag(remote);
             if (!string.IsNullOrEmpty(pin))
-                return remote.Tags.Contains(pin)
+                return remote.Tags.Contains(pin!)
                     ? new RefPlan { Action = pin == dependency.Ref ? RefAction.Keep : RefAction.Move, Ref = pin, Head = TagCommit(remote, pin) }
                     : CreateErrorPlan(dependency, TagNotFound, $"tag {pin} not on the remote");
 
             if (!string.IsNullOrEmpty(track))
-                return remote.Branches.TryGetValue(track, out var trackHead)
+                return remote.Branches.TryGetValue(track!, out var trackHead)
                     ? new RefPlan { Action = track == dependency.Ref ? RefAction.Refresh : RefAction.Move, Ref = track, Head = trackHead }
                     : CreateErrorPlan(dependency, BranchNotFound, $"branch {track} not on the remote");
 
@@ -179,11 +183,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 case GitRefKind.Tag:
                     if (newestTag == null)
                         return CreateErrorPlan(dependency, NoVersionTags, "no version tags on the remote");
-                    return CompareVersions(newestTag, dependency.Ref) > 0
+                    return CompareVersions(newestTag, dependency.Ref!) > 0
                         ? new RefPlan { Action = RefAction.Move, Ref = newestTag, Head = TagCommit(remote, newestTag) }
                         : new RefPlan { Action = RefAction.Keep, Ref = dependency.Ref, Head = TagCommit(remote, dependency.Ref) };
                 case GitRefKind.Branch:
-                    if (remote.Branches.TryGetValue(dependency.Ref, out var head))
+                    if (remote.Branches.TryGetValue(dependency.Ref!, out var head))
                         return new RefPlan { Action = RefAction.Refresh, Ref = dependency.Ref, Head = head };
                     if (!remote.Branches.TryGetValue(Develop, out var developHead))
                         return CreateErrorPlan(dependency, BranchNotFound, $"branch {dependency.Ref} and develop both missing on the remote");
@@ -210,7 +214,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
         }
 
-        private static string TagCommit(RemoteRefs remote, string tag) => tag != null && remote.TagCommits.TryGetValue(tag, out var sha) ? sha : null;
+        private static string? TagCommit(RemoteRefs remote, string? tag) => tag != null && remote.TagCommits.TryGetValue(tag, out var sha) ? sha : null;
 
         private static RefPlan CreateErrorPlan(GitDependency dependency, string code, string reason) =>
             new() { Action = RefAction.Error, Ref = dependency.Ref, ErrorCode = code, Reason = reason };

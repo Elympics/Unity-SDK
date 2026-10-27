@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.IO;
 using System.Linq;
@@ -57,7 +59,7 @@ namespace Elympics.Editor.UnityCli
                 _ = await CliWeb.RunAsync(CliWeb.DefaultTimeoutSeconds, async ct =>
                 {
                     await ElympicsEditorApi.EnsureLoggedInAsync(0, CliWeb.DefaultTimeoutSeconds, ct);
-                    return null;
+                    return null!;
                 }, ElympicsCliErrors.UploadFailed);
                 var report = BuildTools.BuildServerLinux(development ? BuildOptions.Development : BuildOptions.None);
                 ThrowIfFailed(report);

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,12 +13,12 @@ namespace Elympics.Editor.Communication
     internal sealed class EditorApiRequest
     {
         public string Method = UnityWebRequest.kHttpVerbGET;
-        public string Url;
-        public string JsonBody;
-        public List<IMultipartFormSection> Form;
-        public byte[] RawBody;
-        public string ContentType;
-        public string ContentEncoding;
+        public string Url = null!;
+        public string? JsonBody;
+        public List<IMultipartFormSection>? Form;
+        public byte[]? RawBody;
+        public string? ContentType;
+        public string? ContentEncoding;
         public bool ElympicsApi = true;
         public bool Auth = true;
         public int TimeoutSeconds;
@@ -25,11 +27,11 @@ namespace Elympics.Editor.Communication
     internal readonly struct EditorApiResponse
     {
         public readonly long StatusCode;
-        public readonly string Text;
-        public readonly string Error;
+        public readonly string? Text;
+        public readonly string? Error;
         public readonly UnityWebRequest.Result Result;
 
-        public EditorApiResponse(long statusCode, string text, string error, UnityWebRequest.Result result)
+        public EditorApiResponse(long statusCode, string? text, string? error, UnityWebRequest.Result result)
         {
             StatusCode = statusCode;
             Text = text;

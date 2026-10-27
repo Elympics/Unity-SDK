@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -78,7 +80,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
         }
 
-        private static string ReadConfig(string key)
+        private static string? ReadConfig(string key)
         {
             using var process = Start(CreateStartInfo($"config --get {key}"));
             var output = process.StandardOutput.ReadToEndAsync();

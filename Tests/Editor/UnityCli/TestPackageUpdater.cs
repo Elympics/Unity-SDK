@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,10 +43,10 @@ namespace Elympics.Editor.Tests.UnityCli
             }
         }
 
-        private TempDirectory _temp;
-        private string _directory;
-        private PackageUpdater _updater;
-        private FakeGit _git;
+        private TempDirectory _temp = null!;
+        private string _directory = null!;
+        private PackageUpdater _updater = null!;
+        private FakeGit _git = null!;
         private int _resolves;
 
         [SetUp]
@@ -121,7 +123,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var plan = await _updater.PlanAsync(new List<string>(), None, None);
 
-            Assert.That(plan.Single(update => update.name == PlayPad).error.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
+            Assert.That(plan.Single(update => update.name == PlayPad).error!.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
             Assert.That(plan.Single(update => update.name == Sdk).error, Is.Null);
         });
 
@@ -132,7 +134,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var plan = await _updater.PlanAsync(new List<string>(), None, None);
 
-            Assert.That(plan.Single(update => update.name == Sdk).error.code, Is.EqualTo(PackageUpdater.UnsupportedRemote));
+            Assert.That(plan.Single(update => update.name == Sdk).error!.code, Is.EqualTo(PackageUpdater.UnsupportedRemote));
             Assert.That(_git.Requested, Is.EqualTo(new[] { PlayPadUrl }));
         });
 
@@ -144,7 +146,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var plan = await _updater.PlanAsync(new List<string>(), None, None);
 
             var error = plan.Single(update => update.name == Sdk).error;
-            Assert.That(error.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
+            Assert.That(error!.code, Is.EqualTo(PackageUpdater.RemoteUnreachable));
             Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
         });
 
@@ -158,7 +160,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var plan = await _updater.PlanAsync(new List<string>(), None, None);
 
             var error = plan.Single(update => update.name == Sdk).error;
-            Assert.That(error.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
+            Assert.That(error!.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
         });
 
         [Test]
@@ -207,8 +209,8 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(operation.status, Is.EqualTo("started"));
             Assert.That(_resolves, Is.EqualTo(1));
             var manifest = JObject.Parse(File.ReadAllText(_updater.ManifestPath));
-            Assert.That((string)manifest["dependencies"]![PlayPad], Is.EqualTo(PlayPadUrl + "#v4.0.0"));
-            Assert.That((string)manifest["dependencies"]!["com.daftmobile.local"], Is.EqualTo("file:../x"));
+            Assert.That((string?)manifest["dependencies"]![PlayPad], Is.EqualTo(PlayPadUrl + "#v4.0.0"));
+            Assert.That((string?)manifest["dependencies"]!["com.daftmobile.local"], Is.EqualTo("file:../x"));
             var lockFile = JObject.Parse(File.ReadAllText(_updater.LockPath));
             Assert.That(lockFile["dependencies"]![Sdk], Is.Null);
             Assert.That(lockFile["dependencies"]![PlayPad], Is.Null);

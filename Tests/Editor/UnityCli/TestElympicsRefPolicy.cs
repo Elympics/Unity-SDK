@@ -1,3 +1,5 @@
+#nullable enable
+
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Editor.UnityCli.PackageUpdates;
@@ -14,7 +16,7 @@ namespace Elympics.Editor.Tests.UnityCli
         private static readonly string Develop = new('a', 40);
         private static readonly string Feature = new('b', 40);
 
-        private static RemoteRefs Remote(IEnumerable<string> tags = null, Dictionary<string, string> branches = null)
+        private static RemoteRefs Remote(IEnumerable<string>? tags = null, Dictionary<string, string>? branches = null)
         {
             var lines = (tags ?? new[] { "v0.9.0", "v0.10.0", "v0.28.0", "v0.29.0", "v0.30.0-rc.1" })
                 .Select((tag, i) => $"{i.ToString().PadLeft(40, 'c')}\trefs/tags/{tag}")
@@ -23,10 +25,10 @@ namespace Elympics.Editor.Tests.UnityCli
             return RemoteRefs.Parse(string.Join("\n", lines));
         }
 
-        private static RefPlan Plan(string spec, RemoteRefs remote = null, string pin = null, string track = null) =>
-            ElympicsRefPolicy.Plan(GitDependency.Parse(spec), remote ?? Remote(), pin, track);
+        private static RefPlan Plan(string spec, RemoteRefs? remote = null, string? pin = null, string? track = null) =>
+            ElympicsRefPolicy.Plan(GitDependency.Parse(spec)!, remote ?? Remote(), pin, track);
 
-        private static void AssertPlan(RefPlan plan, RefAction action, string reference = null)
+        private static void AssertPlan(RefPlan plan, RefAction action, string? reference = null)
         {
             Assert.That(plan.Action, Is.EqualTo(action), plan.Reason);
             if (reference != null)
@@ -90,7 +92,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ADeletedBranchFallsBackToDevelop()
         {
-            var dependency = GitDependency.Parse(Sdk + "#feature/gone");
+            var dependency = GitDependency.Parse(Sdk + "#feature/gone")!;
             var plan = ElympicsRefPolicy.Plan(dependency, Remote());
             AssertPlan(plan, RefAction.Move, "develop");
             Assert.That(plan.Head, Is.EqualTo(Develop));
@@ -125,7 +127,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void PathIsPreserved()
         {
-            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template#v0.5.0");
+            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template#v0.5.0")!;
             var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
             AssertPlan(plan, RefAction.Move, "v0.6.0");
             Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
@@ -134,7 +136,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void PathWithoutRefPinsTheNewestTag()
         {
-            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template");
+            var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template")!;
             var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
             AssertPlan(plan, RefAction.Move, "v0.6.0");
             Assert.That(plan.Warning, Is.Not.Null);
@@ -178,10 +180,10 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("ssh://git@gitlab.example.com/a/b.git#develop", "ssh://git@gitlab.example.com/a/b.git", "ssh://git@gitlab.example.com/a/b.git", "develop")]
         [TestCase("git@gitlab.example.com:a/b.git", "git@gitlab.example.com:a/b.git", "git@gitlab.example.com:a/b.git", null)]
         [TestCase("git+https://github.com/a/b.git?path=/x#v1.0.0", "git+https://github.com/a/b.git", "https://github.com/a/b.git", "v1.0.0")]
-        public void UrlFormsAreParsed(string spec, string baseUrl, string remoteUrl, string reference)
+        public void UrlFormsAreParsed(string spec, string baseUrl, string remoteUrl, string? reference)
         {
             var dependency = GitDependency.Parse(spec);
-            Assert.That(dependency.Base, Is.EqualTo(baseUrl));
+            Assert.That(dependency!.Base, Is.EqualTo(baseUrl));
             Assert.That(dependency.RemoteUrl, Is.EqualTo(remoteUrl));
             Assert.That(dependency.Ref, Is.EqualTo(reference));
             Assert.That(dependency.FormatWithRef(dependency.Ref), Is.EqualTo(spec));
@@ -197,7 +199,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("ssh://-oProxyCommand=touch%20pwned/a.git")]
         [TestCase("git@-oProxyCommand=x:a/b.git")]
         [TestCase("git+https://example.com/a::b.git")]
-        public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.Parse(spec).HasSupportedRemote, Is.False);
+        public void CommandLikeRemotesAreUnsupported(string spec) => Assert.That(GitDependency.Parse(spec)!.HasSupportedRemote, Is.False);
 
         [TestCase("https://example.com/a\\")]
         [TestCase("https://example.com/a\\b.git")]

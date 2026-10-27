@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -33,7 +35,7 @@ namespace Elympics.Editor.Tests
         private readonly IEditorLoginStore _login = ElympicsEditorApi.LoginStore;
         private readonly Func<long> _now = ElympicsEditorApi.GetUtcNowSeconds;
         private readonly Func<IEditorApiTransport> _createBlockingTransport = ElympicsEditorApi.CreateBlockingTransport;
-        private readonly Func<string> _endpoint = ElympicsEditorApi.GetApiEndpointOverride;
+        private readonly Func<string?>? _endpoint = ElympicsEditorApi.GetApiEndpointOverride;
 
         public EditorApiScope(FakeLoginStore login, FakeTransport transport, string apiEndpoint = "https://api.test/v2/api", long? now = null)
         {

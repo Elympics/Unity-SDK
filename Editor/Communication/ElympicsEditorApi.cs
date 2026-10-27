@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,9 +36,9 @@ namespace Elympics.Editor.Communication
         public EditorApiErrorKind Kind { get; }
         public long StatusCode { get; }
         public string Problem { get; }
-        public string Fix { get; }
+        public string? Fix { get; }
 
-        public ElympicsEditorApiException(EditorApiErrorKind kind, string message, long statusCode = 0, string fix = null)
+        public ElympicsEditorApiException(EditorApiErrorKind kind, string message, long statusCode = 0, string? fix = null)
             : base(fix == null ? message : $"{message} Fix: {fix}")
         {
             Kind = kind;
@@ -83,7 +85,7 @@ namespace Elympics.Editor.Communication
         internal static Func<IEditorApiTransport> CreateBlockingTransport = () => new BusyWaitEditorApiTransport();
         internal static IEditorLoginStore LoginStore = new EditorPrefsLoginStore();
         internal static Func<long> GetUtcNowSeconds = () => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        internal static Func<string> GetApiEndpointOverride;
+        internal static Func<string?>? GetApiEndpointOverride;
 
         private static string ApiEndpoint =>
             GetApiEndpointOverride?.Invoke()
@@ -145,8 +147,8 @@ namespace Elympics.Editor.Communication
         private class LoginRequestModel
         {
             // ReSharper disable InconsistentNaming
-            public string UserName;
-            public string Password;
+            public string UserName = null!;
+            public string Password = null!;
             // ReSharper restore InconsistentNaming
         }
 
@@ -154,9 +156,9 @@ namespace Elympics.Editor.Communication
         private class LoginResponseModel
         {
             // ReSharper disable InconsistentNaming
-            public string UserName;
-            public string AuthToken;
-            public string RefreshToken;
+            public string UserName = null!;
+            public string AuthToken = null!;
+            public string RefreshToken = null!;
             // ReSharper restore InconsistentNaming
         }
 
@@ -185,7 +187,7 @@ namespace Elympics.Editor.Communication
         private class TokenRefreshingRequestModel
         {
             // ReSharper disable once InconsistentNaming
-            public string RefreshToken;
+            public string RefreshToken = null!;
         }
 
         [Serializable]
@@ -254,7 +256,7 @@ namespace Elympics.Editor.Communication
             var payload = parts[1].PadRight(4 * ((parts[1].Length + 3) / 4), '=');
             // JWT is encoded as URL-safe base64.
             var json = Encoding.ASCII.GetString(Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/')));
-            return JsonConvert.DeserializeObject<JwtMidPart>(json).exp;
+            return JsonConvert.DeserializeObject<JwtMidPart>(json)!.exp;
         }
 
         #endregion
@@ -269,10 +271,10 @@ namespace Elympics.Editor.Communication
                 BuildUrl(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute), null, timeoutSeconds, ct);
 
         /// <param name="gameId">Empty for every region of the Elympics cloud.</param>
-        public static async UniTask<List<RegionResponseModel>> GetRegionsAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default)
+        public static async UniTask<List<RegionResponseModel>> GetRegionsAsync(string? gameId, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var route = string.IsNullOrEmpty(gameId) ? RegionsRoutes.AllRegionsRouteUnityFormat : RegionsRoutes.RegionForGameIdRoute;
-            var segments = route.Split('/').Select(segment => segment == "{0}" ? gameId : segment).ToArray();
+            var segments = route.Split('/').Select(segment => segment == "{0}" ? gameId! : segment).ToArray();
             var response = await SendAsync("Get regions", new EditorApiRequest { Url = BuildUrl(segments), TimeoutSeconds = JsonTimeoutSeconds }, false, timeoutSeconds, ct);
             return Deserialize<AvailableRegionsResponseModel>("Get regions", response).Regions?.ToList() ?? new List<RegionResponseModel>();
         }
@@ -320,7 +322,7 @@ namespace Elympics.Editor.Communication
             CallAsync<List<FleetModel>>("Get fleets", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, FleetsRoute);
 
         /// <returns>The created game, or null if the backend's response was empty.</returns>
-        public static UniTask<GameModel> CreateGameAsync(string name, string initialRegionName, string fleetId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+        public static UniTask<GameModel?> CreateGameAsync(string name, string? initialRegionName, string? fleetId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<GameModel>("Create game", UnityWebRequest.kHttpVerbPOST,
                 new CreateGameRequestModel { GameName = name, InitialRegionName = initialRegionName, FleetId = string.IsNullOrEmpty(fleetId) ? null : fleetId },
                 timeoutSeconds, ct, GamesRoutes.BaseRoute);
@@ -329,7 +331,7 @@ namespace Elympics.Editor.Communication
             CallAsync<GameModel>("Get game", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
         /// <returns>The updated game, or null if the backend's response was empty.</returns>
-        public static UniTask<GameModel> UpdateGameAsync(string gameId, UpdateGameRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+        public static UniTask<GameModel?> UpdateGameAsync(string gameId, UpdateGameRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<GameModel>("Update game", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
         public static UniTask<ElympicsWebIntegration.GameVersionResponseModel> GetGameVersionAsync(string gameId, string versionId, int? timeoutSeconds = null, CancellationToken ct = default) =>
@@ -347,23 +349,23 @@ namespace Elympics.Editor.Communication
             CallAsync<List<QueueModel>>("Get queues", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
         /// <returns>The created queue, or null if the backend's response was empty.</returns>
-        public static UniTask<QueueModel> CreateQueueAsync(string gameId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+        public static UniTask<QueueModel?> CreateQueueAsync(string gameId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<QueueModel>("Create queue", UnityWebRequest.kHttpVerbPOST, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
         /// <returns>The updated queue, or null if the backend's response was empty.</returns>
-        public static UniTask<QueueModel> UpdateQueueAsync(string gameId, string queueId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+        public static UniTask<QueueModel?> UpdateQueueAsync(string gameId, string queueId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<QueueModel>("Update queue", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 
         public static UniTask DeleteQueueAsync(string gameId, string queueId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallAsync("Delete queue", UnityWebRequest.kHttpVerbDELETE, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 
-        private static async UniTask CallAsync(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
+        private static async UniTask CallAsync(string action, string method, object? body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
             _ = await SendJsonAsync(action, method, BuildUrl(route), body, timeoutSeconds, ct);
 
-        private static UniTask<T> CallAsync<T>(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
+        private static UniTask<T> CallAsync<T>(string action, string method, object? body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
             SendJsonAsync<T>(action, method, BuildUrl(route), body, timeoutSeconds, ct);
 
-        private static async UniTask<T> CallWithOptionalResponseAsync<T>(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route)
+        private static async UniTask<T?> CallWithOptionalResponseAsync<T>(string action, string method, object? body, int? timeoutSeconds, CancellationToken ct, params string[] route)
             where T : class
         {
             var response = await SendJsonAsync(action, method, BuildUrl(route), body, timeoutSeconds, ct);
@@ -395,7 +397,7 @@ namespace Elympics.Editor.Communication
             string clientBuildPath,
             string clientGameVersion,
             string serverGameVersion,
-            Action<string, float> progress = null,
+            Action<string, float>? progress = null,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var (buildPath, validFiles) = WebGLUploader.ResolveClientBuildFiles(clientBuildPath, clientGameVersion);
@@ -453,7 +455,7 @@ namespace Elympics.Editor.Communication
             string streamingAssetsPath,
             string version,
             StreamingAssetsLayout layout,
-            Action<string, float> progress = null,
+            Action<string, float>? progress = null,
             int? timeoutSeconds = null, CancellationToken ct = default)
         {
             WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out var relativePaths, out var generatedFiles);
@@ -515,10 +517,10 @@ namespace Elympics.Editor.Communication
 
         #region Sending requests and reading responses
 
-        private static async UniTask<T> SendJsonAsync<T>(string action, string method, string url, object body, int? timeoutSeconds, CancellationToken ct) =>
+        private static async UniTask<T> SendJsonAsync<T>(string action, string method, string url, object? body, int? timeoutSeconds, CancellationToken ct) =>
             Deserialize<T>(action, await SendJsonAsync(action, method, url, body, timeoutSeconds, ct));
 
-        private static UniTask<EditorApiResponse> SendJsonAsync(string action, string method, string url, object body, int? timeoutSeconds, CancellationToken ct) =>
+        private static UniTask<EditorApiResponse> SendJsonAsync(string action, string method, string url, object? body, int? timeoutSeconds, CancellationToken ct) =>
             SendAsync(action, new EditorApiRequest
             {
                 Method = method,
@@ -574,20 +576,20 @@ namespace Elympics.Editor.Communication
         private class ErrorModel
         {
             // ReSharper disable InconsistentNaming
-            public Dictionary<string, string[]> Errors = new();
-            public string Title;
-            public string Detail;
+            public Dictionary<string, string[]?> Errors = new();
+            public string? Title;
+            public string? Detail;
             // ReSharper restore InconsistentNaming
         }
 
-        internal static string DescribeErrorResponse(long statusCode, string text)
+        internal static string DescribeErrorResponse(long statusCode, string? text)
         {
             if (statusCode == 401)
                 return "Not authenticated, please login to your ElympicsWeb account";
             if (statusCode == 403)
                 return "This account is not authorized to access the requested resource";
 
-            ErrorModel errorModel = null;
+            ErrorModel? errorModel = null;
             try
             {
                 errorModel = JsonConvert.DeserializeObject<ErrorModel>(text ?? string.Empty);
@@ -604,7 +606,7 @@ namespace Elympics.Editor.Communication
                 return $"Received error response code {statusCode} with errors:\n{string.Join("\n", shown)}";
             }
             if (!string.IsNullOrEmpty(errorModel?.Detail ?? errorModel?.Title))
-                return $"Received error response code {statusCode}: {Sanitize(errorModel.Detail ?? errorModel.Title)}";
+                return $"Received error response code {statusCode}: {Sanitize(errorModel!.Detail ?? errorModel.Title)}";
             return $"Received error response code {statusCode} with error:\n{Sanitize(text)}";
         }
 
@@ -612,11 +614,11 @@ namespace Elympics.Editor.Communication
         private const int MaxShownErrors = 10;
 
         /// <summary>Makes backend text safe to show in logs and CLI results: no control characters (e.g. terminal escapes) and a bounded length.</summary>
-        internal static string Sanitize(string text)
+        internal static string? Sanitize(string? text)
         {
             if (string.IsNullOrEmpty(text))
                 return text;
-            var builder = new StringBuilder(Math.Min(text.Length, MaxBackendTextLength));
+            var builder = new StringBuilder(Math.Min(text!.Length, MaxBackendTextLength));
             foreach (var c in text)
             {
                 if (builder.Length == MaxBackendTextLength)

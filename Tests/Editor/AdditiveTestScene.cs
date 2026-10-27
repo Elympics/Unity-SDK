@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -36,7 +38,7 @@ namespace Elympics.Editor.Tests
             _ = SceneManager.SetActiveScene(Scene);
         }
 
-        public GameObject Create(string name, Transform parent = null)
+        public GameObject Create(string name, Transform? parent = null)
         {
             var gameObject = new GameObject(name);
             if (parent != null)

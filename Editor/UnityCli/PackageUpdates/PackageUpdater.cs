@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,37 +12,37 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 {
     internal sealed class PackageUpdate
     {
-        public string name;
-        public string urlBase;
-        public string path;
-        public string oldRef;
-        public string newRef;
-        public string refKind;
-        public string action;
-        public string oldSpec;
-        public string newSpec;
-        public string oldCommit;
-        public string newCommit;
-        public string oldVersion;
-        public string newVersion;
+        public string name = null!;
+        public string urlBase = null!;
+        public string? path;
+        public string? oldRef;
+        public string? newRef;
+        public string refKind = null!;
+        public string action = null!;
+        public string oldSpec = null!;
+        public string? newSpec;
+        public string? oldCommit;
+        public string? newCommit;
+        public string? oldVersion;
+        public string? newVersion;
         public bool? lockHashMatchesHead;
         public List<string> warnings = new();
-        public PackageUpdateError error;
+        public PackageUpdateError? error;
 
         public bool IsChange() => action is "move" or "refresh";
     }
 
     internal sealed class PackageUpdateError
     {
-        public string code;
-        public string message;
-        public string fix;
+        public string code = null!;
+        public string message = null!;
+        public string fix = null!;
     }
 
     internal sealed class PackageUpdateOperation
     {
-        public string operationId;
-        public string status;
+        public string operationId = null!;
+        public string status = null!;
         public DateTime startedAt;
         public DateTime? finishedAt;
         public List<PackageUpdate> packages = new();
@@ -65,7 +67,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public string OperationsDirectory = Path.Combine("Library", "Elympics", "update-packages");
         public IGitProcess Git = new GitProcess();
         public Action Resolve = () => UnityEditor.PackageManager.Client.Resolve();
-        public Func<string, string> GetInstalledVersion = name => UnityEditor.PackageManager.PackageInfo.FindForPackageName(name)?.version;
+        public Func<string, string?> GetInstalledVersion = name => UnityEditor.PackageManager.PackageInfo.FindForPackageName(name)?.version;
         public Func<DateTime> GetUtcNow = () => DateTime.UtcNow;
 
         public async Task<List<PackageUpdate>> PlanAsync(ICollection<string> packages, IDictionary<string, string> pins, IDictionary<string, string> tracks)
@@ -73,7 +75,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var gitDependencies = ReadDependencies()
                 .Select(entry => (name: entry.Key, dependency: GitDependency.Parse(entry.Value)))
                 .Where(entry => entry.dependency != null)
-                .ToDictionary(entry => entry.name, entry => entry.dependency);
+                .ToDictionary(entry => entry.name, entry => entry.dependency!);
             var selected = gitDependencies.Where(entry => entry.Key.StartsWith(Prefix, StringComparison.Ordinal))
                 .Where(entry => packages.Count == 0 || packages.Contains(entry.Key))
                 .ToList();
@@ -148,12 +150,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 update.warnings.Add(plan.Warning);
             if (plan.Action == RefAction.Error)
             {
-                update.error = new PackageUpdateError { code = plan.ErrorCode, message = plan.Reason, fix = FixFor(plan.ErrorCode) };
+                update.error = new PackageUpdateError { code = plan.ErrorCode!, message = plan.Reason!, fix = FixFor(plan.ErrorCode!) };
                 return update;
             }
 
             update.newSpec = dependency.FormatWithRef(plan.Ref);
-            update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref.TrimStart('v') : null;
+            update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref!.TrimStart('v') : null;
             if (plan.Action == RefAction.Refresh && update.oldCommit != null && update.oldCommit == plan.Head)
                 update.action = "keep";
             return update;
@@ -272,13 +274,13 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         private static JObject ReadJson(string path) => JObject.Parse(File.ReadAllText(path));
 
-        private Dictionary<string, string> ReadDependencies()
+        private Dictionary<string, string?> ReadDependencies()
         {
             if (!File.Exists(ManifestPath))
                 throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"{ManifestPath} doesn't exist.", "run the command in a Unity project.");
             var manifest = ReadJson(ManifestPath);
-            return (manifest["dependencies"] as JObject)?.Properties().ToDictionary(property => property.Name, property => (string)property.Value)
-                ?? new Dictionary<string, string>();
+            return (manifest["dependencies"] as JObject)?.Properties().ToDictionary(property => property.Name, property => (string?)property.Value)
+                ?? new Dictionary<string, string?>();
         }
 
         private Dictionary<string, string> ReadLockHashes()
@@ -288,7 +290,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var lockFile = ReadJson(LockPath);
             return (lockFile["dependencies"] as JObject)?.Properties()
                 .Where(property => property.Value["hash"] != null)
-                .ToDictionary(property => property.Name, property => (string)property.Value["hash"])
+                .ToDictionary(property => property.Name, property => ((string?)property.Value["hash"])!)
                 ?? new Dictionary<string, string>();
         }
 
@@ -301,10 +303,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         private IEnumerable<PackageUpdateOperation> ReadOperations() =>
             Directory.Exists(OperationsDirectory)
-                ? Directory.GetFiles(OperationsDirectory, "*.json").Select(TryReadOperation).Where(operation => operation != null)
+                ? Directory.GetFiles(OperationsDirectory, "*.json").Select(TryReadOperation).Where(operation => operation != null).Select(operation => operation!)
                 : Enumerable.Empty<PackageUpdateOperation>();
 
-        private static PackageUpdateOperation TryReadOperation(string file)
+        private static PackageUpdateOperation? TryReadOperation(string file)
         {
             try
             {

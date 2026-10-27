@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 
 namespace Elympics.Editor.UnityCli
@@ -10,7 +12,7 @@ namespace Elympics.Editor.UnityCli
     {
         public string Code { get; }
 
-        public ElympicsCliException(string code, string message, string fix, Exception innerException = null)
+        public ElympicsCliException(string code, string message, string? fix, Exception? innerException = null)
             : base(ElympicsCliErrors.Format(code, message, fix), innerException)
         {
             if (string.IsNullOrWhiteSpace(fix) && code != ElympicsCliErrors.Internal)

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.IO;
@@ -17,9 +19,9 @@ namespace Elympics.Editor.Tests
         private const string Api = "https://api.test/v2/api";
         private const long Now = 1_800_000_000;
 
-        private FakeTransport _transport;
-        private FakeLoginStore _login;
-        private EditorApiScope _scope;
+        private FakeTransport _transport = null!;
+        private FakeLoginStore _login = null!;
+        private EditorApiScope _scope = null!;
 
         private static EditorApiResponse Ok(string text) => new(200, text, null, UnityWebRequest.Result.Success);
         private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", UnityWebRequest.Result.ProtocolError);
@@ -189,7 +191,7 @@ namespace Elympics.Editor.Tests
         public void RejectedCredentialsStoreNothing()
         {
             _login.IsLogin = false;
-            _login.AuthToken = null;
+            _login.AuthToken = null!;
             _transport.Respond = _ => Status(401, "");
 
             _ = CatchApiException(() => ElympicsEditorApi.LoginAsync("dev", "wrong"));
@@ -312,7 +314,7 @@ namespace Elympics.Editor.Tests
         {
             var blocking = new FakeTransport();
             ElympicsEditorApi.CreateBlockingTransport = () => blocking;
-            IEditorApiTransport transportDuringCall = null;
+            IEditorApiTransport? transportDuringCall = null;
 
             ElympicsEditorApi.RunBlocking(ct =>
             {

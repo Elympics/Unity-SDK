@@ -15,5 +15,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Lobby")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Rooms")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Tests")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Editor.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 

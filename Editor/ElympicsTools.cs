@@ -58,7 +58,6 @@ namespace Elympics.Editor
             return newConfig;
         }
 
-        /// <returns>The new game config's asset path.</returns>
         internal static string CreateAndActivateGameConfig(ElympicsConfig config, string gameId, string name)
         {
             var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();

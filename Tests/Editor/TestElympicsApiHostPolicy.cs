@@ -76,7 +76,7 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void AnIdnHostIsComparedInItsPunycodeForm()
+        public void UnicodeAndLookalikeHostsAreMatchedExactly()
         {
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://münchen.elympics.cc")), Is.True);
             Assert.That(ElympicsApiHostPolicy.IsTrusted(new Uri("https://еlympics.cc")), Is.False);

@@ -27,6 +27,7 @@ namespace Elympics.Editor.Weaving
         private const string RuntimeWeavingAssemblyName = "Elympics.Weaving.dll";
 
         private const string RequestedVersionsKey = "Elympics.Weaver.RequestedVersions";
+        private static readonly long DeletedVersionTicks = DateTime.FromFileTimeUtc(0).Ticks;
 
 #pragma warning disable IDE0060
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
@@ -56,8 +57,6 @@ namespace Elympics.Editor.Weaving
             SessionState.SetString(RequestedVersionsKey, string.Join("\n", requested));
             return true;
         }
-
-        private static readonly long DeletedVersionTicks = DateTime.FromFileTimeUtc(0).Ticks;
 
         private static long GetLastWriteTicks(string path) =>
             (Directory.Exists(path) ? Directory.GetLastWriteTimeUtc(path) : File.GetLastWriteTimeUtc(path)).Ticks;

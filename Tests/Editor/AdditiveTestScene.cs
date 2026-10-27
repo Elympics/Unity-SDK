@@ -10,7 +10,10 @@ using Object = UnityEngine.Object;
 
 namespace Elympics.Editor.Tests
 {
-    /// <summary>Reuses the Test Runner's active untitled scene, otherwise opens an empty one additively. Dispose cleans up.</summary>
+    /// <summary>
+    /// Reuses the Test Runner's active untitled scene (another untitled scene can't be added), otherwise opens an empty one additively.
+    /// Dispose destroys the created objects and restores the dirty state of a reused scene.
+    /// </summary>
     internal sealed class AdditiveTestScene : IDisposable
     {
         private readonly List<GameObject> _created = new();

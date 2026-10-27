@@ -34,6 +34,13 @@ namespace Elympics.Editor.Tests
             return $"{Encode("{\"alg\":\"none\"}")}.{Encode($"{{\"exp\":{expiration}}}")}.signature";
         }
 
+        private void AssertTokens(string authToken, string refreshToken)
+        {
+            Assert.That(_login.AuthToken, Is.EqualTo(authToken));
+            Assert.That(_login.AuthTokenExp, Is.EqualTo((Now + 3600).ToString()));
+            Assert.That(_login.RefreshToken, Is.EqualTo(refreshToken));
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -78,9 +85,7 @@ namespace Elympics.Editor.Tests
 
             Assert.That(_transport.Requests.Select(request => request.Url), Is.EqualTo(new[] { $"{Api}/auth/refresh", $"{Api}/games" }));
             Assert.That(_transport.Requests[0].Auth, Is.False);
-            Assert.That(_login.AuthToken, Is.EqualTo(newToken));
-            Assert.That(_login.AuthTokenExp, Is.EqualTo((Now + 3600).ToString()));
-            Assert.That(_login.RefreshToken, Is.EqualTo("refresh2"));
+            AssertTokens(newToken, "refresh2");
         });
 
         [Test]
@@ -184,9 +189,7 @@ namespace Elympics.Editor.Tests
 
             Assert.That(userName, Is.EqualTo("dev"));
             Assert.That(_login.IsLogin, Is.True);
-            Assert.That(_login.AuthToken, Is.EqualTo(token));
-            Assert.That(_login.AuthTokenExp, Is.EqualTo((Now + 3600).ToString()));
-            Assert.That(_login.RefreshToken, Is.EqualTo("refresh2"));
+            AssertTokens(token, "refresh2");
             var request = _transport.Requests.Single();
             Assert.That(request.Url, Is.EqualTo($"{Api}/auth/login"));
             Assert.That(request.Auth, Is.False);
@@ -342,12 +345,12 @@ namespace Elympics.Editor.Tests
 
         private string CreateClientBuild()
         {
-            var buildFolder = Path.Combine(_temp.Path, WebGLUploader.BuildFolderName);
-            _ = Directory.CreateDirectory(buildFolder);
-            foreach (var extension in WebGLUploader.CompoundExtensions)
-                File.WriteAllText(Path.Combine(buildFolder, "Build" + extension), extension);
+            _ = FakeClientBuild.CreateFiles(_temp.Path);
             return _temp.Path;
         }
+
+        private void RespondToInit(string initResponse, Func<EditorApiRequest, EditorApiResponse>? otherwise = null) =>
+            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(initResponse) : (otherwise ?? (_ => Ok("")))(request);
 
         private static string InitResponse() =>
             "{\"UploadId\":\"u1\",\"Files\":["
@@ -358,7 +361,7 @@ namespace Elympics.Editor.Tests
         public IEnumerator AClientBuildIsInitializedUploadedAndCompleted() => UniTask.ToCoroutine(async () =>
         {
             var buildRoot = CreateClientBuild();
-            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse()) : Ok("OK");
+            RespondToInit(InitResponse());
 
             var fileCount = await ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1");
 
@@ -374,14 +377,12 @@ namespace Elympics.Editor.Tests
         public IEnumerator AFailedFileUploadMarksTheClientBuildUploadAsFailed() => UniTask.ToCoroutine(async () =>
         {
             var buildRoot = CreateClientBuild();
-            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse())
-                : request.Url.StartsWith("https://gcs.test/") ? Status(403, "denied")
-                : Ok("");
+            RespondToInit(InitResponse(), request => request.Url.StartsWith("https://gcs.test/") ? Status(403, "denied") : Ok(""));
 
             var exception = await CliAssert.CatchAsync(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1"));
 
             Assert.That(exception, Is.InstanceOf<ElympicsEditorApiException>());
-            Assert.That(exception!.Message, Does.Contain("Failed to upload file"));
+            Assert.That(exception!.Message, Does.Contain("Upload of 'Build"));
 
             Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
@@ -391,7 +392,7 @@ namespace Elympics.Editor.Tests
         public void AClientBuildIsNotSentToANonHttpsUrl()
         {
             var buildRoot = CreateClientBuild();
-            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(InitResponse().Replace("https://gcs.test/", "http://gcs.test/")) : Ok("");
+            RespondToInit(InitResponse().Replace("https://gcs.test/", "http://gcs.test/"));
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
@@ -402,7 +403,7 @@ namespace Elympics.Editor.Tests
         public void AClientBuildInitWithTheWrongNumberOfUrlsFails()
         {
             var buildRoot = CreateClientBuild();
-            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok("{\"UploadId\":\"u1\",\"Files\":[]}") : Ok("");
+            RespondToInit("{\"UploadId\":\"u1\",\"Files\":[]}");
 
             Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
@@ -429,6 +430,26 @@ namespace Elympics.Editor.Tests
             Assert.That(put.Url, Is.EqualTo("https://gcs.test/a.txt"));
             Assert.That(put.ContentType, Is.EqualTo("text/plain"));
         });
+
+        [UnityTest]
+        public IEnumerator StreamingAssetsUploadReportsTheNumberOfFilesActuallyUploaded() => UniTask.ToCoroutine(async () =>
+        {
+            var root = CreateStreamingAssets();
+            File.WriteAllText(Path.Combine(root, "b.txt"), "b");
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
+
+            var uploaded = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
+
+            Assert.That(uploaded, Is.EqualTo(1));
+            Assert.That(_transport.Requests.Count(request => request.Method == "PUT"), Is.EqualTo(1));
+        });
+
+        [TestCase("")]
+        [TestCase("a.b")]
+        [TestCase("a.b.c.d")]
+        [TestCase("a.%%%.c")]
+        public void AMalformedTokenIsRejected(string token) =>
+            Assert.That(() => ElympicsEditorApi.ReadTokenExpiration(token), Throws.InstanceOf<FormatException>().Or.InstanceOf<Newtonsoft.Json.JsonException>());
 
         [TestCase("../outside.txt")]
         [TestCase("..\\\\outside.txt")]

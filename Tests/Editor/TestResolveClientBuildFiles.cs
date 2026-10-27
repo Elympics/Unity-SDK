@@ -24,11 +24,7 @@ namespace Elympics.Editor.Tests
         [TearDown]
         public void TearDown() => _temp.Dispose();
 
-        private void CreateBuildFiles()
-        {
-            foreach (var extension in WebGLUploader.CompoundExtensions)
-                File.WriteAllText(Path.Combine(_buildFolder, "Build" + extension), string.Empty);
-        }
+        private void CreateBuildFiles() => _ = FakeClientBuild.CreateFiles(_buildRoot);
 
         [Test]
         public void KeepsPath_WhenItIsTheBuildFolder()

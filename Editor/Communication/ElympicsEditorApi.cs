@@ -65,10 +65,7 @@ namespace Elympics.Editor.Communication
         public string RefreshToken { get => ElympicsConfig.RefreshToken; set => ElympicsConfig.RefreshToken = value; }
     }
 
-    /// <summary>
-    /// Async core of the Editor's Elympics web API calls. Every method throws <see cref="ElympicsEditorApiException"/> (or
-    /// <see cref="ElympicsException"/> for invalid local input) instead of logging and skipping its callback. Only RunBlocking blocks the main thread.
-    /// </summary>
+    /// <summary>Async Elympics web API calls of the Editor. They throw <see cref="ElympicsEditorApiException"/> (or <see cref="ElympicsException"/> for invalid local input).</summary>
     internal static class ElympicsEditorApi
     {
         private const string QueuesRoute = "queues";
@@ -98,17 +95,13 @@ namespace Elympics.Editor.Communication
 
         #region Blocking calls
 
-        /// <summary>
-        /// Runs <paramref name="call"/> to completion on the calling thread, with a transport that polls instead of waiting for the player loop.
-        /// Blocks the Editor: for batch mode methods and for the few places that can't yield.
-        /// </summary>
+        /// <summary>Runs <paramref name="call"/> to completion on the calling thread, blocking the Editor. Only for batch mode and places that can't yield.</summary>
         /// <exception cref="InvalidOperationException">The call is still pending when it returns, because something in it awaits the player loop.</exception>
         internal static T RunBlocking<T>(Func<CancellationToken, UniTask<T>> call)
         {
             using var scope = new BlockingScope();
             var task = call(scope.Token);
-            // A UniTask, like a ValueTask, allows GetResult only once and only after it completes; GetResult also returns pooled sources,
-            // so Status must be read before it and the task must not be touched afterwards.
+            // GetResult returns the pooled source, so read Status first.
             scope.ThrowIfPending(task.Status);
             return task.GetAwaiter().GetResult();
         }
@@ -196,7 +189,7 @@ namespace Elympics.Editor.Communication
             public long exp;
         }
 
-        /// <remarks>Logs out only when the backend rejects the refresh token (400, 401 or 403), not when it can't be reached or fails (5xx, 429).</remarks>
+        /// <remarks>Logs out only when the backend rejects the refresh token (400, 401, 403).</remarks>
         public static async UniTask EnsureLoggedInAsync(long expirationMarginSeconds = 0, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             if (!LoginStore.IsLogin)
@@ -243,7 +236,7 @@ namespace Elympics.Editor.Communication
             {
                 return ReadTokenExpiration(authToken);
             }
-            catch (Exception e) when (e is FormatException or JsonException or IndexOutOfRangeException or NullReferenceException)
+            catch (Exception e) when (e is FormatException or JsonException)
             {
                 throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"{action} failed: the auth token is malformed.", statusCode);
             }
@@ -251,11 +244,13 @@ namespace Elympics.Editor.Communication
 
         internal static long ReadTokenExpiration(string authToken)
         {
-            var parts = authToken.Split('.');
+            var parts = (authToken ?? string.Empty).Split('.');
+            if (parts.Length != 3)
+                throw new FormatException("The auth token isn't a JWT.");
             var payload = parts[1].PadRight(4 * ((parts[1].Length + 3) / 4), '=');
             // JWT is encoded as URL-safe base64.
             var json = Encoding.ASCII.GetString(Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/')));
-            return JsonConvert.DeserializeObject<JwtMidPart>(json)!.exp;
+            return JsonConvert.DeserializeObject<JwtMidPart>(json)?.exp ?? throw new FormatException("The auth token payload is empty.");
         }
 
         #endregion
@@ -456,13 +451,15 @@ namespace Elympics.Editor.Communication
                 ClientBuildsRoute, StreamingAssetsRoute);
 
             if (initResponse.Files == null || initResponse.Files.Length == 0)
-                throw new ElympicsException("Elympics cloud returned no files to upload.");
+                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, "Elympics cloud returned no files to upload.");
 
             var localPaths = new HashSet<string>(relativePaths, StringComparer.Ordinal);
             foreach (var file in initResponse.Files)
                 if (file.FilePath == null || !localPaths.Remove(file.FilePath))
                     throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse,
                         $"Elympics cloud requested '{Sanitize(file.FilePath)}', which isn't one of the files to upload or was requested twice.");
+            if (localPaths.Count > 0)
+                ElympicsLogger.LogWarning($"Elympics cloud didn't request {localPaths.Count} of the {relativePaths.Count} local StreamingAssets file(s), so they weren't uploaded: {string.Join(", ", localPaths.Take(5).Select(Sanitize))}{(localPaths.Count > 5 ? ", ..." : string.Empty)}");
 
             var files = WebGLUploader.SortStreamingAssetsFilesForUpload(initResponse.Files);
             for (var index = 0; index < files.Count; index++)
@@ -482,8 +479,8 @@ namespace Elympics.Editor.Communication
             }
 
             progress?.Invoke(string.Empty, 1f);
-            ElympicsLogger.LogInfo($"StreamingAssets content uploaded successfully - {relativePaths.Count} file(s) as version {version}.");
-            return relativePaths.Count;
+            ElympicsLogger.LogInfo($"StreamingAssets content uploaded successfully - {files.Count} file(s) as version {version}.");
+            return files.Count;
         }
 
         private static async UniTask UploadFileAsync(string fileName, string signedUrl, byte[] payload, string contentType, string extension, int? timeoutSeconds, CancellationToken ct)
@@ -501,8 +498,7 @@ namespace Elympics.Editor.Communication
                 TimeoutSeconds = timeoutSeconds ?? FileUploadTimeoutSeconds,
             }, ct);
             if (!response.Succeeded)
-                throw new ElympicsEditorApiException(response.Result == UnityWebRequest.Result.ConnectionError ? EditorApiErrorKind.Network : EditorApiErrorKind.RequestFailed,
-                    $"Failed to upload file '{fileName}': {response.Error}\n{Sanitize(response.Text)}", response.StatusCode);
+                throw ToException($"Upload of '{fileName}'", response);
         }
 
         #endregion
@@ -604,7 +600,7 @@ namespace Elympics.Editor.Communication
         private const int MaxBackendTextLength = 500;
         private const int MaxShownErrors = 10;
 
-        /// <summary>Makes backend text safe to show in logs and CLI results: no control characters (e.g. terminal escapes) and a bounded length.</summary>
+        /// <summary>Replaces control characters and truncates backend text before it is logged.</summary>
         internal static string? Sanitize(string? text)
         {
             if (string.IsNullOrEmpty(text))

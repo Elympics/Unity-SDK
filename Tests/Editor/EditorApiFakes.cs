@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
@@ -30,6 +31,18 @@ namespace Elympics.Editor.Tests
         {
             Requests.Add(request);
             return UniTask.FromResult(Respond(request));
+        }
+    }
+
+    internal static class FakeClientBuild
+    {
+        public static string CreateFiles(string root)
+        {
+            var buildFolder = Path.Combine(root, WebGLUploader.BuildFolderName);
+            _ = Directory.CreateDirectory(buildFolder);
+            foreach (var extension in WebGLUploader.CompoundExtensions)
+                File.WriteAllText(Path.Combine(buildFolder, "Build" + extension), string.Empty);
+            return buildFolder;
         }
     }
 

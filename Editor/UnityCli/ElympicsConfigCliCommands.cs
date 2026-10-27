@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elympics.Editor.Config;
@@ -74,7 +75,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_set_config_game_version", "Set the game version of a game config (the active one by default) and save it.", Tags = new[] { "elympics/config" })]
         public static object SetConfigGameVersion(
             [CliArg("version", "New game version: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string version,
-            [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "") => CliRun.Run(() =>
+            [CliArg("game_id", CliWeb.ConfigGameIdDescription)] string gameId = "") => CliRun.Run(() =>
         {
             version = CliArgs.ValidateVersion(version, "version");
             var gameConfig = CliGames.ResolveGame(gameId);
@@ -118,7 +119,7 @@ namespace Elympics.Editor.UnityCli
             var files = Directory.Exists(match.importPath)
                 ? Directory.GetFiles(match.importPath, "*", SearchOption.AllDirectories).Where(file => !file.EndsWith(".meta", StringComparison.Ordinal))
                     .Select(ToAssetPath).ToList()
-                : new System.Collections.Generic.List<string>();
+                : new List<string>();
             return new
             {
                 status = "imported",

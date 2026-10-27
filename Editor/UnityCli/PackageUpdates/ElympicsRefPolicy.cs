@@ -5,9 +5,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Elympics.Editor.UnityCli.PackageUpdates
 {
+    [JsonConverter(typeof(StringEnumConverter), typeof(SnakeCaseNamingStrategy))]
     internal enum GitRefKind
     {
         None,
@@ -113,6 +117,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         }
     }
 
+    [JsonConverter(typeof(StringEnumConverter), typeof(SnakeCaseNamingStrategy))]
     internal enum RefAction
     {
         Keep,
@@ -125,7 +130,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     {
         public RefAction Action { get; set; }
         public string? Ref { get; set; }
-        public GitRefKind Kind { get; set; }
+        public GitRefKind Kind => GitDependency.GetKind(Ref);
         public string? Head { get; set; }
         public string? Warning { get; set; }
         public string? ErrorCode { get; set; }
@@ -159,13 +164,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(CompareVersions)).LastOrDefault();
 
         public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string? pin = null, string? track = null)
-        {
-            var plan = PlanCore(dependency, remote, pin, track);
-            plan.Kind = GitDependency.GetKind(plan.Ref);
-            return plan;
-        }
-
-        private static RefPlan PlanCore(GitDependency dependency, RemoteRefs remote, string? pin, string? track)
         {
             var newestTag = FindNewestVersionTag(remote);
             if (!string.IsNullOrEmpty(pin))

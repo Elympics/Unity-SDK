@@ -492,14 +492,12 @@ namespace Elympics.Editor.Config
             UpdateChosenGameConfig();
         }
 
-        private static string[] FindGameConfigGuids() => GameConfigAssets.FindGuids();
-
         private void ImportExistingGameConfigs()
         {
             if (_serializedConfig is null)
                 return;
 
-            var configs = FindGameConfigGuids();
+            var configs = GameConfigAssets.FindGuids();
             if (configs.Length <= 0)
             {
                 ElympicsLogger.LogWarning($"No {nameof(ElympicsGameConfig)} found in assets");
@@ -532,7 +530,7 @@ namespace Elympics.Editor.Config
             if (gameConfig == null)
             {
                 //The import button is only visible in this branch, so the project-wide search is only worth running here
-                _elements.ImportGamesButton.text = $"Find and import games ({FindGameConfigGuids().Length})";
+                _elements.ImportGamesButton.text = $"Find and import games ({GameConfigAssets.FindGuids().Length})";
                 DestroyGameConfigEditor();
                 _elements.GameConfigRoot.Clear();
                 return;

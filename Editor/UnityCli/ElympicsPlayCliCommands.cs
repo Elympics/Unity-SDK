@@ -32,7 +32,7 @@ namespace Elympics.Editor.UnityCli
             Tags = new[] { "elympics/play" })]
         public static object Launch(
             [CliArg("mode", "single_player, half_remote_server or half_remote_client.", Required = true)] string mode,
-            [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "",
+            [CliArg("game_id", CliWeb.ConfigGameIdDescription)] string gameId = "",
             [CliArg("launch_timeout_seconds", "Seconds the launch may take before it fails with a timeout; -1 for none.")] int launchTimeoutSeconds = ElympicsLaunchDefaults.LaunchTimeoutSeconds,
             [CliArg("post_match_timeout_seconds", "Seconds to wait after the match ends before returning to boot; -1 for none.")] int postMatchTimeoutSeconds = ElympicsLaunchDefaults.PostMatchTimeoutSeconds,
             [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false) =>
@@ -62,9 +62,7 @@ namespace Elympics.Editor.UnityCli
                             "save them (save_all), or repeat with --save_scenes true to save them before launching.");
                     if (EditorApplication.isCompiling)
                         throw new ElympicsCliException(ElympicsCliErrors.Compiling, "Scripts are compiling.", "wait until recompile_status reports completion, then retry.");
-                    if (EditorUtility.scriptCompilationFailed)
-                        throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors, so Play mode can't start.",
-                            "fix the errors listed by console --level error, recompile, then retry.");
+                    CliRun.RequireNoCompileErrors();
                 }
 
                 var game = CliGames.ResolveGame(gameId);
@@ -193,29 +191,15 @@ namespace Elympics.Editor.UnityCli
             players = MppmReflection.GetPlayers(),
             autoLaunch = new
             {
-                defaultHalfRemoteClient = !MppmAutoLaunchDisabled,
-                gameplaySceneLoad = !LaunchModeSceneLoadDisabled,
+                defaultHalfRemoteClient = !ScriptingSymbols.MppmAutoLaunchDisabled,
+                gameplaySceneLoad = !ScriptingSymbols.LaunchModeSceneLoadDisabled,
             },
             defines = new
             {
-                ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH = MppmAutoLaunchDisabled,
-                ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD = LaunchModeSceneLoadDisabled,
+                ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH = ScriptingSymbols.MppmAutoLaunchDisabled,
+                ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD = ScriptingSymbols.LaunchModeSceneLoadDisabled,
             },
         });
-
-        private static bool MppmAutoLaunchDisabled =>
-#if ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH
-            true;
-#else
-            false;
-#endif
-
-        private static bool LaunchModeSceneLoadDisabled =>
-#if ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD
-            true;
-#else
-            false;
-#endif
 
         [CliCommand("elympics_set_virtual_players",
             "Activate the first --count Multiplayer Play Mode virtual players (0-3) and deactivate the others, optionally replacing their Elympics: tags "

@@ -98,17 +98,18 @@ namespace Elympics.Editor.UnityCli
             else if (change == PlayModeStateChange.ExitingPlayMode)
             {
                 Unsubscribe();
-                if (Last is { result: Pending or Accepted } record)
+                var record = Last;
+                if (record is { result: Pending or Accepted })
                 {
                     record.result = Failed;
                     record.message = "Play mode stopped before the match started.";
                     Save(record);
                 }
-                else if (Last is { result: Running } running)
+                else if (record is { result: Running })
                 {
-                    running.result = Ended;
-                    running.message = "Play mode stopped before the match ended.";
-                    Save(running);
+                    record.result = Ended;
+                    record.message = "Play mode stopped before the match ended.";
+                    Save(record);
                 }
             }
         }

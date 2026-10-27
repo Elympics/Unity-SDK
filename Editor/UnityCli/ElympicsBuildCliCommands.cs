@@ -3,7 +3,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Elympics.Editor.Communication;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -47,19 +46,14 @@ namespace Elympics.Editor.UnityCli
             [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
             CliRun.RunAsync(async () =>
             {
-                if (timeoutSeconds <= 0)
-                    throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 1800.");
+                CliWeb.RequirePositiveTimeout(timeoutSeconds);
                 CliArgs.RequireConfirm(confirm, "Uploading a server version");
                 RequireReadyToBuild();
                 var game = CliGames.RequireActiveGame(CliGames.RequireConfig());
                 if (!Guid.TryParse(game.GameId, out _))
                     throw ElympicsCliErrors.InvalidArgumentException($"The active game config's GameId '{game.GameId}' is not a GUID.",
                         "set the active game's GameId in the Elympics config to an ID from elympics_list_games.");
-                _ = await CliWeb.RunAsync(CliWeb.DefaultTimeoutSeconds, async ct =>
-                {
-                    await ElympicsEditorApi.EnsureLoggedInAsync(0, CliWeb.DefaultTimeoutSeconds, ct);
-                    return null!;
-                }, ElympicsCliErrors.UploadFailed);
+                await CliWeb.EnsureLoggedInAsync(ElympicsCliErrors.UploadFailed);
                 var report = BuildTools.BuildServerLinux(development ? BuildOptions.Development : BuildOptions.None);
                 ThrowIfFailed(report);
                 return await CliWeb.RunAsync(timeoutSeconds, async ct =>
@@ -79,8 +73,7 @@ namespace Elympics.Editor.UnityCli
         private static void RequireReadyToBuild()
         {
             CliRun.RequireNotPlaying("Builds can't run in Play mode.");
-            if (EditorUtility.scriptCompilationFailed)
-                throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors.", "fix the errors listed by console --level error, then retry.");
+            CliRun.RequireNoCompileErrors();
         }
 
         private static void ThrowIfFailed(BuildReport report)

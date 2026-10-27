@@ -23,13 +23,6 @@ namespace Elympics.Editor
         { }
     }
 
-    internal sealed class ElympicsPackFailedException : ElympicsException
-    {
-        public ElympicsPackFailedException(string message, Exception innerException)
-            : base(message, innerException)
-        { }
-    }
-
     public static class WebGLUploader
     {
         private const string NamePattern = "^[0-9-a-zA-Z.]+$";

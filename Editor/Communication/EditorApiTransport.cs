@@ -21,7 +21,7 @@ namespace Elympics.Editor.Communication
         public string? ContentEncoding;
         public bool ElympicsApi = true;
         public bool Auth = true;
-        public int TimeoutSeconds;
+        public int TimeoutSeconds = ElympicsEditorApi.JsonTimeoutSeconds;
     }
 
     internal readonly struct EditorApiResponse

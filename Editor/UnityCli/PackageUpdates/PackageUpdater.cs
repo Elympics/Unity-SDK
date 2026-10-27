@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using Elympics.Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace Elympics.Editor.UnityCli.PackageUpdates
 {
@@ -17,8 +19,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public string? path;
         public string? oldRef;
         public string? newRef;
-        public string refKind = null!;
-        public string action = null!;
+        public GitRefKind refKind;
+        public RefAction action;
         public string oldSpec = null!;
         public string? newSpec;
         public string? oldCommit;
@@ -29,7 +31,17 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public List<string> warnings = new();
         public PackageUpdateError? error;
 
-        public bool IsChange() => action is "move" or "refresh";
+        public bool IsChange() => action is RefAction.Move or RefAction.Refresh;
+    }
+
+    [JsonConverter(typeof(StringEnumConverter), typeof(SnakeCaseNamingStrategy))]
+    internal enum PackageUpdateStatus
+    {
+        Planned,
+        UpToDate,
+        Started,
+        Done,
+        Failed,
     }
 
     internal sealed class PackageUpdateError
@@ -42,7 +54,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     internal sealed class PackageUpdateOperation
     {
         public string operationId = null!;
-        public string status = null!;
+        public PackageUpdateStatus status;
         public DateTime startedAt;
         public DateTime? finishedAt;
         public List<PackageUpdate> packages = new();
@@ -107,7 +119,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 urlBase = dependency.Base,
                 path = dependency.Path,
                 oldRef = dependency.Ref,
-                refKind = dependency.Kind.ToString().ToLowerInvariant(),
+                refKind = dependency.Kind,
                 oldSpec = dependency.Spec,
                 oldCommit = locked.TryGetValue(name, out var hash) ? hash : null,
                 oldVersion = GetInstalledVersion(name),
@@ -115,7 +127,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
             if (!dependency.HasSupportedRemote)
             {
-                update.action = "error";
+                update.action = RefAction.Error;
                 update.error = new PackageUpdateError
                 {
                     code = UnsupportedRemote,
@@ -132,7 +144,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
             catch (InvalidOperationException e)
             {
-                update.action = "error";
+                update.action = RefAction.Error;
                 update.error = new PackageUpdateError
                 {
                     code = RemoteUnreachable,
@@ -143,7 +155,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
 
             var plan = ElympicsRefPolicy.Plan(dependency, remote, pins.TryGetValue(name, out var pin) ? pin : null, tracks.TryGetValue(name, out var track) ? track : null);
-            update.action = plan.Action.ToString().ToLowerInvariant();
+            update.action = plan.Action;
             update.newRef = plan.Ref;
             update.newCommit = plan.Head;
             if (plan.Warning != null)
@@ -157,7 +169,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             update.newSpec = dependency.FormatWithRef(plan.Ref);
             update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref!.TrimStart('v') : null;
             if (plan.Action == RefAction.Refresh && update.oldCommit != null && update.oldCommit == plan.Head)
-                update.action = "keep";
+                update.action = RefAction.Keep;
             return update;
         }
 
@@ -172,7 +184,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public PackageUpdateOperation Apply(List<PackageUpdate> updates)
         {
             FinalizePending();
-            var pending = ReadOperations().FirstOrDefault(operation => operation.status == "started" && GetUtcNow() - operation.startedAt < StaleOperation);
+            var pending = ReadOperations().FirstOrDefault(operation => operation.status == PackageUpdateStatus.Started && GetUtcNow() - operation.startedAt < StaleOperation);
             if (pending != null)
                 throw new ElympicsCliException(ElympicsCliErrors.UpdateInProgress, $"The package update {pending.operationId} is still resolving.",
                     $"poll it with elympics_update_packages --operation_id {pending.operationId} and retry when it's done.");
@@ -181,7 +193,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var operation = new PackageUpdateOperation
             {
                 operationId = GetUtcNow().ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
-                status = changes.Count == 0 ? "up_to_date" : "started",
+                status = changes.Count == 0 ? PackageUpdateStatus.UpToDate : PackageUpdateStatus.Started,
                 startedAt = GetUtcNow(),
                 packages = updates,
             };
@@ -238,13 +250,13 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         /// <summary>Called after domain reloads and when polled.</summary>
         public void FinalizePending()
         {
-            foreach (var operation in ReadOperations().Where(operation => operation.status == "started"))
+            foreach (var operation in ReadOperations().Where(operation => operation.status == PackageUpdateStatus.Started))
                 TryFinalize(operation);
         }
 
         private void TryFinalize(PackageUpdateOperation operation)
         {
-            if (operation.status != "started")
+            if (operation.status != PackageUpdateStatus.Started)
                 return;
             operation.packages ??= new List<PackageUpdate>();
             operation.warnings ??= new List<string>();
@@ -254,11 +266,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 if (GetUtcNow() - operation.startedAt < StaleOperation)
                     return;
-                operation.status = "failed";
+                operation.status = PackageUpdateStatus.Failed;
                 operation.warnings.Add($"The Package Manager didn't lock every updated package within {StaleOperation.TotalMinutes:0} minutes; check the Console for resolve errors.");
             }
             else
-                operation.status = "done";
+                operation.status = PackageUpdateStatus.Done;
 
             foreach (var update in changed)
             {

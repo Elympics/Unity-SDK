@@ -78,7 +78,7 @@ namespace Elympics.Editor.Communication
         private const string ClientBuildCompleteRoute = "complete";
         private const string StreamingAssetsRoute = "streaming-assets";
         // Defaults for calls without timeoutSeconds. A caller's timeoutSeconds applies to every request of the call instead.
-        private const int JsonTimeoutSeconds = 30;
+        internal const int JsonTimeoutSeconds = 30;
         internal const int FileUploadTimeoutSeconds = 1800;
 
         internal static IEditorApiTransport Transport = new UnityWebRequestEditorApiTransport();
@@ -170,7 +170,6 @@ namespace Elympics.Editor.Communication
                 Url = BuildUrl(AuthRoutes.BaseRoute, AuthRoutes.LoginRoute),
                 JsonBody = JsonConvert.SerializeObject(new LoginRequestModel { UserName = username, Password = password }),
                 Auth = false,
-                TimeoutSeconds = JsonTimeoutSeconds,
             }, false, timeoutSeconds, ct);
 
             var tokens = Deserialize<LoginResponseModel>("Login", response);
@@ -275,7 +274,7 @@ namespace Elympics.Editor.Communication
         {
             var route = string.IsNullOrEmpty(gameId) ? RegionsRoutes.AllRegionsRouteUnityFormat : RegionsRoutes.RegionForGameIdRoute;
             var segments = route.Split('/').Select(segment => segment == "{0}" ? gameId! : segment).ToArray();
-            var response = await SendAsync("Get regions", new EditorApiRequest { Url = BuildUrl(segments), TimeoutSeconds = JsonTimeoutSeconds }, false, timeoutSeconds, ct);
+            var response = await SendAsync("Get regions", new EditorApiRequest { Url = BuildUrl(segments) }, false, timeoutSeconds, ct);
             return Deserialize<AvailableRegionsResponseModel>("Get regions", response).Regions?.ToList() ?? new List<RegionResponseModel>();
         }
 
@@ -445,7 +444,6 @@ namespace Elympics.Editor.Communication
                 Method = UnityWebRequest.kHttpVerbPOST,
                 Url = BuildUrl(ClientBuildsRoute, ClientBuildCompleteRoute),
                 JsonBody = JsonConvert.SerializeObject(new WebGLUploader.UploadCompleteRequest { uploadId = uploadId, success = success }),
-                TimeoutSeconds = JsonTimeoutSeconds,
             }, true, timeoutSeconds, ct);
 
         public static async UniTask<int> UploadStreamingAssetsAsync(
@@ -524,7 +522,6 @@ namespace Elympics.Editor.Communication
                 Method = method,
                 Url = url,
                 JsonBody = body == null ? null : JsonConvert.SerializeObject(body),
-                TimeoutSeconds = JsonTimeoutSeconds,
             }, true, timeoutSeconds, ct);
 
         private static async UniTask<EditorApiResponse> SendAsync(string action, EditorApiRequest request, bool requiresLogin, int? timeoutSeconds, CancellationToken ct)

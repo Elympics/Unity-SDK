@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Elympics.Core.Logger;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,17 +14,6 @@ namespace Elympics
     /// </summary>
     internal static class SceneNetworkIdAssigner
     {
-        private static int nextId;
-        private static int GetNextNetworkId()
-        {
-            if (nextId >= NetworkIdConstants.DefaultSceneObjectsReserved)
-                ElympicsLogger.LogError($"Scene object NetworkId {nextId} exceeds reserved range "
-                    + $"(max {NetworkIdConstants.DefaultSceneObjectsReserved - 1}). "
-                    + "Consider increasing DefaultSceneObjectsReserved.");
-
-            return nextId++;
-        }
-
         private static int? TryGetPredefinedIdFor(ElympicsBehaviour behaviour) =>
             behaviour.TryGetComponent<ElympicsUnityPhysicsSimulator>(out _)
                 ? NetworkIdConstants.PhysicsSimulatorNetworkId
@@ -64,10 +52,18 @@ namespace Elympics
         internal static void ResetAllIds(Scene scene)
         {
             var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(scene, true);
-            AssignPredefinedNetworkIds(behaviours);
-
-            nextId = NetworkIdConstants.PredefinedBehaviourCount;
-            ReassignAutoIds(behaviours);
+            foreach (var (behaviour, id) in ComputeIds(behaviours))
+            {
+                if (id >= NetworkIdConstants.DefaultSceneObjectsReserved && !IsPredefinedBehaviour(behaviour))
+                    ElympicsLogger.LogError($"Scene object NetworkId {id} exceeds reserved range "
+                        + $"(max {NetworkIdConstants.DefaultSceneObjectsReserved - 1}). "
+                        + "Consider increasing DefaultSceneObjectsReserved.");
+                if (behaviour.NetworkId == id)
+                    continue;
+                Undo.RecordObject(behaviour, "Assign network ID");
+                behaviour.NetworkId = id;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
+            }
         }
 
         /// <returns>The network IDs <see cref="ResetAllIds"/> would assign, without changing anything.</returns>
@@ -86,36 +82,6 @@ namespace Elympics
             foreach (var behaviour in autoBehaviours)
                 ids[behaviour] = id++;
             return ids;
-        }
-
-        private static void AssignPredefinedNetworkIds(List<ElympicsBehaviour> behaviours)
-        {
-            // TODO: set it up so that the components from the Elympics prefab cannot be used in other places, seal the classes etc. ~dsygocki 2026-03-05
-            foreach (var behaviour in behaviours)
-            {
-                if (TryGetPredefinedIdFor(behaviour) is not { } predefinedId || behaviour.NetworkId == predefinedId)
-                    continue;
-                Undo.RecordObject(behaviour, "Re-assign predefined network ID");
-                PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
-                behaviour.NetworkId = predefinedId;
-            }
-        }
-
-        private static void ReassignAutoIds(List<ElympicsBehaviour> behaviours)
-        {
-            var sortedBehaviours = behaviours
-                .Where(behaviour => !IsPredefinedBehaviour(behaviour))
-                .ToList();
-            HierarchicalSorting.Sort(sortedBehaviours);
-            foreach (var behaviour in sortedBehaviours)
-            {
-                var id = GetNextNetworkId();
-                if (behaviour.NetworkId == id)
-                    continue;
-                Undo.RecordObject(behaviour, "Assign network ID");
-                behaviour.NetworkId = id;
-                PrefabUtility.RecordPrefabInstancePropertyModifications(behaviour);
-            }
         }
     }
 }

@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -147,11 +149,13 @@ namespace Elympics.Editor.UnityCli
         private static async UniTask<string> ResolveVersionIdAsync(string gameId, string version, int timeoutSeconds, CancellationToken ct)
         {
             var versions = await ElympicsEditorApi.GetGameVersionsAsync(gameId, timeoutSeconds, ct);
-            var match = versions.Versions?.FirstOrDefault(candidate => candidate.Id == version)
-                ?? versions.Versions?.FirstOrDefault(candidate => candidate.Version == version);
+            var match = FindByIdOrName(versions.Versions, version, candidate => candidate.Id, candidate => candidate.Version);
             return match?.Id ?? throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, $"The game {gameId} has no version {version}.",
                 "list the versions with elympics_list_game_versions and pass a name or ID from it.");
         }
+
+        private static T? FindByIdOrName<T>(IEnumerable<T?>? items, string key, Func<T, string?> id, Func<T, string?> name) where T : class =>
+            items?.FirstOrDefault(candidate => candidate != null && id(candidate) == key) ?? items?.FirstOrDefault(candidate => candidate != null && name(candidate) == key);
 
         [CliCommand("elympics_create_queue", "Create a matchmaking queue for an Elympics game. Enum values follow the backend (e.g. --match_type SOLO). Needs --confirm true.",
             Tags = new[] { "elympics/backend" })]
@@ -227,11 +231,11 @@ namespace Elympics.Editor.UnityCli
                     .All(value => value == null))
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one field to change, e.g. --max_wait_time 30.");
                 name = name == null ? null : CliArgs.ValidateName(name, "name");
-                matchType = matchType == null ? null : ValidateEnum(matchType, "match_type", MatchTypes);
-                matchmakingStrategy = matchmakingStrategy == null ? null : ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies);
-                samplingStrategy = samplingStrategy == null ? null : ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies);
-                predictionStrategy = predictionStrategy == null ? null : ValidateEnum(predictionStrategy, "prediction_strategy", PredictionStrategies);
-                matchmakingMode = matchmakingMode == null ? null : ValidateEnum(matchmakingMode, "matchmaking_mode", MatchmakingModes);
+                matchType = ValidateEnum(matchType, "match_type", MatchTypes);
+                matchmakingStrategy = ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies);
+                samplingStrategy = ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies);
+                predictionStrategy = ValidateEnum(predictionStrategy, "prediction_strategy", PredictionStrategies);
+                matchmakingMode = ValidateEnum(matchmakingMode, "matchmaking_mode", MatchmakingModes);
                 CliArgs.RequireConfirm(confirm, "Changing a queue");
 
                 var current = await FindQueueAsync(resolvedGameId, queue, timeoutSeconds, ct);
@@ -277,14 +281,16 @@ namespace Elympics.Editor.UnityCli
         private static async UniTask<QueueModel> FindQueueAsync(string gameId, string queue, int timeoutSeconds, CancellationToken ct)
         {
             var queues = await ElympicsEditorApi.GetQueuesAsync(gameId, timeoutSeconds, ct);
-            return queues.FirstOrDefault(candidate => candidate?.Id == queue)
-                ?? queues.FirstOrDefault(candidate => candidate?.Name == queue)
+            return FindByIdOrName(queues, queue, candidate => candidate.Id, candidate => candidate.Name)
                 ?? throw new ElympicsCliException(ElympicsCliErrors.RequestFailed, $"The game {gameId} has no queue {queue}.",
                     "list the queues with elympics_list_queues and pass an ID or name from it.");
         }
 
-        private static string ValidateEnum(string value, string argumentName, string[] allowed)
+        [return: NotNullIfNotNull("value")]
+        private static string? ValidateEnum(string? value, string argumentName, string[] allowed)
         {
+            if (value == null)
+                return null;
             value = CliArgs.Require(value, argumentName).ToUpperInvariant();
             if (!allowed.Contains(value))
                 throw ElympicsCliErrors.InvalidArgumentException($"Unknown --{argumentName} '{value}'.", $"use one of: {string.Join(", ", allowed)}.");

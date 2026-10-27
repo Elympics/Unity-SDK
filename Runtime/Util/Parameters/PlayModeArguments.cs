@@ -31,12 +31,7 @@ namespace Elympics
                 : Array.Empty<string>();
         }
 
-        internal const bool LaunchesByDefault =
-#if ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH
-            false;
-#else
-            true;
-#endif
+        internal const bool LaunchesByDefault = !ScriptingSymbols.MppmAutoLaunchDisabled;
 
         internal static List<string> Build(IList<string> commandLine, IEnumerable<string> tags, bool launchByDefault = LaunchesByDefault)
         {

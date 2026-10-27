@@ -95,12 +95,12 @@ namespace Elympics.Editor.Tests.UnityCli
 
             Assert.That(plan.Select(update => update.name), Is.EquivalentTo(new[] { Sdk, PlayPad }));
             var sdk = plan.Single(update => update.name == Sdk);
-            Assert.That(sdk.action, Is.EqualTo("refresh"));
+            Assert.That(sdk.action, Is.EqualTo(RefAction.Refresh));
             Assert.That(sdk.newCommit, Is.EqualTo(DevelopHead));
             Assert.That(sdk.oldCommit, Is.EqualTo(OldHead));
             Assert.That(sdk.oldVersion, Is.EqualTo("0.28.0"));
             var playPad = plan.Single(update => update.name == PlayPad);
-            Assert.That(playPad.action, Is.EqualTo("move"));
+            Assert.That(playPad.action, Is.EqualTo(RefAction.Move));
             Assert.That(playPad.newSpec, Is.EqualTo(PlayPadUrl + "#v4.0.0"));
             Assert.That(playPad.newVersion, Is.EqualTo("4.0.0"));
         });
@@ -112,7 +112,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var plan = await _updater.PlanAsync(new List<string> { Sdk }, None, None);
 
-            Assert.That(plan.Single().action, Is.EqualTo("keep"));
+            Assert.That(plan.Single().action, Is.EqualTo(RefAction.Keep));
         });
 
         [UnityTest]
@@ -220,7 +220,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var operation = _updater.Apply(plan);
 
-            Assert.That(operation.status, Is.EqualTo("started"));
+            Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Started));
             Assert.That(_resolves, Is.EqualTo(1));
             var manifest = JObject.Parse(File.ReadAllText(_updater.ManifestPath));
             Assert.That((string?)manifest["dependencies"]![PlayPad], Is.EqualTo(PlayPadUrl + "#v4.0.0"));
@@ -231,11 +231,11 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var again = Assert.Catch(() => _updater.Apply(plan));
             CliAssert.HasCodeAndFix(again, ElympicsCliErrors.UpdateInProgress);
-            Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo("started"));
+            Assert.That(_updater.ReadOperation(operation.operationId).status, Is.EqualTo(PackageUpdateStatus.Started));
 
             WriteLockHashes(DevelopHead, TagCommit);
             var done = _updater.ReadOperation(operation.operationId);
-            Assert.That(done.status, Is.EqualTo("done"));
+            Assert.That(done.status, Is.EqualTo(PackageUpdateStatus.Done));
             Assert.That(done.packages.All(update => update.lockHashMatchesHead == true), Is.True);
         });
 
@@ -248,7 +248,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var second = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 
             Assert.That(second.operationId, Is.Not.EqualTo(first.operationId));
-            Assert.That(_updater.ReadOperation(first.operationId).status, Is.EqualTo("done"));
+            Assert.That(_updater.ReadOperation(first.operationId).status, Is.EqualTo(PackageUpdateStatus.Done));
         });
 
         [UnityTest]
@@ -258,7 +258,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 
-            Assert.That(operation.status, Is.EqualTo("up_to_date"));
+            Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.UpToDate));
             Assert.That(_resolves, Is.Zero);
         });
 
@@ -275,7 +275,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var operation = _updater.Apply(await _updater.PlanAsync(new List<string>(), None, None));
 
-            Assert.That(operation.status, Is.EqualTo("started"));
+            Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Started));
         });
 
         [Test]

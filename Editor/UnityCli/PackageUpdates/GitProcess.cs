@@ -24,22 +24,19 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");
             var stopwatch = Stopwatch.StartNew();
             var startInfo = CreateStartInfo("ls-remote", "--tags", "--heads", "--", url);
+            // BatchMode keeps ssh from prompting, but only where the user has no ssh command of their own to override.
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH_COMMAND")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH"))
                 && string.IsNullOrWhiteSpace(ReadConfig("core.sshCommand", timeout)))
                 startInfo.Environment["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes";
 
-            var process = Start(startInfo);
-
-            using (process)
-            {
-                var output = process.StandardOutput.ReadToEndAsync();
-                var error = process.StandardError.ReadToEndAsync();
-                if (!WaitOrKill(process, timeout - stopwatch.Elapsed))
-                    throw new InvalidOperationException($"git ls-remote didn't finish within {timeout.TotalSeconds:0} s.");
-                if (process.ExitCode != 0)
-                    throw new InvalidOperationException($"git ls-remote exited with {process.ExitCode}: {GitDependency.RedactCredentials(error.Result.Trim())}");
-                return output.Result;
-            }
+            using var process = Start(startInfo);
+            var output = process.StandardOutput.ReadToEndAsync();
+            var error = process.StandardError.ReadToEndAsync();
+            if (!WaitOrKill(process, timeout - stopwatch.Elapsed))
+                throw new InvalidOperationException($"git ls-remote didn't finish within {timeout.TotalSeconds:0} s.");
+            if (process.ExitCode != 0)
+                throw new InvalidOperationException($"git ls-remote exited with {process.ExitCode}: {GitDependency.RedactCredentials(error.Result.Trim())}");
+            return output.Result;
         });
 
         private static ProcessStartInfo CreateStartInfo(params string[] arguments)

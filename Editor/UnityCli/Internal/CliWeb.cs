@@ -15,6 +15,7 @@ namespace Elympics.Editor.UnityCli
         public const int DefaultUploadTimeoutSeconds = ElympicsEditorApi.FileUploadTimeoutSeconds;
         public const string UploadTimeoutDescription = "Seconds to wait for the whole upload.";
         public const string GameIdDescription = "Elympics game ID. Defaults to the active game config's ID.";
+        public const string ConfigGameIdDescription = "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.";
         public const string UploadConfirmDescription = "Must be true: the upload can't be undone.";
 
         /// <summary>
@@ -24,8 +25,7 @@ namespace Elympics.Editor.UnityCli
         public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
             CliRun.RunAsync(async () =>
         {
-            if (timeoutSeconds <= 0)
-                throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 20.");
+            RequirePositiveTimeout(timeoutSeconds);
 
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             try
@@ -42,6 +42,20 @@ namespace Elympics.Editor.UnityCli
                 throw Map(e, requestFailedCode);
             }
         });
+
+        public static void RequirePositiveTimeout(int timeoutSeconds)
+        {
+            if (timeoutSeconds <= 0)
+                throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 20.");
+        }
+
+        /// <summary>Checks the login, refreshing an expired token, so a missing login is reported before slow local work.</summary>
+        public static async Task EnsureLoggedInAsync(string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
+            _ = await RunAsync(DefaultTimeoutSeconds, async ct =>
+            {
+                await ElympicsEditorApi.EnsureLoggedInAsync(0, DefaultTimeoutSeconds, ct);
+                return new { };
+            }, requestFailedCode);
 
         public static ElympicsCliException Map(ElympicsEditorApiException exception, string requestFailedCode = ElympicsCliErrors.RequestFailed) => exception.Kind switch
         {

@@ -41,6 +41,12 @@ namespace Elympics.Editor.UnityCli
                 throw new ElympicsCliException(ElympicsCliErrors.EditorPlaying, reason, "stop Play mode (editor_stop), then retry.");
         }
 
+        public static void RequireNoCompileErrors()
+        {
+            if (EditorUtility.scriptCompilationFailed)
+                throw new ElympicsCliException(ElympicsCliErrors.CompileErrors, "Scripts have compile errors.", "fix the errors listed by console --level error, recompile, then retry.");
+        }
+
         private static bool IsInContract(Exception exception) =>
             exception is ElympicsCliException or OperationCanceledException
             || (exception is ArgumentException && exception.Message.StartsWith(ElympicsCliErrors.Prefix, StringComparison.Ordinal));

@@ -45,7 +45,7 @@ namespace Elympics.Editor.UnityCli
                 PackageUpdater.RedactCredentials(updates);
                 return Describe(new PackageUpdateOperation
                 {
-                    status = updates.All(update => update.action == "keep") ? "up_to_date" : "planned",
+                    status = updates.All(update => update.action == RefAction.Keep) ? PackageUpdateStatus.UpToDate : PackageUpdateStatus.Planned,
                     packages = updates,
                 }, true);
             }

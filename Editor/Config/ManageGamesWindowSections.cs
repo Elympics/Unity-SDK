@@ -13,13 +13,14 @@ namespace Elympics.Editor.Config
 
         public static event Action? Changed;
 
-        public static IReadOnlyList<IManageGameSection> All => Sections.OrderBy(section => section.Order).ToList();
+        public static IReadOnlyList<IManageGameSection> All => Sections;
 
         public static void Register(IManageGameSection section)
         {
             if (Sections.Any(registered => registered.GetType() == section.GetType()))
                 return;
-            Sections.Add(section);
+            var index = Sections.FindIndex(registered => registered.Order > section.Order);
+            Sections.Insert(index < 0 ? Sections.Count : index, section);
             Changed?.Invoke();
         }
     }

@@ -47,10 +47,10 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ChangeActionsAreMoveAndRefresh()
         {
-            Assert.That(new PackageUpdate { action = "move" }.IsChange(), Is.True);
-            Assert.That(new PackageUpdate { action = "refresh" }.IsChange(), Is.True);
-            Assert.That(new PackageUpdate { action = "keep" }.IsChange(), Is.False);
-            Assert.That(new PackageUpdate { action = "error" }.IsChange(), Is.False);
+            Assert.That(new PackageUpdate { action = RefAction.Move }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = RefAction.Refresh }.IsChange(), Is.True);
+            Assert.That(new PackageUpdate { action = RefAction.Keep }.IsChange(), Is.False);
+            Assert.That(new PackageUpdate { action = RefAction.Error }.IsChange(), Is.False);
         }
 
         [Test]

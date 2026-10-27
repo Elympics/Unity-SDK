@@ -16,6 +16,16 @@ using UnityEngine;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using UsageStatisticsRoutes = Elympics.Editor.Models.UsageStatistics.Routes;
 
+namespace Elympics.Editor
+{
+    internal sealed class ElympicsPackFailedException : ElympicsException
+    {
+        public ElympicsPackFailedException(string message, Exception innerException)
+            : base(message, innerException)
+        { }
+    }
+}
+
 namespace Elympics
 {
     public static class ElympicsWebIntegration
@@ -234,7 +244,7 @@ namespace Elympics
                 catch (ElympicsEditorApiException e)
                 {
                     ElympicsLogger.LogError(e.Message);
-                    _ = EditorUtility.DisplayDialog(title, "Auth failed", "Check login state");
+                    _ = EditorUtility.DisplayDialog(title, $"Auth failed:\n{e.Message}", "OK");
                     return;
                 }
 
@@ -373,11 +383,7 @@ namespace Elympics
         [PublicAPI]
         public static void UploadStreamingAssetsUsingCurrentLogin(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout)
         {
-            _ = ElympicsEditorApi.RunBlocking(async ct =>
-            {
-                await ElympicsEditorApi.EnsureLoggedInAsync(0, ct: ct);
-                return await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct);
-            });
+            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct));
         }
 
         // Play-mode code (e.g. the PlayPad extension handshake) sends the stored token as is,

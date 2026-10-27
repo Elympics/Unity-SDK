@@ -127,14 +127,6 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.Throws(() => CliArgs.ParseOptionalBool("maybe", "x"), ElympicsCliErrors.InvalidArgument);
         }
 
-        [Test]
-        public void LayoutDefaultsToAddressableVariants()
-        {
-            Assert.That(ElympicsStreamingAssetsCliCommands.ParseLayout(""), Is.EqualTo(StreamingAssetsLayout.AddressableVariants));
-            Assert.That(ElympicsStreamingAssetsCliCommands.ParseLayout("unstructuredassets"), Is.EqualTo(StreamingAssetsLayout.UnstructuredAssets));
-            CliAssert.Throws(() => ElympicsStreamingAssetsCliCommands.ParseLayout("other"), ElympicsCliErrors.InvalidArgument);
-        }
-
         private enum Mode { SinglePlayer, HalfRemoteServer }
 
         [Test]

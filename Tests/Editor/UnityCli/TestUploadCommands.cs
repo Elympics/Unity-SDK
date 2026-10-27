@@ -163,29 +163,6 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.DeleteQueue("solo", Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
-        public void StreamingAssetsUploadRejectsCredentials() =>
-            CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("Assets", "1.0", username: "user", password: "secret", confirm: true),
-                ElympicsCliErrors.CredentialsArgsRemoved);
-
-        [Test]
-        public void StreamingAssetsUploadNeedsConfirm() =>
-            CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("Assets", "1.0"), ElympicsCliErrors.ConfirmRequired);
-
-        [Test]
-        public void StreamingAssetsUploadRejectsADirectoryOutsideTheProject() =>
-            CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.GetTempPath(), "1.0", confirm: true), ElympicsCliErrors.InvalidArgument);
-
-        [Test]
-        public void StreamingAssetsUploadAllowsAnExternalDirectoryWhenAsked() =>
-            CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NoSuchContent_" + Guid.NewGuid().ToString("N")),
-                "1.0", confirm: true, allowExternalPath: true), ElympicsCliErrors.BuildDirNotFound);
-
-        [Test]
-        public void StreamingAssetsUploadNeedsAnExistingDirectory() =>
-            CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets("NoSuchContent_" + Guid.NewGuid().ToString("N"), "1.0", confirm: true),
-                ElympicsCliErrors.BuildDirNotFound);
-
-        [Test]
         public void GameIdsMustBeGuids() =>
             CliAssert.ThrowsAsync(() => ElympicsBackendCliCommands.ListQueues("not-a-guid"), ElympicsCliErrors.InvalidArgument);
     }

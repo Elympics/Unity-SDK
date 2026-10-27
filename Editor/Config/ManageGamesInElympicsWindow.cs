@@ -33,20 +33,6 @@ namespace Elympics.Editor.Config
 
         #endregion
 
-        #region StreamingAssets uploads
-
-        private const string StreamingAssetsPathKey = "ElympicsStreamingAssetsPathForUpload";
-        private const string StreamingAssetsVersionKey = "ElympicsStreamingAssetsVersionForUpload";
-        private const string StreamingAssetsLayoutKey = "ElympicsStreamingAssetsLayoutForUpload";
-
-        private static readonly StreamingAssetsLayout[] StreamingAssetsLayouts = (StreamingAssetsLayout[])Enum.GetValues(typeof(StreamingAssetsLayout));
-
-        [SerializeField] private string? streamingAssetsPath;
-        [SerializeField] private string? streamingAssetsVersion;
-        [SerializeField] private StreamingAssetsLayout streamingAssetsLayout;
-
-        #endregion
-
         private const int TickIntervalMs = 200;
 
         private static readonly Vector2 DefaultWindowSize = new(500, 900);
@@ -134,10 +120,6 @@ namespace Elympics.Editor.Config
             public Button BuildUploadServerButton { get; }
             public Button LogVersionsButton { get; }
             public VisualElement ManageGameExtensions { get; }
-            public DropdownField StreamingAssetsLayoutField { get; }
-            public TextField StreamingAssetsVersionField { get; }
-            public TextField StreamingAssetsPathField { get; }
-            public Button UploadStreamingAssetsButton { get; }
 
             public VisualElements(VisualElement root)
             {
@@ -171,10 +153,6 @@ namespace Elympics.Editor.Config
                 BuildUploadServerButton = root.Q<Button>("build-upload-server-button");
                 LogVersionsButton = root.Q<Button>("log-versions-button");
                 ManageGameExtensions = root.Q<VisualElement>("manage-game-extensions");
-                StreamingAssetsLayoutField = root.Q<DropdownField>("sa-layout");
-                StreamingAssetsVersionField = root.Q<TextField>("sa-version");
-                StreamingAssetsPathField = root.Q<TextField>("sa-path");
-                UploadStreamingAssetsButton = root.Q<Button>("upload-sa-button");
             }
         }
 
@@ -212,10 +190,6 @@ namespace Elympics.Editor.Config
             window.maxSize = maxSize;
             var config = (ElympicsConfig)elympicsConfig.targetObject;
             window.config = config;
-            window.streamingAssetsPath = EditorPrefs.GetString(StreamingAssetsPathKey, string.Empty);
-            window.streamingAssetsVersion = EditorPrefs.GetString(StreamingAssetsVersionKey, string.Empty);
-            var storedLayout = EditorPrefs.GetInt(StreamingAssetsLayoutKey, (int)StreamingAssetsLayout.AddressableVariants);
-            window.streamingAssetsLayout = Enum.IsDefined(typeof(StreamingAssetsLayout), storedLayout) ? (StreamingAssetsLayout)storedLayout : StreamingAssetsLayout.AddressableVariants;
 
             return window;
         }
@@ -604,10 +578,6 @@ namespace Elympics.Editor.Config
 
         private void BindGameManagementSection(VisualElements elements)
         {
-            BindToExternalValue(elements.StreamingAssetsVersionField, streamingAssetsVersion, value => streamingAssetsVersion = value);
-            BindToExternalValue(elements.StreamingAssetsPathField, streamingAssetsPath, value => streamingAssetsPath = value);
-            BindLayoutDropdown(elements.StreamingAssetsLayoutField);
-
             elements.BuildUploadServerButton.clicked += () =>
             {
                 if (!ElympicsWebIntegration.IsConnectedToElympics())
@@ -616,7 +586,6 @@ namespace Elympics.Editor.Config
             };
 
             elements.LogVersionsButton.clicked += LogUploadedServerVersions;
-            elements.UploadStreamingAssetsButton.clicked += UploadStreamingAssets;
         }
 
         private void FillExtensionSections()
@@ -627,26 +596,6 @@ namespace Elympics.Editor.Config
             _elements.ManageGameExtensions.Clear();
             foreach (var section in ManageGamesWindowSections.All)
                 section.CreateGUI(_elements.ManageGameExtensions, config);
-        }
-
-        private static string LayoutLabel(StreamingAssetsLayout layout) => layout switch
-        {
-            StreamingAssetsLayout.AddressableVariants => "Directory of Addressable-based variants",
-            StreamingAssetsLayout.UnstructuredAssets => "Unstructured assets",
-            _ => layout.ToString(),
-        };
-
-        // Choices are set here because the UXML "choices" attribute is unreliable on 2021.3.
-        private void BindLayoutDropdown(DropdownField field)
-        {
-            field.choices = StreamingAssetsLayouts.Select(LayoutLabel).ToList();
-            field.SetValueWithoutNotify(LayoutLabel(streamingAssetsLayout));
-            _ = field.RegisterValueChangedCallback(evt =>
-            {
-                var index = field.choices.IndexOf(evt.newValue);
-                if (index >= 0)
-                    streamingAssetsLayout = StreamingAssetsLayouts[index];
-            });
         }
 
         private void LogUploadedServerVersions()
@@ -668,25 +617,6 @@ namespace Elympics.Editor.Config
 
                     ElympicsLogger.LogInfo(log.ToString());
                 });
-        }
-
-        private void UploadStreamingAssets()
-        {
-            if (config is null)
-                return;
-
-            var activeGameConfig = config.GetCurrentGameConfig();
-            if (activeGameConfig == null)
-                return;
-
-            EditorPrefs.SetString(StreamingAssetsPathKey, streamingAssetsPath);
-            EditorPrefs.SetString(StreamingAssetsVersionKey, streamingAssetsVersion);
-            EditorPrefs.SetInt(StreamingAssetsLayoutKey, (int)streamingAssetsLayout);
-
-            if (!ElympicsWebIntegration.IsConnectedToElympics())
-                return;
-
-            ElympicsWebIntegration.UploadStreamingAssets(activeGameConfig.GameId, streamingAssetsPath, streamingAssetsVersion, streamingAssetsLayout);
         }
 
         #endregion

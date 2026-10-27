@@ -12,7 +12,6 @@ namespace Elympics.Editor.UnityCli
         public const string Internal = "ELYMPICS_INTERNAL";
         public const string InvalidArgument = "ELYMPICS_INVALID_ARGUMENT";
         public const string ConfirmRequired = "ELYMPICS_CONFIRM_REQUIRED";
-        public const string CredentialsArgsRemoved = "ELYMPICS_CREDENTIALS_ARGS_REMOVED";
 
         public const string NoConfig = "ELYMPICS_NO_CONFIG";
         public const string NoActiveGame = "ELYMPICS_NO_ACTIVE_GAME";

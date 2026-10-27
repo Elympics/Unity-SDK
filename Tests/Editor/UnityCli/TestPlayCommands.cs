@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using Elympics.Editor.Launcher;
 using Elympics.Editor.UnityCli;
 using Newtonsoft.Json.Linq;
@@ -43,24 +44,17 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void RefusedLaunchIsRecordedAsFailed()
         {
-            var previous = EditorLaunchRecord.Last;
+            using var record = new LaunchRecordScope();
             // The launch resolves the active game before the queue can refuse it, and the CI project has no ElympicsConfig.
             using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
-            try
-            {
-                using var scene = new AdditiveTestScene();
-                _ = scene.Create("Changed");
-                _ = UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene.Scene);
-                // Saving an untitled scene needs a path, so the launch queue refuses before entering Play mode.
-                Assume.That(scene.Scene.path, Is.Empty);
+            using var scene = new AdditiveTestScene();
+            _ = scene.Create("Changed");
+            _ = UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene.Scene);
+            // Saving an untitled scene needs a path, so the launch queue refuses before entering Play mode.
+            Assume.That(scene.Scene.path, Is.Empty);
 
-                CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", saveScenes: true), ElympicsCliErrors.LaunchRefused);
-                Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Failed));
-            }
-            finally
-            {
-                EditorLaunchRecord.Restore(previous);
-            }
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", saveScenes: true), ElympicsCliErrors.LaunchRefused);
+            Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Failed));
         }
 
         [TestCase("{\"2\":[\"Red\"]}")]
@@ -72,19 +66,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void LaunchOutcomesAreRecorded()
         {
-            var previous = EditorLaunchRecord.Last;
-            try
-            {
-                RecordLaunchOutcomes();
-            }
-            finally
-            {
-                EditorLaunchRecord.Restore(previous);
-            }
-        }
-
-        private static void RecordLaunchOutcomes()
-        {
+            using var record = new LaunchRecordScope();
             EditorLaunchRecord.Start("cli-test", "single_player", "game");
 
             EditorLaunchRecord.OnHostEvent(ElympicsHostProtocol.Events.LaunchAccepted, "other", "");
@@ -102,21 +84,14 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ARunningLaunchEndsWhenPlayModeStops()
         {
-            var previous = EditorLaunchRecord.Last;
-            try
-            {
-                EditorLaunchRecord.Restore(new EditorLaunchRecord.Record { requestId = "cli-test", result = EditorLaunchRecord.Running });
-                EditorLaunchRecord.OnPlayModeStateChanged(UnityEditor.PlayModeStateChange.ExitingPlayMode);
-                Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Ended));
+            using var record = new LaunchRecordScope();
+            EditorLaunchRecord.Restore(new EditorLaunchRecord.Record { requestId = "cli-test", result = EditorLaunchRecord.Running });
+            EditorLaunchRecord.OnPlayModeStateChanged(UnityEditor.PlayModeStateChange.ExitingPlayMode);
+            Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Ended));
 
-                var lastLaunch = JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!;
-                Assert.That(lastLaunch["error"]!.Type, Is.EqualTo(JTokenType.Null));
-                Assert.That((string?)lastLaunch["message"], Does.Contain("before the match ended"));
-            }
-            finally
-            {
-                EditorLaunchRecord.Restore(previous);
-            }
+            var lastLaunch = JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!;
+            Assert.That(lastLaunch["error"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That((string?)lastLaunch["message"], Does.Contain("before the match ended"));
         }
 
 #if ELYMPICS_MPPM
@@ -128,5 +103,12 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(MppmReflection.GetPlayers(), Has.Count.GreaterThan(1));
         }
 #endif
+
+        private sealed class LaunchRecordScope : IDisposable
+        {
+            private readonly EditorLaunchRecord.Record? _previous = EditorLaunchRecord.Last;
+
+            public void Dispose() => EditorLaunchRecord.Restore(_previous);
+        }
     }
 }

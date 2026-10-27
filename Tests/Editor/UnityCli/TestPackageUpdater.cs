@@ -43,7 +43,6 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         private TempDirectory _temp = null!;
-        private string _directory = null!;
         private PackageUpdater _updater = null!;
         private FakeGit _git = null!;
         private int _resolves;
@@ -52,16 +51,15 @@ namespace Elympics.Editor.Tests.UnityCli
         public void SetUp()
         {
             _temp = new TempDirectory("ElympicsTestPackageUpdater");
-            _directory = _temp.Path;
             _git = new FakeGit();
             _git.Outputs[SdkUrl] = $"{TagCommit}\trefs/tags/v0.28.0\n{TagCommit}\trefs/tags/v0.29.0\n{DevelopHead}\trefs/heads/develop\n";
             _git.Outputs[PlayPadUrl] = $"{TagCommit}\trefs/tags/v3.0.0\n{TagCommit}\trefs/tags/v4.0.0\n";
             _resolves = 0;
             _updater = new PackageUpdater
             {
-                ManifestPath = Path.Combine(_directory, "manifest.json"),
-                LockPath = Path.Combine(_directory, "packages-lock.json"),
-                OperationsDirectory = Path.Combine(_directory, "operations"),
+                ManifestPath = Path.Combine(_temp.Path, "manifest.json"),
+                LockPath = Path.Combine(_temp.Path, "packages-lock.json"),
+                OperationsDirectory = Path.Combine(_temp.Path, "operations"),
                 Git = _git,
                 Resolve = () => _resolves++,
                 GetInstalledVersion = name => name == Sdk ? "0.28.0" : null,

@@ -9,8 +9,9 @@ using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
 using NUnit.Framework;
-using UnityEngine.Networking;
 using UnityEngine.TestTools;
+
+using static Elympics.Editor.Tests.FakeTransport;
 
 namespace Elympics.Editor.Tests
 {
@@ -23,9 +24,7 @@ namespace Elympics.Editor.Tests
         private FakeLoginStore _login = null!;
         private EditorApiScope _scope = null!;
 
-        private static EditorApiResponse Ok(string text) => new(200, text, null, UnityWebRequest.Result.Success);
-        private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", UnityWebRequest.Result.ProtocolError);
-        private static EditorApiResponse ConnectionError(string error) => new(0, null, error, UnityWebRequest.Result.ConnectionError);
+        private void ExpireToken() => _login.AuthTokenExp = (Now - 1).ToString();
 
         private static string Jwt(long expiration)
         {
@@ -62,7 +61,7 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AnExpiredTokenIsRefreshedFirst() => UniTask.ToCoroutine(async () =>
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
             var newToken = Jwt(Now + 3600);
             _transport.Respond = request => request.Url.EndsWith("auth/refresh")
                 ? Ok($"{{\"AuthToken\":\"{newToken}\",\"RefreshToken\":\"refresh2\"}}")
@@ -80,7 +79,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ARejectedRefreshLogsOut()
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
             _transport.Respond = _ => Status(401, "");
 
             var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
@@ -93,7 +92,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void AnUnreachableBackendDoesNotLogOut()
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
             _transport.Respond = _ => ConnectionError("Cannot connect to destination host");
 
             var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
@@ -106,7 +105,7 @@ namespace Elympics.Editor.Tests
         [TestCase(429)]
         public void AServerErrorOnRefreshDoesNotLogOut(long statusCode)
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
             _transport.Respond = _ => Status(statusCode, "");
 
             var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
@@ -240,7 +239,7 @@ namespace Elympics.Editor.Tests
         [UnityTest]
         public IEnumerator AUsageEventThatNeedsNoLoginIsSentWithoutAnExpiredToken() => UniTask.ToCoroutine(async () =>
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
 
             await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
 
@@ -250,7 +249,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ARefreshedMalformedTokenIsRejectedAndNotStored()
         {
-            _login.AuthTokenExp = (Now - 1).ToString();
+            ExpireToken();
             _transport.Respond = request => request.Url.EndsWith("auth/refresh")
                 ? Ok("{\"AuthToken\":\"not-a-jwt\",\"RefreshToken\":\"refresh2\"}")
                 : Ok("[]");

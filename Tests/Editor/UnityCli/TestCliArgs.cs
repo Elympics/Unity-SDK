@@ -24,43 +24,38 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(new ElympicsCliException(ElympicsCliErrors.Internal, "Boom.", null).Message, Is.EqualTo("ELYMPICS_INTERNAL: Boom."));
         }
 
+        private Func<string>? _originalProjectRoot;
+        private string _root = string.Empty;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _originalProjectRoot = CliArgs.GetProjectRoot;
+            _root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Proj");
+            CliArgs.GetProjectRoot = () => _root;
+        }
+
+        [TearDown]
+        public void TearDown() => CliArgs.GetProjectRoot = _originalProjectRoot!;
+
         [TestCase("Builds/WebGL", false, ExpectedResult = "Proj/Builds/WebGL")]
         [TestCase(".", false, ExpectedResult = "Proj")]
         [TestCase("../Proj2/Build", true, ExpectedResult = "Proj2/Build")]
-        public string ProjectPathsResolveAgainstTheProjectRoot(string path, bool allowExternal) => WithProjectRoot(root =>
-            System.IO.Path.GetRelativePath(System.IO.Path.GetDirectoryName(root), CliArgs.ResolveProjectPath(path, "p", allowExternal)).Replace('\\', '/'));
+        public string ProjectPathsResolveAgainstTheProjectRoot(string path, bool allowExternal) =>
+            System.IO.Path.GetRelativePath(System.IO.Path.GetDirectoryName(_root), CliArgs.ResolveProjectPath(path, "p", allowExternal)).Replace('\\', '/');
 
         [TestCase("../Proj2/Build")]
         [TestCase("..")]
         [TestCase("Assets/../../Other")]
-        public void ProjectPathsOutsideTheProjectNeedTheOptIn(string path) => WithProjectRoot(_ =>
-        {
+        public void ProjectPathsOutsideTheProjectNeedTheOptIn(string path) =>
             CliAssert.Throws(() => CliArgs.ResolveProjectPath(path, "p", false), ElympicsCliErrors.InvalidArgument);
-            return 0;
-        });
 
         [Test]
-        public void AnAbsolutePathOutsideTheProjectNeedsTheOptIn() => WithProjectRoot(root =>
+        public void AnAbsolutePathOutsideTheProjectNeedsTheOptIn()
         {
-            var outside = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(root), "Other", "Build");
+            var outside = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(_root), "Other", "Build");
             CliAssert.Throws(() => CliArgs.ResolveProjectPath(outside, "p", false), ElympicsCliErrors.InvalidArgument);
             Assert.That(CliArgs.ResolveProjectPath(outside, "p", true), Is.EqualTo(outside));
-            return 0;
-        });
-
-        private static T WithProjectRoot<T>(Func<string, T> body)
-        {
-            var original = CliArgs.GetProjectRoot;
-            var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Proj");
-            CliArgs.GetProjectRoot = () => root;
-            try
-            {
-                return body(root);
-            }
-            finally
-            {
-                CliArgs.GetProjectRoot = original;
-            }
         }
 
         [Test]

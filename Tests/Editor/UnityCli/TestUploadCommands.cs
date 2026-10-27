@@ -3,11 +3,9 @@
 using System;
 using System.Collections;
 using Elympics.Cysharp.Threading.Tasks;
-using Elympics.Editor.Communication;
 using Elympics.Editor.UnityCli;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using UnityEngine.Networking;
 using UnityEngine.TestTools;
 
 namespace Elympics.Editor.Tests.UnityCli
@@ -22,7 +20,7 @@ namespace Elympics.Editor.Tests.UnityCli
         public void SetUp()
         {
             _transport = new FakeTransport();
-            _scope = new EditorApiScope(new FakeLoginStore(), _transport);
+            _scope = new EditorApiScope(_transport);
         }
 
         [TearDown]
@@ -55,8 +53,8 @@ namespace Elympics.Editor.Tests.UnityCli
         public IEnumerator GameUpdateSendsOnlyTheGivenFieldsAndReportsUndeclaredOnes() => UniTask.ToCoroutine(async () =>
         {
             const string game = "{\"Id\":\"g1\",\"Name\":\"Renamed\",\"FleetId\":\"f1\",\"CreatedAt\":\"2026-10-26\"}";
-            var transport = new FakeTransport { Respond = _ => new EditorApiResponse(200, game, null, UnityWebRequest.Result.Success) };
-            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+            var transport = new FakeTransport { Respond = _ => FakeTransport.Ok(game) };
+            using var scope = new EditorApiScope(transport);
 
             var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", externalBackend: "", confirm: true).AsUniTask());
 
@@ -72,11 +70,13 @@ namespace Elympics.Editor.Tests.UnityCli
         private const string BotQueue = "[{\"Id\":\"q1\",\"Name\":\"solo\",\"MatchType\":\"SOLO\",\"NumberOfTeams\":1,\"PlayersInTeam\":1,\"MaxWaitTime\":10,"
             + "\"MinPlayersToMatch\":1,\"SmartContractDeploymentId\":\"sc1\",\"Undeclared\":true}]";
 
+        private static FakeTransport BotQueueTransport() => new() { Respond = request => FakeTransport.Ok(request.Method == "GET" ? BotQueue : "") };
+
         [UnityTest]
         public IEnumerator QueueUpdateSendsOnlyTheGivenFields() => UniTask.ToCoroutine(async () =>
         {
-            var transport = new FakeTransport { Respond = request => new EditorApiResponse(200, request.Method == "GET" ? BotQueue : "", null, UnityWebRequest.Result.Success) };
-            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+            var transport = BotQueueTransport();
+            using var scope = new EditorApiScope(transport);
 
             var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), maxWaitTime: 30, confirm: true).AsUniTask());
 
@@ -93,8 +93,8 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator QueueUpdateSendsTheCurrentMinPlayersWithMatchWithBots() => UniTask.ToCoroutine(async () =>
         {
-            var transport = new FakeTransport { Respond = request => new EditorApiResponse(200, request.Method == "GET" ? BotQueue : "", null, UnityWebRequest.Result.Success) };
-            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+            var transport = BotQueueTransport();
+            using var scope = new EditorApiScope(transport);
 
             _ = await ElympicsBackendWriteCliCommands.UpdateQueue("q1", Guid.NewGuid().ToString(), matchWithBots: true, confirm: true).AsUniTask();
 
@@ -109,7 +109,7 @@ namespace Elympics.Editor.Tests.UnityCli
             using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
             var config = ElympicsConfig.Load()!;
             var gamesBefore = config.availableGames.Count;
-            using var scope = new EditorApiScope(new FakeLoginStore(), new FakeTransport());
+            using var scope = new EditorApiScope(new FakeTransport());
             Exception? caught = null;
             try
             {
@@ -136,10 +136,9 @@ namespace Elympics.Editor.Tests.UnityCli
             const string game = "{\"Id\":\"g1\",\"Name\":\"Game\"}";
             var transport = new FakeTransport
             {
-                Respond = request => new EditorApiResponse(200,
-                    request.Method == "PUT" ? game : request.Url.EndsWith("/versions") ? versions : version, null, UnityWebRequest.Result.Success),
+                Respond = request => FakeTransport.Ok(request.Method == "PUT" ? game : request.Url.EndsWith("/versions") ? versions : version),
             };
-            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+            using var scope = new EditorApiScope(transport);
 
             var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGameVersion("1.0", Guid.NewGuid().ToString(), blocked: true, confirm: true).AsUniTask());
 

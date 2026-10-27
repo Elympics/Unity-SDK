@@ -84,22 +84,14 @@ namespace Elympics.Editor.Tests
         [TestCase(false, true, false)]
         public void TheLoginIsSentOnlyToElympicsApiRequestsThatNeedAuth(bool elympicsApi, bool auth, bool expectedHeader)
         {
-            var original = ElympicsEditorApi.LoginStore;
-            ElympicsEditorApi.LoginStore = new FakeLoginStore { AuthToken = "secret" };
-            try
+            using var _ = new EditorApiScope(new FakeLoginStore { AuthToken = "secret" });
+            using var webRequest = UnityWebRequestEditorApiTransport.Create(new EditorApiRequest
             {
-                using var webRequest = UnityWebRequestEditorApiTransport.Create(new EditorApiRequest
-                {
-                    Url = elympicsApi ? "https://api.elympics.cc/v2" : "https://storage.example.com/signed",
-                    ElympicsApi = elympicsApi,
-                    Auth = auth,
-                });
-                Assert.That(webRequest.GetRequestHeader("Authorization"), expectedHeader ? Is.EqualTo("Bearer secret") : Is.Null.Or.Empty);
-            }
-            finally
-            {
-                ElympicsEditorApi.LoginStore = original;
-            }
+                Url = elympicsApi ? "https://api.elympics.cc/v2" : "https://storage.example.com/signed",
+                ElympicsApi = elympicsApi,
+                Auth = auth,
+            });
+            Assert.That(webRequest.GetRequestHeader("Authorization"), expectedHeader ? Is.EqualTo("Bearer secret") : Is.Null.Or.Empty);
         }
 
         [Test]

@@ -1,8 +1,10 @@
 #nullable enable
 
+using System;
 using System.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
+using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Elympics.Editor.UnityCli
@@ -30,7 +32,7 @@ namespace Elympics.Editor.UnityCli
                     sdkPackage?.resolvedPath,
                 },
                 pipelineVersion = pipelinePackage?.version,
-                UnityEngine.Application.unityVersion,
+                Application.unityVersion,
                 login = new { loggedIn = ElympicsConfig.IsLogin },
                 config = new
                 {
@@ -52,7 +54,7 @@ namespace Elympics.Editor.UnityCli
                         assetPath = AssetDatabase.GetAssetPath(activeGame),
                     },
                 games = config == null
-                    ? new object[0]
+                    ? Array.Empty<object>()
                     : config.AvailableGames.Select((game, index) => game == null
                         ? (object)new { index, missing = true }
                         : new { index, gameId = game.GameId, gameName = game.GameName, gameVersion = game.GameVersion, assetPath = AssetDatabase.GetAssetPath(game) }).ToArray(),

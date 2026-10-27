@@ -376,12 +376,13 @@ namespace Elympics
         {
             ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
-            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct));
+            UploadStreamingAssetsUsingCurrentLogin(gameId, streamingAssetsPath, version, layout);
         }
 
         [PublicAPI]
         public static void UploadStreamingAssetsUsingCurrentLogin(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout)
         {
+            ValidateGameId(gameId);
             _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct));
         }
 

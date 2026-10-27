@@ -142,13 +142,13 @@ namespace Elympics.Editor.UnityCli
             {
                 // Makes the tag known to MPPM before it is added; the return value only says whether it was new.
                 _ = members.RegisterTag.Invoke(registry, new object?[] { tag, null });
-                Invoke(members.AddTag, player, tag, "Adding", number);
+                InvokeTagChange(members.AddTag, player, tag, "Adding", number);
             }
             foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase)))
-                Invoke(members.RemoveTag, player, tag, "Removing", number);
+                InvokeTagChange(members.RemoveTag, player, tag, "Removing", number);
         }
 
-        private static void Invoke(MethodInfo method, object player, string tag, string verb, int number)
+        private static void InvokeTagChange(MethodInfo method, object player, string tag, string verb, int number)
         {
             var arguments = new object?[] { tag, null };
             if (!(bool)method.Invoke(player, arguments)!)

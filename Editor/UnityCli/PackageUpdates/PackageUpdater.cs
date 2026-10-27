@@ -100,8 +100,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 if (!selected.Any(entry => entry.Key == requested))
                     throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't among the selected git packages in Packages/manifest.json.",
                         "list the Elympics git packages with a dry run without --packages, and pass only those names (and include them in --packages if it's set).");
-            foreach (var name in pins.Keys.Intersect(tracks.Keys))
-                throw ElympicsCliErrors.InvalidArgumentException($"{name} is both pinned and tracked.", "pass it in --pin or in --track, not both.");
+            var pinnedAndTracked = pins.Keys.Intersect(tracks.Keys).FirstOrDefault();
+            if (pinnedAndTracked != null)
+                throw ElympicsCliErrors.InvalidArgumentException($"{pinnedAndTracked} is both pinned and tracked.", "pass it in --pin or in --track, not both.");
             if (selected.Count == 0)
                 throw new ElympicsCliException(ElympicsCliErrors.NoElympicsPackages, "Packages/manifest.json has no com.daftmobile.* git dependencies.",
                     "add the Elympics SDK as a git dependency (package_add with its git URL); embedded, local and registry packages aren't updated by this command.");
@@ -126,16 +127,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             };
 
             if (!dependency.HasSupportedRemote)
-            {
-                update.action = RefAction.Error;
-                update.error = new PackageUpdateError
-                {
-                    code = UnsupportedRemote,
-                    message = $"{GitDependency.RedactCredentials(dependency.RemoteUrl)} isn't an https, ssh or git@host: URL, so git isn't run for it.",
-                    fix = "change the package's URL in Packages/manifest.json to its https:// or git@host: form.",
-                };
-                return update;
-            }
+                return Fail(update, UnsupportedRemote, $"{GitDependency.RedactCredentials(dependency.RemoteUrl)} isn't an https, ssh or git@host: URL, so git isn't run for it.",
+                    "change the package's URL in Packages/manifest.json to its https:// or git@host: form.");
 
             RemoteRefs remote;
             try
@@ -144,32 +137,30 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
             catch (InvalidOperationException e)
             {
-                update.action = RefAction.Error;
-                update.error = new PackageUpdateError
-                {
-                    code = RemoteUnreachable,
-                    message = GitDependency.RedactCredentials($"Can't read the refs of {dependency.RemoteUrl}: {e.Message}"),
-                    fix = "check that git is installed and that `git ls-remote <url>` works in a terminal without prompting (stored credentials or an SSH agent), then retry.",
-                };
-                return update;
+                return Fail(update, RemoteUnreachable, GitDependency.RedactCredentials($"Can't read the refs of {dependency.RemoteUrl}: {e.Message}"),
+                    "check that git is installed and that `git ls-remote <url>` works in a terminal without prompting (stored credentials or an SSH agent), then retry.");
             }
 
             var plan = ElympicsRefPolicy.Plan(dependency, remote, pins.TryGetValue(name, out var pin) ? pin : null, tracks.TryGetValue(name, out var track) ? track : null);
-            update.action = plan.Action;
             update.newRef = plan.Ref;
             update.newCommit = plan.Head;
             if (plan.Warning != null)
                 update.warnings.Add(plan.Warning);
             if (plan.Action == RefAction.Error)
-            {
-                update.error = new PackageUpdateError { code = plan.ErrorCode!, message = plan.Reason!, fix = FixFor(plan.ErrorCode!) };
-                return update;
-            }
+                return Fail(update, plan.ErrorCode!, plan.Reason!, FixFor(plan.ErrorCode!));
+            update.action = plan.Action;
 
             update.newSpec = dependency.FormatWithRef(plan.Ref);
             update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref!.TrimStart('v') : null;
             if (plan.Action == RefAction.Refresh && update.oldCommit != null && update.oldCommit == plan.Head)
                 update.action = RefAction.Keep;
+            return update;
+        }
+
+        private static PackageUpdate Fail(PackageUpdate update, string code, string message, string fix)
+        {
+            update.action = RefAction.Error;
+            update.error = new PackageUpdateError { code = code, message = message, fix = fix };
             return update;
         }
 
@@ -202,7 +193,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 var manifest = ReadJson(ManifestPath);
                 foreach (var change in changes)
                     manifest["dependencies"]![change.name] = change.newSpec;
-                File.WriteAllText(ManifestPath, manifest.ToString(Formatting.Indented) + "\n");
+                WriteJson(ManifestPath, manifest);
 
                 if (File.Exists(LockPath))
                 {
@@ -210,7 +201,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     if (lockFile["dependencies"] is JObject lockedDependencies)
                         foreach (var change in changes)
                             _ = lockedDependencies.Remove(change.name);
-                    File.WriteAllText(LockPath, lockFile.ToString(Formatting.Indented) + "\n");
+                    WriteJson(LockPath, lockFile);
                 }
             }
             else
@@ -285,6 +276,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         }
 
         private static JObject ReadJson(string path) => JObject.Parse(File.ReadAllText(path));
+
+        private static void WriteJson(string path, JObject json) => File.WriteAllText(path, json.ToString(Formatting.Indented) + "\n");
 
         private Dictionary<string, string?> ReadDependencies()
         {

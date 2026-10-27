@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elympics.Editor.Launcher;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
@@ -22,7 +23,6 @@ namespace Elympics.Editor.UnityCli
         }
 
         private const string MppmPackage = "com.unity.multiplayer.playmode";
-        private const string TagPrefix = PlayModeArguments.TagPrefix;
         private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
 
         [CliCommand("elympics_launch",
@@ -118,11 +118,7 @@ namespace Elympics.Editor.UnityCli
                         record.mode,
                         record.gameId,
                         record.result,
-                        error = record.result is not (EditorLaunchRecord.Failed or EditorLaunchRecord.TimedOut)
-                            || (string.IsNullOrEmpty(record.code) && string.IsNullOrEmpty(record.message))
-                            ? null
-                            : ElympicsCliErrors.Format(record.result == EditorLaunchRecord.TimedOut ? ElympicsCliErrors.LaunchTimeout : ElympicsCliErrors.LaunchFailed,
-                                $"{record.code} {record.message}".Trim(), LaunchFailureFix(record.code)),
+                        error = FormatLaunchError(record),
                         message = record.result == EditorLaunchRecord.Ended && !string.IsNullOrEmpty(record.message) ? record.message : null,
                         matchId = string.IsNullOrEmpty(record.matchId) ? null : record.matchId,
                         record.updatedAt,
@@ -144,6 +140,15 @@ namespace Elympics.Editor.UnityCli
                 virtualPlayers = TryDescribeVirtualPlayers(),
             };
         });
+
+        private static string? FormatLaunchError(EditorLaunchRecord.Record record)
+        {
+            if (record.result is not (EditorLaunchRecord.Failed or EditorLaunchRecord.TimedOut)
+                || (string.IsNullOrEmpty(record.code) && string.IsNullOrEmpty(record.message)))
+                return null;
+            var code = record.result == EditorLaunchRecord.TimedOut ? ElympicsCliErrors.LaunchTimeout : ElympicsCliErrors.LaunchFailed;
+            return ElympicsCliErrors.Format(code, $"{record.code} {record.message}".Trim(), LaunchFailureFix(record.code));
+        }
 
         private static string LaunchFailureFix(string code) => code switch
         {
@@ -222,7 +227,7 @@ namespace Elympics.Editor.UnityCli
                 throw ElympicsCliErrors.InvalidArgumentException($"--tags lists player {highestTagged}, but there are only {players.Count} players.", TagsFix);
 
             foreach (var (number, playerTags) in tagsByPlayer)
-                MppmReflection.ReplaceTags(number, TagPrefix, playerTags);
+                MppmReflection.ReplaceTags(number, PlayModeArguments.TagPrefix, playerTags);
             for (var number = 2; number <= players.Count; number++)
                 MppmReflection.SetActive(number, number - 1 <= count);
 
@@ -240,9 +245,9 @@ namespace Elympics.Editor.UnityCli
             {
                 if (!int.TryParse(property.Name, out var number) || number < 2 || property.Value is not JArray array)
                     throw ElympicsCliErrors.InvalidArgumentException($"--tags has an invalid entry \"{property.Name}\".", TagsFix);
-                var foreign = array.FirstOrDefault(tag => tag.Type != JTokenType.String || !((string)tag!).StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase));
+                var foreign = array.FirstOrDefault(tag => tag.Type != JTokenType.String || !((string)tag!).StartsWith(PlayModeArguments.TagPrefix, StringComparison.OrdinalIgnoreCase));
                 if (foreign != null)
-                    throw ElympicsCliErrors.InvalidArgumentException($"The tag {foreign.ToString(Newtonsoft.Json.Formatting.None)} isn't a string that starts with {TagPrefix}.", TagsFix);
+                    throw ElympicsCliErrors.InvalidArgumentException($"The tag {foreign.ToString(Formatting.None)} isn't a string that starts with {PlayModeArguments.TagPrefix}.", TagsFix);
                 result.Add((number, array.Select(tag => (string)tag!).ToList()));
             }
             return result;

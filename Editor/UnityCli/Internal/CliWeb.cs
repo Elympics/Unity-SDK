@@ -24,24 +24,24 @@ namespace Elympics.Editor.UnityCli
         /// </summary>
         public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
             CliRun.RunAsync(async () =>
-        {
-            RequirePositiveTimeout(timeoutSeconds);
+            {
+                RequirePositiveTimeout(timeoutSeconds);
 
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-            try
-            {
-                return await body(timeout.Token);
-            }
-            catch (OperationCanceledException) when (timeout.IsCancellationRequested)
-            {
-                throw new ElympicsCliException(ElympicsCliErrors.NetworkTimeout, $"The Elympics backend didn't answer within {timeoutSeconds} s.",
-                    "check the Internet connection and retry with a larger --timeout_seconds (and the CLI's --timeout).");
-            }
-            catch (ElympicsEditorApiException e)
-            {
-                throw Map(e, requestFailedCode);
-            }
-        });
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+                try
+                {
+                    return await body(timeout.Token);
+                }
+                catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+                {
+                    throw new ElympicsCliException(ElympicsCliErrors.NetworkTimeout, $"The Elympics backend didn't answer within {timeoutSeconds} s.",
+                        "check the Internet connection and retry with a larger --timeout_seconds (and the CLI's --timeout).");
+                }
+                catch (ElympicsEditorApiException e)
+                {
+                    throw Map(e, requestFailedCode);
+                }
+            });
 
         public static void RequirePositiveTimeout(int timeoutSeconds)
         {

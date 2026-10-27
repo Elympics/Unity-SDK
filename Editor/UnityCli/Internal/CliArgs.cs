@@ -13,7 +13,7 @@ namespace Elympics.Editor.UnityCli
     internal static class CliArgs
     {
         private const string VersionPattern = "^[0-9-a-zA-Z.]+$";
-        private const int MaxVersionLength = 63;
+        private const int MaxLength = 63;
 
         internal static Func<string?> GetProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
 
@@ -48,9 +48,9 @@ namespace Elympics.Editor.UnityCli
         public static string ValidateVersion(string? version, string argumentName)
         {
             version = Require(version, argumentName);
-            if (version.Length > MaxVersionLength || !Regex.IsMatch(version, VersionPattern))
+            if (version.Length > MaxLength || !Regex.IsMatch(version, VersionPattern))
                 throw ElympicsCliErrors.InvalidArgumentException(
-                    $"--{argumentName} '{version}' is invalid: use 1-{MaxVersionLength} Latin letters, digits, dashes and dots.",
+                    $"--{argumentName} '{version}' is invalid: use 1-{MaxLength} Latin letters, digits, dashes and dots.",
                     $"pass a --{argumentName} such as 1.2.0 or 2026-10-22.1.");
             return version;
         }
@@ -58,9 +58,9 @@ namespace Elympics.Editor.UnityCli
         public static string ValidateName(string? name, string argumentName)
         {
             name = Require(name, argumentName);
-            if (name.Length > MaxVersionLength)
+            if (name.Length > MaxLength)
                 throw ElympicsCliErrors.InvalidArgumentException(
-                    $"--{argumentName} '{name}' is too long: use at most {MaxVersionLength} characters.",
+                    $"--{argumentName} '{name}' is too long: use at most {MaxLength} characters.",
                     $"pass a shorter --{argumentName}.");
             return name;
         }

@@ -36,7 +36,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("timeout_seconds", CliWeb.TimeoutDescription)] int timeoutSeconds = CliWeb.DefaultTimeoutSeconds) =>
             CliWeb.RunAsync(timeoutSeconds, async ct =>
             {
-                name = ValidateGameName(name);
+                name = CliArgs.ValidateName(name, "name");
                 CliArgs.RequireConfirm(confirm, "Creating an Elympics game");
                 var config = createConfig ? CliGames.RequireConfig(true) : null;
                 var created = await ElympicsEditorApi.CreateGameAsync(name, CliArgs.TrimToNull(region), CliArgs.TrimToNull(fleetId), timeoutSeconds, ct);
@@ -61,14 +61,6 @@ namespace Elympics.Editor.UnityCli
                 return new { status = "created", gameId, game = created, configAsset };
             });
 
-        private static string ValidateGameName(string name)
-        {
-            name = CliArgs.Require(name, "name");
-            if (name.Length > 63)
-                throw ElympicsCliErrors.InvalidArgumentException("--name is longer than 63 characters.", "pass a shorter name.");
-            return name;
-        }
-
         [CliCommand("elympics_update_game",
             "Change an Elympics game's settings. Only the given fields are sent; the backend keeps the others. Needs --confirm true.",
             Tags = new[] { "elympics/backend" })]
@@ -87,7 +79,7 @@ namespace Elympics.Editor.UnityCli
                 if (new[] { name, fleetId, externalBackend, eventQueueJoinUrl, eventQueueLeaveUrl }.All(value => value == null))
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one of --name, --fleet_id, --external_backend, --event_queue_join_url, --event_queue_leave_url.");
                 if (name != null)
-                    name = ValidateGameName(name);
+                    name = CliArgs.ValidateName(name, "name");
                 if (fleetId != null && string.IsNullOrWhiteSpace(fleetId))
                     throw ElympicsCliErrors.InvalidArgumentException("--fleet_id is empty.", "pass a fleet ID from elympics_list_fleets, or leave --fleet_id out to keep the current fleet.");
                 CliArgs.RequireConfirm(confirm, "Changing an Elympics game");

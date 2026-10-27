@@ -95,6 +95,8 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(CliArgs.ParseStringArray("", "packages"), Is.Empty);
             CliAssert.Throws(() => CliArgs.ParseStringArray("{\"a\":1}", "packages"), ElympicsCliErrors.InvalidArgument);
             CliAssert.Throws(() => CliArgs.ParseStringArray("[a", "packages"), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => CliArgs.ParseStringArray("[null]", "packages"), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => CliArgs.ParseStringArray("[\" \"]", "packages"), ElympicsCliErrors.InvalidArgument);
         }
 
         [Test]

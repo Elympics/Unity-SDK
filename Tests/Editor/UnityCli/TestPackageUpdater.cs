@@ -178,8 +178,11 @@ namespace Elympics.Editor.Tests.UnityCli
             File.WriteAllText(_updater.ManifestPath, "{ not json");
             await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
 
-            File.WriteAllText(_updater.ManifestPath, "{ \"dependencies\": {} } trailing");
-            await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
+            foreach (var trailing in new[] { " trailing", " // comment" })
+            {
+                File.WriteAllText(_updater.ManifestPath, "{ \"dependencies\": {} }" + trailing);
+                await CliAssert.ThrowsAwaitAsync(async () => _ = await PlanAllAsync(), ElympicsCliErrors.PackageManagerFailed);
+            }
         });
 
         [UnityTest]
@@ -373,22 +376,30 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator CorruptOperationRecordsAreSkipped() => UniTask.ToCoroutine(async () =>
         {
-            WriteOperationFile("corrupt", "{ not json");
-            WriteOperationFile("null", "null");
-            WriteOperationFile("escape", "{\"operationId\":\"../escape\",\"status\":\"started\"}");
-            WriteOperationFile("renamed", "{\"operationId\":\"other\",\"status\":\"started\"}");
-            WriteOperationFile("unnamed", "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}");
+            var records = new Dictionary<string, string>
+            {
+                ["corrupt"] = "{ not json",
+                ["null"] = "null",
+                ["escape"] = "{\"operationId\":\"../escape\",\"status\":\"started\"}",
+                ["renamed"] = "{\"operationId\":\"other\",\"status\":\"started\"}",
+                ["unnamed"] = "{\"operationId\":\"unnamed\",\"status\":\"started\",\"packages\":[{\"name\":null,\"newSpec\":\"x\"}]}",
+            };
+            foreach (var (operationId, json) in records)
+                WriteOperationFile(operationId, json);
 
             var operation = _updater.Apply(await PlanAllAsync());
 
             Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Started));
+            foreach (var (operationId, json) in records)
+                Assert.That(File.ReadAllText(Path.Combine(_updater.OperationsDirectory, operationId + ".json")), Is.EqualTo(json), operationId);
         });
 
         [Test]
+        [UnityPlatform(UnityEngine.RuntimePlatform.WindowsEditor)] // Elsewhere FileShare.None doesn't block a rename.
         public void ReplacingAFileWaitsForABriefLock()
         {
             var (source, destination) = WriteReplacePair();
-            var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
+            using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
             using var release = new System.Threading.Timer(_ => locked.Dispose(), null, 150, System.Threading.Timeout.Infinite);
 
             PackageUpdater.ReplaceFile(source, destination);
@@ -397,7 +408,7 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [Test]
-        [UnityPlatform(UnityEngine.RuntimePlatform.WindowsEditor)] // Elsewhere FileShare.None doesn't block a rename.
+        [UnityPlatform(UnityEngine.RuntimePlatform.WindowsEditor)]
         public void ReplacingAFileThatStaysLockedIsAPackageManagerError()
         {
             var (source, destination) = WriteReplacePair();

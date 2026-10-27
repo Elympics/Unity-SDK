@@ -24,7 +24,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("packages", "JSON array of package names to update. Defaults to every com.daftmobile.* git package.")] string packages = "",
             [CliArg("pin", "JSON object of explicit version tags or commits, e.g. '{\"com.daftmobile.elympics\":\"v0.29.0\"}'.")] string pin = "",
             [CliArg("track", "JSON object of explicit branches, e.g. '{\"com.daftmobile.elympics\":\"develop\"}'.")] string track = "",
-            [CliArg("operation_id", "Return the state of an earlier apply instead of planning (read-only).")] string operationId = "") => CliRun.RunAsync(async () =>
+            [CliArg("operation_id", "Return the state of an earlier apply instead of planning.")] string operationId = "") => CliRun.RunAsync(async () =>
         {
             if (CliArgs.TrimToNull(operationId) is { } existingOperationId)
                 return Describe(Updater.ReadOperation(existingOperationId), false);
@@ -37,7 +37,7 @@ namespace Elympics.Editor.UnityCli
             var explicitError = updates.FirstOrDefault(update => update.error != null && update.error.code != PackageUpdater.RemoteUnreachable
                 && (pins.ContainsKey(update.name) || tracks.ContainsKey(update.name)));
             if (explicitError != null)
-                throw new ElympicsCliException(explicitError.error!.code, $"{explicitError.name}: {explicitError.error.message}.", explicitError.error.fix);
+                throw new ElympicsCliException(explicitError.error!.code, $"{explicitError.name}: {explicitError.error.message.TrimEnd('.')}.", explicitError.error.fix);
 
             if (dryRun)
             {

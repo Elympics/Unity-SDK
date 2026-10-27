@@ -87,7 +87,15 @@ namespace Elympics.Editor.UnityCli
 
         public static List<string> ParseStringArray(string? json, string argumentName) =>
             ParseJsonObject(json, argumentName, "a JSON array of strings", $"pass e.g. --{argumentName} '[\"a\",\"b\"]'.",
-                text => JArray.Parse(text).ToObject<List<string>>()) ?? new List<string>();
+                ParseArray) ?? new List<string>();
+
+        private static List<string>? ParseArray(string text)
+        {
+            var array = JArray.Parse(text).ToObject<List<string>>();
+            if (array?.Any(string.IsNullOrWhiteSpace) == true)
+                throw new ArgumentException("An entry is null or blank.");
+            return array;
+        }
 
         public static Dictionary<string, string> ParseStringObject(string? json, string argumentName) =>
             ParseJsonObject(json, argumentName, "a JSON object with string values", $"pass e.g. --{argumentName} '{{\"key\":\"value\"}}'.",

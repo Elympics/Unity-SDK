@@ -303,7 +303,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 using var reader = new JsonTextReader(new StringReader(File.ReadAllText(path))) { DateParseHandling = DateParseHandling.None };
                 var json = JObject.Load(reader);
-                if (reader.Read() && reader.TokenType != JsonToken.Comment)
+                if (reader.Read())
                     throw new JsonReaderException("Additional text found after the JSON object.");
                 return json;
             }
@@ -334,7 +334,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                         File.Move(source, destination);
                     return;
                 }
-                catch (IOException e) when (e is not FileNotFoundException and not DirectoryNotFoundException)
+                catch (Exception e) when (e is UnauthorizedAccessException or IOException and not FileNotFoundException and not DirectoryNotFoundException)
                 {
                     if (attempt == ReplaceAttempts)
                         throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't replace {destination}: {e.Message}",

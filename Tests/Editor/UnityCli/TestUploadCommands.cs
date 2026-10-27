@@ -15,6 +15,23 @@ namespace Elympics.Editor.Tests.UnityCli
     [Category("UnityCli")]
     public class TestUploadCommands
     {
+        private FakeTransport _transport = null!;
+        private EditorApiScope _scope = null!;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _transport = new FakeTransport();
+            _scope = new EditorApiScope(new FakeLoginStore(), _transport);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            _scope.Dispose();
+            Assert.That(_transport.Requests, Is.Empty, "A test without its own transport must not reach the backend.");
+        }
+
         [Test]
         public void UploadServerNeedsConfirm() => CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadServer(), ElympicsCliErrors.ConfirmRequired);
 
@@ -89,10 +106,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator GameCreateWithAConfigFailsWhenTheResponseHasNoGameId() => UniTask.ToCoroutine(async () =>
         {
-            var config = ElympicsConfig.Load();
-            if (config == null)
-                Assert.Ignore("The host project has no ElympicsConfig, and creating one would change the project.");
-            var gamesBefore = config!.availableGames.Count;
+            using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
+            var config = ElympicsConfig.Load()!;
+            var gamesBefore = config.availableGames.Count;
             using var scope = new EditorApiScope(new FakeLoginStore(), new FakeTransport());
             Exception? caught = null;
             try
@@ -149,7 +165,6 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase(null, -1)]
         public void QueueUpdateRejectsNonPositiveTeamSizes(int? numberOfTeams, int? playersInTeam)
         {
-            using var scope = new EditorApiScope(new FakeLoginStore(), new FakeTransport());
             CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), numberOfTeams: numberOfTeams, playersInTeam: playersInTeam, confirm: true),
                 ElympicsCliErrors.InvalidArgument);
         }

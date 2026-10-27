@@ -36,9 +36,16 @@ namespace Elympics.Editor.Tests.UnityCli
             _ = scene.Create("Player").AddComponent<ElympicsBehaviour>();
             _ = scene.Create("Ground").AddComponent<BoxCollider2D>();
 
-            var result = JObject.FromObject(ElympicsSceneCliCommands.SetUpScene(addToBuild: false, setGameplayScene: false));
-            foreach (var root in scene.Scene.GetRootGameObjects().Where(root => root.GetComponent<GameSceneManager>() != null))
-                scene.Track(root);
+            JObject result;
+            try
+            {
+                result = JObject.FromObject(ElympicsSceneCliCommands.SetUpScene(addToBuild: false, setGameplayScene: false));
+            }
+            finally
+            {
+                foreach (var root in scene.Scene.GetRootGameObjects().Where(root => root.GetComponent<GameSceneManager>() != null))
+                    scene.Track(root);
+            }
 
             Assert.That((string?)result["status"], Is.EqualTo("set_up"));
             Assert.That((bool)result["physics2DSimulatorAdded"]!, Is.True);

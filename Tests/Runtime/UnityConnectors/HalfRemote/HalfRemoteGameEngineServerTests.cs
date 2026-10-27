@@ -73,7 +73,15 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
             void CloseWebSocket() => webRtcClient.Close();
 
-            await ConnectionTest(ConnectWebRtc, CloseWebSocket, new IPEndPoint(IPAddress.Loopback, tcpPort), new IPEndPoint(IPAddress.Loopback, webPort));
+            try
+            {
+                await ConnectionTest(ConnectWebRtc, CloseWebSocket, new IPEndPoint(IPAddress.Loopback, tcpPort), new IPEndPoint(IPAddress.Loopback, webPort));
+            }
+            finally
+            {
+                // With ELYMPICS_LAZY_WEBRTC_CONTEXT, stops the native context now instead of on quit, where it crashed Unity in CI.
+                EditorWebRtcContext.Dispose();
+            }
         });
 
         private async UniTask ConnectionTest(Func<UniTask<HalfRemoteMatchClient>> clientConnect, Action clientClose, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, CancellationToken ct = default)

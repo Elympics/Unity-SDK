@@ -15,6 +15,8 @@ namespace Elympics.Editor.UnityCli
 {
     public static class ElympicsSceneCliCommands
     {
+        private const string ElympicsSystemPrefabPath = "Elympics";
+        private const string SceneChangesLostInPlayMode = "The Editor is in Play mode, where scene changes are lost.";
         private const string SceneDescription = "Path of an open scene (e.g. Assets/Scenes/Game.unity). Defaults to the active scene.";
 
         [CliCommand("elympics_validate_scene",
@@ -148,25 +150,27 @@ namespace Elympics.Editor.UnityCli
             }
         }
 
-        [CliCommand("elympics_reset_network_ids",
-            "Reassign the automatic network IDs of every ElympicsBehaviour in the active scene (like Tools > Elympics > Reset Network Ids). "
+        [CliCommand(ElympicsSceneValidator.ResetNetworkIdsCommand,
+            "Reassign the automatic network IDs of every ElympicsBehaviour in an open scene (like Tools > Elympics > Reset Network Ids). "
             + "Doesn't save the scene unless --save true.",
             Tags = new[] { "elympics/scene" })]
-        public static object ResetNetworkIds([CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Run(() =>
+        public static object ResetNetworkIds(
+            [CliArg("scene", SceneDescription)] string scene = "",
+            [CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Run(() =>
         {
             CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
-            var scene = ResolveOpenScene(string.Empty);
-            var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(scene, true);
+            var resolvedScene = ResolveOpenScene(scene);
+            var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(resolvedScene, true);
             var before = behaviours.ToDictionary(behaviour => behaviour, behaviour => behaviour.NetworkId);
-            SceneNetworkIdAssigner.ResetAllIds(scene);
+            SceneNetworkIdAssigner.ResetAllIds(resolvedScene);
             var changed = behaviours.Count(behaviour => behaviour.NetworkId != before[behaviour]);
             if (changed > 0)
-                _ = EditorSceneManager.MarkSceneDirty(scene);
-            var saved = save && Save(scene);
-            return new { status = "reset", scene = scene.path, behaviourCount = behaviours.Count, changed, sceneDirty = scene.isDirty, saved };
+                _ = EditorSceneManager.MarkSceneDirty(resolvedScene);
+            var saved = save && Save(resolvedScene);
+            return new { status = "reset", scene = resolvedScene.path, behaviourCount = behaviours.Count, changed, sceneDirty = resolvedScene.isDirty, saved };
         });
 
-        [CliCommand("elympics_set_up_scene",
+        [CliCommand(ElympicsSceneValidator.SetUpSceneCommand,
             "Turn an open scene into an Elympics gameplay scene: add the Elympics system prefab, optionally the 2D physics simulator, add the scene to Build Settings, "
             + "make it the active game's gameplay scene and assign network IDs. Refuses a scene that already has an Elympics system. Returns elympics_validate_scene's findings.",
             Tags = new[] { "elympics/scene" })]
@@ -213,7 +217,7 @@ namespace Elympics.Editor.UnityCli
                 gameConfig.gameplaySceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(target.path);
                 gameConfig.gameplayScene = target.path;
                 EditorUtility.SetDirty(gameConfig);
-                AssetDatabase.SaveAssets();
+                AssetDatabase.SaveAssetIfDirty(gameConfig);
             }
 
             SceneNetworkIdAssigner.ResetAllIds(target);
@@ -231,9 +235,6 @@ namespace Elympics.Editor.UnityCli
                 validation = Validate(target, Array.Empty<string>()),
             };
         });
-
-        private const string ElympicsSystemPrefabPath = "Elympics";
-        private const string SceneChangesLostInPlayMode = "The Editor is in Play mode, where scene changes are lost.";
 
         private static bool Uses2DPhysics(UnityEngine.GameObject[] roots) =>
             roots.Any(root => root.GetComponentInChildren<UnityEngine.Rigidbody2D>(true) != null || root.GetComponentInChildren<UnityEngine.Collider2D>(true) != null);

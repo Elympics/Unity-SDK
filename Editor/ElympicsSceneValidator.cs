@@ -34,6 +34,11 @@ namespace Elympics.Editor
     /// <summary>Checks an Elympics gameplay scene without changing it.</summary>
     internal static class ElympicsSceneValidator
     {
+        internal const string SetUpSceneCommand = "elympics_set_up_scene";
+        internal const string ResetNetworkIdsCommand = "elympics_reset_network_ids";
+        internal const string SetActiveGameCommand = "elympics_set_active_game";
+        private const string AddSceneToBuildCommand = "add_scene_to_build";
+
         public const string NoActiveGameConfig = "NO_ACTIVE_GAME_CONFIG";
         public const string NoElympicsSystem = "NO_ELYMPICS_SYSTEM";
         public const string MultipleElympicsSystems = "MULTIPLE_ELYMPICS_SYSTEMS";
@@ -55,7 +60,7 @@ namespace Elympics.Editor
             if (activeGame == null)
                 findings.Add(new SceneFinding(NoActiveGameConfig, SceneFindingSeverity.Error,
                     config == null ? "The project has no ElympicsConfig." : "ElympicsConfig lists no game configs.",
-                    "create or register a game config with elympics_set_active_game --create_if_missing true --config_asset <path>."));
+                    $"create or register a game config with {SetActiveGameCommand} --create_if_missing true --config_asset <path>."));
 
             CheckGameplayScene(scene, activeGame, enabledBuildScenes, findings);
             if (config != null)
@@ -69,7 +74,7 @@ namespace Elympics.Editor
             if (Physics2DSimulatorSceneCheck.LacksPhysics2DSimulator(scene.GetRootGameObjects()))
                 findings.Add(new SceneFinding(Physics2DSimulatorMissing, SceneFindingSeverity.Error,
                     $"The scene uses 2D physics but has no {nameof(ElympicsUnityPhysics2DSimulator)}, so its 2D physics doesn't follow Elympics ticks.",
-                    $"add it with {ElympicsEditorMenuPaths.AddPhysics2DSimulator} (or elympics_set_up_scene --add_physics2d_simulator true on a new scene); "
+                    $"add it with {ElympicsEditorMenuPaths.AddPhysics2DSimulator} (or {SetUpSceneCommand} --add_physics2d_simulator true on a new scene); "
                     + "if the scene only uses triggers and doesn't need it, define ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK or ignore this code."));
 #endif
             return findings;
@@ -84,18 +89,18 @@ namespace Elympics.Editor
             {
                 findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Error,
                     $"The active game {activeGame.GameName} has no gameplay scene.",
-                    "set it in the game config, or run elympics_set_up_scene --set_gameplay_scene true on the gameplay scene."));
+                    $"set it in the game config, or run {SetUpSceneCommand} --set_gameplay_scene true on the gameplay scene."));
                 return;
             }
 
             if (gameplayScene != scene.path)
                 findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Warning,
                     $"The scene isn't the gameplay scene of the active game {activeGame.GameName} ({gameplayScene}).",
-                    "validate the gameplay scene instead, or make this scene the gameplay scene (elympics_set_up_scene --set_gameplay_scene true)."));
+                    $"validate the gameplay scene instead, or make this scene the gameplay scene ({SetUpSceneCommand} --set_gameplay_scene true)."));
             if (!enabledBuildScenes.Contains(gameplayScene))
                 findings.Add(new SceneFinding(SceneNotInBuild, SceneFindingSeverity.Error,
                     $"The gameplay scene {gameplayScene} isn't enabled in Build Settings.",
-                    $"add it with add_scene_to_build --scene_path {gameplayScene} (or elympics_set_up_scene --add_to_build true)."));
+                    $"add it with {AddSceneToBuildCommand} --scene_path {gameplayScene} (or {SetUpSceneCommand} --add_to_build true)."));
         }
 
         private static void CheckBootScene(ElympicsConfig config, IReadOnlyCollection<string> enabledBuildScenes, List<SceneFinding> findings)
@@ -116,7 +121,7 @@ namespace Elympics.Editor
             var systems = SceneObjectsFinder.FindObjectsOfType<GameSceneManager>(scene, true);
             if (systems.Count == 0)
                 findings.Add(new SceneFinding(NoElympicsSystem, SceneFindingSeverity.Error, "The scene has no Elympics system (no GameSceneManager).",
-                    $"run elympics_set_up_scene, or add it with {ElympicsEditorMenuPaths.MouseActionCreateElympicsSystem}."));
+                    $"run {SetUpSceneCommand}, or add it with {ElympicsEditorMenuPaths.MouseActionCreateElympicsSystem}."));
             else if (systems.Count > 1)
                 findings.Add(new SceneFinding(MultipleElympicsSystems, SceneFindingSeverity.Error,
                     $"The scene has {systems.Count} Elympics systems: {string.Join(", ", systems.Select(system => GetPath(system.transform)))}.",
@@ -125,7 +130,7 @@ namespace Elympics.Editor
 
         private static void CheckNetworkIds(List<ElympicsBehaviour> behaviours, List<SceneFinding> findings)
         {
-            const string ResetIdsFix = "run elympics_reset_network_ids (or " + ElympicsEditorMenuPaths.ResetIdsMenuPath + "), then save the scene.";
+            const string ResetIdsFix = "run " + ResetNetworkIdsCommand + " (or " + ElympicsEditorMenuPaths.ResetIdsMenuPath + "), then save the scene.";
 
             foreach (var behaviour in behaviours.Where(behaviour => behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId))
                 findings.Add(new SceneFinding(NetworkIdUnassigned, SceneFindingSeverity.Error, "An ElympicsBehaviour has no network ID.", ResetIdsFix,
@@ -163,7 +168,6 @@ namespace Elympics.Editor
             behaviour.TryGetComponent<ElympicsTransformSynchronizer>(out _)
             && (behaviour.TryGetComponent<ElympicsRigidBodySynchronizer>(out _) || behaviour.TryGetComponent<ElympicsRigidBody2DSynchronizer>(out _));
 
-        // Update runs only on the server for such a behaviour, so clients never predict it.
         internal static bool IsUpdatableButNotPredictable(ElympicsBehaviour behaviour) =>
             behaviour.TryGetComponent<IUpdatable>(out _)
             && (behaviour.predictableFor == ElympicsPlayer.World || behaviour.predictableFor == ElympicsPlayer.Invalid)

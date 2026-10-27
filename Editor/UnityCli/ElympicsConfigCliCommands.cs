@@ -14,7 +14,7 @@ namespace Elympics.Editor.UnityCli
 {
     public static class ElympicsConfigCliCommands
     {
-        [CliCommand("elympics_set_active_game",
+        [CliCommand(ElympicsSceneValidator.SetActiveGameCommand,
             "Make a game config the active one (ElympicsConfig's first game) and save ElympicsConfig. "
             + "A game config asset that isn't in ElympicsConfig yet is registered first (found by --game_id, or given by --config_asset).",
             Tags = new[] { "elympics/config" })]

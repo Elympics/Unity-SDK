@@ -19,7 +19,7 @@ namespace Elympics.Editor.UnityCli
             + "(a deleted branch falls back to develop), no ref pins the newest tag, a commit is kept; --pin and --track override that. "
             + "Reads refs with git ls-remote (never prompts). Applying rewrites Packages/manifest.json and starts a resolve that may reload the Editor: "
             + "it returns status \"started\" with an operationId to poll with --operation_id until \"done\". Versions are reported, not compared.",
-            Tags = new[] { "elympics", "write" })]
+            Tags = new[] { "elympics/packages" })]
         public static Task<object> UpdatePackages(
             [CliArg("dry_run", "Only plan: report what would change.")] bool dryRun = false,
             [CliArg("packages", "JSON array of package names to update. Defaults to every com.daftmobile.* git package.")] string packages = "",

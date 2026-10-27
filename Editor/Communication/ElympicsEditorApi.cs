@@ -353,7 +353,7 @@ namespace Elympics.Editor.Communication
             CallWithOptionalResponseAsync<QueueModel>("Create queue", UnityWebRequest.kHttpVerbPOST, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
         /// <returns>The updated queue, or null if the backend's response was empty.</returns>
-        public static UniTask<QueueModel?> UpdateQueueAsync(string gameId, string queueId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+        public static UniTask<QueueModel?> UpdateQueueAsync(string gameId, string queueId, UpdateQueueRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
             CallWithOptionalResponseAsync<QueueModel>("Update queue", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 
         public static UniTask DeleteQueueAsync(string gameId, string queueId, int? timeoutSeconds = null, CancellationToken ct = default) =>

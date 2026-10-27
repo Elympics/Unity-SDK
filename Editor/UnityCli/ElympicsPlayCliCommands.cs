@@ -29,7 +29,7 @@ namespace Elympics.Editor.UnityCli
             "Launch a match in the Editor like the Match Launcher window: single_player, half_remote_server (virtual players from elympics_set_virtual_players "
             + "join as clients) or half_remote_client. Returns before Play mode starts (the domain reload drops the connection): "
             + "poll elympics_get_match_state until lastLaunch.result is running, failed or timed_out.",
-            Tags = new[] { "elympics", "play" })]
+            Tags = new[] { "elympics/play" })]
         public static object Launch(
             [CliArg("mode", "single_player, half_remote_server or half_remote_client.", Required = true)] string mode,
             [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "",
@@ -94,7 +94,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_get_match_state",
             "Report Play mode, the match launcher, the last elympics_launch outcome (survives the Play mode reload), the live match "
             + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch.",
-            Tags = new[] { "elympics", "read" })]
+            Tags = new[] { "elympics/play" })]
         public static object GetMatchState() => CliRun.Run(() =>
         {
             var launcher = ElympicsMatchLauncher.Current;
@@ -183,7 +183,7 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_get_virtual_players",
             "List Multiplayer Play Mode's players (1 is the main Editor) with their state and tags, and the defines that turn off their automatic half-remote launch.",
-            Tags = new[] { "elympics", "read" })]
+            Tags = new[] { "elympics/play" })]
         public static object GetVirtualPlayers() => CliRun.Run(() => new
         {
             status = "ok",
@@ -218,7 +218,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_set_virtual_players",
             "Activate the first --count Multiplayer Play Mode virtual players (0-3) and deactivate the others, optionally replacing their Elympics: tags "
             + "(e.g. Elympics:halfRemoteServer, Elympics:PlayerIndex=1, Elympics:manual). By default virtual players join a half_remote_server launch as clients.",
-            Tags = new[] { "elympics", "write" })]
+            Tags = new[] { "elympics/play" })]
         public static object SetVirtualPlayers(
             [CliArg("count", "How many virtual players (Player 2, 3, ...) to activate.", Required = true)] int count,
             [CliArg("tags", "JSON object from player number to its Elympics: tags, e.g. '{\"2\":[\"Elympics:PlayerIndex=1\"]}'. "

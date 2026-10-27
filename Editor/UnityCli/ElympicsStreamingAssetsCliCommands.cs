@@ -12,7 +12,7 @@ namespace Elympics.Editor.UnityCli
             "Upload a directory of StreamingAssets variants to the Elympics cloud as a new content version, with the Editor's current login and "
             + "the active game config unless --game_id is given. Versions are write-once - a burnt version name cannot be reused, and the upload "
             + "is not undoable, so it needs --confirm true. Large bundles take minutes: run it with --detach.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/streaming_assets" })]
         public static Task<object> UploadStreamingAssets(
             [CliArg("streaming_assets_path", "Local directory to upload, inside the project unless --allow_external_path true. Absolute, or relative to the project root.", Required = true)] string streamingAssetsPath,
             [CliArg("version_name", "Content version to publish. Write-once - a version name that has already been used (or failed mid-upload) cannot be reused. "

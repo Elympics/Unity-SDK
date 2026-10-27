@@ -12,7 +12,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_status",
             "Report the Elympics SDK version, login state (no user name or tokens), ElympicsConfig, the active and configured games, endpoints and Editor state. "
             + "Works offline, logged out and without a config.",
-            Tags = new[] { "elympics", "read" })]
+            Tags = new[] { "elympics/status" })]
         public static object GetStatus() => CliRun.Run(() =>
         {
             var sdkPackage = PackageInfo.FindForAssembly(typeof(ElympicsConfig).Assembly);

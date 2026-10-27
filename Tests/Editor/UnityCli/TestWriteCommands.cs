@@ -14,12 +14,12 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("", -1, "")]
         [TestCase("abc", 0, "")]
         [TestCase("abc", -1, "Assets/x.asset")]
-        public void SelectGameNeedsExactlyOneSelector(string gameId, int index, string configAsset) =>
-            CliAssert.Throws(() => ElympicsConfigCliCommands.SelectGame(gameId, index, configAsset), ElympicsCliErrors.InvalidArgument);
+        public void SetActiveGameNeedsExactlyOneSelector(string gameId, int index, string configAsset) =>
+            CliAssert.Throws(() => ElympicsConfigCliCommands.SetActiveGame(gameId, index, configAsset), ElympicsCliErrors.InvalidArgument);
 
         [Test]
-        public void SelectGameRejectsAMissingAsset() =>
-            CliAssert.Throws(() => ElympicsConfigCliCommands.SelectGame(configAsset: "Assets/NoSuchGameConfig.asset", createIfMissing: false), ElympicsCliErrors.GameNotFound);
+        public void SetActiveGameRejectsAMissingAsset() =>
+            CliAssert.Throws(() => ElympicsConfigCliCommands.SetActiveGame(configAsset: "Assets/NoSuchGameConfig.asset", createIfMissing: false), ElympicsCliErrors.GameNotFound);
 
         [Test]
         public void SetVersionValidatesTheVersion() =>

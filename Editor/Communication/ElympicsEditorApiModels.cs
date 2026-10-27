@@ -37,9 +37,10 @@ namespace Elympics.Editor.Communication
         public string? FleetId { get; set; }
     }
 
+    /// <summary>A null field stays unchanged; an empty string clears it.</summary>
     internal class UpdateGameRequestModel
     {
-        public string GameName { get; set; } = null!;
+        public string? GameName { get; set; }
         public string? FleetId { get; set; }
         public string? ExternalBackend { get; set; }
         public string? EventQueueJoinUrl { get; set; }
@@ -54,7 +55,23 @@ namespace Elympics.Editor.Communication
         public bool? DebugModeWithBots { get; set; }
     }
 
-    /// <summary>The body of the create and update queue requests.</summary>
+    /// <summary>A null field stays unchanged. The backend rejects any change of the smart contract deployment ID.</summary>
+    internal class UpdateQueueRequestModel
+    {
+        public string? Name { get; set; }
+        public string? MatchType { get; set; }
+        public string? MatchmakingStrategy { get; set; }
+        public string? SamplingStrategy { get; set; }
+        public string? PredictionStrategy { get; set; }
+        public string? MatchmakingMode { get; set; }
+        public int? NumberOfTeams { get; set; }
+        public int? PlayersInTeam { get; set; }
+        public bool? MatchWithBots { get; set; }
+        public int? MaxWaitTime { get; set; }
+        public int? MinPlayersToMatch { get; set; }
+    }
+
+    /// <summary>The body of the create queue request.</summary>
     internal class QueueSettingsModel
     {
         public string Name { get; set; } = null!;

@@ -30,52 +30,35 @@ namespace Elympics.Editor.Tests.UnityCli
         public void GameUpdateValidatesTheName(string name) =>
             CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), name, confirm: true), ElympicsCliErrors.InvalidArgument);
 
-        [UnityTest]
-        public IEnumerator GameUpdateFailsWithoutChangingWhenTheGameReplyIsNotAnObject([Values("", "[]")] string reply) => UniTask.ToCoroutine(async () =>
-        {
-            var transport = new FakeTransport { Respond = _ => new EditorApiResponse(200, reply, null, UnityWebRequest.Result.Success) };
-            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
-            Exception? caught = null;
-            try
-            {
-                _ = await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", confirm: true).AsUniTask();
-            }
-            catch (Exception e)
-            {
-                caught = e;
-            }
-            Assert.That(caught, Is.Not.Null);
-            CliAssert.HasCodeAndFix(caught, ElympicsCliErrors.RequestFailed);
-            Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.All.EqualTo("GET"));
-        });
+        [Test]
+        public void GameUpdateRejectsAnEmptyFleetId() =>
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), fleetId: " ", confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [UnityTest]
-        public IEnumerator GameUpdateSendsBackUnchangedFieldsAndReportsUndeclaredOnes() => UniTask.ToCoroutine(async () =>
+        public IEnumerator GameUpdateSendsOnlyTheGivenFieldsAndReportsUndeclaredOnes() => UniTask.ToCoroutine(async () =>
         {
-            const string game = "{\"Id\":\"g1\",\"Name\":\"Old\",\"FleetId\":\"f1\",\"ExternalBackend\":\"https://backend.test\",\"CreatedAt\":\"2026-10-26\"}";
-            var transport = new FakeTransport
-            {
-                Respond = request => new EditorApiResponse(200, request.Method == "GET" ? game : game.Replace("Old", "Renamed"), null, UnityWebRequest.Result.Success),
-            };
+            const string game = "{\"Id\":\"g1\",\"Name\":\"Renamed\",\"FleetId\":\"f1\",\"CreatedAt\":\"2026-10-26\"}";
+            var transport = new FakeTransport { Respond = _ => new EditorApiResponse(200, game, null, UnityWebRequest.Result.Success) };
             using var scope = new EditorApiScope(new FakeLoginStore(), transport);
 
-            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", confirm: true).AsUniTask());
+            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", externalBackend: "", confirm: true).AsUniTask());
 
-            var body = JObject.Parse(transport.Requests.Find(r => r.Method == "PUT")!.JsonBody!);
+            Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.EqualTo(new[] { "PUT" }));
+            var body = JObject.Parse(transport.Requests[0].JsonBody!);
             Assert.That((string?)body["GameName"], Is.EqualTo("Renamed"));
-            Assert.That((string?)body["FleetId"], Is.EqualTo("f1"));
-            Assert.That((string?)body["ExternalBackend"], Is.EqualTo("https://backend.test"));
-            Assert.That(body.ContainsKey("CreatedAt"), Is.False);
-            Assert.That((string?)result["game"]!["Name"], Is.EqualTo("Renamed"));
+            Assert.That((string?)body["ExternalBackend"], Is.Empty);
+            Assert.That(body["FleetId"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(body["EventQueueJoinUrl"]!.Type, Is.EqualTo(JTokenType.Null));
             Assert.That((string?)result["game"]!["CreatedAt"], Is.EqualTo("2026-10-26"));
         });
 
+        private const string BotQueue = "[{\"Id\":\"q1\",\"Name\":\"solo\",\"MatchType\":\"SOLO\",\"NumberOfTeams\":1,\"PlayersInTeam\":1,\"MaxWaitTime\":10,"
+            + "\"MinPlayersToMatch\":1,\"SmartContractDeploymentId\":\"sc1\",\"Undeclared\":true}]";
+
         [UnityTest]
-        public IEnumerator QueueUpdateKeepsTheSmartContractAndSendsOnlyQueueSettings() => UniTask.ToCoroutine(async () =>
+        public IEnumerator QueueUpdateSendsOnlyTheGivenFields() => UniTask.ToCoroutine(async () =>
         {
-            const string queues = "[{\"Id\":\"q1\",\"Name\":\"solo\",\"MatchType\":\"SOLO\",\"NumberOfTeams\":1,\"PlayersInTeam\":1,\"MaxWaitTime\":10,"
-                + "\"SmartContractDeploymentId\":\"sc1\",\"Undeclared\":true}]";
-            var transport = new FakeTransport { Respond = request => new EditorApiResponse(200, request.Method == "GET" ? queues : "", null, UnityWebRequest.Result.Success) };
+            var transport = new FakeTransport { Respond = request => new EditorApiResponse(200, request.Method == "GET" ? BotQueue : "", null, UnityWebRequest.Result.Success) };
             using var scope = new EditorApiScope(new FakeLoginStore(), transport);
 
             var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), maxWaitTime: 30, confirm: true).AsUniTask());
@@ -84,11 +67,23 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(put.Url, Does.EndWith("/queues/q1"));
             var body = JObject.Parse(put.JsonBody!);
             Assert.That((int)body["MaxWaitTime"]!, Is.EqualTo(30));
-            Assert.That((string?)body["Name"], Is.EqualTo("solo"));
-            Assert.That((int)body["PlayersInTeam"]!, Is.EqualTo(1));
-            Assert.That((string?)body["SmartContractDeploymentId"], Is.EqualTo("sc1"));
-            Assert.That(body.ContainsKey("Id") || body.ContainsKey("Undeclared"), Is.False);
+            Assert.That(body["Name"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(body["MinPlayersToMatch"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(body.ContainsKey("SmartContractDeploymentId") || body.ContainsKey("Id") || body.ContainsKey("Undeclared"), Is.False);
             Assert.That((string?)result["queueId"], Is.EqualTo("q1"));
+        });
+
+        [UnityTest]
+        public IEnumerator QueueUpdateSendsTheCurrentMinPlayersWithMatchWithBots() => UniTask.ToCoroutine(async () =>
+        {
+            var transport = new FakeTransport { Respond = request => new EditorApiResponse(200, request.Method == "GET" ? BotQueue : "", null, UnityWebRequest.Result.Success) };
+            using var scope = new EditorApiScope(new FakeLoginStore(), transport);
+
+            _ = await ElympicsBackendWriteCliCommands.UpdateQueue("q1", Guid.NewGuid().ToString(), matchWithBots: true, confirm: true).AsUniTask();
+
+            var body = JObject.Parse(transport.Requests.Find(r => r.Method == "PUT")!.JsonBody!);
+            Assert.That((bool)body["MatchWithBots"]!, Is.True);
+            Assert.That((int)body["MinPlayersToMatch"]!, Is.EqualTo(1));
         });
 
         [UnityTest]

@@ -57,7 +57,7 @@ namespace Elympics.Editor
             if (activeGame == null)
                 findings.Add(new SceneFinding(NoActiveGameConfig, SceneFindingSeverity.Error,
                     config == null ? "The project has no ElympicsConfig." : "ElympicsConfig lists no game configs.",
-                    "create or register a game config with elympics_select_game --create_if_missing true --config_asset <path>."));
+                    "create or register a game config with elympics_set_active_game --create_if_missing true --config_asset <path>."));
 
             CheckGameplayScene(scene, activeGame, enabledBuildScenes, findings);
             if (config != null)

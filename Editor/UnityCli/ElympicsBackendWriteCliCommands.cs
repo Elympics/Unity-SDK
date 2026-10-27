@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
 using Unity.Pipeline.Commands;
-using UnityEditor;
-using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
@@ -26,7 +24,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_create_game",
             "Create an Elympics game in the logged-in account's organization. With --create_config true, also create its ElympicsGameConfig in "
             + "Assets/Resources/Elympics, register it in ElympicsConfig and make it the active game. Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> CreateGame(
             [CliArg("name", "Game name, 1-63 characters.", Required = true)] string name,
             [CliArg("fleet_id", "Server fleet ID from elympics_list_fleets. Defaults to the backend's default fleet.")] string fleetId = "",
@@ -50,7 +48,7 @@ namespace Elympics.Editor.UnityCli
                             "find the game with elympics_list_games and create its config in Tools > Elympics > Manage games in Elympics.");
                     try
                     {
-                        configAsset = CreateAndSelectGameConfig(config!, gameId!, created!.Name ?? name);
+                        configAsset = ElympicsTools.CreateAndActivateGameConfig(config!, gameId!, created!.Name ?? name);
                     }
                     catch (Exception exception) when (exception is not ElympicsCliException)
                     {
@@ -69,22 +67,9 @@ namespace Elympics.Editor.UnityCli
             return name;
         }
 
-        private static string CreateAndSelectGameConfig(ElympicsConfig config, string gameId, string name)
-        {
-            var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
-            gameConfig.gameId = gameId;
-            gameConfig.gameName = name;
-            ElympicsTools.EnsureElympicsResourcesDirectoryExists();
-            var safeName = new string(name.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{ElympicsConfig.ElympicsResourcesPath}/{safeName}GameConfig.asset");
-            AssetDatabase.CreateAsset(gameConfig, path);
-            _ = CliGames.RegisterAndActivate(config, gameConfig);
-            return path;
-        }
-
         [CliCommand("elympics_update_game",
-            "Change an Elympics game's settings. Only the given fields change: the others are read from the backend and sent back. Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            "Change an Elympics game's settings. Only the given fields are sent; the backend keeps the others. Needs --confirm true.",
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> UpdateGame(
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
             [CliArg("name", "New game name, 1-63 characters.")] string? name = null,
@@ -101,25 +86,24 @@ namespace Elympics.Editor.UnityCli
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one of --name, --fleet_id, --external_backend, --event_queue_join_url, --event_queue_leave_url.");
                 if (name != null)
                     name = ValidateGameName(name);
+                if (fleetId != null && string.IsNullOrWhiteSpace(fleetId))
+                    throw ElympicsCliErrors.InvalidArgumentException("--fleet_id is empty.", "pass a fleet ID from elympics_list_fleets, or leave --fleet_id out to keep the current fleet.");
                 CliArgs.RequireConfirm(confirm, "Changing an Elympics game");
-                var current = await ElympicsEditorApi.GetGameAsync(resolvedGameId, timeoutSeconds, ct);
                 var body = new UpdateGameRequestModel
                 {
-                    GameName = name ?? current.Name,
-                    FleetId = fleetId ?? current.FleetId,
-                    ExternalBackend = ToNullIfEmpty(externalBackend ?? current.ExternalBackend),
-                    EventQueueJoinUrl = ToNullIfEmpty(eventQueueJoinUrl ?? current.EventQueueJoinUrl),
-                    EventQueueLeaveUrl = ToNullIfEmpty(eventQueueLeaveUrl ?? current.EventQueueLeaveUrl),
+                    GameName = name,
+                    FleetId = fleetId?.Trim(),
+                    ExternalBackend = externalBackend,
+                    EventQueueJoinUrl = eventQueueJoinUrl,
+                    EventQueueLeaveUrl = eventQueueLeaveUrl,
                 };
                 var updated = await ElympicsEditorApi.UpdateGameAsync(resolvedGameId, body, timeoutSeconds, ct);
                 return new { status = "updated", gameId = resolvedGameId, game = (object?)updated ?? body };
             });
 
-        private static string? ToNullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
-
         [CliCommand("elympics_update_game_version",
             "Block or unblock an uploaded server version, or change its debug flags. Only the given flags change. Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> UpdateGameVersion(
             [CliArg("version", "Version name (as set by elympics_set_config_game_version) or version ID from elympics_list_game_versions.", Required = true)] string version,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
@@ -144,7 +128,7 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_delete_game_version",
             "Delete an uploaded server version. Its name stays burnt: versions are write-once. Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> DeleteGameVersion(
             [CliArg("version", "Version name or version ID from elympics_list_game_versions.", Required = true)] string version,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
@@ -170,7 +154,7 @@ namespace Elympics.Editor.UnityCli
         }
 
         [CliCommand("elympics_create_queue", "Create a matchmaking queue for an Elympics game. Enum values follow the backend (e.g. --match_type SOLO). Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> CreateQueue(
             [CliArg("name", "Queue name: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string name,
             [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.", Required = true)] string matchType,
@@ -216,8 +200,8 @@ namespace Elympics.Editor.UnityCli
         }
 
         [CliCommand("elympics_update_queue",
-            "Change a matchmaking queue. Only the given fields change: the others are read from the backend and sent back. Needs --confirm true.",
-            Tags = new[] { "elympics", "upload" })]
+            "Change a matchmaking queue. Only the given fields are sent; the backend keeps the others. Needs --confirm true.",
+            Tags = new[] { "elympics/backend" })]
         public static Task<object> UpdateQueue(
             [CliArg("queue", "Queue ID or name from elympics_list_queues.", Required = true)] string queue,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
@@ -229,7 +213,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("sampling_strategy", "Sampling strategy, as in elympics_create_queue.")] string? samplingStrategy = null,
             [CliArg("prediction_strategy", "Prediction strategy, as in elympics_create_queue.")] string? predictionStrategy = null,
             [CliArg("matchmaking_mode", "Matchmaking mode, as in elympics_create_queue.")] string? matchmakingMode = null,
-            [CliArg("match_with_bots", "Fill missing players with bots.")] bool? matchWithBots = null,
+            [CliArg("match_with_bots", "Fill missing players with bots. Without --min_players_to_match, the queue's current value is sent with it, as the backend requires.")] bool? matchWithBots = null,
             [CliArg("max_wait_time", "Maximum wait in seconds; -1 for no limit.")] int? maxWaitTime = null,
             [CliArg("min_players_to_match", "Minimum players to start a match.")] int? minPlayersToMatch = null,
             [CliArg("confirm", ConfirmDescription)] bool confirm = false,
@@ -251,27 +235,30 @@ namespace Elympics.Editor.UnityCli
                 CliArgs.RequireConfirm(confirm, "Changing a queue");
 
                 var current = await FindQueueAsync(resolvedGameId, queue, timeoutSeconds, ct);
-                var body = new QueueSettingsModel
+                if (matchWithBots != null && minPlayersToMatch == null)
+                    minPlayersToMatch = current.MinPlayersToMatch
+                        ?? throw ElympicsCliErrors.InvalidArgumentException("The backend needs --min_players_to_match with --match_with_bots, and the queue has none.",
+                            "pass --min_players_to_match too.");
+                var body = new UpdateQueueRequestModel
                 {
-                    Name = name ?? current.Name,
-                    MatchType = matchType ?? current.MatchType,
-                    MatchmakingStrategy = matchmakingStrategy ?? current.MatchmakingStrategy,
-                    SamplingStrategy = samplingStrategy ?? current.SamplingStrategy,
-                    PredictionStrategy = predictionStrategy ?? current.PredictionStrategy,
-                    MatchmakingMode = matchmakingMode ?? current.MatchmakingMode,
-                    NumberOfTeams = numberOfTeams ?? current.NumberOfTeams,
-                    PlayersInTeam = playersInTeam ?? current.PlayersInTeam,
-                    MatchWithBots = matchWithBots ?? current.MatchWithBots,
-                    MaxWaitTime = maxWaitTime ?? current.MaxWaitTime,
-                    MinPlayersToMatch = minPlayersToMatch ?? current.MinPlayersToMatch,
-                    SmartContractDeploymentId = current.SmartContractDeploymentId,
+                    Name = name,
+                    MatchType = matchType,
+                    MatchmakingStrategy = matchmakingStrategy,
+                    SamplingStrategy = samplingStrategy,
+                    PredictionStrategy = predictionStrategy,
+                    MatchmakingMode = matchmakingMode,
+                    NumberOfTeams = numberOfTeams,
+                    PlayersInTeam = playersInTeam,
+                    MatchWithBots = matchWithBots,
+                    MaxWaitTime = maxWaitTime,
+                    MinPlayersToMatch = minPlayersToMatch,
                 };
                 var queueId = current.Id;
                 var updated = await ElympicsEditorApi.UpdateQueueAsync(resolvedGameId, queueId, body, timeoutSeconds, ct);
-                return new { status = "updated", gameId = resolvedGameId, queueId, queue = updated ?? body };
+                return new { status = "updated", gameId = resolvedGameId, queueId, queue = (object?)updated ?? body };
             });
 
-        [CliCommand("elympics_delete_queue", "Delete a matchmaking queue. Needs --confirm true.", Tags = new[] { "elympics", "upload" })]
+        [CliCommand("elympics_delete_queue", "Delete a matchmaking queue. Needs --confirm true.", Tags = new[] { "elympics/backend" })]
         public static Task<object> DeleteQueue(
             [CliArg("queue", "Queue ID or name from elympics_list_queues.", Required = true)] string queue,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",

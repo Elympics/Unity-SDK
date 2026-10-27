@@ -20,7 +20,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_validate_scene",
             "Check an open Elympics gameplay scene without changing it: Elympics system, network IDs, build settings, boot scene, 2D physics simulator and "
             + "synchronizer conflicts. Every finding has a code, a severity and a fix. Returns status \"issues\" when there are errors or warnings.",
-            Tags = new[] { "elympics", "read" })]
+            Tags = new[] { "elympics/scene" })]
         public static object ValidateScene(
             [CliArg("scene", SceneDescription)] string scene = "",
             [CliArg("ignore", "JSON array of finding codes to ignore, e.g. '[\"UPDATABLE_NOT_PREDICTABLE\"]'. Ignored findings are still listed under \"ignored\".")]
@@ -60,7 +60,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_list_synced_vars",
             "List the synchronized ElympicsVars of every ElympicsBehaviour in an open scene, with their serialized sizes in bytes. "
             + "Values are read without changing state; sizes of variable-length vars (strings, lists, arrays) depend on their current values.",
-            Tags = new[] { "elympics", "read" })]
+            Tags = new[] { "elympics/scene" })]
         public static object ListSyncedVars([CliArg("scene", SceneDescription)] string scene = "") => CliRun.Run(() =>
         {
             var resolvedScene = ResolveOpenScene(scene);
@@ -151,7 +151,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_reset_network_ids",
             "Reassign the automatic network IDs of every ElympicsBehaviour in the active scene (like Tools > Elympics > Reset Network Ids). "
             + "Doesn't save the scene unless --save true.",
-            Tags = new[] { "elympics", "write" })]
+            Tags = new[] { "elympics/scene" })]
         public static object ResetNetworkIds([CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Run(() =>
         {
             CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
@@ -169,7 +169,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_set_up_scene",
             "Turn an open scene into an Elympics gameplay scene: add the Elympics system prefab, optionally the 2D physics simulator, add the scene to Build Settings, "
             + "make it the active game's gameplay scene and assign network IDs. Refuses a scene that already has an Elympics system. Returns elympics_validate_scene's findings.",
-            Tags = new[] { "elympics", "write" })]
+            Tags = new[] { "elympics/scene" })]
         public static object SetUpScene(
             [CliArg("scene", SceneDescription)] string scene = "",
             [CliArg("add_to_build", "Add the scene to Build Settings (or enable it there).")] bool addToBuild = true,

@@ -13,11 +13,11 @@ namespace Elympics.Editor.UnityCli
 {
     public static class ElympicsConfigCliCommands
     {
-        [CliCommand("elympics_select_game",
+        [CliCommand("elympics_set_active_game",
             "Make a game config the active one (ElympicsConfig's first game) and save ElympicsConfig. "
             + "A game config asset that isn't in ElympicsConfig yet is registered first (found by --game_id, or given by --config_asset).",
-            Tags = new[] { "elympics", "write" })]
-        public static object SelectGame(
+            Tags = new[] { "elympics/config" })]
+        public static object SetActiveGame(
             [CliArg("game_id", "Elympics game ID of the game config to activate.")] string gameId = "",
             [CliArg("index", "Index of the game in ElympicsConfig (see elympics_status), instead of --game_id.")] int index = -1,
             [CliArg("config_asset", "Asset path of an ElympicsGameConfig to register and activate, e.g. after elympics_import_sample.")] string configAsset = "",
@@ -33,11 +33,11 @@ namespace Elympics.Editor.UnityCli
             var previousGameId = config.GetCurrentGameConfig()?.GameId;
             var gameConfig = assetGameConfig ?? (index >= 0 ? GetByIndex(config, index) : FindByGameId(config, gameId.Trim()));
 
-            var registered = CliGames.RegisterAndActivate(config, gameConfig);
+            var registered = ElympicsTools.RegisterAndActivateGameConfig(config, gameConfig);
 
             return new
             {
-                status = "selected",
+                status = "active",
                 gameId = gameConfig.GameId,
                 gameName = gameConfig.GameName,
                 assetPath = AssetDatabase.GetAssetPath(gameConfig),
@@ -49,7 +49,7 @@ namespace Elympics.Editor.UnityCli
         private static ElympicsGameConfig LoadGameConfigAsset(string assetPath) =>
             AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(assetPath.Trim())
             ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound, $"No ElympicsGameConfig asset at {assetPath}.",
-                "pass the asset path of an ElympicsGameConfig (find_assets --type ElympicsGameConfig lists them), or select the game by --game_id.");
+                "pass the asset path of an ElympicsGameConfig (find_assets --type ElympicsGameConfig lists them), or pass --game_id.");
 
         private static ElympicsGameConfig GetByIndex(ElympicsConfig config, int index)
         {
@@ -71,7 +71,7 @@ namespace Elympics.Editor.UnityCli
                 "import a sample (elympics_import_sample), create a game with elympics_create_game --create_config true, or pass --config_asset.");
         }
 
-        [CliCommand("elympics_set_config_game_version", "Set the game version of a game config (the active one by default) and save it.", Tags = new[] { "elympics", "write" })]
+        [CliCommand("elympics_set_config_game_version", "Set the game version of a game config (the active one by default) and save it.", Tags = new[] { "elympics/config" })]
         public static object SetConfigGameVersion(
             [CliArg("version", "New game version: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string version,
             [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "") => CliRun.Run(() =>
@@ -87,8 +87,8 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_import_sample",
             "Import a sample of the Elympics package into Assets/Samples. Refuses a sample that is already imported unless --force true --confirm true. "
-            + "Doesn't change ElympicsConfig: select an imported game config with elympics_select_game --config_asset.",
-            Tags = new[] { "elympics", "write" })]
+            + "Doesn't change ElympicsConfig: make an imported game config active with elympics_set_active_game --config_asset.",
+            Tags = new[] { "elympics/config" })]
         public static object ImportSample(
             [CliArg("sample", "Sample display name or directory name, case-insensitive (e.g. \"Button Clicker [Game]\" or ButtonClicker).", Required = true)] string sample,
             [CliArg("force", "Import again over an already imported sample, discarding changes to it. Needs --confirm true.")] bool force = false,

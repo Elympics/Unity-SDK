@@ -17,7 +17,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_build_server",
             "Build the active game's Linux dedicated server into serverbuild/Engine (the Linux Dedicated Server module must be installed). "
             + "Takes minutes: run it with --detach, or raise the CLI's --timeout.",
-            Tags = new[] { "elympics", "build" })]
+            Tags = new[] { "elympics/build" })]
         public static object BuildServer([CliArg("development", "Make a development build.")] bool development = false) => CliRun.Run(() =>
         {
             RequireReadyToBuild();
@@ -40,7 +40,7 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_upload_server",
             "Build the active game's Linux server and upload it as the game version set in its game config (elympics_set_config_game_version). "
             + "Irreversible: a version name can't be uploaded again. Needs --confirm true. Takes minutes: run it with --detach.",
-            Tags = new[] { "elympics", "upload" })]
+            Tags = new[] { "elympics/build" })]
         public static Task<object> UploadServer(
             [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("development", "Upload a development build.")] bool development = false,

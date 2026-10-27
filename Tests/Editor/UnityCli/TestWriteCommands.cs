@@ -21,7 +21,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [Test]
         public void SetVersionValidatesTheVersion() =>
-            CliAssert.Throws(() => ElympicsConfigCliCommands.SetVersion("1.0 beta"), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => ElympicsConfigCliCommands.SetConfigGameVersion("1.0 beta"), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void ImportSampleRejectsAnUnknownSample() =>
@@ -34,7 +34,7 @@ namespace Elympics.Editor.Tests.UnityCli
             _ = scene.Create("Player").AddComponent<ElympicsBehaviour>();
             _ = scene.Create("Ground").AddComponent<BoxCollider2D>();
 
-            var result = JObject.FromObject(ElympicsSceneCliCommands.SceneSetup(addToBuild: false, setGameplayScene: false));
+            var result = JObject.FromObject(ElympicsSceneCliCommands.SetUpScene(addToBuild: false, setGameplayScene: false));
             foreach (var root in scene.Scene.GetRootGameObjects().Where(root => root.GetComponent<GameSceneManager>() != null))
                 scene.Track(root);
 
@@ -44,21 +44,21 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(codes, Does.Not.Contain(ElympicsSceneValidator.NoElympicsSystem)
                 .And.Not.Contain(ElympicsSceneValidator.NetworkIdsStale)
                 .And.Not.Contain(ElympicsSceneValidator.Physics2DSimulatorMissing));
-            CliAssert.Throws(() => ElympicsSceneCliCommands.SceneSetup(addToBuild: false, setGameplayScene: false), ElympicsCliErrors.SystemAlreadyPresent);
+            CliAssert.Throws(() => ElympicsSceneCliCommands.SetUpScene(addToBuild: false, setGameplayScene: false), ElympicsCliErrors.SystemAlreadyPresent);
         }
 
         [Test]
         public void SceneSetupNeedsASavedSceneForBuildSettings()
         {
             using var scene = new AdditiveTestScene();
-            CliAssert.Throws(() => ElympicsSceneCliCommands.SceneSetup(), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => ElympicsSceneCliCommands.SetUpScene(), ElympicsCliErrors.InvalidArgument);
         }
 
         [Test]
         public void SceneSetupRejectsAnUnknownSimulatorOption()
         {
             using var scene = new AdditiveTestScene();
-            CliAssert.Throws(() => ElympicsSceneCliCommands.SceneSetup(addToBuild: false, setGameplayScene: false, addPhysics2DSimulator: "maybe"),
+            CliAssert.Throws(() => ElympicsSceneCliCommands.SetUpScene(addToBuild: false, setGameplayScene: false, addPhysics2DSimulator: "maybe"),
                 ElympicsCliErrors.InvalidArgument);
         }
 

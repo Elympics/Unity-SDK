@@ -31,7 +31,7 @@ namespace Elympics.Editor.Tests.UnityCli
             public readonly Dictionary<string, string> Errors = new();
             public readonly List<string> Requested = new();
 
-            public Task<string> LsRemoteAsync(string url, TimeSpan timeout)
+            public Task<string> ListRemoteRefsAsync(string url, TimeSpan timeout)
             {
                 lock (Requested)
                     Requested.Add(url);
@@ -63,7 +63,7 @@ namespace Elympics.Editor.Tests.UnityCli
                 OperationsDirectory = Path.Combine(_directory, "operations"),
                 Git = _git,
                 Resolve = () => _resolves++,
-                InstalledVersion = name => name == Sdk ? "0.28.0" : null,
+                GetInstalledVersion = name => name == Sdk ? "0.28.0" : null,
             };
             WriteManifest(SdkUrl + "#develop", PlayPadUrl + "#v3.0.0");
             WriteLock(new JObject { ["version"] = SdkUrl + "#develop", ["hash"] = OldHead },

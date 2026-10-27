@@ -32,10 +32,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             Base = baseUrl;
             Path = path;
             Ref = reference;
-            Kind = KindOf(reference);
+            Kind = GetKind(reference);
         }
 
-        public static GitRefKind KindOf(string reference) =>
+        public static GitRefKind GetKind(string reference) =>
             string.IsNullOrEmpty(reference) ? GitRefKind.None
             : VersionTag.IsMatch(reference) ? GitRefKind.Tag
             : Commit.IsMatch(reference) ? GitRefKind.Commit
@@ -58,7 +58,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public static string Format(string baseUrl, string path, string reference) =>
             baseUrl + (string.IsNullOrEmpty(path) ? string.Empty : PathQuery + path) + (string.IsNullOrEmpty(reference) ? string.Empty : "#" + reference);
 
-        public string WithRef(string reference) => Format(Base, Path, reference);
+        public string FormatWithRef(string reference) => Format(Base, Path, reference);
 
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
 
@@ -137,7 +137,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public const string NoVersionTags = "ELYMPICS_NO_VERSION_TAGS";
 
         /// <returns>Positive when <paramref name="a"/> is newer. A leading v is ignored and only the first three components count.</returns>
-        public static int VersionCompare(string a, string b)
+        public static int CompareVersions(string a, string b)
         {
             static int[] Parts(string version) =>
                 version.TrimStart('v').Split('.', '-').Select(part => int.TryParse(part, out var number) ? number : 0).ToArray();
@@ -151,42 +151,42 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             return 0;
         }
 
-        public static string NewestVersionTag(RemoteRefs remote) =>
-            remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(VersionCompare)).LastOrDefault();
+        public static string FindNewestVersionTag(RemoteRefs remote) =>
+            remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(CompareVersions)).LastOrDefault();
 
         public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string pin = null, string track = null)
         {
             var plan = PlanCore(dependency, remote, pin, track);
-            plan.Kind = GitDependency.KindOf(plan.Ref);
+            plan.Kind = GitDependency.GetKind(plan.Ref);
             return plan;
         }
 
         private static RefPlan PlanCore(GitDependency dependency, RemoteRefs remote, string pin, string track)
         {
-            var newestTag = NewestVersionTag(remote);
+            var newestTag = FindNewestVersionTag(remote);
             if (!string.IsNullOrEmpty(pin))
                 return remote.Tags.Contains(pin)
                     ? new RefPlan { Action = pin == dependency.Ref ? RefAction.Keep : RefAction.Move, Ref = pin, Head = TagCommit(remote, pin) }
-                    : Error(dependency, TagNotFound, $"tag {pin} not on the remote");
+                    : CreateErrorPlan(dependency, TagNotFound, $"tag {pin} not on the remote");
 
             if (!string.IsNullOrEmpty(track))
                 return remote.Branches.TryGetValue(track, out var trackHead)
                     ? new RefPlan { Action = track == dependency.Ref ? RefAction.Refresh : RefAction.Move, Ref = track, Head = trackHead }
-                    : Error(dependency, BranchNotFound, $"branch {track} not on the remote");
+                    : CreateErrorPlan(dependency, BranchNotFound, $"branch {track} not on the remote");
 
             switch (dependency.Kind)
             {
                 case GitRefKind.Tag:
                     if (newestTag == null)
-                        return Error(dependency, NoVersionTags, "no version tags on the remote");
-                    return VersionCompare(newestTag, dependency.Ref) > 0
+                        return CreateErrorPlan(dependency, NoVersionTags, "no version tags on the remote");
+                    return CompareVersions(newestTag, dependency.Ref) > 0
                         ? new RefPlan { Action = RefAction.Move, Ref = newestTag, Head = TagCommit(remote, newestTag) }
                         : new RefPlan { Action = RefAction.Keep, Ref = dependency.Ref, Head = TagCommit(remote, dependency.Ref) };
                 case GitRefKind.Branch:
                     if (remote.Branches.TryGetValue(dependency.Ref, out var head))
                         return new RefPlan { Action = RefAction.Refresh, Ref = dependency.Ref, Head = head };
                     if (!remote.Branches.TryGetValue(Develop, out var developHead))
-                        return Error(dependency, BranchNotFound, $"branch {dependency.Ref} and develop both missing on the remote");
+                        return CreateErrorPlan(dependency, BranchNotFound, $"branch {dependency.Ref} and develop both missing on the remote");
                     return new RefPlan
                     {
                         Action = RefAction.Move,
@@ -196,7 +196,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     };
                 case GitRefKind.None:
                     if (newestTag == null)
-                        return Error(dependency, NoVersionTags, "no version tags on the remote to pin");
+                        return CreateErrorPlan(dependency, NoVersionTags, "no version tags on the remote to pin");
                     return new RefPlan
                     {
                         Action = RefAction.Move,
@@ -212,7 +212,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         private static string TagCommit(RemoteRefs remote, string tag) => tag != null && remote.TagCommits.TryGetValue(tag, out var sha) ? sha : null;
 
-        private static RefPlan Error(GitDependency dependency, string code, string reason) =>
+        private static RefPlan CreateErrorPlan(GitDependency dependency, string code, string reason) =>
             new() { Action = RefAction.Error, Ref = dependency.Ref, ErrorCode = code, Reason = reason };
     }
 }

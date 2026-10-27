@@ -22,7 +22,7 @@ namespace Elympics.Editor.UnityCli
         public static object ValidateScene(
             [CliArg("scene", SceneDescription)] string scene = "",
             [CliArg("ignore", "JSON array of finding codes to ignore, e.g. '[\"UPDATABLE_NOT_PREDICTABLE\"]'. Ignored findings are still listed under \"ignored\".")]
-            string ignore = "") => CliRun.Sync(() =>
+            string ignore = "") => CliRun.Run(() =>
         {
             var ignoredCodes = new HashSet<string>(CliArgs.ParseStringArray(ignore, "ignore"), StringComparer.OrdinalIgnoreCase);
             return Validate(ResolveOpenScene(scene), ignoredCodes);
@@ -55,11 +55,11 @@ namespace Elympics.Editor.UnityCli
             objectPath = finding.ObjectPath,
         };
 
-        [CliCommand("elympics_synced_vars",
+        [CliCommand("elympics_list_synced_vars",
             "List the synchronized ElympicsVars of every ElympicsBehaviour in an open scene, with their serialized sizes in bytes. "
             + "Values are read without changing state; sizes of variable-length vars (strings, lists, arrays) depend on their current values.",
             Tags = new[] { "elympics", "read" })]
-        public static object SyncedVars([CliArg("scene", SceneDescription)] string scene = "") => CliRun.Sync(() =>
+        public static object ListSyncedVars([CliArg("scene", SceneDescription)] string scene = "") => CliRun.Run(() =>
         {
             var resolvedScene = ResolveOpenScene(scene);
             var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(resolvedScene, true);
@@ -150,7 +150,7 @@ namespace Elympics.Editor.UnityCli
             "Reassign the automatic network IDs of every ElympicsBehaviour in the active scene (like Tools > Elympics > Reset Network Ids). "
             + "Doesn't save the scene unless --save true.",
             Tags = new[] { "elympics", "write" })]
-        public static object ResetNetworkIds([CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Sync(() =>
+        public static object ResetNetworkIds([CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Run(() =>
         {
             CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
             var scene = ResolveOpenScene(string.Empty);
@@ -164,17 +164,17 @@ namespace Elympics.Editor.UnityCli
             return new { status = "reset", scene = scene.path, behaviourCount = behaviours.Count, changed, sceneDirty = scene.isDirty, saved };
         });
 
-        [CliCommand("elympics_scene_setup",
+        [CliCommand("elympics_set_up_scene",
             "Turn an open scene into an Elympics gameplay scene: add the Elympics system prefab, optionally the 2D physics simulator, add the scene to Build Settings, "
             + "make it the active game's gameplay scene and assign network IDs. Refuses a scene that already has an Elympics system. Returns elympics_validate_scene's findings.",
             Tags = new[] { "elympics", "write" })]
-        public static object SceneSetup(
+        public static object SetUpScene(
             [CliArg("scene", SceneDescription)] string scene = "",
             [CliArg("add_to_build", "Add the scene to Build Settings (or enable it there).")] bool addToBuild = true,
             [CliArg("set_gameplay_scene", "Make the scene the active game config's gameplay scene.")] bool setGameplayScene = true,
             [CliArg("create_if_missing", "Create ElympicsConfig if the project has none (--set_gameplay_scene still needs a game config).")] bool createIfMissing = false,
             [CliArg("add_physics2d_simulator", "auto (add it if the scene has 2D colliders or rigidbodies), true or false.")] string addPhysics2DSimulator = "auto",
-            [CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Sync(() =>
+            [CliArg("save", "Save the scene afterwards.")] bool save = false) => CliRun.Run(() =>
         {
             CliRun.RequireNotPlaying(SceneChangesLostInPlayMode);
             var addSimulator = CliArgs.ParseOptionalBool(addPhysics2DSimulator, "add_physics2d_simulator");

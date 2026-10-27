@@ -27,19 +27,17 @@ namespace Elympics.Editor.Communication
         public readonly long StatusCode;
         public readonly string Text;
         public readonly string Error;
-        public readonly bool IsConnectionError;
-        public readonly bool IsProtocolError;
+        public readonly UnityWebRequest.Result Result;
 
-        public EditorApiResponse(long statusCode, string text, string error, bool isConnectionError, bool isProtocolError)
+        public EditorApiResponse(long statusCode, string text, string error, UnityWebRequest.Result result)
         {
             StatusCode = statusCode;
             Text = text;
             Error = error;
-            IsConnectionError = isConnectionError;
-            IsProtocolError = isProtocolError;
+            Result = result;
         }
 
-        public bool Succeeded => !IsConnectionError && !IsProtocolError;
+        public bool Succeeded => Result == UnityWebRequest.Result.Success;
     }
 
     internal interface IEditorApiTransport
@@ -66,7 +64,7 @@ namespace Elympics.Editor.Communication
         }
 
         internal static EditorApiResponse ReadResponse(UnityWebRequest webRequest) =>
-            new(webRequest.responseCode, webRequest.downloadHandler?.text, webRequest.error, webRequest.IsConnectionError(), webRequest.IsProtocolError());
+            new(webRequest.responseCode, webRequest.downloadHandler?.text, webRequest.error, webRequest.result);
 
         internal static UnityWebRequest Create(EditorApiRequest request)
         {

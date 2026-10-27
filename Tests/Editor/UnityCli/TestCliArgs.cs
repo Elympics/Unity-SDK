@@ -48,16 +48,16 @@ namespace Elympics.Editor.Tests.UnityCli
 
         private static T WithProjectRoot<T>(Func<string, T> body)
         {
-            var original = CliArgs.ProjectRoot;
+            var original = CliArgs.GetProjectRoot;
             var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Proj");
-            CliArgs.ProjectRoot = () => root;
+            CliArgs.GetProjectRoot = () => root;
             try
             {
                 return body(root);
             }
             finally
             {
-                CliArgs.ProjectRoot = original;
+                CliArgs.GetProjectRoot = original;
             }
         }
 
@@ -108,10 +108,10 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void OptionalArgumentIsTrimmedOrNull()
         {
-            Assert.That(CliArgs.Optional("  x "), Is.EqualTo("x"));
-            Assert.That(CliArgs.Optional(" "), Is.Null);
-            Assert.That(CliArgs.Optional(string.Empty), Is.Null);
-            Assert.That(CliArgs.Optional(null), Is.Null);
+            Assert.That(CliArgs.TrimToNull("  x "), Is.EqualTo("x"));
+            Assert.That(CliArgs.TrimToNull(" "), Is.Null);
+            Assert.That(CliArgs.TrimToNull(string.Empty), Is.Null);
+            Assert.That(CliArgs.TrimToNull(null), Is.Null);
         }
 
         [Test]
@@ -145,9 +145,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void UnexpectedExceptionsBecomeInternal()
         {
-            var exception = Assert.Catch(() => CliRun.Sync(() => throw new NullReferenceException("x")));
+            var exception = Assert.Catch(() => CliRun.Run(() => throw new NullReferenceException("x")));
             Assert.That(exception.Message, Does.StartWith(ElympicsCliErrors.Internal + ": NullReferenceException"));
-            CliAssert.Throws(() => CliRun.Sync(() => throw new ArgumentException("plain")), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => CliRun.Run(() => throw new ArgumentException("plain")), ElympicsCliErrors.InvalidArgument);
         }
     }
 }

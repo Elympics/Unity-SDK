@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
+using UnityEngine.Networking;
 
 namespace Elympics.Editor.Tests
 {
@@ -17,7 +18,7 @@ namespace Elympics.Editor.Tests
     internal sealed class FakeTransport : IEditorApiTransport
     {
         public readonly List<EditorApiRequest> Requests = new();
-        public Func<EditorApiRequest, EditorApiResponse> Respond = _ => new EditorApiResponse(200, "{}", null, false, false);
+        public Func<EditorApiRequest, EditorApiResponse> Respond = _ => new EditorApiResponse(200, "{}", null, UnityWebRequest.Result.Success);
 
         public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
         {
@@ -30,27 +31,27 @@ namespace Elympics.Editor.Tests
     {
         private readonly IEditorApiTransport _transport = ElympicsEditorApi.Transport;
         private readonly IEditorLoginStore _login = ElympicsEditorApi.LoginStore;
-        private readonly Func<long> _now = ElympicsEditorApi.UtcNowSeconds;
-        private readonly Func<IEditorApiTransport> _blockingTransportFactory = ElympicsEditorApi.BlockingTransportFactory;
-        private readonly Func<string> _endpoint = ElympicsEditorApi.ApiEndpointOverride;
+        private readonly Func<long> _now = ElympicsEditorApi.GetUtcNowSeconds;
+        private readonly Func<IEditorApiTransport> _createBlockingTransport = ElympicsEditorApi.CreateBlockingTransport;
+        private readonly Func<string> _endpoint = ElympicsEditorApi.GetApiEndpointOverride;
 
         public EditorApiScope(FakeLoginStore login, FakeTransport transport, string apiEndpoint = "https://api.test/v2/api", long? now = null)
         {
             ElympicsEditorApi.Transport = transport;
-            ElympicsEditorApi.BlockingTransportFactory = () => transport;
+            ElympicsEditorApi.CreateBlockingTransport = () => transport;
             ElympicsEditorApi.LoginStore = login;
             if (now.HasValue)
-                ElympicsEditorApi.UtcNowSeconds = () => now.Value;
-            ElympicsEditorApi.ApiEndpointOverride = () => apiEndpoint;
+                ElympicsEditorApi.GetUtcNowSeconds = () => now.Value;
+            ElympicsEditorApi.GetApiEndpointOverride = () => apiEndpoint;
         }
 
         public void Dispose()
         {
             ElympicsEditorApi.Transport = _transport;
             ElympicsEditorApi.LoginStore = _login;
-            ElympicsEditorApi.UtcNowSeconds = _now;
-            ElympicsEditorApi.BlockingTransportFactory = _blockingTransportFactory;
-            ElympicsEditorApi.ApiEndpointOverride = _endpoint;
+            ElympicsEditorApi.GetUtcNowSeconds = _now;
+            ElympicsEditorApi.CreateBlockingTransport = _createBlockingTransport;
+            ElympicsEditorApi.GetApiEndpointOverride = _endpoint;
         }
     }
 }

@@ -104,7 +104,7 @@ namespace Elympics
         {
             ElympicsEditorApi.RequireTrustedApiEndpoint();
             ElympicsLogger.LogInfo($"Logging in as {username}");
-            var userName = await ElympicsEditorApi.LoginAsync(username, password, ct);
+            var userName = await ElympicsEditorApi.LoginAsync(username, password, ct: ct);
             ElympicsLogger.LogInfo($"Logged to ElympicsWeb as {userName}.");
         }
 
@@ -144,7 +144,7 @@ namespace Elympics
             var cancellation = gameVersionsCancellation = new CancellationTokenSource();
             RunAndLogErrors(async () =>
             {
-                var gameVersions = await ElympicsEditorApi.GetGameVersionsAsync(gameId, cancellation.Token);
+                var gameVersions = await ElympicsEditorApi.GetGameVersionsAsync(gameId, ct: cancellation.Token);
                 updateProperty?.Invoke(gameVersions);
             }, silent);
         }
@@ -271,25 +271,25 @@ namespace Elympics
             if (buildReport.summary.result != BuildResult.Succeeded)
                 return buildReport;
 
-            await PackAndUploadServerAsync(gameConfig, progress, ct);
+            await PackAndUploadServerAsync(gameConfig, progress, null, ct);
             return buildReport;
         }
 
         /// <summary>Packs and uploads the server already built into <see cref="BuildTools.EnginePath"/>, using the current login.</summary>
-        internal static async UniTask PackAndUploadServerUsingCurrentLoginAsync(CancellationToken ct)
+        internal static async UniTask PackAndUploadServerUsingCurrentLoginAsync(int? timeoutSeconds, CancellationToken ct)
         {
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
-            await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
-            await PackAndUploadServerAsync(currentGameConfig, null, ct);
+            await ElympicsEditorApi.EnsureLoggedInAsync(0, timeoutSeconds, ct);
+            await PackAndUploadServerAsync(currentGameConfig, null, timeoutSeconds, ct);
         }
 
-        private static async UniTask PackAndUploadServerAsync(ElympicsGameConfig gameConfig, Action<string, float> progress, CancellationToken ct)
+        private static async UniTask PackAndUploadServerAsync(ElympicsGameConfig gameConfig, Action<string, float> progress, int? timeoutSeconds, CancellationToken ct)
         {
             progress?.Invoke("Packing engine", 0.2f);
             var enginePath = Pack(gameConfig.GameId, gameConfig.GameVersion, BuildTools.EnginePath, EngineSubdirectory);
 
             progress?.Invoke("Uploading...", 0.8f);
-            await ElympicsEditorApi.UploadServerAsync(gameConfig.GameId, gameConfig.GameVersion, enginePath, ct);
+            await ElympicsEditorApi.UploadServerAsync(gameConfig.GameId, gameConfig.GameVersion, enginePath, timeoutSeconds, ct);
             ElympicsLogger.LogInfo($"Uploaded game {gameConfig.GameName} with version {gameConfig.GameVersion}.");
             GameUploadedToTheCloud?.Invoke();
         }
@@ -334,18 +334,18 @@ namespace Elympics
 
         [PublicAPI]
         public static Task<int> UploadStreamingAssetsUsingCurrentLoginAsync(string gameId, string streamingAssetsPath, string version, StreamingAssetsLayout layout,
-            CancellationToken ct = default)
+            int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct).AsTask();
+            return ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, timeoutSeconds, ct).AsTask();
         }
 
         [PublicAPI]
         public static Task<int> UploadClientBuildUsingCurrentLoginAsync(string gameId, string clientBuildPath, string clientGameVersion, string serverGameVersion,
-            CancellationToken ct = default)
+            int? timeoutSeconds = null, CancellationToken ct = default)
         {
             ValidateGameId(gameId);
-            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, ct).AsTask();
+            return ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, timeoutSeconds, ct).AsTask();
         }
 
         /// <returns>The build report. A failed build is returned without uploading.</returns>
@@ -353,7 +353,7 @@ namespace Elympics
         public static async Task<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)
         {
             var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
-            await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+            await ElympicsEditorApi.EnsureLoggedInAsync(0, ct: ct);
             return await BuildPackAndUploadServerAsync(currentGameConfig, additionalOptions, null, ct);
         }
 
@@ -368,7 +368,7 @@ namespace Elympics
         {
             ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
-            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct));
+            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct));
         }
 
         [PublicAPI]
@@ -376,8 +376,8 @@ namespace Elympics
         {
             _ = ElympicsEditorApi.RunBlocking(async ct =>
             {
-                await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
-                return await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct);
+                await ElympicsEditorApi.EnsureLoggedInAsync(0, ct: ct);
+                return await ElympicsEditorApi.UploadStreamingAssetsAsync(gameId, streamingAssetsPath, version, layout, null, ct: ct);
             });
         }
 
@@ -394,7 +394,7 @@ namespace Elympics
                 return;
             try
             {
-                ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.EnsureLoggedInAsync(PlayModeTokenExpirationMarginSeconds, ct));
+                ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.EnsureLoggedInAsync(PlayModeTokenExpirationMarginSeconds, ct: ct));
             }
             catch (Exception e)
             {
@@ -421,7 +421,7 @@ namespace Elympics
         {
             ValidateGameId(gameId);
             LoginAsDeveloper(username, password);
-            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, ct));
+            _ = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.UploadClientBuildAsync(gameId, clientBuildPath, clientGameVersion, serverGameVersion, null, ct: ct));
             ElympicsLogger.LogInfo("Client build uploaded successfully.");
         }
 

@@ -13,13 +13,13 @@ namespace Elympics.Editor.Tests
         [SetUp]
         public void SetUp()
         {
-            _originalCustomHost = ElympicsApiHostPolicy.TrustedCustomHost;
+            _originalCustomHost = ElympicsApiHostPolicy.GetTrustedCustomHost;
             _customHost = string.Empty;
-            ElympicsApiHostPolicy.TrustedCustomHost = () => _customHost;
+            ElympicsApiHostPolicy.GetTrustedCustomHost = () => _customHost;
         }
 
         [TearDown]
-        public void TearDown() => ElympicsApiHostPolicy.TrustedCustomHost = _originalCustomHost;
+        public void TearDown() => ElympicsApiHostPolicy.GetTrustedCustomHost = _originalCustomHost;
 
         [TestCase("https://api.elympics.cc/v2")]
         [TestCase("https://api-stg.elympics.cc/v2/api")]
@@ -58,6 +58,7 @@ namespace Elympics.Editor.Tests
         }
 
         [TestCase("127.0.0.1", "http://127.0.0.1:5000", true)]
+        [TestCase("127.0.0.2", "http://127.0.0.2:5000", true)]
         [TestCase("[::1]", "http://[::1]:5000", true)]
         [TestCase("[::1]", "https://[::1]:5000", true)]
         [TestCase("example.com", "https://example.com", true)]

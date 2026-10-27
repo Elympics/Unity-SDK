@@ -7,6 +7,7 @@ using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.Communication;
 using NUnit.Framework;
+using UnityEngine.Networking;
 using UnityEngine.TestTools;
 
 namespace Elympics.Editor.Tests
@@ -20,9 +21,9 @@ namespace Elympics.Editor.Tests
         private FakeLoginStore _login;
         private EditorApiScope _scope;
 
-        private static EditorApiResponse Ok(string text) => new(200, text, null, false, false);
-        private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", false, true);
-        private static EditorApiResponse ConnectionError(string error) => new(0, null, error, true, false);
+        private static EditorApiResponse Ok(string text) => new(200, text, null, UnityWebRequest.Result.Success);
+        private static EditorApiResponse Status(long code, string text) => new(code, text, $"HTTP/1.1 {code}", UnityWebRequest.Result.ProtocolError);
+        private static EditorApiResponse ConnectionError(string error) => new(0, null, error, UnityWebRequest.Result.ConnectionError);
 
         private static string Jwt(long expiration)
         {
@@ -140,7 +141,7 @@ namespace Elympics.Editor.Tests
         {
             _transport.Respond = _ => Status(400, "{\"errors\":{\"Name\":[\"Name is taken.\"]}}");
 
-            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new Newtonsoft.Json.Linq.JObject()));
+            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new QueueSettingsModel()));
 
             Assert.That(exception.Message, Does.Contain("[Name] Name is taken."));
             Assert.That(_transport.Requests.Single().Url, Is.EqualTo($"{Api}/games/g1/queues"));
@@ -151,7 +152,7 @@ namespace Elympics.Editor.Tests
         {
             _transport.Respond = _ => Status(400, "{\"errors\":{\"Name\":null,\"Size\":[\"Size is too big.\"]}}");
 
-            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new Newtonsoft.Json.Linq.JObject()));
+            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new QueueSettingsModel()));
 
             Assert.That(exception.Message, Does.Contain("[Size] Size is too big."));
         }
@@ -171,7 +172,7 @@ namespace Elympics.Editor.Tests
             var token = Jwt(Now + 3600);
             _transport.Respond = _ => Ok($"{{\"UserName\":\"dev\",\"AuthToken\":\"{token}\",\"RefreshToken\":\"refresh2\"}}");
 
-            var userName = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.LoginAsync("dev", "secret", ct));
+            var userName = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.LoginAsync("dev", "secret", ct: ct));
 
             Assert.That(userName, Is.EqualTo("dev"));
             Assert.That(_login.IsLogin, Is.True);
@@ -275,7 +276,7 @@ namespace Elympics.Editor.Tests
         {
             _transport.Respond = _ => Ok("[{\"Id\":\"g1\",\"Name\":\"Game\"}]");
 
-            var games = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct));
+            var games = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct));
 
             Assert.That(games.Single().Name, Is.EqualTo("Game"));
             Assert.That(_transport.Requests, Has.Count.EqualTo(1));
@@ -286,7 +287,7 @@ namespace Elympics.Editor.Tests
         {
             _transport.Respond = _ => Status(404, "");
 
-            var exception = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct)));
+            var exception = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct)));
 
             Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.NotFound));
         }
@@ -310,7 +311,7 @@ namespace Elympics.Editor.Tests
         public void ABlockingCallUsesTheBlockingTransportAndRestoresTheTransport()
         {
             var blocking = new FakeTransport();
-            ElympicsEditorApi.BlockingTransportFactory = () => blocking;
+            ElympicsEditorApi.CreateBlockingTransport = () => blocking;
             IEditorApiTransport transportDuringCall = null;
 
             ElympicsEditorApi.RunBlocking(ct =>
@@ -326,7 +327,7 @@ namespace Elympics.Editor.Tests
 
             _transport.Respond = _ => Status(500, "");
             blocking.Respond = _ => Status(500, "");
-            _ = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct)));
+            _ = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct)));
             Assert.That(ElympicsEditorApi.Transport, Is.SameAs(_transport));
             Assert.That(_transport.Requests, Is.Empty);
         }

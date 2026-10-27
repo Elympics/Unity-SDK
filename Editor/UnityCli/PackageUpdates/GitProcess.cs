@@ -7,7 +7,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     internal interface IGitProcess
     {
         /// <exception cref="InvalidOperationException">git failed, timed out or isn't installed; the message says which.</exception>
-        Task<string> LsRemoteAsync(string url, TimeSpan timeout);
+        Task<string> ListRemoteRefsAsync(string url, TimeSpan timeout);
     }
 
     /// <summary>
@@ -16,7 +16,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     /// </summary>
     internal sealed class GitProcess : IGitProcess
     {
-        public Task<string> LsRemoteAsync(string url, TimeSpan timeout) => Task.Run(() =>
+        public Task<string> ListRemoteRefsAsync(string url, TimeSpan timeout) => Task.Run(() =>
         {
             if (!GitDependency.IsSupportedRemote(url))
                 throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");

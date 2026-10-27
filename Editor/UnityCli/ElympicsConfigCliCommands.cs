@@ -11,7 +11,7 @@ namespace Elympics.Editor.UnityCli
 {
     public static class ElympicsConfigCliCommands
     {
-        [CliCommand("elympics_config_select_game",
+        [CliCommand("elympics_select_game",
             "Make a game config the active one (ElympicsConfig's first game) and save ElympicsConfig. "
             + "A game config asset that isn't in ElympicsConfig yet is registered first (found by --game_id, or given by --config_asset).",
             Tags = new[] { "elympics", "write" })]
@@ -19,7 +19,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("game_id", "Elympics game ID of the game config to activate.")] string gameId = "",
             [CliArg("index", "Index of the game in ElympicsConfig (see elympics_status), instead of --game_id.")] int index = -1,
             [CliArg("config_asset", "Asset path of an ElympicsGameConfig to register and activate, e.g. after elympics_import_sample.")] string configAsset = "",
-            [CliArg("create_if_missing", "Create ElympicsConfig (Assets/Resources/Elympics) if the project has none.")] bool createIfMissing = false) => CliRun.Sync(() =>
+            [CliArg("create_if_missing", "Create ElympicsConfig (Assets/Resources/Elympics) if the project has none.")] bool createIfMissing = false) => CliRun.Run(() =>
         {
             var given = new[] { !string.IsNullOrWhiteSpace(gameId), index >= 0, !string.IsNullOrWhiteSpace(configAsset) }.Count(isGiven => isGiven);
             if (given != 1)
@@ -66,13 +66,13 @@ namespace Elympics.Editor.UnityCli
                 .Select(guid => AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(guid)))
                 .FirstOrDefault(game => game != null && game.GameId == gameId);
             return asset ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound, $"No ElympicsGameConfig asset in the project has the game ID {gameId}.",
-                "import a sample (elympics_import_sample), create a game with elympics_game_create --create_config true, or pass --config_asset.");
+                "import a sample (elympics_import_sample), create a game with elympics_create_game --create_config true, or pass --config_asset.");
         }
 
-        [CliCommand("elympics_config_set_version", "Set the game version of a game config (the active one by default) and save it.", Tags = new[] { "elympics", "write" })]
-        public static object SetVersion(
+        [CliCommand("elympics_set_config_game_version", "Set the game version of a game config (the active one by default) and save it.", Tags = new[] { "elympics", "write" })]
+        public static object SetConfigGameVersion(
             [CliArg("version", "New game version: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string version,
-            [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "") => CliRun.Sync(() =>
+            [CliArg("game_id", "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.")] string gameId = "") => CliRun.Run(() =>
         {
             version = CliArgs.ValidateVersion(version, "version");
             var gameConfig = CliGames.ResolveGame(gameId);
@@ -85,12 +85,12 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_import_sample",
             "Import a sample of the Elympics package into Assets/Samples. Refuses a sample that is already imported unless --force true --confirm true. "
-            + "Doesn't change ElympicsConfig: select an imported game config with elympics_config_select_game --config_asset.",
+            + "Doesn't change ElympicsConfig: select an imported game config with elympics_select_game --config_asset.",
             Tags = new[] { "elympics", "write" })]
         public static object ImportSample(
             [CliArg("sample", "Sample display name or directory name, case-insensitive (e.g. \"Button Clicker [Game]\" or ButtonClicker).", Required = true)] string sample,
             [CliArg("force", "Import again over an already imported sample, discarding changes to it. Needs --confirm true.")] bool force = false,
-            [CliArg("confirm", "Must be true with --force true for an already imported sample: its changed files are overwritten.")] bool confirm = false) => CliRun.Sync(() =>
+            [CliArg("confirm", "Must be true with --force true for an already imported sample: its changed files are overwritten.")] bool confirm = false) => CliRun.Run(() =>
         {
             sample = CliArgs.Require(sample, "sample");
             var package = PackageInfo.FindForAssembly(typeof(ElympicsConfig).Assembly);
@@ -132,7 +132,7 @@ namespace Elympics.Editor.UnityCli
         private static string ToAssetPath(string path)
         {
             var fullPath = Path.GetFullPath(path).Replace('\\', '/');
-            var projectPath = Path.GetFullPath(CliArgs.ProjectRoot()).Replace('\\', '/').TrimEnd('/') + "/";
+            var projectPath = Path.GetFullPath(CliArgs.GetProjectRoot()).Replace('\\', '/').TrimEnd('/') + "/";
             return fullPath.StartsWith(projectPath, StringComparison.OrdinalIgnoreCase) ? fullPath[projectPath.Length..] : fullPath;
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEditor;
 
 namespace Elympics.Editor.Communication
@@ -12,14 +13,14 @@ namespace Elympics.Editor.Communication
 
         private static readonly string[] TrustedDomains = { "elympics.cc", "elympics.ai" };
 
-        internal static Func<string> TrustedCustomHost = () => EditorPrefs.GetString(CustomHostPrefsKey, string.Empty);
+        internal static Func<string> GetTrustedCustomHost = () => EditorPrefs.GetString(CustomHostPrefsKey, string.Empty);
 
         public static bool IsTrusted(Uri uri)
         {
             var host = uri.Host;
-            var customHost = TrustedCustomHost();
+            var customHost = GetTrustedCustomHost();
             if (!string.IsNullOrEmpty(customHost) && string.Equals(host, customHost, StringComparison.OrdinalIgnoreCase))
-                return uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && IsLoopback(host));
+                return uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback);
             if (uri.Scheme != Uri.UriSchemeHttps)
                 return false;
             foreach (var domain in TrustedDomains)
@@ -29,14 +30,11 @@ namespace Elympics.Editor.Communication
             return false;
         }
 
-        private static bool IsLoopback(string host) =>
-            host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host == "127.0.0.1" || host == "::1" || host == "[::1]";
-
         public static void Require(Uri uri)
         {
             if (!IsTrusted(uri))
                 throw new ElympicsEditorApiException(EditorApiErrorKind.UntrustedHost,
-                    $"{uri.Scheme}://{uri.Host} isn't an https Elympics host (*.elympics.cc, *.elympics.ai) or a trusted custom host (https, or http on localhost only), so the Editor won't send the Elympics login to it.",
+                    $"{uri.Scheme}://{uri.Host} isn't an https Elympics host ({string.Join(", ", TrustedDomains.Select(domain => "*." + domain))}) or a trusted custom host (https, or http on localhost only), so the Editor won't send the Elympics login to it.",
                     fix: $"correct the API endpoint in ElympicsConfig or its command-line override, or, if you trust this server, use {ElympicsEditorMenuPaths.TrustCustomApiHost}.");
         }
 
@@ -44,7 +42,7 @@ namespace Elympics.Editor.Communication
         private static void TrustCustomApiHost()
         {
             const string title = "Trust custom API host";
-            var current = TrustedCustomHost();
+            var current = GetTrustedCustomHost();
             var endpoint = ElympicsConfig.Load()?.ElympicsApiEndpoint;
             if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri))
             {

@@ -47,7 +47,7 @@ namespace Elympics.Editor.UnityCli
                 int fileCount;
                 try
                 {
-                    fileCount = await ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync(resolvedGameId, resolvedPath, versionName, parsedLayout, ct);
+                    fileCount = await ElympicsWebIntegration.UploadStreamingAssetsUsingCurrentLoginAsync(resolvedGameId, resolvedPath, versionName, parsedLayout, timeoutSeconds, ct);
                 }
                 catch (ElympicsUploadInputException e)
                 {

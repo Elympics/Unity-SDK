@@ -88,16 +88,16 @@ namespace Elympics.Editor.UnityCli
             return cached = members;
         }
 
-        private static Members Require() => TryResolve(out var problem) ?? throw Unavailable(problem);
+        private static Members Require() => TryResolve(out var problem) ?? throw CreateUnavailableException(problem);
 
-        private static ElympicsCliException Unavailable(string problem) =>
+        private static ElympicsCliException CreateUnavailableException(string problem) =>
             new(ElympicsCliErrors.MppmUnavailable, $"Multiplayer Play Mode's virtual players can't be reached: {problem}.",
                 "install com.unity.multiplayer.playmode 2.x, or manage virtual players in Window > Multiplayer > Multiplayer Play Mode; "
                 + "if MPPM is installed, this Unity version changed its internals (report it to Elympics).");
 
         private static object[] GetPlayerObjects(Members members) =>
             (members.Players.GetValue(null) as Array)?.Cast<object>().ToArray()
-            ?? throw Unavailable("MultiplayerPlaymode.Players is null (is the Multiplayer Play Mode package installed?)");
+            ?? throw CreateUnavailableException("MultiplayerPlaymode.Players is null (is the Multiplayer Play Mode package installed?)");
 
         public static List<VirtualPlayer> GetPlayers()
         {

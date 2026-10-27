@@ -20,7 +20,7 @@ namespace Elympics.Editor.UnityCli
         /// so argument errors are reported before a missing login.
         /// </summary>
         public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
-            CliRun.Async(async () =>
+            CliRun.RunAsync(async () =>
         {
             if (timeoutSeconds <= 0)
                 throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 20.");
@@ -46,17 +46,17 @@ namespace Elympics.Editor.UnityCli
             EditorApiErrorKind.NotLoggedIn or EditorApiErrorKind.Unauthorized =>
                 new ElympicsCliException(ElympicsCliErrors.NotLoggedIn, exception.Message, CliGames.LoginFix, exception),
             EditorApiErrorKind.UntrustedHost => new ElympicsCliException(ElympicsCliErrors.UntrustedHost, exception.Problem, exception.Fix, exception),
-            _ => FromKind(exception, requestFailedCode),
+            _ => ToCliException(exception, requestFailedCode),
         };
 
-        private static ElympicsCliException FromKind(ElympicsEditorApiException exception, string requestFailedCode)
+        private static ElympicsCliException ToCliException(ElympicsEditorApiException exception, string requestFailedCode)
         {
             var (code, fix) = exception.Kind switch
             {
                 EditorApiErrorKind.Forbidden => (ElympicsCliErrors.RequestFailed,
                     "log in with an account that is a member of the game's organization, or pass the ID of a game this account can access."),
                 EditorApiErrorKind.NotFound => (ElympicsCliErrors.RequestFailed,
-                    "check the IDs: list games with elympics_games_list, versions with elympics_game_versions and queues with elympics_queues_list."),
+                    "check the IDs: list games with elympics_list_games, versions with elympics_list_game_versions and queues with elympics_list_queues."),
                 EditorApiErrorKind.Timeout => (ElympicsCliErrors.NetworkTimeout, "check the Internet connection and retry; for uploads, retry with a new version name."),
                 EditorApiErrorKind.Network => (ElympicsCliErrors.RequestFailed, "check the Internet connection and the endpoints reported by elympics_status, then retry."),
                 _ => (requestFailedCode, "read the backend's message above, correct the arguments and retry."),

@@ -7,7 +7,6 @@ using System.Threading;
 using Elympics.Core.Logger;
 using Elympics.Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UnityEngine.Networking;
 using AuthRoutes = ElympicsApiModels.ApiModels.Auth.Routes;
 using GamesRoutes = ElympicsApiModels.ApiModels.Games.Routes;
@@ -76,23 +75,24 @@ namespace Elympics.Editor.Communication
         private const string ClientBuildInitRoute = "init";
         private const string ClientBuildCompleteRoute = "complete";
         private const string StreamingAssetsRoute = "streaming-assets";
+        // Defaults for calls without timeoutSeconds. A caller's timeoutSeconds applies to every request of the call instead.
         private const int JsonTimeoutSeconds = 30;
         internal const int FileUploadTimeoutSeconds = 1800;
 
         internal static IEditorApiTransport Transport = new UnityWebRequestEditorApiTransport();
-        internal static Func<IEditorApiTransport> BlockingTransportFactory = () => new BusyWaitEditorApiTransport();
+        internal static Func<IEditorApiTransport> CreateBlockingTransport = () => new BusyWaitEditorApiTransport();
         internal static IEditorLoginStore LoginStore = new EditorPrefsLoginStore();
-        internal static Func<long> UtcNowSeconds = () => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        internal static Func<string> ApiEndpointOverride;
+        internal static Func<long> GetUtcNowSeconds = () => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        internal static Func<string> GetApiEndpointOverride;
 
         private static string ApiEndpoint =>
-            ApiEndpointOverride?.Invoke()
+            GetApiEndpointOverride?.Invoke()
             ?? ElympicsConfig.Load()?.ElympicsApiEndpoint
             ?? throw new ElympicsException($"No ElympicsConfig found in Resources/{ElympicsConfig.PathInResources}.");
 
         internal static void RequireTrustedApiEndpoint() => ElympicsApiHostPolicy.Require(new Uri(ApiEndpoint));
 
-        private static string Url(params string[] segments) => string.Join("/", new[] { ApiEndpoint.TrimEnd('/') }.Concat(segments.Select(Uri.EscapeDataString)));
+        private static string BuildUrl(params string[] segments) => string.Join("/", new[] { ApiEndpoint.TrimEnd('/') }.Concat(segments.Select(Uri.EscapeDataString)));
 
         #region Blocking calls
 
@@ -105,6 +105,8 @@ namespace Elympics.Editor.Communication
         {
             using var scope = new BlockingScope();
             var task = call(scope.Token);
+            // A UniTask, like a ValueTask, allows GetResult only once and only after it completes; GetResult also returns pooled sources,
+            // so Status must be read before it and the task must not be touched afterwards.
             scope.ThrowIfPending(task.Status);
             return task.GetAwaiter().GetResult();
         }
@@ -118,7 +120,7 @@ namespace Elympics.Editor.Communication
 
             public CancellationToken Token => _cancellation.Token;
 
-            public BlockingScope() => Transport = BlockingTransportFactory();
+            public BlockingScope() => Transport = CreateBlockingTransport();
 
             public void ThrowIfPending(UniTaskStatus status)
             {
@@ -158,16 +160,16 @@ namespace Elympics.Editor.Communication
             // ReSharper restore InconsistentNaming
         }
 
-        public static async UniTask<string> LoginAsync(string username, string password, CancellationToken ct = default)
+        public static async UniTask<string> LoginAsync(string username, string password, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var response = await SendAsync("Login", new EditorApiRequest
             {
                 Method = UnityWebRequest.kHttpVerbPOST,
-                Url = Url(AuthRoutes.BaseRoute, AuthRoutes.LoginRoute),
+                Url = BuildUrl(AuthRoutes.BaseRoute, AuthRoutes.LoginRoute),
                 JsonBody = JsonConvert.SerializeObject(new LoginRequestModel { UserName = username, Password = password }),
                 Auth = false,
                 TimeoutSeconds = JsonTimeoutSeconds,
-            }, false, ct);
+            }, false, timeoutSeconds, ct);
 
             var tokens = Deserialize<LoginResponseModel>("Login", response);
             var expiration = ReadTokenExpiration("Login", tokens.AuthToken, response.StatusCode);
@@ -194,7 +196,7 @@ namespace Elympics.Editor.Communication
         }
 
         /// <remarks>Logs out only when the backend rejects the refresh token (400, 401 or 403), not when it can't be reached or fails (5xx, 429).</remarks>
-        public static async UniTask EnsureLoggedInAsync(long expirationMarginSeconds = 0, CancellationToken ct = default)
+        public static async UniTask EnsureLoggedInAsync(long expirationMarginSeconds = 0, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             if (!LoginStore.IsLogin)
                 throw new ElympicsEditorApiException(EditorApiErrorKind.NotLoggedIn, "Not logged in to Elympics cloud.");
@@ -205,17 +207,17 @@ namespace Elympics.Editor.Communication
                 throw new ElympicsEditorApiException(EditorApiErrorKind.NotLoggedIn, "Can't check the auth token's expiration time. Log in to Elympics again.");
             }
 
-            if (UtcNowSeconds() + expirationMarginSeconds <= expiration)
+            if (GetUtcNowSeconds() + expirationMarginSeconds <= expiration)
                 return;
 
             ElympicsLogger.LogInfo("Auth token expired. Refreshing using refresh token...");
             var response = await Transport.SendAsync(new EditorApiRequest
             {
                 Method = UnityWebRequest.kHttpVerbPOST,
-                Url = Url(AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute),
+                Url = BuildUrl(AuthRoutes.BaseRoute, AuthRoutes.RefreshRoute),
                 JsonBody = JsonConvert.SerializeObject(new TokenRefreshingRequestModel { RefreshToken = LoginStore.RefreshToken }),
                 Auth = false,
-                TimeoutSeconds = JsonTimeoutSeconds,
+                TimeoutSeconds = timeoutSeconds ?? JsonTimeoutSeconds,
             }, ct);
 
             if (!response.Succeeded)
@@ -259,27 +261,27 @@ namespace Elympics.Editor.Communication
 
         #region Games, versions, regions, fleets, queues
 
-        public static UniTask<List<ElympicsWebIntegration.GameResponseModel>> GetGamesAsync(CancellationToken ct = default) =>
-            SendJsonAsync<List<ElympicsWebIntegration.GameResponseModel>>("Get games", UnityWebRequest.kHttpVerbGET, Url(GamesRoutes.BaseRoute), null, ct);
+        public static UniTask<List<ElympicsWebIntegration.GameResponseModel>> GetGamesAsync(int? timeoutSeconds = null, CancellationToken ct = default) =>
+            SendJsonAsync<List<ElympicsWebIntegration.GameResponseModel>>("Get games", UnityWebRequest.kHttpVerbGET, BuildUrl(GamesRoutes.BaseRoute), null, timeoutSeconds, ct);
 
-        public static UniTask<ElympicsWebIntegration.GameVersionsResponseModel> GetGameVersionsAsync(string gameId, CancellationToken ct = default) =>
+        public static UniTask<ElympicsWebIntegration.GameVersionsResponseModel> GetGameVersionsAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
             SendJsonAsync<ElympicsWebIntegration.GameVersionsResponseModel>("Get game versions", UnityWebRequest.kHttpVerbGET,
-                Url(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute), null, ct);
+                BuildUrl(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute), null, timeoutSeconds, ct);
 
         /// <param name="gameId">Empty for every region of the Elympics cloud.</param>
-        public static async UniTask<List<RegionResponseModel>> GetRegionsAsync(string gameId, CancellationToken ct = default)
+        public static async UniTask<List<RegionResponseModel>> GetRegionsAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var route = string.IsNullOrEmpty(gameId) ? RegionsRoutes.AllRegionsRouteUnityFormat : RegionsRoutes.RegionForGameIdRoute;
             var segments = route.Split('/').Select(segment => segment == "{0}" ? gameId : segment).ToArray();
-            var response = await SendAsync("Get regions", new EditorApiRequest { Url = Url(segments), TimeoutSeconds = JsonTimeoutSeconds }, false, ct);
+            var response = await SendAsync("Get regions", new EditorApiRequest { Url = BuildUrl(segments), TimeoutSeconds = JsonTimeoutSeconds }, false, timeoutSeconds, ct);
             return Deserialize<AvailableRegionsResponseModel>("Get regions", response).Regions?.ToList() ?? new List<RegionResponseModel>();
         }
 
-        public static UniTask<ElympicsWebIntegration.ElympicsEndpointsModel> GetEndpointsAsync(CancellationToken ct = default) =>
-            SendJsonAsync<ElympicsWebIntegration.ElympicsEndpointsModel>("Get Elympics Endpoints", UnityWebRequest.kHttpVerbGET, Url(UsersRoutes.BaseRoute, UsersRoutes.EndpointRoutes), null, ct);
+        public static UniTask<ElympicsWebIntegration.ElympicsEndpointsModel> GetEndpointsAsync(int? timeoutSeconds = null, CancellationToken ct = default) =>
+            SendJsonAsync<ElympicsWebIntegration.ElympicsEndpointsModel>("Get Elympics Endpoints", UnityWebRequest.kHttpVerbGET, BuildUrl(UsersRoutes.BaseRoute, UsersRoutes.EndpointRoutes), null, timeoutSeconds, ct);
 
         /// <summary>Posts a usage statistics event. Failures of the request are ignored, since losing an event must never disturb the Editor.</summary>
-        public static async UniTask PostUsageEventAsync(string route, object body, bool requireLogin, int timeoutSeconds = JsonTimeoutSeconds, CancellationToken ct = default)
+        public static async UniTask PostUsageEventAsync(string route, object body, bool requireLogin, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             if (requireLogin && !LoginStore.IsLogin)
                 return;
@@ -289,7 +291,7 @@ namespace Elympics.Editor.Communication
                 {
                     try
                     {
-                        await EnsureLoggedInAsync(0, ct);
+                        await EnsureLoggedInAsync(0, timeoutSeconds, ct);
                     }
                     catch (ElympicsEditorApiException)
                     { }
@@ -298,10 +300,10 @@ namespace Elympics.Editor.Communication
                 var response = await Transport.SendAsync(new EditorApiRequest
                 {
                     Method = UnityWebRequest.kHttpVerbPOST,
-                    Url = Url(UsageStatisticsRoutes.Base, route),
+                    Url = BuildUrl(UsageStatisticsRoutes.Base, route),
                     JsonBody = JsonConvert.SerializeObject(body),
                     Auth = LoginStore.IsLogin && !IsAuthTokenExpired(),
-                    TimeoutSeconds = timeoutSeconds,
+                    TimeoutSeconds = timeoutSeconds ?? JsonTimeoutSeconds,
                 }, ct);
                 if (!response.Succeeded)
                     ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {response.Error}");
@@ -312,50 +314,67 @@ namespace Elympics.Editor.Communication
             }
         }
 
-        private static bool IsAuthTokenExpired() => !long.TryParse(LoginStore.AuthTokenExp, out var expiration) || UtcNowSeconds() > expiration;
+        private static bool IsAuthTokenExpired() => !long.TryParse(LoginStore.AuthTokenExp, out var expiration) || GetUtcNowSeconds() > expiration;
 
-        public static UniTask<JToken> GetFleetsAsync(CancellationToken ct = default) =>
-            CallAsync("Get fleets", UnityWebRequest.kHttpVerbGET, null, ct, GamesRoutes.BaseRoute, FleetsRoute);
+        public static UniTask<List<FleetModel>> GetFleetsAsync(int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync<List<FleetModel>>("Get fleets", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, FleetsRoute);
 
-        public static UniTask<JToken> CreateGameAsync(string name, string initialRegionName, string fleetId, CancellationToken ct = default) =>
-            CallAsync("Create game", UnityWebRequest.kHttpVerbPOST,
-                new JObject { ["GameName"] = name, ["InitialRegionName"] = initialRegionName, ["FleetId"] = string.IsNullOrEmpty(fleetId) ? null : fleetId }, ct, GamesRoutes.BaseRoute);
+        /// <returns>The created game, or null if the backend's response was empty.</returns>
+        public static UniTask<GameModel> CreateGameAsync(string name, string initialRegionName, string fleetId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallWithOptionalResponseAsync<GameModel>("Create game", UnityWebRequest.kHttpVerbPOST,
+                new CreateGameRequestModel { GameName = name, InitialRegionName = initialRegionName, FleetId = string.IsNullOrEmpty(fleetId) ? null : fleetId },
+                timeoutSeconds, ct, GamesRoutes.BaseRoute);
 
-        public static UniTask<JToken> GetGameAsync(string gameId, CancellationToken ct = default) =>
-            CallAsync("Get game", UnityWebRequest.kHttpVerbGET, null, ct, GamesRoutes.BaseRoute, gameId);
+        public static UniTask<GameModel> GetGameAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync<GameModel>("Get game", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
-        public static UniTask<JToken> UpdateGameAsync(string gameId, JObject body, CancellationToken ct = default) =>
-            CallAsync("Update game", UnityWebRequest.kHttpVerbPUT, body, ct, GamesRoutes.BaseRoute, gameId);
+        /// <returns>The updated game, or null if the backend's response was empty.</returns>
+        public static UniTask<GameModel> UpdateGameAsync(string gameId, UpdateGameRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallWithOptionalResponseAsync<GameModel>("Update game", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId);
 
-        public static UniTask<JToken> UpdateGameVersionAsync(string gameId, string versionId, JObject body, CancellationToken ct = default) =>
-            CallAsync("Update game version", UnityWebRequest.kHttpVerbPUT, body, ct, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute, versionId);
+        public static UniTask<ElympicsWebIntegration.GameVersionResponseModel> GetGameVersionAsync(string gameId, string versionId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync<ElympicsWebIntegration.GameVersionResponseModel>("Get game version", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct,
+                GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute, versionId);
 
-        public static UniTask<JToken> DeleteGameVersionAsync(string gameId, string versionId, CancellationToken ct = default) =>
-            CallAsync("Delete game version", UnityWebRequest.kHttpVerbDELETE, null, ct, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute, versionId);
+        /// <remarks>The backend replies with the game, not the version, so the reply is ignored. Use <see cref="GetGameVersionAsync"/> to read the result.</remarks>
+        public static UniTask UpdateGameVersionAsync(string gameId, string versionId, UpdateGameVersionRequestModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync("Update game version", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute, versionId);
 
-        public static UniTask<JToken> GetQueuesAsync(string gameId, CancellationToken ct = default) =>
-            CallAsync("Get queues", UnityWebRequest.kHttpVerbGET, null, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
+        public static UniTask DeleteGameVersionAsync(string gameId, string versionId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync("Delete game version", UnityWebRequest.kHttpVerbDELETE, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute, versionId);
 
-        public static UniTask<JToken> CreateQueueAsync(string gameId, JObject body, CancellationToken ct = default) =>
-            CallAsync("Create queue", UnityWebRequest.kHttpVerbPOST, body, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
+        public static UniTask<List<QueueModel>> GetQueuesAsync(string gameId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync<List<QueueModel>>("Get queues", UnityWebRequest.kHttpVerbGET, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
-        public static UniTask<JToken> UpdateQueueAsync(string gameId, string queueId, JObject body, CancellationToken ct = default) =>
-            CallAsync("Update queue", UnityWebRequest.kHttpVerbPUT, body, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
+        /// <returns>The created queue, or null if the backend's response was empty.</returns>
+        public static UniTask<QueueModel> CreateQueueAsync(string gameId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallWithOptionalResponseAsync<QueueModel>("Create queue", UnityWebRequest.kHttpVerbPOST, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute);
 
-        public static UniTask<JToken> DeleteQueueAsync(string gameId, string queueId, CancellationToken ct = default) =>
-            CallAsync("Delete queue", UnityWebRequest.kHttpVerbDELETE, null, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
+        /// <returns>The updated queue, or null if the backend's response was empty.</returns>
+        public static UniTask<QueueModel> UpdateQueueAsync(string gameId, string queueId, QueueSettingsModel body, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallWithOptionalResponseAsync<QueueModel>("Update queue", UnityWebRequest.kHttpVerbPUT, body, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 
-        private static UniTask<JToken> CallAsync(string action, string method, object body, CancellationToken ct, params string[] route) =>
-            CallAsync<JToken>(action, method, body, ct, route);
+        public static UniTask DeleteQueueAsync(string gameId, string queueId, int? timeoutSeconds = null, CancellationToken ct = default) =>
+            CallAsync("Delete queue", UnityWebRequest.kHttpVerbDELETE, null, timeoutSeconds, ct, GamesRoutes.BaseRoute, gameId, QueuesRoute, queueId);
 
-        private static UniTask<T> CallAsync<T>(string action, string method, object body, CancellationToken ct, params string[] route) =>
-            SendJsonAsync<T>(action, method, Url(route), body, ct);
+        private static async UniTask CallAsync(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
+            _ = await SendJsonAsync(action, method, BuildUrl(route), body, timeoutSeconds, ct);
+
+        private static UniTask<T> CallAsync<T>(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route) =>
+            SendJsonAsync<T>(action, method, BuildUrl(route), body, timeoutSeconds, ct);
+
+        private static async UniTask<T> CallWithOptionalResponseAsync<T>(string action, string method, object body, int? timeoutSeconds, CancellationToken ct, params string[] route)
+            where T : class
+        {
+            var response = await SendJsonAsync(action, method, BuildUrl(route), body, timeoutSeconds, ct);
+            return string.IsNullOrWhiteSpace(response.Text) ? null : Deserialize<T>(action, response);
+        }
 
         #endregion
 
         #region Uploads
 
-        public static async UniTask UploadServerAsync(string gameId, string gameVersion, string packPath, CancellationToken ct = default)
+        public static async UniTask UploadServerAsync(string gameId, string gameVersion, string packPath, int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var form = new List<IMultipartFormSection>
             {
@@ -365,10 +384,10 @@ namespace Elympics.Editor.Communication
             _ = await SendAsync("Upload server", new EditorApiRequest
             {
                 Method = UnityWebRequest.kHttpVerbPOST,
-                Url = Url(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute),
+                Url = BuildUrl(GamesRoutes.BaseRoute, gameId, GamesRoutes.GameVersionsRoute),
                 Form = form,
                 TimeoutSeconds = FileUploadTimeoutSeconds,
-            }, true, ct);
+            }, true, timeoutSeconds, ct);
         }
 
         public static async UniTask<int> UploadClientBuildAsync(
@@ -377,11 +396,11 @@ namespace Elympics.Editor.Communication
             string clientGameVersion,
             string serverGameVersion,
             Action<string, float> progress = null,
-            CancellationToken ct = default)
+            int? timeoutSeconds = null, CancellationToken ct = default)
         {
             var (buildPath, validFiles) = WebGLUploader.ResolveClientBuildFiles(clientBuildPath, clientGameVersion);
             var initRequest = WebGLUploader.CreateInitRequest(gameId, clientGameVersion, serverGameVersion, validFiles);
-            var initResponse = await CallAsync<WebGLUploader.UploadInitResponse>("Initialize client build upload", UnityWebRequest.kHttpVerbPOST, initRequest, ct,
+            var initResponse = await CallAsync<WebGLUploader.UploadInitResponse>("Initialize client build upload", UnityWebRequest.kHttpVerbPOST, initRequest, timeoutSeconds, ct,
                 ClientBuildsRoute, ClientBuildInitRoute);
 
             try
@@ -399,14 +418,14 @@ namespace Elympics.Editor.Communication
                     var localFile = expectedFile.name + expectedFile.extension;
                     progress?.Invoke(localFile, (float)index / initResponse.Files.Length);
                     var payload = File.ReadAllBytes(Path.Combine(buildPath, localFile));
-                    await UploadFileAsync(localFile, fileUploadInfo.SignedUrl, payload, WebGLUploader.FetchContentType(expectedFile.extension), expectedFile.extension, ct);
+                    await UploadFileAsync(localFile, fileUploadInfo.SignedUrl, payload, WebGLUploader.FetchContentType(expectedFile.extension), expectedFile.extension, timeoutSeconds, ct);
                 }
             }
             catch
             {
                 try
                 {
-                    _ = await CompleteClientBuildUploadAsync(initResponse.UploadId, false, CancellationToken.None);
+                    _ = await CompleteClientBuildUploadAsync(initResponse.UploadId, false, timeoutSeconds, CancellationToken.None);
                 }
                 catch (Exception e)
                 {
@@ -416,18 +435,18 @@ namespace Elympics.Editor.Communication
             }
 
             progress?.Invoke(string.Empty, 1f);
-            _ = await CompleteClientBuildUploadAsync(initResponse.UploadId, true, ct);
+            _ = await CompleteClientBuildUploadAsync(initResponse.UploadId, true, timeoutSeconds, ct);
             return initResponse.Files.Length;
         }
 
-        private static UniTask<EditorApiResponse> CompleteClientBuildUploadAsync(string uploadId, bool success, CancellationToken ct) =>
+        private static UniTask<EditorApiResponse> CompleteClientBuildUploadAsync(string uploadId, bool success, int? timeoutSeconds, CancellationToken ct) =>
             SendAsync("Complete client build upload", new EditorApiRequest
             {
                 Method = UnityWebRequest.kHttpVerbPOST,
-                Url = Url(ClientBuildsRoute, ClientBuildCompleteRoute),
+                Url = BuildUrl(ClientBuildsRoute, ClientBuildCompleteRoute),
                 JsonBody = JsonConvert.SerializeObject(new WebGLUploader.UploadCompleteRequest { uploadId = uploadId, success = success }),
                 TimeoutSeconds = JsonTimeoutSeconds,
-            }, true, ct);
+            }, true, timeoutSeconds, ct);
 
         public static async UniTask<int> UploadStreamingAssetsAsync(
             string gameId,
@@ -435,11 +454,11 @@ namespace Elympics.Editor.Communication
             string version,
             StreamingAssetsLayout layout,
             Action<string, float> progress = null,
-            CancellationToken ct = default)
+            int? timeoutSeconds = null, CancellationToken ct = default)
         {
             WebGLUploader.PrepareStreamingAssetsFiles(streamingAssetsPath, version, layout, out var relativePaths, out var generatedFiles);
             var initRequest = WebGLUploader.CreateStreamingAssetsInitRequest(gameId, version, relativePaths);
-            var initResponse = await CallAsync<WebGLUploader.StreamingAssetsUploadInitResponse>("Initialize StreamingAssets upload", UnityWebRequest.kHttpVerbPOST, initRequest, ct,
+            var initResponse = await CallAsync<WebGLUploader.StreamingAssetsUploadInitResponse>("Initialize StreamingAssets upload", UnityWebRequest.kHttpVerbPOST, initRequest, timeoutSeconds, ct,
                 ClientBuildsRoute, StreamingAssetsRoute);
 
             if (initResponse.Files == null || initResponse.Files.Length == 0)
@@ -465,7 +484,7 @@ namespace Elympics.Editor.Communication
                 }
 
                 var extension = Path.GetExtension(fileUploadInfo.FilePath);
-                await UploadFileAsync(fileUploadInfo.FilePath, fileUploadInfo.SignedUrl, payload, WebGLUploader.FetchStreamingAssetsContentType(extension), extension, ct);
+                await UploadFileAsync(fileUploadInfo.FilePath, fileUploadInfo.SignedUrl, payload, WebGLUploader.FetchStreamingAssetsContentType(extension), extension, timeoutSeconds, ct);
             }
 
             progress?.Invoke(string.Empty, 1f);
@@ -473,7 +492,7 @@ namespace Elympics.Editor.Communication
             return relativePaths.Count;
         }
 
-        private static async UniTask UploadFileAsync(string fileName, string signedUrl, byte[] payload, string contentType, string extension, CancellationToken ct)
+        private static async UniTask UploadFileAsync(string fileName, string signedUrl, byte[] payload, string contentType, string extension, int? timeoutSeconds, CancellationToken ct)
         {
             if (!Uri.TryCreate(signedUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
                 throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"Elympics cloud returned a non-https upload URL for '{fileName}'.");
@@ -485,33 +504,35 @@ namespace Elympics.Editor.Communication
                 ContentType = contentType,
                 ContentEncoding = WebGLUploader.FetchEncoding(extension),
                 ElympicsApi = false,
-                TimeoutSeconds = FileUploadTimeoutSeconds,
+                TimeoutSeconds = timeoutSeconds ?? FileUploadTimeoutSeconds,
             }, ct);
             if (!response.Succeeded)
-                throw new ElympicsEditorApiException(response.IsConnectionError ? EditorApiErrorKind.Network : EditorApiErrorKind.RequestFailed,
+                throw new ElympicsEditorApiException(response.Result == UnityWebRequest.Result.ConnectionError ? EditorApiErrorKind.Network : EditorApiErrorKind.RequestFailed,
                     $"Failed to upload file '{fileName}': {response.Error}\n{Sanitize(response.Text)}", response.StatusCode);
         }
 
         #endregion
 
-        #region Plumbing
+        #region Sending requests and reading responses
 
-        private static async UniTask<T> SendJsonAsync<T>(string action, string method, string url, object body, CancellationToken ct)
-        {
-            var response = await SendAsync(action, new EditorApiRequest
+        private static async UniTask<T> SendJsonAsync<T>(string action, string method, string url, object body, int? timeoutSeconds, CancellationToken ct) =>
+            Deserialize<T>(action, await SendJsonAsync(action, method, url, body, timeoutSeconds, ct));
+
+        private static UniTask<EditorApiResponse> SendJsonAsync(string action, string method, string url, object body, int? timeoutSeconds, CancellationToken ct) =>
+            SendAsync(action, new EditorApiRequest
             {
                 Method = method,
                 Url = url,
                 JsonBody = body == null ? null : JsonConvert.SerializeObject(body),
                 TimeoutSeconds = JsonTimeoutSeconds,
-            }, true, ct);
-            return Deserialize<T>(action, response);
-        }
+            }, true, timeoutSeconds, ct);
 
-        private static async UniTask<EditorApiResponse> SendAsync(string action, EditorApiRequest request, bool requiresLogin, CancellationToken ct)
+        private static async UniTask<EditorApiResponse> SendAsync(string action, EditorApiRequest request, bool requiresLogin, int? timeoutSeconds, CancellationToken ct)
         {
             if (requiresLogin)
-                await EnsureLoggedInAsync(0, ct);
+                await EnsureLoggedInAsync(0, timeoutSeconds, ct);
+            if (timeoutSeconds.HasValue)
+                request.TimeoutSeconds = timeoutSeconds.Value;
             var response = await Transport.SendAsync(request, ct);
             if (!response.Succeeded)
                 throw ToException(action, response);
@@ -520,8 +541,6 @@ namespace Elympics.Editor.Communication
 
         internal static T Deserialize<T>(string action, EditorApiResponse response)
         {
-            if (typeof(T) == typeof(JToken))
-                return string.IsNullOrWhiteSpace(response.Text) ? default : (T)(object)Parse(action, response.Text);
             try
             {
                 return JsonConvert.DeserializeObject<T>(response.Text ?? string.Empty)
@@ -533,21 +552,9 @@ namespace Elympics.Editor.Communication
             }
         }
 
-        private static JToken Parse(string action, string text)
-        {
-            try
-            {
-                return JToken.Parse(text);
-            }
-            catch (JsonException e)
-            {
-                throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"{action} failed: invalid response ({e.Message}).");
-            }
-        }
-
         internal static ElympicsEditorApiException ToException(string action, EditorApiResponse response)
         {
-            if (response.IsConnectionError)
+            if (response.Result == UnityWebRequest.Result.ConnectionError)
             {
                 var kind = response.Error?.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0 ? EditorApiErrorKind.Timeout : EditorApiErrorKind.Network;
                 return new ElympicsEditorApiException(kind, $"{action} failed: {response.Error}", response.StatusCode);

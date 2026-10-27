@@ -9,7 +9,7 @@ namespace Elympics.Editor.UnityCli
     {
         private const string CheckArgumentsFix = "check the command's arguments in its listing (unity command --query elympics).";
 
-        public static object Sync(Func<object> body)
+        public static object Run(Func<object> body)
         {
             try
             {
@@ -21,7 +21,7 @@ namespace Elympics.Editor.UnityCli
             }
         }
 
-        public static async Task<object> Async(Func<UniTask<object>> body)
+        public static async Task<object> RunAsync(Func<UniTask<object>> body)
         {
             try
             {

@@ -13,7 +13,7 @@ namespace Elympics.Editor.UnityCli
         private const string VersionPattern = "^[0-9-a-zA-Z.]+$";
         private const int MaxVersionLength = 63;
 
-        internal static Func<string> ProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
+        internal static Func<string> GetProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
 
         public static string Require(string value, string argumentName)
         {
@@ -25,7 +25,7 @@ namespace Elympics.Editor.UnityCli
         /// <summary>Unless <paramref name="allowExternal"/>, the path must stay inside the project (a lexical check: links and junctions are followed).</summary>
         public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
         {
-            var root = Path.GetFullPath(ProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var root = Path.GetFullPath(GetProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var resolved = Path.GetFullPath(Path.Combine(root, path));
             var inside = resolved.Equals(root, StringComparison.OrdinalIgnoreCase)
                 || resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
@@ -58,11 +58,11 @@ namespace Elympics.Editor.UnityCli
             value = Require(value, argumentName);
             if (!Guid.TryParse(value, out _))
                 throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} '{value}' is not a GUID.",
-                    "pass an ID from elympics_games_list (or elympics_queues_list for queues).");
+                    "pass an ID from elympics_list_games (or elympics_list_queues for queues).");
             return value;
         }
 
-        public static string Optional(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        public static string TrimToNull(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
         public static bool? ParseOptionalBool(string value, string argumentName) => value?.Trim().ToLowerInvariant() switch
         {

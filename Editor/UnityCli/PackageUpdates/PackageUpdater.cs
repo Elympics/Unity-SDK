@@ -65,8 +65,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public string OperationsDirectory = Path.Combine("Library", "Elympics", "update-packages");
         public IGitProcess Git = new GitProcess();
         public Action Resolve = () => UnityEditor.PackageManager.Client.Resolve();
-        public Func<string, string> InstalledVersion = name => UnityEditor.PackageManager.PackageInfo.FindForPackageName(name)?.version;
-        public Func<DateTime> UtcNow = () => DateTime.UtcNow;
+        public Func<string, string> GetInstalledVersion = name => UnityEditor.PackageManager.PackageInfo.FindForPackageName(name)?.version;
+        public Func<DateTime> GetUtcNow = () => DateTime.UtcNow;
 
         public async Task<List<PackageUpdate>> PlanAsync(ICollection<string> packages, IDictionary<string, string> pins, IDictionary<string, string> tracks)
         {
@@ -108,7 +108,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 refKind = dependency.Kind.ToString().ToLowerInvariant(),
                 oldSpec = dependency.Spec,
                 oldCommit = locked.TryGetValue(name, out var hash) ? hash : null,
-                oldVersion = InstalledVersion(name),
+                oldVersion = GetInstalledVersion(name),
             };
 
             if (!dependency.HasSupportedRemote)
@@ -126,7 +126,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             RemoteRefs remote;
             try
             {
-                remote = RemoteRefs.Parse(await Git.LsRemoteAsync(dependency.RemoteUrl, LsRemoteTimeout));
+                remote = RemoteRefs.Parse(await Git.ListRemoteRefsAsync(dependency.RemoteUrl, LsRemoteTimeout));
             }
             catch (InvalidOperationException e)
             {
@@ -152,7 +152,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 return update;
             }
 
-            update.newSpec = dependency.WithRef(plan.Ref);
+            update.newSpec = dependency.FormatWithRef(plan.Ref);
             update.newVersion = plan.Kind == GitRefKind.Tag ? plan.Ref.TrimStart('v') : null;
             if (plan.Action == RefAction.Refresh && update.oldCommit != null && update.oldCommit == plan.Head)
                 update.action = "keep";
@@ -170,7 +170,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public PackageUpdateOperation Apply(List<PackageUpdate> updates)
         {
             FinalizePending();
-            var pending = ReadOperations().FirstOrDefault(operation => operation.status == "started" && UtcNow() - operation.startedAt < StaleOperation);
+            var pending = ReadOperations().FirstOrDefault(operation => operation.status == "started" && GetUtcNow() - operation.startedAt < StaleOperation);
             if (pending != null)
                 throw new ElympicsCliException(ElympicsCliErrors.UpdateInProgress, $"The package update {pending.operationId} is still resolving.",
                     $"poll it with elympics_update_packages --operation_id {pending.operationId} and retry when it's done.");
@@ -178,9 +178,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var changes = updates.Where(update => update.IsChange()).ToList();
             var operation = new PackageUpdateOperation
             {
-                operationId = UtcNow().ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
+                operationId = GetUtcNow().ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
                 status = changes.Count == 0 ? "up_to_date" : "started",
-                startedAt = UtcNow(),
+                startedAt = GetUtcNow(),
                 packages = updates,
             };
             if (changes.Count > 0)
@@ -222,7 +222,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         public PackageUpdateOperation ReadOperation(string operationId)
         {
-            var path = OperationPath(operationId);
+            var path = GetOperationPath(operationId);
             if (!File.Exists(path))
                 throw new ElympicsCliException(ElympicsCliErrors.OperationNotFound, $"No package update operation {operationId} in {OperationsDirectory}.",
                     "pass the operationId an apply returned; records live in the project's Library folder.");
@@ -250,7 +250,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var changed = operation.packages.Where(update => update.IsChange()).ToList();
             if (changed.Any(update => !locked.ContainsKey(update.name)))
             {
-                if (UtcNow() - operation.startedAt < StaleOperation)
+                if (GetUtcNow() - operation.startedAt < StaleOperation)
                     return;
                 operation.status = "failed";
                 operation.warnings.Add($"The Package Manager didn't lock every updated package within {StaleOperation.TotalMinutes:0} minutes; check the Console for resolve errors.");
@@ -261,12 +261,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             foreach (var update in changed)
             {
                 var hash = locked.TryGetValue(update.name, out var lockHash) ? lockHash : null;
-                update.newVersion = InstalledVersion(update.name) ?? update.newVersion;
+                update.newVersion = GetInstalledVersion(update.name) ?? update.newVersion;
                 update.lockHashMatchesHead = hash != null && update.newCommit != null ? hash == update.newCommit : null;
                 if (hash != null)
                     update.newCommit ??= hash;
             }
-            operation.finishedAt = UtcNow();
+            operation.finishedAt = GetUtcNow();
             Save(operation);
         }
 
@@ -292,7 +292,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 ?? new Dictionary<string, string>();
         }
 
-        private string OperationPath(string operationId)
+        private string GetOperationPath(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId) || operationId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || operationId.Contains(".."))
                 throw ElympicsCliErrors.InvalidArgumentException($"--operation_id '{operationId}' is invalid.", "pass the operationId an apply returned.");
@@ -319,7 +319,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         private void Save(PackageUpdateOperation operation)
         {
             _ = Directory.CreateDirectory(OperationsDirectory);
-            File.WriteAllText(OperationPath(operation.operationId), JsonConvert.SerializeObject(operation, Formatting.Indented));
+            File.WriteAllText(GetOperationPath(operation.operationId), JsonConvert.SerializeObject(operation, Formatting.Indented));
         }
     }
 }

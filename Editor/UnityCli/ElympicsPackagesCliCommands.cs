@@ -23,9 +23,9 @@ namespace Elympics.Editor.UnityCli
             [CliArg("packages", "JSON array of package names to update. Defaults to every com.daftmobile.* git package.")] string packages = "",
             [CliArg("pin", "JSON object of explicit tags, e.g. '{\"com.daftmobile.elympics\":\"v0.29.0\"}'.")] string pin = "",
             [CliArg("track", "JSON object of explicit branches, e.g. '{\"com.daftmobile.elympics\":\"develop\"}'.")] string track = "",
-            [CliArg("operation_id", "Return the state of an earlier apply instead of planning (read-only).")] string operationId = "") => CliRun.Async(async () =>
+            [CliArg("operation_id", "Return the state of an earlier apply instead of planning (read-only).")] string operationId = "") => CliRun.RunAsync(async () =>
         {
-            if (CliArgs.Optional(operationId) is { } existingOperationId)
+            if (CliArgs.TrimToNull(operationId) is { } existingOperationId)
                 return Describe(Updater.ReadOperation(existingOperationId), false);
 
             var packageNames = CliArgs.ParseStringArray(packages, "packages");

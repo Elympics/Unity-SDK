@@ -95,7 +95,7 @@ namespace Elympics.Editor.Tests.UnityCli
             AssertPlan(plan, RefAction.Move, "develop");
             Assert.That(plan.Head, Is.EqualTo(Develop));
             Assert.That(plan.Warning, Does.Contain("feature/gone").And.Contain("develop"));
-            Assert.That(dependency.WithRef(plan.Ref), Is.EqualTo(Sdk + "#develop"));
+            Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Sdk + "#develop"));
         }
 
         [Test]
@@ -128,7 +128,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var dependency = GitDependency.Parse(Template + "?path=/template/Assets/Template#v0.5.0");
             var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
             AssertPlan(plan, RefAction.Move, "v0.6.0");
-            Assert.That(dependency.WithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
+            Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
         }
 
         [Test]
@@ -138,7 +138,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var plan = ElympicsRefPolicy.Plan(dependency, Remote(new[] { "v0.5.0", "v0.6.0" }));
             AssertPlan(plan, RefAction.Move, "v0.6.0");
             Assert.That(plan.Warning, Is.Not.Null);
-            Assert.That(dependency.WithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
+            Assert.That(dependency.FormatWithRef(plan.Ref), Is.EqualTo(Template + "?path=/template/Assets/Template#v0.6.0"));
         }
 
         [Test]
@@ -184,7 +184,7 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(dependency.Base, Is.EqualTo(baseUrl));
             Assert.That(dependency.RemoteUrl, Is.EqualTo(remoteUrl));
             Assert.That(dependency.Ref, Is.EqualTo(reference));
-            Assert.That(dependency.WithRef(dependency.Ref), Is.EqualTo(spec));
+            Assert.That(dependency.FormatWithRef(dependency.Ref), Is.EqualTo(spec));
             Assert.That(dependency.HasSupportedRemote, Is.True);
         }
 
@@ -241,6 +241,6 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("0.29.0", "v0.29.0", 0)]
         [TestCase("v0.30.0-rc.1", "v0.30.0", 0)]
         [TestCase("v1.0.0", "v1.0.1", -1)]
-        public void VersionsCompareNumerically(string a, string b, int sign) => Assert.That(System.Math.Sign(ElympicsRefPolicy.VersionCompare(a, b)), Is.EqualTo(sign));
+        public void VersionsCompareNumerically(string a, string b, int sign) => Assert.That(System.Math.Sign(ElympicsRefPolicy.CompareVersions(a, b)), Is.EqualTo(sign));
     }
 }

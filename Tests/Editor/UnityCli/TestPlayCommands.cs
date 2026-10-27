@@ -12,7 +12,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void MatchStateWorksOutsidePlayMode()
         {
-            var state = JObject.FromObject(ElympicsPlayCliCommands.MatchState());
+            var state = JObject.FromObject(ElympicsPlayCliCommands.GetMatchState());
 
             Assert.That((string)state["status"], Is.EqualTo("ok"));
             Assert.That((bool)state["inPlayMode"], Is.False);
@@ -63,7 +63,7 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [Test]
         public void VirtualPlayerTagsMustBeElympicsTags() =>
-            CliAssert.Throws(() => ElympicsPlayCliCommands.VirtualPlayersSet(0, "{\"2\":[\"Red\"]}"), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, "{\"2\":[\"Red\"]}"), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void LaunchOutcomesAreRecorded()
@@ -91,7 +91,7 @@ namespace Elympics.Editor.Tests.UnityCli
                 JsonUtility.ToJson(new ElympicsLaunchFailure(ElympicsLaunchErrorCode.Timeout, "The match didn't start.")));
             Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.TimedOut));
 
-            var error = (string)JObject.FromObject(ElympicsPlayCliCommands.MatchState())["lastLaunch"]!["error"];
+            var error = (string)JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!["error"];
             Assert.That(error, Does.StartWith("ELYMPICS_LAUNCH_TIMEOUT: Timeout The match didn't start.").And.Contain(" Fix: "));
         }
 

@@ -57,7 +57,7 @@ namespace Elympics.Editor
             if (activeGame == null)
                 findings.Add(new SceneFinding(NoActiveGameConfig, SceneFindingSeverity.Error,
                     config == null ? "The project has no ElympicsConfig." : "ElympicsConfig lists no game configs.",
-                    "create or register a game config with elympics_config_select_game --create_if_missing true --config_asset <path>."));
+                    "create or register a game config with elympics_select_game --create_if_missing true --config_asset <path>."));
 
             CheckGameplayScene(scene, activeGame, enabledBuildScenes, findings);
             if (config != null)
@@ -71,7 +71,7 @@ namespace Elympics.Editor
             if (Physics2DSimulatorSceneCheck.LacksPhysics2DSimulator(scene.GetRootGameObjects()))
                 findings.Add(new SceneFinding(Physics2DSimulatorMissing, SceneFindingSeverity.Error,
                     $"The scene uses 2D physics but has no {nameof(ElympicsUnityPhysics2DSimulator)}, so its 2D physics doesn't follow Elympics ticks.",
-                    $"add it with {ElympicsEditorMenuPaths.AddPhysics2DSimulator} (or elympics_scene_setup --add_physics2d_simulator true on a new scene); "
+                    $"add it with {ElympicsEditorMenuPaths.AddPhysics2DSimulator} (or elympics_set_up_scene --add_physics2d_simulator true on a new scene); "
                     + "if the scene only uses triggers and doesn't need it, define ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK or ignore this code."));
 #endif
             return findings;
@@ -86,18 +86,18 @@ namespace Elympics.Editor
             {
                 findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Error,
                     $"The active game {activeGame.GameName} has no gameplay scene.",
-                    "set it in the game config, or run elympics_scene_setup --set_gameplay_scene true on the gameplay scene."));
+                    "set it in the game config, or run elympics_set_up_scene --set_gameplay_scene true on the gameplay scene."));
                 return;
             }
 
             if (gameplayScene != scene.path)
                 findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Warning,
                     $"The scene isn't the gameplay scene of the active game {activeGame.GameName} ({gameplayScene}).",
-                    "validate the gameplay scene instead, or make this scene the gameplay scene (elympics_scene_setup --set_gameplay_scene true)."));
+                    "validate the gameplay scene instead, or make this scene the gameplay scene (elympics_set_up_scene --set_gameplay_scene true)."));
             if (!enabledBuildScenes.Contains(gameplayScene))
                 findings.Add(new SceneFinding(SceneNotInBuild, SceneFindingSeverity.Error,
                     $"The gameplay scene {gameplayScene} isn't enabled in Build Settings.",
-                    $"add it with add_scene_to_build --scene_path {gameplayScene} (or elympics_scene_setup --add_to_build true)."));
+                    $"add it with add_scene_to_build --scene_path {gameplayScene} (or elympics_set_up_scene --add_to_build true)."));
         }
 
         private static void CheckBootScene(ElympicsConfig config, IReadOnlyCollection<string> enabledBuildScenes, List<SceneFinding> findings)
@@ -118,7 +118,7 @@ namespace Elympics.Editor
             var systems = SceneObjectsFinder.FindObjectsOfType<GameSceneManager>(scene, true);
             if (systems.Count == 0)
                 findings.Add(new SceneFinding(NoElympicsSystem, SceneFindingSeverity.Error, "The scene has no Elympics system (no GameSceneManager).",
-                    $"run elympics_scene_setup, or add it with {ElympicsEditorMenuPaths.MouseActionCreateElympicsSystem}."));
+                    $"run elympics_set_up_scene, or add it with {ElympicsEditorMenuPaths.MouseActionCreateElympicsSystem}."));
             else if (systems.Count > 1)
                 findings.Add(new SceneFinding(MultipleElympicsSystems, SceneFindingSeverity.Error,
                     $"The scene has {systems.Count} Elympics systems: {string.Join(", ", systems.Select(system => GetPath(system.transform)))}.",

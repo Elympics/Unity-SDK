@@ -24,9 +24,9 @@ namespace Elympics.Editor.UnityCli
         private const string TagsFix = "pass e.g. --tags '{\"2\":[\"Elympics:halfRemoteServer\"],\"3\":[]}' (an empty list removes the Elympics: tags).";
 
         [CliCommand("elympics_launch",
-            "Launch a match in the Editor like the Match Launcher window: single_player, half_remote_server (virtual players from elympics_virtual_players_set "
+            "Launch a match in the Editor like the Match Launcher window: single_player, half_remote_server (virtual players from elympics_set_virtual_players "
             + "join as clients) or half_remote_client. Returns before Play mode starts (the domain reload drops the connection): "
-            + "poll elympics_match_state until lastLaunch.result is running, failed or timed_out.",
+            + "poll elympics_get_match_state until lastLaunch.result is running, failed or timed_out.",
             Tags = new[] { "elympics", "play" })]
         public static object Launch(
             [CliArg("mode", "single_player, half_remote_server or half_remote_client.", Required = true)] string mode,
@@ -34,7 +34,7 @@ namespace Elympics.Editor.UnityCli
             [CliArg("launch_timeout_seconds", "Seconds the launch may take before it fails with a timeout; -1 for none.")] int launchTimeoutSeconds = ElympicsLaunchDefaults.LaunchTimeoutSeconds,
             [CliArg("post_match_timeout_seconds", "Seconds to wait after the match ends before returning to boot; -1 for none.")] int postMatchTimeoutSeconds = ElympicsLaunchDefaults.PostMatchTimeoutSeconds,
             [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false) =>
-            CliRun.Sync(() =>
+            CliRun.Run(() =>
             {
                 var launchMode = CliArgs.ParseEnum<LaunchMode>(mode, "mode");
                 var kind = launchMode switch
@@ -49,7 +49,7 @@ namespace Elympics.Editor.UnityCli
                     var launcher = ElympicsMatchLauncher.Current;
                     if (launcher != null && launcher.State != MatchLauncherState.Idle)
                         throw new ElympicsCliException(ElympicsCliErrors.LauncherBusy, $"The match launcher is {launcher.State}, not Idle.",
-                            "wait for the match to end and elympics_match_state to report an Idle launcher, or stop Play mode (editor_stop).");
+                            "wait for the match to end and elympics_get_match_state to report an Idle launcher, or stop Play mode (editor_stop).");
                 }
                 else
                 {
@@ -89,11 +89,11 @@ namespace Elympics.Editor.UnityCli
         private static string ToSnakeCase(string name) => string.Concat(name.Select((character, index) =>
             char.IsUpper(character) ? (index > 0 ? "_" : "") + char.ToLowerInvariant(character) : character.ToString()));
 
-        [CliCommand("elympics_match_state",
+        [CliCommand("elympics_get_match_state",
             "Report Play mode, the match launcher, the last elympics_launch outcome (survives the Play mode reload), the live match "
             + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch.",
             Tags = new[] { "elympics", "read" })]
-        public static object MatchState() => CliRun.Sync(() =>
+        public static object GetMatchState() => CliRun.Run(() =>
         {
             var launcher = ElympicsMatchLauncher.Current;
             var record = EditorLaunchRecord.Last;
@@ -179,10 +179,10 @@ namespace Elympics.Editor.UnityCli
             }
         }
 
-        [CliCommand("elympics_virtual_players",
+        [CliCommand("elympics_get_virtual_players",
             "List Multiplayer Play Mode's players (1 is the main Editor) with their state and tags, and the defines that turn off their automatic half-remote launch.",
             Tags = new[] { "elympics", "read" })]
-        public static object VirtualPlayers() => CliRun.Sync(() => new
+        public static object GetVirtualPlayers() => CliRun.Run(() => new
         {
             status = "ok",
             mppmPackageVersion = PackageInfo.FindForPackageName(MppmPackage)?.version,
@@ -213,15 +213,15 @@ namespace Elympics.Editor.UnityCli
             false;
 #endif
 
-        [CliCommand("elympics_virtual_players_set",
+        [CliCommand("elympics_set_virtual_players",
             "Activate the first --count Multiplayer Play Mode virtual players (0-3) and deactivate the others, optionally replacing their Elympics: tags "
             + "(e.g. Elympics:halfRemoteServer, Elympics:PlayerIndex=1, Elympics:manual). By default virtual players join a half_remote_server launch as clients.",
             Tags = new[] { "elympics", "write" })]
-        public static object VirtualPlayersSet(
+        public static object SetVirtualPlayers(
             [CliArg("count", "How many virtual players (Player 2, 3, ...) to activate.", Required = true)] int count,
             [CliArg("tags", "JSON object from player number to its Elympics: tags, e.g. '{\"2\":[\"Elympics:PlayerIndex=1\"]}'. "
                 + "Replaces only the Elympics: tags of the listed players.")]
-            string tags = "") => CliRun.Sync(() =>
+            string tags = "") => CliRun.Run(() =>
         {
             CliRun.RequireNotPlaying("Virtual players can't be changed in Play mode.");
             var tagsByPlayer = ParseTags(tags);

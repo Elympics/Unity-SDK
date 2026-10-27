@@ -4,10 +4,10 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Elympics.Editor.Launcher
+namespace Elympics.Editor.UnityCli
 {
     /// <summary>
-    /// The outcome of the last launch started by a tool, kept in <see cref="SessionState"/> to survive the domain reload of entering play mode.
+    /// The outcome of the last launch started by a tool, kept in <see cref="SessionState"/> to survive domain reloads (entering play mode, script recompiles).
     /// </summary>
     [InitializeOnLoad]
     internal static class EditorLaunchRecord

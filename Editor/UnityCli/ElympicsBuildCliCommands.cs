@@ -17,7 +17,7 @@ namespace Elympics.Editor.UnityCli
             "Build the active game's Linux dedicated server into serverbuild/Engine (the Linux Dedicated Server module must be installed). "
             + "Takes minutes: run it with --detach, or raise the CLI's --timeout.",
             Tags = new[] { "elympics", "build" })]
-        public static object BuildServer([CliArg("development", "Make a development build.")] bool development = false) => CliRun.Sync(() =>
+        public static object BuildServer([CliArg("development", "Make a development build.")] bool development = false) => CliRun.Run(() =>
         {
             RequireReadyToBuild();
             var game = CliGames.RequireActiveGame(CliGames.RequireConfig());
@@ -37,14 +37,14 @@ namespace Elympics.Editor.UnityCli
         });
 
         [CliCommand("elympics_upload_server",
-            "Build the active game's Linux server and upload it as the game version set in its game config (elympics_config_set_version). "
+            "Build the active game's Linux server and upload it as the game version set in its game config (elympics_set_config_game_version). "
             + "Irreversible: a version name can't be uploaded again. Needs --confirm true. Takes minutes: run it with --detach.",
             Tags = new[] { "elympics", "upload" })]
         public static Task<object> UploadServer(
             [CliArg("confirm", CliWeb.UploadConfirmDescription)] bool confirm = false,
             [CliArg("development", "Upload a development build.")] bool development = false,
             [CliArg("timeout_seconds", CliWeb.UploadTimeoutDescription)] int timeoutSeconds = CliWeb.DefaultUploadTimeoutSeconds) =>
-            CliRun.Async(async () =>
+            CliRun.RunAsync(async () =>
             {
                 if (timeoutSeconds <= 0)
                     throw ElympicsCliErrors.InvalidArgumentException("--timeout_seconds must be positive.", "pass e.g. --timeout_seconds 1800.");
@@ -53,10 +53,10 @@ namespace Elympics.Editor.UnityCli
                 var game = CliGames.RequireActiveGame(CliGames.RequireConfig());
                 if (!Guid.TryParse(game.GameId, out _))
                     throw ElympicsCliErrors.InvalidArgumentException($"The active game config's GameId '{game.GameId}' is not a GUID.",
-                        "set the active game's GameId in the Elympics config to an ID from elympics_games_list.");
+                        "set the active game's GameId in the Elympics config to an ID from elympics_list_games.");
                 _ = await CliWeb.RunAsync(CliWeb.DefaultTimeoutSeconds, async ct =>
                 {
-                    await ElympicsEditorApi.EnsureLoggedInAsync(0, ct);
+                    await ElympicsEditorApi.EnsureLoggedInAsync(0, CliWeb.DefaultTimeoutSeconds, ct);
                     return null;
                 }, ElympicsCliErrors.UploadFailed);
                 var report = BuildTools.BuildServerLinux(development ? BuildOptions.Development : BuildOptions.None);
@@ -65,7 +65,7 @@ namespace Elympics.Editor.UnityCli
                 {
                     try
                     {
-                        await ElympicsWebIntegration.PackAndUploadServerUsingCurrentLoginAsync(ct);
+                        await ElympicsWebIntegration.PackAndUploadServerUsingCurrentLoginAsync(timeoutSeconds, ct);
                     }
                     catch (ElympicsPackFailedException e)
                     {
@@ -101,7 +101,7 @@ namespace Elympics.Editor.UnityCli
                 int fileCount;
                 try
                 {
-                    fileCount = await ElympicsWebIntegration.UploadClientBuildUsingCurrentLoginAsync(game.GameId, resolvedPath, clientGameVersion, serverGameVersion, ct);
+                    fileCount = await ElympicsWebIntegration.UploadClientBuildUsingCurrentLoginAsync(game.GameId, resolvedPath, clientGameVersion, serverGameVersion, timeoutSeconds, ct);
                 }
                 catch (ElympicsClientBuildFilesException e)
                 {

@@ -54,7 +54,7 @@ namespace Elympics
             var behaviours = SceneObjectsFinder.FindObjectsOfType<ElympicsBehaviour>(scene, true);
             foreach (var (behaviour, id) in ComputeIds(behaviours))
             {
-                if (id >= NetworkIdConstants.DefaultSceneObjectsReserved && !IsPredefinedBehaviour(behaviour))
+                if (id >= NetworkIdConstants.DefaultSceneObjectsReserved)
                     ElympicsLogger.LogError($"Scene object NetworkId {id} exceeds reserved range "
                         + $"(max {NetworkIdConstants.DefaultSceneObjectsReserved - 1}). "
                         + "Consider increasing DefaultSceneObjectsReserved.");

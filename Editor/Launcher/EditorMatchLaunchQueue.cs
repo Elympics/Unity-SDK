@@ -50,7 +50,6 @@ namespace Elympics.Editor.Launcher
         public enum UnsavedScenePolicy
         {
             Prompt,
-            Refuse,
             /// <summary>Save them without asking. Untitled scenes are refused, as saving them needs a path.</summary>
             Save,
         }
@@ -89,8 +88,6 @@ namespace Elympics.Editor.Launcher
             var dirty = GetDirtyScenes();
             if (dirty.Length == 0)
                 return null;
-            if (policy == UnsavedScenePolicy.Refuse)
-                return $"the open scenes have unsaved changes: {string.Join(", ", dirty.Select(DescribeScene))}.";
             if (dirty.Any(scene => string.IsNullOrEmpty(scene.path)))
                 return "an untitled scene has unsaved changes, and saving it needs a path.";
             return EditorSceneManager.SaveScenes(dirty) ? null : "the open scenes could not be saved.";

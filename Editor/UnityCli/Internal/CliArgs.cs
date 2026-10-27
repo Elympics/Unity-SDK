@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,10 +13,10 @@ namespace Elympics.Editor.UnityCli
 {
     internal static class CliArgs
     {
-        private const string VersionPattern = "^[0-9-a-zA-Z.]+$";
+        private const string VersionPattern = "^[0-9a-zA-Z.-]+$";
         private const int MaxLength = 63;
 
-        internal static Func<string?> GetProjectRoot = () => Path.GetDirectoryName(Application.dataPath);
+        internal static Func<string> GetProjectRoot = () => Path.GetDirectoryName(Application.dataPath)!;
 
         public static string Require(string? value, string argumentName)
         {
@@ -24,10 +25,10 @@ namespace Elympics.Editor.UnityCli
             return value!.Trim();
         }
 
-        /// <summary>Unless <paramref name="allowExternal"/>, the path must stay inside the project (a lexical check: links and junctions are followed).</summary>
+        /// <summary>Unless <paramref name="allowExternal"/>, the path must stay inside the project. The check is lexical, so links and junctions aren't resolved.</summary>
         public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
         {
-            var root = Path.GetFullPath(GetProjectRoot()!).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var root = Path.GetFullPath(GetProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var resolved = Path.GetFullPath(Path.Combine(root, path));
             var inside = resolved.Equals(root, StringComparison.OrdinalIgnoreCase)
                 || resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
@@ -90,7 +91,16 @@ namespace Elympics.Editor.UnityCli
 
         public static Dictionary<string, string> ParseStringObject(string? json, string argumentName) =>
             ParseJsonObject(json, argumentName, "a JSON object with string values", $"pass e.g. --{argumentName} '{{\"key\":\"value\"}}'.",
-                text => JObject.Parse(text).ToObject<Dictionary<string, string>>()) ?? new Dictionary<string, string>();
+                ParseObject) ?? new Dictionary<string, string>();
+
+        private static Dictionary<string, string>? ParseObject(string text)
+        {
+            var obj = JObject.Parse(text);
+            var nullKey = obj.Properties().FirstOrDefault(property => property.Value.Type == JTokenType.Null)?.Name;
+            if (nullKey != null)
+                throw new ArgumentException($"'{nullKey}' is null.");
+            return obj.ToObject<Dictionary<string, string>>();
+        }
 
         /// <returns>Null for blank <paramref name="json"/>, so the caller picks the empty value.</returns>
         public static T? ParseJsonObject<T>(string? json, string argumentName, string expectation, string fix, Func<string, T?> parse) where T : class

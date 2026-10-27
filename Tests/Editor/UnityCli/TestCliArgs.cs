@@ -9,6 +9,9 @@ namespace Elympics.Editor.Tests.UnityCli
     [Category("UnityCli")]
     public class TestCliArgs
     {
+        private Func<string>? _originalProjectRoot;
+        private string _root = string.Empty;
+
         [Test]
         public void ExceptionMessageHasCodeTextAndFix()
         {
@@ -23,9 +26,6 @@ namespace Elympics.Editor.Tests.UnityCli
             _ = Assert.Throws<ArgumentException>(() => _ = new ElympicsCliException(ElympicsCliErrors.NoConfig, "No config.", " "));
             Assert.That(new ElympicsCliException(ElympicsCliErrors.Internal, "Boom.", null).Message, Is.EqualTo("ELYMPICS_INTERNAL: Boom."));
         }
-
-        private Func<string>? _originalProjectRoot;
-        private string _root = string.Empty;
 
         [SetUp]
         public void SetUp()
@@ -100,6 +100,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             Assert.That(CliArgs.ParseStringObject("{\"p\":\"v1.0.0\"}", "pin")["p"], Is.EqualTo("v1.0.0"));
             CliAssert.Throws(() => CliArgs.ParseStringObject("[\"a\"]", "pin"), ElympicsCliErrors.InvalidArgument);
+            CliAssert.Throws(() => CliArgs.ParseStringObject("{\"p\":null}", "pin"), ElympicsCliErrors.InvalidArgument);
         }
 
         [Test]

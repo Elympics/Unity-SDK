@@ -21,7 +21,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
 - **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
 - **Scratch Editors share the Elympics login:** give them a reachable endpoint; check the login afterwards.
-- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; 2+ Editors: `UNITY_PROJECT_PATH`; tests total > 0.
+- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; always `UNITY_PROJECT_PATH`; tests total > 0.
 
 ## Configuration
 - **Active game is availableGames[0]:** duplicate game IDs resolve to the first entry.

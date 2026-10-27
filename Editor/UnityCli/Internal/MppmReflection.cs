@@ -7,10 +7,7 @@ using System.Reflection;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>
-    /// Multiplayer Play Mode has no public API for its virtual players, so its internal one is used through reflection.
-    /// A missing member fails closed with <see cref="ElympicsCliErrors.MppmUnavailable"/>.
-    /// </summary>
+    /// <summary>Reaches Multiplayer Play Mode's internal virtual-player API; a missing member fails with <see cref="ElympicsCliErrors.MppmUnavailable"/>.</summary>
     internal static class MppmReflection
     {
         private const string AssemblyName = "UnityEditor.MultiplayerModule";
@@ -120,7 +117,7 @@ namespace Elympics.Editor.UnityCli
             var members = Require();
             var player = GetPlayer(members, number);
             var arguments = active ? new object?[] { null, null } : new object?[] { null };
-            var succeeded = (bool)(active ? members.Activate : members.Deactivate).Invoke(player, arguments)!;
+            var succeeded = (bool)Invoke(active ? members.Activate : members.Deactivate, player, arguments)!;
             if (!succeeded)
             {
                 var error = arguments[0]?.ToString();
@@ -136,12 +133,12 @@ namespace Elympics.Editor.UnityCli
         {
             var members = Require();
             var player = GetPlayer(members, number);
-            var registry = members.PlayerTags.GetValue(null);
+            var registry = members.PlayerTags.GetValue(null) ?? throw CreateUnavailableException("MultiplayerPlaymode.PlayerTags is null");
             var current = (string[]?)members.Tags.GetValue(player) ?? Array.Empty<string>();
             foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.OrdinalIgnoreCase)))
             {
                 // Makes the tag known to MPPM before it is added; the return value only says whether it was new.
-                _ = members.RegisterTag.Invoke(registry, new object?[] { tag, null });
+                _ = Invoke(members.RegisterTag, registry, new object?[] { tag, null });
                 InvokeTagChange(members.AddTag, player, tag, "Adding", number);
             }
             foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase)))
@@ -151,9 +148,22 @@ namespace Elympics.Editor.UnityCli
         private static void InvokeTagChange(MethodInfo method, object player, string tag, string verb, int number)
         {
             var arguments = new object?[] { tag, null };
-            if (!(bool)method.Invoke(player, arguments)!)
+            if (!(bool)Invoke(method, player, arguments)!)
                 throw new ElympicsCliException(ElympicsCliErrors.MppmFailed, $"{verb} the tag {tag} on Player {number} failed: {arguments[1]}.",
                     arguments[1]?.ToString() == "InPlayMode" ? "stop Play mode (editor_stop), then retry." : "check the tag in Window > Multiplayer > Multiplayer Play Mode, then retry.");
+        }
+
+        private static object? Invoke(MethodInfo method, object target, object?[] arguments)
+        {
+            try
+            {
+                return method.Invoke(target, arguments);
+            }
+            catch (TargetInvocationException e) when (e.InnerException != null)
+            {
+                throw new ElympicsCliException(ElympicsCliErrors.MppmFailed, $"Multiplayer Play Mode threw from {method.Name}: {e.InnerException.Message}",
+                    "open Window > Multiplayer > Multiplayer Play Mode to see the player's state, then retry.");
+            }
         }
 
         private static object GetPlayer(Members members, int number)

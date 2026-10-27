@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
 
 namespace Elympics.Editor.UnityCli.PackageUpdates
@@ -12,10 +13,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         UniTask<string> ListRemoteRefsAsync(string url, TimeSpan timeout);
     }
 
-    /// <summary>
-    /// Runs git without ever prompting: a credential window would block the command for its whole timeout.
-    /// git runs from the home directory, and current-directory lookup is off for the executables git itself launches.
-    /// </summary>
+    /// <summary>Runs git without ever prompting, from the home directory, so a credential window can't block the command.</summary>
     internal sealed class GitProcess : IGitProcess
     {
         public UniTask<string> ListRemoteRefsAsync(string url, TimeSpan timeout) => UniTask.RunOnThreadPool(() =>
@@ -32,8 +30,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             using var process = Start(startInfo);
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
+            var timedOut = new InvalidOperationException($"git ls-remote didn't finish within {timeout.TotalSeconds:0} s.");
             if (!WaitOrKill(process, timeout - stopwatch.Elapsed))
-                throw new InvalidOperationException($"git ls-remote didn't finish within {timeout.TotalSeconds:0} s.");
+                throw timedOut;
+            // A helper that inherited the pipes can keep them open after git exits.
+            if (!Task.WaitAll(new Task[] { output, error }, (int)Math.Max(0, (timeout - stopwatch.Elapsed).TotalMilliseconds)))
+                throw timedOut;
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"git ls-remote exited with {process.ExitCode}: {GitDependency.RedactCredentials(error.Result.Trim())}");
             return output.Result;

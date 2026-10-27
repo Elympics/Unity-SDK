@@ -50,7 +50,7 @@ namespace Elympics.Editor.Launcher
         public enum UnsavedScenePolicy
         {
             Prompt,
-            /// <summary>Save them without asking. Untitled scenes are refused, as saving them needs a path.</summary>
+            /// <summary>Untitled scenes are refused: saving needs a path.</summary>
             Save,
         }
 

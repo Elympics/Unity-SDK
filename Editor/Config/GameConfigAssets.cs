@@ -10,7 +10,6 @@ namespace Elympics.Editor.Config
     {
         private const string ElympicsPackagesPrefix = "Packages/com.daftmobile.";
 
-        /// <summary>Excludes the test fixtures of Elympics packages.</summary>
         public static string[] FindGuids() => AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}")
             .Where(guid => !IsPackageTestAsset(AssetDatabase.GUIDToAssetPath(guid)))
             .ToArray();

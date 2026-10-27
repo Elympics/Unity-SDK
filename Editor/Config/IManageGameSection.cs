@@ -10,7 +10,6 @@ namespace Elympics.Editor.Config
         /// <summary>Sections are shown in ascending order.</summary>
         int Order { get; }
 
-        /// <summary>Called on every rebuild of the window, with a container cleared beforehand.</summary>
         void CreateGUI(VisualElement container, ElympicsConfig config);
     }
 }

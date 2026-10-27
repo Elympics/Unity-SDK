@@ -18,7 +18,6 @@ namespace Elympics.Editor.UnityCli
         public const string ConfigGameIdDescription = "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.";
         public const string UploadConfirmDescription = "Must be true: the upload can't be undone.";
 
-        /// <summary>Runs backend calls with a timeout, mapping web errors to CLI error codes.</summary>
         public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
             CliRun.RunAsync(async () =>
             {

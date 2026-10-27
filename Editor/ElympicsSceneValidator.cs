@@ -31,7 +31,6 @@ namespace Elympics.Editor
         }
     }
 
-    /// <summary>Checks an Elympics gameplay scene without changing it.</summary>
     internal static class ElympicsSceneValidator
     {
         internal const string SetUpSceneCommand = "elympics_set_up_scene";

@@ -10,9 +10,8 @@ namespace Elympics
     /// <summary>
     /// Arguments of a Multiplayer Play Mode virtual player. By default it joins the half-remote server as a client,
     /// with the player index taken from its <c>-name PlayerN</c> argument (Player2 is index 0).
-    /// <c>Elympics:</c> player tags override that: a launch mode (<c>Elympics:halfRemoteServer</c>), a player index
-    /// (<c>Elympics:PlayerIndex=2</c>), any long argument (<c>Elympics:half-remote-ip=10.0.0.5</c>)
-    /// or <c>Elympics:manual</c>, which leaves the player to the Match Launcher.
+    /// <c>Elympics:</c> player tags override that (e.g. <c>Elympics:halfRemoteServer</c>, <c>Elympics:PlayerIndex=2</c>,
+    /// <c>Elympics:half-remote-ip=10.0.0.5</c>, or <c>Elympics:manual</c> to leave the player to the Match Launcher).
     /// They are collected after environment variables and URL queries and before the real command line, which wins.
     /// With ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH defined, there is no default launch: without a launch mode tag the player is manual and its other <c>Elympics:</c> tags are ignored.
     /// </summary>

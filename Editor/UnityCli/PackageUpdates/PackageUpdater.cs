@@ -287,9 +287,10 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 var hash = locked.TryGetValue(update.name, out var lockHash) ? lockHash : null;
                 update.newVersion = GetInstalledVersion(update.name) ?? update.newVersion;
-                update.lockHashMatchesHead = hash != null && update.newCommit != null ? hash == update.newCommit : null;
-                if (hash != null)
-                    update.newCommit ??= hash;
+                // A commit pin may be an abbreviated hash.
+                update.lockHashMatchesHead = hash != null && update.newCommit != null ? hash.StartsWith(update.newCommit, StringComparison.Ordinal) : null;
+                if (hash != null && update.lockHashMatchesHead != false)
+                    update.newCommit = hash;
             }
             Save(operation);
         }

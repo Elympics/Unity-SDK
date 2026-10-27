@@ -156,6 +156,19 @@ namespace Elympics.Editor.Tests.UnityCli
         });
 
         [UnityTest]
+        public IEnumerator AnAbbreviatedCommitPinMatchesTheLockedHash() => UniTask.ToCoroutine(async () =>
+        {
+            var commit = new string('d', 40);
+            var operation = _updater.Apply(await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [Sdk] = commit[..7] }, None));
+
+            WriteLockHashes(commit, TagCommit);
+            var sdk = _updater.ReadOperation(operation.operationId).packages.Single(update => update.name == Sdk);
+
+            Assert.That(sdk.lockHashMatchesHead, Is.True);
+            Assert.That(sdk.newCommit, Is.EqualTo(commit));
+        });
+
+        [UnityTest]
         public IEnumerator ACorruptManifestOrLockIsAPackageManagerError() => UniTask.ToCoroutine(async () =>
         {
             var plan = await PlanAllAsync();

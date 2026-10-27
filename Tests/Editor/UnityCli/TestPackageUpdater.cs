@@ -385,6 +385,36 @@ namespace Elympics.Editor.Tests.UnityCli
         });
 
         [Test]
+        public void ReplacingAFileWaitsForABriefLock()
+        {
+            var (source, destination) = WriteReplacePair();
+            var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
+            using var release = new System.Threading.Timer(_ => locked.Dispose(), null, 150, System.Threading.Timeout.Infinite);
+
+            PackageUpdater.ReplaceFile(source, destination);
+
+            Assert.That(File.ReadAllText(destination), Is.EqualTo("new"));
+        }
+
+        [Test]
+        [UnityPlatform(UnityEngine.RuntimePlatform.WindowsEditor)] // Elsewhere FileShare.None doesn't block a rename.
+        public void ReplacingAFileThatStaysLockedIsAPackageManagerError()
+        {
+            var (source, destination) = WriteReplacePair();
+            using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
+            CliAssert.Throws(() => PackageUpdater.ReplaceFile(source, destination), ElympicsCliErrors.PackageManagerFailed);
+        }
+
+        private (string source, string destination) WriteReplacePair()
+        {
+            var source = Path.Combine(_temp.Path, "replace.tmp");
+            var destination = Path.Combine(_temp.Path, "replace.json");
+            File.WriteAllText(source, "new");
+            File.WriteAllText(destination, "old");
+            return (source, destination);
+        }
+
+        [Test]
         public void AMissingOperationIsReported() =>
             CliAssert.Throws(() => _updater.ReadOperation("20260101000000-abcdef12"), ElympicsCliErrors.OperationNotFound);
 

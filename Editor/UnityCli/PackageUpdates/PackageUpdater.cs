@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Elympics.Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -69,6 +70,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public const string UnsupportedRemote = "ELYMPICS_UNSUPPORTED_GIT_URL";
         private static readonly TimeSpan LsRemoteTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan StaleOperation = TimeSpan.FromMinutes(10);
+        private const int ReplaceAttempts = 5;
+        private static readonly TimeSpan ReplaceRetryDelay = TimeSpan.FromMilliseconds(100);
 
         public string ManifestPath = Path.Combine("Packages", "manifest.json");
         public string LockPath = Path.Combine("Packages", "packages-lock.json");
@@ -211,9 +214,12 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             Save(operation);
             try
             {
-                WriteJson(ManifestPath, manifest);
-                if (lockFile != null)
-                    WriteJson(LockPath, lockFile);
+                // Both temp files are written first, so most failures happen before anything in Packages/ changes.
+                var manifestTemp = WriteTemp(ManifestPath, manifest);
+                var lockTemp = lockFile != null ? WriteTemp(LockPath, lockFile) : null;
+                ReplaceFile(manifestTemp, ManifestPath);
+                if (lockTemp != null)
+                    ReplaceFile(lockTemp, LockPath);
                 Resolve();
             }
             catch (Exception e) when (e is not OperationCanceledException)
@@ -308,14 +314,34 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
         }
 
-        private static void WriteJson(string path, JObject json)
+        private static string WriteTemp(string path, JObject json)
         {
             var temp = path + ".tmp";
             File.WriteAllText(temp, json.ToString(Formatting.Indented) + "\n");
-            if (File.Exists(path))
-                File.Replace(temp, path, null);
-            else
-                File.Move(temp, path);
+            return temp;
+        }
+
+        // Antivirus, indexers and Unity's file watcher can hold the file for a moment.
+        internal static void ReplaceFile(string source, string destination)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(destination))
+                        File.Replace(source, destination, null);
+                    else
+                        File.Move(source, destination);
+                    return;
+                }
+                catch (IOException e) when (e is not FileNotFoundException and not DirectoryNotFoundException)
+                {
+                    if (attempt == ReplaceAttempts)
+                        throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't replace {destination}: {e.Message}",
+                            $"close any program holding {Path.GetFileName(destination)} (antivirus, indexer, IDE) or wait a moment, then retry.", e);
+                    Thread.Sleep(ReplaceRetryDelay);
+                }
+            }
         }
 
         private Dictionary<string, string?> ReadDependencies()

@@ -6,9 +6,7 @@ using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>
-    /// The outcome of the last launch started by a tool, kept in <see cref="SessionState"/> to survive domain reloads (entering play mode, script recompiles).
-    /// </summary>
+    /// <summary>The outcome of the last tool-started launch, kept in <see cref="SessionState"/> across domain reloads.</summary>
     [InitializeOnLoad]
     internal static class EditorLaunchRecord
     {
@@ -67,7 +65,7 @@ namespace Elympics.Editor.UnityCli
 
         public static void Fail(string requestId, string message)
         {
-            if (Last is not { } record || record.requestId != requestId)
+            if (Last is not { } record || record.requestId != requestId || IsTerminal(record.result))
                 return;
             record.result = Failed;
             record.message = message;
@@ -81,6 +79,8 @@ namespace Elympics.Editor.UnityCli
             else
                 Write(record);
         }
+
+        private static bool IsTerminal(string result) => result is Ended or Failed or TimedOut;
 
         private static void Save(Record record)
         {
@@ -130,19 +130,19 @@ namespace Elympics.Editor.UnityCli
 
         internal static void OnHostEvent(string type, string requestId, string payloadJson)
         {
-            if (Last is not { } record)
+            if (Last is not { } record || IsTerminal(record.result))
                 return;
             var forThisLaunch = requestId == record.requestId;
             switch (type)
             {
-                case ElympicsHostProtocol.Events.LaunchAccepted when forThisLaunch:
+                case ElympicsHostProtocol.Events.LaunchAccepted when forThisLaunch && record.result == Pending:
                     record.result = Accepted;
                     break;
-                case ElympicsHostProtocol.Events.LaunchSucceeded when forThisLaunch:
+                case ElympicsHostProtocol.Events.LaunchSucceeded when forThisLaunch && record.result is Pending or Accepted:
                     record.result = Running;
                     record.matchId = string.IsNullOrEmpty(payloadJson) ? "" : JsonUtility.FromJson<ElympicsLaunchSucceededInfo>(payloadJson).matchId;
                     break;
-                case ElympicsHostProtocol.Events.LaunchFailed when forThisLaunch:
+                case ElympicsHostProtocol.Events.LaunchFailed when forThisLaunch && record.result is Pending or Accepted:
                     var failure = string.IsNullOrEmpty(payloadJson) ? new ElympicsLaunchFailure() : JsonUtility.FromJson<ElympicsLaunchFailure>(payloadJson);
                     record.result = failure.code == nameof(ElympicsLaunchErrorCode.Timeout) ? TimedOut : Failed;
                     record.code = failure.code;

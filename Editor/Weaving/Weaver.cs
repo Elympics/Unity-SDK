@@ -39,14 +39,16 @@ namespace Elympics.Editor.Weaving
                     is EditorCodeGenAssemblyName or EditorWeavingAssemblyName or RuntimeWeavingAssemblyName)
                 .ToArray();
 
-            if (elympicsPackageRemoved || IsNewWeavingCodeChange(weavingCodePaths))
+            if (elympicsPackageRemoved || IsNewWeavingCodeChange(weavingCodePaths, importedAssets))
                 CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
         }
 
         /// <remarks>Unity 6.5+ reports unchanged scripts again after the requested recompilation.</remarks>
-        private static bool IsNewWeavingCodeChange(string[] paths)
+        private static bool IsNewWeavingCodeChange(string[] paths, string[] importedAssets)
         {
             var requested = SessionState.GetString(RequestedVersionsKey, "").Split('\n').ToHashSet(StringComparer.Ordinal);
+            // A deleted path always has the same version, so a later deletion of a re-created file must not look already requested.
+            _ = requested.RemoveWhere(version => importedAssets.Any(imported => version == $"{imported}@{DeletedVersionTicks}"));
             var versions = paths.Select(path => $"{path}@{GetLastWriteTicks(FileUtil.GetPhysicalPath(path))}").ToArray();
             if (versions.All(requested.Contains))
                 return false;
@@ -54,6 +56,8 @@ namespace Elympics.Editor.Weaving
             SessionState.SetString(RequestedVersionsKey, string.Join("\n", requested));
             return true;
         }
+
+        private static readonly long DeletedVersionTicks = DateTime.FromFileTimeUtc(0).Ticks;
 
         private static long GetLastWriteTicks(string path) =>
             (Directory.Exists(path) ? Directory.GetLastWriteTimeUtc(path) : File.GetLastWriteTimeUtc(path)).Ticks;

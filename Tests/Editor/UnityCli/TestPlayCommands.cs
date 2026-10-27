@@ -35,7 +35,7 @@ namespace Elympics.Editor.Tests.UnityCli
             using var scene = new AdditiveTestScene();
             _ = scene.Create("Changed");
             _ = UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene.Scene);
-            // Without a dirty scene the launch would enter Play mode in the middle of the test run.
+            // A launch without a dirty scene would enter Play mode.
             Assume.That(EditorMatchLaunchQueue.GetDirtyScenes(), Is.Not.Empty);
 
             CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player"), ElympicsCliErrors.UnsavedScenes);
@@ -45,12 +45,12 @@ namespace Elympics.Editor.Tests.UnityCli
         public void RefusedLaunchIsRecordedAsFailed()
         {
             using var record = new LaunchRecordScope();
-            // The launch resolves the active game before the queue can refuse it, and the CI project has no ElympicsConfig.
+            // The launch needs an active game; CI has no ElympicsConfig.
             using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
             using var scene = new AdditiveTestScene();
             _ = scene.Create("Changed");
             _ = UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene.Scene);
-            // Saving an untitled scene needs a path, so the launch queue refuses before entering Play mode.
+            // An untitled scene cannot be saved, so the launch is refused.
             Assume.That(scene.Scene.path, Is.Empty);
 
             CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", saveScenes: true), ElympicsCliErrors.LaunchRefused);

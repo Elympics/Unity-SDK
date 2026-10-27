@@ -8,6 +8,7 @@ namespace Elympics.Editor.Tests
     public class TestPlayModeArguments
     {
         private static readonly string[] NoTags = Array.Empty<string>();
+        private ParameterList _parameters;
 
         [TestCase(new[] { "Unity.exe", "-name", "Player3" }, 3)]
         [TestCase(new[] { "Unity.exe", "-projectPath", "x", "-name", "Player2", "-batchmode" }, 2)]
@@ -59,8 +60,6 @@ namespace Elympics.Editor.Tests
             Assert.That(PlayModeArguments.Build(new[] { "Unity.exe" }, new[] { "Elympics:bot" }), Is.EqualTo(new[] { "--elympics-launch-mode=halfRemoteClient" }));
 
         #region Precedence
-
-        private ParameterList _parameters;
 
         private void Initialize(string[] args, string[] playModeArgs, string envLaunchMode = null)
         {

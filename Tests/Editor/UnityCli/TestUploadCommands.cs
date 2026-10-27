@@ -16,6 +16,8 @@ namespace Elympics.Editor.Tests.UnityCli
         private FakeTransport _transport = null!;
         private EditorApiScope _scope = null!;
 
+        private static string GameId() => Guid.NewGuid().ToString();
+
         [SetUp]
         public void SetUp()
         {
@@ -38,16 +40,16 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [Test]
         public void GameUpdateNeedsAChange() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(GameId(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [TestCase("")]
         [TestCase("0123456789012345678901234567890123456789012345678901234567890123")]
         public void GameUpdateValidatesTheName(string name) =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), name, confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(GameId(), name, confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void GameUpdateRejectsAnEmptyFleetId() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), fleetId: " ", confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGame(GameId(), fleetId: " ", confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [UnityTest]
         public IEnumerator GameUpdateSendsOnlyTheGivenFieldsAndReportsUndeclaredOnes() => UniTask.ToCoroutine(async () =>
@@ -56,7 +58,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var transport = new FakeTransport { Respond = _ => FakeTransport.Ok(game) };
             using var scope = new EditorApiScope(transport);
 
-            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(Guid.NewGuid().ToString(), "Renamed", externalBackend: "", confirm: true).AsUniTask());
+            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGame(GameId(), "Renamed", externalBackend: "", confirm: true).AsUniTask());
 
             Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.EqualTo(new[] { "PUT" }));
             var body = JObject.Parse(transport.Requests[0].JsonBody!);
@@ -78,7 +80,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var transport = BotQueueTransport();
             using var scope = new EditorApiScope(transport);
 
-            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), maxWaitTime: 30, confirm: true).AsUniTask());
+            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateQueue("solo", GameId(), maxWaitTime: 30, confirm: true).AsUniTask());
 
             var put = transport.Requests.Find(r => r.Method == "PUT");
             Assert.That(put.Url, Does.EndWith("/queues/q1"));
@@ -96,7 +98,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var transport = BotQueueTransport();
             using var scope = new EditorApiScope(transport);
 
-            _ = await ElympicsBackendWriteCliCommands.UpdateQueue("q1", Guid.NewGuid().ToString(), matchWithBots: true, confirm: true).AsUniTask();
+            _ = await ElympicsBackendWriteCliCommands.UpdateQueue("q1", GameId(), matchWithBots: true, confirm: true).AsUniTask();
 
             var body = JObject.Parse(transport.Requests.Find(r => r.Method == "PUT")!.JsonBody!);
             Assert.That((bool)body["MatchWithBots"]!, Is.True);
@@ -109,15 +111,16 @@ namespace Elympics.Editor.Tests.UnityCli
             using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
             var config = ElympicsConfig.Load()!;
             var gamesBefore = config.availableGames.Count;
-            using var scope = new EditorApiScope(new FakeTransport());
-            var caught = await CliAssert.CatchAsync(() => ElympicsBackendWriteCliCommands.CreateGame("Game", createConfig: true, confirm: true).AsUniTask());
-            CliAssert.HasCodeAndFix(caught, ElympicsCliErrors.RequestFailed);
+            var transport = new FakeTransport();
+            using var scope = new EditorApiScope(transport);
+            await CliAssert.ThrowsAwaitAsync(() => ElympicsBackendWriteCliCommands.CreateGame("Game", createConfig: true, confirm: true).AsUniTask(), ElympicsCliErrors.RequestFailed);
+            Assert.That(transport.Requests.Exists(request => request.Method == "POST"), Is.True);
             Assert.That(config.availableGames, Has.Count.EqualTo(gamesBefore));
         });
 
         [Test]
         public void GameVersionUpdateNeedsAChange() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGameVersion("1.0", Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateGameVersion("1.0", GameId(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [UnityTest]
         public IEnumerator GameVersionUpdateReportsTheVersionReadBackAfterwards() => UniTask.ToCoroutine(async () =>
@@ -131,7 +134,7 @@ namespace Elympics.Editor.Tests.UnityCli
             };
             using var scope = new EditorApiScope(transport);
 
-            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGameVersion("1.0", Guid.NewGuid().ToString(), blocked: true, confirm: true).AsUniTask());
+            var result = JObject.FromObject(await ElympicsBackendWriteCliCommands.UpdateGameVersion("1.0", GameId(), blocked: true, confirm: true).AsUniTask());
 
             Assert.That(transport.Requests.ConvertAll(r => r.Method), Is.EqualTo(new[] { "GET", "PUT", "GET" }));
             Assert.That(transport.Requests[2].Url, Does.EndWith("/versions/v1"));
@@ -141,31 +144,31 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [Test]
         public void GameVersionDeleteNeedsConfirm() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.DeleteGameVersion("1.0", Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.DeleteGameVersion("1.0", GameId()), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
         public void QueueCreateValidatesEnums() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.CreateQueue("solo", "TRIO", 1, 1, Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.CreateQueue("solo", "TRIO", 1, 1, GameId(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void QueueCreateNeedsConfirm() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.CreateQueue("solo", "solo", 1, 1, Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.CreateQueue("solo", "solo", 1, 1, GameId()), ElympicsCliErrors.ConfirmRequired);
 
         [TestCase(0, null)]
         [TestCase(null, -1)]
         public void QueueUpdateRejectsNonPositiveTeamSizes(int? numberOfTeams, int? playersInTeam)
         {
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), numberOfTeams: numberOfTeams, playersInTeam: playersInTeam, confirm: true),
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateQueue("solo", GameId(), numberOfTeams: numberOfTeams, playersInTeam: playersInTeam, confirm: true),
                 ElympicsCliErrors.InvalidArgument);
         }
 
         [Test]
         public void QueueUpdateNeedsAChange() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateQueue("solo", Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.UpdateQueue("solo", GameId(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void QueueDeleteNeedsConfirm() =>
-            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.DeleteQueue("solo", Guid.NewGuid().ToString()), ElympicsCliErrors.ConfirmRequired);
+            CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.DeleteQueue("solo", GameId()), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
         public void GameIdsMustBeGuids() =>

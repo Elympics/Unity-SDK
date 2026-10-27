@@ -15,6 +15,16 @@ namespace Elympics.Editor.Tests
             _ = Directory.CreateDirectory(Path);
         }
 
-        public void Dispose() => Directory.Delete(Path, true);
+        public void Dispose()
+        {
+            try
+            {
+                Directory.Delete(Path, true);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"Could not delete the temp directory {Path}: {e.Message}");
+            }
+        }
     }
 }

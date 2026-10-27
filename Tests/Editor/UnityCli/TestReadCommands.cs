@@ -14,12 +14,11 @@ namespace Elympics.Editor.Tests.UnityCli
     {
         private static JObject ToJson(object result) => JObject.FromObject(result);
 
-        private static string?[] Codes(JObject result, string list = "findings") => result[list]!.Select(finding => (string?)finding["code"]).ToArray();
-
         [Test]
         public void StatusWorksWithoutAConfig()
         {
             using var _ = ConfigPathScope.Missing();
+            using var __ = new EditorApiScope(new FakeLoginStore());
             var status = ToJson(ElympicsStatusCliCommands.GetStatus());
             Assert.That((string?)status["status"], Is.EqualTo("ok"));
             Assert.That((bool)status["config"]!["present"]!, Is.False);
@@ -32,7 +31,9 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             var login = new FakeLoginStore { AuthToken = "secret-auth-7f3a", RefreshToken = "secret-refresh-9c1d" };
             using var _ = new EditorApiScope(login);
-            var json = ToJson(ElympicsStatusCliCommands.GetStatus()).ToString();
+            var status = ToJson(ElympicsStatusCliCommands.GetStatus());
+            Assert.That((bool)status["login"]!["loggedIn"]!, Is.True);
+            var json = status.ToString();
             Assert.That(json, Does.Not.Contain("token").IgnoreCase.And.Not.Contain("password").IgnoreCase.And.Not.Contain("username").IgnoreCase);
             Assert.That(json, Does.Not.Contain("secret-auth-7f3a").And.Not.Contain("secret-refresh-9c1d"));
         }
@@ -63,7 +64,7 @@ namespace Elympics.Editor.Tests.UnityCli
             var result = ToJson(ElympicsSceneCliCommands.Validate(scene.Scene, Array.Empty<string>()));
 
             Assert.That((string?)result["status"], Is.EqualTo("issues"));
-            Assert.That(Codes(result), Is.SupersetOf(new[]
+            Assert.That(CliAssert.Codes(result), Is.SupersetOf(new[]
             {
                 ElympicsSceneValidator.NoElympicsSystem,
                 ElympicsSceneValidator.NetworkIdDuplicate,
@@ -83,8 +84,8 @@ namespace Elympics.Editor.Tests.UnityCli
 
             var result = ToJson(ElympicsSceneCliCommands.Validate(scene.Scene, new[] { ElympicsSceneValidator.NoElympicsSystem }));
 
-            Assert.That(Codes(result), Does.Not.Contain(ElympicsSceneValidator.NoElympicsSystem));
-            Assert.That(Codes(result, "ignored"), Does.Contain(ElympicsSceneValidator.NoElympicsSystem));
+            Assert.That(CliAssert.Codes(result), Does.Not.Contain(ElympicsSceneValidator.NoElympicsSystem));
+            Assert.That(CliAssert.Codes(result, "ignored"), Does.Contain(ElympicsSceneValidator.NoElympicsSystem));
             Assert.That((int)result["summary"]!["ignored"]!, Is.EqualTo(1));
         }
 

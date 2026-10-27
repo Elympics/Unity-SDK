@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using Elympics.Editor.Communication;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEngine;
@@ -33,7 +34,7 @@ namespace Elympics.Editor.UnityCli
                 },
                 pipelineVersion = pipelinePackage?.version,
                 Application.unityVersion,
-                login = new { loggedIn = ElympicsConfig.IsLogin },
+                login = new { loggedIn = ElympicsEditorApi.LoginStore.IsLogin },
                 config = new
                 {
                     present = config != null,

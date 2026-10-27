@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +23,13 @@ namespace Elympics.Editor.UnityCli
                 return new
                 {
                     status = "ok",
-                    games = games.Select(game => new { id = game.Id, name = game.Name, isConfigured = configured.Contains(game.Id), isActive = game.Id == active }).ToArray(),
+                    games = games.Select(game => new
+                    {
+                        id = game.Id,
+                        name = game.Name,
+                        isConfigured = configured.Contains(game.Id, StringComparer.OrdinalIgnoreCase),
+                        isActive = string.Equals(game.Id, active, StringComparison.OrdinalIgnoreCase),
+                    }).ToArray(),
                 };
             });
 

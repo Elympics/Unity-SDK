@@ -117,7 +117,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### com.unity.pipeline 0.8 is the floor; UPM can't downgrade below a package dependency
 - **Rule:** keep `com.unity.pipeline` in `package.json` at the lowest version Elympics supports, and don't design for older versions than that: a project can't pin one. `[CliCommand]`/`[CliArg]` come from `Unity.Pipeline.Attributes` (0.8+). Verify a command through the `unity command` listing, never by running an upload command.
 - **Reason:** Unity 6's Package Manager treats a package's dependency version as a minimum ("Requested version X overridden by minimum version Y" in `upm.log`): a project manifest pin of 0.7 still resolved 0.8 (embedded and tarball installs, lock deleted). The command compiled against 0.5–0.8, but those versions were unreachable, so the user chose 0.8 as the floor: 0.8 binds its servers to loopback, 0.7+ keeps the Roslyn DLLs out of release players, and 0.5–0.7 likely don't compile on 6000.7. StreamingAssets uploads are write-once, and pipeline has no `dry_run` for custom commands.
-- **Example:** after updating the host to 0.8, `ElympicsStreamingAssetsCliCommands.cs` failed with `CS0246 CliCommandAttribute` until the asmdef referenced `Unity.Pipeline.Attributes`. Pipeline 0.4 lacks `CliCommandAttribute.Tags`.
+- **Example:** after updating the host to 0.8, PlayPad's `PlayPadUploadCliCommands.cs` failed with `CS0246 CliCommandAttribute` until the asmdef referenced `Unity.Pipeline.Attributes`. Pipeline 0.4 lacks `CliCommandAttribute.Tags`.
 - **Time scope:** If Unity's Package Manager lets projects downgrade package dependencies, revisit.
 
 ## Verification

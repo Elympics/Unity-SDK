@@ -53,13 +53,16 @@ Under `Runtime/GameEngine/Libraries/`:
 - WebRTC `Other` (non-WebGL, uses `com.unity.webrtc`) and `WebGL` (browser, through `webrtc.jslib`) define classes with the **same names**. That lets `WebRtcFactory` stay free of `#if`, so keep the two implementations API-identical.
 
 ## Editor
-- `ElympicsWebIntegration.cs`: login, game versions, uploads.
-- `WebGLUploader.cs`: client builds and StreamingAssets bundles.
+- `Communication/`: the backend layer. `ElympicsEditorApi` holds every request (with token refresh and `RunBlocking` for Editor quit), `EditorApiTransport` sends them, and `ElympicsApiHostPolicy` limits where the login is sent. `UsageStatistics/` sends usage events.
+- `ElympicsWebIntegration.cs`: menu and window entry points on top of `ElympicsEditorApi` (login, game lists, usage events, build and upload with a progress bar).
+- `WebGLUploader.cs`: input checks and packing for client builds and StreamingAssets bundles (no network code).
+- `Config/`: `ElympicsConfig` and game config editors, the Manage Games window and its pluggable sections (`ManageGamesWindowSections`).
+- `UnityCli/` (`Elympics.Editor.UnityCli`): the `[CliCommand]`s. `Internal/` holds the argument, error and web helpers plus the launch record, and `PackageUpdates/` the git-based package updater.
 - Custom inspectors and drawers, some in UXML/UI Toolkit.
 - `SceneNetworkIdAssigner`, `Replay/`.
 
 ## Tests
-- **`Tests/Editor`:** RPC weaving validation, endpoint and file checks.
+- **`Tests/Editor`:** RPC weaving validation, endpoint and file checks, the Editor API and host policy, and `UnityCli/` (the CLI commands). `EditorApiFakes` (`FakeTransport`, `FakeLoginStore`, `EditorApiScope`) fakes the backend.
 - **`Tests/Runtime`:** runs in the editor only (all player platforms excluded).
   - Uses NUnit and NSubstitute. Runtime internals are visible to `DynamicProxyGenAssembly2` so they can be mocked.
   - Shared mocks and asserts are in `Tests/Runtime/Common/` and `Tests/Runtime/Util/`.

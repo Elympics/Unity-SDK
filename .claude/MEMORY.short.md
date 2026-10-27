@@ -7,7 +7,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **UITK Bind() discards earlier .value writes:** write the serialized property or use `OnValidate`.
 - **MPPM CurrentPlayer throws without the package:** read it only via `PlayModeInstance` (`ELYMPICS_MPPM`).
 - **MPPM virtual players run the main Editor's scenes:** load the needed scene yourself.
-- **Vendored deps:** `Elympics.`-prefixed assemblies, own GUIDs, references by name; see entry for BCL DLLs.
+- **Vendored deps:** `Elympics.`-prefixed assemblies, own GUIDs, references by name; vendored BCL DLLs need `!UNITY_6000_5_OR_NEWER`.
 - **com.unity.webrtc threads in every Editor:** `ELYMPICS_LAZY_WEBRTC_CONTEXT`; `EditorWebRtcContext.EnsureInitialized()`.
 - **WebGL size:** optional engine-module components go in their own never-referenced assembly.
 - **com.unity.webrtc disposes all on quit in players:** tolerate `ObjectDisposedException` at shutdown.

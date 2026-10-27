@@ -68,7 +68,11 @@ Mode selection, tick loop, serialization and weaving, transport, Editor and test
 `Runtime/Util/ScriptingSymbols.cs` wraps these defines:
 - `ELYMPICS_DEBUG` / `ELYMPICS_TRACE`: `[Conditional]` logging.
 - `ELYMPICS_PRODUCTION`: strips dev-time checks.
+- `ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH`: Multiplayer Play Mode virtual players don't launch a match by default.
+- `ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD`: the bootstrap doesn't load the gameplay scene for `ELYMPICS_LAUNCH_MODE`.
 - `UNITY_WEBGL && !UNITY_EDITOR`, `UNITY_SERVER`.
+
+`ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK` (not wrapped) turns off the Editor's 2D physics simulator scene check.
 
 ## Conventions
 

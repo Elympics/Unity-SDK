@@ -229,7 +229,11 @@ namespace Elympics.Editor.UnityCli
             foreach (var (number, playerTags) in tagsByPlayer)
                 MppmReflection.ReplaceTags(number, PlayModeArguments.TagPrefix, playerTags);
             for (var number = 2; number <= players.Count; number++)
-                MppmReflection.SetActive(number, number - 1 <= count);
+            {
+                var wanted = number - 1 <= count;
+                if (wanted != (players[number - 1].state != "NotLaunched"))
+                    MppmReflection.SetActive(number, wanted);
+            }
 
             return new { status = "updated", count, players = MppmReflection.GetPlayers() };
         });

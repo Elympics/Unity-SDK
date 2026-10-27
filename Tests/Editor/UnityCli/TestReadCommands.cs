@@ -33,6 +33,7 @@ namespace Elympics.Editor.Tests.UnityCli
             using var _ = new EditorApiScope(login);
             var status = ToJson(ElympicsStatusCliCommands.GetStatus());
             Assert.That((bool)status["login"]!["loggedIn"]!, Is.True);
+            Assert.That(((JObject)status["sdk"]!).Remove("resolvedPath"), Is.True);
             var json = status.ToString();
             Assert.That(json, Does.Not.Contain("token").IgnoreCase.And.Not.Contain("password").IgnoreCase.And.Not.Contain("username").IgnoreCase);
             Assert.That(json, Does.Not.Contain("secret-auth-7f3a").And.Not.Contain("secret-refresh-9c1d"));

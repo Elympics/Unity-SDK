@@ -49,7 +49,7 @@ namespace Elympics.Editor.UnityCli
                             "find the game with elympics_list_games and create its config in Tools > Elympics > Manage games in Elympics.");
                     try
                     {
-                        configAsset = ElympicsTools.CreateAndActivateGameConfig(config!, gameId!, created!.Name ?? name);
+                        configAsset = ElympicsTools.CreateAndActivateGameConfig(config!, gameId!, string.IsNullOrWhiteSpace(created!.Name) ? name : created.Name!);
                     }
                     catch (Exception exception) when (exception is not ElympicsCliException)
                     {
@@ -145,13 +145,23 @@ namespace Elympics.Editor.UnityCli
                 "list the versions with elympics_list_game_versions and pass a name or ID from it.");
         }
 
-        private static T? FindByIdOrName<T>(IEnumerable<T?>? items, string key, Func<T, string?> id, Func<T, string?> name) where T : class =>
-            items?.FirstOrDefault(candidate => candidate != null && id(candidate) == key) ?? items?.FirstOrDefault(candidate => candidate != null && name(candidate) == key);
+        internal static T? FindByIdOrName<T>(IEnumerable<T?>? items, string key, Func<T, string?> id, Func<T, string?> name) where T : class
+        {
+            var candidates = items?.Where(candidate => candidate != null).Select(candidate => candidate!).ToList() ?? new List<T>();
+            var byId = candidates.FirstOrDefault(candidate => id(candidate) == key);
+            if (byId != null)
+                return byId;
+            var byName = candidates.Where(candidate => name(candidate) == key).ToList();
+            if (byName.Count > 1)
+                throw ElympicsCliErrors.InvalidArgumentException($"'{key}' matches {byName.Count} entries by name.",
+                    $"pass the ID instead: {string.Join(", ", byName.Select(id))}.");
+            return byName.FirstOrDefault();
+        }
 
         [CliCommand("elympics_create_queue", "Create a matchmaking queue for an Elympics game. Enum values follow the backend (e.g. --match_type SOLO). Needs --confirm true.",
             Tags = new[] { "elympics/backend" })]
         public static Task<object> CreateQueue(
-            [CliArg("name", "Queue name: 1-63 Latin letters, digits, dashes and dots.", Required = true)] string name,
+            [CliArg("name", "Queue name, 1-63 characters.", Required = true)] string name,
             [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO.", Required = true)] string matchType,
             [CliArg("number_of_teams", "Number of teams.", Required = true)] int numberOfTeams,
             [CliArg("players_in_team", "Players in each team.", Required = true)] int playersInTeam,
@@ -200,7 +210,7 @@ namespace Elympics.Editor.UnityCli
         public static Task<object> UpdateQueue(
             [CliArg("queue", "Queue ID or name from elympics_list_queues.", Required = true)] string queue,
             [CliArg("game_id", CliWeb.GameIdDescription)] string gameId = "",
-            [CliArg("name", "New queue name.")] string? name = null,
+            [CliArg("name", "Queue name, 1-63 characters.")] string? name = null,
             [CliArg("match_type", "PAIR, GROUP, TEAM or SOLO. Changing it resets the strategies you don't pass to the new type's defaults.")] string? matchType = null,
             [CliArg("number_of_teams", "Number of teams.")] int? numberOfTeams = null,
             [CliArg("players_in_team", "Players in each team.")] int? playersInTeam = null,

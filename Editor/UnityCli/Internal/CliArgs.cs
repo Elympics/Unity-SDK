@@ -25,7 +25,7 @@ namespace Elympics.Editor.UnityCli
             return value!.Trim();
         }
 
-        /// <summary>Unless <paramref name="allowExternal"/>, the path must stay inside the project. The check is lexical, so links and junctions aren't resolved.</summary>
+        /// <summary>Lexical check: links and junctions aren't resolved.</summary>
         public static string ResolveProjectPath(string path, string argumentName, bool allowExternal)
         {
             var root = Path.GetFullPath(GetProjectRoot()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -69,10 +69,10 @@ namespace Elympics.Editor.UnityCli
         public static string ValidateGuid(string? value, string argumentName)
         {
             value = Require(value, argumentName);
-            if (!Guid.TryParse(value, out _))
+            if (!Guid.TryParse(value, out var guid))
                 throw ElympicsCliErrors.InvalidArgumentException($"--{argumentName} '{value}' is not a GUID.",
                     "pass an ID from elympics_list_games (or elympics_list_queues for queues).");
-            return value;
+            return guid.ToString("D");
         }
 
         public static string? TrimToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value!.Trim();

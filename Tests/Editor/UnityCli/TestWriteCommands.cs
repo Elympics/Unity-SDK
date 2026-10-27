@@ -22,6 +22,15 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.Throws(() => ElympicsConfigCliCommands.SetActiveGame(configAsset: "Assets/NoSuchGameConfig.asset", createIfMissing: false), ElympicsCliErrors.GameNotFound);
 
         [Test]
+        public void FindByIdOrNameTakesAnIdMatchAndRejectsAmbiguousNames()
+        {
+            var items = new[] { new[] { "a", "x" }, new[] { "b", "x" }, new[] { "x", "c" } };
+            Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "x", item => item[0], item => item[1]), Is.SameAs(items[2]));
+            Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "c", item => item[0], item => item[1]), Is.SameAs(items[2]));
+            CliAssert.Throws(() => ElympicsBackendWriteCliCommands.FindByIdOrName(items, "x", item => "", item => item[1]), ElympicsCliErrors.InvalidArgument);
+        }
+
+        [Test]
         public void SetVersionValidatesTheVersion() =>
             CliAssert.Throws(() => ElympicsConfigCliCommands.SetConfigGameVersion("1.0 beta"), ElympicsCliErrors.InvalidArgument);
 

@@ -42,7 +42,7 @@ namespace Elympics.Editor.UnityCli
         public static string ResolveGameId(string? gameId) =>
             GetExplicitGameId(gameId) ?? RequireActiveGame(RequireConfig()).GameId;
 
-        /// <returns>Null for a blank <paramref name="gameId"/> (the active game).</returns>
+        /// <returns>Null means the active game.</returns>
         private static string? GetExplicitGameId(string? gameId) => string.IsNullOrWhiteSpace(gameId) ? null : CliArgs.ValidateGuid(gameId, "game_id");
     }
 }

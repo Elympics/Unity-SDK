@@ -83,7 +83,9 @@ namespace Elympics.Editor.Tests.UnityCli
         public void GameIdMustBeAGuid()
         {
             CliAssert.Throws(() => CliArgs.ValidateGuid("not-a-guid", "game_id"), ElympicsCliErrors.InvalidArgument);
-            Assert.DoesNotThrow(() => CliArgs.ValidateGuid(Guid.NewGuid().ToString(), "game_id"));
+            var guid = Guid.NewGuid();
+            Assert.That(CliArgs.ValidateGuid(guid.ToString("N").ToUpperInvariant(), "game_id"), Is.EqualTo(guid.ToString()));
+            Assert.That(CliArgs.ValidateGuid(guid.ToString("B"), "game_id"), Is.EqualTo(guid.ToString()));
         }
 
         [Test]

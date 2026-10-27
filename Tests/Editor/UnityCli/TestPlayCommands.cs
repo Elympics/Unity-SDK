@@ -94,6 +94,15 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That((string?)lastLaunch["message"], Does.Contain("before the match ended"));
         }
 
+        [Test]
+        public void APendingLaunchFailsWhenPlayModeNeverStarted()
+        {
+            using var record = new LaunchRecordScope();
+            EditorLaunchRecord.Start("cli-test", "single_player", "game");
+            EditorLaunchRecord.OnPlayModeStateChanged(UnityEditor.PlayModeStateChange.EnteredEditMode);
+            Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Failed));
+        }
+
 #if ELYMPICS_MPPM
         [Test]
         [Category("MultiplayerPlayMode")]

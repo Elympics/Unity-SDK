@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>The outcome of the last tool-started launch, kept in <see cref="SessionState"/> across domain reloads.</summary>
+    /// <summary>Survives domain reloads (SessionState).</summary>
     [InitializeOnLoad]
     internal static class EditorLaunchRecord
     {
@@ -94,6 +94,16 @@ namespace Elympics.Editor.UnityCli
         {
             if (change == PlayModeStateChange.EnteredPlayMode)
                 Subscribe();
+            else if (change == PlayModeStateChange.EnteredEditMode)
+            {
+                var record = Last;
+                if (record is { result: Pending })
+                {
+                    record.result = Failed;
+                    record.message = "Play mode did not start.";
+                    Save(record);
+                }
+            }
             else if (change == PlayModeStateChange.ExitingPlayMode)
             {
                 Unsubscribe();

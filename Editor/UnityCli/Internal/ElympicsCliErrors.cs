@@ -39,7 +39,6 @@ namespace Elympics.Editor.UnityCli
         public const string OperationNotFound = "ELYMPICS_OPERATION_NOT_FOUND";
         public const string PackageManagerFailed = "ELYMPICS_PACKAGE_MANAGER_FAILED";
 
-        public const string UnsupportedMode = "ELYMPICS_UNSUPPORTED_MODE";
         public const string LauncherBusy = "ELYMPICS_LAUNCHER_BUSY";
         public const string LaunchRefused = "ELYMPICS_LAUNCH_REFUSED";
         public const string LaunchTimeout = "ELYMPICS_LAUNCH_TIMEOUT";

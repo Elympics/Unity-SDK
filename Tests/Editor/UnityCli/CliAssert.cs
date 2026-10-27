@@ -3,7 +3,6 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Elympics.Cysharp.Threading.Tasks;
 using Elympics.Editor.UnityCli;
 using NUnit.Framework;
 
@@ -28,7 +27,5 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         public static void ThrowsAsync(Func<Task<object>> command, string errorCode) => HasCodeAndFix(Assert.CatchAsync(async () => await command()), errorCode);
-
-        public static void ThrowsAsync(Func<UniTask> code, string errorCode) => HasCodeAndFix(Assert.CatchAsync(async () => await code()), errorCode);
     }
 }

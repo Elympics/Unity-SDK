@@ -162,12 +162,14 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(error!.message, Does.Not.Contain("glpat-secret").And.Contain("gitlab.example.com"));
         });
 
-        [Test]
-        public void PinAndTrackKeysOutsideTheSelectedPackagesAreRejected()
+        [UnityTest]
+        public IEnumerator PinAndTrackKeysOutsideTheSelectedPackagesAreRejected() => UniTask.ToCoroutine(async () =>
         {
-            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None), ElympicsCliErrors.InvalidArgument);
-            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" }), ElympicsCliErrors.InvalidArgument);
-        }
+            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [PlayPad] = "v4.0.0" }, None)),
+                ElympicsCliErrors.InvalidArgument);
+            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { Sdk }, None, new Dictionary<string, string> { [PlayPad] = "develop" })),
+                ElympicsCliErrors.InvalidArgument);
+        });
 
         [Test]
         public void ACorruptOperationRecordIsReportedNotThrownAsANullReference()
@@ -194,9 +196,22 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(Directory.GetFiles(_updater.OperationsDirectory).Select(File.ReadAllText), Has.None.Contain("glpat-secret"));
         });
 
-        [Test]
-        public void UnknownPackagesAreRejected() =>
-            CliAssert.ThrowsAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None), ElympicsCliErrors.InvalidArgument);
+        [UnityTest]
+        public IEnumerator UnknownPackagesAreRejected() => UniTask.ToCoroutine(async () =>
+            CliAssert.HasCodeAndFix(await CatchAsync(() => _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None)), ElympicsCliErrors.InvalidArgument));
+
+        private static async UniTask<Exception?> CatchAsync(Func<UniTask> code)
+        {
+            try
+            {
+                await code();
+            }
+            catch (Exception e)
+            {
+                return e;
+            }
+            return null;
+        }
 
         [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>

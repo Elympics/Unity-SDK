@@ -19,19 +19,6 @@ namespace Elympics.Editor.Tests.UnityCli
         public void UploadServerNeedsConfirm() => CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadServer(), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
-        public void UploadClientBuildNeedsConfirm() =>
-            CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadClientBuild("Builds/WebGL", "1.0"), ElympicsCliErrors.ConfirmRequired);
-
-        [Test]
-        public void UploadClientBuildValidatesTheVersion() =>
-            CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadClientBuild("Builds/WebGL", "1.0 beta", confirm: true), ElympicsCliErrors.InvalidArgument);
-
-        [Test]
-        public void UploadClientBuildNeedsAConfiguredGame() =>
-            CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadClientBuild("NoSuchBuild_" + Guid.NewGuid().ToString("N"), "1.0", gameId: Guid.NewGuid().ToString(), confirm: true),
-                ElympicsConfig.Load() == null ? ElympicsCliErrors.NoConfig : ElympicsCliErrors.GameNotFound);
-
-        [Test]
         public void GameCreateNeedsConfirm() => CliAssert.ThrowsAsync(() => ElympicsBackendWriteCliCommands.CreateGame("Game"), ElympicsCliErrors.ConfirmRequired);
 
         [Test]
@@ -197,11 +184,6 @@ namespace Elympics.Editor.Tests.UnityCli
         public void StreamingAssetsUploadAllowsAnExternalDirectoryWhenAsked() =>
             CliAssert.ThrowsAsync(() => ElympicsStreamingAssetsCliCommands.UploadStreamingAssets(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NoSuchContent_" + Guid.NewGuid().ToString("N")),
                 "1.0", confirm: true, allowExternalPath: true), ElympicsCliErrors.BuildDirNotFound);
-
-        [TestCase("../NoSuchBuild")]
-        [TestCase("Builds/../../NoSuchBuild")]
-        public void UploadClientBuildRejectsADirectoryOutsideTheProject(string path) =>
-            CliAssert.ThrowsAsync(() => ElympicsBuildCliCommands.UploadClientBuild(path, "1.0", gameId: Guid.NewGuid().ToString(), confirm: true), ElympicsCliErrors.InvalidArgument);
 
         [Test]
         public void StreamingAssetsUploadNeedsAnExistingDirectory() =>

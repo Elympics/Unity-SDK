@@ -120,10 +120,12 @@ namespace Elympics.Editor.UnityCli
                         record.mode,
                         record.gameId,
                         record.result,
-                        error = string.IsNullOrEmpty(record.code) && string.IsNullOrEmpty(record.message)
+                        error = record.result is not (EditorLaunchRecord.Failed or EditorLaunchRecord.TimedOut)
+                            || (string.IsNullOrEmpty(record.code) && string.IsNullOrEmpty(record.message))
                             ? null
                             : ElympicsCliErrors.Format(record.result == EditorLaunchRecord.TimedOut ? ElympicsCliErrors.LaunchTimeout : ElympicsCliErrors.LaunchFailed,
                                 $"{record.code} {record.message}".Trim(), LaunchFailureFix(record.code)),
+                        message = record.result == EditorLaunchRecord.Ended && !string.IsNullOrEmpty(record.message) ? record.message : null,
                         matchId = string.IsNullOrEmpty(record.matchId) ? null : record.matchId,
                         record.updatedAt,
                     },

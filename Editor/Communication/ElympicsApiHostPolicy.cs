@@ -61,6 +61,11 @@ namespace Elympics.Editor.Communication
                     EditorPrefs.DeleteKey(CustomHostPrefsKey);
                 return;
             }
+            if (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))
+            {
+                _ = EditorUtility.DisplayDialog(title, $"The API endpoint \"{endpoint}\" doesn't use https, so the Editor won't send the login to it. Use an https endpoint (http works on localhost only).", "OK");
+                return;
+            }
             if (EditorUtility.DisplayDialog(title,
                     $"Send your Elympics login to {uri.Host}? Only do this for a server you control. This setting applies to every project on this machine "
                     + $"and replaces any earlier trusted host. {stored}", "Trust " + uri.Host, "Cancel"))

@@ -55,6 +55,16 @@ namespace Elympics.Editor.UnityCli
             return version;
         }
 
+        public static string ValidateName(string? name, string argumentName)
+        {
+            name = Require(name, argumentName);
+            if (name.Length > MaxVersionLength)
+                throw ElympicsCliErrors.InvalidArgumentException(
+                    $"--{argumentName} '{name}' is too long: use at most {MaxVersionLength} characters.",
+                    $"pass a shorter --{argumentName}.");
+            return name;
+        }
+
         public static string ValidateGuid(string? value, string argumentName)
         {
             value = Require(value, argumentName);

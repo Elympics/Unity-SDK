@@ -310,10 +310,8 @@ namespace Elympics.Editor.Communication
                 if (!response.Succeeded)
                     ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {response.Error}");
             }
-            catch (ElympicsEditorApiException e)
-            {
-                ElympicsLogger.LogDebug($"Usage statistics event '{route}' failed: {e.Message}");
-            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            { }
         }
 
         private static bool IsAuthTokenExpired() => !long.TryParse(LoginStore.AuthTokenExp, out var expiration) || GetUtcNowSeconds() > expiration;

@@ -108,6 +108,10 @@ namespace Elympics.Editor.Tests.UnityCli
                 EditorLaunchRecord.Restore(new EditorLaunchRecord.Record { requestId = "cli-test", result = EditorLaunchRecord.Running });
                 EditorLaunchRecord.OnPlayModeStateChanged(UnityEditor.PlayModeStateChange.ExitingPlayMode);
                 Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Ended));
+
+                var lastLaunch = JObject.FromObject(ElympicsPlayCliCommands.GetMatchState())["lastLaunch"]!;
+                Assert.That(lastLaunch["error"]!.Type, Is.EqualTo(JTokenType.Null));
+                Assert.That((string?)lastLaunch["message"], Does.Contain("before the match ended"));
             }
             finally
             {

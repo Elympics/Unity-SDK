@@ -176,7 +176,7 @@ namespace Elympics.Editor.UnityCli
                 ValidateTeamSizes(numberOfTeams, playersInTeam);
                 var body = new QueueSettingsModel
                 {
-                    Name = CliArgs.ValidateVersion(name, "name"),
+                    Name = CliArgs.ValidateName(name, "name"),
                     MatchType = ValidateEnum(matchType, "match_type", MatchTypes),
                     MatchmakingStrategy = ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies),
                     SamplingStrategy = ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies),
@@ -226,7 +226,7 @@ namespace Elympics.Editor.UnityCli
                 if (new object?[] { name, matchType, numberOfTeams, playersInTeam, matchmakingStrategy, samplingStrategy, predictionStrategy, matchmakingMode, matchWithBots, maxWaitTime, minPlayersToMatch }
                     .All(value => value == null))
                     throw ElympicsCliErrors.InvalidArgumentException("Nothing to change.", "pass at least one field to change, e.g. --max_wait_time 30.");
-                name = name == null ? null : CliArgs.ValidateVersion(name, "name");
+                name = name == null ? null : CliArgs.ValidateName(name, "name");
                 matchType = matchType == null ? null : ValidateEnum(matchType, "match_type", MatchTypes);
                 matchmakingStrategy = matchmakingStrategy == null ? null : ValidateEnum(matchmakingStrategy, "matchmaking_strategy", MatchmakingStrategies);
                 samplingStrategy = samplingStrategy == null ? null : ValidateEnum(samplingStrategy, "sampling_strategy", SamplingStrategies);

@@ -595,7 +595,16 @@ namespace Elympics.Editor.Config
 
             _elements.ManageGameExtensions.Clear();
             foreach (var section in ManageGamesWindowSections.All)
-                section.CreateGUI(_elements.ManageGameExtensions, config);
+            {
+                try
+                {
+                    section.CreateGUI(_elements.ManageGameExtensions, config);
+                }
+                catch (Exception e)
+                {
+                    ElympicsLogger.LogError($"The {section.GetType().Name} section of the Manage Games window failed to build: {e}");
+                }
+            }
         }
 
         private void LogUploadedServerVersions()

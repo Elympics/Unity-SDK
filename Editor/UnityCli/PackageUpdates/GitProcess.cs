@@ -14,7 +14,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
     /// <summary>
     /// Runs git without ever prompting: a credential window would block the command for its whole timeout.
-    /// git runs from the home directory with current-directory lookup off, so a project can't plant its own git executable.
+    /// git runs from the home directory, and current-directory lookup is off for the executables git itself launches.
     /// </summary>
     internal sealed class GitProcess : IGitProcess
     {

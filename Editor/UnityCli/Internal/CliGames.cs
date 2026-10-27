@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Linq;
 
 namespace Elympics.Editor.UnityCli
@@ -32,7 +33,7 @@ namespace Elympics.Editor.UnityCli
             var config = RequireConfig();
             if (explicitId == null)
                 return RequireActiveGame(config);
-            return config.AvailableGames.FirstOrDefault(game => game != null && game.GameId == explicitId)
+            return config.AvailableGames.FirstOrDefault(game => game != null && string.Equals(game.GameId, explicitId, StringComparison.OrdinalIgnoreCase))
                 ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound,
                     $"No game config in ElympicsConfig has the game ID {explicitId}.",
                     "list the configured games with elympics_status, or register one with elympics_set_active_game --config_asset <path>.");

@@ -118,8 +118,8 @@ namespace Elympics.Editor.UnityCli
                         type = typeName,
                         bytes = TryMeasure(value),
                         variableLength = typeName.StartsWith(nameof(ElympicsString), StringComparison.Ordinal)
-                            || typeName.StartsWith("ElympicsList", StringComparison.Ordinal)
-                            || typeName.StartsWith("ElympicsArray", StringComparison.Ordinal),
+                            || typeName.StartsWith(nameof(ElympicsList<ElympicsInt>), StringComparison.Ordinal)
+                            || typeName.StartsWith(nameof(ElympicsArray<ElympicsInt>), StringComparison.Ordinal),
                     });
                 }
 

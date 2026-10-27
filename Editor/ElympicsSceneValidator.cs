@@ -48,8 +48,6 @@ namespace Elympics.Editor
         public const string TransformRigidbodySyncConflict = "TRANSFORM_RIGIDBODY_SYNC_CONFLICT";
         public const string UpdatableNotPredictable = "UPDATABLE_NOT_PREDICTABLE";
 
-        private const string ResetIdsFix = "run elympics_reset_network_ids (or " + ElympicsEditorMenuPaths.ResetIdsMenuPath + "), then save the scene.";
-
         public static List<SceneFinding> Validate(Scene scene, ElympicsConfig? config, IReadOnlyCollection<string> enabledBuildScenes)
         {
             var findings = new List<SceneFinding>();
@@ -127,6 +125,8 @@ namespace Elympics.Editor
 
         private static void CheckNetworkIds(List<ElympicsBehaviour> behaviours, List<SceneFinding> findings)
         {
+            const string ResetIdsFix = "run elympics_reset_network_ids (or " + ElympicsEditorMenuPaths.ResetIdsMenuPath + "), then save the scene.";
+
             foreach (var behaviour in behaviours.Where(behaviour => behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId))
                 findings.Add(new SceneFinding(NetworkIdUnassigned, SceneFindingSeverity.Error, "An ElympicsBehaviour has no network ID.", ResetIdsFix,
                     GetPath(behaviour.transform)));

@@ -10,7 +10,6 @@ using UnityEngine;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>Uploads are irreversible (versions are write-once) and need --confirm true.</summary>
     public static class ElympicsBuildCliCommands
     {
         [CliCommand("elympics_build_server",

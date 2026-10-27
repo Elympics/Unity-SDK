@@ -12,7 +12,6 @@ using Unity.Pipeline.Commands;
 
 namespace Elympics.Editor.UnityCli
 {
-    /// <summary>These change the Elympics backend right away and need --confirm true.</summary>
     public static class ElympicsBackendWriteCliCommands
     {
         private const string ConfirmDescription = "Must be true: the change is applied to the Elympics backend right away.";

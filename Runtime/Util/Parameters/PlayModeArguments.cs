@@ -14,7 +14,7 @@ namespace Elympics
     /// (<c>Elympics:PlayerIndex=2</c>), any long argument (<c>Elympics:half-remote-ip=10.0.0.5</c>)
     /// or <c>Elympics:manual</c>, which leaves the player to the Match Launcher.
     /// They are collected after environment variables and URL queries and before the real command line, which wins.
-    /// With ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH defined, there is no default: a player without a launch mode tag is manual.
+    /// With ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH defined, there is no default launch: without a launch mode tag the player is manual and its other <c>Elympics:</c> tags are ignored.
     /// </summary>
     internal static class PlayModeArguments
     {

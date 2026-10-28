@@ -326,7 +326,15 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         private static string WriteTemp(string path, JObject json)
         {
             var temp = path + ".tmp";
-            File.WriteAllText(temp, json.ToString(Formatting.Indented) + "\n");
+            try
+            {
+                File.WriteAllText(temp, json.ToString(Formatting.Indented) + "\n");
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't write {temp}: {e.Message}",
+                    "make sure Packages/ is writable and the disk isn't full, then retry.", e);
+            }
             return temp;
         }
 

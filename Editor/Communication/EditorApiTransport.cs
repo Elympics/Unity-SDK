@@ -113,18 +113,26 @@ namespace Elympics.Editor.Communication
     internal sealed class BusyWaitEditorApiTransport : IEditorApiTransport
     {
         private const int PollIntervalMilliseconds = 5;
+        private const int DeadlineGraceSeconds = 5;
 
         public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
         {
             using var webRequest = UnityWebRequestEditorApiTransport.Create(request);
             ct.ThrowIfCancellationRequested();
             var operation = webRequest.SendWebRequest();
+            // A backstop in case UnityWebRequest's own timeout never fires, since this blocks the main thread.
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(request.TimeoutSeconds > 0 ? request.TimeoutSeconds + DeadlineGraceSeconds : ElympicsEditorApi.JsonTimeoutSeconds);
             while (!operation.isDone)
             {
                 if (ct.IsCancellationRequested)
                 {
                     webRequest.Abort();
                     ct.ThrowIfCancellationRequested();
+                }
+                if (DateTime.UtcNow > deadline)
+                {
+                    webRequest.Abort();
+                    throw new ElympicsEditorApiException(EditorApiErrorKind.Timeout, "The request didn't finish within its timeout.");
                 }
                 Thread.Sleep(PollIntervalMilliseconds);
             }

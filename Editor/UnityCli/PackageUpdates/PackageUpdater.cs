@@ -316,6 +316,11 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"{path} isn't valid JSON: {e.Message}",
                     "fix or restore the file (version control has the last good copy), then retry.");
             }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't read {path}: {e.Message}",
+                    $"close any program holding {Path.GetFileName(path)} or wait for the Package Manager to finish, then retry.", e);
+            }
         }
 
         private static string WriteTemp(string path, JObject json)
@@ -363,8 +368,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 return new Dictionary<string, string>();
             var lockFile = ReadJson(LockPath);
             return (lockFile["dependencies"] as JObject)?.Properties()
-                .Where(property => property.Value["hash"] != null)
-                .ToDictionary(property => property.Name, property => ((string?)property.Value["hash"])!)
+                .Where(property => property.Value is JObject entry && entry["hash"] is { Type: JTokenType.String })
+                .ToDictionary(property => property.Name, property => (string)property.Value["hash"]!)
                 ?? new Dictionary<string, string>();
         }
 
@@ -399,7 +404,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     update.warnings ??= new List<string>();
                 return operation;
             }
-            catch (Exception e) when (e is JsonException or IOException)
+            catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
             {
                 return null;
             }

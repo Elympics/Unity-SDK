@@ -357,6 +357,20 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [UnityTest]
+        public IEnumerator LockEntriesWithoutAStringHashCountAsUnlocked() => UniTask.ToCoroutine(async () =>
+        {
+            File.WriteAllText(_updater.LockPath, new JObject
+            {
+                ["dependencies"] = new JObject { [Sdk] = JValue.CreateNull(), [PlayPad] = new JObject { ["hash"] = 1 } },
+            }.ToString());
+
+            var plan = await PlanAllAsync();
+
+            Assert.That(plan.Select(update => update.error), Has.All.Null);
+            Assert.That(plan.Select(update => update.oldCommit), Has.All.Null);
+        });
+
+        [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>
         {
             var plan = await PlanAllAsync();

@@ -267,14 +267,14 @@ namespace Elympics.Editor.UnityCli
             {
                 var active = SceneManager.GetActiveScene();
                 if (!active.IsValid() || !active.isLoaded)
-                    throw new ElympicsCliException(ElympicsCliErrors.NoActiveScene, "No scene is loaded.", "open the gameplay scene with open_scene --scene_path <path>.");
+                    throw new ElympicsCliException(ElympicsCliErrors.NoActiveScene, "No scene is loaded.", "open the gameplay scene with open_scene --path <path>.");
                 return active;
             }
 
             var scene = SceneManager.GetSceneByPath(scenePath.Trim());
             if (!scene.IsValid() || !scene.isLoaded)
                 throw new ElympicsCliException(ElympicsCliErrors.SceneNotOpen, $"The scene {scenePath} isn't open.",
-                    $"open it first with open_scene --scene_path {scenePath.Trim()}, or omit --scene to use the active scene.");
+                    $"open it first with open_scene --path {scenePath.Trim()}, or omit --scene to use the active scene.");
             return scene;
         }
     }

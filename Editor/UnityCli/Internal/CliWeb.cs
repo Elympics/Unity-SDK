@@ -18,7 +18,12 @@ namespace Elympics.Editor.UnityCli
         public const string ConfigGameIdDescription = "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.";
         public const string UploadConfirmDescription = "Must be true: the upload can't be undone.";
 
+        private const string TimeoutFix = "check the Internet connection and retry with a larger --timeout_seconds (and the CLI's --timeout).";
+
         public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
+            RunAsync(timeoutSeconds, body, requestFailedCode, TimeoutFix);
+
+        private static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode, string timeoutFix) =>
             CliRun.RunAsync(async () =>
             {
                 RequirePositiveTimeout(timeoutSeconds);
@@ -30,8 +35,7 @@ namespace Elympics.Editor.UnityCli
                 }
                 catch (OperationCanceledException) when (timeout.IsCancellationRequested)
                 {
-                    throw new ElympicsCliException(ElympicsCliErrors.NetworkTimeout, $"The Elympics backend didn't answer within {timeoutSeconds} s.",
-                        "check the Internet connection and retry with a larger --timeout_seconds (and the CLI's --timeout).");
+                    throw new ElympicsCliException(ElympicsCliErrors.NetworkTimeout, $"The Elympics backend didn't answer within {timeoutSeconds} s.", timeoutFix);
                 }
                 catch (ElympicsEditorApiException e)
                 {
@@ -51,7 +55,7 @@ namespace Elympics.Editor.UnityCli
             {
                 await ElympicsEditorApi.EnsureLoggedInAsync(0, DefaultTimeoutSeconds, ct);
                 return new { };
-            }, requestFailedCode);
+            }, requestFailedCode, "check the Internet connection and retry.");
 
         public static ElympicsCliException Map(ElympicsEditorApiException exception, string requestFailedCode = ElympicsCliErrors.RequestFailed) => exception.Kind switch
         {

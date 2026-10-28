@@ -170,6 +170,9 @@ namespace Elympics
             });
         }
 
+        private static ElympicsGameConfig RequireCurrentGameConfig() =>
+            ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+
         private static void RunAndLogErrors(Func<UniTask> action, bool silent = false) => RunAndLogErrorsAsync(action, silent).Forget();
 
         private static async UniTask RunAndLogErrorsAsync(Func<UniTask> action, bool silent)
@@ -180,10 +183,14 @@ namespace Elympics
             }
             catch (OperationCanceledException)
             { }
-            catch (Exception e)
+            catch (ElympicsException e)
             {
                 if (!silent)
                     ElympicsLogger.LogError(e.Message);
+            }
+            catch (Exception e)
+            {
+                ElympicsLogger.LogException(e);
             }
         }
 
@@ -284,10 +291,10 @@ namespace Elympics
             return buildReport;
         }
 
-        /// <summary>Packs and uploads the server already built into <see cref="BuildTools.EnginePath"/>, using the current login.</summary>
+        /// <summary>Uploads the server already built into <see cref="BuildTools.EnginePath"/>.</summary>
         internal static async UniTask PackAndUploadServerUsingCurrentLoginAsync(int? timeoutSeconds, CancellationToken ct)
         {
-            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+            var currentGameConfig = RequireCurrentGameConfig();
             await ElympicsEditorApi.EnsureLoggedInAsync(0, timeoutSeconds, ct);
             await PackAndUploadServerAsync(currentGameConfig, null, timeoutSeconds, ct);
         }
@@ -362,7 +369,7 @@ namespace Elympics
         [PublicAPI]
         public static async UniTask<BuildReport> BuildAndUploadServerUsingCurrentLoginAsync(BuildOptions additionalOptions = BuildOptions.None, CancellationToken ct = default)
         {
-            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+            var currentGameConfig = RequireCurrentGameConfig();
             await ElympicsEditorApi.EnsureLoggedInAsync(0, ct: ct);
             return await BuildPackAndUploadServerAsync(currentGameConfig, additionalOptions, null, ct);
         }
@@ -450,7 +457,7 @@ namespace Elympics
         public static BuildReport BuildAndUploadServerInBatchmodeWithBuildReport(string username, string password, BuildOptions additionalOptions = BuildOptions.None)
         {
             LoginAsDeveloper(username, password);
-            var currentGameConfig = ElympicsConfig.LoadCurrentElympicsGameConfig() ?? throw new ElympicsException("Current game config is null");
+            var currentGameConfig = RequireCurrentGameConfig();
             return ElympicsEditorApi.RunBlocking(ct => BuildPackAndUploadServerAsync(currentGameConfig, additionalOptions, null, ct));
         }
 

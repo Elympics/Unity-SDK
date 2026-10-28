@@ -3,11 +3,11 @@
 
 ### Bug Fixes 🪲
 
+* **BREAKING:** Check the API host before logging the Editor login attempt ([ddc2a20](https://github.com/Elympics/Unity-SDK/commit/ddc2a20ea4546ae82d2ea78e8123d2f7ed09e1bf))
 * Accept a null query value again ([35a0810](https://github.com/Elympics/Unity-SDK/commit/35a081047f381ab56826890141b77314c2fc9210))
 * Accept a WebGL build root in the client build uploader and explain bad arguments ([8909c98](https://github.com/Elympics/Unity-SDK/commit/8909c980810833a66dd5134b0ea1bc33f280ebba))
 * Avoid an unreachable-code warning in builds without ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD ([f133ff7](https://github.com/Elympics/Unity-SDK/commit/f133ff71d1753b22340ad20226d4ab069f01464e))
 * Bind only the client's data channels in the WebRTC server ([b3d93eb](https://github.com/Elympics/Unity-SDK/commit/b3d93eb7addc72ec51e60e28bc9e2ac94c9cd875))
-* Check the API host before logging the Editor login attempt ([ddc2a20](https://github.com/Elympics/Unity-SDK/commit/ddc2a20ea4546ae82d2ea78e8123d2f7ed09e1bf))
 * **ci:** Restore ProjectSettings when Unity fails in run_with_defines.sh ([9c1e546](https://github.com/Elympics/Unity-SDK/commit/9c1e546626d67131f52ee71544f88ced6ebf01af))
 * Clamp zip entry timestamps to the DOS date range ([01eb9fb](https://github.com/Elympics/Unity-SDK/commit/01eb9fbfa75ddda78d2166464d375b2086a287f8))
 * Clear the Manage Games login fields on logout ([4d5aec2](https://github.com/Elympics/Unity-SDK/commit/4d5aec270005731a256e70c2061b7c0bd39630b3))
@@ -91,7 +91,6 @@
 * Refresh the gameplay scene path outside OnValidate ([a843f73](https://github.com/Elympics/Unity-SDK/commit/a843f73f3ae7931d985d7c8f2ce3b896701dbb0b))
 * Report a half-remote player as disconnected when its connection drops ([e7d32f2](https://github.com/Elympics/Unity-SDK/commit/e7d32f27dfeeee3dd90458b89229f861814d324f))
 * Require https for a trusted custom API host except on localhost ([b14b27f](https://github.com/Elympics/Unity-SDK/commit/b14b27ffc0afc96f7a1a9df4da29a2c96b4d8419))
-* Restore removed utcTime assignment in ElympicsScore ([00d585f](https://github.com/Elympics/Unity-SDK/commit/00d585f29c844d47fd1e0add5941de56b2c9944d))
 * Restore the Dedicated Server scripting backend after a server build ([ecd98ff](https://github.com/Elympics/Unity-SDK/commit/ecd98ff2cc9dd937d807b944ea1b4a23e30dfa2c))
 * Restore the standalone build subtarget after building a server ([0386280](https://github.com/Elympics/Unity-SDK/commit/0386280200a569a9362f464d371a4a7aa2387249))
 * Send one ButtonClicker result per match player, not per config slot ([4416ca9](https://github.com/Elympics/Unity-SDK/commit/4416ca96433af34a359fb77660cc69b20f8ed459))
@@ -107,30 +106,11 @@
 * Write the replay window's UXML floats with decimal points ([06ed3c9](https://github.com/Elympics/Unity-SDK/commit/06ed3c9a6dbbd517431a65c79e60c480dd9213cc))
 * Zip server builds without the System.IO.Compression.FileSystem facade ([142167d](https://github.com/Elympics/Unity-SDK/commit/142167dd70ad316c5b774f357283015769cfd18e))
 
-
-### Code Refactoring
-
-* **cli:** Move the StreamingAssets upload to the PlayPad package ([9b7a0c3](https://github.com/Elympics/Unity-SDK/commit/9b7a0c31fc289fdb7b2344c3518ac3f31a9bd906))
-
-
-* refactor(cli)!: Note the client build upload move to PlayPad ([6c97ca4](https://github.com/Elympics/Unity-SDK/commit/6c97ca4e5b34e295d74fd25c04bce799bdcb4ee8))
-* fix(cli)!: Require --confirm true to import a sample over its imported copy ([bf7a581](https://github.com/Elympics/Unity-SDK/commit/bf7a58139eac04ea4f015dc2447d097e8cd15f7a))
-* fix(cli)!: Upload only paths inside the project unless --allow_external_path true ([62ad450](https://github.com/Elympics/Unity-SDK/commit/62ad450b5e5d8fef424e40f7692184e58ffab72a))
-* refactor!: Send every Editor web request through ElympicsEditorApi ([e1fc892](https://github.com/Elympics/Unity-SDK/commit/e1fc89205d2321074fe5fee215cf404eb71d3548))
-* feat(cli)!: Make elympics_upload_streaming_assets use the Editor login and require --confirm ([f22f501](https://github.com/Elympics/Unity-SDK/commit/f22f50129735f984a3fcc8e66c05235da9d4c891))
-* feat!: Include additional metadata in score submitted over time ([9fdddc2](https://github.com/Elympics/Unity-SDK/commit/9fdddc293ad21b1ee2e6f48bede78f2f19c40f20))
-* perf!: Move the 2D physics and Animator components to opt-in assemblies ([ca78df4](https://github.com/Elympics/Unity-SDK/commit/ca78df4104c5a21cab6e32bf6ef5922e805d0c3f))
-* perf!: Drop the vendored UniTask's uGUI, physics and TextMeshPro extensions ([f4ab753](https://github.com/Elympics/Unity-SDK/commit/f4ab753c3767e1caf700216ee50acbb04500dcc6))
-* refactor!: Move the WebSocket client to PlayPad ([894e8fe](https://github.com/Elympics/Unity-SDK/commit/894e8feec09544189d404275cca907dc3fb3b65a))
-* refactor!: Give the vendored MessagePack Elympics names and its own GUIDs ([500792c](https://github.com/Elympics/Unity-SDK/commit/500792c940d3cf9d7cd5310f216dc4153075a56a))
-* refactor!: Vendor UniTask 2.5.10 under Elympics names ([1d495a8](https://github.com/Elympics/Unity-SDK/commit/1d495a8297c4f611f4a8b7c39f2aea827008b9de))
-* feat!: Replace ParrelSync with Multiplayer Play Mode ([64f6860](https://github.com/Elympics/Unity-SDK/commit/64f6860553afe8c34729fa86560f95c8920669c8))
-* chore!: Remove the unused Ethereum signer and stale link.xml ([bd6956d](https://github.com/Elympics/Unity-SDK/commit/bd6956d874ab5769710464143400b73bafd34741))
-* feat!: Require Unity 6.3 ([f77b0a8](https://github.com/Elympics/Unity-SDK/commit/f77b0a81bccd6dc4f1ad85e1edcb13f6d2ade8b7))
-
-
 ### Features
 
+* **BREAKING:** Include additional metadata in score submitted over time ([9fdddc2](https://github.com/Elympics/Unity-SDK/commit/9fdddc293ad21b1ee2e6f48bede78f2f19c40f20))
+* **BREAKING:** Replace ParrelSync with Multiplayer Play Mode ([64f6860](https://github.com/Elympics/Unity-SDK/commit/64f6860553afe8c34729fa86560f95c8920669c8))
+* **BREAKING:** Require Unity 6.3 ([f77b0a8](https://github.com/Elympics/Unity-SDK/commit/f77b0a81bccd6dc4f1ad85e1edcb13f6d2ade8b7))
 * Add a non-blocking core for the Editor's Elympics web calls ([d9ae19a](https://github.com/Elympics/Unity-SDK/commit/d9ae19a6efc42fbe0282eccd6bf7e81ca576c15d))
 * Add defines that disable the SDK's automatic usage statistics, build scene validation, Run In Background and 2D physics check ([5192a82](https://github.com/Elympics/Unity-SDK/commit/5192a82885e093b4fe667476b8e850441ddafd88))
 * Add defines that turn off automatic launch-mode behaviour ([7f13c54](https://github.com/Elympics/Unity-SDK/commit/7f13c54899f1e36f9cf62bc748a8bd11f8c56162))
@@ -147,53 +127,87 @@
 * Set a define without build targets for all build targets ([01a0aa2](https://github.com/Elympics/Unity-SDK/commit/01a0aa26cc9c786afe4d94bbfc6ee15f392bfc9d))
 * Start the WebRTC context in the Editor only when Elympics needs it ([e9c4b32](https://github.com/Elympics/Unity-SDK/commit/e9c4b327800c6e30b2d68d80f7bd86804bb29301))
 
-
 ### Performance Improvements 🚀
 
+* **BREAKING:** Move the 2D physics and Animator components to opt-in assemblies ([ca78df4](https://github.com/Elympics/Unity-SDK/commit/ca78df4104c5a21cab6e32bf6ef5922e805d0c3f))
+* **BREAKING:** Drop the vendored UniTask's uGUI, physics and TextMeshPro extensions ([f4ab753](https://github.com/Elympics/Unity-SDK/commit/f4ab753c3767e1caf700216ee50acbb04500dcc6))
 * Avoid per-send closures in WebRTC data-channel sends ([a73be0b](https://github.com/Elympics/Unity-SDK/commit/a73be0b0896ec1622cbb95e6cf7af5d098309336))
 * Keep the TCP/UDP transport out of WebGL players ([70ca07d](https://github.com/Elympics/Unity-SDK/commit/70ca07d68da797cbab7373d09d2c3ab35b0b9241))
 * Leave TestCertificateHandler out of WebGL players ([bf71e48](https://github.com/Elympics/Unity-SDK/commit/bf71e4817450bea4346e087c1e5f9f877ea3db82))
 * Leave the local-file replay retriever out of WebGL players ([883fa4f](https://github.com/Elympics/Unity-SDK/commit/883fa4fa2941b3876172ab13eb4afb64a12a0643))
 * Parse launch parameters without Regex ([71540bc](https://github.com/Elympics/Unity-SDK/commit/71540bc532fa7c54a4e0118db6aacd5050528325))
 
+### Code Refactoring
+
+* **BREAKING:** **cli:** Move the StreamingAssets upload to the PlayPad package ([9b7a0c3](https://github.com/Elympics/Unity-SDK/commit/9b7a0c31fc289fdb7b2344c3518ac3f31a9bd906))
+* **BREAKING:** **cli:** Move the Manage Games window's client build upload to PlayPad ([6c97ca4](https://github.com/Elympics/Unity-SDK/commit/6c97ca4e5b34e295d74fd25c04bce799bdcb4ee8))
+* **BREAKING:** Send every Editor web request through ElympicsEditorApi ([e1fc892](https://github.com/Elympics/Unity-SDK/commit/e1fc89205d2321074fe5fee215cf404eb71d3548))
+* **BREAKING:** Move the WebSocket client to PlayPad ([894e8fe](https://github.com/Elympics/Unity-SDK/commit/894e8feec09544189d404275cca907dc3fb3b65a))
+* **BREAKING:** Give the vendored MessagePack Elympics names and its own GUIDs ([500792c](https://github.com/Elympics/Unity-SDK/commit/500792c940d3cf9d7cd5310f216dc4153075a56a))
+* **BREAKING:** Vendor UniTask 2.5.10 under Elympics names ([1d495a8](https://github.com/Elympics/Unity-SDK/commit/1d495a8297c4f611f4a8b7c39f2aea827008b9de))
+
+### Chores
+
+* **BREAKING:** Remove the unused Ethereum signer and stale link.xml ([bd6956d](https://github.com/Elympics/Unity-SDK/commit/bd6956d874ab5769710464143400b73bafd34741))
 
 ### BREAKING CHANGES :warning:
 
-* **editor:** BuildAndUploadGame reports the result as Action<bool> instead of Action<UnityWebRequest>, and GameUploadedToTheCloud fires from the new upload path. The PlayPad StreamingAssets upload no longer sends the old build tag.
-* The elympics_upload_client_build command and the client build upload fields of the Manage Games window were removed. Use playpad_upload_client_build or the PlayPad section of the window, from the PlayPad package.
-* **cli:** elympics_upload_streaming_assets is replaced by
-playpad_upload_streaming_assets from com.daftmobile.elympics-playpad,
-which drops the removed --username and --password arguments. The Manage
-Games window shows the StreamingAssets upload only with PlayPad installed.
-* importing an already imported sample again needs --force true --confirm true.
-* the Editor sends the Elympics login, credentials and tokens only to https *.elympics.cc and *.elympics.ai API endpoints. With any other endpoint in ElympicsConfig or its command-line override, Editor API requests fail (ELYMPICS_UNTRUSTED_HOST in the CLI) until that host is trusted on the machine through Tools/Elympics/Trust Custom API Host on This Machine.
-* uploading a directory outside the project now needs
---allow_external_path true.
-* ElympicsWebIntegration.BuildAndUploadGame takes an
-Action<bool> (whether the build and upload succeeded) instead of an
-Action<UnityWebRequest>, and it calls it on every exit. The public
-ElympicsEditorWebClient class is removed.
-* elympics_upload_streaming_assets no longer accepts
---username and --password; passing them fails with
-ELYMPICS_CREDENTIALS_ARGS_REMOVED. Log in to Elympics in the Editor instead.
-The result no longer has the usedCurrentLogin field.
-* ElympicsScore.this[int] now returns
-  ElympicsScore.ScoreWithMetadata instead of float.
-* scenes with 2D physics must add ElympicsUnityPhysics2DSimulator
-(next to ElympicsUnityPhysicsSimulator); otherwise 2D physics doesn't follow Elympics
-ticks. Assemblies that use ElympicsRigidBody2DSynchronizer or
-ElympicsAnimatorSynchronizer in code must reference Elympics.Physics2D or
-Elympics.Animation.
-* Elympics.Cysharp.Threading.Tasks no longer has the uGUI, TextMeshPro
-and physics helpers (e.g. Button.OnClickAsync, GetAsyncCollisionEnterTrigger).
-Install the official UniTask package to use them.
-* the HybridWebSocket types are no longer part of Elympics.
-* asmdefs that referenced the SDK's MessagePack assemblies by name or GUID must reference Elympics.MessagePack* instead.
-* code that uses the SDK's UniTask must use the Elympics.Cysharp.Threading.Tasks namespace (or install official UniTask itself), and asmdefs must reference Elympics.UniTask instead of UniTask.
-* the vendored ParrelSync, ElympicsClonesManager and the .parrelsyncarg handling are removed. Use Multiplayer Play Mode virtual players instead.
+* 2D physics is no longer stepped by ElympicsUnityPhysicsSimulator. Add ElympicsUnityPhysics2DSimulator to the Physics object of the Elympics System (menu: Tools/Elympics/Add 2D Physics Simulator); otherwise 2D physics doesn't follow Elympics ticks, and builds report an error for such scenes. Assemblies that use ElympicsRigidBody2DSynchronizer or ElympicsAnimatorSynchronizer in code must reference Elympics.Physics2D or Elympics.Animation.
+* Elympics.Cysharp.Threading.Tasks no longer has the uGUI, TextMeshPro and physics helpers (e.g. Button.OnClickAsync, GetAsyncCollisionEnterTrigger). Install the official UniTask package to use them.
+* The HybridWebSocket types are no longer part of Elympics.
+* Asmdefs that referenced the SDK's MessagePack assemblies by name or GUID must reference Elympics.MessagePack* instead.
+* Code that uses the SDK's UniTask must use the Elympics.Cysharp.Threading.Tasks namespace (or install official UniTask itself), and asmdefs must reference Elympics.UniTask instead of UniTask.
+* The vendored ParrelSync, ElympicsClonesManager and the .parrelsyncarg handling are removed. Use Multiplayer Play Mode virtual players instead.
 * ElympicsEthSigner and IEthSigner are removed.
+* A process started with the launch mode parameter (ELYMPICS_LAUNCH_MODE) in another scene now loads the gameplay scene itself; a player build without that scene exits with code 1.
+* TestCertificateHandler doesn't exist in WebGL players, and SetTestCertificateHandlerIfNeeded does nothing there (the browser handles TLS).
 * Unity versions older than 6000.3 are no longer supported.
+* The elympics_upload_streaming_assets command is removed. Use playpad_upload_streaming_assets from com.daftmobile.elympics-playpad instead: it uses the Editor's Elympics login (no --username/--password), requires --confirm true, uploads only folders inside the project unless --allow_external_path true, and its result has no usedCurrentLogin field. The Manage Games window shows the StreamingAssets upload only with PlayPad installed.
+* The client build upload fields of the Manage Games window were removed. Use the PlayPad section of the window or playpad_upload_client_build, from the PlayPad package.
+* ElympicsWebIntegration.BuildAndUploadGame takes an Action<bool> (whether the build and upload succeeded) instead of an Action<UnityWebRequest>, and it calls it on every exit. GameUploadedToTheCloud fires from the new upload path. The public ElympicsEditorWebClient class is removed.
+* The Editor sends the Elympics login, credentials and tokens only to https *.elympics.cc and *.elympics.ai API endpoints. With any other endpoint in ElympicsConfig or its command-line override, Editor API requests fail (ELYMPICS_UNTRUSTED_HOST in the CLI) until that host is trusted on the machine through Tools/Elympics/Trust Custom API Host on This Machine.
+* ElympicsScore.this[int] returns ElympicsScore.ScoreWithMetadata instead of float. It converts implicitly to and from float, so code that reads or assigns a float still compiles, but code that depends on the float type (e.g. var or generic type inference) must use .Score or cast to float.
 
+### Migration notes
+
+- **Requires Unity 6.3 (6000.3) or newer.**
+  - Expect larger WebGL builds from the engine itself: the AsyncGame sample grew from 25.3 to 31.7 MB raw (8.2 → 10.7 MB gzip) going from Unity 2021.3 to 6.3 with the same settings.
+- **ParrelSync removed; use Multiplayer Play Mode.**
+  - A virtual player joins the half-remote server as client `N-2` (Player2 = 0) by default.
+  - `Elympics:` player tags override that: a launch mode, `PlayerIndex=<n>`, `<long-arg>=<value>`, or `manual`.
+  - `ElympicsClonesManager` and `.parrelsyncarg` handling are gone.
+- **UniTask is vendored as 2.5.10 under `Elympics.UniTask*` / `Elympics.Cysharp.*`.**
+  - Replace `using Cysharp.Threading.Tasks` with `using Elympics.Cysharp.Threading.Tasks` (or install official UniTask yourself; both can coexist now).
+  - Asmdefs that referenced `UniTask` must reference `Elympics.UniTask`.
+- **MessagePack assemblies renamed to `Elympics.MessagePack*`** (namespace unchanged); official MessagePack-CSharp can now be installed alongside.
+- **com.unity.pipeline 0.8.0-exp.1 is a dependency**, so the Elympics CLI commands are always available. It is the minimum version: Unity 6 doesn't let a project pin an older one.
+- **New CLI commands** (`unity command <name>`, all prefixed `elympics_`): status, games/versions/queues/regions/fleets lists, scene validation and setup, synced variables, config game and version selection, network-ID reset, sample import, package updates, launch, match state, virtual players, server build and upload, and game/version/queue writes.
+  - Failures read `ELYMPICS_<CODE>: <what went wrong> Fix: <next step>`.
+  - Commands that write to the backend or upload require `--confirm true` and use the Editor's Elympics login; no command takes or returns credentials.
+- **Client build and StreamingAssets uploads moved to PlayPad:** use `playpad_upload_client_build` and `playpad_upload_streaming_assets` from com.daftmobile.elympics-playpad (Editor login, `--confirm true`, no `--username`/`--password`). The Manage Games window shows these uploads only with PlayPad installed.
+- **API endpoints must be trusted:** the Editor sends the login and tokens only to https `*.elympics.cc` and `*.elympics.ai`. For any other endpoint, use Tools/Elympics/Trust Custom API Host on This Machine; until then, Editor API requests fail (`ELYMPICS_UNTRUSTED_HOST` in the CLI).
+- **PlayPad 4.0.0 needs a region for ElympicsLobby WebGL builds:** set it in Player Settings > Resolution and Presentation (`ELYMPICS_REGION`), with `playpad_set_template_values --region <name>`, or with the `TEMPLATE_REGION` environment variable. Otherwise the build fails.
+- **Network IDs may be renumbered:** automatic IDs after the first one that already matched are now reassigned too. After updating, save your gameplay scenes, then rebuild and upload the server and the client together; old client builds won't match new servers, and earlier snapshot replays may not line up.
+- **New defines to turn off automatic launch-mode behaviour:**
+  - `ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD`: the bootstrap no longer loads the gameplay scene for the launch mode parameter; the match starts once your game loads that scene.
+  - `ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH`: Multiplayer Play Mode virtual players no longer join as half-remote clients by default; a player launches only when an `Elympics:` tag sets its launch mode.
+- **New public methods** that use the Editor login: `BuildAndUploadServerUsingCurrentLoginAsync`, `UploadClientBuildUsingCurrentLoginAsync`, `UploadStreamingAssetsUsingCurrentLoginAsync`.
+- **Removed:**
+  - `ElympicsEthSigner`/`IEthSigner`
+  - the HybridWebSocket client (moved to PlayPad)
+  - websocket-sharp
+  - the burst, ide.rider, textmeshpro and unitywebrequesttexture dependencies (add them to your project if you used them through Elympics)
+- **Server builds** set the Dedicated Server scripting backend (`NamedBuildTarget.Server`) and no longer touch the Standalone setting. Mono until Unity 6.8; from 6.8 the project's setting is used.
+- **New opt-in define `ELYMPICS_LAZY_WEBRTC_CONTEXT`:** keeps com.unity.webrtc's native context stopped in the Editor until Elympics needs WebRTC. com.unity.webrtc 3.0.0 starts it after every script reload, and its threads can crash the Editor during reloads or on quit. Don't define it if your game uses com.unity.webrtc itself in the Editor.
+- **Smaller WebGL builds:** a minimal Elympics game is about 11 MB smaller raw (3.5 MB gzip) than in 0.28 on Unity 6.3.
+  - The vendored UniTask no longer has its uGUI, TextMeshPro and physics helpers (e.g. `Button.OnClickAsync`, `GetAsyncCollisionEnterTrigger`); install official UniTask to use them.
+  - **2D physics is no longer stepped by `ElympicsUnityPhysicsSimulator`.** Add `ElympicsUnityPhysics2DSimulator` to the Physics object of the Elympics System (menu: Tools/Elympics/Add 2D Physics Simulator); without it, 2D physics doesn't follow Elympics ticks. Builds report an error for such scenes, and entering Play Mode logs a warning.
+  - `ElympicsRigidBody2DSynchronizer` and `ElympicsAnimatorSynchronizer` moved to the `Elympics.Physics2D` and `Elympics.Animation` assemblies; asmdefs that use them in code must reference those assemblies.
+  - The half-remote IP launch parameter no longer accepts IPv4-mapped IPv6 addresses (`::ffff:…`); use the plain IPv4 address.
+  - `TestCertificateHandler` is left out of WebGL players (it linked X509 and Mono.Security; the browser handles TLS there), and `SetTestCertificateHandlerIfNeeded` does nothing on WebGL.
+- **WebGL:** jslib callbacks use `makeDynCall`. Both "Use WebAssembly.Table" settings are supported.
+- **Fixed:** apps without the Multiplayer Play Mode package no longer hit `CurrentPlayer` exceptions; query strings are no longer re-encoded; jslib strings are decoded as UTF-8.
+- **Score metadata:** `ElympicsScore[playerIndex]` returns `ElympicsScore.ScoreWithMetadata` (implicitly convertible to and from `float`). To send metadata with the score submitted over time, pass the allowed keys to `Enable(getGameplayTime, metadataKeys)` and set values with `SetMetadata` or `score[playerIndex].Metadata[key]`. `GetScore`/`SetScore` and `GetMetadata` are also available.
 
 
 ## [0.28.0](https://github.com/Elympics/Unity-SDK/compare/v0.27.0...v0.28.0) (2026-10-12)

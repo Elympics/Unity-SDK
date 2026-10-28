@@ -195,7 +195,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If the real transport stops depending on the player loop, or tests stop blocking on tasks, remove this.
 
 ### Scratch Editors share the developer's Elympics login and can log it out
-- **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at a reachable web endpoint, or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
+- **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at the developer's web endpoint (a dead one is harmless too; another live backend may reject the refresh token), or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
 - **Reason:** the Elympics login (auth and refresh tokens) lives in machine-global EditorPrefs, so every Editor on the machine shares it. On each Editor start, `UsageStatisticsSender` (`[InitializeOnLoad]`) posts telemetry, which refreshes an expired token through `ElympicsEditorApi.EnsureLoggedInAsync`. A refresh rejected with 400, 401 or 403 clears the login in every Editor. A successful refresh rotates the refresh token. An unreachable endpoint no longer logs out.
 - **Example:** on 2026-10-15, scratch projects whose config pointed at a dead endpoint (`127.0.0.1:9`) logged "Auth token expired. Refreshing…" at every launch, and the developer's Editor was left logged out. Before a25b4159, any failed refresh logged out.
 - **Time scope:** If login state stops being machine-global, or a rejected refresh stops clearing it, remove this.

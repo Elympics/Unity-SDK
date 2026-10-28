@@ -20,7 +20,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
 - **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
-- **Scratch Editors share the Elympics login:** give them a reachable endpoint; check the login afterwards.
+- **Scratch Editors share the Elympics login:** use the developer's endpoint or a dead one, never another live backend; check the login afterwards.
 - **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; always `UNITY_PROJECT_PATH`; tests total > 0.
 
 ## Configuration

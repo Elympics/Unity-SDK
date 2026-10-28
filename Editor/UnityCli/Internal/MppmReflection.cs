@@ -111,7 +111,7 @@ namespace Elympics.Editor.UnityCli
             }).ToList();
         }
 
-        /// <param name="number">1 is the main Editor; virtual players are 2-4.</param>
+        /// <param name="number">1 is the main Editor; virtual players start at 2.</param>
         public static void SetActive(int number, bool active)
         {
             var members = Require();

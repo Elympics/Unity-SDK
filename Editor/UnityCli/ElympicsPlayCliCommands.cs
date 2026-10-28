@@ -40,6 +40,9 @@ namespace Elympics.Editor.UnityCli
             [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false) =>
             CliRun.Run(() =>
             {
+                if (launchTimeoutSeconds < -1 || postMatchTimeoutSeconds < -1)
+                    throw ElympicsCliErrors.InvalidArgumentException("--launch_timeout_seconds and --post_match_timeout_seconds must be -1 or more.",
+                        "pass a number of seconds, or -1 for no timeout.");
                 var launchMode = CliArgs.ParseEnum<LaunchMode>(mode, "mode");
                 var kind = launchMode switch
                 {

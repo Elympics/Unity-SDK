@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Elympics.Cysharp.Threading.Tasks;
@@ -22,11 +23,13 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             if (!GitDependency.IsSupportedRemote(url))
                 throw new InvalidOperationException($"Unsupported git URL: {GitDependency.RedactCredentials(url)}");
             var stopwatch = Stopwatch.StartNew();
-            var startInfo = CreateStartInfo("ls-remote", "--tags", "--heads", "--", url);
+            var seconds = ((int)Math.Ceiling(timeout.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
+            // A stalled transfer or connect fails on its own instead of leaving an orphaned git or ssh behind after our timeout.
+            var startInfo = CreateStartInfo("-c", "http.lowSpeedLimit=1", "-c", "http.lowSpeedTime=" + seconds, "ls-remote", "--tags", "--heads", "--", url);
             // BatchMode keeps ssh from prompting, but only where the user has no ssh command of their own to override.
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH_COMMAND")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GIT_SSH"))
                 && !HasConfiguredSshCommand(timeout))
-                startInfo.Environment["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes";
+                startInfo.Environment["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes -o ConnectTimeout=" + seconds;
 
             using var process = Start(startInfo);
             var output = process.StandardOutput.ReadToEndAsync();

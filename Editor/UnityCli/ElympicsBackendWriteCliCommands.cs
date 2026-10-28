@@ -161,7 +161,7 @@ namespace Elympics.Editor.UnityCli
         internal static T? FindByIdOrName<T>(IEnumerable<T?>? items, string key, Func<T, string?> id, Func<T, string?> name) where T : class
         {
             var candidates = items?.OfType<T>().ToList() ?? new List<T>();
-            var byId = candidates.FirstOrDefault(candidate => id(candidate) == key);
+            var byId = candidates.FirstOrDefault(candidate => string.Equals(id(candidate), key, StringComparison.OrdinalIgnoreCase));
             if (byId != null)
                 return byId;
             var byName = candidates.Where(candidate => name(candidate) == key).ToList();

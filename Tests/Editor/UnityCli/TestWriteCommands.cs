@@ -27,6 +27,8 @@ namespace Elympics.Editor.Tests.UnityCli
             var items = new[] { new[] { "a", "x" }, new[] { "b", "x" }, new[] { "x", "c" } };
             Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "x", item => item[0], item => item[1]), Is.SameAs(items[2]));
             Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "c", item => item[0], item => item[1]), Is.SameAs(items[2]));
+            Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "X", item => item[0], item => item[1]), Is.SameAs(items[2]));
+            Assert.That(ElympicsBackendWriteCliCommands.FindByIdOrName(items, "C", item => item[0], item => item[1]), Is.Null);
             CliAssert.Throws(() => ElympicsBackendWriteCliCommands.FindByIdOrName(items, "x", item => "", item => item[1]), ElympicsCliErrors.InvalidArgument);
         }
 

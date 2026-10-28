@@ -67,7 +67,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
 
         public string RemoteUrl => Base.StartsWith("git+", StringComparison.Ordinal) ? Base[4..] : Base;
 
-        /// <summary>Rejects <c>ext::</c>, <c>file://</c> and values starting with <c>-</c>, which could make <c>git ls-remote</c> run a command from the manifest.</summary>
+        /// <summary>Allows only https, ssh and <c>git@host:</c> remotes without <c>::</c>, quotes, backslashes or control characters, so <c>git ls-remote</c> can't run a command from the manifest.</summary>
         public static bool IsSupportedRemote(string url) => SupportedRemote.IsMatch(url) && !url.Contains("::") && !url.Any(character => char.IsControl(character) || character is '"' or '\\');
 
         private static readonly Regex SupportedRemote = new(@"^(https://(?!-)[^\s/]+|ssh://(?!-)[^\s/]+|git@(?!-)[^\s:/]+:)\S*$");

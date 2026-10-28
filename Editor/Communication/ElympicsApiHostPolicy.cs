@@ -7,7 +7,7 @@ using UnityEditor;
 namespace Elympics.Editor.Communication
 {
     /// <summary>
-    /// Decides which hosts get the Elympics login: https Elympics hosts, or one custom host trusted in EditorPrefs.
+    /// Decides which hosts get the Elympics login: https Elympics hosts, or one custom host trusted in EditorPrefs (machine-local, so a cloned project can't add one).
     /// </summary>
     internal static class ElympicsApiHostPolicy
     {

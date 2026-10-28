@@ -22,10 +22,11 @@ namespace Elympics
         public const bool MppmAutoLaunchDisabled = false;
 #endif
 
+        public static bool LaunchModeSceneLoadDisabled =>
 #if ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD
-        public const bool LaunchModeSceneLoadDisabled = true;
+            true;
 #else
-        public const bool LaunchModeSceneLoadDisabled = false;
+            false;
 #endif
     }
 }

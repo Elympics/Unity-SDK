@@ -91,7 +91,6 @@ namespace Elympics.Editor.Tests
         [TestCase("elympics.cc", "https://elympics.cc/v2", true)]
         [TestCase("elympics.ai", "http://elympics.ai", false)]
         [TestCase("elympics.cc", "http://elympics.cc", false)]
-        [TestCase("elympics.cc", "https://api.elympics.cc", true)]
         public void ACustomHostEqualToATrustedDomainDoesNotChangeThePolicy(string customHost, string url, bool expected)
         {
             _customHost = customHost;

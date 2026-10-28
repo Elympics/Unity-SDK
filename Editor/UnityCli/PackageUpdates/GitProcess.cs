@@ -14,7 +14,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         UniTask<string> ListRemoteRefsAsync(string url, TimeSpan timeout);
     }
 
-    /// <summary>Runs git without ever prompting, from the home directory, so a credential window can't block the command.</summary>
+    /// <summary>Runs git without ever prompting, so a credential window can't block the command, and from the home directory, so the project's repo config doesn't apply.</summary>
     internal sealed class GitProcess : IGitProcess
     {
         public UniTask<string> ListRemoteRefsAsync(string url, TimeSpan timeout) => UniTask.RunOnThreadPool(() =>

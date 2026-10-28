@@ -69,7 +69,7 @@ namespace Elympics
                 return;
             if (ScriptingSymbols.LaunchModeSceneLoadDisabled)
             {
-                ElympicsLogger.LogWarning($"ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD is defined, so the gameplay scene {gameplayScene} isn't loaded.");
+                ElympicsLogger.LogWarning($"ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD is defined, so the gameplay scene {gameplayScene} isn't loaded. The match starts once the game loads it.");
                 return;
             }
             ElympicsLogger.LogInfo($"Loading the gameplay scene {gameplayScene} for the launch mode parameter.");

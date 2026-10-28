@@ -608,6 +608,7 @@ namespace Elympics.Editor.Communication
         private const int MaxBackendTextLength = 500;
         private const int MaxShownErrors = 10;
 
+        /// <summary>Strips control characters (e.g. terminal escapes) and bounds the length.</summary>
         internal static string? Sanitize(string? text)
         {
             if (string.IsNullOrEmpty(text))

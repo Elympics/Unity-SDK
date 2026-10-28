@@ -73,22 +73,17 @@ namespace Elympics.Editor.Communication
             var uri = new Uri(request.Url);
             if (request.ElympicsApi)
                 ElympicsApiHostPolicy.Require(uri);
-            UnityWebRequest webRequest;
-            if (request.Form != null)
-                webRequest = UnityWebRequest.Post(uri, request.Form);
-            else
+            var webRequest = request.Form != null
+                ? UnityWebRequest.Post(uri, request.Form)
+                : new UnityWebRequest(uri, request.Method) { downloadHandler = new DownloadHandlerBuffer() };
+            try
             {
-                webRequest = new UnityWebRequest(uri, request.Method) { downloadHandler = new DownloadHandlerBuffer() };
-                var body = request.RawBody ?? (request.JsonBody != null ? Encoding.UTF8.GetBytes(request.JsonBody) : null);
+                var body = request.Form == null ? request.RawBody ?? (request.JsonBody != null ? Encoding.UTF8.GetBytes(request.JsonBody) : null) : null;
                 if (body != null)
                 {
                     webRequest.uploadHandler = new UploadHandlerRaw(body);
                     webRequest.SetRequestHeader("Content-Type", request.ContentType ?? "application/json");
                 }
-            }
-
-            try
-            {
                 if (!string.IsNullOrEmpty(request.ContentEncoding))
                     webRequest.SetRequestHeader("Content-Encoding", request.ContentEncoding);
                 if (request.TimeoutSeconds > 0)

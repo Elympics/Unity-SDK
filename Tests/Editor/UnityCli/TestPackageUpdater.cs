@@ -305,6 +305,58 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { "com.daftmobile.local" }, None, None), ElympicsCliErrors.InvalidArgument));
 
         [UnityTest]
+        public IEnumerator OnlyElympicsGitPackagesCanBeRequested() => UniTask.ToCoroutine(async () =>
+        {
+            const string other = "com.example.tools";
+            File.WriteAllText(_updater.ManifestPath, new JObject
+            {
+                ["dependencies"] = new JObject { [Sdk] = SdkUrl + "#develop", [other] = "https://gitlab.example.com/tools.git#v1.0.0" },
+            }.ToString());
+
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { other }, None, None), ElympicsCliErrors.InvalidArgument);
+            Assert.That(_git.Requested, Is.Empty);
+        });
+
+        [UnityTest]
+        public IEnumerator AnApplyWhereEveryPackageFailedIsFailed() => UniTask.ToCoroutine(async () =>
+        {
+            _ = _git.Outputs.Remove(SdkUrl);
+            _ = _git.Outputs.Remove(PlayPadUrl);
+
+            var operation = _updater.Apply(await PlanAllAsync());
+
+            Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Failed));
+            Assert.That(_resolves, Is.Zero);
+        });
+
+        [UnityTest]
+        public IEnumerator AStaleOperationKeepsThePlannedVersions() => UniTask.ToCoroutine(async () =>
+        {
+            var now = DateTime.UtcNow;
+            _updater.GetUtcNow = () => now;
+            var plan = await PlanAllAsync();
+            var planned = plan.Single(update => update.name == Sdk).newVersion;
+            var operation = _updater.Apply(plan);
+            now += TimeSpan.FromMinutes(11);
+
+            var stale = _updater.ReadOperation(operation.operationId);
+
+            Assert.That(stale.status, Is.EqualTo(PackageUpdateStatus.Failed));
+            Assert.That(stale.packages.Single(update => update.name == Sdk).newVersion, Is.EqualTo(planned));
+        });
+
+        [Test]
+        public void ARecordWithoutListsIsReadable()
+        {
+            WriteOperationFile("nolists", "{\"operationId\":\"nolists\",\"packages\":null,\"warnings\":null}");
+
+            var operation = _updater.ReadOperation("nolists");
+
+            Assert.That(operation.packages, Is.Empty);
+            Assert.That(operation.warnings, Is.Empty);
+        }
+
+        [UnityTest]
         public IEnumerator ApplyRewritesTheManifestDropsLockEntriesAndResolvesOnce() => UniTask.ToCoroutine(async () =>
         {
             var plan = await PlanAllAsync();
@@ -400,7 +452,7 @@ namespace Elympics.Editor.Tests.UnityCli
         {
             var (source, destination) = WriteReplacePair();
             using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.None);
-            using var release = new System.Threading.Timer(_ => locked.Dispose(), null, 150, System.Threading.Timeout.Infinite);
+            using var release = new System.Threading.Timer(_ => locked.Dispose(), null, 50, System.Threading.Timeout.Infinite);
 
             PackageUpdater.ReplaceFile(source, destination);
 

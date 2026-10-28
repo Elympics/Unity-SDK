@@ -92,8 +92,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 .ToList();
 
             foreach (var requested in packages.Distinct())
-                if (!gitDependencies.ContainsKey(requested))
-                    throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't a git dependency in Packages/manifest.json.",
+                if (!requested.StartsWith(PackagePrefix, StringComparison.Ordinal) || !gitDependencies.ContainsKey(requested))
+                    throw ElympicsCliErrors.InvalidArgumentException($"{requested} isn't a {PackagePrefix}* git dependency in Packages/manifest.json.",
                         "list the Elympics git packages with a dry run without --packages, and pass only those names.");
             foreach (var requested in pins.Keys.Concat(tracks.Keys).Distinct())
                 if (!selected.Any(entry => entry.Key == requested))
@@ -177,6 +177,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             _ => "check the package's git URL in Packages/manifest.json.",
         };
 
+        internal static PackageUpdateStatus GetUnchangedStatus(List<PackageUpdate> updates) =>
+            updates.Any(update => update.action == RefAction.Error) ? PackageUpdateStatus.Failed : PackageUpdateStatus.UpToDate;
+
         public PackageUpdateOperation Apply(List<PackageUpdate> updates)
         {
             FinalizePending();
@@ -190,7 +193,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             var operation = new PackageUpdateOperation
             {
                 operationId = startedAt.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..8],
-                status = changes.Count == 0 ? PackageUpdateStatus.UpToDate : PackageUpdateStatus.Started,
+                status = changes.Count == 0 ? GetUnchangedStatus(updates) : PackageUpdateStatus.Started,
                 startedAt = startedAt,
                 finishedAt = changes.Count == 0 ? startedAt : null,
                 packages = updates,
@@ -288,7 +291,8 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             foreach (var update in changed)
             {
                 var hash = locked.TryGetValue(update.name, out var lockHash) ? lockHash : null;
-                update.newVersion = GetInstalledVersion(update.name) ?? update.newVersion;
+                if (operation.status == PackageUpdateStatus.Done)
+                    update.newVersion = GetInstalledVersion(update.name) ?? update.newVersion;
                 // A commit pin may be an abbreviated hash.
                 update.lockHashMatchesHead = hash != null && update.newCommit != null ? hash.StartsWith(update.newCommit, StringComparison.Ordinal) : null;
                 if (hash != null && update.lockHashMatchesHead != false)
@@ -334,7 +338,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                         File.Move(source, destination);
                     return;
                 }
-                catch (Exception e) when (e is UnauthorizedAccessException or IOException and not FileNotFoundException and not DirectoryNotFoundException)
+                catch (Exception e) when (e is UnauthorizedAccessException or (IOException and not FileNotFoundException and not DirectoryNotFoundException))
                 {
                     if (attempt == ReplaceAttempts)
                         throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't replace {destination}: {e.Message}",
@@ -385,10 +389,15 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 var operation = JsonConvert.DeserializeObject<PackageUpdateOperation>(File.ReadAllText(file));
                 // Only records Save could have written: the ID names this file and every package has a name.
-                return operation != null && IsValidOperationId(operation.operationId) && operation.operationId == Path.GetFileNameWithoutExtension(file)
-                    && operation.packages?.All(update => update?.name != null) != false
-                        ? operation
-                        : null;
+                if (operation == null || !IsValidOperationId(operation.operationId) || operation.operationId != Path.GetFileNameWithoutExtension(file))
+                    return null;
+                operation.packages ??= new List<PackageUpdate>();
+                operation.warnings ??= new List<string>();
+                if (operation.packages.Any(update => update?.name == null))
+                    return null;
+                foreach (var update in operation.packages)
+                    update.warnings ??= new List<string>();
+                return operation;
             }
             catch (Exception e) when (e is JsonException or IOException)
             {

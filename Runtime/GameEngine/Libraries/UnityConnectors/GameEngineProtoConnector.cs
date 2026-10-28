@@ -56,11 +56,12 @@ namespace UnityConnectors
             return _client;
         }
 
-        private void OnIntermediateScoreSubmitted((Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime) arg) =>
+        private void OnIntermediateScoreSubmitted((Guid UserId, float Score, string Metadata, DateTimeOffset UtcTime, TimeSpan GameplayTime) arg) =>
             _client.Send(new SubmitScoreMsg
             {
                 Score = arg.Score,
                 UserId = arg.UserId.ToString(),
+                Metadata = arg.Metadata,
                 Timestamp = arg.UtcTime.ToUnixTimeMilliseconds(),
                 GameplayTime = (long)arg.GameplayTime.TotalMilliseconds,
             });

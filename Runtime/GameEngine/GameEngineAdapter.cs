@@ -156,7 +156,7 @@ namespace Elympics
             /* Using Unity Update instead. */
         }
 
-        public event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
+        public event Action<(Guid UserId, float Score, string Metadata, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
 
         internal void SetLatestSimulatedInputTick(ElympicsPlayer player, ElympicsInput elympicsInput)
         {
@@ -193,10 +193,10 @@ namespace Elympics
             sendData?.Invoke(serializedData, userId.ToString());
         }
 
-        internal void SubmitIntermediateScore(float score, ElympicsPlayer player, DateTime utcTime, TimeSpan gameplayTime)
+        internal void SubmitIntermediateScore(float score, ElympicsPlayer player, string metadata, DateTime utcTime, TimeSpan gameplayTime)
         {
             var userId = _initialMatchData.UserData[(int)player].UserId;
-            IntermediateScoreSubmitted?.Invoke((userId, score, utcTime, gameplayTime));
+            IntermediateScoreSubmitted?.Invoke((userId, score, metadata, utcTime, gameplayTime));
         }
 
         internal void EndGame(ResultMatchPlayerDatas? result = null)

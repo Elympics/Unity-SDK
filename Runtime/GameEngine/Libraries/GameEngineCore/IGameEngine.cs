@@ -21,7 +21,7 @@ namespace GameEngineCore
 
         void Tick(long tick);
 
-        event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
+        event Action<(Guid UserId, float Score, string Metadata, DateTimeOffset UtcTime, TimeSpan GameplayTime)>? IntermediateScoreSubmitted;
 
         event Action<ResultMatchUserDatas?>? GameEnded;
 

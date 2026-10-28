@@ -383,7 +383,8 @@ namespace Elympics.Editor.Tests
             var exception = await CliAssert.CatchAsync(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1"));
 
             Assert.That(exception, Is.InstanceOf<ElympicsEditorApiException>());
-            Assert.That(exception!.Message, Does.Contain("Upload of 'Build"));
+            Assert.That(exception!.Message, Does.Contain("Upload of 'Build").And.Contain("denied"));
+            Assert.That(((ElympicsEditorApiException)exception).Kind, Is.EqualTo(EditorApiErrorKind.RequestFailed));
 
             Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
             Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));

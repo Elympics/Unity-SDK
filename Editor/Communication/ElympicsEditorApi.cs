@@ -411,7 +411,7 @@ namespace Elympics.Editor.Communication
                         throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"Elympics cloud returned an incomplete upload entry for client build file {index + 1}.");
                     var expectedFile = validFiles[index];
                     if (!WebGLUploader.DoesFileHaveGivenCompoundExtension(fileUploadInfo.FilePath, expectedFile.extension))
-                        throw new ElympicsException($"Uploaded file '{Sanitize(fileUploadInfo.FilePath)}' does not match expected extension '{expectedFile.extension}'.");
+                        throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"Elympics cloud returned upload file '{Sanitize(fileUploadInfo.FilePath)}' which does not match the expected extension '{expectedFile.extension}'.");
 
                     var localFile = expectedFile.name + expectedFile.extension;
                     progress?.Invoke(localFile, (float)index / initResponse.Files.Length);
@@ -478,7 +478,7 @@ namespace Elympics.Editor.Communication
                 {
                     var filePath = Path.Combine(streamingAssetsPath, fileUploadInfo.FilePath);
                     if (!File.Exists(filePath))
-                        throw new ElympicsException($"File '{fileUploadInfo.FilePath}' requested by Elympics cloud was not found at '{filePath}'.");
+                        throw new ElympicsEditorApiException(EditorApiErrorKind.InvalidResponse, $"File '{Sanitize(fileUploadInfo.FilePath)}' requested by Elympics cloud was not found at '{filePath}'.");
                     payload = File.ReadAllBytes(filePath);
                 }
 
@@ -506,7 +506,7 @@ namespace Elympics.Editor.Communication
                 TimeoutSeconds = timeoutSeconds ?? FileUploadTimeoutSeconds,
             }, ct);
             if (!response.Succeeded)
-                throw ToException($"Upload of '{fileName}'", response);
+                throw ToException($"Upload of '{fileName}'", response, false);
         }
 
         #endregion
@@ -549,13 +549,18 @@ namespace Elympics.Editor.Communication
             }
         }
 
-        internal static ElympicsEditorApiException ToException(string action, EditorApiResponse response)
+        internal static ElympicsEditorApiException ToException(string action, EditorApiResponse response, bool elympicsApi = true)
         {
             if (response.Result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.DataProcessingError)
             {
                 var kind = response.Error?.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0 ? EditorApiErrorKind.Timeout : EditorApiErrorKind.Network;
                 return new ElympicsEditorApiException(kind, $"{action} failed: {response.Error}", response.StatusCode);
             }
+
+            // A storage 401/403 (e.g. SignatureDoesNotMatch) is not an Elympics login or permission problem.
+            if (!elympicsApi)
+                return new ElympicsEditorApiException(EditorApiErrorKind.RequestFailed,
+                    $"{action} failed: storage returned error response code {response.StatusCode}: {Sanitize(response.Text)}", response.StatusCode);
 
             var errorKind = response.StatusCode switch
             {

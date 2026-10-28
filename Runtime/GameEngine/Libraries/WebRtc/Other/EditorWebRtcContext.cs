@@ -61,7 +61,7 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             _ = InitializeMethod!.Invoke(null, InitializeMethod.GetParameters().Select(parameter => parameter.DefaultValue).ToArray());
         }
 
-        private static void Dispose()
+        internal static void Dispose()
         {
             if (IsInitialized)
                 _ = DisposeMethod!.Invoke(null, null);
@@ -76,6 +76,9 @@ namespace Elympics.GameEngine.Libraries.WebRtc
     internal static class EditorWebRtcContext
     {
         internal static void EnsureInitialized()
+        { }
+
+        internal static void Dispose()
         { }
     }
 }

@@ -579,3 +579,5 @@ Runtime/WeaverLockingProblemTest.*
 !.claude/CLAUDE.md
 !.claude/MEMORY.md
 !.claude/MEMORY.short.md
+!.claude/ARCHITECTURE.md
+!.claude/RELEASING.md

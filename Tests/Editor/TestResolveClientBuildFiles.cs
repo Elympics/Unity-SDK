@@ -3,38 +3,34 @@ using NUnit.Framework;
 
 namespace Elympics.Editor.Tests
 {
-    public class TestPrepareValidFiles
+    public class TestResolveClientBuildFiles
     {
         private const string ClientGameVersion = "v1";
 
+        private TempDirectory _temp;
         private string _buildRoot;
         private string _buildFolder;
 
         [SetUp]
         public void SetUp()
         {
-            _buildRoot = Path.Combine(Path.GetTempPath(), "ElympicsTestPrepareValidFiles_" + Path.GetRandomFileName());
+            _temp = new TempDirectory("ElympicsTestResolveClientBuildFiles");
+            _buildRoot = _temp.Path;
             _buildFolder = Path.Combine(_buildRoot, WebGLUploader.BuildFolderName);
             _ = Directory.CreateDirectory(_buildFolder);
             File.WriteAllText(Path.Combine(_buildRoot, "index.html"), string.Empty);
         }
 
         [TearDown]
-        public void TearDown() => Directory.Delete(_buildRoot, true);
+        public void TearDown() => _temp.Dispose();
 
-        private void CreateBuildFiles()
-        {
-            foreach (var extension in WebGLUploader.CompoundExtensions)
-                File.WriteAllText(Path.Combine(_buildFolder, "Build" + extension), string.Empty);
-        }
+        private void CreateBuildFiles() => _ = FakeClientBuild.CreateFiles(_buildRoot);
 
         [Test]
         public void KeepsPath_WhenItIsTheBuildFolder()
         {
             CreateBuildFiles();
-            var path = _buildFolder;
-
-            WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out var validFiles);
+            var (path, validFiles) = WebGLUploader.ResolveClientBuildFiles(_buildFolder, ClientGameVersion);
 
             Assert.AreEqual(_buildFolder, path);
             Assert.AreEqual(WebGLUploader.CompoundExtensions.Length, validFiles.Count);
@@ -44,9 +40,7 @@ namespace Elympics.Editor.Tests
         public void UsesBuildFolder_WhenPathIsTheBuildRoot()
         {
             CreateBuildFiles();
-            var path = _buildRoot;
-
-            WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out var validFiles);
+            var (path, validFiles) = WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion);
 
             Assert.AreEqual(_buildFolder, path);
             Assert.AreEqual(WebGLUploader.CompoundExtensions.Length, validFiles.Count);
@@ -55,12 +49,9 @@ namespace Elympics.Editor.Tests
         [Test]
         public void Throws_WhenNeitherPathNorBuildFolderHasTheFiles()
         {
-            var path = _buildRoot;
-
-            var exception = Assert.Throws<ElympicsException>(() => WebGLUploader.PrepareValidFiles(ref path, ClientGameVersion, out _));
+            var exception = Assert.Throws<ElympicsClientBuildFilesException>(() => WebGLUploader.ResolveClientBuildFiles(_buildRoot, ClientGameVersion));
 
             StringAssert.Contains("missing", exception.Message);
-            Assert.AreEqual(_buildRoot, path);
         }
     }
 }

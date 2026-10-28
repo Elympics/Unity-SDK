@@ -1,0 +1,143 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
+using UnityEngine.Networking;
+
+namespace Elympics.Editor.Communication
+{
+    internal sealed class EditorApiRequest
+    {
+        public string Method = UnityWebRequest.kHttpVerbGET;
+        public string Url = null!;
+        public string? JsonBody;
+        public List<IMultipartFormSection>? Form;
+        public byte[]? RawBody;
+        public string? ContentType;
+        public string? ContentEncoding;
+        public bool ElympicsApi = true;
+        public bool Auth = true;
+        public int TimeoutSeconds = ElympicsEditorApi.JsonTimeoutSeconds;
+    }
+
+    internal readonly struct EditorApiResponse
+    {
+        public readonly long StatusCode;
+        public readonly string? Text;
+        public readonly string? Error;
+        public readonly UnityWebRequest.Result Result;
+
+        public EditorApiResponse(long statusCode, string? text, string? error, UnityWebRequest.Result result)
+        {
+            StatusCode = statusCode;
+            Text = text;
+            Error = error;
+            Result = result;
+        }
+
+        public bool Succeeded => Result == UnityWebRequest.Result.Success;
+    }
+
+    internal interface IEditorApiTransport
+    {
+        UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct);
+    }
+
+    internal sealed class UnityWebRequestEditorApiTransport : IEditorApiTransport
+    {
+        public async UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
+        {
+            using var webRequest = Create(request);
+            var operation = webRequest.SendWebRequest();
+            if (!operation.isDone)
+            {
+                var completion = new UniTaskCompletionSource();
+                operation.completed += _ => completion.TrySetResult();
+                using (ct.Register(webRequest.Abort, useSynchronizationContext: true))
+                    await completion.Task;
+            }
+            ct.ThrowIfCancellationRequested();
+
+            return ReadResponse(webRequest);
+        }
+
+        internal static EditorApiResponse ReadResponse(UnityWebRequest webRequest) =>
+            new(webRequest.responseCode, webRequest.downloadHandler?.text, webRequest.error, webRequest.result);
+
+        internal static UnityWebRequest Create(EditorApiRequest request)
+        {
+            var uri = new Uri(request.Url);
+            if (request.ElympicsApi)
+                ElympicsApiHostPolicy.Require(uri);
+            var webRequest = request.Form != null
+                ? UnityWebRequest.Post(uri, request.Form)
+                : new UnityWebRequest(uri, request.Method) { downloadHandler = new DownloadHandlerBuffer() };
+            try
+            {
+                var body = request.Form == null ? request.RawBody ?? (request.JsonBody != null ? Encoding.UTF8.GetBytes(request.JsonBody) : null) : null;
+                if (body != null)
+                {
+                    webRequest.uploadHandler = new UploadHandlerRaw(body);
+                    webRequest.SetRequestHeader("Content-Type", request.ContentType ?? "application/json");
+                }
+                if (!string.IsNullOrEmpty(request.ContentEncoding))
+                    webRequest.SetRequestHeader("Content-Encoding", request.ContentEncoding);
+                if (request.TimeoutSeconds > 0)
+                    webRequest.timeout = request.TimeoutSeconds;
+
+                if (request.ElympicsApi)
+                {
+                    webRequest.SetRequestHeader("Accept", "application/json");
+                    var token = ElympicsEditorApi.LoginStore.AuthToken;
+                    if (request.Auth && !string.IsNullOrEmpty(token))
+                        webRequest.SetRequestHeader("Authorization", $"Bearer {token}");
+                    webRequest.SetSdkVersionHeader();
+                    webRequest.SetTestCertificateHandlerIfNeeded();
+                    ElympicsLogger.LogDebug($"Sending Web request: {request.Method} {request.Url}");
+                }
+            }
+            catch
+            {
+                webRequest.Dispose();
+                throw;
+            }
+            return webRequest;
+        }
+    }
+
+    /// <summary>Blocks the main thread; only for <see cref="ElympicsEditorApi.RunBlocking{T}"/>.</summary>
+    internal sealed class BusyWaitEditorApiTransport : IEditorApiTransport
+    {
+        private const int PollIntervalMilliseconds = 5;
+        private const int DeadlineGraceSeconds = 5;
+
+        public UniTask<EditorApiResponse> SendAsync(EditorApiRequest request, CancellationToken ct)
+        {
+            using var webRequest = UnityWebRequestEditorApiTransport.Create(request);
+            ct.ThrowIfCancellationRequested();
+            var operation = webRequest.SendWebRequest();
+            // A backstop in case UnityWebRequest's own timeout never fires, since this blocks the main thread.
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(request.TimeoutSeconds > 0 ? request.TimeoutSeconds + DeadlineGraceSeconds : ElympicsEditorApi.JsonTimeoutSeconds);
+            while (!operation.isDone)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    webRequest.Abort();
+                    ct.ThrowIfCancellationRequested();
+                }
+                if (DateTime.UtcNow > deadline)
+                {
+                    webRequest.Abort();
+                    throw new ElympicsEditorApiException(EditorApiErrorKind.Timeout, "The request didn't finish within its timeout.");
+                }
+                Thread.Sleep(PollIntervalMilliseconds);
+            }
+
+            return UniTask.FromResult(UnityWebRequestEditorApiTransport.ReadResponse(webRequest));
+        }
+    }
+}

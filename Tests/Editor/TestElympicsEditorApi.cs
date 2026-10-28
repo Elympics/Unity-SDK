@@ -1,0 +1,533 @@
+#nullable enable
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using Elympics.Cysharp.Threading.Tasks;
+using Elympics.Editor.Communication;
+using Elympics.Editor.Tests.UnityCli;
+using NUnit.Framework;
+using UnityEngine.TestTools;
+
+using static Elympics.Editor.Tests.FakeTransport;
+
+namespace Elympics.Editor.Tests
+{
+    public class TestElympicsEditorApi
+    {
+        private const string Api = "https://api.test/v2/api";
+        private const long Now = 1_800_000_000;
+
+        private FakeTransport _transport = null!;
+        private FakeLoginStore _login = null!;
+        private EditorApiScope _scope = null!;
+        private TempDirectory _temp = null!;
+
+        private void ExpireToken() => _login.AuthTokenExp = (Now - 1).ToString();
+
+        private static string Jwt(long expiration)
+        {
+            static string Encode(string json) => Convert.ToBase64String(Encoding.ASCII.GetBytes(json)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            return $"{Encode("{\"alg\":\"none\"}")}.{Encode($"{{\"exp\":{expiration}}}")}.signature";
+        }
+
+        private void AssertTokens(string authToken, string refreshToken)
+        {
+            Assert.That(_login.AuthToken, Is.EqualTo(authToken));
+            Assert.That(_login.AuthTokenExp, Is.EqualTo((Now + 3600).ToString()));
+            Assert.That(_login.RefreshToken, Is.EqualTo(refreshToken));
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            _transport = new FakeTransport();
+            _login = new FakeLoginStore { IsLogin = true, AuthToken = "old", AuthTokenExp = (Now + 100).ToString(), RefreshToken = "refresh" };
+            _scope = new EditorApiScope(_login, _transport, Api, Now);
+            _temp = new TempDirectory("ElympicsTestEditorApi");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            _scope.Dispose();
+            _temp.Dispose();
+        }
+
+        private static ElympicsEditorApiException CatchApiException(Func<UniTask> action) =>
+            Assert.ThrowsAsync<ElympicsEditorApiException>(async () => await action());
+
+        [UnityTest]
+        public IEnumerator GamesAreFetchedWithAValidToken() => UniTask.ToCoroutine(async () =>
+        {
+            _transport.Respond = _ => Ok("[{\"Id\":\"g1\",\"Name\":\"Game\"}]");
+
+            var games = await ElympicsEditorApi.GetGamesAsync();
+
+            Assert.That(games.Single().Name, Is.EqualTo("Game"));
+            Assert.That(_transport.Requests.Single().Url, Is.EqualTo($"{Api}/games"));
+            Assert.That(_transport.Requests.Single().Method, Is.EqualTo("GET"));
+        });
+
+        [UnityTest]
+        public IEnumerator AnExpiredTokenIsRefreshedFirst() => UniTask.ToCoroutine(async () =>
+        {
+            ExpireToken();
+            var newToken = Jwt(Now + 3600);
+            _transport.Respond = request => request.Url.EndsWith("auth/refresh")
+                ? Ok($"{{\"AuthToken\":\"{newToken}\",\"RefreshToken\":\"refresh2\"}}")
+                : Ok("[]");
+
+            _ = await ElympicsEditorApi.GetGamesAsync();
+
+            Assert.That(_transport.Requests.Select(request => request.Url), Is.EqualTo(new[] { $"{Api}/auth/refresh", $"{Api}/games" }));
+            Assert.That(_transport.Requests[0].Auth, Is.False);
+            AssertTokens(newToken, "refresh2");
+        });
+
+        [Test]
+        public void ARejectedRefreshLogsOut()
+        {
+            ExpireToken();
+            _transport.Respond = _ => Status(401, "");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.NotLoggedIn));
+            Assert.That(_login.IsLogin, Is.False);
+            Assert.That(_transport.Requests, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void AnUnreachableBackendDoesNotLogOut()
+        {
+            ExpireToken();
+            _transport.Respond = _ => ConnectionError("Cannot connect to destination host");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.Network));
+            Assert.That(_login.IsLogin, Is.True);
+        }
+
+        [TestCase(503)]
+        [TestCase(429)]
+        public void AServerErrorOnRefreshDoesNotLogOut(long statusCode)
+        {
+            ExpireToken();
+            _transport.Respond = _ => Status(statusCode, "");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.Not.EqualTo(EditorApiErrorKind.NotLoggedIn));
+            Assert.That(_login.IsLogin, Is.True);
+            Assert.That(_transport.Requests, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void NothingIsSentWhenLoggedOut()
+        {
+            _login.IsLogin = false;
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.NotLoggedIn));
+            Assert.That(_transport.Requests, Is.Empty);
+        }
+
+        [TestCase(401, nameof(EditorApiErrorKind.Unauthorized))]
+        [TestCase(403, nameof(EditorApiErrorKind.Forbidden))]
+        [TestCase(404, nameof(EditorApiErrorKind.NotFound))]
+        [TestCase(500, nameof(EditorApiErrorKind.RequestFailed))]
+        public void ErrorStatusesHaveKinds(long statusCode, string kind)
+        {
+            _transport.Respond = _ => Status(statusCode, "");
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Kind.ToString(), Is.EqualTo(kind));
+        }
+
+        [Test]
+        public void ValidationErrorsAreDescribed()
+        {
+            _transport.Respond = _ => Status(400, "{\"errors\":{\"Name\":[\"Name is taken.\"]}}");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new QueueSettingsModel()));
+
+            Assert.That(exception.Message, Does.Contain("[Name] Name is taken."));
+            Assert.That(_transport.Requests.Single().Url, Is.EqualTo($"{Api}/games/g1/queues"));
+        }
+
+        [Test]
+        public void ValidationErrorsWithoutMessagesAreDescribed()
+        {
+            _transport.Respond = _ => Status(400, "{\"errors\":{\"Name\":null,\"Size\":[\"Size is too big.\"]}}");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.CreateQueueAsync("g1", new QueueSettingsModel()));
+
+            Assert.That(exception.Message, Does.Contain("[Size] Size is too big."));
+        }
+
+        [Test]
+        public void ATimeoutIsReportedAsSuch()
+        {
+            _transport.Respond = _ => ConnectionError("Request timeout");
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Kind, Is.EqualTo(EditorApiErrorKind.Timeout));
+        }
+
+        [Test]
+        public void LoggingInStoresTheTokens()
+        {
+            _login.IsLogin = false;
+            var token = Jwt(Now + 3600);
+            _transport.Respond = _ => Ok($"{{\"UserName\":\"dev\",\"AuthToken\":\"{token}\",\"RefreshToken\":\"refresh2\"}}");
+
+            var userName = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.LoginAsync("dev", "secret", ct: ct));
+
+            Assert.That(userName, Is.EqualTo("dev"));
+            Assert.That(_login.IsLogin, Is.True);
+            AssertTokens(token, "refresh2");
+            var request = _transport.Requests.Single();
+            Assert.That(request.Url, Is.EqualTo($"{Api}/auth/login"));
+            Assert.That(request.Auth, Is.False);
+            Assert.That(request.JsonBody, Does.Contain("\"UserName\":\"dev\"").And.Contain("\"Password\":\"secret\""));
+        }
+
+        [Test]
+        public void RejectedCredentialsStoreNothing()
+        {
+            _login.IsLogin = false;
+            _login.AuthToken = null!;
+            _transport.Respond = _ => Status(401, "");
+
+            _ = CatchApiException(() => ElympicsEditorApi.LoginAsync("dev", "wrong"));
+
+            Assert.That(_login.IsLogin, Is.False);
+            Assert.That(_login.AuthToken, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator EndpointsAreFetched() => UniTask.ToCoroutine(async () =>
+        {
+            _transport.Respond = _ => Ok("{\"Lobby\":\"https://lobby.test\",\"GameServers\":\"https://servers.test\"}");
+
+            var endpoints = await ElympicsEditorApi.GetEndpointsAsync();
+
+            Assert.That(endpoints.Lobby, Is.EqualTo("https://lobby.test"));
+            Assert.That(endpoints.GameServers, Is.EqualTo("https://servers.test"));
+            Assert.That(_transport.Requests.Single().Url, Is.EqualTo($"{Api}/users/endpoint"));
+        });
+
+        [UnityTest]
+        public IEnumerator OnlyEventsNotRequiringALoginAreSentWhenLoggedOut() => UniTask.ToCoroutine(async () =>
+        {
+            await ElympicsEditorApi.PostUsageEventAsync("start", new { gameId = "g1" }, true);
+            _login.IsLogin = false;
+            await ElympicsEditorApi.PostUsageEventAsync("start", new { gameId = "g1" }, true);
+
+            await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
+
+            Assert.That(_transport.Requests.Select(request => request.Url), Is.EqualTo(new[] { $"{Api}/hello/start", $"{Api}/hello/stop" }));
+            Assert.That(_transport.Requests.Select(request => request.Auth), Is.EqualTo(new[] { true, false }));
+            Assert.That(_transport.Requests[0].JsonBody, Is.EqualTo("{\"gameId\":\"g1\"}"));
+        });
+
+        [UnityTest]
+        public IEnumerator AUsageEventToAnUntrustedHostIsIgnored() => UniTask.ToCoroutine(async () =>
+        {
+            _transport.Respond = _ => throw new ElympicsEditorApiException(EditorApiErrorKind.UntrustedHost, "untrusted");
+
+            await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
+            await ElympicsEditorApi.PostUsageEventAsync("start", new { gameId = "g1" }, true);
+
+            Assert.That(_transport.Requests, Has.Count.EqualTo(2));
+        });
+
+        [UnityTest]
+        public IEnumerator AUsageEventThatNeedsNoLoginIsSentWithoutAnExpiredToken() => UniTask.ToCoroutine(async () =>
+        {
+            ExpireToken();
+
+            await ElympicsEditorApi.PostUsageEventAsync("stop", new { gameId = "g1" }, false);
+
+            Assert.That(_transport.Requests.Single().Auth, Is.False);
+        });
+
+        [Test]
+        public void ARefreshedMalformedTokenIsRejectedAndNotStored()
+        {
+            ExpireToken();
+            _transport.Respond = request => request.Url.EndsWith("auth/refresh")
+                ? Ok("{\"AuthToken\":\"not-a-jwt\",\"RefreshToken\":\"refresh2\"}")
+                : Ok("[]");
+
+            var exception = CatchApiException(() => ElympicsEditorApi.GetGamesAsync());
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_login.AuthToken, Is.EqualTo("old"));
+            Assert.That(_login.RefreshToken, Is.EqualTo("refresh"));
+        }
+
+        [UnityTest]
+        public IEnumerator RegionsRoutesAreNotEscaped() => UniTask.ToCoroutine(async () =>
+        {
+            _transport.Respond = _ => Ok("{\"Regions\":[]}");
+
+            _ = await ElympicsEditorApi.GetRegionsAsync(string.Empty);
+            _ = await ElympicsEditorApi.GetRegionsAsync("g1");
+
+            Assert.That(_transport.Requests.Select(request => request.Url), Is.EqualTo(new[] { $"{Api}/Regions/unity-format", $"{Api}/Regions/game/g1/unity-format" }));
+        });
+
+        [Test]
+        public void ABlockingCallReturnsItsResult()
+        {
+            _transport.Respond = _ => Ok("[{\"Id\":\"g1\",\"Name\":\"Game\"}]");
+
+            var games = ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct));
+
+            Assert.That(games.Single().Name, Is.EqualTo("Game"));
+            Assert.That(_transport.Requests, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void ABlockingCallPropagatesItsException()
+        {
+            _transport.Respond = _ => Status(404, "");
+
+            var exception = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct)));
+
+            Assert.That(exception.Kind, Is.EqualTo(EditorApiErrorKind.NotFound));
+        }
+
+        [Test]
+        public void ABlockingCallThatAwaitsThePlayerLoopThrows()
+        {
+            var pending = new UniTaskCompletionSource<int>();
+            CancellationToken token = default;
+
+            _ = Assert.Throws<InvalidOperationException>(() => ElympicsEditorApi.RunBlocking(ct =>
+            {
+                token = ct;
+                return pending.Task;
+            }));
+
+            Assert.That(token.IsCancellationRequested, Is.True);
+        }
+
+        [Test]
+        public void ABlockingCallUsesTheBlockingTransportAndRestoresTheTransport()
+        {
+            var blocking = new FakeTransport();
+            ElympicsEditorApi.CreateBlockingTransport = () => blocking;
+            IEditorApiTransport? transportDuringCall = null;
+
+            ElympicsEditorApi.RunBlocking(ct =>
+            {
+                transportDuringCall = ElympicsEditorApi.Transport;
+                return UniTask.CompletedTask;
+            });
+            Assert.That(transportDuringCall, Is.SameAs(blocking));
+            Assert.That(ElympicsEditorApi.Transport, Is.SameAs(_transport));
+
+            _ = Assert.Throws<InvalidOperationException>(() => ElympicsEditorApi.RunBlocking(ct => new UniTaskCompletionSource<int>().Task));
+            Assert.That(ElympicsEditorApi.Transport, Is.SameAs(_transport));
+
+            _transport.Respond = _ => Status(500, "");
+            blocking.Respond = _ => Status(500, "");
+            _ = Assert.Throws<ElympicsEditorApiException>(() => ElympicsEditorApi.RunBlocking(ct => ElympicsEditorApi.GetGamesAsync(ct: ct)));
+            Assert.That(ElympicsEditorApi.Transport, Is.SameAs(_transport));
+            Assert.That(_transport.Requests, Is.Empty);
+        }
+
+        private string CreateClientBuild()
+        {
+            _ = FakeClientBuild.CreateFiles(_temp.Path);
+            return _temp.Path;
+        }
+
+        private void RespondToInit(string initResponse, Func<EditorApiRequest, EditorApiResponse>? otherwise = null) =>
+            _transport.Respond = request => request.Url.EndsWith("client-builds/init") ? Ok(initResponse) : (otherwise ?? (_ => Ok("")))(request);
+
+        private static string InitResponse() =>
+            "{\"UploadId\":\"u1\",\"Files\":["
+            + string.Join(",", WebGLUploader.CompoundExtensions.OrderBy(extension => "Build" + extension, StringComparer.Ordinal).Select(extension => $"{{\"FilePath\":\"Build{extension}\",\"SignedUrl\":\"https://gcs.test/Build{extension}\"}}"))
+            + "]}";
+
+        [UnityTest]
+        public IEnumerator AClientBuildIsInitializedUploadedAndCompleted() => UniTask.ToCoroutine(async () =>
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit(InitResponse());
+
+            var fileCount = await ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1");
+
+            Assert.That(fileCount, Is.EqualTo(WebGLUploader.CompoundExtensions.Length));
+            var puts = _transport.Requests.Where(request => request.Url.StartsWith("https://gcs.test/")).ToList();
+            Assert.That(puts, Has.Count.EqualTo(fileCount));
+            Assert.That(puts.All(request => request.Method == "PUT" && !request.ElympicsApi && request.TimeoutSeconds > 0), Is.True);
+            Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":true"));
+        });
+
+        [UnityTest]
+        public IEnumerator AFailedFileUploadMarksTheClientBuildUploadAsFailed() => UniTask.ToCoroutine(async () =>
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit(InitResponse(), request => request.Url.StartsWith("https://gcs.test/") ? Status(403, "denied") : Ok(""));
+
+            var exception = await CliAssert.CatchAsync(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1"));
+
+            Assert.That(exception, Is.InstanceOf<ElympicsEditorApiException>());
+            Assert.That(exception!.Message, Does.Contain("Upload of 'Build").And.Contain("denied"));
+            Assert.That(((ElympicsEditorApiException)exception).Kind, Is.EqualTo(EditorApiErrorKind.RequestFailed));
+
+            Assert.That(_transport.Requests.Last().Url, Is.EqualTo($"{Api}/client-builds/complete"));
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        });
+
+        [Test]
+        public void AClientBuildIsNotSentToANonHttpsUrl()
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit(InitResponse().Replace("https://gcs.test/", "http://gcs.test/"));
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        }
+
+        [Test]
+        public void AClientBuildInitWithTheWrongNumberOfUrlsFails()
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit("{\"UploadId\":\"u1\",\"Files\":[]}");
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Last().JsonBody, Does.Contain("\"success\":false"));
+        }
+
+        [TestCase(@"\{""FilePath""[^}]*\}", "null")]
+        [TestCase(@"""SignedUrl"":""[^""]*""", "\"SignedUrl\":null")]
+        [TestCase(@"""FilePath"":""[^""]*""", "\"FilePath\":null")]
+        [TestCase(@"""UploadId"":""u1"",", "")]
+        public void AClientBuildInitWithAnIncompleteEntryFails(string pattern, string replacement)
+        {
+            var buildRoot = CreateClientBuild();
+            RespondToInit(new Regex(pattern).Replace(InitResponse(), replacement, 1));
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadClientBuildAsync("g1", buildRoot, "c1", "s1")).Kind, Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+        }
+
+        private string CreateStreamingAssets()
+        {
+            File.WriteAllText(Path.Combine(_temp.Path, "a.txt"), "a");
+            return _temp.Path;
+        }
+
+        private static string StreamingAssetsInitResponse(params string[] paths) =>
+            "{\"Files\":[" + string.Join(",", paths.Select(path => $"{{\"FilePath\":\"{path}\",\"SignedUrl\":\"https://gcs.test/{path}\"}}")) + "]}";
+
+        [UnityTest]
+        public IEnumerator StreamingAssetsUploadOnlyTheRequestedLocalFiles() => UniTask.ToCoroutine(async () =>
+        {
+            var root = CreateStreamingAssets();
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
+
+            _ = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
+
+            var put = _transport.Requests.Single(request => request.Method == "PUT");
+            Assert.That(put.Url, Is.EqualTo("https://gcs.test/a.txt"));
+            Assert.That(put.ContentType, Is.EqualTo("text/plain"));
+        });
+
+        [UnityTest]
+        public IEnumerator StreamingAssetsUploadReportsTheNumberOfFilesActuallyUploaded() => UniTask.ToCoroutine(async () =>
+        {
+            var root = CreateStreamingAssets();
+            File.WriteAllText(Path.Combine(root, "b.txt"), "b");
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(StreamingAssetsInitResponse("a.txt"));
+
+            var uploaded = await ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets);
+
+            Assert.That(uploaded, Is.EqualTo(1));
+            Assert.That(_transport.Requests.Count(request => request.Method == "PUT"), Is.EqualTo(1));
+        });
+
+        [TestCase("")]
+        [TestCase("a.b")]
+        [TestCase("a.b.c.d")]
+        [TestCase("a.%%%.c")]
+        public void AMalformedTokenIsRejected(string token) =>
+            Assert.That(() => ElympicsEditorApi.ReadTokenExpiration(token), Throws.InstanceOf<FormatException>().Or.InstanceOf<Newtonsoft.Json.JsonException>());
+
+        [TestCase("../outside.txt")]
+        [TestCase("..\\\\outside.txt")]
+        [TestCase("/etc/a.txt")]
+        [TestCase("C:/a.txt")]
+        [TestCase("b.txt")]
+        [TestCase("a.txt,a.txt")]
+        public void StreamingAssetsRequestedOutsideTheLocalFilesAreRejected(string serverPaths)
+        {
+            var root = CreateStreamingAssets();
+            var init = StreamingAssetsInitResponse(serverPaths.Split(','));
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets)).Kind,
+                Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+        }
+
+        [Test]
+        public void StreamingAssetsAreNotSentToANonHttpsUrl()
+        {
+            var root = CreateStreamingAssets();
+            var init = StreamingAssetsInitResponse("a.txt").Replace("https://gcs.test/", "http://gcs.test/");
+            _transport.Respond = request => request.Method == "PUT" ? Ok("") : Ok(init);
+
+            Assert.That(CatchApiException(() => ElympicsEditorApi.UploadStreamingAssetsAsync("g1", root, "v1", StreamingAssetsLayout.UnstructuredAssets)).Kind,
+                Is.EqualTo(EditorApiErrorKind.InvalidResponse));
+            Assert.That(_transport.Requests.Any(request => request.Method == "PUT"), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AServerUploadHasTheFileUploadTimeout() => UniTask.ToCoroutine(async () =>
+        {
+            var pack = Path.Combine(_temp.Path, "pack.zip");
+            File.WriteAllText(pack, "zip");
+            _transport.Respond = _ => Ok("");
+
+            await ElympicsEditorApi.UploadServerAsync("g1", "v1", pack);
+
+            Assert.That(_transport.Requests.Single().TimeoutSeconds, Is.EqualTo(ElympicsEditorApi.FileUploadTimeoutSeconds));
+        });
+
+        [Test]
+        public void BackendErrorTextHasNoControlCharactersAndIsTruncated()
+        {
+            _transport.Respond = _ => Status(500, "\u001b[2J\rcleared" + new string('x', 2000));
+
+            var message = CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Message;
+
+            Assert.That(message.Any(c => char.IsControl(c) && c != '\n'), Is.False);
+            Assert.That(message, Does.Contain("(truncated)"));
+            Assert.That(message.Length, Is.LessThan(700));
+        }
+
+        [Test]
+        public void OnlyTheFirstValidationErrorsAreListed()
+        {
+            var errors = string.Join(",", Enumerable.Range(0, 15).Select(i => $"\"F{i}\":[\"bad\"]"));
+            _transport.Respond = _ => Status(400, $"{{\"errors\":{{{errors}}}}}");
+
+            var message = CatchApiException(() => ElympicsEditorApi.GetGamesAsync()).Message;
+
+            Assert.That(message, Does.Contain("[F9] bad").And.Not.Contain("[F10]").And.Contain("(and 5 more)"));
+        }
+    }
+}

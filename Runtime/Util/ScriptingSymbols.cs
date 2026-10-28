@@ -15,5 +15,18 @@ namespace Elympics
 #else
             false;
 #endif
+
+#if ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH
+        public const bool MppmAutoLaunchDisabled = true;
+#else
+        public const bool MppmAutoLaunchDisabled = false;
+#endif
+
+        public static bool LaunchModeSceneLoadDisabled =>
+#if ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD
+            true;
+#else
+            false;
+#endif
     }
 }

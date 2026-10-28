@@ -8,6 +8,7 @@ namespace Elympics.Editor.Tests
     public class TestPlayModeArguments
     {
         private static readonly string[] NoTags = Array.Empty<string>();
+        private ParameterList _parameters;
 
         [TestCase(new[] { "Unity.exe", "-name", "Player3" }, 3)]
         [TestCase(new[] { "Unity.exe", "-projectPath", "x", "-name", "Player2", "-batchmode" }, 2)]
@@ -25,6 +26,15 @@ namespace Elympics.Editor.Tests
         [Test]
         public void WithoutANameOnlyTheLaunchModeIsSet() =>
             Assert.That(PlayModeArguments.Build(new[] { "Unity.exe" }, NoTags), Is.EqualTo(new[] { "--elympics-launch-mode=halfRemoteClient" }));
+
+        [Test]
+        public void WithoutAutoLaunchAPlayerWithoutALaunchModeTagIsManual() =>
+            Assert.That(PlayModeArguments.Build(new[] { "Unity.exe", "-name", "Player2" }, new[] { "Elympics:PlayerIndex=3" }, launchByDefault: false), Is.Empty);
+
+        [Test]
+        public void WithoutAutoLaunchALaunchModeTagStillLaunches() =>
+            Assert.That(PlayModeArguments.Build(new[] { "Unity.exe", "-name", "Player2" }, new[] { "Elympics:halfRemoteServer" }, launchByDefault: false),
+                Is.EqualTo(new[] { "--half-remote-player-index=0", "--elympics-launch-mode=halfRemoteServer" }));
 
         [Test]
         public void ManualTagLeavesThePlayerToTheMatchLauncher() =>
@@ -50,8 +60,6 @@ namespace Elympics.Editor.Tests
             Assert.That(PlayModeArguments.Build(new[] { "Unity.exe" }, new[] { "Elympics:bot" }), Is.EqualTo(new[] { "--elympics-launch-mode=halfRemoteClient" }));
 
         #region Precedence
-
-        private ParameterList _parameters;
 
         private void Initialize(string[] args, string[] playModeArgs, string envLaunchMode = null)
         {

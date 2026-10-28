@@ -49,6 +49,8 @@ COVERAGE_ARGS=(
 )
 fi
 
+rm -f "$RAW_TEST_RESULTS_PATH"
+
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -projectPath "$UNITY_DIR" \
   -runTests \
@@ -60,6 +62,21 @@ ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x2
   "${COVERAGE_ARGS[@]}"
 
 UNITY_EXIT_CODE=$?
+
+# Unity can abort (134) or segfault (139) on quit (com.unity.webrtc threads) after it has saved the results; the results then decide the outcome.
+if [ $UNITY_EXIT_CODE -eq 134 ] || [ $UNITY_EXIT_CODE -eq 139 ]; then
+  TEST_RUN=$(grep -m1 -o '<test-run [^>]*' "$RAW_TEST_RESULTS_PATH" 2>/dev/null)
+  TOTAL_COUNT=$(echo "$TEST_RUN" | grep -o ' total="[0-9]*"' | grep -o '[0-9][0-9]*')
+  FAILED_COUNT=$(echo "$TEST_RUN" | grep -o ' failed="[0-9]*"' | grep -o '[0-9][0-9]*')
+  RUN_RESULT=$(echo "$TEST_RUN" | grep -o ' result="[^"]*"' | cut -d'"' -f2)
+  if [ -n "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 0 ] && [ -n "$FAILED_COUNT" ]; then
+    echo "WARNING: Unity exited with code $UNITY_EXIT_CODE after saving the test results ($TOTAL_COUNT run, $FAILED_COUNT failed, result $RUN_RESULT); using the results instead"
+    if [ "$FAILED_COUNT" -eq 0 ] && [[ "$RUN_RESULT" != Failed* ]]; then UNITY_EXIT_CODE=0; else UNITY_EXIT_CODE=2; fi
+    if [ ${#COVERAGE_ARGS[@]} -gt 0 ] && [ -z "$(ls -A "$COVERAGE_RESULTS_PATH" 2>/dev/null)" ]; then
+      echo "WARNING: the crash left no coverage report in $COVERAGE_RESULTS_PATH"
+    fi
+  fi
+fi
 
 function process_test_results {
   if [ "$TESTING_TYPE" == 'JUNIT' ]; then

@@ -67,6 +67,11 @@ namespace Elympics
             var gameplayScene = ElympicsConfig.LoadCurrentElympicsGameConfig()?.GameplayScene;
             if (!ShouldLoadGameplayScene(gameplayScene, SceneManager.GetActiveScene().path))
                 return;
+            if (ScriptingSymbols.LaunchModeSceneLoadDisabled)
+            {
+                ElympicsLogger.LogWarning($"ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD is defined, so the gameplay scene {gameplayScene} isn't loaded. The match starts once the game loads it.");
+                return;
+            }
             ElympicsLogger.LogInfo($"Loading the gameplay scene {gameplayScene} for the launch mode parameter.");
 #if UNITY_EDITOR
             // Unlike SceneManager, this loads scenes missing from Build Settings.

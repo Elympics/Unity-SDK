@@ -12,7 +12,8 @@
         "Elympics.Editor.Weaving",
         "Elympics.Core",
         "Elympics.WebRtc.Other",
-        "Elympics.Physics2D"
+        "Elympics.Physics2D",
+        "Elympics.Editor.UnityCli"
     ],
     "includePlatforms": [
         "Editor"
@@ -22,12 +23,19 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll",
-        "Mono.Cecil.dll"
+        "Mono.Cecil.dll",
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.playmode",
+            "expression": "",
+            "define": "ELYMPICS_MPPM"
+        }
+    ],
     "noEngineReferences": false
 }

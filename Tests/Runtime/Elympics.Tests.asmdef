@@ -12,6 +12,7 @@
         "UnityConnectors",
         "Elympics.Core",
         "Elympics.WebRtc.Common",
+        "Elympics.WebRtc.Other",
         "Elympics.MatchConnection"
     ],
     "includePlatforms": [],

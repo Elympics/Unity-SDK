@@ -1,6 +1,8 @@
 #nullable enable
 
+using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -24,18 +26,39 @@ namespace Elympics.Editor.Weaving
         /// </remark>
         private const string RuntimeWeavingAssemblyName = "Elympics.Weaving.dll";
 
+        private const string RequestedVersionsKey = "Elympics.Weaver.RequestedVersions";
+        private static readonly long DeletedVersionTicks = DateTime.FromFileTimeUtc(0).Ticks;
+
 #pragma warning disable IDE0060
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 #pragma warning restore IDE0060
         {
             var elympicsPackageRemoved = deletedAssets.Any(path => path.EndsWith($"/{RuntimeWeavingAssemblyName}"));
 
-            var elympicsWeavingCodeUpdated = importedAssets.Concat(deletedAssets).Concat(movedAssets)
-                .Any(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath)
-                    is EditorCodeGenAssemblyName or EditorWeavingAssemblyName or RuntimeWeavingAssemblyName);
+            var weavingCodePaths = importedAssets.Concat(deletedAssets).Concat(movedAssets)
+                .Where(assetPath => CompilationPipeline.GetAssemblyNameFromScriptPath(assetPath)
+                    is EditorCodeGenAssemblyName or EditorWeavingAssemblyName or RuntimeWeavingAssemblyName)
+                .ToArray();
 
-            if (elympicsPackageRemoved || elympicsWeavingCodeUpdated)
+            if (elympicsPackageRemoved || IsNewWeavingCodeChange(weavingCodePaths, importedAssets))
                 CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
         }
+
+        /// <remarks>Unity 6.5+ reports unchanged scripts again after the requested recompilation.</remarks>
+        private static bool IsNewWeavingCodeChange(string[] paths, string[] importedAssets)
+        {
+            var requested = SessionState.GetString(RequestedVersionsKey, "").Split('\n').ToHashSet(StringComparer.Ordinal);
+            // A deleted path always has the same version, so a later deletion of a re-created file must not look already requested.
+            _ = requested.RemoveWhere(version => importedAssets.Any(imported => version == $"{imported}@{DeletedVersionTicks}"));
+            var versions = paths.Select(path => $"{path}@{GetLastWriteTicks(FileUtil.GetPhysicalPath(path))}").ToArray();
+            if (versions.All(requested.Contains))
+                return false;
+            requested.UnionWith(versions);
+            SessionState.SetString(RequestedVersionsKey, string.Join("\n", requested));
+            return true;
+        }
+
+        private static long GetLastWriteTicks(string path) =>
+            (Directory.Exists(path) ? Directory.GetLastWriteTimeUtc(path) : File.GetLastWriteTimeUtc(path)).Ticks;
     }
 }

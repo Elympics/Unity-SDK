@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Editor")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Tests")]
+[assembly: InternalsVisibleTo("Elympics.Editor.UnityCli")]
 [assembly: InternalsVisibleTo("Elympics.Editor.Weaving")]
 [assembly: InternalsVisibleTo("Elympics.Physics2D")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad")]
@@ -14,5 +15,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Lobby")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Rooms")]
 [assembly: InternalsVisibleTo("ElympicsPlayPad.Tests")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Editor.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 

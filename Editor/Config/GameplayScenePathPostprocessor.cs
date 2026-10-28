@@ -13,9 +13,9 @@ namespace Elympics.Editor.Config
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 #pragma warning restore IDE0060
         {
-            if (!importedAssets.Concat(movedAssets).Any(IsScene))
+            if (!importedAssets.Any(IsScene) && !movedAssets.Any(IsScene))
                 return;
-            foreach (var guid in AssetDatabase.FindAssets($"t:{nameof(ElympicsGameConfig)}"))
+            foreach (var guid in GameConfigAssets.FindGuids())
             {
                 AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(guid))?.RefreshGameplayScene();
             }

@@ -6,7 +6,10 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - Every entry has **Rule**, **Reason**, **Example** and **Time scope** (the condition under which to rewrite or remove it). Remove or rewrite entries whose time scope has passed.
 - No personal or machine-specific data (user names, home-dir paths, local tool locations).
 - Entries are grouped under `## Category` headings, each entry a `### Title`. Put a new entry under the category that fits, or add a new category if none does.
-- After every edit, regenerate `MEMORY.short.md`: the same category headings, one bullet per entry with its title and a condensed Rule, no Reason/Example/Time scope. CLAUDE.md imports that file.
+- After every edit, regenerate `MEMORY.short.md` (CLAUDE.md imports it, so every character is paid on every request):
+  - The same category headings, one bullet per entry: its title and the core of its Rule, at most ~120 characters. No Reason/Example/Time scope.
+  - Leave out entries whose rule `CLAUDE.md` already states.
+  - Situational entries (needed only in one kind of task) go under the final `## Situational (see MEMORY.md)` heading as a title-only label of at most 30 characters.
 
 ## Code
 
@@ -56,7 +59,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### com.unity.webrtc runs native threads in every Editor; ELYMPICS_LAZY_WEBRTC_CONTEXT stops them
 - **Rule:** in Unity projects that run Editor-only work (CI testing projects, measurement projects), define `ELYMPICS_LAZY_WEBRTC_CONTEXT` so the WebRTC context starts only when Elympics creates a peer connection. Code that creates `RTCPeerConnection` in the Editor must call `EditorWebRtcContext.EnsureInitialized()` first. Treat a SIGSEGV with `libwebrtc.so` frames, or a glibc heap error on quit, as this issue.
 - **Reason:** com.unity.webrtc 3.0.0 (the latest; no fix available) starts its native context after every assembly reload (`ContextManager`, `[InitializeOnLoad]`), even when nothing uses WebRTC. Its threads crashed Unity during `ReloadAssembly` (exit code 255) and probably on quit. The define is opt-in, because a game that uses com.unity.webrtc itself in the Editor needs the context running. `EditorWebRtcContext` uses webrtc internals (`s_context`, `InitializeInternal`, `DisposeInternal`, the `ContextManager` handlers); `TestEditorWebRtcContext` fails when they disappear.
-- **Example:** a PlayPad EditMode job on 6.6 crashed right after compiling, before any test ran (`Native stacktrace: … libwebrtc.so … Begin MonoManager ReloadAssembly`). With the define, the host Editor showed `s_context == null` after reloads, and the half-remote `WebRtcTest` still connected.
+- **Example:** a PlayPad EditMode job on 6.6 crashed right after compiling, before any test ran (`Native stacktrace: … libwebrtc.so … Begin MonoManager ReloadAssembly`). With the define, the host Editor showed `s_context == null` after reloads, and the half-remote `WebRtcTest` still connected. A PlayMode job on 6.3 (2026-10-27) passed every test, saved the results, then aborted on quit (`tcache_thread_shutdown(): unaligned tcache chunk detected`, exit code 134), because `WebRtcTest` had started the context. That test now disposes it, and `test.sh` takes the outcome from saved results after such a crash.
 - **Time scope:** If com.unity.webrtc fixes its Editor lifecycle, or Elympics stops depending on it, remove the define and this entry.
 
 ### WebGL size: unused components in a linked assembly keep their engine modules
@@ -83,12 +86,18 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** a scratch batchmode check logged `start=Player`, `raw … after=Server`, and `BuildServerLinux … after=Player` once `BuildTools.BuildServer` restored it (R3, 2026-10-19).
 - **Time scope:** If Unity stops persisting the subtarget from `BuildPlayerOptions`, remove this.
 
+### Unity 6.5+ reports unchanged scripts again after a requested recompile
+- **Rule:** an `AssetPostprocessor` that calls `CompilationPipeline.RequestScriptCompilation` for some scripts in `importedAssets` must skip scripts it has already requested for (e.g. path plus write time in `SessionState`, as `Editor/Weaving/Weaver.cs` does). `didDomainReload` can't tell the two cases apart.
+- **Reason:** after the domain reload that follows the requested compile, 6000.5 and 6000.6 call `OnPostprocessAllAssets` again with the same unchanged scripts (6000.4 doesn't), so each request starts a second clean compile. `didDomainReload` is true on the first, real import too. `-runTests` then runs the tests while that second compile is in progress, so `EditorApplication.isCompiling` is true.
+- **Example:** on MR !604, the 6000.5/6000.6 CI jobs failed `RefusedLaunchIsRecordedAsFailed` with `ELYMPICS_COMPILING` until Weaver skipped repeat reports (2026-10-23). Two "Requested through public api" log lines in one run are the symptom.
+- **Time scope:** If Unity stops re-reporting the scripts, or Weaver no longer requests compiles, remove this.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract
-- **Rule:** treat the per-extension Content-Type map as a verified allowlist: `.json` → `application/json`, `.xml` → `application/xml`, everything else `application/octet-stream`. Don't add an extension without a real upload confirming it. Keep the upload order bundles → catalogs → `variants.meta.json`. Don't validate catalog URLs baked into builds.
+- **Rule:** treat the per-extension Content-Type map as a verified allowlist: `.json` → `application/json`, `.xml` → `application/xml`, `.txt` → `text/plain`, everything else `application/octet-stream`. Don't add an extension without a real upload confirming it. Keep the upload order bundles → catalogs → `variants.meta.json`. Don't validate catalog URLs baked into builds. The upload code stays in the SDK: the map and order are in `WebGLUploader.cs`, and the PUTs are in `ElympicsEditorApi.UploadStreamingAssetsAsync`. PlayPad's `playpad_upload_streaming_assets` command calls them via `ElympicsWebIntegration`.
 - **Reason:** a version is write-once (re-initializing returns 400, and there's no resume), so any failed PUT uses up that version number. The upload order makes a partial version fail closed. The signed URL covers `content-type`, so a mismatch surfaces as GCS `SignatureDoesNotMatch`, not as a content-type error. The game runner overwrites the baked URLs at runtime. Bucket layout: `{bucket}/{gameId}/sa/{version}/{variant}/aa/…`.
-- **Example:** sending `text/plain` for `.hash` failed with `SignatureDoesNotMatch` and used up that version number.
+- **Example:** sending `text/plain` for `.hash` failed with `SignatureDoesNotMatch` and used up that version number. On staging (2026-10-23), `application/octet-stream` for `.txt` failed the same way, and `text/plain` for `.txt` then worked; `.bin` with `application/octet-stream` and `.json` worked too.
 - **Time scope:** If the backend `/client-builds/streaming-assets` contract changes (resumable uploads, `Content-Type` no longer signed), rewrite this.
 
 ## API and compatibility
@@ -108,7 +117,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### com.unity.pipeline 0.8 is the floor; UPM can't downgrade below a package dependency
 - **Rule:** keep `com.unity.pipeline` in `package.json` at the lowest version Elympics supports, and don't design for older versions than that: a project can't pin one. `[CliCommand]`/`[CliArg]` come from `Unity.Pipeline.Attributes` (0.8+). Verify a command through the `unity command` listing, never by running an upload command.
 - **Reason:** Unity 6's Package Manager treats a package's dependency version as a minimum ("Requested version X overridden by minimum version Y" in `upm.log`): a project manifest pin of 0.7 still resolved 0.8 (embedded and tarball installs, lock deleted). The command compiled against 0.5–0.8, but those versions were unreachable, so the user chose 0.8 as the floor: 0.8 binds its servers to loopback, 0.7+ keeps the Roslyn DLLs out of release players, and 0.5–0.7 likely don't compile on 6000.7. StreamingAssets uploads are write-once, and pipeline has no `dry_run` for custom commands.
-- **Example:** after updating the host to 0.8, `ElympicsStreamingAssetsCliCommands.cs` failed with `CS0246 CliCommandAttribute` until the asmdef referenced `Unity.Pipeline.Attributes`. Pipeline 0.4 lacks `CliCommandAttribute.Tags`.
+- **Example:** after updating the host to 0.8, PlayPad's `PlayPadUploadCliCommands.cs` failed with `CS0246 CliCommandAttribute` until the asmdef referenced `Unity.Pipeline.Attributes`. Pipeline 0.4 lacks `CliCommandAttribute.Tags`.
 - **Time scope:** If Unity's Package Manager lets projects downgrade package dependencies, revisit.
 
 ## Verification
@@ -121,15 +130,15 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 
 ### Compile and test evidence
 - **Rule:** compile with the redirected `dotnet build` from the host project dir (see CLAUDE.md), never a plain one. For tests:
-  - If a Unity license seat is free, use batchmode `-runTests`.
-  - If the host project has `com.unity.pipeline`, drive the running Editor with the Unity CLI (`unity command`).
-  - Otherwise, ask the user to run Test Runner in the open Editor, and read the evidence yourself:
+  - Drive the running Editor with the Unity CLI (`unity command`; this package depends on `com.unity.pipeline`). See "Driving the Editor through the pipeline CLI".
+  - If a Unity license seat is free, batchmode `-runTests` also works.
+  - If neither works, ask the user to run Test Runner in the open Editor, and read the evidence yourself:
     - `<host>/Library/ScriptAssemblies/Elympics.Editor{,.Tests}.dll`: the mtime advances only on a successful compile.
     - `Editor.log` (Windows: `%LOCALAPPDATA%/Unity/Editor/Editor.log`) accumulates across sessions and Editor instances. Compare the byte offset of a match against the file size before trusting it.
     - `TestResults.xml` is written to `<LocalLow>/<companyName>/<productName>/` (Windows: `%USERPROFILE%/AppData/LocalLow/…`), using the names in the host's `ProjectSettings/ProjectSettings.asset`. Parse `total`/`passed`/`failed`/`result` on `<test-run>` and `result` on each `<test-case>`.
 - **Reason:** a plain `dotnet build` writes into the `obj/`/`bin/` dirs Unity owns. Batchmode dies without a free license seat, and seats are usually held by the open Editor. It would also hit the `Library` lock.
 - **Example:** `-runTests` fails with `BatchMode: Unity has not been activated with a valid License` before compiling anything.
-- **Time scope:** If `com.unity.pipeline` becomes a dependency of this package, rewrite the test part.
+- **Time scope:** If this package drops its `com.unity.pipeline` dependency, rewrite the test part.
 
 ### Generated csprojs follow the Editor's build target
 - **Rule:** before trusting a redirected `dotnet build`, check the platform defines in the host's generated csproj (`<DefineConstants>`). If it has `UNITY_WEBGL` (or another player platform), also compile with that platform's defines swapped for the other platform, so both sides of every `#if` build. Build the references normally first and rebuild only the Elympics projects with `-p:DefineConstants=…` (semicolons escaped as `%3B`) and `-p:BuildProjectReferences=false`. A global define override also replaces the defines of vendored projects such as UniTask. Tests that depend on a platform define should take the capability as input (like `ElympicsLaunchPlatform`), not read the define.
@@ -179,17 +188,25 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** `TestNativeWebSocket` in PlayPad.
 - **Time scope:** If tests run on CoreCLR Unity, `HttpListener` may work; recheck.
 
+### Editor API tests that can reach the backend need EditorApiScope
+- **Rule:** any Editor test whose code under test could send an `ElympicsEditorApi` request, even only when a check it tests regresses, runs inside `EditorApiScope` with `FakeLoginStore` and `FakeTransport` (`Tests/Editor/EditorApiFakes.cs`).
+- **Reason:** `CliAssert.ThrowsAsync` and other `[Test]` helpers block the main thread on the task. The real transport completes `UnityWebRequest`s only on the Editor's player loop, so the wait deadlocks and freezes the Editor. The Test Runner's timeout doesn't unfreeze it, so the Editor has to be killed. Without the fakes, the test also uses the developer's real login and backend.
+- **Example:** on 2026-10-26, `QueueUpdateRejectsNonPositiveTeamSizes` without the fakes froze the Editor once the fix it guards was undone: `queue_update` went on to refresh the real token.
+- **Time scope:** If the real transport stops depending on the player loop, or tests stop blocking on tasks, remove this.
+
 ### Scratch Editors share the developer's Elympics login and can log it out
-- **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at a reachable web endpoint, or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
-- **Reason:** the Elympics login (auth and refresh tokens) lives in machine-global EditorPrefs, so every Editor on the machine shares it. On each Editor start, `UsageStatisticsSender` (`[InitializeOnLoad]`) posts telemetry through `CheckAuthTokenAndRefreshIfNeeded`. When the stored token has expired and the refresh fails, that path calls `SetAsLoggedOut()`, which logs out every Editor. A successful refresh from a scratch Editor rotates the refresh token instead.
-- **Example:** on 2026-10-15, scratch projects whose config pointed at a dead endpoint (`127.0.0.1:9`) logged "Auth token expired. Refreshing…" at every launch. The refresh failed, and the developer's Editor was left logged out.
-- **Time scope:** If login state stops being machine-global, or a failed refresh stops clearing it, remove this.
+- **Rule:** before launching scratch or batch-mode Editors with this package, point the scratch `ElympicsConfig` at the developer's web endpoint (a dead one is harmless too; another live backend may reject the refresh token), or make sure the stored login isn't expired. Afterwards, check whether the developer is still logged in.
+- **Reason:** the Elympics login (auth and refresh tokens) lives in machine-global EditorPrefs, so every Editor on the machine shares it. On each Editor start, `UsageStatisticsSender` (`[InitializeOnLoad]`) posts telemetry, which refreshes an expired token through `ElympicsEditorApi.EnsureLoggedInAsync`. A refresh rejected with 400, 401 or 403 clears the login in every Editor. A successful refresh rotates the refresh token. An unreachable endpoint no longer logs out.
+- **Example:** on 2026-10-15, scratch projects whose config pointed at a dead endpoint (`127.0.0.1:9`) logged "Auth token expired. Refreshing…" at every launch, and the developer's Editor was left logged out. Before a25b4159, any failed refresh logged out.
+- **Time scope:** If login state stops being machine-global, or a rejected refresh stops clearing it, remove this.
 
 ### Driving the Editor through the pipeline CLI
-- **Rule:** put `command`'s own flags (`--result-only`, `--timeout <s>`) right after `command` and before the subcommand (`unity command --result-only --timeout 300 run_tests …`); `unity --json` goes before `command`. New files only appear after `eval --code 'UnityEditor.AssetDatabase.Refresh(); return "ok";'` (then poll `recompile_status`). `run_tests --filter_type` takes `testName` (namespace/class prefix), `assembly` or `category`, not regex. PlayMode tests need `--async_tests true` and polling `test_status` (its result uses lowercase `summary`/`results`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`).
+- **Rule:** put `command`'s own flags (`--result-only`, `--timeout <s>`) right after `command` and before the subcommand (`unity command --result-only --timeout 300 run_tests …`); `unity --json` goes before `command`. New files only appear after `eval --code 'UnityEditor.AssetDatabase.Refresh(); return "ok";'` (then poll `recompile_status`). `run_tests --filter_type` takes `testName` (namespace/class prefix), `assembly` or `category`, not regex. PlayMode tests need `--async_tests true` and polling `test_status` (its result uses lowercase `summary`/`results`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`). Always set `UNITY_PROJECT_PATH` (or `--project-path`) on every call: discovery fails with more than one Editor open, and also when Unity Hub started the Editor (`-projectpath` in lowercase), even though the server is running. Treat a test run as evidence only when its summary total is above 0.
 - **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.
 - **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters. A `build --target WebGL` from a Linux-active Editor compiled without `UnityEngine.WebGLModule` and failed with CS0103 `WebGLInput` in PlayPad, which builds fine after a switch.
 - **Example (2026-10-19):** `unity --result-only command …` and `unity --timeout 120 command …` failed with "unknown option"; a synchronous PlayMode `run_tests` returned "entering play mode triggers a domain reload that drops the request".
+- **Example (2026-10-23):** with a second project's Editor open, every call failed with a list of candidate projects. A wrapper script still exited 0, with null compile and test results, so a run that tested nothing looked like a pass.
+- **Example (2026-10-27):** with one Hub-launched Editor (CLI 1.0.0-beta.13, pipeline 0.8.0-exp.1), `unity status` and `unity pipeline list` listed nothing, although `Library/Pipeline/.unity-pipeline-port` was fresh and the server was listening on 7800. With `UNITY_PROJECT_PATH` set, `run_tests` worked.
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
 
 ### A newer Unity Editor rewrites package sources

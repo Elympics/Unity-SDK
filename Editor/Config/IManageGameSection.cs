@@ -11,6 +11,7 @@ namespace Elympics.Editor.Config
         int Order { get; }
 
         /// <summary>Called on every rebuild of the window, with a container cleared beforehand.</summary>
+        /// <remarks>A section registered after the window was bound isn't bound, so set field values in code instead of using <c>bindingPath</c>.</remarks>
         void CreateGUI(VisualElement container, ElympicsConfig config);
     }
 }

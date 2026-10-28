@@ -3,7 +3,7 @@
 using System;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal sealed class ContinuationQueue
     {

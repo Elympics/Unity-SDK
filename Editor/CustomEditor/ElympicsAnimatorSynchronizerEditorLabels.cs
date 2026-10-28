@@ -8,7 +8,7 @@ namespace Elympics
         private const string Label_NoAnimatorParametersWarning = "Animator doesn't have any parameters to synchronize";
 
         private const string Label_PlayModeModificationWarning = "Modification of settings in play mode is not allowed";
-        private const string Label_CloneModificationWarning = "Modification of settings in a clone is not allowed";
+        private const string Label_VirtualPlayerModificationWarning = "Modification of settings in a Multiplayer Play Mode virtual player is not allowed";
 
         private const string Label_RefreshButton = "Refresh layers and parameters";
 

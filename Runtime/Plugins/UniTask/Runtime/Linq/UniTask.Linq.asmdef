@@ -1,8 +1,7 @@
 {
-    "name": "UniTask.Linq",
-    "rootNamespace": "",
+    "name": "Elympics.UniTask.Linq",
     "references": [
-        "UniTask"
+        "Elympics.UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,7 +1,7 @@
-﻿using Cysharp.Threading.Tasks.Internal;
+﻿using Elympics.Cysharp.Threading.Tasks.Internal;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {
@@ -14,7 +14,7 @@ namespace Cysharp.Threading.Tasks.Linq
 
             if (count == 0) UniTaskAsyncEnumerable.Empty<int>();
 
-            return new Cysharp.Threading.Tasks.Linq.Range(start, count);
+            return new global::Elympics.Cysharp.Threading.Tasks.Linq.Range(start, count);
         }
     }
 

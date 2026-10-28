@@ -24,7 +24,8 @@ fi
 
 echo "Removing default packages"
 
-echo '{ "dependencies": { } }' > "${PACKAGES_FOLDER}/manifest.json"
+# Rider: generate_solution_files.sh calls its SyncSolution
+echo '{ "dependencies": { "com.unity.ide.rider": "3.0.39" } }' > "${PACKAGES_FOLDER}/manifest.json"
 
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
   -projectPath "$UNITY_DIR" \
@@ -53,3 +54,6 @@ cp -r Samples~ "$PACKAGE_FOLDER"
 mv "${PACKAGE_FOLDER}Samples~" "${ASSETS_FOLDER}/Samples"
 
 echo "Elympics moved ✅"
+
+# Keeps com.unity.webrtc's native context stopped in the Editor until a test needs it; it can crash Unity during reloads.
+"$(dirname "${BASH_SOURCE[0]}")/set_scripting_defines.sh" "ELYMPICS_LAZY_WEBRTC_CONTEXT"

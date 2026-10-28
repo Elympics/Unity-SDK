@@ -1,10 +1,9 @@
-using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Elympics.Core.Logger;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -24,7 +23,7 @@ namespace Elympics
         private static readonly Regex MissingModuleRegex = new(
             @"build target (was )?unsupported|LinuxStandalone|scripting backend (\(\w+\) )?(is )?not installed",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private const string MissingModuleErrorMessage =
+        internal const string MissingModuleErrorMessage =
             "Installation of Unity modules is required: Linux Build Support (Mono) and Linux Dedicated Server Build Support";
 
         public static void UpdateElympicsGameVersion(string newGameVersion)
@@ -35,30 +34,16 @@ namespace Elympics
             config.UpdateGameVersion(newGameVersion);
         }
 
-        internal static bool BuildServerWindows(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions);
+        internal static bool BuildServerWindows(BuildOptions additionalOptions) =>
+            BuildServer(ServerBuildAppNameWindows, BuildTarget.StandaloneWindows64, additionalOptions).summary.result == BuildResult.Succeeded;
 
         internal static BuildReport BuildServerLinux(BuildOptions additionalOptions) => BuildServer(ServerBuildAppNameLinux, BuildTarget.StandaloneLinux64, additionalOptions);
 
-        private static bool? IsLinuxModuleInstalled()
-        {
-            var moduleManager = Type.GetType("UnityEditor.Modules.ModuleManager,UnityEditor.dll");
-            var isPlatformSupportLoadedByBuildTarget = moduleManager?.GetMethod("IsPlatformSupportLoadedByBuildTarget", BindingFlags.Static | BindingFlags.NonPublic);
-            return (bool?)isPlatformSupportLoadedByBuildTarget?.Invoke(null, new object[] { BuildTarget.StandaloneLinux64 });
-        }
-
-        internal static BuildReport BuildElympicsServerLinux(BuildOptions additionalOptions)
-        {
-            // if (IsLinuxModuleInstalled() is false)
-            // {
-            //     ElympicsLogger.LogError(MissingModuleErrorMessage);
-            //     return false;
-            // }
-
-            return BuildServerLinux(additionalOptions);
-        }
-
         private static BuildReport BuildServer(string appName, BuildTarget target, BuildOptions additionalOptions)
         {
+            ScriptingImplementation? replacedBackend = null;
+            // BuildPlayer leaves the Editor's standalone subtarget on Server, which breaks the next player build.
+            var previousSubtarget = EditorUserBuildSettings.standaloneBuildSubtarget;
             try
             {
                 var title = $"Building server for {appName}";
@@ -66,12 +51,11 @@ namespace Elympics
                 var config = ElympicsConfig.LoadCurrentElympicsGameConfig()
                              ?? throw new ElympicsException("Elympics config not found");
 
+                config.RefreshGameplayScene();
                 var sceneToBuild = new[] { config.GameplayScene };
                 EditorUtility.DisplayProgressBar(title, $"Using scene {config.GameplayScene}", 0.15f);
 
-                const BuildTargetGroup buildTargetGroup = BuildTargetGroup.Standalone;
-                var oldScriptingBackend = PlayerSettings.GetScriptingBackend(buildTargetGroup);
-                PlayerSettings.SetScriptingBackend(buildTargetGroup, ScriptingImplementation.Mono2x);
+                replacedBackend = SetUpServerScriptingBackend();
 
                 EditorUtility.DisplayProgressBar(title, "Removing old server build path", 0.3f);
                 if (Directory.Exists(ServerBuildPath))
@@ -83,7 +67,7 @@ namespace Elympics
                 {
                     scenes = sceneToBuild,
                     locationPathName = Path.Combine(ServerBuildPath, EngineSubdirectory, UnityBuildPath, appName),
-                    targetGroup = buildTargetGroup,
+                    targetGroup = BuildTargetGroup.Standalone,
                     target = target,
                     subtarget = (int)StandaloneBuildSubtarget.Server,
                     options = BuildOptions.CompressWithLz4HC | additionalOptions
@@ -91,9 +75,6 @@ namespace Elympics
 
                 var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
                 LogBuildResult(report);
-
-                // Restore
-                PlayerSettings.SetScriptingBackend(buildTargetGroup, oldScriptingBackend);
 
                 if (report.summary.result != BuildResult.Succeeded)
                     return report;
@@ -104,8 +85,28 @@ namespace Elympics
             }
             finally
             {
+                if (replacedBackend is { } backend)
+                    PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, backend);
+                if (EditorUserBuildSettings.standaloneBuildSubtarget != previousSubtarget)
+                    EditorUserBuildSettings.standaloneBuildSubtarget = previousSubtarget;
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        /// <returns>The Dedicated Server backend to restore after the build, or null if it wasn't changed.</returns>
+        private static ScriptingImplementation? SetUpServerScriptingBackend()
+        {
+#if UNITY_6000_8_OR_NEWER || UNITY_7000_0_OR_NEWER
+            var backend = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Server);
+            ElympicsLogger.LogWarning($"Elympics no longer forces a scripting backend for server builds. Using {backend} from the Dedicated Server player settings.");
+            return null;
+#else
+            var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Server);
+            if (previous == ScriptingImplementation.Mono2x)
+                return null;
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
+            return previous;
+#endif
         }
 
         private static void LogBuildResult(BuildReport report)
@@ -124,8 +125,11 @@ namespace Elympics
             if (report.summary.totalErrors == 0)
                 return;
 
-            if (report.steps.SelectMany(step => step.messages).Any(m => m.type is LogType.Error or LogType.Exception && MissingModuleRegex.IsMatch(m.content)))
+            if (HasMissingModuleError(report))
                 ElympicsLogger.LogError(MissingModuleErrorMessage);
         }
+
+        internal static bool HasMissingModuleError(BuildReport report) =>
+            report.steps.SelectMany(step => step.messages).Any(m => m.type is LogType.Error or LogType.Exception && MissingModuleRegex.IsMatch(m.content));
     }
 }

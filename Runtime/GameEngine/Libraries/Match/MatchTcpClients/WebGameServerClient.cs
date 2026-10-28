@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;

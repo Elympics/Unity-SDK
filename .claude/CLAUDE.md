@@ -10,7 +10,7 @@ Use `.claude/MEMORY.md` as your memory for this package, instead of your local/a
 
 ## What this is
 
-`com.daftmobile.elympics` is the Elympics Unity SDK: a server-authoritative, deterministic-tick multiplayer netcode UPM package. It targets Unity 2021.3 and is published to GitHub as `Elympics/Unity-SDK`, with the version in `package.json`.
+`com.daftmobile.elympics` is the Elympics Unity SDK: a server-authoritative, deterministic-tick multiplayer netcode UPM package. It targets Unity 6.3 (`6000.3`) and is published to GitHub as `Elympics/Unity-SDK`, with the version in `package.json`.
 
 This repo is **only the package**. It doesn't contain a Unity project. A host Unity project uses it, either installed locally (embedded in `<project>/Packages/` or referenced with `file:` in `Packages/manifest.json`) or through UPM (cached in `<project>/Library/PackageCache/`). The host project's location isn't fixed, so find it by searching up from the package root for a dir that contains `ProjectSettings/` and `Packages/manifest.json`. If no parent matches (for example, a `file:` reference from outside the project), ask the user. The host project owns `Library/`, the generated `*.csproj`/`*.sln` and the Editor.
 
@@ -28,9 +28,11 @@ Unity owns compilation, so never run a plain `dotnet build` that writes into the
   - It uses `.editorconfig`, and IDE-style warnings fail CI.
   - This checks style only. It does **not** prove the code compiles.
 - **JS check (CI `verify-js`):** `bash .scripts/ci/check_js.sh`.
-  - It copies every `.jslib`/`.jspre` (outside `Samples~`) to a temp `.js` and runs strict `tsc -p jsconfig.json --noEmit`.
-  - JS must stay **ES2017** (Unity 2021.3 Emscripten): no `?.`, no `??`, no class fields.
+  - It copies every `.jslib`/`.jspre` (outside `Samples~`) to a temp `.js`, rewrites `{{{ makeDynCall('sig', 'ptr') }}}` to a plain call, runs strict `tsc -p jsconfig.json --noEmit`, then parses each file with acorn at ES2020 (`.scripts/js-check/parse.mjs`), because `tsc` doesn't reject newer syntax.
+  - JS must stay **ES2020** (Unity 6.3–6.4 ship Emscripten 3.1.39; 6.5+ ship 4.0.19): `?.` and `??` are fine; no class fields, no `||=`.
+  - Call C# callbacks with `{{{ makeDynCall('vii', 'callback') }}}(a, b)`, never `Module.dynCall_*`. Macros don't expand in `.jspre` files.
   - Emscripten globals are declared in `Runtime/Plugins/emscripten-globals.js`.
+  - Prefix top-level names and `$` library symbols with `Elympics`/`elympics`. Test WebGL callback changes with "Use WebAssembly.Table" off and on (see `MEMORY.md`).
 - **Tests:** NUnit through the Unity Test Framework.
   - Locally, run them with Test Runner in the open Editor (EditMode / PlayMode). Batchmode needs a free Unity license seat.
   - CI runs `.scripts/ci/test.sh`:
@@ -50,87 +52,36 @@ The code is split across many asmdefs. The main ones:
 - `Elympics` (Runtime)
 - `Elympics.Core`
 - `Elympics.Editor`, `Elympics.Editor.Weaving`, `Unity.Elympics.Editor.CodeGen`
-- `Elympics.Editor.UnityCli` (compiles only when `com.unity.pipeline` is present)
+- `Elympics.Editor.UnityCli` (`[CliCommand]`s for com.unity.pipeline, a package dependency with 0.8 as the floor; the attributes live in `Unity.Pipeline.Attributes`)
 - `GameEngineCore`, `Elympics.Proto`, `Elympics.MatchConnection`, `UnityConnectors`
 - WebRtc: `Elympics.WebRtc`, `Elympics.WebRtc.Common`, `Elympics.WebRtc.Other`, `Elympics.WebRtc.WebGl`
+- Opt-in components: `Elympics.Physics2D` (Rigidbody2D synchronizer, 2D physics simulator) and `Elympics.Animation` (Animator synchronizer). Runtime code in the other assemblies must never reference them (only Editor code may), or every WebGL player links the 2D physics and Animation modules again.
 
 Two rules when a file starts using another assembly's types:
 - `InternalsVisibleTo` (in each `AssemblyInfo.cs`) is **not** enough. The consuming `.asmdef` `references` must also include the source assembly, usually by GUID.
 - Watch for `var`-inferred types from factories. A file can depend on an assembly without ever naming its types.
 
-### Mode selection
-Matches are started by `ElympicsMatchLauncher` (`Runtime/Launcher/`).
-- `ElympicsMatchLauncherBootstrap` creates it before the first scene loads, after initializing `ApplicationParameters` (env vars, command-line args, the WebGL URL query and ParrelSync clone arguments; see `Runtime/Util/Parameters/`).
-- Unless the process is passive (online server or `ELYMPICS_LAUNCH_MODE` set), the bootstrap also starts a host bridge (`Runtime/Launcher/Bridges/`: WebGL or native) and emits `ready`. A host, game code (`Launch*Async`) or the Editor's Match Launcher window then launches matches. Each launch loads the gameplay scene and returns to the boot scene afterwards.
-
-`GameSceneManager.ChooseDriver` (`Runtime/SceneManagement/GameSceneManager.cs`) picks what initializes a loaded gameplay scene. It checks in this order:
-1. **Online server:** set by `ApplicationParameters`.
-2. **Launch mode parameter:** `ELYMPICS_LAUNCH_MODE` runs one match in this process and quits after it (`LaunchDataFromParameters`, `ExitAfterMatchSink`). ParrelSync clones get it from their default arguments (`Editor/ParrelSync/ElympicsCloneArguments.cs`) and run as half-remote clients.
-3. **Session:** the launcher's current launch. Its `LaunchData` (`Runtime/Launcher/LaunchData/`) creates the mode's `GameSceneInitializer`.
-4. **Suppressed:** the scene activated while its launch is being torn down.
-5. **None:** the scene waits for a launch.
-
-Configuration lives in the `ElympicsConfig` ScriptableObject (`Resources/Elympics/ElympicsConfig`), which holds a list of `ElympicsGameConfig` assets (tick rate, half-remote endpoints, lag simulation).
-
-### Tick loop
-All of this is in `Runtime/ElympicsSystems/`.
-- **Timing:** `ElympicsBase` is subclassed by `ElympicsClient` and `ElympicsServer`. There is no bot class: bots run inside the server (`IsBot`, `PlayerHandlers/`). `ElympicsBase.Update()` runs a fixed-timestep accumulator. Each step calls `ElympicsFixedUpdate` then `ElympicsLateFixedUpdate`, and each frame ends with `ElympicsRenderUpdate(alpha)`.
-- **Server tick:**
-  1. Take the buffered inputs for the tick, or reuse the last one.
-  2. Run RPCs, then `CommitVars`, then `ElympicsUpdate`.
-  3. Build the snapshot.
-  4. Pass it through `Runtime/Replication/ReplicationPipeline.cs`: change detection, interest management, prioritization, bandwidth scheduling, ack tracking, encoding.
-- **Client tick:**
-  1. Merge the received snapshot and reconcile against `Runtime/Prediction/PredictionBuffer.cs`.
-  2. Pick the predicted tick (`ClientTickCalculator`).
-  3. Send input.
-  4. Apply the unpredictable state.
-  5. Run RPCs, then `CommitVars`, then predicted input, then `ElympicsUpdate`.
-  6. Store the predicted snapshot.
-- **Game-facing API:**
-  - `ElympicsMonoBehaviour` and `ElympicsBehaviour` (`Runtime/Behaviour/`).
-  - Synced state: `ElympicsVar<T>`, `ElympicsList`, `ElympicsArray`, `ElympicsRandom`.
-  - Callback interfaces in `Runtime/BehaviourPredefined/Interfaces/`: `IInputHandler`, `IUpdatable`, `IInitializable`, `IReconciliationHandler`, `IStateSerializationHandler`, `I{Server,Client,Bot}HandlerGuid`. All derive from the marker `IObservable`.
-
-### Serialization and weaving
-- **MessagePack:** inputs, snapshots, RPCs, match data.
-- **Protobuf:** the game-engine host ↔ Unity process, NTP and logs.
-- **RPCs** are implemented by IL weaving:
-  - `Editor/Weaving/CodeGen/ElympicsILPostProcessor.cs` is an ILPostProcessor built on Mono.Cecil.
-  - It validates `[ElympicsRpc]` methods: instance, non-virtual, void, non-generic, not overloaded, optional `RpcMetadata` parameter only.
-  - It then injects capture/dispatch code into them (`Editor/Weaving/Components/Elympics/ElympicsRpcComponent.cs`).
-  - Woven assemblies are marked with `ProcessedByElympicsAttribute`.
-
-### Transport
-Under `Runtime/GameEngine/Libraries/`:
-- `Match/MatchTcpLibrary` provides TCP/UDP/WebRTC data channels, with the interfaces in `Elympics.MatchConnection`.
-- `MatchTcpClients` holds the game-server clients.
-- `UnityConnectors/HalfRemote` covers editor half-remote play.
-- WebRTC `Other` (non-WebGL, uses `com.unity.webrtc`) and `WebGL` (browser, through `webrtc.jslib`) define classes with the **same names**. That lets `WebRtcFactory` stay free of `#if`, so keep the two implementations API-identical.
-
-### Editor
-- `ElympicsWebIntegration.cs`: login, game versions, uploads.
-- `WebGLUploader.cs`: client builds and StreamingAssets bundles.
-- Custom inspectors and drawers, some in UXML/UI Toolkit.
-- `SceneNetworkIdAssigner`, `Replay/`.
-
-### Tests
-- **`Tests/Editor`:** RPC weaving validation, endpoint and file checks.
-- **`Tests/Runtime`:** runs in the editor only (all player platforms excluded).
-  - Uses NUnit and NSubstitute. Runtime internals are visible to `DynamicProxyGenAssembly2` so they can be mocked.
-  - Shared mocks and asserts are in `Tests/Runtime/Common/` and `Tests/Runtime/Util/`.
-- **`Tests/Runtime/AssemblyCommunicator`:** deliberately references only `Elympics.Core`, to exercise the cross-assembly event API from outside.
+### More
+Mode selection, tick loop, serialization and weaving, transport, Editor and tests: `.claude/ARCHITECTURE.md`. Read it before changing those areas.
 
 ### Scripting defines
 `Runtime/Util/ScriptingSymbols.cs` wraps these defines:
-- `ELYMPICS_DEBUG` / `ELYMPICS_TRACE`: `[Conditional]` logging.
+- `ELYMPICS_DEBUG`: debug logging (`[Conditional]` on the logger).
+- `ELYMPICS_DISABLE_MPPM_AUTO_LAUNCH`: Multiplayer Play Mode virtual players don't launch a match by default.
+- `ELYMPICS_DISABLE_LAUNCH_MODE_SCENE_LOAD`: the bootstrap doesn't load the gameplay scene for `ELYMPICS_LAUNCH_MODE`.
+- `UNITY_SERVER`.
+
+Used directly with `#if` or `[Conditional]` (not wrapped):
+- `ELYMPICS_TRACE`: trace logging.
 - `ELYMPICS_PRODUCTION`: strips dev-time checks.
-- `UNITY_WEBGL && !UNITY_EDITOR`, `UNITY_SERVER`, `ELYMPICS_UNITY_PIPELINE`.
+- `UNITY_WEBGL && !UNITY_EDITOR`.
+- `ELYMPICS_DISABLE_PHYSICS2D_SCENE_CHECK`: turns off the Editor's 2D physics simulator scene check.
 
 ## Conventions
 
 - **Vendored / generated code, do not edit:**
-  - `Runtime/Plugins/`: UniTask, MessagePack, ParrelSync, Google.Protobuf, websocket-sharp, etc.
+  - `Runtime/Plugins/`: UniTask 2.5.10 (assemblies `Elympics.UniTask*`, namespace `Elympics.Cysharp.*`), MessagePack (assemblies `Elympics.MessagePack*`, namespace unchanged), Google.Protobuf, etc.
+  - Vendored source dependencies get `Elympics.`-prefixed assembly names and their own asset GUIDs, so they can't clash with the official package in a game. Reference them by name, not GUID (see `MEMORY.md`).
   - `MessagePackGenerated.cs`, `ProtosCompiled/`.
   - `Elympics.Analyzers.dll`.
 - **Unity `.meta` files:** every new asset or folder needs one, and renames or moves must carry the `.meta` along so the GUID is kept.
@@ -140,3 +91,7 @@ Under `Runtime/GameEngine/Libraries/`:
   - CI rejects any `tmp:` commit on top of `develop`.
   - Feature branches target `develop`.
 - **Versions:** the version is kept in `package.json` and in `AssemblyVersion` in several `AssemblyInfo.cs` files (Runtime, Editor, Editor/Weaving, Tests/Runtime). `.scripts/ci/bump_version_and_generate_changelog.sh` updates them all. Don't bump by hand.
+
+## Releasing
+
+See `.claude/RELEASING.md`.

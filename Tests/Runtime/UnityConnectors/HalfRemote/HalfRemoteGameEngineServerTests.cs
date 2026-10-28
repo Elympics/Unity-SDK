@@ -3,8 +3,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Communication.Models;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using NUnit.Framework;
@@ -73,7 +73,15 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
             void CloseWebSocket() => webRtcClient.Close();
 
-            await ConnectionTest(ConnectWebRtc, CloseWebSocket, new IPEndPoint(IPAddress.Loopback, tcpPort), new IPEndPoint(IPAddress.Loopback, webPort));
+            try
+            {
+                await ConnectionTest(ConnectWebRtc, CloseWebSocket, new IPEndPoint(IPAddress.Loopback, tcpPort), new IPEndPoint(IPAddress.Loopback, webPort));
+            }
+            finally
+            {
+                // With ELYMPICS_LAZY_WEBRTC_CONTEXT, stops the native context now instead of on quit, where it crashed Unity in CI.
+                EditorWebRtcContext.Dispose();
+            }
         });
 
         private async UniTask ConnectionTest(Func<UniTask<HalfRemoteMatchClient>> clientConnect, Action clientClose, IPEndPoint tcpListenEndpoint, IPEndPoint webListenEndpoint, CancellationToken ct = default)
@@ -168,6 +176,11 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             await UniTask.WhenAll(SendUnreliableTask(), SendReliableTask());
             gameEngine.EndGame(null);
 
+            // Closing the client before MatchEnded arrives would drop it.
+            var matchEndedDeadline = Time.realtimeSinceStartup + 2f;
+            while (!matchEnded && Time.realtimeSinceStartup < matchEndedDeadline)
+                await UniTask.Delay(10, DelayType.Realtime, cancellationToken: ct);
+
             clientClose.Invoke();
             await UniTask.Delay(100, DelayType.Realtime, cancellationToken: ct);
             connector.Dispose();
@@ -187,6 +200,140 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             // This seems to be a chance high enough.
             Assert.That(unreliableClientDataReceived, Is.GreaterThan(0));
             Assert.That(unreliableServerDataReceived, Is.GreaterThan(0));
+        }
+
+        [UnityTest]
+        public IEnumerator WebMatchConnectClient_JoinsAndLeaves() => UniTask.ToCoroutine(async () =>
+        {
+            const int webPort = 7900;
+            var webEndPoint = new IPEndPoint(IPAddress.Loopback, webPort);
+            var gameEngine = new GameEngineStub();
+            var connectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            var disconnectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            gameEngine.PlayerConnected += connectedUserIds.Enqueue;
+            gameEngine.PlayerDisconnected += disconnectedUserIds.Enqueue;
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, null, webEndPoint, () => { });
+            using var signalingServerCts = new CancellationTokenSource();
+            var signalingServer = new SimpleHttpSignalingServer(connector, webEndPoint);
+            signalingServer.RunAsync(signalingServerCts.Token).Forget();
+            connector.Listen();
+
+            var gameConfig = ScriptableObject.CreateInstance<ElympicsGameConfig>();
+            var userId = Guid.NewGuid();
+            using var clientCts = new CancellationTokenSource();
+            var adapter = new HalfRemoteMatchClientAdapter(gameConfig);
+            var client = new HalfRemoteMatchConnectClient(adapter, gameConfig, webEndPoint, true, userId, default);
+            try
+            {
+                // Joining sends PlayerConnectedMsg right away, so the data channels must already be open.
+                await client.ConnectAndJoinAsPlayerAsync(clientCts.Token);
+                await WaitUntilOrTimeout(() => !connectedUserIds.IsEmpty);
+                client.Disconnect();
+                await WaitUntilOrTimeout(() => !disconnectedUserIds.IsEmpty);
+            }
+            finally
+            {
+                clientCts.Cancel();
+                adapter.Dispose();
+                connector.Dispose();
+                signalingServerCts.Cancel();
+                signalingServer.Dispose();
+                UnityEngine.Object.DestroyImmediate(gameConfig);
+            }
+
+            CollectionAssert.AreEqual(new[] { userId.ToString() }, connectedUserIds);
+            CollectionAssert.AreEqual(new[] { userId.ToString() }, disconnectedUserIds);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedWithoutLeaving_IsReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, _) = await ConnectTcpPlayer(7896);
+            var disconnectedUserIds = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            gameEngine.PlayerDisconnected += disconnectedUserIds.Enqueue;
+
+            tcpClient.Close();
+            await WaitUntilOrTimeout(() => !disconnectedUserIds.IsEmpty);
+            connector.Dispose();
+
+            CollectionAssert.AreEqual(new[] { UserId }, disconnectedUserIds);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientLeavingBeforeClosing_IsReportedOnce() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, client) = await ConnectTcpPlayer(7897);
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            client.PlayerDisconnected();
+            await WaitUntilOrTimeout(() => disconnected > 0);
+            tcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+
+            Assert.AreEqual(1, disconnected);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedAfterPlayerRejoined_IsNotReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            const int tcpPort = 7899;
+            var (gameEngine, connector, oldTcpClient, _) = await ConnectTcpPlayer(tcpPort);
+            var connections = 0;
+            gameEngine.PlayerConnected += _ => connections++;
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            var newTcpClient = new TcpClient();
+            await newTcpClient.ConnectAsync(IPAddress.Loopback, tcpPort);
+            new HalfRemoteMatchClient(UserId, new ProtoNetworkStreamClient(newTcpClient.GetStream())).PlayerConnected();
+            await WaitUntilOrTimeout(() => connections > 0);
+            oldTcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+            newTcpClient.Close();
+
+            Assert.AreEqual(1, connections);
+            Assert.AreEqual(0, disconnected);
+        });
+
+        [UnityTest]
+        public IEnumerator TcpClientClosedAfterGameEnded_IsNotReportedAsDisconnected() => UniTask.ToCoroutine(async () =>
+        {
+            var (gameEngine, connector, tcpClient, _) = await ConnectTcpPlayer(7898);
+            var disconnected = 0;
+            gameEngine.PlayerDisconnected += _ => disconnected++;
+
+            gameEngine.EndGame(null);
+            tcpClient.Close();
+            await UniTask.Delay(500, DelayType.Realtime);
+            connector.Dispose();
+
+            Assert.AreEqual(0, disconnected);
+        });
+
+        private static async UniTask<(GameEngineStub, HalfRemoteGameEngineProtoConnector, TcpClient, HalfRemoteMatchClient)> ConnectTcpPlayer(int tcpPort)
+        {
+            var gameEngine = new GameEngineStub();
+            var connected = false;
+            gameEngine.PlayerConnected += _ => connected = true;
+            var connector = new HalfRemoteGameEngineProtoConnector(gameEngine, new IPEndPoint(IPAddress.Loopback, tcpPort), null, () => { });
+            connector.Listen();
+
+            var tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync(IPAddress.Loopback, tcpPort);
+            var client = new HalfRemoteMatchClient(UserId, new ProtoNetworkStreamClient(tcpClient.GetStream()));
+            client.PlayerConnected();
+            await WaitUntilOrTimeout(() => connected);
+            Assert.IsTrue(connected);
+            return (gameEngine, connector, tcpClient, client);
+        }
+
+        private static async UniTask WaitUntilOrTimeout(Func<bool> condition)
+        {
+            for (var i = 0; i < 50 && !condition(); i++)
+                await UniTask.Delay(100, DelayType.Realtime);
         }
     }
 }

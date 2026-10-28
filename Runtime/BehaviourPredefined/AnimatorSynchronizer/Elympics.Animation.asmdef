@@ -1,0 +1,16 @@
+{
+    "name": "Elympics.Animation",
+    "rootNamespace": "Elympics",
+    "references": [
+        "Elympics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

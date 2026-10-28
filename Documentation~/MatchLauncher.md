@@ -251,23 +251,39 @@ It limits the process to that one match:
 - Every launch fails with `Busy`.
 - The process quits when the match ends or fails to start. In the Editor, play mode exits.
 
-It is meant for processes started straight into the gameplay scene:
+If the process starts in another scene (for example a boot or lobby scene), Elympics loads the gameplay scene of
+the active game first. In a build, that scene must be in the build's scene list; otherwise an error is logged and
+the player exits with code 1. The Editor loads it even when it's missing from Build Settings.
+
+Typical uses:
 
 - **Server builds:** a `UNITY_SERVER` build becomes a half-remote server only with
   `--elympics-launch-mode=halfRemoteServer`. Otherwise it waits for a host, like any build.
-- **Play in a gameplay scene in the Editor.**
-- **Client builds whose first scene is the gameplay scene.** With a separate boot scene first, no match starts.
+- **Play in the Editor.**
+- **Client builds.**
 
 Pressing Play in a gameplay scene without the parameter starts nothing. It logs that the scene awaits a launch call.
 
-### ParrelSync clones
+### Multiplayer Play Mode virtual players
 
-A clone Editor reads its ParrelSync arguments (the Arguments field in the Clones Manager) as command-line
-arguments. They beat environment variables and lose to the real command line. ParrelSync's default argument
-`client` is replaced with `--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<clone number>`.
+A Multiplayer Play Mode virtual player (an additional Editor instance, Window > Multiplayer > Multiplayer Play Mode)
+gets launch arguments from Elympics. They beat environment variables and lose to the real command line. By default it gets
+`--elympics-launch-mode=halfRemoteClient --half-remote-player-index=<N - 2>`, where N comes from the `-name PlayerN`
+argument that Multiplayer Play Mode gives it, so Player2 is player 0, Player3 is player 1 and so on.
 
-So a clone pressing Play in the gameplay scene joins the half-remote server as that player, and exits play
-mode when the match ends. An edited argument is left alone.
+So a virtual player joins the half-remote server as that player when play mode starts, and exits play mode when the
+match ends. It opens the gameplay scene itself, because Multiplayer Play Mode gives it the scenes open in the main Editor. Player tags (Project Settings > Multiplayer > Play Mode > Player Tags) with the `Elympics:`
+prefix change that:
+
+| Tag | Effect |
+|---|---|
+| `Elympics:manual` | No launch arguments; launch from the Match Launcher as in the main Editor. |
+| `Elympics:halfRemoteServer` (or another launch mode) | Sets the launch mode. |
+| `Elympics:PlayerIndex=2` | Sets the half-remote player index. |
+| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name. |
+
+Multiplayer Play Mode supports up to three virtual players, so the main Editor plus three virtual players can run a
+half-remote server and three clients.
 
 ## In the Editor: Tools > Elympics > Match Launcher
 
@@ -279,7 +295,7 @@ mode when the match ends. An edited argument is left alone.
   play mode it enters play mode first, from the boot scene or from an empty scene.
 - **Controls:** return to boot, ping and quit. The window logs every command and event as one selectable text; `Copy all`
   copies the whole log.
-- **With the launch mode parameter set** (e.g. in a clone): the launch controls are disabled, with a note
+- **With the launch mode parameter set** (e.g. in a virtual player): the launch controls are disabled, with a note
   naming the parameter's source.
 - **The gameplay scene must be enabled in Build Settings**, in the Editor too. The launcher loads it by path,
   so a launch fails with `SceneLoadFailed` otherwise. The window says so when the selected game's scene is missing.
@@ -310,12 +326,6 @@ Teardown before a quit is best effort and lasts at most `ElympicsLaunchDefaults.
 - **Mixed games on iOS:** if a host mixes memory-heavy and light games in one page session, consider
   `unityInstance.Quit()` and a new instance when switching between them, not only for recovery. On desktop,
   the soft `returnToBoot → idle → launch` cycle is correct and quitting is unnecessary.
-- **Unity versions:** the SDK builds on Unity 2021.3, while games may ship on Unity 6. The two differ:
-
-| | Unity 2021.3 | Unity 6 |
-|---|---|---|
-| Heap ceiling | 2 GB | up to 16 GB |
-| Growth control | none in Player Settings. Emscripten grows in ~100 MB steps | Memory Growth Mode, and Initial / Maximum Memory Size |
-| `unityInstance.Quit()` reclaims the heap | yes | in release builds. A development-build regression prevents a full release |
-
-"Tune Initial Memory Size to the steady-state peak" is advice for games on Unity 6. It doesn't apply to 2021.3 builds.
+- **Unity 6 memory settings:** the heap can grow up to 16 GB. Use Memory Growth Mode and Initial / Maximum Memory Size
+  in Player Settings, and tune Initial Memory Size to the steady-state peak. `unityInstance.Quit()` reclaims the heap in
+  release builds; a development-build regression prevents a full release.

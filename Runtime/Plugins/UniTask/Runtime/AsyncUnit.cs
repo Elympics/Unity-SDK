@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public readonly struct AsyncUnit : IEquatable<AsyncUnit>
     {

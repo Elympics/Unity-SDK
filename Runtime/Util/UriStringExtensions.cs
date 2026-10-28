@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Web;
 
 namespace Elympics
 {
@@ -48,10 +47,8 @@ namespace Elympics
         {
             var uriBuilder = new UriBuilder(uri);
             uriBuilder.Scheme = uriBuilder.Scheme == "https" ? "wss" : "ws";
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            query.Add(JwtProtocolAndQueryParameter, jwtToken);
-            uriBuilder.Query = query.ToString();
-            return (uriBuilder.Uri.ToString(), JwtProtocolAndQueryParameter);
+            var url = QueryString.Append(uriBuilder, JwtProtocolAndQueryParameter, jwtToken);
+            return (url, JwtProtocolAndQueryParameter);
         }
     }
 }

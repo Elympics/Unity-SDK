@@ -4,8 +4,8 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc.Other;
 using MatchTcpLibrary.TransportLayer.Interfaces;
 using Unity.WebRTC;
@@ -60,10 +60,8 @@ namespace Elympics.GameEngine.Libraries.WebRtc
                     username = s.username,
                 }).ToArray(),
             };
-            _peerConnection = new RTCPeerConnection(ref configuration)
-            {
-                OnNegotiationNeeded = OnNegotiationNeeded,
-            };
+            _peerConnection = WebRtcNative.CreatePeerConnection(ref configuration);
+            _peerConnection.OnNegotiationNeeded = OnNegotiationNeeded;
 
             _peerConnection.OnIceCandidate += OnIceCandidate;
             _peerConnection.OnIceConnectionChange += OnIceConnectionStateChanged;
@@ -150,14 +148,12 @@ namespace Elympics.GameEngine.Libraries.WebRtc
 
             public void Send(byte[] payload)
             {
-                if (_dc.ReadyState is not RTCDataChannelState.Open)
-                    return;
-                _dc.Send(payload);
+                WebRtcNative.TrySend(_dc, payload);
             }
 
             public void Disconnect()
             {
-                _dc.Close();
+                WebRtcNative.IgnoreDisposed(_dc.Close);
                 IsConnected = false;
             }
 
@@ -171,7 +167,10 @@ namespace Elympics.GameEngine.Libraries.WebRtc
             }
         }
 
-        public void Close() => _peerConnection.Close();
+        public void Close()
+        {
+            WebRtcNative.IgnoreDisposed(_peerConnection.Close);
+        }
 
         public void Dispose()
         {

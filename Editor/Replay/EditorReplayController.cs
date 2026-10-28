@@ -61,7 +61,7 @@ namespace Elympics.Editor.Replay
             // referring to play mode state
             EditorApplication.playModeStateChanged += AdjustControlsToPlayMode;
 
-            _tickListDisplayer.TickListElement.onSelectionChange += selected =>
+            _tickListDisplayer.TickListElement.selectionChanged += selected =>
             {
                 if (!_ignoreAutoApply)
                     ApplyTickStateIfNeeded((selected.FirstOrDefault() as TickEntryData)?.Snapshot);

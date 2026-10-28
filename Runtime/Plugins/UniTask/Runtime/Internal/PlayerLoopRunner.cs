@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks.Internal
+namespace Elympics.Cysharp.Threading.Tasks.Internal
 {
     internal sealed class PlayerLoopRunner
     {

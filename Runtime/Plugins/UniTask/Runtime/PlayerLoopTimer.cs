@@ -2,10 +2,10 @@
 
 using System.Threading;
 using System;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public abstract class PlayerLoopTimer : IDisposable, IPlayerLoopItem
     {

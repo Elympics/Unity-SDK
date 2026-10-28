@@ -5,9 +5,9 @@ using System.Collections;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static partial class UniTaskExtensions
     {
@@ -28,7 +28,7 @@ namespace Cysharp.Threading.Tasks
                         p.TrySetCanceled();
                         break;
                     case TaskStatus.Faulted:
-                        p.TrySetException(x.Exception);
+                        p.TrySetException(x.Exception.InnerException ?? x.Exception);
                         break;
                     case TaskStatus.RanToCompletion:
                         p.TrySetResult(x.Result);
@@ -58,7 +58,7 @@ namespace Cysharp.Threading.Tasks
                         p.TrySetCanceled();
                         break;
                     case TaskStatus.Faulted:
-                        p.TrySetException(x.Exception);
+                        p.TrySetException(x.Exception.InnerException ?? x.Exception);
                         break;
                     case TaskStatus.RanToCompletion:
                         p.TrySetResult();
@@ -201,6 +201,7 @@ namespace Cysharp.Threading.Tasks
 
             if (cancellationToken.IsCancellationRequested)
             {
+                task.Forget();
                 return UniTask.FromCanceled(cancellationToken);
             }
 
@@ -224,6 +225,7 @@ namespace Cysharp.Threading.Tasks
 
             if (cancellationToken.IsCancellationRequested)
             {
+                task.Forget();
                 return UniTask.FromCanceled<T>(cancellationToken);
             }
 
@@ -454,7 +456,7 @@ namespace Cysharp.Threading.Tasks
         }
 
         /// <summary>
-        /// Timeout with suppress OperationCanceledException. Returns (bool, IsCacneled).
+        /// Timeout with suppress OperationCanceledException. Returns (bool, IsCanceled).
         /// </summary>
         public static async UniTask<bool> TimeoutWithoutException(this UniTask task, TimeSpan timeout, DelayType delayType = DelayType.DeltaTime, PlayerLoopTiming timeoutCheckTiming = PlayerLoopTiming.Update, CancellationTokenSource taskCancellationTokenSource = null)
         {

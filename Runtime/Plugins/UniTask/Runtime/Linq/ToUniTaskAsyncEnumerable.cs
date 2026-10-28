@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks.Internal;
+﻿using Elympics.Cysharp.Threading.Tasks.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {

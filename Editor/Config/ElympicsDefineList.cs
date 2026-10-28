@@ -16,9 +16,14 @@ namespace Elympics.Editor.Config
         {
             public string Name => name ?? "";
             public string Description => description ?? "";
+            /// <summary>Names of the build targets (<see cref="UnityEditor.Build.NamedBuildTarget.TargetName"/>) the define is set for,
+            /// whatever the active one. Empty: all build targets.</summary>
+            public IReadOnlyList<string> BuildTargets => buildTargets ?? Array.Empty<string>();
 
             [SerializeField] private string name;
-            [SerializeField] private string description;
+            [SerializeField, TextArea] private string description;
+            [Tooltip("NamedBuildTarget names, e.g. Standalone, Server, WebGL, Android, iOS. Leave empty for all build targets.")]
+            [SerializeField] private string[] buildTargets;
         }
 
         public ElympicsDefineDescription this[int index] => list[index];

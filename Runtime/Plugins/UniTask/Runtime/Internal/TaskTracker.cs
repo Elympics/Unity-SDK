@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     // public for add user custom.
 
@@ -169,9 +169,9 @@ namespace Cysharp.Threading.Tasks
 
         //static string RemoveUniTaskNamespace(string str)
         //{
-        //    return str.Replace("Cysharp.Threading.Tasks.CompilerServices", "")
-        //        .Replace("Cysharp.Threading.Tasks.Linq", "")
-        //        .Replace("Cysharp.Threading.Tasks", "");
+        //    return str.Replace("Elympics.Cysharp.Threading.Tasks.CompilerServices", "")
+        //        .Replace("Elympics.Cysharp.Threading.Tasks.Linq", "")
+        //        .Replace("Elympics.Cysharp.Threading.Tasks", "");
         //}
     }
 }

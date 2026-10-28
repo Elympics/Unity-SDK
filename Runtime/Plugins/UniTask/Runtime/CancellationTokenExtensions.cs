@@ -4,7 +4,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class CancellationTokenExtensions
     {

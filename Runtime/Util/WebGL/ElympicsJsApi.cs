@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Specialized;
-using System.Web;
 using Elympics.Core.Logger;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System.Runtime.InteropServices;
@@ -32,7 +31,7 @@ namespace Elympics
                 ElympicsLogger.LogWarning($"Ignoring the query of \"{url}\": not an absolute URL.");
                 return new NameValueCollection();
             }
-            return HttpUtility.ParseQueryString(uri.Query);
+            return QueryString.Parse(uri.Query);
         }
 
         public static NameValueCollection GetUrlQuery() => GetQuery(GetHref());

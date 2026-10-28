@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 
 namespace Elympics
 {

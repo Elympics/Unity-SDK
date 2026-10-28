@@ -3,7 +3,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 using System.Threading;
 
 #if UNITY_2019_3_OR_NEWER
@@ -18,7 +18,7 @@ using PlayerLoopType = UnityEngine.Experimental.PlayerLoop;
 using UnityEditor;
 #endif
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class UniTaskLoopRunners
     {
@@ -285,7 +285,11 @@ namespace Cysharp.Threading.Tasks
             return dest.ToArray();
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+#if UNITY_2020_1_OR_NEWER
+		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+#else
+		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+#endif
         static void Init()
         {
             // capture default(unity) sync-context.

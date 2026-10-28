@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.GameEngine.Libraries.WebRtc;
 using Elympics.Replication;
 using UnityEngine;
@@ -17,28 +17,26 @@ namespace Elympics
         private readonly float _fixedDeltaTime;
         private readonly float _maximumDeltaTime;
         private readonly int _targetFrameRate;
-        private readonly bool _physicsAutoSimulation;
-        private readonly SimulationMode2D _physics2DSimulationMode;
+        private readonly SimulationMode _physicsSimulationMode;
 
-        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, bool physicsAutoSimulation, SimulationMode2D physics2DSimulationMode)
+        private ElympicsProcessGlobals(float fixedDeltaTime, float maximumDeltaTime, int targetFrameRate, SimulationMode physicsSimulationMode)
         {
             _fixedDeltaTime = fixedDeltaTime;
             _maximumDeltaTime = maximumDeltaTime;
             _targetFrameRate = targetFrameRate;
-            _physicsAutoSimulation = physicsAutoSimulation;
-            _physics2DSimulationMode = physics2DSimulationMode;
+            _physicsSimulationMode = physicsSimulationMode;
         }
 
         public static ElympicsProcessGlobals Capture() =>
-            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.autoSimulation, Physics2D.simulationMode);
+            new(Time.fixedDeltaTime, Time.maximumDeltaTime, Application.targetFrameRate, Physics.simulationMode);
 
         public void Restore()
         {
             Time.fixedDeltaTime = _fixedDeltaTime;
             Time.maximumDeltaTime = _maximumDeltaTime;
             Application.targetFrameRate = _targetFrameRate;
-            Physics.autoSimulation = _physicsAutoSimulation;
-            Physics2D.simulationMode = _physics2DSimulationMode;
+            // 2D physics is restored by ElympicsUnityPhysics2DSimulator, so this assembly doesn't link the 2D physics module.
+            Physics.simulationMode = _physicsSimulationMode;
         }
     }
 

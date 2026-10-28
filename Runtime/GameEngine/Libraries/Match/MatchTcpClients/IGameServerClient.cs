@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using MatchTcpModels.Messages;
 

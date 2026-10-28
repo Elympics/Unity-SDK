@@ -1,9 +1,9 @@
-﻿using Cysharp.Threading.Tasks.Internal;
+﻿using Elympics.Cysharp.Threading.Tasks.Internal;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     public static partial class UniTaskAsyncEnumerable
     {
@@ -11,7 +11,7 @@ namespace Cysharp.Threading.Tasks.Linq
         {
             Error.ThrowArgumentNullException(source, nameof(source));
 
-            return Cysharp.Threading.Tasks.Linq.ToArray.ToArrayAsync(source, cancellationToken);
+            return global::Elympics.Cysharp.Threading.Tasks.Linq.ToArray.ToArrayAsync(source, cancellationToken);
         }
     }
 

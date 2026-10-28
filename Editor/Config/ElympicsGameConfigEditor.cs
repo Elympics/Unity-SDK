@@ -39,7 +39,6 @@ namespace Elympics.Editor.Config
             var maxPlayers = inspectorTree.Q<SliderInt>("max-players");
 
             var scenePath = inspectorTree.Q<TextField>("scene-path");
-            var sceneAsset = inspectorTree.Q<ObjectField>("scene-object");
             var openScene = inspectorTree.Q<Button>("open-scene-button");
 
             var ticksPerSecond = inspectorTree.Q<SliderInt>("ticks-per-second");
@@ -78,12 +77,14 @@ namespace Elympics.Editor.Config
             _ = gameVersion.RegisterValueChangedCallback(_ => RescheduleDataChangedNotification());
             _ = maxPlayers.RegisterValueChangedCallback(_ => RescheduleDataChangedNotification());
 
-            _ = sceneAsset.RegisterValueChangedCallback(evt =>
+            // Written through the serialized object, because Bind() discards values set on the bound field before it.
+            inspectorTree.TrackPropertyValue(serializedObject.FindProperty(nameof(ElympicsGameConfig.gameplaySceneAsset)), property =>
             {
-                var asset = (SceneAsset)evt.newValue;
-                scenePath.value = asset != null
+                var asset = property.objectReferenceValue;
+                serializedObject.FindProperty(nameof(ElympicsGameConfig.gameplayScene)).stringValue = asset != null
                     ? AssetDatabase.GetAssetOrScenePath(asset)
                     : string.Empty;
+                _ = serializedObject.ApplyModifiedProperties();
                 UpdateSceneButton();
             });
 

@@ -12,6 +12,8 @@ namespace Elympics.Editor
         public const string BuildAndUploadServer = ToolsMenuPath + "Build and Upload Server";
         public const string ManageGamesInElympics = ToolsMenuPath + "Manage games in Elympics";
         public const string MatchLauncher = ToolsMenuPath + MatchLauncherWindow.EditorTitle;
+        public const string AddPhysics2DSimulator = ToolsMenuPath + "Add 2D Physics Simulator";
+        public const string TrustCustomApiHost = ToolsMenuPath + "Trust Custom API Host on This Machine";
 
         private const string GameObjectMenuPath = "GameObject/Elympics/";
         public const string MouseActionCreateElympicsSystem = GameObjectMenuPath + "ElympicsSystem";

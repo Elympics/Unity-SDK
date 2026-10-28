@@ -35,12 +35,12 @@ namespace Elympics
         private GameEngineAdapter? _gameEngineAdapter;
         private InitialMatchPlayerDatasGuid? _playerData;
 
-        private SnapshotAnalysisCollector _snapshotCollector = null!;
+        private SnapshotAnalysisCollector? _snapshotCollector;
         private IServerPlayerHandler _serverPlayerHandler = null!;
         private IServerElympicsUpdateLoop _serverElympicsUpdate = null!;
         private ElympicsSnapshotWithMetadata _currentSnapshot = null!;
         private ElympicsSnapshotWithMetadata? _previousSnapshot;
-        private ElympicsScore _score = null!;
+        private ElympicsScore? _score;
         private LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsServer));
 
         internal void InitializeInternal(
@@ -62,18 +62,20 @@ namespace Elympics
             HandlingClientsInServer = handlingClientsOverride;
             _gameEngineAdapter = gameEngineAdapter;
             SetupCallbacks();
-            LogHalfRemoteRunInBackgroundErrorIfApplicable();
         }
 
         private void SetupCallbacks()
         {
-            _score.PlayerScoreUpdated += SubmitIntermediateScore;
+            if (_score != null)
+                _score.PlayerScoreUpdated += SubmitIntermediateScore;
+            if (_gameEngineAdapter is null)
+                return;
             _gameEngineAdapter.PlayerConnected += OnPlayerConnected;
             _gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
             _gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
             {
                 _playerData = args.Data;
-                _snapshotCollector.Initialize(
+                _snapshotCollector?.Initialize(
                     Config,
                     _playerData,
                     new LatestMessagePackSerializer()
@@ -109,30 +111,32 @@ namespace Elympics
             // or it carries the end time of the previous tick.
             _currentSnapshot.TickEndUtc = TickEndUtc;
             using (ElympicsMarkers.Elympics_SnapshotCollector.Auto())
-                _snapshotCollector.CaptureSnapshot(_previousSnapshot, _currentSnapshot);
+                _snapshotCollector?.CaptureSnapshot(_previousSnapshot, _currentSnapshot);
             _previousSnapshot = _currentSnapshot;
 
             SendQueuedRpcMessages();
+            _score?.Submit();
             _serverElympicsUpdate.FinalizeTick(_currentSnapshot);
             if (_endGameRequested)
             {
                 _endGameRequested = false;
                 _gameEnded = true;
                 SetDeInitialized();
-                _snapshotCollector.Dispose();
-                _gameEngineAdapter.EndGame(_matchResult);
+                _snapshotCollector?.Dispose();
+                _gameEngineAdapter?.EndGame(_matchResult);
             }
 
+            if (_gameEngineAdapter is null)
+                return;
             foreach (var (_, inputBuffer) in _gameEngineAdapter.PlayerInputBuffers)
                 inputBuffer.UpdateMinTick(Tick);
         }
 
-        private void SubmitIntermediateScore(int playerIndex, float score, DateTime utcTime, TimeSpan gameplayTime) =>
-            _gameEngineAdapter.SubmitIntermediateScore(score, ElympicsPlayer.FromIndex(playerIndex), utcTime, gameplayTime);
+        private void SubmitIntermediateScore(int playerIndex, float score, string metadata, DateTime utcTime, TimeSpan gameplayTime) =>
+            _gameEngineAdapter?.SubmitIntermediateScore(score, ElympicsPlayer.FromIndex(playerIndex), metadata, utcTime, gameplayTime);
 
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
-            _gameEngineAdapter.BroadcastDataToPlayers(rpcMessageList, reliable);
-
+            _gameEngineAdapter?.BroadcastDataToPlayers(rpcMessageList, reliable);
 
         //TODO refactor this.... ~kpieta 2025-02-27
         internal void SwitchBehaviourToServer()
@@ -153,29 +157,6 @@ namespace Elympics
             _currentIsBot = false;
         }
 
-        /// <summary>Set by the half-remote server initializer, which needs the simulation to run in out-of-focus windows.</summary>
-        internal bool IsHalfRemoteServer { get; set; }
-
-        private void LogHalfRemoteRunInBackgroundErrorIfApplicable()
-        {
-            if (!Application.runInBackground && IsHalfRemoteServer)
-                _logger.LogError("This is a half-remote server, but PlayerSettings \"Run In Background\" option is false, "
-                    + "hence network simulation will not be performed in out-of-focus windows. "
-                    + "Please make sure that PlayerSettings \"Run In Background\" option is set to true.");
-        }
-
-        private void OnApplicationPause(bool pauseStatus)
-        {
-            if (pauseStatus)
-                LogHalfRemoteRunInBackgroundErrorIfApplicable();
-        }
-
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (!hasFocus)
-                LogHalfRemoteRunInBackgroundErrorIfApplicable();
-        }
-
         #region IElympics
 
         public override void EndGame(ResultMatchPlayerDatas? result = null)
@@ -189,7 +170,7 @@ namespace Elympics
             _matchResult = result;
         }
 
-        public override ElympicsScore Score => _score;
+        public override ElympicsScore Score => Initialized ? _score! : throw new InvalidOperationException("Not initialized");
 
         #endregion
 

@@ -3,7 +3,7 @@
 using System;
 using System.IO;
 using System.Threading;
-using Cysharp.Threading.Tasks;
+using Elympics.Cysharp.Threading.Tasks;
 using Elympics.SnapshotAnalysis.Retrievers;
 using Elympics.SnapshotAnalysis.Serialization;
 using UnityEngine.Networking;
@@ -27,7 +27,16 @@ namespace Elympics
             public static Result Failed(ElympicsLaunchErrorCode code, string message) => new(null, new ElympicsLaunchFailure(code, message));
         }
 
-        public static bool LocalReplayExists(string path, out string error) => EditorSnapshotAnalysisRetriever.TryResolvePath(path, out _, out error);
+        // Local files are unreachable on WebGL, and leaving the local retriever out keeps its code out of WebGL builds.
+        public static bool LocalReplayExists(string path, out string error)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            error = $"The replay path {ElympicsLaunchPlatform.NoLocalFilesMessage}.";
+            return false;
+#else
+            return EditorSnapshotAnalysisRetriever.TryResolvePath(path, out _, out error);
+#endif
+        }
 
         /// <summary>
         /// A failed download is <see cref="ElympicsLaunchErrorCode.ConnectionFailed"/>;
@@ -61,6 +70,9 @@ namespace Elympics
             }
             else
             {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                return Result.Failed(ElympicsLaunchErrorCode.UnsupportedMode, $"The replay path {ElympicsLaunchPlatform.NoLocalFilesMessage}.");
+#else
                 try
                 {
                     retriever = new EditorSnapshotAnalysisRetriever(data.Path);
@@ -69,6 +81,7 @@ namespace Elympics
                 {
                     return Result.Failed(ElympicsLaunchErrorCode.InvalidPayload, $"Could not read replay {data.Path}: {Describe(e)}");
                 }
+#endif
             }
             return Check(retriever, gameConfig);
         }

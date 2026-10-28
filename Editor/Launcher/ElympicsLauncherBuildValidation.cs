@@ -3,9 +3,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+#if !ELYMPICS_DISABLE_BUILD_SCENE_VALIDATION
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+#endif
 
 namespace Elympics.Editor.Launcher
 {
@@ -52,6 +54,7 @@ namespace Elympics.Editor.Launcher
             EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToHashSet();
     }
 
+#if !ELYMPICS_DISABLE_BUILD_SCENE_VALIDATION
     /// <summary>Server builds are skipped: they contain a single gameplay scene and never return to boot.</summary>
     internal sealed class ElympicsLauncherBuildPreprocessor : IPreprocessBuildWithReport
     {
@@ -79,4 +82,5 @@ namespace Elympics.Editor.Launcher
             && (EditorUserBuildSettings.standaloneBuildSubtarget == StandaloneBuildSubtarget.Server
                 || report.summary.GetSubtarget<StandaloneBuildSubtarget>() == StandaloneBuildSubtarget.Server);
     }
+#endif
 }

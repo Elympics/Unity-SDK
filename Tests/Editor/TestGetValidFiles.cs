@@ -17,7 +17,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ReturnsEmpty_WhenNoFilesMatch()
         {
-            var result = ElympicsWebIntegration.GetValidFiles(InvalidFileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(InvalidFileNames, CompoundExtensions);
 
             Assert.IsEmpty(result);
         }
@@ -25,7 +25,7 @@ namespace Elympics.Editor.Tests
         [Test]
         public void ReturnsEmpty_WhenInputIsEmpty()
         {
-            var result = ElympicsWebIntegration.GetValidFiles(Array.Empty<string>(), CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(Array.Empty<string>(), CompoundExtensions);
 
             Assert.IsEmpty(result);
         }
@@ -36,7 +36,7 @@ namespace Elympics.Editor.Tests
             var fileName = DefaultPrefix + extension;
             var fileNames = new[] { fileName };
 
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(DefaultPrefix, result[0].name);
@@ -44,19 +44,11 @@ namespace Elympics.Editor.Tests
         }
 
         [Test]
-        public void ParsesAllValidFilesTogether()
-        {
-            var result = ElympicsWebIntegration.GetValidFiles(ValidFileNames, CompoundExtensions);
-
-            Assert.AreEqual(CompoundExtensions.Length, result.Count);
-        }
-
-        [Test]
         public void FiltersOutInvalidFiles()
         {
             var mixed = ValidFileNames.Concat(InvalidFileNames).ToArray();
 
-            var result = ElympicsWebIntegration.GetValidFiles(mixed, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(mixed, CompoundExtensions);
 
             Assert.AreEqual(CompoundExtensions.Length, result.Count);
             foreach (var file in result)
@@ -69,50 +61,20 @@ namespace Elympics.Editor.Tests
             var fileName = DefaultPrefix + extension.ToUpperInvariant();
             var fileNames = new[] { fileName };
 
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
 
             Assert.AreEqual(1, result.Count);
         }
 
         [Test]
-        public void UsesFirstDotSegmentAsName([ValueSource(nameof(CompoundExtensions))] string extension)
+        public void ParsesPrefix(
+            [Values("MyGame", DefaultPrefix + "-1", DefaultPrefix + ".1")] string prefix,
+            [ValueSource(nameof(CompoundExtensions))] string extension)
         {
-            const string customPrefix = "MyGame";
-            var fileName = customPrefix + extension;
-            var fileNames = new[] { fileName };
-
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(new[] { prefix + extension }, CompoundExtensions);
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(customPrefix, result[0].name);
-            Assert.AreEqual(extension, result[0].extension);
-        }
-
-        [Test]
-        public void ParsesPrefixWithHyphenAndNumber([ValueSource(nameof(CompoundExtensions))] string extension)
-        {
-            const string prefixWithHyphen = DefaultPrefix + "-1";
-            var fileName = prefixWithHyphen + extension;
-            var fileNames = new[] { fileName };
-
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(prefixWithHyphen, result[0].name);
-            Assert.AreEqual(extension, result[0].extension);
-        }
-
-        [Test]
-        public void ParsesPrefixWithDot([ValueSource(nameof(CompoundExtensions))] string extension)
-        {
-            const string prefixWithDot = DefaultPrefix + ".1";
-            var fileName = prefixWithDot + extension;
-            var fileNames = new[] { fileName };
-
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(prefixWithDot, result[0].name);
+            Assert.AreEqual(prefix, result[0].name);
             Assert.AreEqual(extension, result[0].extension);
         }
 
@@ -123,7 +85,7 @@ namespace Elympics.Editor.Tests
             var fileName = DefaultPrefix + extension + packExtension;
             var fileNames = new[] { fileName };
 
-            var result = ElympicsWebIntegration.GetValidFiles(fileNames, CompoundExtensions);
+            var result = WebGLUploader.GetValidFiles(fileNames, CompoundExtensions);
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(DefaultPrefix, result[0].name);

@@ -8,6 +8,7 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
         #region Test methods and events
 
         public event Action<string> PlayerConnected;
+        public event Action<string> PlayerDisconnected;
         public event Action<byte[], string> InGameDataFromPlayerReliableReceived;
         public event Action<byte[], string> InGameDataFromPlayerUnreliableReceived;
 
@@ -36,13 +37,13 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
 
         public void OnPlayerConnected(string userId) => PlayerConnected?.Invoke(userId);
 
-        public void OnPlayerDisconnected(string userId) => throw new NotImplementedException();
+        public void OnPlayerDisconnected(string userId) => PlayerDisconnected?.Invoke(userId);
 
         public void Init(IGameEngineLogger logger, InitialMatchData initialMatchData) => throw new NotImplementedException();
 
         public void Tick(long tick) => throw new NotImplementedException();
 
-        public event Action<(Guid UserId, float Score, DateTimeOffset UtcTime, TimeSpan GameplayTime)> IntermediateScoreSubmitted;
+        public event Action<(Guid UserId, float Score, string Metadata, DateTimeOffset UtcTime, TimeSpan GameplayTime)> IntermediateScoreSubmitted;
 
         public event Action<byte[], string> InGameDataForPlayerOnReliableChannelGenerated;
         public event Action<byte[], string> InGameDataForPlayerOnUnreliableChannelGenerated;

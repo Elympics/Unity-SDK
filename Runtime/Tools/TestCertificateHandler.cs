@@ -1,3 +1,4 @@
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
 using System.Security.Cryptography.X509Certificates;
 using UnityEngine.Networking;
 
@@ -15,3 +16,4 @@ namespace Elympics
         }
     }
 }
+#endif

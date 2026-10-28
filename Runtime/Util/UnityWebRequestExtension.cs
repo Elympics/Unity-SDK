@@ -1,5 +1,7 @@
-using Elympics.Core.Logger;
 using UnityEngine.Networking;
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
+using Elympics.Core.Logger;
+#endif
 
 namespace Elympics
 {
@@ -13,11 +15,14 @@ namespace Elympics
 
         public static void SetTestCertificateHandlerIfNeeded(this UnityWebRequest request)
         {
+            // The browser does TLS on WebGL, where a certificate handler has no effect but links X509 and Mono.Security.
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
             if (request.uri.Scheme != TestCertificateHandler.SecureScheme || !request.uri.Host.EndsWith(TestCertificateHandler.TestDomain))
                 return;
 
             ElympicsLogger.LogInfo($"Test certificate handler set for domain: {request.uri.Host}");
             request.certificateHandler = new TestCertificateHandler();
+#endif
         }
 
         public static void SetSdkVersionHeader(this UnityWebRequest request) =>

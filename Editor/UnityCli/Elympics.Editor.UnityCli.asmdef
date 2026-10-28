@@ -3,26 +3,24 @@
     "rootNamespace": "Elympics.Editor.UnityCli",
     "references": [
         "Elympics",
+        "Elympics.Core",
         "Elympics.Editor",
-        "Unity.Pipeline"
+        "Elympics.Physics2D",
+        "Elympics.UniTask",
+        "Unity.Pipeline",
+        "Unity.Pipeline.Attributes"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
     "autoReferenced": true,
-    "defineConstraints": [
-        "ELYMPICS_UNITY_PIPELINE"
-    ],
-    "versionDefines": [
-        {
-            "name": "com.unity.pipeline",
-            "expression": "",
-            "define": "ELYMPICS_UNITY_PIPELINE"
-        }
-    ],
+    "defineConstraints": [],
+    "versionDefines": [],
     "noEngineReferences": false
 }

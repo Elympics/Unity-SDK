@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Cysharp.Threading.Tasks.Linq
+namespace Elympics.Cysharp.Threading.Tasks.Linq
 {
     // note: refactor all inherit class and should remove this.
     // see Select and Where.

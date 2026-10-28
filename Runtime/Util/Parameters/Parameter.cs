@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Text.RegularExpressions;
 
 namespace Elympics
 {
@@ -18,21 +17,23 @@ namespace Elympics
         public string LongArgumentName { get; init; }
         public char? ShortArgumentName { get; init; }
         public int? ArgumentIndex { get; init; }
+        /// <summary>Describes the values that pass validation, for the error message.</summary>
+        public string ExpectedFormat { get; init; }
 
         protected bool IsPresent { get; private set; }
         protected string RawValue { get; private set; }
 
-        private readonly Regex _validationRegex;
+        private readonly Func<string, bool> _validate;
 
         protected Parameter(string envVarName = null, string queryKey = null, string longArgName = null,
-            char? shortArgName = null, int? argIndex = null, Regex validationRegex = null)
+            char? shortArgName = null, int? argIndex = null, Func<string, bool> validate = null)
         {
             EnvironmentVariableName = envVarName;
             QueryKey = queryKey;
             LongArgumentName = longArgName;
             ShortArgumentName = shortArgName;
             ArgumentIndex = argIndex;
-            _validationRegex = validationRegex;
+            _validate = validate;
         }
 
         public string GetRawValue() => IsPresent ? RawValue : null;
@@ -47,11 +48,10 @@ namespace Elympics
 
         protected void ValidateRawValue()
         {
-            if (_validationRegex == null)
+            if (_validate == null || _validate(RawValue))
                 return;
-            if (_validationRegex.Match(RawValue).Success)
-                return;
-            throw new ArgumentException($"Provided value: {RawValue} does not match validation expression: {_validationRegex}");
+            var expected = ExpectedFormat != null ? $" (expected {ExpectedFormat})" : string.Empty;
+            throw new ArgumentException($"Provided value: {RawValue} failed validation{expected}");
         }
 
         public void ValidateAndParseRawValue()
@@ -90,8 +90,8 @@ namespace Elympics
         private readonly Func<string, T> _parse;
 
         public ValueParameter(string envVarName = null, string queryKey = null, string longArgName = null,
-            char? shortArgName = null, int? argIndex = null, Regex validationRegex = null, Func<string, T> parse = null)
-            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validationRegex)
+            char? shortArgName = null, int? argIndex = null, Func<string, bool> validate = null, Func<string, T> parse = null)
+            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validate)
         {
             _parse = parse;
             _parse ??= rawValue => (T)Convert.ChangeType(rawValue, typeof(T), CultureInfo.InvariantCulture);
@@ -127,8 +127,8 @@ namespace Elympics
         private readonly Func<string, T> _parse;
 
         public Parameter(string envVarName = null, string queryKey = null, string longArgName = null,
-            char? shortArgName = null, int? argIndex = null, Regex validationRegex = null, Func<string, T> parse = null)
-            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validationRegex)
+            char? shortArgName = null, int? argIndex = null, Func<string, bool> validate = null, Func<string, T> parse = null)
+            : base(envVarName, queryKey, longArgName, shortArgName, argIndex, validate)
         {
             _parse = parse;
             _parse ??= rawValue => (T)Convert.ChangeType(rawValue, typeof(T));

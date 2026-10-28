@@ -3,28 +3,42 @@
 Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and time scopes: `MEMORY.md`.
 
 ## Code
-- **jslib/jspre are ES2017:** no class fields, `?.` or `??`.
-- **Cross-assembly use needs an asmdef reference:** add the source assembly GUID to the consumer `.asmdef` `references` (`InternalsVisibleTo` isn't enough). Grep factory call sites for `var`-inferred uses.
-- **Create a handshake's completion source before connecting; build WebRtcConfig from Default:** set up the TCS/subscription before the call that triggers the reply. Use `WebRtcConfig.Default` + field assignments, never a bare initializer.
-- **UITK Bind() discards earlier .value writes:** don't set bound fields in `CreateInspectorGUI`/`PrepareInspectorTree`. Write the serialized property or use `OnValidate`.
-
-## Backend contracts
-- **StreamingAssets upload contract:** versions are write-once. The Content-Type map (json/xml/octet-stream) is a verified allowlist. Keep the bundles → catalogs → `variants.meta.json` order. Don't validate baked catalog URLs.
+- **Handshake TCS before connecting; WebRtcConfig from Default:** never a bare `new WebRtcConfig { … }`.
+- **UITK Bind() discards earlier .value writes:** write the serialized property or use `OnValidate`.
+- **MPPM CurrentPlayer throws without the package:** read it only via `PlayModeInstance` (`ELYMPICS_MPPM`).
+- **MPPM virtual players run the main Editor's scenes:** load the needed scene yourself.
+- **Vendored BCL DLLs:** need the plugin define constraint `!UNITY_6000_5_OR_NEWER`.
+- **com.unity.webrtc threads in every Editor:** `ELYMPICS_LAZY_WEBRTC_CONTEXT`; `EditorWebRtcContext.EnsureInitialized()`.
+- **WebGL size:** optional engine-module components go in their own never-referenced assembly.
+- **com.unity.webrtc disposes all on quit in players:** tolerate `ObjectDisposedException` at shutdown.
 
 ## API and compatibility
-- **Shipped [PublicAPI]: add a sibling (inactive until 1.0.0):** from 1.0.0, add a sibling method instead of refactoring a `[PublicAPI]` one.
-- **Breaking changes are allowed before 1.0.0; ask before designing for compatibility:** no `[Obsolete]` cycles or migrations, but they must increase the minor version. Document in release notes. Ask before engineering compatibility.
+- **com.unity.pipeline 0.8 is the floor:** keep it as the minimum; verify commands by listing, never by uploading.
 
 ## Verification
-- **dotnet format is not a compile check:** never cite its exit code as proof that code compiles.
-- **Compile and test evidence:** compile with the redirected `dotnet build`. Test with batchmode if a seat is free, `unity command` if the host has `com.unity.pipeline`, or else the open Editor plus `ScriptAssemblies` mtimes, `Editor.log` offsets and `TestResults.xml`.
-- **Generated csprojs follow the Editor's build target:** check `<DefineConstants>` for a platform (e.g. `UNITY_WEBGL`) and also compile the other side of each `#if`: build refs normally, then rebuild the Elympics projects with escaped `DefineConstants` and `BuildProjectReferences=false`. Pass platform capabilities into code under test.
-- **The running Editor caches EditorPrefs:** force Editor state with a temporary in-Editor code change, not external registry writes.
-- **Test Runner window runs write TestResults.xml only through the performance package:** keep `com.unity.test-framework.performance` in the host, and check `start-time` before trusting the file.
-- **WebGL linked assemblies: read the build, not ScriptingAssemblies.json:** use `ManagedStripped` right after the build, or the `.dll` names in the build's `global-metadata.dat`.
+- **Compile and test evidence:** redirected `dotnet build`; tests via `unity command`, batchmode, or the open Editor.
+- **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
+- **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
+- **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
+- **Scratch Editors share the Elympics login:** use the developer's endpoint or a dead one, never another live backend; check the login afterwards.
+- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; always `UNITY_PROJECT_PATH`; tests total > 0.
 
 ## Configuration
-- **The active game is availableGames[0]; duplicate game IDs resolve to the first entry:** list order decides the gameplay scene when IDs repeat.
+- **Active game is availableGames[0]:** duplicate game IDs resolve to the first entry.
 
 ## Git
-- **Pre-edit baseline via git show, never git stash; snapshot unstaged work before editing:** use `git show :path` / `HEAD:path`. Copy files with unstaged changes before editing.
+- **Baseline via git show, never git stash:** copy files with unstaged changes before editing.
+- **New CI scripts need git's executable bit:** `git update-index --chmod=+x`.
+
+## Situational (see MEMORY.md)
+- StreamingAssets upload rules
+- runInBackground PlayerSetting
+- BuildPlayer Server subtarget
+- 6.5+ re-reports scripts
+- Project Auditor skips asms
+- Editor caches EditorPrefs
+- Test Runner TestResults.xml
+- WebGL linked assemblies
+- Domain reload + ValueSource
+- HttpListener no WebSockets
+- New Editor rewrites sources

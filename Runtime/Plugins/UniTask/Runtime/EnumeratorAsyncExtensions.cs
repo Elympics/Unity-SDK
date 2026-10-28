@@ -5,10 +5,10 @@ using System.Collections;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using Cysharp.Threading.Tasks.Internal;
+using Elympics.Cysharp.Threading.Tasks.Internal;
 using UnityEngine;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public static class EnumeratorAsyncExtensions
     {

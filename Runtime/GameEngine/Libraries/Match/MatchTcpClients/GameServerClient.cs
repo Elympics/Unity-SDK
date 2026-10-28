@@ -1,9 +1,9 @@
 #nullable enable
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Elympics;
 using Elympics.Core.Logger;
+using Elympics.Cysharp.Threading.Tasks;
 using MatchTcpClients.Synchronizer;
 using MatchTcpLibrary;
 using MatchTcpLibrary.TransportLayer.Interfaces;

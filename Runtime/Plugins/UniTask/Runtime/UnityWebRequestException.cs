@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 
-namespace Cysharp.Threading.Tasks
+namespace Elympics.Cysharp.Threading.Tasks
 {
     public class UnityWebRequestException : Exception
     {

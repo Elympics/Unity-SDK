@@ -20,9 +20,12 @@ namespace Elympics
             var config = elympicsGameConfig.ConnectionConfig.GameServerClientConfig;
             ElympicsLogger.State.SetGameMode("online");
             GameServerClient gameServerClient;
+            // WebGL players can't open sockets (the launch validation rejects TCP/UDP there), so they don't link that code.
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (data.UsesTcpUdp(elympicsGameConfig))
                 gameServerClient = new TcpUdpGameServerClient(serializer, config, IPEndPointExtensions.Parse(data.ServerAddress));
             else
+#endif
             {
                 var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
                 var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, data.ServerAddress, data.RegionName);

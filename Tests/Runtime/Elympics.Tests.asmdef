@@ -4,14 +4,15 @@
     "references": [
         "UnityEngine.TestRunner",
         "Elympics",
-        "UniTask",
-        "MessagePack",
+        "Elympics.UniTask",
+        "Elympics.MessagePack",
         "Elympics.WebRtc",
         "Elympics.Proto",
         "GameEngineCore",
         "UnityConnectors",
         "Elympics.Core",
         "Elympics.WebRtc.Common",
+        "Elympics.WebRtc.Other",
         "Elympics.MatchConnection"
     ],
     "includePlatforms": [],

@@ -18,12 +18,12 @@ namespace Elympics.Editor.UnityCli
         public const string ConfigGameIdDescription = "Elympics game ID of a game config in ElympicsConfig. Defaults to the active game.";
         public const string UploadConfirmDescription = "Must be true: the upload can't be undone.";
 
+        public const string UploadTimeoutFix = "check the Internet connection and retry with a new version name and a larger --timeout_seconds (and the CLI's --timeout).";
         private const string TimeoutFix = "check the Internet connection and retry with a larger --timeout_seconds (and the CLI's --timeout).";
+        private const string LoginFix = "log in via Tools > Elympics > Manage games in Elympics, then retry.";
 
-        public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed) =>
-            RunAsync(timeoutSeconds, body, requestFailedCode, TimeoutFix);
-
-        private static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode, string timeoutFix) =>
+        public static Task<object> RunAsync(int timeoutSeconds, Func<CancellationToken, UniTask<object>> body, string requestFailedCode = ElympicsCliErrors.RequestFailed,
+            string timeoutFix = TimeoutFix) =>
             CliRun.RunAsync(async () =>
             {
                 RequirePositiveTimeout(timeoutSeconds);
@@ -60,7 +60,7 @@ namespace Elympics.Editor.UnityCli
         public static ElympicsCliException Map(ElympicsEditorApiException exception, string requestFailedCode = ElympicsCliErrors.RequestFailed) => exception.Kind switch
         {
             EditorApiErrorKind.NotLoggedIn or EditorApiErrorKind.Unauthorized =>
-                new ElympicsCliException(ElympicsCliErrors.NotLoggedIn, exception.Message, CliGames.LoginFix, exception),
+                new ElympicsCliException(ElympicsCliErrors.NotLoggedIn, exception.Message, LoginFix, exception),
             EditorApiErrorKind.UntrustedHost => new ElympicsCliException(ElympicsCliErrors.UntrustedHost, exception.Problem, exception.Fix, exception),
             _ => ToCliException(exception, requestFailedCode),
         };

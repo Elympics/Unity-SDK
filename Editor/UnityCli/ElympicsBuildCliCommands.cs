@@ -65,8 +65,8 @@ namespace Elympics.Editor.UnityCli
                     {
                         throw new ElympicsCliException(ElympicsCliErrors.PackFailed, e.Message, "check that serverbuild/Engine isn't locked by another process and that the disk has space, then retry.");
                     }
-                    return new { status = "uploaded", gameId = game.GameId, gameVersion = game.GameVersion, usedCurrentLogin = true, buildResult = report.summary.result.ToString() };
-                }, ElympicsCliErrors.UploadFailed);
+                    return new { status = "uploaded", gameId = game.GameId, gameVersion = game.GameVersion, buildResult = report.summary.result.ToString() };
+                }, ElympicsCliErrors.UploadFailed, CliWeb.UploadTimeoutFix);
             });
 
         private static void RequireReadyToBuild()

@@ -44,6 +44,7 @@ namespace Elympics.Editor
         public const string NetworkIdUnassigned = "NETWORK_ID_UNASSIGNED";
         public const string NetworkIdDuplicate = "NETWORK_ID_DUPLICATE";
         public const string NetworkIdsStale = "NETWORK_IDS_STALE";
+        public const string GameplaySceneNotSet = "GAMEPLAY_SCENE_NOT_SET";
         public const string SceneNotGameplayScene = "SCENE_NOT_GAMEPLAY_SCENE";
         public const string SceneNotInBuild = "SCENE_NOT_IN_BUILD";
         public const string BootSceneNotSet = "BOOT_SCENE_NOT_SET";
@@ -86,7 +87,7 @@ namespace Elympics.Editor
             var gameplayScene = activeGame.GameplayScene;
             if (string.IsNullOrEmpty(gameplayScene))
             {
-                findings.Add(new SceneFinding(SceneNotGameplayScene, SceneFindingSeverity.Error,
+                findings.Add(new SceneFinding(GameplaySceneNotSet, SceneFindingSeverity.Error,
                     $"The active game {activeGame.GameName} has no gameplay scene.",
                     $"set it in the game config, or run {SetUpSceneCommand} --set_gameplay_scene true on the gameplay scene."));
                 return;
@@ -99,7 +100,7 @@ namespace Elympics.Editor
             if (!enabledBuildScenes.Contains(gameplayScene))
                 findings.Add(new SceneFinding(SceneNotInBuild, SceneFindingSeverity.Error,
                     $"The gameplay scene {gameplayScene} isn't enabled in Build Settings.",
-                    $"add it with {AddSceneToBuildCommand} --scene_path {gameplayScene} (or {SetUpSceneCommand} --add_to_build true)."));
+                    $"add it with {AddSceneToBuildCommand} --path {gameplayScene} (or {SetUpSceneCommand} --add_to_build true)."));
         }
 
         private static void CheckBootScene(ElympicsConfig config, IReadOnlyCollection<string> enabledBuildScenes, List<SceneFinding> findings)
@@ -131,18 +132,25 @@ namespace Elympics.Editor
         {
             const string ResetIdsFix = "run " + ResetNetworkIdsCommand + " (or " + ElympicsEditorMenuPaths.ResetIdsMenuPath + "), then save the scene.";
 
+            var reported = new HashSet<ElympicsBehaviour>();
             foreach (var behaviour in behaviours.Where(behaviour => behaviour.NetworkId == ElympicsBehaviour.UndefinedNetworkId))
+            {
                 findings.Add(new SceneFinding(NetworkIdUnassigned, SceneFindingSeverity.Error, "An ElympicsBehaviour has no network ID.", ResetIdsFix,
                     GetPath(behaviour.transform)));
+                _ = reported.Add(behaviour);
+            }
 
             foreach (var group in behaviours.Where(behaviour => behaviour.NetworkId != ElympicsBehaviour.UndefinedNetworkId).GroupBy(behaviour => behaviour.NetworkId)
                 .Where(group => group.Count() > 1))
+            {
                 findings.Add(new SceneFinding(NetworkIdDuplicate, SceneFindingSeverity.Error,
                     $"{group.Count()} ElympicsBehaviours share network ID {group.Key}: {string.Join(", ", group.Select(behaviour => GetPath(behaviour.transform)))}.",
                     ResetIdsFix, GetPath(group.First().transform)));
+                reported.UnionWith(group);
+            }
 
             var expected = SceneNetworkIdAssigner.ComputeIds(behaviours);
-            var stale = behaviours.Count(behaviour => behaviour.NetworkId != expected[behaviour]);
+            var stale = behaviours.Count(behaviour => !reported.Contains(behaviour) && behaviour.NetworkId != expected[behaviour]);
             if (stale > 0)
                 findings.Add(new SceneFinding(NetworkIdsStale, SceneFindingSeverity.Warning,
                     $"{stale} network ID(s) differ from what the automatic assignment would give.", ResetIdsFix));

@@ -58,7 +58,7 @@ namespace Elympics.Editor.Tests.UnityCli
             unassigned.NetworkId = ElympicsBehaviour.UndefinedNetworkId;
             var synchronized = scene.Create("Synchronized");
             _ = synchronized.AddComponent<Rigidbody>();
-            _ = synchronized.AddComponent<ElympicsBehaviour>();
+            synchronized.AddComponent<ElympicsBehaviour>().NetworkId = 1000;
             _ = synchronized.AddComponent<ElympicsTransformSynchronizer>();
             _ = synchronized.AddComponent<ElympicsRigidBodySynchronizer>();
 

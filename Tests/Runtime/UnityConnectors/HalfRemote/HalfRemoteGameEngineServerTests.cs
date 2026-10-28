@@ -176,6 +176,11 @@ namespace Elympics.Tests.UnityConnectors.HalfRemote
             await UniTask.WhenAll(SendUnreliableTask(), SendReliableTask());
             gameEngine.EndGame(null);
 
+            // Closing the client before MatchEnded arrives would drop it.
+            var matchEndedDeadline = Time.realtimeSinceStartup + 2f;
+            while (!matchEnded && Time.realtimeSinceStartup < matchEndedDeadline)
+                await UniTask.Delay(10, DelayType.Realtime, cancellationToken: ct);
+
             clientClose.Invoke();
             await UniTask.Delay(100, DelayType.Realtime, cancellationToken: ct);
             connector.Dispose();

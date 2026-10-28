@@ -62,12 +62,12 @@ namespace Elympics.Editor.UnityCli
 
         private static ElympicsGameConfig FindByGameId(ElympicsConfig config, string gameId)
         {
-            var listed = config.AvailableGames.FirstOrDefault(game => game != null && string.Equals(game.GameId, gameId, StringComparison.OrdinalIgnoreCase));
+            var listed = config.AvailableGames.FirstOrDefault(game => CliGames.HasGameId(game, gameId));
             if (listed != null)
                 return listed;
             var asset = GameConfigAssets.FindGuids()
                 .Select(guid => AssetDatabase.LoadAssetAtPath<ElympicsGameConfig>(AssetDatabase.GUIDToAssetPath(guid)))
-                .FirstOrDefault(game => game != null && string.Equals(game.GameId, gameId, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(game => CliGames.HasGameId(game, gameId));
             return asset ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound, $"No ElympicsGameConfig asset in the project has the game ID {gameId}.",
                 "import a sample (elympics_import_sample), create a game with elympics_create_game --create_config true, or pass --config_asset.");
         }
@@ -82,7 +82,7 @@ namespace Elympics.Editor.UnityCli
             var oldVersion = gameConfig.GameVersion;
             Undo.RecordObject(gameConfig, "Set Elympics game version");
             gameConfig.UpdateGameVersion(version);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssetIfDirty(gameConfig);
             return new { status = "updated", gameId = gameConfig.GameId, oldVersion, newVersion = version };
         });
 

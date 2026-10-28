@@ -7,7 +7,6 @@ namespace Elympics.Editor.UnityCli
 {
     internal static class CliGames
     {
-        public const string LoginFix = "log in via Tools > Elympics > Manage games in Elympics, then retry.";
         private const string CreateConfigFix = "repeat the call with --create_if_missing true, or use Tools > Elympics > Select or Create Config.";
         private const string AddGameFix = "import a sample (elympics_import_sample) or create a game (elympics_create_game --create_config true), "
             + "then make it active with elympics_set_active_game.";
@@ -33,11 +32,13 @@ namespace Elympics.Editor.UnityCli
             var config = RequireConfig();
             if (explicitId == null)
                 return RequireActiveGame(config);
-            return config.AvailableGames.FirstOrDefault(game => game != null && string.Equals(game.GameId, explicitId, StringComparison.OrdinalIgnoreCase))
+            return config.AvailableGames.FirstOrDefault(game => HasGameId(game, explicitId))
                 ?? throw new ElympicsCliException(ElympicsCliErrors.GameNotFound,
                     $"No game config in ElympicsConfig has the game ID {explicitId}.",
                     "list the configured games with elympics_status, or register one with elympics_set_active_game --config_asset <path>.");
         }
+
+        public static bool HasGameId(ElympicsGameConfig? game, string gameId) => game != null && string.Equals(game.GameId, gameId, StringComparison.OrdinalIgnoreCase);
 
         public static string ResolveGameId(string? gameId) =>
             GetExplicitGameId(gameId) ?? RequireActiveGame(RequireConfig()).GameId;

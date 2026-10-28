@@ -80,7 +80,7 @@ namespace Elympics.Editor
                 config.availableGames.Add(gameConfig);
             config.SwitchGame(config.availableGames.IndexOf(gameConfig));
             EditorUtility.SetDirty(config);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssetIfDirty(config);
             return registered;
         }
 

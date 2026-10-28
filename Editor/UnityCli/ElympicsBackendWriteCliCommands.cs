@@ -125,6 +125,10 @@ namespace Elympics.Editor.UnityCli
                 {
                     warning = $"The version was updated, but reading it back failed: {e.Message}";
                 }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    warning = "The version was updated, but reading it back timed out.";
+                }
                 return new { status = "updated", gameId = resolvedGameId, versionId, version = updated, warning };
             });
 

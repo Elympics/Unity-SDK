@@ -23,7 +23,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
     internal sealed class GitDependency
     {
         private static readonly Regex GitUrl = new("^(https?://|ssh://|git@|git\\+)");
-        public static readonly Regex VersionTag = new("^v?\\d+\\.\\d+\\.\\d+$");
+        public static readonly Regex VersionTag = new("^v?\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$");
         public static readonly Regex Commit = new("^[0-9a-f]{7,40}$");
         private const string PathQuery = "?path=";
 
@@ -141,27 +141,60 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         public const string BranchNotFound = "ELYMPICS_BRANCH_NOT_FOUND";
         public const string NoVersionTags = "ELYMPICS_NO_VERSION_TAGS";
 
-        /// <returns>Positive when <paramref name="a"/> is newer. A leading v is ignored and only the first three components count.</returns>
+        /// <returns>Positive when <paramref name="a"/> is newer by semver precedence. A leading v and build metadata are ignored.</returns>
         public static int CompareVersions(string a, string b)
         {
-            static int[] Parts(string version) =>
-                version.TrimStart('v').Split('.', '-').Select(part => int.TryParse(part, out var number) ? number : 0).ToArray();
-            var (partsA, partsB) = (Parts(a), Parts(b));
+            var (coreA, prereleaseA) = SplitVersion(a);
+            var (coreB, prereleaseB) = SplitVersion(b);
             for (var i = 0; i < 3; i++)
             {
-                var difference = (i < partsA.Length ? partsA[i] : 0) - (i < partsB.Length ? partsB[i] : 0);
+                var difference = CompareNumbers(i < coreA.Length ? coreA[i] : "0", i < coreB.Length ? coreB[i] : "0");
                 if (difference != 0)
                     return difference;
             }
-            return 0;
+            if (prereleaseA == null || prereleaseB == null)
+                return prereleaseA == prereleaseB ? 0 : prereleaseA == null ? 1 : -1;
+
+            var (fieldsA, fieldsB) = (prereleaseA.Split('.'), prereleaseB.Split('.'));
+            for (var i = 0; i < Math.Min(fieldsA.Length, fieldsB.Length); i++)
+            {
+                var (numericA, numericB) = (IsNumeric(fieldsA[i]), IsNumeric(fieldsB[i]));
+                var difference = numericA && numericB ? CompareNumbers(fieldsA[i], fieldsB[i])
+                    : numericA != numericB ? (numericA ? -1 : 1)
+                    : string.CompareOrdinal(fieldsA[i], fieldsB[i]);
+                if (difference != 0)
+                    return difference;
+            }
+            return fieldsA.Length - fieldsB.Length;
         }
 
-        public static string? FindNewestVersionTag(RemoteRefs remote) =>
-            remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag)).OrderBy(tag => tag, Comparer<string>.Create(CompareVersions)).LastOrDefault();
+        public static bool IsPrerelease(string version) => SplitVersion(version).Prerelease != null;
+
+        private static (string[] Core, string? Prerelease) SplitVersion(string version)
+        {
+            var plus = version.IndexOf('+');
+            var withoutBuild = (plus < 0 ? version : version[..plus]).TrimStart('v');
+            var dash = withoutBuild.IndexOf('-');
+            return dash < 0 ? (withoutBuild.Split('.'), null) : (withoutBuild[..dash].Split('.'), withoutBuild[(dash + 1)..]);
+        }
+
+        private static bool IsNumeric(string field) => field.Length > 0 && field.All(character => character is >= '0' and <= '9');
+
+        private static int CompareNumbers(string a, string b)
+        {
+            var (trimmedA, trimmedB) = (a.TrimStart('0'), b.TrimStart('0'));
+            return trimmedA.Length != trimmedB.Length ? trimmedA.Length - trimmedB.Length : string.CompareOrdinal(trimmedA, trimmedB);
+        }
+
+        /// <param name="includePrereleases">False keeps a stable or unpinned ref on stable tags.</param>
+        public static string? FindNewestVersionTag(RemoteRefs remote, bool includePrereleases = false) =>
+            remote.Tags.Where(tag => GitDependency.VersionTag.IsMatch(tag) && (includePrereleases || !IsPrerelease(tag)))
+                .OrderBy(tag => tag, Comparer<string>.Create(CompareVersions)).LastOrDefault();
 
         public static RefPlan Plan(GitDependency dependency, RemoteRefs remote, string? pin = null, string? track = null)
         {
-            var newestTag = FindNewestVersionTag(remote);
+            var onPrerelease = dependency.Kind == GitRefKind.Tag && IsPrerelease(dependency.Ref!);
+            var newestTag = FindNewestVersionTag(remote, onPrerelease);
             if (!string.IsNullOrEmpty(pin))
                 return remote.Tags.Contains(pin!)
                     ? new RefPlan { Action = pin == dependency.Ref ? RefAction.Keep : RefAction.Move, Ref = pin, Head = TagCommit(remote, pin) }
@@ -176,10 +209,16 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             {
                 case GitRefKind.Tag:
                     if (newestTag == null)
-                        return CreateErrorPlan(dependency, NoVersionTags, "no version tags on the remote");
-                    return CompareVersions(newestTag, dependency.Ref!) > 0
-                        ? new RefPlan { Action = RefAction.Move, Ref = newestTag, Head = TagCommit(remote, newestTag) }
-                        : new RefPlan { Action = RefAction.Keep, Ref = dependency.Ref, Head = TagCommit(remote, dependency.Ref) };
+                        return CreateErrorPlan(dependency, NoVersionTags, onPrerelease ? "no version tags on the remote" : "no stable version tags on the remote");
+                    if (CompareVersions(newestTag, dependency.Ref!) > 0)
+                        return new RefPlan { Action = RefAction.Move, Ref = newestTag, Head = TagCommit(remote, newestTag) };
+                    return new RefPlan
+                    {
+                        Action = RefAction.Keep,
+                        Ref = dependency.Ref,
+                        Head = TagCommit(remote, dependency.Ref),
+                        Warning = remote.Tags.Contains(dependency.Ref!) ? null : $"tag {dependency.Ref} not on the remote; keeping it",
+                    };
                 case GitRefKind.Branch:
                     if (remote.Branches.TryGetValue(dependency.Ref!, out var head))
                         return new RefPlan { Action = RefAction.Refresh, Ref = dependency.Ref, Head = head };
@@ -194,7 +233,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                     };
                 case GitRefKind.None:
                     if (newestTag == null)
-                        return CreateErrorPlan(dependency, NoVersionTags, "no version tags on the remote to pin");
+                        return CreateErrorPlan(dependency, NoVersionTags, "no stable version tags on the remote to pin");
                     return new RefPlan
                     {
                         Action = RefAction.Move,

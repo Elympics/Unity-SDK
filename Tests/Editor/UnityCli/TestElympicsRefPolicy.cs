@@ -47,9 +47,39 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void TagMovesToTheNewestVersionTag() => AssertPlan(Plan(Sdk + "#v0.28.0"), RefAction.Move, "v0.29.0");
 
-        [TestCase("v0.29.0")]
-        [TestCase("v0.31.0")]
-        public void ATagAtOrAboveTheNewestIsKept(string tag) => AssertPlan(Plan(Sdk + "#" + tag), RefAction.Keep, tag);
+        [Test]
+        public void ATagAtTheNewestIsKept()
+        {
+            var plan = Plan(Sdk + "#v0.29.0");
+            AssertPlan(plan, RefAction.Keep, "v0.29.0");
+            Assert.That(plan.Warning, Is.Null);
+        }
+
+        [Test]
+        public void AKeptTagMissingOnTheRemoteWarns()
+        {
+            var plan = Plan(Sdk + "#v0.31.0");
+            AssertPlan(plan, RefAction.Keep, "v0.31.0");
+            Assert.That(plan.Warning, Does.Contain("v0.31.0"));
+        }
+
+        [Test]
+        public void AStableTagDoesNotMoveToAPrerelease() =>
+            AssertPlan(Plan(Sdk + "#v0.29.0", Remote(new[] { "v0.29.0", "v0.30.0-rc.1" })), RefAction.Keep, "v0.29.0");
+
+        [Test]
+        public void APrereleaseTagMovesToTheNewestTagOfAnyKind()
+        {
+            AssertPlan(Plan(Sdk + "#v0.30.0-rc.1", Remote(new[] { "v0.29.0", "v0.30.0-rc.1", "v0.30.0-rc.2" })), RefAction.Move, "v0.30.0-rc.2");
+            AssertPlan(Plan(Sdk + "#v0.30.0-rc.1", Remote(new[] { "v0.30.0-rc.1", "v0.30.0", "v0.31.0-rc.1" })), RefAction.Move, "v0.31.0-rc.1");
+        }
+
+        [Test]
+        public void NoRefIgnoresPrereleases() => AssertPlan(Plan(Sdk, Remote(new[] { "v0.29.0", "v0.30.0-rc.1" })), RefAction.Move, "v0.29.0");
+
+        [Test]
+        public void AStableTagWithOnlyPrereleasesOnTheRemoteIsAnError() =>
+            Assert.That(Plan(Sdk + "#v0.29.0", Remote(new[] { "v0.30.0-rc.1" })).ErrorCode, Is.EqualTo(ElympicsRefPolicy.NoVersionTags));
 
         [Test]
         public void TagWithoutVKeepsTheRepositorySpelling() => AssertPlan(Plan(Sdk + "#0.28.0", Remote(new[] { "0.28.0", "0.29.0" })), RefAction.Move, "0.29.0");
@@ -143,11 +173,14 @@ namespace Elympics.Editor.Tests.UnityCli
         public void PinWinsOverTrack() => AssertPlan(Plan(Sdk + "#develop", pin: "v0.28.0", track: "develop"), RefAction.Move, "v0.28.0");
 
         [Test]
-        public void APrereleaseTagCanBePlannedButIsNotAVersionTag()
+        public void APrereleaseTagIsAVersionTag()
         {
             var plan = Plan(Sdk + "#develop", pin: "v0.30.0-rc.1");
             AssertPlan(plan, RefAction.Move, "v0.30.0-rc.1");
-            Assert.That(plan.Kind, Is.EqualTo(GitRefKind.Branch));
+            Assert.That(plan.Kind, Is.EqualTo(GitRefKind.Tag));
+            Assert.That(GitDependency.GetKind("v1.0.0-rc.1+build.5"), Is.EqualTo(GitRefKind.Tag));
+            Assert.That(GitDependency.GetKind("v1.0.0-"), Is.EqualTo(GitRefKind.Branch));
+            Assert.That(GitDependency.GetKind("v1.0.0-rc..1"), Is.EqualTo(GitRefKind.Branch));
         }
 
         [Test]
@@ -238,8 +271,15 @@ namespace Elympics.Editor.Tests.UnityCli
 
         [TestCase("v0.10.0", "v0.9.0", 1)]
         [TestCase("0.29.0", "v0.29.0", 0)]
-        [TestCase("v0.30.0-rc.1", "v0.30.0", 0)]
+        [TestCase("v0.30.0-rc.1", "v0.30.0", -1)]
         [TestCase("v1.0.0", "v1.0.1", -1)]
+        [TestCase("v1.0.0-alpha", "v1.0.0-alpha.1", -1)]
+        [TestCase("v1.0.0-alpha.1", "v1.0.0-alpha.beta", -1)]
+        [TestCase("v1.0.0-alpha.beta", "v1.0.0-beta", -1)]
+        [TestCase("v1.0.0-beta.2", "v1.0.0-beta.11", -1)]
+        [TestCase("v1.0.0-beta.11", "v1.0.0-rc.1", -1)]
+        [TestCase("v1.0.0+build.2", "v1.0.0+build.1", 0)]
+        [TestCase("v99999999999.0.0", "v9.0.0", 1)]
         public void VersionsCompareNumerically(string a, string b, int sign) => Assert.That(System.Math.Sign(ElympicsRefPolicy.CompareVersions(a, b)), Is.EqualTo(sign));
     }
 }

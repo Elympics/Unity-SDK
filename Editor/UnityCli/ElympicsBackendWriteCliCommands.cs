@@ -115,8 +115,17 @@ namespace Elympics.Editor.UnityCli
                 var versionId = await ResolveVersionIdAsync(resolvedGameId, version, timeoutSeconds, ct);
                 var body = new UpdateGameVersionRequestModel { Blocked = blocked, DebugMode = debugMode, DebugModeWithBots = debugModeWithBots };
                 await ElympicsEditorApi.UpdateGameVersionAsync(resolvedGameId, versionId, body, timeoutSeconds, ct);
-                var updated = await ElympicsEditorApi.GetGameVersionAsync(resolvedGameId, versionId, timeoutSeconds, ct);
-                return new { status = "updated", gameId = resolvedGameId, versionId, version = updated };
+                object? updated = null;
+                string? warning = null;
+                try
+                {
+                    updated = await ElympicsEditorApi.GetGameVersionAsync(resolvedGameId, versionId, timeoutSeconds, ct);
+                }
+                catch (ElympicsEditorApiException e)
+                {
+                    warning = $"The version was updated, but reading it back failed: {e.Message}";
+                }
+                return new { status = "updated", gameId = resolvedGameId, versionId, version = updated, warning };
             });
 
         [CliCommand("elympics_delete_game_version",

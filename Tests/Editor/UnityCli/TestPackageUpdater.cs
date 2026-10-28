@@ -144,7 +144,7 @@ namespace Elympics.Editor.Tests.UnityCli
         [UnityTest]
         public IEnumerator APinMustBeAVersionTagOrACommit() => UniTask.ToCoroutine(async () =>
         {
-            foreach (var pin in new[] { "feature/x", "v0.30.0-rc.1", "" })
+            foreach (var pin in new[] { "feature/x", "" })
                 await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [Sdk] = pin }, None),
                     ElympicsCliErrors.InvalidArgument);
 
@@ -153,6 +153,21 @@ namespace Elympics.Editor.Tests.UnityCli
 
             Assert.That(plan.Single().action, Is.EqualTo(RefAction.Move));
             Assert.That(plan.Single().newSpec, Is.EqualTo(SdkUrl + "#" + commit));
+        });
+
+        [UnityTest]
+        public IEnumerator APrereleasePinIsKeptByTheNextUpdate() => UniTask.ToCoroutine(async () =>
+        {
+            _git.Outputs[SdkUrl] += $"{TagCommit}\trefs/tags/v0.30.0-rc.1\n";
+            var pinned = await _updater.PlanAsync(new List<string> { Sdk }, new Dictionary<string, string> { [Sdk] = "v0.30.0-rc.1" }, None);
+            Assert.That(pinned.Single().newSpec, Is.EqualTo(SdkUrl + "#v0.30.0-rc.1"));
+            Assert.That(pinned.Single().newVersion, Is.EqualTo("0.30.0-rc.1"));
+
+            WriteManifest(SdkUrl + "#v0.30.0-rc.1", PlayPadUrl + "#v3.0.0");
+            var next = await _updater.PlanAsync(new List<string> { Sdk }, None, None);
+
+            Assert.That(next.Single().action, Is.EqualTo(RefAction.Keep));
+            Assert.That(next.Single().refKind, Is.EqualTo(GitRefKind.Tag));
         });
 
         [UnityTest]
@@ -328,6 +343,22 @@ namespace Elympics.Editor.Tests.UnityCli
             Assert.That(operation.status, Is.EqualTo(PackageUpdateStatus.Failed));
             Assert.That(_resolves, Is.Zero);
         });
+
+        [UnityTest]
+        public IEnumerator AnApplyWherePackagesFailedNamesThemInAWarning() => UniTask.ToCoroutine(async () =>
+        {
+            _ = _git.Outputs.Remove(PlayPadUrl);
+
+            var operation = _updater.Apply(await PlanAllAsync());
+
+            Assert.That(operation.status, Is.Not.EqualTo(PackageUpdateStatus.Failed));
+            Assert.That(operation.warnings, Has.Exactly(1).Contains(PlayPad));
+        });
+
+        [UnityTest]
+        public IEnumerator ABlankTrackIsRejected() => UniTask.ToCoroutine(async () =>
+            await CliAssert.ThrowsAwaitAsync(async () => _ = await _updater.PlanAsync(new List<string>(), None, new Dictionary<string, string> { [Sdk] = " " }),
+                ElympicsCliErrors.InvalidArgument));
 
         [UnityTest]
         public IEnumerator AStaleOperationKeepsThePlannedVersions() => UniTask.ToCoroutine(async () =>

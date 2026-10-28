@@ -106,6 +106,9 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             if (badPin.Key != null)
                 throw ElympicsCliErrors.InvalidArgumentException($"--pin '{badPin.Value}' for {badPin.Key} isn't a version tag or a commit.",
                     "pin a tag like v0.29.0 or a commit hash (7-40 hex characters); use --track for a branch.");
+            var blankTrack = tracks.FirstOrDefault(entry => string.IsNullOrWhiteSpace(entry.Value));
+            if (blankTrack.Key != null)
+                throw ElympicsCliErrors.InvalidArgumentException($"--track for {blankTrack.Key} is blank.", "pass a branch name like develop, or leave the package out of --track.");
             if (selected.Count == 0)
                 throw new ElympicsCliException(ElympicsCliErrors.NoElympicsPackages, "Packages/manifest.json has no com.daftmobile.* git dependencies.",
                     "add the Elympics SDK as a git dependency (package_add with its git URL); embedded, local and registry packages aren't updated by this command.");
@@ -213,20 +216,27 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 foreach (var change in changes)
                     _ = lockedDependencies.Remove(change.name);
 
+            var failed = updates.Where(update => update.action == RefAction.Error).Select(update => update.name).ToList();
+            if (failed.Count > 0)
+                operation.warnings.Add($"Not updated because of errors (see packages[].error): {string.Join(", ", failed)}.");
+
             RedactCredentials(updates);
             Save(operation);
+            string? manifestTemp = null, lockTemp = null;
             try
             {
                 // Both temp files are written first, so most failures happen before anything in Packages/ changes.
-                var manifestTemp = WriteTemp(ManifestPath, manifest);
-                var lockTemp = lockFile != null ? WriteTemp(LockPath, lockFile) : null;
+                manifestTemp = WriteTemp(ManifestPath, manifest);
+                lockTemp = lockFile != null ? WriteTemp(LockPath, lockFile) : null;
                 ReplaceFile(manifestTemp, ManifestPath);
                 if (lockTemp != null)
-                    ReplaceFile(lockTemp, LockPath);
+                    ReplaceFile(lockTemp, LockPath, "Packages/manifest.json is already updated. ");
                 Resolve();
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
+                DeleteIfExists(manifestTemp);
+                DeleteIfExists(lockTemp);
                 operation.status = PackageUpdateStatus.Failed;
                 operation.finishedAt = GetUtcNow();
                 Save(operation);
@@ -269,8 +279,6 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         {
             if (operation.status != PackageUpdateStatus.Started)
                 return;
-            operation.packages ??= new List<PackageUpdate>();
-            operation.warnings ??= new List<string>();
             var locked = ReadLockHashes();
             var changed = operation.packages.Where(update => update.IsChange()).ToList();
             var now = GetUtcNow();
@@ -323,6 +331,17 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
             }
         }
 
+        private static void DeleteIfExists(string? path)
+        {
+            try
+            {
+                if (path != null && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            { }
+        }
+
         private static string WriteTemp(string path, JObject json)
         {
             var temp = path + ".tmp";
@@ -339,7 +358,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
         }
 
         // Antivirus, indexers and Unity's file watcher can hold the file for a moment.
-        internal static void ReplaceFile(string source, string destination)
+        internal static void ReplaceFile(string source, string destination, string problemPrefix = "")
         {
             for (var attempt = 1; ; attempt++)
             {
@@ -354,7 +373,7 @@ namespace Elympics.Editor.UnityCli.PackageUpdates
                 catch (Exception e) when (e is UnauthorizedAccessException or (IOException and not FileNotFoundException and not DirectoryNotFoundException))
                 {
                     if (attempt == ReplaceAttempts)
-                        throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"Couldn't replace {destination}: {e.Message}",
+                        throw new ElympicsCliException(ElympicsCliErrors.PackageManagerFailed, $"{problemPrefix}Couldn't replace {destination}: {e.Message}",
                             $"close any program holding {Path.GetFileName(destination)} (antivirus, indexer, IDE) or wait a moment, then retry.", e);
                     Thread.Sleep(ReplaceRetryDelay);
                 }

@@ -31,8 +31,8 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **New CI scripts need git's executable bit:** `git update-index --chmod=+x`.
 
 ## Situational (see MEMORY.md)
-- StreamingAssets upload contract
-- runInBackground = PlayerSetting
+- StreamingAssets upload rules
+- runInBackground PlayerSetting
 - BuildPlayer Server subtarget
 - 6.5+ re-reports scripts
 - Project Auditor skips asms

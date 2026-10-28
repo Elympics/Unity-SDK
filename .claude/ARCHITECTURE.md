@@ -53,7 +53,7 @@ Under `Runtime/GameEngine/Libraries/`:
 - WebRTC `Other` (non-WebGL, uses `com.unity.webrtc`) and `WebGL` (browser, through `webrtc.jslib`) define classes with the **same names**. That lets `WebRtcFactory` stay free of `#if`, so keep the two implementations API-identical.
 
 ## Editor
-- `Communication/`: the backend layer. `ElympicsEditorApi` holds every request (with token refresh and `RunBlocking` for Editor quit), `EditorApiTransport` sends them, and `ElympicsApiHostPolicy` limits where the login is sent. `UsageStatistics/` sends usage events.
+- `Communication/`: the backend layer. `ElympicsEditorApi` holds every request (with token refresh and `RunBlocking` for Editor quit), `IEditorApiTransport` (`EditorApiTransport.cs`) sends them, and `ElympicsApiHostPolicy` limits where the login is sent. `UsageStatistics/` sends usage events.
 - `ElympicsWebIntegration.cs`: menu and window entry points on top of `ElympicsEditorApi` (login, game lists, usage events, build and upload with a progress bar).
 - `WebGLUploader.cs`: input checks and packing for client builds and StreamingAssets bundles (no network code).
 - `Config/`: `ElympicsConfig` and game config editors, the Manage Games window and its pluggable sections (`ManageGamesWindowSections`).

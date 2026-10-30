@@ -12,46 +12,26 @@ COVERAGE_RESULTS_PATH="$CI_PROJECT_DIR/coverage"
 PACKAGE_MANIFEST_PATH="$UNITY_DIR/Packages/manifest.json"
 CODE_COVERAGE_PACKAGE="com.unity.testtools.codecoverage"
 
-# CODE_COVERAGE=false runs without coverage instrumentation, which can keep objects alive (see ElympicsEventTests.RaiseAfterGC).
+# CODE_COVERAGE=true instruments the run, which is slower and can keep objects alive, so garbage-collection tests need an uninstrumented run.
+# COVERAGE_ASSEMBLY_FILTERS and COVERAGE_PATH_FILTERS: Code Coverage filters, one per line.
 COVERAGE_ARGS=()
-if [ "${CODE_COVERAGE:-true}" != "false" ]; then
+if [ "${CODE_COVERAGE:-false}" = "true" ]; then
 mv "$PACKAGE_MANIFEST_PATH" "$PACKAGE_MANIFEST_PATH.old"
 jq -r '.dependencies["'"$CODE_COVERAGE_PACKAGE"'"] = "1.3.0"' "$PACKAGE_MANIFEST_PATH.old" > "$PACKAGE_MANIFEST_PATH"
 
 mkdir "$COVERAGE_RESULTS_PATH"
 
-COVERAGE_ASSEMBLY_FILTERS=(
-  "+Elympics"
-  "+Elympics.*"
-  "+Elympics.Editor.*"
-  "-Elympics.Tests"
-  "-Elympics.Tests.*"
-  "-Elympics.Editor.Tests"
-  "-Elympics.Editor.Tests.*"
-  "+AssemblyCommunicator"
-  "+SmartContractService"
-  "+SmartContractService.*"
-  "-SmartContractService.Test"
-  "-SmartContractService.Test.*"
-)
-COVERAGE_PATH_FILTERS=(
-  "-**/Runtime/Plugins/**"
-  "-**/GameEngine/Libraries/**"
-)
-
-COVERAGE_ASSEMBLY_FILTERS_JOINED=$(IFS=, ; echo "${COVERAGE_ASSEMBLY_FILTERS[*]}")
-COVERAGE_PATH_FILTERS_JOINED=$(IFS=, ; echo "${COVERAGE_PATH_FILTERS[*]}")
 COVERAGE_ARGS=(
   -enableCodeCoverage
   -coverageResultsPath "$COVERAGE_RESULTS_PATH"
-  -coverageOptions "generateAdditionalReports;assemblyFilters:$COVERAGE_ASSEMBLY_FILTERS_JOINED;pathFilters:$COVERAGE_PATH_FILTERS_JOINED"
+  -coverageOptions "generateAdditionalReports;assemblyFilters:$(paste -sd, <<< "$COVERAGE_ASSEMBLY_FILTERS");pathFilters:$(paste -sd, <<< "$COVERAGE_PATH_FILTERS")"
   -debugCodeOptimization
 )
 fi
 
 rm -f "$RAW_TEST_RESULTS_PATH"
 
-${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+"$(dirname "${BASH_SOURCE[0]}")/unity_editor.sh" \
   -projectPath "$UNITY_DIR" \
   -runTests \
   -testPlatform "$TEST_PLATFORM" \

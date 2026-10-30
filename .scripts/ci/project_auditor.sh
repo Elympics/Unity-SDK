@@ -14,7 +14,7 @@ export CI_AUDIT_PACKAGE_PATH="Packages/$(basename "$PACKAGE_DIR")/"
 export CI_AUDIT_BASELINE="$SCRIPT_DIR/project-auditor-baseline.txt"
 export CI_AUDIT_OUTPUT="$CI_PROJECT_DIR/project-auditor-findings.txt"
 
-${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+"$(dirname "${BASH_SOURCE[0]}")/unity_editor.sh" \
   -projectPath "$UNITY_DIR" \
   -executeMethod ProjectAuditorCi.Run \
   -quit \

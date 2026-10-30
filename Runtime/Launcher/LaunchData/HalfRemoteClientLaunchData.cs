@@ -51,7 +51,6 @@ namespace Elympics
 
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
-            failure = null;
             if (!platform.HasHalfRemoteClient)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {ElympicsLaunchPlatform.NoHalfRemoteClientMessage}.", out failure);
             if (UseTcpUdpInsteadOfWebRtc == true && !platform.CanUseTcpUdp)

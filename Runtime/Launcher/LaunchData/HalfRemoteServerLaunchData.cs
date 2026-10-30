@@ -50,7 +50,6 @@ namespace Elympics
 
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
-            failure = null;
             if (!platform.CanListen)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {ElympicsLaunchPlatform.CannotListenMessage}.", out failure);
             if (Protocols is { } protocols && (protocols == 0 || (protocols & ~ElympicsHalfRemoteProtocols.Both) != 0))

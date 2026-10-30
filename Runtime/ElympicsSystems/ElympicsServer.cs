@@ -50,6 +50,7 @@ namespace Elympics
         private DateTime _initializedUtc;
         private ElympicsPlayer[] _humanPlayers = Array.Empty<ElympicsPlayer>();
         private readonly HashSet<ElympicsPlayer> _readyPlayers = new();
+        private bool _clientsInServerReady;
         private readonly HashSet<ElympicsPlayer> _connectedHumans = new();
 
         internal void InitializeInternal(
@@ -158,7 +159,7 @@ namespace Elympics
             if (_startTick.HasValue || _endGameRequested || _gameEnded)
                 return;
 
-            if (Array.TrueForAll(_humanPlayers, _readyPlayers.Contains))
+            if (_clientsInServerReady || Array.TrueForAll(_humanPlayers, _readyPlayers.Contains))
             {
                 _startTick = Tick + Config.MatchStartDelayTicks;
                 _logger.LogInfo($"All players are ready. The match starts at tick {_startTick} (current tick: {Tick}).");
@@ -300,13 +301,11 @@ namespace Elympics
 
         public override long? StartTick => _startTick;
 
-        /// <remarks>In local modes, the server simulates the clients, so this marks all players ready. Otherwise, it does nothing.</remarks>
+        /// <remarks>In local modes, the server simulates the clients, so this marks all players ready, also when called before the server is initialized. Otherwise, it does nothing.</remarks>
         public override void MarkReady()
         {
-            if (!HandlingClientsInServer)
-                return;
-            foreach (var player in _humanPlayers)
-                MarkPlayerReady(player);
+            if (HandlingClientsInServer)
+                _clientsInServerReady = true;
         }
 
         #endregion

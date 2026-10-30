@@ -17,6 +17,8 @@ namespace Elympics.Core
         internal event PlayerScoreUpdatedDelegate? PlayerScoreUpdated;
 
         internal bool IsEnabled { get; private set; }
+        private bool _autoEnabled;
+        private DateTime? _matchStartUtc;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
 
@@ -48,7 +50,10 @@ namespace Elympics.Core
         /// <summary>
         /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score.
         /// </summary>
-        /// <remarks>Each score update must be registered manually using the <see cref="this[int]"/> setter.</remarks>
+        /// <remarks>
+        /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
+        /// If it hasn't been called by the match start, it's called with defaults then. A later call replaces those defaults once.
+        /// </remarks>
         /// <param name="getGameplayTime">
         /// Function for calculating the gameplay time of each score.
         /// The gameplay time should start with the beginning of a game or match and then be steadily increased,
@@ -62,8 +67,9 @@ namespace Elympics.Core
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
         {
-            if (IsEnabled)
+            if (IsEnabled && !_autoEnabled)
                 throw new InvalidOperationException("Already enabled");
+            _autoEnabled = false;
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
             if (metadataKeys is not null)
@@ -232,11 +238,30 @@ namespace Elympics.Core
             }
         }
 
-        private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime)
+        private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime) =>
+            currentTime - (_matchStartUtc ?? throw new InvalidOperationException("The match has not started yet"));
+
+        /// <summary>
+        /// Marks the match start: enables the score with defaults if the game hasn't, and submits the scores of all players.
+        /// The default gameplay time counts from <paramref name="matchStartUtc"/>.
+        /// </summary>
+        internal void Start(DateTime matchStartUtc)
         {
-            if (!_startingScoreUtcTime[playerIndex].HasValue)
-                throw new InvalidOperationException($"The score of player {playerIndex} has not been initialized yet");
-            return currentTime - _startingScoreUtcTime[playerIndex]!.Value;
+            if (_matchStartUtc.HasValue)
+                return;
+            if (!IsEnabled)
+            {
+                Enable();
+                _autoEnabled = true;
+            }
+            _matchStartUtc = matchStartUtc;
+            SubmitAt(matchStartUtc, true);
+        }
+
+        internal void SubmitIfStarted()
+        {
+            if (IsEnabled && _matchStartUtc.HasValue)
+                Submit();
         }
 
         /// <summary>
@@ -246,6 +271,7 @@ namespace Elympics.Core
         /// <remarks>
         /// <see cref="Enable"/> must be called first.
         /// Automatic sending is done at the end of each tick.
+        /// Before the match start (see <see cref="IElympics.IsMatchStarted"/>), nothing is sent. The scores of all players are sent at the start.
         /// </remarks>
         /// <param name="forceSend">Force sending the data for all players even if there were no changes.</param>
         [PublicAPI]
@@ -253,7 +279,13 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            var utcTime = DateTime.UtcNow;
+            if (!_matchStartUtc.HasValue)
+                return;
+            SubmitAt(DateTime.UtcNow, forceSend);
+        }
+
+        private void SubmitAt(DateTime utcTime, bool forceSend)
+        {
             for (var i = 0; i < _playerCount; i++)
             {
                 if (!_changed[i] && !forceSend)

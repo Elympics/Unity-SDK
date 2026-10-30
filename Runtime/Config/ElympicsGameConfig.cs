@@ -41,6 +41,15 @@ namespace Elympics
         [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private int predictionLimitInTicks = 25;
 
+        [Tooltip("The server ends the match (refunded) if not all players call IElympics.MarkReady() within this time from the server init.")]
+        [Min(180)]
+        [SerializeField] private float readyTimeoutSeconds = 180;
+        [Tooltip("How far ahead the server schedules the match start once all players are ready. It's never shorter than the total prediction limit.")]
+        [Min(0)]
+        [SerializeField] private float matchStartDelaySeconds = 1;
+        [Tooltip("After the match start, the server ends the match if any or all (human) players leave.")]
+        [SerializeField] private TerminationOption terminateWhenPlayersLeave = TerminationOption.All;
+
         [SerializeField] private bool detailedNetworkLog;
 
         // Launch defaults: used by the Match Launcher window, ELYMPICS_LAUNCH_MODE and launch data that leaves them unset.
@@ -100,6 +109,11 @@ namespace Elympics
         public int ForceJumpThresholdInTicks => forceJumpThresholdInTicks;
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
+        public float ReadyTimeoutSeconds => readyTimeoutSeconds;
+        public float MatchStartDelaySeconds => matchStartDelaySeconds;
+        public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
+        /// <summary>How many ticks ahead the match start is scheduled: at least the total prediction limit plus a margin, so that no client has predicted past it.</summary>
+        internal long MatchStartDelayTicks => Math.Max((long)Math.Ceiling(matchStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + 2);
         public int PlayerIndexForHalfRemoteMode
         {
             get => ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode);

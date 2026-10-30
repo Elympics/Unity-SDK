@@ -30,6 +30,12 @@
         <ui:IMGUIContainer name="client-connection-config" />
     </ui:Foldout>
     <ui:VisualElement class="separator" style="height: 9px;" />
+    <ui:Foldout text="&lt;b&gt;Match start and end&lt;/b&gt;" name="match-start-foldout">
+        <uie:PropertyField binding-path="readyTimeoutSeconds" name="ready-timeout" label="Ready timeout (s)" />
+        <uie:PropertyField binding-path="matchStartDelaySeconds" name="match-start-delay" label="Match start delay (s)" />
+        <uie:PropertyField binding-path="terminateWhenPlayersLeave" name="terminate-when-players-leave" label="Terminate when players leave" />
+    </ui:Foldout>
+    <ui:VisualElement class="separator" style="height: 9px;" />
     <ui:Foldout text="&lt;b&gt;Debug options&lt;/b&gt;" name="debug-foldout">
         <ui:Toggle label="Detailed network log" name="detailed-network-log" binding-path="detailedNetworkLog" tooltip="The log contains errors and warnings to differentiate between slight and serious throttle" />
         <ui:Label text="Launch defaults, used by Tools &gt; Elympics &gt; Match Launcher, ELYMPICS_LAUNCH_MODE and launch data that leaves them unset." display-tooltip-when-elided="true" name="launch-defaults-summary" style="-unity-font-style: italic; white-space: normal;" />

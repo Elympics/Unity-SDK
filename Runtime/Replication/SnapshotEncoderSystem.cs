@@ -46,7 +46,10 @@ namespace Elympics.Replication
                     fullSnapshot.TickToPlayersInputData != null
                         ? new Dictionary<int, TickToPlayerInput>(fullSnapshot.TickToPlayersInputData)
                         : null
-                );
+                )
+                {
+                    StartTick = fullSnapshot.StartTick,
+                };
 
                 _ = playerSnapshot.TickToPlayersInputData?.Remove((int)player);
 

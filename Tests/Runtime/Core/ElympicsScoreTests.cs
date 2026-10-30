@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Elympics.Core;
 using Elympics.Core.Utils;
 using NUnit.Framework;
@@ -128,6 +129,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(2);
             score.Enable();
+            score.Start(DateTime.UtcNow);
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -145,6 +147,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(2);
             score.Enable(metadataKeys: new[] { "example-key" });
+            score.Start(DateTime.UtcNow);
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -162,6 +165,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(2);
             score.Enable(metadataKeys: new[] { "example-key" });
+            score.Start(DateTime.UtcNow);
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score[1] = 5.0f;
             score[1].Metadata["example-key"] = "example-value";
@@ -199,6 +203,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(1);
             score.Enable();
+            score.Start(DateTime.UtcNow);
 
             score[0] = 1f;
             score.Submit();
@@ -217,6 +222,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(1);
             score.Enable();
+            score.Start(DateTime.UtcNow);
 
             score[0] = 1f;
             score.Submit();
@@ -227,7 +233,7 @@ namespace Elympics.Tests.Runtime.Core
             var secondTime = score.GetCurrentScoreUtcTime(0);
 
             Assert.That(firstTime, Is.LessThanOrEqualTo(secondTime));
-            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(secondTime - firstTime));
+            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(secondTime - score.GetStartingScoreUtcTime(0)));
         }
 
         [UnityTest]
@@ -235,6 +241,7 @@ namespace Elympics.Tests.Runtime.Core
         {
             var score = new ElympicsScore(1);
             score.Enable();
+            score.Start(DateTime.UtcNow);
 
             score[0] = 1f;
             score.Submit();
@@ -252,11 +259,82 @@ namespace Elympics.Tests.Runtime.Core
             var score = new ElympicsScore(1);
             var expectedGameplayTime = TimeSpan.FromSeconds(10);
             score.Enable((_, _) => expectedGameplayTime);
+            score.Start(DateTime.UtcNow);
 
             score[0] = 100f;
             score.Submit();
 
             Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(expectedGameplayTime));
+        }
+
+        [Test]
+        public void SubmittingBeforeStartShouldNotCauseEventToBeEmitted()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable();
+            var emitted = false;
+            score.PlayerScoreUpdated += (_, _, _, _, _) => emitted = true;
+
+            score[1] = 5.0f;
+            score.Submit(true);
+            score.SubmitIfStarted();
+
+            Assert.That(emitted, Is.False);
+        }
+
+        [Test]
+        public void StartShouldSubmitAllPlayersWithZeroGameplayTime()
+        {
+            var score = new ElympicsScore(2);
+            score.Enable();
+            score[1] = 5.0f;
+            var updates = new List<(int PlayerIndex, float Score, TimeSpan GameplayTime)>();
+            score.PlayerScoreUpdated += (p, s, _, _, t) => updates.Add((p, s, t));
+
+            score.Start(DateTime.UtcNow);
+
+            Assert.That(updates, Is.EqualTo(new[] { (0, 0f, TimeSpan.Zero), (1, 5f, TimeSpan.Zero) }));
+        }
+
+        [Test]
+        public void StartShouldEnableScoreIfNotEnabled()
+        {
+            var score = new ElympicsScore(1);
+            var start = DateTime.UtcNow;
+
+            score.Start(start);
+
+            Assert.That((float)score[0], Is.EqualTo(0f));
+            Assert.That(score.GetStartingScoreUtcTime(0), Is.EqualTo(start));
+        }
+
+        [Test]
+        public void EnablingOnceAfterAutomaticEnableShouldReplaceSettings()
+        {
+            var score = new ElympicsScore(1);
+            score.Start(DateTime.UtcNow);
+            var expectedGameplayTime = TimeSpan.FromSeconds(10);
+
+            score.Enable((_, _) => expectedGameplayTime);
+            score[0] = 1f;
+            score.Submit();
+
+            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(expectedGameplayTime));
+            _ = Assert.Throws<InvalidOperationException>(() => score.Enable());
+        }
+
+        [Test]
+        public void DefaultGameplayTimeShouldCountFromStart()
+        {
+            var score = new ElympicsScore(1);
+            score.Enable();
+            var start = DateTime.UtcNow - TimeSpan.FromSeconds(3);
+            score.Start(start);
+
+            score[0] = 1f;
+            score.Submit();
+
+            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(score.GetCurrentScoreUtcTime(0) - start));
         }
     }
 }

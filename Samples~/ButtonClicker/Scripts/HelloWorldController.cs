@@ -37,6 +37,9 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
         mainLabel.text = $"Game started for {_playerCount} players";
         _ticksLeft = new ElympicsInt((int)Mathf.Ceil(secondsLimit * Elympics.TicksPerSecond));
         _initialized = true;
+        // The match counts only once every player confirms that the game launched for them.
+        if (Elympics.IsClient)
+            Elympics.MarkReady();
     }
 
     [UsedImplicitly]
@@ -66,7 +69,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
 
     public void ElympicsUpdate()
     {
-        if (!_initialized)
+        if (!_initialized || !Elympics.IsMatchStarted)
             return;
         _ticksLeft.Value--;
         if (_ticksLeft.Value <= 0)

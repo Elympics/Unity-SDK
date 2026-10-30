@@ -50,16 +50,21 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ScoreEnabledMidMatchIsSubmittedFromTheNextTick()
+        public void ScoreEnabledBeforeTheStartIsSubmittedForAllPlayersAtTheStart()
         {
             _server.RunTick();
             _server.Score.Enable();
             _server.Score[1] = 5f;
 
             _server.RunTick();
+            Assert.That(_submittedPlayers, Is.Empty);
 
-            Assert.That(_updateLoop.FinalizedTicks, Is.EqualTo(2));
-            Assert.That(_submittedPlayers, Is.EqualTo(new[] { 1 }));
+            for (var i = 0; i < 100 && !_server.IsMatchStarted; i++)
+                _server.RunTick();
+            _server.RunTick();
+
+            Assert.That(_server.IsMatchStarted, Is.True);
+            Assert.That(_submittedPlayers, Is.EqualTo(new[] { 0, 1 }));
         }
 
         private class TickableElympicsServer : ElympicsServer
@@ -69,6 +74,8 @@ namespace Elympics.Tests
             public void RunTick()
             {
                 ElympicsFixedUpdate();
+                // Done by DefaultServerElympicsUpdateLoop in a real match.
+                NotifyMatchStartedIfReached();
                 ElympicsLateFixedUpdate();
             }
         }

@@ -512,6 +512,13 @@ namespace Elympics
                 handler.OnMatchEnded(matchId);
         }
 
+        internal void OnMatchStarted(long startTick)
+        {
+            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate))
+                foreach (var handler in _componentsContainer.MatchStartHandlers)
+                    handler.OnMatchStarted(startTick);
+        }
+
         #endregion
 
         #region BotCallbacks

@@ -366,6 +366,33 @@ namespace Elympics
 
         public abstract long Tick { get; }
 
+        #region Match start
+
+        public virtual void MarkReady() { }
+
+        public virtual long? StartTick => null;
+
+        public bool IsMatchStarted => IsMatchStartedAt(Tick);
+
+        internal bool IsMatchStartedAt(long tick) => StartTick is { } startTick && tick >= startTick;
+
+        /// <summary>Latched once the start tick has run, unlike <see cref="IsMatchStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
+        internal bool MatchStartReached { get; private set; }
+
+        /// <summary>Calls <see cref="IMatchStartHandler.OnMatchStarted"/> once per instance, on the first tick from <see cref="StartTick"/> on.</summary>
+        internal void NotifyMatchStartedIfReached()
+        {
+            if (MatchStartReached || !IsMatchStarted)
+                return;
+            MatchStartReached = true;
+            OnMatchStarted(StartTick.Value);
+            ElympicsBehavioursManager.OnMatchStarted(StartTick.Value);
+        }
+
+        private protected virtual void OnMatchStarted(long startTick) { }
+
+        #endregion
+
         #region Client
 
         public virtual UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct) => throw new SupportedOnlyByClientException();

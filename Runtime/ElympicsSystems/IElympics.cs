@@ -40,6 +40,31 @@ namespace Elympics
 
         bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour);
 
+        #region Match start
+
+        /// <summary>
+        /// Confirms that the game launched successfully for this player.
+        /// Call it on every player client once the game is playable. Bots are ready automatically.
+        /// </summary>
+        /// <remarks>
+        /// When all players are ready, the server schedules the match start (<see cref="StartTick"/>) shortly ahead,
+        /// so that every client learns about it in time.
+        /// A match that ends before it started is refunded (the server sends a null result).
+        /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/>, the server ends the match.
+        /// Inputs for ticks before <see cref="StartTick"/> are ignored.
+        /// Calling it again, or on a server or spectator, has no effect.
+        /// </remarks>
+        void MarkReady();
+
+        /// <value>The tick the match starts at, or null while the start isn't scheduled (or not yet known to this client).</value>
+        long? StartTick { get; }
+
+        /// <value>True from <see cref="StartTick"/> on.</value>
+        /// <remarks>Objects spawned after the start should check it, because <see cref="IMatchStartHandler.OnMatchStarted"/> has already been called.</remarks>
+        bool IsMatchStarted { get; }
+
+        #endregion
+
         #region Client
 
         UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct = default);
@@ -58,6 +83,11 @@ namespace Elympics
         /// </remarks>
         ElympicsScore Score { get; }
 
+        /// <summary>Ends the match.</summary>
+        /// <param name="result">
+        /// Results for all players. If the match hasn't started (see <see cref="IsMatchStarted"/>), it's ignored and a null result is sent.
+        /// If it's null after the start, a result is built from <see cref="Score"/>.
+        /// </param>
         void EndGame(ResultMatchPlayerDatas result = null);
 
         #endregion

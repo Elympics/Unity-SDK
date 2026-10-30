@@ -71,6 +71,9 @@ namespace Elympics
         }
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
+        private bool _readyRequested;
+        private long _nextReadySendTick;
+
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
         private long _previousTick;
@@ -281,6 +284,7 @@ namespace Elympics
             _reanchoredCount = 0;
             _replayedCount = 0;
             _serverWorldState.ResetToEmpty();
+            _nextReadySendTick = long.MinValue;
             _currentTicksWithoutPrediction = 0;
             _previousTick = 0;
             _lastDelayedInputTick = 0;
@@ -327,6 +331,7 @@ namespace Elympics
                     ProcessInput();
 
             SendBufferInput(Tick);
+            SendReadyIfPending();
 
             _snapshotTracker.ProcessNewSnapshot(_serverWorldState);
 
@@ -344,6 +349,7 @@ namespace Elympics
                     _snapshotTracker.InitializeNewBehaviours();
 
                     InvokeQueuedRpcMessages();
+                    NotifyMatchStartedIfReached();
                     ElympicsBehavioursManager.CommitVars();
 
                     using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
@@ -439,6 +445,25 @@ namespace Elympics
             input.Player = Player;
         }
 
+        public override long? StartTick => _serverWorldState.StartTick;
+
+        /// <remarks>Sent reliably and repeated about once a second (also after a reconnect) until a snapshot carries the start tick.</remarks>
+        public override void MarkReady()
+        {
+            if ((int)Player < 0)
+                return;
+            _readyRequested = true;
+            _nextReadySendTick = long.MinValue;
+        }
+
+        private void SendReadyIfPending()
+        {
+            if (!_readyRequested || StartTick.HasValue || Tick < _nextReadySendTick)
+                return;
+            _nextReadySendTick = Tick + Config.TicksPerSecond;
+            _matchClient.SendReady();
+        }
+
         private void AddInputToSendBuffer(ElympicsInput input) => _matchClient.AddInputToSendBuffer(input);
 
         private void SendBufferInput(long tick) => _matchClient.SendBufferInput(tick);
@@ -449,7 +474,8 @@ namespace Elympics
         private void ApplyPredictedInput()
         {
             _inputList.Clear();
-            if (_predictionBuffer.TryGetInputFromBuffer(_clientTickCalculator.Results.CurrentTick, out var predictedInput))
+            var currentTick = _clientTickCalculator.Results.CurrentTick;
+            if (IsMatchStartedAt(currentTick) && _predictionBuffer.TryGetInputFromBuffer(currentTick, out var predictedInput))
                 _inputList.Add(predictedInput);
             ElympicsBehavioursManager.SetCurrentInputs(_inputList);
         }
@@ -521,7 +547,7 @@ namespace Elympics
                     ElympicsBehavioursManager.CommitVars();
 
                     _inputList.Clear();
-                    if (_predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
+                    if (IsMatchStartedAt(resimulationTick) && _predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
                         _inputList.Add(resimulatedInput);
                     ElympicsBehavioursManager.SetCurrentInputs(_inputList);
 

@@ -135,13 +135,13 @@ namespace Elympics.Editor.UnityCli
             var player = GetPlayer(members, number);
             var registry = members.PlayerTags.GetValue(null) ?? throw CreateUnavailableException("MultiplayerPlaymode.PlayerTags is null");
             var current = (string[]?)members.Tags.GetValue(player) ?? Array.Empty<string>();
-            foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.OrdinalIgnoreCase)))
+            foreach (var tag in tags.Where(tag => !current.Contains(tag, StringComparer.Ordinal)))
             {
                 // MPPM must know the tag before it is added.
                 _ = Invoke(members.RegisterTag, registry, new object?[] { tag, null });
                 InvokeTagChange(members.AddTag, player, tag, "Adding", number);
             }
-            foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase)))
+            foreach (var tag in current.Where(tag => tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !tags.Contains(tag, StringComparer.Ordinal)))
                 InvokeTagChange(members.RemoveTag, player, tag, "Removing", number);
         }
 

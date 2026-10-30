@@ -293,7 +293,7 @@ namespace Elympics.Editor.UnityCli
             after.Where(player => player.number >= 2 && player.number - 1 <= count)
                 .Where(player => before.FirstOrDefault(old => old.number == player.number) is { } old
                     && old.state != NotLaunched
-                    && !GetElympicsTags(old).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(GetElympicsTags(player)))
+                    && !GetElympicsTags(old).ToHashSet(StringComparer.Ordinal).SetEquals(GetElympicsTags(player)))
                 .Select(player => player.number)
                 .ToList();
 

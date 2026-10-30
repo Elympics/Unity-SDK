@@ -106,13 +106,15 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [Test]
-        public void ReorderedOrRecasedTagsDontNeedARestart()
+        public void ReorderedTagsDontNeedARestartButRecasedOnesDo()
         {
             static MppmReflection.VirtualPlayer CreatePlayer(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
-            var before = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Red") };
-            var after = new[] { CreatePlayer("elympics:red", "Elympics:PlayerIndex=0") };
+            var before = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
+            var reordered = new[] { CreatePlayer("Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
+            var recased = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=red") };
 
-            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 1), Is.Empty);
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, reordered, 1), Is.Empty);
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, recased, 1), Is.EqualTo(new[] { 2 }));
         }
 
         [Test]

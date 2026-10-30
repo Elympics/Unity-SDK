@@ -411,6 +411,45 @@ namespace Elympics.Tests
             _ = Validate(data);
         }
 
+        private const string SeedWireData = "{\"customMatchmakingData\":[{\"key\":\":pub:seed\",\"value\":\"42\"},{\"key\":\"mode\",\"value\":\"\"}]}";
+        private static readonly Dictionary<string, string> SeedData = new() { [":pub:seed"] = "42", ["mode"] = "" };
+
+        [Test]
+        public void HalfRemoteServerWireCustomMatchmakingDataMapsToLaunchData() =>
+            Assert.That(((HalfRemoteServerLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteServer, SeedWireData)).CustomMatchmakingData,
+                Is.EquivalentTo(SeedData));
+
+        [Test]
+        public void HalfRemoteClientWireCustomMatchmakingDataMapsToLaunchData() =>
+            Assert.That(((HalfRemoteClientLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteClient, SeedWireData)).CustomMatchmakingData,
+                Is.EquivalentTo(SeedData));
+
+        [TestCase("{}")]
+        [TestCase("{\"customMatchmakingData\":[]}")]
+        public void EmptyCustomMatchmakingDataWireIsNull(string json)
+        {
+            Assert.That(((HalfRemoteServerLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteServer, json)).CustomMatchmakingData, Is.Null);
+            Assert.That(((HalfRemoteClientLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteClient, json)).CustomMatchmakingData, Is.Null);
+        }
+
+        [Test]
+        public void DuplicateCustomMatchmakingKeyIsInvalidPayload()
+        {
+            var failure = GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteServer,
+                "{\"customMatchmakingData\":[{\"key\":\":pub:seed\",\"value\":\"1\"},{\"key\":\":pub:seed\",\"value\":\"2\"}]}");
+
+            Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(failure.message, Does.Contain(":pub:seed"));
+        }
+
+        [Test]
+        public void EmptyCustomMatchmakingKeyIsInvalidPayload()
+        {
+            const string json = "{\"customMatchmakingData\":[{\"value\":\"1\"}]}";
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteServer, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+            Assert.That(GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteClient, json).Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+        }
+
         private static IEnumerable<TestCaseData> BrokenHalfRemoteServerData()
         {
             yield return Case("no protocols", new HalfRemoteServerLaunchData(default(ElympicsHalfRemoteProtocols)));

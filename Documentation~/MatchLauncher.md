@@ -96,8 +96,10 @@ otherwise `ElympicsGameConfig`.
 | `PlayerIndex` | `ELYMPICS_HALF_REMOTE_PLAYER_INDEX`, else the config player index |
 | `RegionName`, `QueueName` | the config's test match data |
 | `GameEngineData`, `MatchmakerData` of the local player | its entry in the config's test players |
+| `CustomMatchmakingData` | `ELYMPICS_CUSTOM_MATCHMAKING_DATA`, else the config's test match data |
 
 The player list itself always comes from `TestPlayers`, as the server derives the same player IDs from its own config.
+The client doesn't receive the server's custom matchmaking data either, so give both of them the same value.
 
 **`HalfRemoteServerLaunchData`**: every field is optional.
 
@@ -108,6 +110,9 @@ The player list itself always comes from `TestPlayers`, as the server derives th
 | `TcpUdpPort` | used only with `TcpUdp` (ignored with a warning otherwise) | the config TCP port |
 | `SignalingPort` | used only with `WebRtc` (ignored with a warning otherwise) | the config web port |
 | `MaxPlayers` | how many test players the match uses, at most `ElympicsGameConfig.MaxPlayers` | all of them |
+| `CustomMatchmakingData` | string pairs of the match, e.g. `:pub:seed` for `InitialMatchPlayerDatasGuid.Seed`. An empty dictionary means none | `ELYMPICS_CUSTOM_MATCHMAKING_DATA`, else the config's test match data |
+
+The custom matchmaking data sources are never merged: the first one that is set is used whole.
 
 **`SnapshotReplayLaunchData`**: `Path` is one of:
 
@@ -152,6 +157,8 @@ window.addEventListener('elympics', (e) => {
 - The transport is `transport: "" | "webRtc" | "tcpUdp"`, and the protocols are
   `protocols: "" | "tcpUdp" | "webRtc" | "both"`.
 - `gameEngineData` is base64. A `Uint8Array` is converted for you.
+- `customMatchmakingData` is an array of `{ key, value }` strings, e.g. `[{ "key": ":pub:seed", "value": "42" }]`.
+  A key must not be empty or repeated.
 - The options are `{ requestId, launchTimeoutSeconds, postMatchTimeoutSeconds }`. For both timeouts, `0`
   means the default and `-1` means never.
 
@@ -243,7 +250,13 @@ The `ELYMPICS_LAUNCH_MODE` parameter (`--elympics-launch-mode=…`, an environme
 `halfRemoteServer`, `singlePlayer` and `snapshotReplay`.
 
 Its data comes from the half-remote parameters (`--half-remote-ip`, `--half-remote-port`,
-`--half-remote-player-index`) and from `ELYMPICS_REPLAY_PATH` (`--elympics-replay-path`, a path or URL). Everything else comes from `ElympicsGameConfig`.
+`--half-remote-player-index`), from `ELYMPICS_CUSTOM_MATCHMAKING_DATA` (see below) and from `ELYMPICS_REPLAY_PATH`
+(`--elympics-replay-path`, a path or URL). Everything else comes from `ElympicsGameConfig`.
+
+`ELYMPICS_CUSTOM_MATCHMAKING_DATA` (`--elympics-custom-matchmaking-data=…`, or the URL query `elympicsCustomMatchmakingData`)
+sets the custom matchmaking data of a half-remote server or client, e.g. `--elympics-custom-matchmaking-data=:pub:seed=42;mode=fast`.
+Pairs are separated by `;`, and each key is separated from its value by the first `=`. Percent-encode a `;`, or an `=` in a key,
+(`%3B`, `%3D`); every key and value is percent-decoded. An entry without `=`, an empty key or a repeated key is an error.
 
 It limits the process to that one match:
 
@@ -280,7 +293,7 @@ prefix change that:
 | `Elympics:manual` | No launch arguments; launch from the Match Launcher as in the main Editor. |
 | `Elympics:halfRemoteServer` (or another launch mode) | Sets the launch mode. |
 | `Elympics:PlayerIndex=2` | Sets the half-remote player index. |
-| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name. |
+| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name, e.g. `Elympics:elympics-custom-matchmaking-data=:pub:seed=42`. Give the server and every client the same custom matchmaking data. |
 
 Multiplayer Play Mode supports up to three virtual players, so the main Editor plus three virtual players can run a
 half-remote server and three clients.

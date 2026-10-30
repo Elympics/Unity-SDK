@@ -48,7 +48,7 @@ namespace Elympics
 
         private long? _startTick;
         private DateTime _initializedUtc;
-        private ElympicsPlayer[] _humanPlayers = Array.Empty<ElympicsPlayer>();
+        private readonly HashSet<ElympicsPlayer> _humanPlayers = new();
         private readonly HashSet<ElympicsPlayer> _readyPlayers = new();
         private bool _clientsInServerReady;
         private readonly HashSet<ElympicsPlayer> _connectedHumans = new();
@@ -88,7 +88,7 @@ namespace Elympics
                 _playerData = args.Data;
                 // Sized from the init data, so that the score fallback result matches the players in the match.
                 CreateScore(args.Data.Count);
-                _humanPlayers = args.Data.Where(data => !data.IsBot).Select(data => data.Player).ToArray();
+                _humanPlayers.UnionWith(args.Data.Where(data => !data.IsBot).Select(data => data.Player));
                 _initializedUtc = DateTime.UtcNow;
                 if (!_isReplay)
                     LogMatchData(args.Data);
@@ -159,7 +159,7 @@ namespace Elympics
             if (_startTick.HasValue || _endGameRequested || _gameEnded)
                 return;
 
-            if (_clientsInServerReady || Array.TrueForAll(_humanPlayers, _readyPlayers.Contains))
+            if (_clientsInServerReady || _readyPlayers.Count == _humanPlayers.Count)
             {
                 _startTick = Tick + Config.MatchStartDelayTicks;
                 _logger.LogInfo($"All players are ready. The match starts at tick {_startTick} (current tick: {Tick}).");
@@ -202,13 +202,13 @@ namespace Elympics
 
         private void MarkPlayerReady(ElympicsPlayer player)
         {
-            if (Array.IndexOf(_humanPlayers, player) >= 0 && _readyPlayers.Add(player))
+            if (_humanPlayers.Contains(player) && _readyPlayers.Add(player))
                 _logger.LogInfo($"Player {player} is ready.");
         }
 
         private void TrackPlayerConnected(ElympicsPlayer player) => Enqueue(() =>
         {
-            if (Array.IndexOf(_humanPlayers, player) >= 0)
+            if (_humanPlayers.Contains(player))
                 _ = _connectedHumans.Add(player);
         });
 
@@ -220,11 +220,11 @@ namespace Elympics
 
         private void TerminateIfPlayersLeft()
         {
-            if (HandlingClientsInServer || _isReplay || !MatchStartReached || _endGameRequested || _gameEnded || _humanPlayers.Length == 0)
+            if (HandlingClientsInServer || _isReplay || !MatchStartReached || _endGameRequested || _gameEnded || _humanPlayers.Count == 0)
                 return;
             var shouldTerminate = Config.TerminateWhenPlayersLeave switch
             {
-                TerminationOption.Any => _connectedHumans.Count < _humanPlayers.Length,
+                TerminationOption.Any => _connectedHumans.Count < _humanPlayers.Count,
                 TerminationOption.All => _connectedHumans.Count == 0,
                 _ => false,
             };

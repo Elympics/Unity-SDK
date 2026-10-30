@@ -241,10 +241,7 @@ namespace Elympics.Core
         private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime) =>
             currentTime - (_matchStartUtc ?? throw new InvalidOperationException("The match has not started yet"));
 
-        /// <summary>
-        /// Marks the match start: enables the score with defaults if the game hasn't, and submits the scores of all players.
-        /// The default gameplay time counts from <paramref name="matchStartUtc"/>.
-        /// </summary>
+        /// <summary>Starts the gameplay time (enabling the score if needed) and submits all scores.</summary>
         internal void Start(DateTime matchStartUtc)
         {
             if (_matchStartUtc.HasValue)
@@ -260,7 +257,7 @@ namespace Elympics.Core
 
         internal void SubmitIfStarted()
         {
-            if (IsEnabled && _matchStartUtc.HasValue)
+            if (IsEnabled)
                 Submit();
         }
 

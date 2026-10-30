@@ -29,6 +29,23 @@ namespace Elympics.Editor.Tests.UnityCli
         public void LaunchRejectsUnsupportedModes(string mode) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.Launch(mode), ElympicsCliErrors.InvalidArgument);
 
+        [TestCase("single_player", 0)]
+        [TestCase("half_remote_server", 0)]
+        [TestCase("half_remote_client", -2)]
+        public void LaunchRejectsInvalidPlayerIndex(string mode, int playerIndex) =>
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch(mode, playerIndex: playerIndex), ElympicsCliErrors.InvalidArgument);
+
+        // The test game has no Test players, so no index (explicit or from the config) has an entry.
+        [TestCase(-1)]
+        [TestCase(0)]
+        public void HalfRemoteClientLaunchRequiresATestPlayerForItsIndex(int playerIndex)
+        {
+            using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
+            Assume.That(EditorMatchLaunchQueue.GetDirtyScenes(), Is.Empty);
+
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("half_remote_client", playerIndex: playerIndex), ElympicsCliErrors.InvalidArgument);
+        }
+
         [Test]
         public void LaunchRefusesUnsavedScenes()
         {

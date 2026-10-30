@@ -37,7 +37,9 @@ namespace Elympics.Editor.UnityCli
             [CliArg("game_id", CliWeb.ConfigGameIdDescription)] string gameId = "",
             [CliArg("launch_timeout_seconds", "Seconds the launch may take before it fails with a timeout; -1 for none.")] int launchTimeoutSeconds = ElympicsLaunchDefaults.LaunchTimeoutSeconds,
             [CliArg("post_match_timeout_seconds", "Seconds to wait after the match ends before returning to boot; -1 for none.")] int postMatchTimeoutSeconds = ElympicsLaunchDefaults.PostMatchTimeoutSeconds,
-            [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false) =>
+            [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false,
+            [CliArg("player_index", "half_remote_client only: the index in the game config's Test players list to join as; -1 uses the config's half-remote player index.")]
+            int playerIndex = -1) =>
             CliRun.Run(() =>
             {
                 if (launchTimeoutSeconds < -1 || postMatchTimeoutSeconds < -1)
@@ -50,6 +52,11 @@ namespace Elympics.Editor.UnityCli
                     LaunchMode.HalfRemoteClient => ElympicsHostLaunchKind.HalfRemoteClient,
                     _ => ElympicsHostLaunchKind.SinglePlayer,
                 };
+                if (playerIndex != -1 && kind != ElympicsHostLaunchKind.HalfRemoteClient)
+                    throw ElympicsCliErrors.InvalidArgumentException("--player_index applies only to --mode half_remote_client.", "leave --player_index out for this mode.");
+                if (playerIndex < -1)
+                    throw ElympicsCliErrors.InvalidArgumentException("--player_index must be -1 or more.",
+                        "pass an index in the game config's Test players list, or -1 for the config's half-remote player index.");
                 var playing = EditorApplication.isPlaying;
                 if (playing)
                 {
@@ -72,7 +79,13 @@ namespace Elympics.Editor.UnityCli
 
                 var game = CliGames.ResolveGame(gameId);
                 var requestId = "cli-" + Guid.NewGuid().ToString("N")[..12];
-                var dataJson = JsonUtility.ToJson(ElympicsLaunchDtos.Create(kind));
+                var data = ElympicsLaunchDtos.Create(kind);
+                if (data is HalfRemoteClientLaunchDataDto clientData)
+                {
+                    RequireTestPlayer(game, playerIndex);
+                    clientData.playerIndex = playerIndex;
+                }
+                var dataJson = JsonUtility.ToJson(data);
                 var optionsJson = JsonUtility.ToJson(new ElympicsLaunchOptionsDto
                 {
                     requestId = requestId,
@@ -90,6 +103,20 @@ namespace Elympics.Editor.UnityCli
 
                 return new { status = "launch_queued", requestId, mode = modeName, gameId = game.GameId, enteringPlayMode = !playing };
             });
+
+        /// <summary>Without this check, a player index with no Test players entry fails only once the gameplay scene loads.</summary>
+        private static void RequireTestPlayer(ElympicsGameConfig game, int playerIndex)
+        {
+            var effective = playerIndex >= 0 ? playerIndex : game.PlayerIndexForHalfRemoteMode;
+            var count = game.TestPlayers.Count;
+            if (effective < count)
+                return;
+            var source = playerIndex >= 0 ? "--player_index" : "The config's half-remote player index";
+            throw ElympicsCliErrors.InvalidArgumentException($"{source} {effective} has no entry in the Test players list of {game.GameName}, which has {count}.",
+                count > 0
+                    ? $"pass --player_index from 0 to {count - 1}, or add Test players to the game config (Elympics config Inspector)."
+                    : "add Test players to the game config (Elympics config Inspector), then pass --player_index.");
+        }
 
         private static string ToSnakeCase(string name) => string.Concat(name.Select((character, index) =>
             char.IsUpper(character) ? (index > 0 ? "_" : "") + char.ToLowerInvariant(character) : character.ToString()));

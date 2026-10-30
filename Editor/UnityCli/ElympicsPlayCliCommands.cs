@@ -273,7 +273,7 @@ namespace Elympics.Editor.UnityCli
             }
 
             var updated = MppmReflection.GetPlayers();
-            var restartRequired = PlayersNeedingRestart(players, updated, count);
+            var restartRequired = FindPlayersNeedingRestart(players, updated, count);
             return new
             {
                 status = "updated",
@@ -289,15 +289,15 @@ namespace Elympics.Editor.UnityCli
 
         /// <summary>Numbers of players that stay active (within <paramref name="count"/>), were already running, and had their Elympics: tags changed.</summary>
         /// <remarks>Deactivation is asynchronous, so a player being deactivated may still look running in <paramref name="after"/>.</remarks>
-        internal static List<int> PlayersNeedingRestart(IReadOnlyList<MppmReflection.VirtualPlayer> before, IReadOnlyList<MppmReflection.VirtualPlayer> after, int count) =>
+        internal static List<int> FindPlayersNeedingRestart(IReadOnlyList<MppmReflection.VirtualPlayer> before, IReadOnlyList<MppmReflection.VirtualPlayer> after, int count) =>
             after.Where(player => player.number >= 2 && player.number - 1 <= count)
                 .Where(player => before.FirstOrDefault(old => old.number == player.number) is { } old
                     && old.state != NotLaunched
-                    && !ElympicsTags(old).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(ElympicsTags(player)))
+                    && !GetElympicsTags(old).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(GetElympicsTags(player)))
                 .Select(player => player.number)
                 .ToList();
 
-        private static IEnumerable<string> ElympicsTags(MppmReflection.VirtualPlayer player) =>
+        private static IEnumerable<string> GetElympicsTags(MppmReflection.VirtualPlayer player) =>
             player.tags.Where(tag => tag.StartsWith(PlayModeArguments.TagPrefix, StringComparison.OrdinalIgnoreCase));
 
         private static List<(int number, List<string> tags)> ParseTags(string json)

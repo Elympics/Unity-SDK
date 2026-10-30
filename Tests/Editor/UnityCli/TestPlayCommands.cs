@@ -83,36 +83,36 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void OnlyRunningPlayersThatStayActiveWithChangedTagsNeedARestart()
         {
-            static MppmReflection.VirtualPlayer Player(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
+            static MppmReflection.VirtualPlayer CreatePlayer(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
             var before = new[]
             {
-                Player(1, "Launched", "Elympics:halfRemoteServer"),
-                Player(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
-                Player(3, "Launched", "Elympics:PlayerIndex=1"),
-                Player(4, "NotLaunched", "Elympics:PlayerIndex=2"),
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=1"),
+                CreatePlayer(4, "NotLaunched", "Elympics:PlayerIndex=2"),
             };
             var after = new[]
             {
-                Player(1, "Launched", "Elympics:halfRemoteServer"),
-                Player(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
-                Player(3, "Launched", "Elympics:PlayerIndex=0"),
-                Player(4, "Launching", "Elympics:PlayerIndex=3"),
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=0"),
+                CreatePlayer(4, "Launching", "Elympics:PlayerIndex=3"),
             };
 
             // Player 3 is being deactivated (--count 1), and player 4 has just been activated with its new tags.
-            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 1), Is.EqualTo(new[] { 2 }));
-            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 3), Is.EqualTo(new[] { 2, 3 }));
-            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, before, 3), Is.Empty);
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 1), Is.EqualTo(new[] { 2 }));
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 3), Is.EqualTo(new[] { 2, 3 }));
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, before, 3), Is.Empty);
         }
 
         [Test]
         public void ReorderedOrRecasedTagsDontNeedARestart()
         {
-            static MppmReflection.VirtualPlayer Player(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
-            var before = new[] { Player("Elympics:PlayerIndex=0", "Elympics:Red") };
-            var after = new[] { Player("elympics:red", "Elympics:PlayerIndex=0") };
+            static MppmReflection.VirtualPlayer CreatePlayer(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
+            var before = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Red") };
+            var after = new[] { CreatePlayer("elympics:red", "Elympics:PlayerIndex=0") };
 
-            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 1), Is.Empty);
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 1), Is.Empty);
         }
 
         [Test]

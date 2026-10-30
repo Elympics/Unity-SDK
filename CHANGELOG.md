@@ -1,3 +1,25 @@
+## [0.29.1](https://github.com/Elympics/Unity-SDK/compare/v0.29.0...v0.29.1) (2026-10-30)
+
+
+### Bug Fixes 🪲
+
+* Compare virtual player tags case-sensitively ([057c9ed](https://github.com/Elympics/Unity-SDK/commit/057c9eda1eb15ca287f3e33d5bc1109bbb557859))
+* Finalize server ticks while the game hasn't enabled ElympicsScore ([f60a963](https://github.com/Elympics/Unity-SDK/commit/f60a9635551ec941f033b3d3a4aa19d7ac5e922d))
+* Keep '=' signs after the first one in the value of a --key=value argument ([e44e6db](https://github.com/Elympics/Unity-SDK/commit/e44e6dbc67af0e0c6a465a2d3ddecde934367df9))
+* Track a match started from the launch mode parameter in the launcher state ([14025ba](https://github.com/Elympics/Unity-SDK/commit/14025bac131fcd395911b987c834bcbbcf1811a2))
+
+
+### Features
+
+* Accept customMatchmakingData in half-remote host launch payloads ([a991c10](https://github.com/Elympics/Unity-SDK/commit/a991c100310d74cf567e997ce3b16cba7ae06474))
+* Add --custom_matchmaking_data to elympics_launch ([9427467](https://github.com/Elympics/Unity-SDK/commit/9427467cc9d0e50b61d835b1b6d564da35469d5f))
+* Add --player_index to elympics_launch for half-remote clients ([d55707e](https://github.com/Elympics/Unity-SDK/commit/d55707eb2d29cdf7a2fd73db04ba3b50b2040d48))
+* Pass custom matchmaking data to half-remote servers and allow setting it at launch ([e795fc1](https://github.com/Elympics/Unity-SDK/commit/e795fc16ddac2ea646effd1748cd92a6f85804bd))
+* Report virtual players that need a restart for new tags in elympics_set_virtual_players ([2508614](https://github.com/Elympics/Unity-SDK/commit/250861456964f1980c6ae0084115b8e85d2c5f31))
+* Show a stalled tick loop in elympics_get_match_state ([4b2d935](https://github.com/Elympics/Unity-SDK/commit/4b2d935786d30d8efff16709365dd57743b22574))
+
+
+
 ## [0.29.0](https://github.com/Elympics/Unity-SDK/compare/v0.28.0...v0.29.0) (2026-10-28)
 
 

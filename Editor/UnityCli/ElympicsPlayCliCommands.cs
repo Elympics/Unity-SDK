@@ -104,7 +104,7 @@ namespace Elympics.Editor.UnityCli
                 return new { status = "launch_queued", requestId, mode = modeName, gameId = game.GameId, enteringPlayMode = !playing };
             });
 
-        /// <summary>Without this check, a player index with no Test players entry fails only once the gameplay scene loads.</summary>
+        // Fails fast: a missing Test players entry otherwise surfaces only when the gameplay scene loads.
         private static void RequireTestPlayer(ElympicsGameConfig game, int playerIndex)
         {
             var effective = playerIndex >= 0 ? playerIndex : game.PlayerIndexForHalfRemoteMode;
@@ -124,7 +124,8 @@ namespace Elympics.Editor.UnityCli
         [CliCommand("elympics_get_match_state",
             "Report Play mode, the match launcher, the last elympics_launch outcome (survives the Play mode reload), the live match "
             + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch. "
-            + "A match.secondsSinceTickAdvanced well above the tick duration means the tick loop is stalled (check the Console for repeated exceptions).",
+            + "A match.secondsSinceTickAdvanced well above the tick duration means the tick loop is stalled (check the Console for repeated exceptions), "
+            + "unless the Editor is paused or the match hasn't started ticking (e.g. it's waiting for players).",
             Tags = new[] { "elympics/play" })]
         public static object GetMatchState() => CliRun.Run(() =>
         {
@@ -281,18 +282,18 @@ namespace Elympics.Editor.UnityCli
                 restartRequired,
                 hint = restartRequired.Count == 0
                     ? null
-                    : "Running virtual players apply new tags only after a restart. Deactivate them (a lower --count), wait until elympics_get_virtual_players "
+                    : "Running players apply new tags only after a restart: lower --count, wait until elympics_get_virtual_players "
                     + $"shows them NotLaunched, then call elympics_set_virtual_players --count {count} again.",
             };
         });
 
-        /// <summary>The numbers of players that stay active (within <paramref name="count"/>) and were already running while their Elympics: tags changed.</summary>
+        /// <summary>Numbers of players that stay active (within <paramref name="count"/>), were already running, and had their Elympics: tags changed.</summary>
         /// <remarks>Deactivation is asynchronous, so a player being deactivated may still look running in <paramref name="after"/>.</remarks>
         internal static List<int> PlayersNeedingRestart(IReadOnlyList<MppmReflection.VirtualPlayer> before, IReadOnlyList<MppmReflection.VirtualPlayer> after, int count) =>
             after.Where(player => player.number >= 2 && player.number - 1 <= count)
                 .Where(player => before.FirstOrDefault(old => old.number == player.number) is { } old
                     && old.state != NotLaunched
-                    && !ElympicsTags(old).SequenceEqual(ElympicsTags(player)))
+                    && !ElympicsTags(old).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(ElympicsTags(player)))
                 .Select(player => player.number)
                 .ToList();
 

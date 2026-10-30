@@ -40,7 +40,7 @@ namespace Elympics
         internal DateTime TickEndUtc { get; set; }
 
         private long _lastSeenTick = long.MinValue;
-        /// <summary>When an update last saw <see cref="Tick"/> change. A tick that keeps failing (e.g. throwing) leaves it behind.</summary>
+        /// <summary>When an update last saw <see cref="Tick"/> change. Stays behind while ticks keep failing.</summary>
         internal DateTime TickLastAdvancedUtc { get; private set; }
         internal ElympicsGameConfig Config { get; private set; }
 

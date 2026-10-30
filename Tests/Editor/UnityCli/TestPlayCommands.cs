@@ -106,6 +106,16 @@ namespace Elympics.Editor.Tests.UnityCli
         }
 
         [Test]
+        public void ReorderedOrRecasedTagsDontNeedARestart()
+        {
+            static MppmReflection.VirtualPlayer Player(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
+            var before = new[] { Player("Elympics:PlayerIndex=0", "Elympics:Red") };
+            var after = new[] { Player("elympics:red", "Elympics:PlayerIndex=0") };
+
+            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 1), Is.Empty);
+        }
+
+        [Test]
         public void LaunchOutcomesAreRecorded()
         {
             using var record = new LaunchRecordScope();

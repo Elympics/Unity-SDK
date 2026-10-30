@@ -79,7 +79,7 @@ namespace Elympics
             return arg.Length == 2 && arg[0] == '-' && arg[1] != '-';
         }
 
-        /// <summary>Matches <c>--key</c> and <c>--key=value</c>; the key doesn't start with a dash, and neither part contains another <c>=</c>.</summary>
+        /// <summary>Matches <c>--key</c> and <c>--key=value</c>; the key doesn't start with a dash and ends at the first <c>=</c>, so the value may contain more.</summary>
         private static bool TryParseLongArgument(string arg, out string key, out string value)
         {
             key = value = null;
@@ -91,8 +91,6 @@ namespace Elympics
                 key = arg[2..];
                 return true;
             }
-            if (arg.IndexOf('=', equalsIndex + 1) >= 0)
-                return false;
             key = arg[2..equalsIndex];
             value = arg[(equalsIndex + 1)..];
             return true;

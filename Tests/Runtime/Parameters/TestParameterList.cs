@@ -346,7 +346,6 @@ namespace Elympics.Tests
         }
 
         [TestCase("---k")]
-        [TestCase("--k=a=b")]
         [TestCase("-kk")]
         [TestCase("--")]
         public void MalformedCommandLineArgumentsShouldBeIgnored(string argument)
@@ -368,6 +367,16 @@ namespace Elympics.Tests
             ParameterList.CollectFromNamedArguments(new Parameter[] { parameter }, new List<string> { "--k=", "next" });
 
             Assert.AreEqual("", parameter.GetRawValue());
+        }
+
+        [Test]
+        public void LongCommandLineArgumentValueShouldKeepEqualsSignsAfterTheFirst()
+        {
+            var parameter = new FakeParameter(longArgName: "k");
+
+            ParameterList.CollectFromNamedArguments(new Parameter[] { parameter }, new List<string> { "--k=a=b;c=d" });
+
+            Assert.AreEqual("a=b;c=d", parameter.GetRawValue());
         }
 
         [TestCase("127.0.0.1", true)]

@@ -24,7 +24,11 @@ namespace Elympics.Tests
         }
 
         [TearDown]
-        public void TearDown() => Object.DestroyImmediate(_config);
+        public void TearDown()
+        {
+            LogAssert.ignoreFailingMessages = false;
+            Object.DestroyImmediate(_config);
+        }
 
         #region LaunchDataFromParameters
 
@@ -107,7 +111,7 @@ namespace Elympics.Tests
         public void LauncherLimitedToParameterMatchRejectsLaunchesAsBusy()
         {
             var events = new List<(string Type, string Payload)>();
-            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            var launcher = CreateParameterLauncher();
             launcher.HostEventEmitted += (type, _, payload) => events.Add((type, payload));
 
             var result = launcher.LaunchSinglePlayerAsync("a1b2c3d4-0000-0000-0000-000000000001").GetAwaiter().GetResult();
@@ -124,7 +128,7 @@ namespace Elympics.Tests
         public void ParameterMatchMovesTheLauncherThroughItsStates(string end)
         {
             LogAssert.ignoreFailingMessages = true;
-            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            var launcher = CreateParameterLauncher();
             var endEvents = 0;
             launcher.MatchEnded += _ => endEvents++;
             launcher.Disconnected += _ => endEvents++;
@@ -149,7 +153,7 @@ namespace Elympics.Tests
         public void ParameterMatchThatFailsToStartLeavesTheLauncherIdle()
         {
             LogAssert.ignoreFailingMessages = true;
-            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            var launcher = CreateParameterLauncher();
             IElympicsMatchLifecycleSink sink = new ExitAfterMatchSink(_ => { }, launcher.TrackParameterMatch());
 
             sink.JoinFailed("x");
@@ -165,6 +169,9 @@ namespace Elympics.Tests
             Assert.That(launcher.TrackParameterMatch(), Is.Null);
             Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Idle));
         }
+
+        private static DefaultElympicsMatchLauncher CreateParameterLauncher() =>
+            new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
 
         private sealed class NullSceneLoader : IElympicsSceneLoader
         {

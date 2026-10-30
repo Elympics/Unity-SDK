@@ -12,6 +12,14 @@ namespace Elympics.Tests.Runtime.Core
     [Category("Core")]
     public class ElympicsScoreTests
     {
+        private static ElympicsScore CreateStartedScore(int playerCount, IEnumerable<string> metadataKeys = null)
+        {
+            var score = new ElympicsScore(playerCount);
+            score.Enable(metadataKeys: metadataKeys);
+            score.Start(DateTime.UtcNow);
+            return score;
+        }
+
         [Test]
         [TestCase(0)]
         [TestCase(3)]
@@ -127,9 +135,7 @@ namespace Elympics.Tests.Runtime.Core
         [Test]
         public void SubmittingChangedScoreShouldCauseEventToBeEmitted()
         {
-            var score = new ElympicsScore(2);
-            score.Enable();
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(2);
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -145,9 +151,7 @@ namespace Elympics.Tests.Runtime.Core
         [Test]
         public void SubmittingChangedMetadataShouldCauseEventToBeEmitted()
         {
-            var score = new ElympicsScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(2, metadataKeys: new[] { "example-key" });
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -163,9 +167,7 @@ namespace Elympics.Tests.Runtime.Core
         [Test]
         public void SubmittingWithoutChangesShouldNotCauseEventToBeEmitted()
         {
-            var score = new ElympicsScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(2, metadataKeys: new[] { "example-key" });
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score[1] = 5.0f;
             score[1].Metadata["example-key"] = "example-value";
@@ -201,9 +203,7 @@ namespace Elympics.Tests.Runtime.Core
         [UnityTest]
         public IEnumerator StartingScoreTimeShouldNotChange()
         {
-            var score = new ElympicsScore(1);
-            score.Enable();
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(1);
 
             score[0] = 1f;
             score.Submit();
@@ -220,9 +220,7 @@ namespace Elympics.Tests.Runtime.Core
         [UnityTest]
         public IEnumerator DefaultGameplayTimeShouldBeCalculatedAsDiffToStartingTime()
         {
-            var score = new ElympicsScore(1);
-            score.Enable();
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(1);
 
             score[0] = 1f;
             score.Submit();
@@ -239,9 +237,7 @@ namespace Elympics.Tests.Runtime.Core
         [UnityTest]
         public IEnumerator UnsubmittedScoreShouldNotChangeCurrentTime()
         {
-            var score = new ElympicsScore(1);
-            score.Enable();
-            score.Start(DateTime.UtcNow);
+            var score = CreateStartedScore(1);
 
             score[0] = 1f;
             score.Submit();

@@ -8,11 +8,34 @@ variables:
   YQ_VERSION: "v4.54.1"
   YQ_SHA256: "8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f"
   UNITY_VERSION: 6000.3.10f1
+  # For the :newest jobs.
+  NEWEST_UNITY_VERSION: 6000.6.4f1
   UNITY_ARCH: base-3
   TESTING_PROJECT_NAME: TestingProject
   UNITY_DIR: ${CI_PROJECT_DIR}/${TESTING_PROJECT_NAME}
   PACKAGE_DIR: ${UNITY_DIR}/Packages/com.daftmobile.elympics
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
   FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
+  ASSEMBLY_INFO_FILES: |-
+    Runtime/AssemblyInfo.cs
+    Editor/AssemblyInfo.cs
+    Editor/Weaving/AssemblyInfo.cs
+    Tests/Runtime/AssemblyInfo.cs
+  COVERAGE_ASSEMBLY_FILTERS: |-
+    +Elympics
+    +Elympics.*
+    +Elympics.Editor.*
+    -Elympics.Tests
+    -Elympics.Tests.*
+    -Elympics.Editor.Tests
+    -Elympics.Editor.Tests.*
+  COVERAGE_PATH_FILTERS: |-
+    -**/Runtime/Plugins/**
+    -**/GameEngine/Libraries/**
+  RELEASE_ONLY:
+    value: "false"
+    options: ["false", "true"]
+    description: "true skips build, test and verify jobs (release jobs only)"
 
 stages:
   - prepare-version
@@ -31,25 +54,64 @@ default:
 
 workflow:
   rules:
+    # Coverage is tracked on develop only; elsewhere the tests run uninstrumented, which is faster.
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        CODE_COVERAGE: "true"
     - if: "$CI_COMMIT_BRANCH"
     - if: "$CI_COMMIT_TAG"
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
 
-.cond.license:
+# Build, test and verify jobs run only when code changed. detect_tested_release_merge.sh reads this list too.
+.code_paths: &code_paths
+  - Runtime/**/*
+  - Editor/**/*
+  - Tests/**/*
+  - Samples~/**/*
+  - "*.dll"
+  - package.json
+  - jsconfig.json
+  - .editorconfig
+  - .gitlab-ci.yml
+  - .scripts/**/*
+
+.cond.code:
   rules:
-    - if: "$UNITY_LICENSE != null"
-      when: always
+    - if: "$CI_COMMIT_TAG"
+      when: never
+    - if: '$RELEASE_ONLY == "true"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    # A new release branch repeats develop's pipeline unless it differs from develop.
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"'
+      changes:
+        paths: *code_paths
+        compare_to: refs/heads/develop
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"'
+      when: never
+    # Feature branches compare with develop, so a docs-only push after a failed code push still runs the tests.
+    - if: '$CI_COMMIT_BRANCH !~ /^(develop|main|(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+)$/'
+      changes:
+        paths: *code_paths
+        compare_to: refs/heads/develop
+    - if: '$CI_COMMIT_BRANCH !~ /^(develop|main|(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+)$/'
+      when: never
+    - changes: *code_paths
+
+.cond.code.license:
+  rules:
+    - if: "$UNITY_LICENSE == null"
+      when: never
+    - !reference [.cond.code, rules]
+
+.skip_if_tested:
+  before_script: &skip_if_tested
+    - 'if [ "$SKIP_CODE_JOBS" = 1 ]; then echo "Skipped: develop already tested this code"; exit 0; fi'
 
 .cond.releasebranch:
   rules: &cond_releasebranch_rules
     - if: '$CI_COMMIT_BRANCH =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-
-.cond.mergerequest.target.main:
-  rules: &cond_mergerequest_target_main
-    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^(release|hotfix)\/v[0-9]+\.[0-9]+\.[0-9]+$/'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
       when: always
 
 .cond.release.auto:
@@ -82,11 +144,27 @@ workflow:
 
 .unity_image:
   image: unityci/editor:ubuntu-$UNITY_VERSION-$UNITY_ARCH
-  # Unity can hang after a crash on quit.
+  # Retry once on a Unity crash (exit 134/139) or a timeout.
   retry:
     max: 1
     when:
       - job_execution_timeout
+    exit_codes:
+      - 134
+      - 139
+
+# For jobs that create their own testing project. The cache isn't shared between runners, so a miss means a reimport.
+# A change to create_testing_project.sh starts a new cache, since a cached project skips the script's Unity runs.
+.library_cache:
+  cache:
+    key:
+      files:
+        - .scripts/ci/create_testing_project.sh
+      prefix: library-$UNITY_VERSION
+    paths:
+      - "$TESTING_PROJECT_NAME/Library/"
+      - "$TESTING_PROJECT_NAME/ProjectSettings/"
+    policy: pull-push
 
 .dotnet_image:
   image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
@@ -103,6 +181,11 @@ workflow:
 .unity_default:
   before_script: &unity_default_before_script
     - ./.scripts/ci/before_script.sh
+
+.unity_code:
+  before_script: &unity_code_before_script
+    - *skip_if_tested
+    - *unity_default_before_script
 
 .install_yq:
   script: &install_yq
@@ -150,6 +233,8 @@ get-branch-version:
       dotenv: prepare.env
 
 get-activation-file:
+  extends:
+    - .unity_image
   rules:
     - if: "$UNITY_LICENSE == null"
       when: manual
@@ -164,6 +249,24 @@ get-activation-file:
     paths:
       - $UNITY_ACTIVATION_FILE
     expire_in: 10 min
+
+detect-tested-release-merge:
+  extends:
+    - .alpine_image
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $RELEASE_ONLY != "true" && $CI_PIPELINE_SOURCE != "web"'
+  stage: prepare-version
+  needs: []
+  variables:
+    GIT_DEPTH: 0
+  before_script:
+    - apk add --no-cache bash git curl jq
+    - *install_yq
+  script:
+    - ./.scripts/ci/detect_tested_release_merge.sh skip.env
+  artifacts:
+    reports:
+      dotenv: skip.env
 
 check-commits:
   extends:
@@ -180,8 +283,12 @@ check-commits:
 verify-js:
   extends:
     - .node_image
+    - .cond.code
+    - .skip_if_tested
   stage: verify
-  needs: []
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
   variables:
     GIT_DEPTH: 1
     NODE_VERSION: "20"
@@ -191,35 +298,50 @@ verify-js:
 create-testing-project:
   extends:
     - .unity_image
-    - .cond.license
+    - .library_cache
+    - .cond.code.license
   stage: compile
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
   timeout: 30m
   variables:
     GIT_DEPTH: 1
   before_script:
-    - *unity_default_before_script
+    - *unity_code_before_script
     - *install_yq
   script:
     - ./.scripts/ci/create_testing_project.sh
-    - ./.scripts/ci/generate_solution_files.sh
   artifacts:
     paths:
       - "./$TESTING_PROJECT_NAME"
+    # Library/ in full is too large for an artifact. Without PackageManager/, Unity resolves and downloads the packages again.
+    exclude:
+      - "./$TESTING_PROJECT_NAME/Library/PackageCache/**/*"
+      - "./$TESTING_PROJECT_NAME/Library/PackageManager/**/*"
+      - "./$TESTING_PROJECT_NAME/Library/BurstCache/**/*"
     expire_in: 1 hour
+
+create-testing-project:newest:
+  extends: create-testing-project
+  variables:
+    UNITY_VERSION: $NEWEST_UNITY_VERSION
 
 compile:elympics-debug:
   extends:
     - .unity_image
-    - .cond.license
-  stage: compile
+    - .cond.code.license
+  stage: build
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   # A separate job, so a Unity crash on quit here doesn't hold up the tests.
   timeout: 30m
   variables:
     GIT_DEPTH: 1
   before_script:
-    - *unity_default_before_script
+    - *unity_code_before_script
     - *install_yq
   script:
     - ./.scripts/ci/run_with_defines.sh "ELYMPICS_DEBUG;ELYMPICS_LAZY_WEBRTC_CONTEXT"
@@ -227,42 +349,48 @@ compile:elympics-debug:
 build:sample:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   timeout: 45m
-  image: unityci/editor:ubuntu-$BUILD_UNITY_VERSION-$BUILD_UNITY_ARCH
+  image: unityci/editor:ubuntu-$UNITY_VERSION-$BUILD_UNITY_ARCH
   stage: build
-  needs: []
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
+    - job: create-testing-project
   variables:
     GIT_DEPTH: 1
     CI_BUILD_SCENES: "Assets/Samples/ButtonClicker/ButtonClicker.unity"
   parallel:
     matrix:
-      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
-        BUILD_TARGET: StandaloneLinux64
+      - BUILD_TARGET: StandaloneLinux64
         BUILD_UNITY_ARCH: base-3
-      - BUILD_UNITY_VERSION: ["6000.3.10f1", "6000.6.4f1"]
-        BUILD_TARGET: WebGL
+      - BUILD_TARGET: WebGL
         BUILD_UNITY_ARCH: webgl-3
-  cache:
-    key: library-$BUILD_UNITY_VERSION-$BUILD_TARGET
-    paths:
-      - "$TESTING_PROJECT_NAME/Library/"
   before_script:
-    - *unity_default_before_script
-    - *install_yq
+    - *unity_code_before_script
   script:
-    - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/build_sample.sh
+
+build:sample:newest:
+  extends: build:sample
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
+    - job: create-testing-project:newest
+  variables:
+    UNITY_VERSION: $NEWEST_UNITY_VERSION
 
 .test:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   stage: test
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   before_script:
-    - *unity_default_before_script
+    - *unity_code_before_script
     - apt-get update && apt-get install -y --no-install-recommends jq xsltproc
   script:
     - ./.scripts/ci/test.sh
@@ -307,7 +435,6 @@ test:disable-defines:
   variables:
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
-    # Coverage comes from the default test jobs.
     CODE_COVERAGE: "false"
   parallel:
     matrix:
@@ -318,30 +445,51 @@ test:disable-defines:
     - ./.scripts/ci/test.sh
 
 test:editmode:unity-versions:
-  extends: .test
+  extends:
+    - .test
+    - .library_cache
   # Compiles and runs EditMode tests around the version cut-offs: 6.4 (hierarchy EntityId event) and 6.5 (Unity's own Unsafe).
   image: unityci/editor:ubuntu-$TEST_UNITY_VERSION-base-3
-  needs: []
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
   timeout: 45m
   variables:
     TEST_PLATFORM: editmode
     TESTING_TYPE: JUNIT
     GIT_DEPTH: 1
+    CODE_COVERAGE: "false"
   parallel:
     matrix:
-      - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1", "6000.6.4f1"]
+      - TEST_UNITY_VERSION: ["6000.4.12f1", "6000.5.11f1"]
   cache:
-    key: library-editmode-$TEST_UNITY_VERSION
-    paths:
-      - "$TESTING_PROJECT_NAME/Library/"
+    key:
+      prefix: library-editmode-$TEST_UNITY_VERSION
   script:
     - *install_yq
     - ./.scripts/ci/create_testing_project.sh
     - ./.scripts/ci/test.sh
 
+test:editmode:newest:
+  extends: .test
+  needs:
+    - job: detect-tested-release-merge
+      optional: true
+    - job: create-testing-project:newest
+  variables:
+    UNITY_VERSION: $NEWEST_UNITY_VERSION
+    TEST_PLATFORM: editmode
+    TESTING_TYPE: JUNIT
+    GIT_DEPTH: 1
+    CODE_COVERAGE: "false"
+
 create-coverage-report:
   extends:
     - .dotnet_image
+  rules:
+    - if: '$CI_COMMIT_BRANCH != "develop"'
+      when: never
+    - !reference [.cond.code.license, rules]
   stage: test
   needs:
     - job: test:playmode
@@ -369,16 +517,21 @@ create-coverage-report:
 verify-formatting:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   stage: verify
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   variables:
     GIT_DEPTH: 1
   before_script:
+    - *unity_code_before_script
     - *install_dotnet
     - apt-get install -y --no-install-recommends jq
   script:
+    # Library/ comes from create-testing-project, so Unity resolves packages and writes the csprojs here.
+    - ./.scripts/ci/generate_solution_files.sh
     - ./.scripts/ci/generate_formatting_report.sh
   artifacts:
     when: always
@@ -391,14 +544,16 @@ verify-formatting:
 audit:project-auditor:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   stage: verify
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   variables:
     GIT_DEPTH: 1
   before_script:
-    - *unity_default_before_script
+    - *unity_code_before_script
     - apt-get update && apt-get install -y --no-install-recommends jq
   script:
     - ./.scripts/ci/project_auditor.sh
@@ -411,20 +566,24 @@ audit:project-auditor:
 verify-messagepack-generated:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   stage: verify
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   variables:
     GIT_DEPTH: 1
     ORIGINAL_GENERATED_PATH: "${PACKAGE_DIR}/Runtime/Plugins/MessagePackGenerated.cs"
-    CORRECT_GENERATED_PATH: ./MessagePackGenerated.cs
+    CORRECT_GENERATED_PATH: "${CI_PROJECT_DIR}/MessagePackGenerated.cs"
   before_script:
+    - *unity_code_before_script
     - *install_dotnet
     - dotnet tool install --global MessagePack.Generator --version $MESSAGEPACK_VERSION
   script:
+    - ./.scripts/ci/generate_solution_files.sh
     - '"${HOME}/.dotnet/tools/mpc" -i "${UNITY_DIR}/Elympics.csproj" -o "$CORRECT_GENERATED_PATH"'
-    - diff "$ORIGINAL_GENERATED_PATH" "$CORRECT_GENERATED_PATH"
+    - diff --strip-trailing-cr "$ORIGINAL_GENERATED_PATH" "$CORRECT_GENERATED_PATH"
   artifacts:
     when: always
     paths:
@@ -434,16 +593,20 @@ verify-messagepack-generated:
 verify-compiled-protos:
   extends:
     - .unity_image
-    - .cond.license
+    - .cond.code.license
   stage: verify
   needs:
+    - job: detect-tested-release-merge
+      optional: true
     - job: create-testing-project
   variables:
     GIT_DEPTH: 1
     PROTO_SCHEMAS_DIR: "${PACKAGE_DIR}/Runtime/GameEngine/Libraries/Proto/Protos"
     ORIGINAL_COMPILED_PATH: ../ProtosCompiled
     CURRENT_COMPILED_PATH: ../ProtosCompiledCurrent
+  cache: []
   before_script:
+    - *skip_if_tested
     - apt-get update && apt-get install -y --no-install-recommends unzip
     - wget "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" -O protoc.zip
     - unzip -o protoc.zip -d /usr/local
@@ -484,12 +647,15 @@ get-changelog-for-release:
     - .node_image
     - .cond.release.always
   stage: pre-release
+  # Test and verify jobs are absent on tags and in release-only pipelines.
   needs:
     - job: get-package-version
     - job: test:playmode
       artifacts: false
+      optional: true
     - job: test:editmode
       artifacts: false
+      optional: true
   variables:
     GIT_DEPTH: 1
   before_script:
@@ -497,10 +663,9 @@ get-changelog-for-release:
     - export NODE_PATH="$(npm root -g)"
   script:
     - echo $PACKAGE_VERSION
-    - node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION
-    - export RELEASE_NOTES=$(node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION)
-    - echo "Release notes to deploy... \n$RELEASE_NOTES"
-    - echo "$RELEASE_NOTES" > release.description
+    - node ./.scripts/ci/parse_changelog.js CHANGELOG.md $PACKAGE_VERSION > release.description
+    - echo "Release notes to deploy:"
+    - cat release.description
   artifacts:
     paths:
       - release.description
@@ -514,14 +679,34 @@ check-if-release-possible:
     - job: get-package-version
     - job: test:playmode
       artifacts: false
+      optional: true
     - job: test:editmode
       artifacts: false
+      optional: true
     - job: verify-formatting
       artifacts: false
+      optional: true
     - job: verify-messagepack-generated
       artifacts: false
+      optional: true
     - job: compile:elympics-debug
       artifacts: false
+      optional: true
+    - job: verify-js
+      artifacts: false
+      optional: true
+    - job: verify-compiled-protos
+      artifacts: false
+      optional: true
+    - job: build:sample
+      artifacts: false
+      optional: true
+    - job: test:playmode:no-domain-reload
+      artifacts: false
+      optional: true
+    - job: test:disable-defines
+      artifacts: false
+      optional: true
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends git
   script:

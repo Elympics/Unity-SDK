@@ -24,21 +24,24 @@ public static class CiBuild
         if (scenes.Length == 0 || scenes.Any(scene => !File.Exists(scene)))
             Fail($"CI_BUILD_SCENES must list existing scenes, got: [{string.Join(", ", scenes)}]");
 
-        PlayerSettings.SetManagedStrippingLevel(namedTarget, ManagedStrippingLevel.Low);
         PlayerSettings.stripEngineCode = false;
         if (target == BuildTarget.WebGL)
         {
             PlayerSettings.SetScriptingBackend(namedTarget, ScriptingImplementation.IL2CPP);
+            // IL2CPP can't disable stripping; Low is its minimum.
+            PlayerSettings.SetManagedStrippingLevel(namedTarget, ManagedStrippingLevel.Low);
             PlayerSettings.SetIl2CppCompilerConfiguration(namedTarget, Il2CppCompilerConfiguration.Debug);
             PlayerSettings.SetIl2CppCodeGeneration(namedTarget, Il2CppCodeGeneration.OptimizeSize);
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
             PlayerSettings.WebGL.webAssemblyTable = false;
+            SetWasmCodeOptimizationForBuildTime();
             output = Path.Combine(output, "WebGL");
         }
         else
         {
             PlayerSettings.SetScriptingBackend(namedTarget, ScriptingImplementation.Mono2x);
+            PlayerSettings.SetManagedStrippingLevel(namedTarget, ManagedStrippingLevel.Disabled);
             output = Path.Combine(output, target.ToString(), "Sample");
         }
 
@@ -53,6 +56,19 @@ public static class CiBuild
         Debug.Log($"CiBuild: [{string.Join(", ", defines)}] {report.summary.result} in {report.summary.totalTime}, {report.summary.totalSize / (1024 * 1024)} MB, {report.summary.totalErrors} errors");
         if (report.summary.result != BuildResult.Succeeded)
             Fail($"Build {report.summary.result}");
+    }
+
+    // UnityEditor.WebGL.UserBuildSettings lives in the WebGL module's assembly, which Editors without WebGL support lack.
+    private static void SetWasmCodeOptimizationForBuildTime()
+    {
+        var settingsType = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.GetType("UnityEditor.WebGL.UserBuildSettings"))
+            .FirstOrDefault(type => type != null);
+        var property = settingsType?.GetProperty("codeOptimization");
+        if (property == null)
+            Fail("UnityEditor.WebGL.UserBuildSettings.codeOptimization not found");
+        property.SetValue(null, Enum.Parse(property.PropertyType, "BuildTimes"));
+        Debug.Log($"CiBuild: WebGL code optimization {property.GetValue(null)}");
     }
 
     private static void Fail(string message) => throw new BuildFailedException("CiBuild: " + message);

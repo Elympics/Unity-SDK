@@ -59,8 +59,7 @@ namespace Elympics
         public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
         /// <summary>
-        /// Custom matchmaking data of a half-remote match, such as <c>:pub:seed=42;mode=fast</c>. Launch data overrides it, and it overrides the game config.
-        /// An empty value means unset.
+        /// Custom matchmaking data of a half-remote match, e.g. <c>:pub:seed=42;mode=fast</c>. Empty means unset.
         /// </summary>
         public readonly Parameter<IReadOnlyDictionary<string, string>> CustomMatchmakingData = new("ELYMPICS_CUSTOM_MATCHMAKING_DATA",
             "elympicsCustomMatchmakingData", "elympics-custom-matchmaking-data", validate: value => TryParseKeyValuePairs(value, out _),
@@ -103,13 +102,19 @@ namespace Elympics
             return true;
         }
 
+        /// <summary>The inverse of <see cref="TryParseKeyValuePairs"/>.</summary>
+        internal static string FormatKeyValuePairs(IReadOnlyDictionary<string, string> pairs) =>
+            string.Join(";", pairs.Select(pair => $"{EscapePairPart(pair.Key)}={EscapePairPart(pair.Value)}"));
+
+        private static string EscapePairPart(string part) => part.Replace("%", "%25").Replace(";", "%3B").Replace("=", "%3D");
+
         private static bool TryParseShortArgument(string arg, out char key)
         {
             key = arg.Length == 2 ? arg[1] : default;
             return arg.Length == 2 && arg[0] == '-' && arg[1] != '-';
         }
 
-        /// <summary>Matches <c>--key</c> and <c>--key=value</c>; the key doesn't start with a dash and ends at the first <c>=</c>, so the value may contain more.</summary>
+        /// <summary>Matches <c>--key</c> and <c>--key=value</c>; the key doesn't start with a dash, and the value is everything after the first <c>=</c>.</summary>
         private static bool TryParseLongArgument(string arg, out string key, out string value)
         {
             key = value = null;

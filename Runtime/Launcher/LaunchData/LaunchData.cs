@@ -33,7 +33,7 @@ namespace Elympics
 
         private protected static T[] Copy<T>(IEnumerable<T>? values) => values?.ToArray() ?? Array.Empty<T>();
 
-        private protected static IReadOnlyDictionary<string, string>? Copy(IReadOnlyDictionary<string, string>? values) =>
+        private protected static IReadOnlyDictionary<string, string>? CopyOrNull(IReadOnlyDictionary<string, string>? values) =>
             values?.ToDictionary(x => x.Key, x => x.Value);
 
         private protected static bool TryValidateCustomMatchmakingData(IReadOnlyDictionary<string, string>? data, out ElympicsLaunchFailure? failure)

@@ -84,8 +84,15 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("{\":pub:seed\":null}")]
         [TestCase("{\"\":\"1\"}")]
         [TestCase("[\"42\"]")]
+        [TestCase("{}")]
+        [TestCase("{\"a\":\"1\",\"a\":\"2\"}")]
+        [TestCase("{\"a\":\"1\"} {}")]
         public void LaunchCustomDataRejectsInvalidJson(string json) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.ParseCustomMatchmakingData(json), ElympicsCliErrors.InvalidArgument);
+
+        [Test]
+        public void LaunchCustomDataKeepsDateLikeStrings() =>
+            Assert.That(ElympicsPlayCliCommands.ParseCustomMatchmakingData("{\"d\":\"2025-01-31T00:00:00Z\"}")!["d"], Is.EqualTo("2025-01-31T00:00:00Z"));
 
         [Test]
         public void LaunchCustomDataRejectsSinglePlayerMode() =>

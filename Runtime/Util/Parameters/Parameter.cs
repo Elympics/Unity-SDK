@@ -79,7 +79,7 @@ namespace Elympics
             value switch
             {
                 IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
-                IReadOnlyDictionary<string, string> pairs => string.Join(";", pairs.Select(pair => $"{pair.Key}={pair.Value}")),
+                IReadOnlyDictionary<string, string> pairs => ParameterList.FormatKeyValuePairs(pairs),
                 _ => $"{value}",
             };
     }

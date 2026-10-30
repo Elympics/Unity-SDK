@@ -30,9 +30,8 @@ namespace Elympics
         /// <summary>How many <see cref="ElympicsGameConfig.TestPlayers"/> entries the match uses. Null means all of them.</summary>
         public int? MaxPlayers { get; }
         /// <summary>
-        /// Custom matchmaking data of the match, such as <c>:pub:seed</c> (see <see cref="InitialMatchPlayerDatasGuid.Seed"/>).
-        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, or else the custom matchmaking data of <see cref="ElympicsGameConfig.TestMatchData"/>.
-        /// An empty dictionary means none.
+        /// Custom matchmaking data of the match, e.g. <c>:pub:seed</c> (see <see cref="InitialMatchPlayerDatasGuid.Seed"/>).
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none (an empty array on the wire means unset).
         /// </summary>
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 
@@ -44,7 +43,7 @@ namespace Elympics
             TcpUdpPort = tcpUdpPort;
             SignalingPort = signalingPort;
             MaxPlayers = maxPlayers;
-            CustomMatchmakingData = Copy(customMatchmakingData);
+            CustomMatchmakingData = CopyOrNull(customMatchmakingData);
         }
 
         internal override string ModeName => "HalfRemoteServer";

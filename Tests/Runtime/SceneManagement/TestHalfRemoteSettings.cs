@@ -167,6 +167,16 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void DuplicateConfigCustomDataKeyIsNamed()
+        {
+            AddConfigSeed();
+            _config.TestMatchData.customMatchmakingData.Add(new ElympicsGameConfig.CustomData { key = "mode", value = "fast" });
+
+            var exception = Assert.Throws<InvalidOperationException>(() => HalfRemoteCustomData.Resolve(null, null, _config));
+            Assert.That(exception.Message, Does.Contain("'mode'").And.Contain("Fix: "));
+        }
+
+        [Test]
         public void ServerLaunchDataOverridesConfig()
         {
             AddConfigSeed();

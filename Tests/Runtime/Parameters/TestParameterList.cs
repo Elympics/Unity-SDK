@@ -418,6 +418,27 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void CustomMatchmakingDataInUrlQueryIsEncodedTwice()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+
+            ParameterList.CollectFromUrlQuery(new Parameter[] { parameter }, QueryString.Parse("?elympicsCustomMatchmakingData=a%253Bb%3Dc%252Cd%3Be%3D1%2B1%2525"));
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { ["a;b"] = "c,d", ["e"] = "1+1%" }));
+        }
+
+        [Test]
+        public void FormattedCustomMatchmakingDataParsesBack()
+        {
+            var pairs = new Dictionary<string, string> { [":pub:seed"] = "42", ["a;b=c"] = "d=e;f%3B" };
+
+            Assert.That(ParameterList.TryParseKeyValuePairs(ParameterList.FormatKeyValuePairs(pairs), out var parsed), Is.True);
+            Assert.That(parsed, Is.EquivalentTo(pairs));
+            Assert.That(ParameterList.FormatKeyValuePairs(new Dictionary<string, string> { [":pub:seed"] = "42" }), Is.EqualTo(":pub:seed=42"));
+        }
+
+        [Test]
         public void EmptyCustomMatchmakingDataParameterIsUnset()
         {
             var parameter = new ParameterList().CustomMatchmakingData;

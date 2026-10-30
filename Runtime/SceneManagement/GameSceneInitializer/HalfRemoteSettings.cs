@@ -107,10 +107,7 @@ namespace Elympics
         }
     }
 
-    /// <summary>
-    /// Custom matchmaking data of a half-remote match: the launch data where set, otherwise the <see cref="ParameterList.CustomMatchmakingData"/> parameter,
-    /// otherwise <see cref="ElympicsGameConfig.TestMatchData"/>. Sources are never merged.
-    /// </summary>
+    /// <summary>Launch data, else the <see cref="ParameterList.CustomMatchmakingData"/> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>; never merged.</summary>
     internal static class HalfRemoteCustomData
     {
         public static IReadOnlyDictionary<string, string> Resolve(IReadOnlyDictionary<string, string>? fromLaunchData, ElympicsGameConfig config) =>
@@ -118,6 +115,16 @@ namespace Elympics
 
         internal static IReadOnlyDictionary<string, string> Resolve(IReadOnlyDictionary<string, string>? fromLaunchData,
             IReadOnlyDictionary<string, string>? fromParameter, ElympicsGameConfig config) =>
-            fromLaunchData ?? fromParameter ?? config.TestMatchData.customMatchmakingData.ToDictionary(x => x.key, x => x.value);
+            fromLaunchData ?? fromParameter ?? FromConfig(config);
+
+        private static Dictionary<string, string> FromConfig(ElympicsGameConfig config)
+        {
+            var result = new Dictionary<string, string>();
+            foreach (var entry in config.TestMatchData.customMatchmakingData)
+                if (!result.TryAdd(entry.key, entry.value))
+                    throw new InvalidOperationException($"The custom matchmaking data of {config.GameName}'s test match data has a duplicate key: '{entry.key}'. "
+                        + "Fix: remove the duplicate in the Elympics config Inspector.");
+            return result;
+        }
     }
 }

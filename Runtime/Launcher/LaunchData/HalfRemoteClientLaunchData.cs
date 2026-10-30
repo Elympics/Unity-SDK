@@ -28,9 +28,8 @@ namespace Elympics
         /// <summary>Of the local player. Null means the value of its <see cref="ElympicsGameConfig.TestPlayers"/> entry.</summary>
         public IReadOnlyList<float>? MatchmakerData { get; }
         /// <summary>
-        /// Custom matchmaking data the client sees in its match data. Set it to what the server uses, as the client doesn't get the server's value.
-        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, or else the custom matchmaking data of <see cref="ElympicsGameConfig.TestMatchData"/>.
-        /// An empty dictionary means none.
+        /// Custom matchmaking data in the client's match data; set it to the server's, which the client doesn't receive.
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none (an empty array on the wire means unset).
         /// </summary>
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 
@@ -45,7 +44,7 @@ namespace Elympics
             QueueName = queueName;
             GameEngineData = gameEngineData == null ? null : Copy(gameEngineData);
             MatchmakerData = matchmakerData == null ? null : Copy(matchmakerData);
-            CustomMatchmakingData = Copy(customMatchmakingData);
+            CustomMatchmakingData = CopyOrNull(customMatchmakingData);
         }
 
         internal override string ModeName => "HalfRemoteClient";

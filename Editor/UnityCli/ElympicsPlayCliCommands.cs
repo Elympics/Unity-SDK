@@ -40,8 +40,8 @@ namespace Elympics.Editor.UnityCli
             [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false,
             [CliArg("player_index", "half_remote_client only: the index in the game config's Test players list to join as; -1 uses the config's half-remote player index.")]
             int playerIndex = -1,
-            [CliArg("custom_matchmaking_data", "half_remote_server and half_remote_client only: a JSON object of strings, e.g. '{\":pub:seed\":\"42\"}', "
-                + "used instead of the game config's custom matchmaking data. Give the server and its clients the same value (for virtual players: "
+            [CliArg("custom_matchmaking_data", "half_remote_server and half_remote_client only: a non-empty JSON object of strings, e.g. '{\":pub:seed\":\"42\"}', "
+                + "replacing the game config's custom matchmaking data. Use the same value for the server and its clients (virtual players: "
                 + "the Elympics:elympics-custom-matchmaking-data=<key=value;...> tag).")]
             string customMatchmakingData = "") =>
             CliRun.Run(() =>
@@ -119,9 +119,13 @@ namespace Elympics.Editor.UnityCli
 
         internal static Dictionary<string, string>? ParseCustomMatchmakingData(string json)
         {
-            var parsed = CliArgs.ParseJsonObject(json, "custom_matchmaking_data", "a JSON object", CustomMatchmakingDataFix, JObject.Parse);
+            var parsed = CliArgs.ParseJsonObject(json, "custom_matchmaking_data", "a JSON object", CustomMatchmakingDataFix, ParseStrictObject);
             if (parsed == null)
                 return null;
+            // An empty array means unset on the wire, so an empty object couldn't replace the game config's data.
+            if (!parsed.HasValues)
+                throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data is an empty object.",
+                    "leave --custom_matchmaking_data out to use the game config's custom matchmaking data.");
             var result = new Dictionary<string, string>();
             foreach (var property in parsed.Properties())
             {
@@ -135,7 +139,16 @@ namespace Elympics.Editor.UnityCli
             return result;
         }
 
-        // An empty array means unset on the wire, so an empty object leaves the game config's data in place.
+        // Unlike JObject.Parse, keeps date-like strings as strings and rejects duplicate keys.
+        private static JObject ParseStrictObject(string json)
+        {
+            using var reader = new JsonTextReader(new System.IO.StringReader(json)) { DateParseHandling = DateParseHandling.None };
+            var parsed = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+            if (reader.Read())
+                throw new JsonReaderException("Additional text found after the JSON object.");
+            return parsed;
+        }
+
         private static KeyValueDto[] ToKeyValueDtos(Dictionary<string, string>? data) =>
             data?.Select(pair => new KeyValueDto { key = pair.Key, value = pair.Value }).ToArray() ?? Array.Empty<KeyValueDto>();
 

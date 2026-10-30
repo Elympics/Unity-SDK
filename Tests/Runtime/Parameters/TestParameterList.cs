@@ -395,6 +395,52 @@ namespace Elympics.Tests
                 _ = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
         }
 
+        [Test]
+        public void CustomMatchmakingDataParameterParsesPairs()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue(":pub:seed=42;mode=fast");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "42", ["mode"] = "fast" }));
+        }
+
+        [Test]
+        public void CustomMatchmakingDataParameterDecodesPercentEncodedEntries()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue("a%3Bb=c%3Dd;e=f=g");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { ["a;b"] = "c=d", ["e"] = "f=g" }));
+        }
+
+        [Test]
+        public void EmptyCustomMatchmakingDataParameterIsUnset()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue("");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.Null(parameter.GetValue());
+        }
+
+        [TestCase("foo")]
+        [TestCase("=1")]
+        [TestCase("a=1;a=2")]
+        [TestCase("a=1;")]
+        public void InvalidCustomMatchmakingDataParameterFailsValidation(string value)
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue(value);
+
+            var exception = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
+            Assert.That(exception.Message, Does.Contain(parameter.ExpectedFormat));
+        }
+
         [TestCase("WebGL", true)]
         [TestCase("none", true)]
         [TestCase("browser", false)]

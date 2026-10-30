@@ -75,7 +75,11 @@ namespace Elympics
                 ElympicsLogger.LogInfo($"Listening error for {x.Source}: {x.Error}");
 
             var players = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig).Take(settings.PlayerCount).ToList();
-            gameEngineAdapter.Initialize(new InitialMatchData { UserData = players });
+            gameEngineAdapter.Initialize(new InitialMatchData { UserData = players, CustomMatchmakingData = settings.CustomMatchmakingData });
+            var customData = settings.CustomMatchmakingData.Count > 0
+                ? string.Join(", ", settings.CustomMatchmakingData.Select(pair => $"{pair.Key}={pair.Value}"))
+                : "none";
+            ElympicsLogger.LogInfo($"Half-remote server custom matchmaking data: {customData}.");
 
             _halfRemoteGameEngineProtoConnector.Listen();
             ElympicsLogger.LogInfo($"Half-remote server listening on {(settings.TcpUdpEndPoint != null ? $"TCP/UDP {settings.TcpUdpEndPoint}" : "")}"

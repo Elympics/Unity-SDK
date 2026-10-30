@@ -1,8 +1,11 @@
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Elympics.Tests
 {
@@ -140,6 +143,109 @@ namespace Elympics.Tests
         [Test]
         public void MaxPlayersAboveTestPlayersUsesAllTestPlayers() =>
             Assert.That(HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(maxPlayers: 4), _config).PlayerCount, Is.EqualTo(3));
+
+        #endregion
+
+        #region Custom matchmaking data
+
+        private static readonly Dictionary<string, string> LaunchSeed = new() { [":pub:seed"] = "42" };
+
+        private void AddConfigSeed()
+        {
+            _config.TestMatchData.customMatchmakingData.Add(new ElympicsGameConfig.CustomData { key = ":pub:seed", value = "7" });
+            _config.TestMatchData.customMatchmakingData.Add(new ElympicsGameConfig.CustomData { key = "mode", value = "slow" });
+        }
+
+        [Test]
+        public void ServerCustomDataDefaultsToConfig()
+        {
+            AddConfigSeed();
+
+            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(), _config);
+
+            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
+        }
+
+        [Test]
+        public void ServerLaunchDataOverridesConfig()
+        {
+            AddConfigSeed();
+
+            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: LaunchSeed), _config);
+
+            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(LaunchSeed));
+        }
+
+        [Test]
+        public void ClientLaunchDataOverridesConfig()
+        {
+            AddConfigSeed();
+
+            var settings = HalfRemoteClientSettings.Resolve(new HalfRemoteClientLaunchData(customMatchmakingData: LaunchSeed), _config);
+
+            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(LaunchSeed));
+        }
+
+        [Test]
+        public void ExplicitEmptyDataOverridesConfig()
+        {
+            AddConfigSeed();
+
+            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: new Dictionary<string, string>()), _config);
+
+            Assert.That(settings.CustomMatchmakingData, Is.Empty);
+        }
+
+        [Test]
+        public void NonNumericSeedPassesThroughAndSeedIsNull()
+        {
+            var data = new Dictionary<string, string> { [":pub:seed"] = "abc" };
+
+            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: data), _config);
+
+            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(data));
+            Assert.That(new InitialMatchPlayerDatasGuid(Array.Empty<InitialMatchPlayerDataGuid>()) { CustomMatchmakingData = settings.CustomMatchmakingData }.Seed, Is.Null);
+        }
+
+        [Test]
+        public void NumericSeedIsReadAsSeed()
+        {
+            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: LaunchSeed), _config);
+
+            Assert.That(new InitialMatchPlayerDatasGuid(Array.Empty<InitialMatchPlayerDataGuid>()) { CustomMatchmakingData = settings.CustomMatchmakingData }.Seed, Is.EqualTo(42u));
+        }
+
+        [Test]
+        public void LaunchDataCopiesTheDictionary()
+        {
+            var data = new Dictionary<string, string> { [":pub:seed"] = "42" };
+            var launchData = new HalfRemoteClientLaunchData(customMatchmakingData: data);
+
+            data[":pub:seed"] = "43";
+            data["mode"] = "fast";
+
+            Assert.That(launchData.CustomMatchmakingData, Is.EquivalentTo(LaunchSeed));
+        }
+
+        [Test]
+        public void ResolveOrderIsLaunchDataThenParameterThenConfig()
+        {
+            AddConfigSeed();
+            var fromParameter = new Dictionary<string, string> { [":pub:seed"] = "5" };
+
+            Assert.That(HalfRemoteCustomData.Resolve(LaunchSeed, fromParameter, _config), Is.EquivalentTo(LaunchSeed));
+            Assert.That(HalfRemoteCustomData.Resolve(null, fromParameter, _config), Is.EquivalentTo(fromParameter));
+            Assert.That(HalfRemoteCustomData.Resolve(null, null, _config), Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
+        }
+
+        [Test]
+        public void EmptyCustomMatchmakingDataKeyIsInvalidPayload()
+        {
+            var data = new HalfRemoteServerLaunchData(customMatchmakingData: new Dictionary<string, string> { [""] = "1" });
+
+            Assert.That(data.TryValidate(_config, ElympicsLaunchPlatform.Unrestricted, out var failure), Is.False);
+            Assert.That(failure!.Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));
+        }
 
         #endregion
     }

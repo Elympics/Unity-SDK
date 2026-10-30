@@ -58,6 +58,15 @@ namespace Elympics
         /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
         public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
+        /// <summary>
+        /// Custom matchmaking data of a half-remote match, such as <c>:pub:seed=42;mode=fast</c>. Launch data overrides it, and it overrides the game config.
+        /// An empty value means unset.
+        /// </summary>
+        public readonly Parameter<IReadOnlyDictionary<string, string>> CustomMatchmakingData = new("ELYMPICS_CUSTOM_MATCHMAKING_DATA",
+            "elympicsCustomMatchmakingData", "elympics-custom-matchmaking-data", validate: value => TryParseKeyValuePairs(value, out _),
+            parse: value => TryParseKeyValuePairs(value, out var pairs) ? pairs : throw new ArgumentException($"Invalid key=value pairs: {value}"))
+        { ExpectedFormat = "key=value pairs separated by ';', each part percent-encoded" };
+
         private static readonly HashSet<string> HostBridgeValues = new(StringComparer.OrdinalIgnoreCase)
         {
             ElympicsHostBridgeFactory.Auto,
@@ -71,6 +80,27 @@ namespace Elympics
         {
             var parts = value.Split('.');
             return parts.Length == 4 && parts.All(part => part.Length > 0 && part.All(char.IsDigit));
+        }
+
+        /// <summary>Parses <c>key=value;key=value</c> with percent-encoded parts. An empty value gives null pairs.</summary>
+        internal static bool TryParseKeyValuePairs(string value, out IReadOnlyDictionary<string, string> pairs)
+        {
+            pairs = null;
+            if (value.Length == 0)
+                return true;
+            var result = new Dictionary<string, string>();
+            pairs = result;
+            foreach (var entry in value.Split(';'))
+            {
+                var equalsIndex = entry.IndexOf('=');
+                if (equalsIndex <= 0)
+                    return false;
+                var key = Uri.UnescapeDataString(entry[..equalsIndex]);
+                if (key.Length == 0 || result.ContainsKey(key))
+                    return false;
+                result[key] = Uri.UnescapeDataString(entry[(equalsIndex + 1)..]);
+            }
+            return true;
         }
 
         private static bool TryParseShortArgument(string arg, out char key)

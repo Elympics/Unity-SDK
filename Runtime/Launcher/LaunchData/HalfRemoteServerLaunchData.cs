@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using JetBrains.Annotations;
 
@@ -28,15 +29,22 @@ namespace Elympics
         public int? SignalingPort { get; }
         /// <summary>How many <see cref="ElympicsGameConfig.TestPlayers"/> entries the match uses. Null means all of them.</summary>
         public int? MaxPlayers { get; }
+        /// <summary>
+        /// Custom matchmaking data of the match, such as <c>:pub:seed</c> (see <see cref="InitialMatchPlayerDatasGuid.Seed"/>).
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, or else the custom matchmaking data of <see cref="ElympicsGameConfig.TestMatchData"/>.
+        /// An empty dictionary means none.
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 
         public HalfRemoteServerLaunchData(ElympicsHalfRemoteProtocols? protocols = null, string? serverHostname = null, int? tcpUdpPort = null,
-            int? signalingPort = null, int? maxPlayers = null)
+            int? signalingPort = null, int? maxPlayers = null, IReadOnlyDictionary<string, string>? customMatchmakingData = null)
         {
             Protocols = protocols;
             ServerHostname = serverHostname;
             TcpUdpPort = tcpUdpPort;
             SignalingPort = signalingPort;
             MaxPlayers = maxPlayers;
+            CustomMatchmakingData = Copy(customMatchmakingData);
         }
 
         internal override string ModeName => "HalfRemoteServer";
@@ -58,7 +66,7 @@ namespace Elympics
             if (MaxPlayers is { } maxPlayers && (maxPlayers < 1 || maxPlayers > gameConfig.MaxPlayers))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload,
                     $"{nameof(MaxPlayers)} must be between 1 and {nameof(ElympicsGameConfig.MaxPlayers)} ({gameConfig.MaxPlayers}) of {gameConfig.GameName}, got {maxPlayers}.", out failure);
-            return true;
+            return TryValidateCustomMatchmakingData(CustomMatchmakingData, out failure);
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR

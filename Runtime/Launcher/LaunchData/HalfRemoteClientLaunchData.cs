@@ -27,9 +27,16 @@ namespace Elympics
         public IReadOnlyList<byte>? GameEngineData { get; }
         /// <summary>Of the local player. Null means the value of its <see cref="ElympicsGameConfig.TestPlayers"/> entry.</summary>
         public IReadOnlyList<float>? MatchmakerData { get; }
+        /// <summary>
+        /// Custom matchmaking data the client sees in its match data. Set it to what the server uses, as the client doesn't get the server's value.
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, or else the custom matchmaking data of <see cref="ElympicsGameConfig.TestMatchData"/>.
+        /// An empty dictionary means none.
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 
         public HalfRemoteClientLaunchData(string? serverAddress = null, bool? useTcpUdpInsteadOfWebRtc = null, int? playerIndex = null,
-            string? regionName = null, string? queueName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null)
+            string? regionName = null, string? queueName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null,
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null)
         {
             ServerAddress = serverAddress;
             UseTcpUdpInsteadOfWebRtc = useTcpUdpInsteadOfWebRtc;
@@ -38,6 +45,7 @@ namespace Elympics
             QueueName = queueName;
             GameEngineData = gameEngineData == null ? null : Copy(gameEngineData);
             MatchmakerData = matchmakerData == null ? null : Copy(matchmakerData);
+            CustomMatchmakingData = Copy(customMatchmakingData);
         }
 
         internal override string ModeName => "HalfRemoteClient";
@@ -53,7 +61,7 @@ namespace Elympics
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} must be ip:port, got \"{ServerAddress}\".", out failure);
             if (PlayerIndex is < 0)
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(PlayerIndex)} must not be negative, got {PlayerIndex}.", out failure);
-            return true;
+            return TryValidateCustomMatchmakingData(CustomMatchmakingData, out failure);
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR && !ELYMPICS_WEBGL_HALF_REMOTE

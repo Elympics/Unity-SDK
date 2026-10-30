@@ -42,7 +42,7 @@ namespace Elympics
         [SerializeField] private int predictionLimitInTicks = 25;
 
         [Tooltip("The server ends the match (refunded) if not all players call IElympics.MarkReady() within this time from the server init.")]
-        [Min(180)]
+        [Min(180)] // The floor of the start timeout in the former DefaultServerHandler.
         [SerializeField] private float readyTimeoutSeconds = 180;
         [Tooltip("How far ahead the server schedules the match start once all players are ready. It's never shorter than the total prediction limit.")]
         [Min(0)]
@@ -112,7 +112,7 @@ namespace Elympics
         public float ReadyTimeoutSeconds => readyTimeoutSeconds;
         public float MatchStartDelaySeconds => matchStartDelaySeconds;
         public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
-        /// <summary>How many ticks ahead the match start is scheduled: at least the total prediction limit plus a margin, so that no client has predicted past it.</summary>
+        /// <summary>Start delay in ticks: at least the total prediction limit plus a margin, so that no client has predicted past it.</summary>
         internal long MatchStartDelayTicks => Math.Max((long)Math.Ceiling(matchStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + 2);
         public int PlayerIndexForHalfRemoteMode
         {

@@ -29,7 +29,7 @@ namespace Elympics
         public IReadOnlyList<float>? MatchmakerData { get; }
         /// <summary>
         /// Custom matchmaking data in the client's match data; set it to the server's, which the client doesn't receive.
-        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none (an empty array on the wire means unset).
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>.
         /// </summary>
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 

@@ -16,7 +16,7 @@ namespace Elympics.Core
         internal delegate void PlayerScoreUpdatedDelegate(int playerIndex, float score, string metadataJson, DateTime utcTime, TimeSpan gameplayTime);
         internal event PlayerScoreUpdatedDelegate? PlayerScoreUpdated;
 
-        private bool _enabled;
+        internal bool IsEnabled { get; private set; }
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
 
@@ -62,7 +62,7 @@ namespace Elympics.Core
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
         {
-            if (_enabled)
+            if (IsEnabled)
                 throw new InvalidOperationException("Already enabled");
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
@@ -75,7 +75,7 @@ namespace Elympics.Core
                 foreach (var key in _metadataKeys)
                     metadata.Add(key, default);
             }
-            _enabled = true;
+            IsEnabled = true;
         }
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
@@ -174,14 +174,14 @@ namespace Elympics.Core
         }
 
         [PublicAPI]
-        public float GetScore(int playerIndex) => _enabled
+        public float GetScore(int playerIndex) => IsEnabled
             ? _score[playerIndex]
             : throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
 
         [PublicAPI]
         public void SetScore(int playerIndex, float score)
         {
-            if (!_enabled)
+            if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             _score[playerIndex] = score;
             _changed[playerIndex] = true;
@@ -192,7 +192,7 @@ namespace Elympics.Core
         [PublicAPI]
         public JsonValue GetMetadata(int playerIndex, string key)
         {
-            if (!_enabled)
+            if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             return _metadataKeys.Contains(key)
                 ? _metadata[playerIndex][key]
@@ -202,7 +202,7 @@ namespace Elympics.Core
         [PublicAPI]
         public void SetMetadata(int playerIndex, string key, JsonValue value)
         {
-            if (!_enabled)
+            if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             if (!_metadataKeys.Contains(key))
                 throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
@@ -221,7 +221,7 @@ namespace Elympics.Core
         [PublicAPI]
         public ScoreWithMetadata this[int playerIndex]
         {
-            get => _enabled
+            get => IsEnabled
                 ? new ScoreWithMetadata(this, playerIndex)
                 : throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             set
@@ -251,7 +251,7 @@ namespace Elympics.Core
         [PublicAPI]
         public void Submit(bool forceSend = false)
         {
-            if (!_enabled)
+            if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             var utcTime = DateTime.UtcNow;
             for (var i = 0; i < _playerCount; i++)

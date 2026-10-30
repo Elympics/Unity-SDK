@@ -115,7 +115,9 @@ namespace Elympics
             _previousSnapshot = _currentSnapshot;
 
             SendQueuedRpcMessages();
-            _score?.Submit();
+            // A game may enable the score only once gameplay starts.
+            if (_score is { IsEnabled: true } score)
+                score.Submit();
             _serverElympicsUpdate.FinalizeTick(_currentSnapshot);
             if (_endGameRequested)
             {

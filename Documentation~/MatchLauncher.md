@@ -99,7 +99,7 @@ otherwise `ElympicsGameConfig`.
 | `CustomMatchmakingData` | `ELYMPICS_CUSTOM_MATCHMAKING_DATA`, else the config's test match data |
 
 The player list itself always comes from `TestPlayers`, as the server derives the same player IDs from its own config.
-The client doesn't receive the server's custom matchmaking data either, so give both of them the same value.
+The client doesn't receive the server's custom matchmaking data, so give both of them the same value.
 
 **`HalfRemoteServerLaunchData`**: every field is optional.
 
@@ -110,7 +110,7 @@ The client doesn't receive the server's custom matchmaking data either, so give 
 | `TcpUdpPort` | used only with `TcpUdp` (ignored with a warning otherwise) | the config TCP port |
 | `SignalingPort` | used only with `WebRtc` (ignored with a warning otherwise) | the config web port |
 | `MaxPlayers` | how many test players the match uses, at most `ElympicsGameConfig.MaxPlayers` | all of them |
-| `CustomMatchmakingData` | string pairs of the match, e.g. `:pub:seed` for `InitialMatchPlayerDatasGuid.Seed`. An empty dictionary means none | `ELYMPICS_CUSTOM_MATCHMAKING_DATA`, else the config's test match data |
+| `CustomMatchmakingData` | string pairs of the match, e.g. `:pub:seed` for `InitialMatchPlayerDatasGuid.Seed`. An empty dictionary means none (an empty array on the wire means unset) | `ELYMPICS_CUSTOM_MATCHMAKING_DATA`, else the config's test match data |
 
 The custom matchmaking data sources are never merged: the first one that is set is used whole.
 
@@ -255,8 +255,10 @@ Its data comes from the half-remote parameters (`--half-remote-ip`, `--half-remo
 
 `ELYMPICS_CUSTOM_MATCHMAKING_DATA` (`--elympics-custom-matchmaking-data=…`, or the URL query `elympicsCustomMatchmakingData`)
 sets the custom matchmaking data of a half-remote server or client, e.g. `--elympics-custom-matchmaking-data=:pub:seed=42;mode=fast`.
-Pairs are separated by `;`, and each key is separated from its value by the first `=`. Percent-encode a `;`, or an `=` in a key,
-(`%3B`, `%3D`); every key and value is percent-decoded. An entry without `=`, an empty key or a repeated key is an error.
+Pairs are separated by `;`, and each key is separated from its value by the first `=`. Percent-encode `;` (`%3B`) in keys and values,
+`=` (`%3D`) in keys and `%` (`%25`); every key and value is percent-decoded. An entry without `=`, an empty key or a repeated key is an error.
+In a URL query, the value is URL-decoded first, so encode it once more: `%253B`, `%253D`, `%2525`, `%252C` for a `,`
+(a raw one cuts the value), and `%2B` for a `+`. For example, `elympicsCustomMatchmakingData=%3Apub%3Aseed%3D42%3Bmode%3Dfast`.
 
 It limits the process to that one match:
 
@@ -293,7 +295,7 @@ prefix change that:
 | `Elympics:manual` | No launch arguments; launch from the Match Launcher as in the main Editor. |
 | `Elympics:halfRemoteServer` (or another launch mode) | Sets the launch mode. |
 | `Elympics:PlayerIndex=2` | Sets the half-remote player index. |
-| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name, e.g. `Elympics:elympics-custom-matchmaking-data=:pub:seed=42`. Give the server and every client the same custom matchmaking data. |
+| `Elympics:<long-argument>=<value>` | Sets any other parameter by its long argument name, e.g. `Elympics:elympics-custom-matchmaking-data=:pub:seed=42`. |
 
 Multiplayer Play Mode supports up to three virtual players, so the main Editor plus three virtual players can run a
 half-remote server and three clients.

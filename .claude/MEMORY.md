@@ -213,6 +213,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example (2026-10-19):** `unity --result-only command …` and `unity --timeout 120 command …` failed with "unknown option"; a synchronous PlayMode `run_tests` returned "entering play mode triggers a domain reload that drops the request".
 - **Example (2026-10-23):** with a second project's Editor open, every call failed with a list of candidate projects. A wrapper script still exited 0, with null compile and test results, so a run that tested nothing looked like a pass.
 - **Example (2026-10-27):** with one Hub-launched Editor (CLI 1.0.0-beta.13, pipeline 0.8.0-exp.1), `unity status` and `unity pipeline list` listed nothing, although `Library/Pipeline/.unity-pipeline-port` was fresh and the server was listening on 7800. With `UNITY_PROJECT_PATH` set, `run_tests` worked.
+- **Example (2026-10-30):** an EditMode `run_tests` left `test_status` showing the earlier PlayMode run. `unity --json command --timeout 120 run_tests …` printed the per-test results. Right after a PlayMode run, `TestPlayCommands.MatchStateWorksOutsidePlayMode` failed (a stale `ElympicsMatchLauncher.Current`) and passed after `EditorUtility.RequestScriptReload()`.
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
 
 ### A newer Unity Editor rewrites package sources

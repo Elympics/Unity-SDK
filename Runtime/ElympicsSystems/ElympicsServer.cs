@@ -119,6 +119,8 @@ namespace Elympics
                 UpdateMatchStart();
 
             var snapshot = _serverElympicsUpdate.GenerateSnapshot();
+            if (_isReplay)
+                _startTick = snapshot.StartTick;
             _currentSnapshot = ElympicsBehavioursManager.AddMetadataToSnapshot(snapshot);
         }
 

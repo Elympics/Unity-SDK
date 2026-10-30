@@ -401,6 +401,51 @@ namespace Elympics
 
         #endregion
 
+        #region Match started from the launch mode parameter
+
+        internal override IElympicsMatchLifecycleSink? TrackParameterMatch()
+        {
+            if (!_limitedToParameterMatch || State != MatchLauncherState.Idle)
+                return null;
+            SetState(MatchLauncherState.Loading);
+            return new ParameterMatchTracker(this);
+        }
+
+        private sealed class ParameterMatchTracker : IElympicsMatchLifecycleSink
+        {
+            private readonly DefaultElympicsMatchLauncher _owner;
+
+            public ParameterMatchTracker(DefaultElympicsMatchLauncher owner) => _owner = owner;
+
+            public void SceneInitializationFailed(ElympicsLaunchErrorCode code, string message) => _owner.MoveParameterMatch(MatchLauncherState.Loading, MatchLauncherState.Idle);
+            public void MatchJoined() => _owner.MoveParameterMatch(MatchLauncherState.Loading, MatchLauncherState.Running);
+            public void JoinFailed(string message) => _owner.MoveParameterMatch(MatchLauncherState.Loading, MatchLauncherState.Idle);
+
+            public void MatchEnded(Guid matchId)
+            {
+                if (_owner.MoveParameterMatch(MatchLauncherState.Running, MatchLauncherState.Ended))
+                    _owner.Raise(_owner.MatchEnded, new ElympicsMatchEndedInfo { matchId = matchId.ToString() });
+            }
+
+            public void Disconnected(bool byServer)
+            {
+                if (_owner.MoveParameterMatch(MatchLauncherState.Running, MatchLauncherState.Ended))
+                    _owner.Raise(_owner.Disconnected, new ElympicsDisconnectedInfo { matchId = Guid.Empty.ToString(), byServer = byServer });
+                else
+                    _ = _owner.MoveParameterMatch(MatchLauncherState.Loading, MatchLauncherState.Idle);
+            }
+        }
+
+        private bool MoveParameterMatch(MatchLauncherState from, MatchLauncherState to)
+        {
+            if (State != from || _session != null)
+                return false;
+            SetState(to);
+            return true;
+        }
+
+        #endregion
+
         #region Quit
 
         public override void QuitApplication(string reason = "")

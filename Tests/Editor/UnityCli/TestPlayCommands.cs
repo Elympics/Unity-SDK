@@ -29,6 +29,23 @@ namespace Elympics.Editor.Tests.UnityCli
         public void LaunchRejectsUnsupportedModes(string mode) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.Launch(mode), ElympicsCliErrors.InvalidArgument);
 
+        [TestCase("single_player", 0)]
+        [TestCase("half_remote_server", 0)]
+        [TestCase("half_remote_client", -2)]
+        public void LaunchRejectsInvalidPlayerIndex(string mode, int playerIndex) =>
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch(mode, playerIndex: playerIndex), ElympicsCliErrors.InvalidArgument);
+
+        // The test game has no Test players, so no index (explicit or from the config) has an entry.
+        [TestCase(-1)]
+        [TestCase(0)]
+        public void HalfRemoteClientLaunchRequiresATestPlayerForItsIndex(int playerIndex)
+        {
+            using var configPath = new ConfigPathScope("ElympicsTests/ElympicsConfig");
+            Assume.That(EditorMatchLaunchQueue.GetDirtyScenes(), Is.Empty);
+
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("half_remote_client", playerIndex: playerIndex), ElympicsCliErrors.InvalidArgument);
+        }
+
         [Test]
         public void LaunchRefusesUnsavedScenes()
         {
@@ -62,6 +79,43 @@ namespace Elympics.Editor.Tests.UnityCli
         [TestCase("{\"2\":[{\"tag\":\"Elympics:Red\"}]}")]
         public void VirtualPlayerTagsMustBeElympicsTags(string tags) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, tags), ElympicsCliErrors.InvalidArgument);
+
+        [Test]
+        public void OnlyRunningPlayersThatStayActiveWithChangedTagsNeedARestart()
+        {
+            static MppmReflection.VirtualPlayer CreatePlayer(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
+            var before = new[]
+            {
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=1"),
+                CreatePlayer(4, "NotLaunched", "Elympics:PlayerIndex=2"),
+            };
+            var after = new[]
+            {
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=0"),
+                CreatePlayer(4, "Launching", "Elympics:PlayerIndex=3"),
+            };
+
+            // Player 3 is being deactivated (--count 1), and player 4 has just been activated with its new tags.
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 1), Is.EqualTo(new[] { 2 }));
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, after, 3), Is.EqualTo(new[] { 2, 3 }));
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, before, 3), Is.Empty);
+        }
+
+        [Test]
+        public void ReorderedTagsDontNeedARestartButRecasedOnesDo()
+        {
+            static MppmReflection.VirtualPlayer CreatePlayer(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
+            var before = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
+            var reordered = new[] { CreatePlayer("Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
+            var recased = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=red") };
+
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, reordered, 1), Is.Empty);
+            Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, recased, 1), Is.EqualTo(new[] { 2 }));
+        }
 
         [Test]
         public void LaunchOutcomesAreRecorded()

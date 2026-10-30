@@ -16,6 +16,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **com.unity.pipeline 0.8 is the floor:** keep it as the minimum; verify commands by listing, never by uploading.
 
 ## Verification
+- **dotnet format --include:** file paths, `folder/` or a glob; a bare folder matches nothing and exits 0.
 - **Compile and test evidence:** redirected `dotnet build`; tests via `unity command`, batchmode, or the open Editor.
 - **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.

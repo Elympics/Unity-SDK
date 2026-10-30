@@ -46,6 +46,7 @@ namespace Elympics
         private PredictionBuffer _predictionBuffer;
 
         private static readonly object LastReceivedSnapshotLock = new();
+        private static readonly TimeSpan ReadyResendInterval = TimeSpan.FromSeconds(1);
         private ElympicsSnapshot? _lastReceivedSnapshot;
         private long _latestReconciliationBaseSnapshotTick;
         private bool _hasReconciliationBase;
@@ -72,7 +73,7 @@ namespace Elympics
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
         private bool _readyRequested;
-        private long _nextReadySendTick;
+        private DateTime _nextReadySendUtc;
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
@@ -284,7 +285,7 @@ namespace Elympics
             _reanchoredCount = 0;
             _replayedCount = 0;
             _serverWorldState.ResetToEmpty();
-            _nextReadySendTick = long.MinValue;
+            _nextReadySendUtc = DateTime.MinValue;
             _currentTicksWithoutPrediction = 0;
             _previousTick = 0;
             _lastDelayedInputTick = 0;
@@ -453,14 +454,16 @@ namespace Elympics
             if ((int)Player < 0)
                 return;
             _readyRequested = true;
-            _nextReadySendTick = long.MinValue;
+            _nextReadySendUtc = DateTime.MinValue;
         }
 
         private void SendReadyIfPending()
         {
-            if (!_readyRequested || StartTick.HasValue || Tick < _nextReadySendTick)
+            // Wall-clock time, because the tick doesn't advance while prediction is blocked.
+            var now = DateTime.UtcNow;
+            if (!_readyRequested || StartTick.HasValue || now < _nextReadySendUtc)
                 return;
-            _nextReadySendTick = Tick + Config.TicksPerSecond;
+            _nextReadySendUtc = now + ReadyResendInterval;
             _matchClient.SendReady();
         }
 

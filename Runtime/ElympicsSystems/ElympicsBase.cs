@@ -38,6 +38,10 @@ namespace Elympics
         protected virtual double MaxUpdateTimeWarningThreshold => ElympicsUpdateDuration;
         internal DateTime TickStartUtc { get; set; }
         internal DateTime TickEndUtc { get; set; }
+
+        private long _lastSeenTick = long.MinValue;
+        /// <summary>When an update last saw <see cref="Tick"/> change. Stays behind while ticks keep failing.</summary>
+        internal DateTime TickLastAdvancedUtc { get; private set; }
         internal ElympicsGameConfig Config { get; private set; }
 
         internal CallContext CurrentCallContext { get; private set; } = CallContext.None;
@@ -82,6 +86,11 @@ namespace Elympics
                 return;
 
             var currentUtc = DateTime.UtcNow;
+            if (Tick != _lastSeenTick)
+            {
+                _lastSeenTick = Tick;
+                TickLastAdvancedUtc = currentUtc;
+            }
             _timer += CalculateDeltaBasedOnUtcNow(currentUtc);
 
             _elympicsUpdateStopwatch.Stop();

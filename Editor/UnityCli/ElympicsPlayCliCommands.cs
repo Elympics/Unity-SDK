@@ -37,7 +37,13 @@ namespace Elympics.Editor.UnityCli
             [CliArg("game_id", CliWeb.ConfigGameIdDescription)] string gameId = "",
             [CliArg("launch_timeout_seconds", "Seconds the launch may take before it fails with a timeout; -1 for none.")] int launchTimeoutSeconds = ElympicsLaunchDefaults.LaunchTimeoutSeconds,
             [CliArg("post_match_timeout_seconds", "Seconds to wait after the match ends before returning to boot; -1 for none.")] int postMatchTimeoutSeconds = ElympicsLaunchDefaults.PostMatchTimeoutSeconds,
-            [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false) =>
+            [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false,
+            [CliArg("player_index", "half_remote_client only: the index in the game config's Test players list to join as; -1 uses the config's half-remote player index.")]
+            int playerIndex = -1,
+            [CliArg("custom_matchmaking_data", "half_remote_server and half_remote_client only: a non-empty JSON object of strings, e.g. '{\":pub:seed\":\"42\"}', "
+                + "replacing the game config's custom matchmaking data. Use the same value for the server and its clients (virtual players: "
+                + "the Elympics:elympics-custom-matchmaking-data=<key=value;...> tag).")]
+            string customMatchmakingData = "") =>
             CliRun.Run(() =>
             {
                 if (launchTimeoutSeconds < -1 || postMatchTimeoutSeconds < -1)
@@ -50,6 +56,15 @@ namespace Elympics.Editor.UnityCli
                     LaunchMode.HalfRemoteClient => ElympicsHostLaunchKind.HalfRemoteClient,
                     _ => ElympicsHostLaunchKind.SinglePlayer,
                 };
+                if (playerIndex != -1 && kind != ElympicsHostLaunchKind.HalfRemoteClient)
+                    throw ElympicsCliErrors.InvalidArgumentException("--player_index applies only to --mode half_remote_client.", "leave --player_index out for this mode.");
+                if (playerIndex < -1)
+                    throw ElympicsCliErrors.InvalidArgumentException("--player_index must be -1 or more.",
+                        "pass an index in the game config's Test players list, or -1 for the config's half-remote player index.");
+                var customData = ParseCustomMatchmakingData(customMatchmakingData);
+                if (customData != null && kind == ElympicsHostLaunchKind.SinglePlayer)
+                    throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data applies only to the half_remote_server and half_remote_client modes.",
+                        "leave --custom_matchmaking_data out for this mode.");
                 var playing = EditorApplication.isPlaying;
                 if (playing)
                 {
@@ -72,7 +87,16 @@ namespace Elympics.Editor.UnityCli
 
                 var game = CliGames.ResolveGame(gameId);
                 var requestId = "cli-" + Guid.NewGuid().ToString("N")[..12];
-                var dataJson = JsonUtility.ToJson(ElympicsLaunchDtos.Create(kind));
+                var data = ElympicsLaunchDtos.Create(kind);
+                if (data is HalfRemoteClientLaunchDataDto clientData)
+                {
+                    RequireTestPlayer(game, playerIndex);
+                    clientData.playerIndex = playerIndex;
+                    clientData.customMatchmakingData = CreateKeyValueDtos(customData);
+                }
+                else if (data is HalfRemoteServerLaunchDataDto serverData)
+                    serverData.customMatchmakingData = CreateKeyValueDtos(customData);
+                var dataJson = JsonUtility.ToJson(data);
                 var optionsJson = JsonUtility.ToJson(new ElympicsLaunchOptionsDto
                 {
                     requestId = requestId,
@@ -91,12 +115,65 @@ namespace Elympics.Editor.UnityCli
                 return new { status = "launch_queued", requestId, mode = modeName, gameId = game.GameId, enteringPlayMode = !playing };
             });
 
+        private const string CustomMatchmakingDataFix = "pass e.g. --custom_matchmaking_data '{\":pub:seed\":\"42\"}' (string values only).";
+
+        internal static Dictionary<string, string>? ParseCustomMatchmakingData(string json)
+        {
+            var parsed = CliArgs.ParseJsonObject(json, "custom_matchmaking_data", "a JSON object", CustomMatchmakingDataFix, ParseStrictObject);
+            if (parsed == null)
+                return null;
+            // An empty array means unset on the wire, so an empty object couldn't replace the game config's data.
+            if (!parsed.HasValues)
+                throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data is an empty object.",
+                    "leave --custom_matchmaking_data out to use the game config's custom matchmaking data.");
+            var result = new Dictionary<string, string>();
+            foreach (var property in parsed.Properties())
+            {
+                if (property.Name.Length == 0)
+                    throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data has an empty key.", CustomMatchmakingDataFix);
+                if (property.Value.Type != JTokenType.String)
+                    throw ElympicsCliErrors.InvalidArgumentException(
+                        $"--custom_matchmaking_data has a {property.Value.Type} value for \"{property.Name}\"; values must be strings.", CustomMatchmakingDataFix);
+                result[property.Name] = (string)property.Value!;
+            }
+            return result;
+        }
+
+        // Unlike JObject.Parse, keeps date-like strings as strings and rejects duplicate keys.
+        private static JObject ParseStrictObject(string json)
+        {
+            using var reader = new JsonTextReader(new System.IO.StringReader(json)) { DateParseHandling = DateParseHandling.None };
+            var parsed = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+            if (reader.Read())
+                throw new JsonReaderException("Additional text found after the JSON object.");
+            return parsed;
+        }
+
+        private static KeyValueDto[] CreateKeyValueDtos(Dictionary<string, string>? data) =>
+            data?.Select(pair => new KeyValueDto { key = pair.Key, value = pair.Value }).ToArray() ?? Array.Empty<KeyValueDto>();
+
+        // Fails fast: a missing Test players entry otherwise surfaces only when the gameplay scene loads.
+        private static void RequireTestPlayer(ElympicsGameConfig game, int playerIndex)
+        {
+            var effective = playerIndex >= 0 ? playerIndex : game.PlayerIndexForHalfRemoteMode;
+            var count = game.TestPlayers.Count;
+            if (effective < count)
+                return;
+            var source = playerIndex >= 0 ? "--player_index" : "The config's half-remote player index";
+            throw ElympicsCliErrors.InvalidArgumentException($"{source} {effective} has no entry in the Test players list of {game.GameName}, which has {count}.",
+                count > 0
+                    ? $"pass --player_index from 0 to {count - 1}, or add Test players to the game config (Elympics config Inspector)."
+                    : "add Test players to the game config (Elympics config Inspector), then pass --player_index.");
+        }
+
         private static string ToSnakeCase(string name) => string.Concat(name.Select((character, index) =>
             char.IsUpper(character) ? (index > 0 ? "_" : "") + char.ToLowerInvariant(character) : character.ToString()));
 
         [CliCommand("elympics_get_match_state",
             "Report Play mode, the match launcher, the last elympics_launch outcome (survives the Play mode reload), the live match "
-            + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch.",
+            + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch. "
+            + "A match.secondsSinceTickAdvanced well above the tick duration means the tick loop is stalled (check the Console for repeated exceptions), "
+            + "unless the Editor is paused or the match hasn't started ticking (e.g. it's waiting for players).",
             Tags = new[] { "elympics/play" })]
         public static object GetMatchState() => CliRun.Run(() =>
         {
@@ -133,6 +210,9 @@ namespace Elympics.Editor.UnityCli
                     : new
                     {
                         tick = elympics.Tick,
+                        secondsSinceTickAdvanced = elympics.TickLastAdvancedUtc == default
+                            ? (double?)null
+                            : Math.Round((DateTime.UtcNow - elympics.TickLastAdvancedUtc).TotalSeconds, 2),
                         ticksPerSecond = elympics.TicksPerSecond,
                         tickDuration = elympics.TickDuration,
                         isServer = elympics.IsServer,
@@ -240,8 +320,33 @@ namespace Elympics.Editor.UnityCli
                     MppmReflection.SetActive(number, wanted);
             }
 
-            return new { status = "updated", count, players = MppmReflection.GetPlayers() };
+            var updated = MppmReflection.GetPlayers();
+            var restartRequired = FindPlayersNeedingRestart(players, updated, count);
+            return new
+            {
+                status = "updated",
+                count,
+                players = updated,
+                restartRequired,
+                hint = restartRequired.Count == 0
+                    ? null
+                    : "Running players apply new tags only after a restart: lower --count, wait until elympics_get_virtual_players "
+                    + $"shows them NotLaunched, then call elympics_set_virtual_players --count {count} again.",
+            };
         });
+
+        /// <summary>Numbers of players that stay active (within <paramref name="count"/>), were already running, and had their Elympics: tags changed.</summary>
+        /// <remarks>Deactivation is asynchronous, so a player being deactivated may still look running in <paramref name="after"/>.</remarks>
+        internal static List<int> FindPlayersNeedingRestart(IReadOnlyList<MppmReflection.VirtualPlayer> before, IReadOnlyList<MppmReflection.VirtualPlayer> after, int count) =>
+            after.Where(player => player.number >= 2 && player.number - 1 <= count)
+                .Where(player => before.FirstOrDefault(old => old.number == player.number) is { } old
+                    && old.state != NotLaunched
+                    && !GetElympicsTags(old).ToHashSet(StringComparer.Ordinal).SetEquals(GetElympicsTags(player)))
+                .Select(player => player.number)
+                .ToList();
+
+        private static IEnumerable<string> GetElympicsTags(MppmReflection.VirtualPlayer player) =>
+            player.tags.Where(tag => tag.StartsWith(PlayModeArguments.TagPrefix, StringComparison.OrdinalIgnoreCase));
 
         private static List<(int number, List<string> tags)> ParseTags(string json)
         {

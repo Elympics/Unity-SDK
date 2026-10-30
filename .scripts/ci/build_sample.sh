@@ -11,7 +11,7 @@ cp "$(dirname "${BASH_SOURCE[0]}")/CiBuild.cs" "$UNITY_DIR/Assets/Editor/CiBuild
 
 export CI_BUILD_OUTPUT="${CI_BUILD_OUTPUT:-$UNITY_DIR/Build}"
 
-${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+"$(dirname "${BASH_SOURCE[0]}")/unity_editor.sh" \
   -projectPath "$UNITY_DIR" \
   -buildTarget "$BUILD_TARGET" \
   -executeMethod CiBuild.Build \

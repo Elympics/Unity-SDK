@@ -128,6 +128,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** it exited 0 on a `WebGLUploader.cs` that the compiler rejected with six errors (CS0201, CS0019, CS0029).
 - **Time scope:** If the CI style check stops using `dotnet format`, remove this.
 
+### dotnet format --include needs file paths or a trailing slash
+- **Rule:** pass `--include` as file paths (e.g. the output of `git diff --name-only origin/develop...HEAD -- '*.cs'`, prefixed with the package path, run on the host `.sln`), a folder with a trailing `/`, or a glob. Prove a new invocation works by adding a known violation and seeing exit 2.
+- **Reason:** a folder without a trailing slash matches no files, and `dotnet format` then exits 0 silently.
+- **Example:** on 2026-10-30, `--include …/Runtime/Util/Parameters` exited 0 while CI's `verify-formatting` failed twice on files in that folder (IDE0059, IDE0005); `…/Parameters/` exited 2.
+- **Time scope:** If `dotnet format` starts matching bare folder paths, remove this.
+
 ### Compile and test evidence
 - **Rule:** compile with the redirected `dotnet build` from the host project dir (see CLAUDE.md), never a plain one. For tests:
   - Drive the running Editor with the Unity CLI (`unity command`; this package depends on `com.unity.pipeline`). See "Driving the Editor through the pipeline CLI".

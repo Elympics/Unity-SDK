@@ -22,8 +22,10 @@ namespace Elympics
         public byte[]? GameEngineData { get; }
         /// <summary>Of the local player. Null means the value of its test player entry.</summary>
         public float[]? MatchmakerData { get; }
+        public IReadOnlyDictionary<string, string> CustomMatchmakingData { get; }
 
-        private HalfRemoteClientSettings(IPEndPoint serverEndPoint, bool useWeb, int playerIndex, string queueName, string regionName, byte[]? gameEngineData, float[]? matchmakerData)
+        private HalfRemoteClientSettings(IPEndPoint serverEndPoint, bool useWeb, int playerIndex, string queueName, string regionName, byte[]? gameEngineData, float[]? matchmakerData,
+            IReadOnlyDictionary<string, string> customMatchmakingData)
         {
             ServerEndPoint = serverEndPoint;
             UseWeb = useWeb;
@@ -32,6 +34,7 @@ namespace Elympics
             RegionName = regionName;
             GameEngineData = gameEngineData;
             MatchmakerData = matchmakerData;
+            CustomMatchmakingData = customMatchmakingData;
         }
 
         public static HalfRemoteClientSettings Resolve(HalfRemoteClientLaunchData? data, ElympicsGameConfig config)
@@ -52,7 +55,8 @@ namespace Elympics
                 data?.QueueName ?? config.TestMatchData.queueName,
                 data?.RegionName ?? config.TestMatchData.regionName,
                 data?.GameEngineData?.ToArray(),
-                data?.MatchmakerData?.ToArray());
+                data?.MatchmakerData?.ToArray(),
+                HalfRemoteCustomData.Resolve(data?.CustomMatchmakingData, config));
         }
     }
 
@@ -69,13 +73,16 @@ namespace Elympics
         public int PlayerCount { get; }
         /// <summary>Settings given for a protocol that is not listened on, and so ignored.</summary>
         public IReadOnlyList<string> Warnings { get; }
+        public IReadOnlyDictionary<string, string> CustomMatchmakingData { get; }
 
-        private HalfRemoteServerSettings(IPEndPoint? tcpUdpEndPoint, IPEndPoint? webEndPoint, int playerCount, IReadOnlyList<string> warnings)
+        private HalfRemoteServerSettings(IPEndPoint? tcpUdpEndPoint, IPEndPoint? webEndPoint, int playerCount, IReadOnlyList<string> warnings,
+            IReadOnlyDictionary<string, string> customMatchmakingData)
         {
             TcpUdpEndPoint = tcpUdpEndPoint;
             WebEndPoint = webEndPoint;
             PlayerCount = playerCount;
             Warnings = warnings;
+            CustomMatchmakingData = customMatchmakingData;
         }
 
         public static HalfRemoteServerSettings Resolve(HalfRemoteServerLaunchData? data, ElympicsGameConfig config)
@@ -96,7 +103,28 @@ namespace Elympics
             var tcpUdp = listensTcpUdp ? new IPEndPoint(address, data?.TcpUdpPort ?? config.TcpPortForHalfRemoteMode) : null;
             var web = listensWebRtc ? new IPEndPoint(address, data?.SignalingPort ?? config.WebPortForHalfRemoteMode) : null;
             var playerCount = Math.Min(data?.MaxPlayers ?? int.MaxValue, config.TestPlayers.Count);
-            return new HalfRemoteServerSettings(tcpUdp, web, playerCount, warnings);
+            return new HalfRemoteServerSettings(tcpUdp, web, playerCount, warnings, HalfRemoteCustomData.Resolve(data?.CustomMatchmakingData, config));
+        }
+    }
+
+    /// <summary>Launch data, else the <see cref="ParameterList.CustomMatchmakingData"/> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>; never merged.</summary>
+    internal static class HalfRemoteCustomData
+    {
+        public static IReadOnlyDictionary<string, string> Resolve(IReadOnlyDictionary<string, string>? fromLaunchData, ElympicsGameConfig config) =>
+            Resolve(fromLaunchData, ApplicationParameters.Parameters.CustomMatchmakingData.GetValue(), config);
+
+        internal static IReadOnlyDictionary<string, string> Resolve(IReadOnlyDictionary<string, string>? fromLaunchData,
+            IReadOnlyDictionary<string, string>? fromParameter, ElympicsGameConfig config) =>
+            fromLaunchData ?? fromParameter ?? ReadFromConfig(config);
+
+        private static Dictionary<string, string> ReadFromConfig(ElympicsGameConfig config)
+        {
+            var result = new Dictionary<string, string>();
+            foreach (var entry in config.TestMatchData.customMatchmakingData)
+                if (!result.TryAdd(entry.key, entry.value))
+                    throw new InvalidOperationException($"The custom matchmaking data of {config.GameName}'s test match data has a duplicate key: '{entry.key}'. "
+                        + "Fix: remove the duplicate in the Elympics config Inspector.");
+            return result;
         }
     }
 }

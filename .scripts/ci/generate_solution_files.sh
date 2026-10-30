@@ -4,7 +4,7 @@ set -x
 
 echo "Generating solution files for created project"
 
-${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+"$(dirname "${BASH_SOURCE[0]}")/unity_editor.sh" \
   -projectPath $UNITY_DIR \
   -quit \
   -batchmode \

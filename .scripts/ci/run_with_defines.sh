@@ -10,7 +10,7 @@ cp "$PROJECT_SETTINGS_PATH" "${PROJECT_SETTINGS_PATH}.bak"
 "$(dirname "${BASH_SOURCE[0]}")/set_scripting_defines.sh" "$1"
 
 UNITY_EXIT_CODE=0
-${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' unity-editor} \
+"$(dirname "${BASH_SOURCE[0]}")/unity_editor.sh" \
   -projectPath "$UNITY_DIR" \
   -logFile /dev/stdout \
   -batchmode \
@@ -23,5 +23,5 @@ if [ $UNITY_EXIT_CODE -eq 0 ]; then
   echo "Run succeeded, no failures occurred"
 else
   echo "Failed to run project"
-  exit 1
+  exit "$UNITY_EXIT_CODE"
 fi

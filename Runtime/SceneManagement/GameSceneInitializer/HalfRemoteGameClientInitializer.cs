@@ -21,7 +21,6 @@ namespace Elympics
             var settings = HalfRemoteClientSettings.Resolve(_data, elympicsGameConfig);
             var playerIndex = settings.PlayerIndex;
             var customRoomData = elympicsGameConfig.TestMatchData.roomCustomData;
-            var customMatchmakingData = elympicsGameConfig.TestMatchData.customMatchmakingData;
 
             var playersList = DebugPlayerListCreator.CreatePlayersList(elympicsGameConfig);
 
@@ -54,7 +53,7 @@ namespace Elympics
                     var roomCustomData = x.roomCustomData.ToDictionary(customData => customData.key, customData => customData.value);
                     return (roomid: roomId, (IReadOnlyDictionary<string, string>)roomCustomData);
                 }).ToDictionary(pair => pair.roomid, pair => pair.Item2),
-                CustomMatchmakingData = customMatchmakingData.ToDictionary(x => x.key, x => x.value),
+                CustomMatchmakingData = settings.CustomMatchmakingData,
                 ExternalGameData = new byte[] { },
                 PlayerInitialDatas = playersList.Select((x, index) => new PlayerInitialData
                 {

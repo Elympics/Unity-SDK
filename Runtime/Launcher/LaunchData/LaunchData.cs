@@ -32,5 +32,20 @@ namespace Elympics
         }
 
         private protected static T[] Copy<T>(IEnumerable<T>? values) => values?.ToArray() ?? Array.Empty<T>();
+
+        private protected static IReadOnlyDictionary<string, string>? CopyOrNull(IReadOnlyDictionary<string, string>? values) =>
+            values?.ToDictionary(x => x.Key, x => x.Value);
+
+        private protected static bool TryValidateCustomMatchmakingData(IReadOnlyDictionary<string, string>? data, out ElympicsLaunchFailure? failure)
+        {
+            failure = null;
+            if (data == null)
+                return true;
+            if (data.Keys.Any(string.IsNullOrEmpty))
+                return Fail(ElympicsLaunchErrorCode.InvalidPayload, "CustomMatchmakingData keys must not be empty.", out failure);
+            if (data.Values.Any(value => value == null))
+                return Fail(ElympicsLaunchErrorCode.InvalidPayload, "CustomMatchmakingData values must not be null.", out failure);
+            return true;
+        }
     }
 }

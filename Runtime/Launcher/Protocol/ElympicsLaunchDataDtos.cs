@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 
 namespace Elympics
 {
@@ -109,6 +110,26 @@ namespace Elympics
             }
         }
 
+        public static bool TryParseKeyValues(KeyValueDto[]? entries, string name, out IReadOnlyDictionary<string, string>? result, out ElympicsLaunchFailure? failure)
+        {
+            failure = null;
+            result = null;
+            if (entries is not { Length: > 0 })
+                return true;
+            var parsed = new Dictionary<string, string>();
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var key = entries[i]?.key;
+                if (string.IsNullOrEmpty(key))
+                    return Fail($"{name}[{i}].key must not be empty.", out failure);
+                if (parsed.ContainsKey(key!))
+                    return Fail($"{name} has the key \"{key}\" more than once.", out failure);
+                parsed[key!] = entries[i].value ?? "";
+            }
+            result = parsed;
+            return true;
+        }
+
         public static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 
         public static float[]? NullIfEmpty(float[]? values) => values is { Length: > 0 } ? values : null;
@@ -118,6 +139,13 @@ namespace Elympics
             failure = new ElympicsLaunchFailure(ElympicsLaunchErrorCode.InvalidPayload, message);
             return false;
         }
+    }
+
+    [Serializable]
+    internal class KeyValueDto
+    {
+        public string key = "";
+        public string value = "";
     }
 
     internal interface ILaunchDataDto
@@ -186,18 +214,20 @@ namespace Elympics
         public string queueName = "";
         public string gameEngineData = "";
         public float[] matchmakerData = Array.Empty<float>();
+        public KeyValueDto[] customMatchmakingData = Array.Empty<KeyValueDto>();
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)
         {
             data = null;
             if (!ElympicsLaunchDtoParsing.TryParseTransport(transport, out var useTcpUdp, out failure)
-                || !ElympicsLaunchDtoParsing.TryParseBase64(gameEngineData, nameof(gameEngineData), out var engineData, out failure))
+                || !ElympicsLaunchDtoParsing.TryParseBase64(gameEngineData, nameof(gameEngineData), out var engineData, out failure)
+                || !ElympicsLaunchDtoParsing.TryParseKeyValues(customMatchmakingData, nameof(customMatchmakingData), out var customData, out failure))
                 return false;
             if (playerIndex < -1)
                 return ElympicsLaunchDtoParsing.Fail($"{nameof(playerIndex)} must be -1 (default) or an index, got {playerIndex}.", out failure);
             data = new HalfRemoteClientLaunchData(ElympicsLaunchDtoParsing.NullIfEmpty(serverAddress), useTcpUdp, playerIndex < 0 ? null : playerIndex,
                 ElympicsLaunchDtoParsing.NullIfEmpty(regionName), ElympicsLaunchDtoParsing.NullIfEmpty(queueName), engineData,
-                ElympicsLaunchDtoParsing.NullIfEmpty(matchmakerData));
+                ElympicsLaunchDtoParsing.NullIfEmpty(matchmakerData), customData);
             return true;
         }
     }
@@ -214,11 +244,13 @@ namespace Elympics
         public int tcpUdpPort;
         public int signalingPort;
         public int maxPlayers;
+        public KeyValueDto[] customMatchmakingData = Array.Empty<KeyValueDto>();
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)
         {
             data = null;
-            failure = null;
+            if (!ElympicsLaunchDtoParsing.TryParseKeyValues(customMatchmakingData, nameof(customMatchmakingData), out var customData, out failure))
+                return false;
             ElympicsHalfRemoteProtocols? parsedProtocols;
             switch (protocols)
             {
@@ -239,7 +271,7 @@ namespace Elympics
                         $"{nameof(protocols)} must be \"\", \"{ProtocolsTcpUdp}\", \"{ProtocolsWebRtc}\" or \"{ProtocolsBoth}\", got \"{protocols}\".", out failure);
             }
             data = new HalfRemoteServerLaunchData(parsedProtocols, ElympicsLaunchDtoParsing.NullIfEmpty(serverHostname),
-                tcpUdpPort == 0 ? null : tcpUdpPort, signalingPort == 0 ? null : signalingPort, maxPlayers == 0 ? null : maxPlayers);
+                tcpUdpPort == 0 ? null : tcpUdpPort, signalingPort == 0 ? null : signalingPort, maxPlayers == 0 ? null : maxPlayers, customData);
             return true;
         }
     }

@@ -92,7 +92,8 @@ namespace Elympics
 
         private async UniTask RunFromLaunchModeParameterAsync()
         {
-            var sink = new ExitAfterMatchSink(_ => ExitUtility.ExitGame());
+            var launcherTracker = (ElympicsMatchLauncher.Current as DefaultElympicsMatchLauncher)?.TrackParameterMatch();
+            var sink = new ExitAfterMatchSink(_ => ExitUtility.ExitGame(), launcherTracker);
             try
             {
                 var parameters = ApplicationParameters.Parameters;

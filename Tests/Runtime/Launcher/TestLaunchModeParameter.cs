@@ -119,6 +119,53 @@ namespace Elympics.Tests
             Assert.That(events[0].Type, Is.EqualTo("launchFailed"));
         }
 
+        [TestCase("MatchEnded")]
+        [TestCase("Disconnected")]
+        public void ParameterMatchMovesTheLauncherThroughItsStates(string end)
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            var endEvents = 0;
+            launcher.MatchEnded += _ => endEvents++;
+            launcher.Disconnected += _ => endEvents++;
+            var exits = new List<string>();
+            IElympicsMatchLifecycleSink sink = new ExitAfterMatchSink(exits.Add, launcher.TrackParameterMatch());
+
+            Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Loading));
+            sink.MatchJoined();
+            Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Running));
+            Assert.That(launcher.IsCurrentlyInMatch, Is.True);
+            if (end == "MatchEnded")
+                sink.MatchEnded(Guid.Empty);
+            else
+                sink.Disconnected(true);
+
+            Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Ended));
+            Assert.That(endEvents, Is.EqualTo(1));
+            Assert.That(exits, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void ParameterMatchThatFailsToStartLeavesTheLauncherIdle()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            IElympicsMatchLifecycleSink sink = new ExitAfterMatchSink(_ => { }, launcher.TrackParameterMatch());
+
+            sink.JoinFailed("x");
+
+            Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Idle));
+        }
+
+        [Test]
+        public void OnlyALauncherLimitedToTheParameterMatchTracksIt()
+        {
+            var launcher = new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { });
+
+            Assert.That(launcher.TrackParameterMatch(), Is.Null);
+            Assert.That(launcher.State, Is.EqualTo(MatchLauncherState.Idle));
+        }
+
         private sealed class NullSceneLoader : IElympicsSceneLoader
         {
             public Cysharp.Threading.Tasks.UniTask<bool> LoadSingleAsync(string scenePath) => Cysharp.Threading.Tasks.UniTask.FromResult(false);

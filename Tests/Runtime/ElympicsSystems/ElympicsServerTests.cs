@@ -9,7 +9,7 @@ namespace Elympics.Tests
 {
     [TestFixture]
     [Category("Core")]
-    public class ElympicsServerScoreTests
+    public class ElympicsServerTests
     {
         private const int MaxPlayers = 2;
 

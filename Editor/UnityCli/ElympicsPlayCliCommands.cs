@@ -123,7 +123,8 @@ namespace Elympics.Editor.UnityCli
 
         [CliCommand("elympics_get_match_state",
             "Report Play mode, the match launcher, the last elympics_launch outcome (survives the Play mode reload), the live match "
-            + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch.",
+            + "(tick, role, player) and client connection diagnostics (RTT, prediction, reconciliations). Never fails; poll it after elympics_launch. "
+            + "A match.secondsSinceTickAdvanced well above the tick duration means the tick loop is stalled (check the Console for repeated exceptions).",
             Tags = new[] { "elympics/play" })]
         public static object GetMatchState() => CliRun.Run(() =>
         {
@@ -160,6 +161,9 @@ namespace Elympics.Editor.UnityCli
                     : new
                     {
                         tick = elympics.Tick,
+                        secondsSinceTickAdvanced = elympics.TickLastAdvancedUtc == default
+                            ? (double?)null
+                            : Math.Round((DateTime.UtcNow - elympics.TickLastAdvancedUtc).TotalSeconds, 2),
                         ticksPerSecond = elympics.TicksPerSecond,
                         tickDuration = elympics.TickDuration,
                         isServer = elympics.IsServer,

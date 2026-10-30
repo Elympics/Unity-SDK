@@ -101,5 +101,12 @@ namespace Elympics
         }
 
         internal abstract SceneAttachment AttachGameplayScene(out ElympicsMatchSession? session);
+
+        /// <summary>
+        /// Lets the match started from the launch mode parameter drive <see cref="State"/>, so <see cref="IsCurrentlyInMatch"/> holds during it.
+        /// The launcher doesn't own that match: it arms no timers and doesn't tear it down, and the process quits once it ends.
+        /// </summary>
+        /// <returns>Null if this launcher isn't limited to the parameter match or isn't idle.</returns>
+        internal abstract IElympicsMatchLifecycleSink? TrackParameterMatch();
     }
 }

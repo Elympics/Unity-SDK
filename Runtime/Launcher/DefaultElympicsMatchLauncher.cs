@@ -403,12 +403,7 @@ namespace Elympics
 
         #region Match started from the launch mode parameter
 
-        /// <summary>
-        /// Lets the match started from the launch mode parameter drive <see cref="State"/>, so <see cref="ElympicsMatchLauncher.IsCurrentlyInMatch"/> holds during it.
-        /// The launcher doesn't own that match: it arms no timers and doesn't tear it down, and the process quits once it ends.
-        /// </summary>
-        /// <returns>Null if this launcher isn't limited to the parameter match or isn't idle.</returns>
-        internal IElympicsMatchLifecycleSink? TrackParameterMatch()
+        internal override IElympicsMatchLifecycleSink? TrackParameterMatch()
         {
             if (!_limitedToParameterMatch || State != MatchLauncherState.Idle)
                 return null;

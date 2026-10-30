@@ -39,7 +39,11 @@ namespace Elympics.Editor.UnityCli
             [CliArg("post_match_timeout_seconds", "Seconds to wait after the match ends before returning to boot; -1 for none.")] int postMatchTimeoutSeconds = ElympicsLaunchDefaults.PostMatchTimeoutSeconds,
             [CliArg("save_scenes", "Save modified open scenes instead of refusing (Play mode replaces the open scenes with the boot scene).")] bool saveScenes = false,
             [CliArg("player_index", "half_remote_client only: the index in the game config's Test players list to join as; -1 uses the config's half-remote player index.")]
-            int playerIndex = -1) =>
+            int playerIndex = -1,
+            [CliArg("custom_matchmaking_data", "half_remote_server and half_remote_client only: a non-empty JSON object of strings, e.g. '{\":pub:seed\":\"42\"}', "
+                + "replacing the game config's custom matchmaking data. Use the same value for the server and its clients (virtual players: "
+                + "the Elympics:elympics-custom-matchmaking-data=<key=value;...> tag).")]
+            string customMatchmakingData = "") =>
             CliRun.Run(() =>
             {
                 if (launchTimeoutSeconds < -1 || postMatchTimeoutSeconds < -1)
@@ -57,6 +61,10 @@ namespace Elympics.Editor.UnityCli
                 if (playerIndex < -1)
                     throw ElympicsCliErrors.InvalidArgumentException("--player_index must be -1 or more.",
                         "pass an index in the game config's Test players list, or -1 for the config's half-remote player index.");
+                var customData = ParseCustomMatchmakingData(customMatchmakingData);
+                if (customData != null && kind == ElympicsHostLaunchKind.SinglePlayer)
+                    throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data applies only to the half_remote_server and half_remote_client modes.",
+                        "leave --custom_matchmaking_data out for this mode.");
                 var playing = EditorApplication.isPlaying;
                 if (playing)
                 {
@@ -84,7 +92,10 @@ namespace Elympics.Editor.UnityCli
                 {
                     RequireTestPlayer(game, playerIndex);
                     clientData.playerIndex = playerIndex;
+                    clientData.customMatchmakingData = CreateKeyValueDtos(customData);
                 }
+                else if (data is HalfRemoteServerLaunchDataDto serverData)
+                    serverData.customMatchmakingData = CreateKeyValueDtos(customData);
                 var dataJson = JsonUtility.ToJson(data);
                 var optionsJson = JsonUtility.ToJson(new ElympicsLaunchOptionsDto
                 {
@@ -103,6 +114,43 @@ namespace Elympics.Editor.UnityCli
 
                 return new { status = "launch_queued", requestId, mode = modeName, gameId = game.GameId, enteringPlayMode = !playing };
             });
+
+        private const string CustomMatchmakingDataFix = "pass e.g. --custom_matchmaking_data '{\":pub:seed\":\"42\"}' (string values only).";
+
+        internal static Dictionary<string, string>? ParseCustomMatchmakingData(string json)
+        {
+            var parsed = CliArgs.ParseJsonObject(json, "custom_matchmaking_data", "a JSON object", CustomMatchmakingDataFix, ParseStrictObject);
+            if (parsed == null)
+                return null;
+            // An empty array means unset on the wire, so an empty object couldn't replace the game config's data.
+            if (!parsed.HasValues)
+                throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data is an empty object.",
+                    "leave --custom_matchmaking_data out to use the game config's custom matchmaking data.");
+            var result = new Dictionary<string, string>();
+            foreach (var property in parsed.Properties())
+            {
+                if (property.Name.Length == 0)
+                    throw ElympicsCliErrors.InvalidArgumentException("--custom_matchmaking_data has an empty key.", CustomMatchmakingDataFix);
+                if (property.Value.Type != JTokenType.String)
+                    throw ElympicsCliErrors.InvalidArgumentException(
+                        $"--custom_matchmaking_data has a {property.Value.Type} value for \"{property.Name}\"; values must be strings.", CustomMatchmakingDataFix);
+                result[property.Name] = (string)property.Value!;
+            }
+            return result;
+        }
+
+        // Unlike JObject.Parse, keeps date-like strings as strings and rejects duplicate keys.
+        private static JObject ParseStrictObject(string json)
+        {
+            using var reader = new JsonTextReader(new System.IO.StringReader(json)) { DateParseHandling = DateParseHandling.None };
+            var parsed = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+            if (reader.Read())
+                throw new JsonReaderException("Additional text found after the JSON object.");
+            return parsed;
+        }
+
+        private static KeyValueDto[] CreateKeyValueDtos(Dictionary<string, string>? data) =>
+            data?.Select(pair => new KeyValueDto { key = pair.Key, value = pair.Value }).ToArray() ?? Array.Empty<KeyValueDto>();
 
         // Fails fast: a missing Test players entry otherwise surfaces only when the gameplay scene loads.
         private static void RequireTestPlayer(ElympicsGameConfig game, int playerIndex)

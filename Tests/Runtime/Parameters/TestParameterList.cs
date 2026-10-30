@@ -346,7 +346,6 @@ namespace Elympics.Tests
         }
 
         [TestCase("---k")]
-        [TestCase("--k=a=b")]
         [TestCase("-kk")]
         [TestCase("--")]
         public void MalformedCommandLineArgumentsShouldBeIgnored(string argument)
@@ -370,6 +369,16 @@ namespace Elympics.Tests
             Assert.AreEqual("", parameter.GetRawValue());
         }
 
+        [Test]
+        public void LongCommandLineArgumentValueShouldKeepEqualsSignsAfterTheFirst()
+        {
+            var parameter = new FakeParameter(longArgName: "k");
+
+            ParameterList.CollectFromNamedArguments(new Parameter[] { parameter }, new List<string> { "--k=a=b;c=d" });
+
+            Assert.AreEqual("a=b;c=d", parameter.GetRawValue());
+        }
+
         [TestCase("127.0.0.1", true)]
         [TestCase("localhost", false)]
         [TestCase("1.2.3", false)]
@@ -384,6 +393,73 @@ namespace Elympics.Tests
                 Assert.DoesNotThrow(parameter.ValidateAndParseRawValue);
             else
                 _ = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
+        }
+
+        [Test]
+        public void CustomMatchmakingDataParameterParsesPairs()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue(":pub:seed=42;mode=fast");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "42", ["mode"] = "fast" }));
+        }
+
+        [Test]
+        public void CustomMatchmakingDataParameterDecodesPercentEncodedEntries()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue("a%3Bb=c%3Dd;e=f=g");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { ["a;b"] = "c=d", ["e"] = "f=g" }));
+        }
+
+        [Test]
+        public void CustomMatchmakingDataInUrlQueryIsEncodedTwice()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+
+            ParameterList.CollectFromUrlQuery(new Parameter[] { parameter }, QueryString.Parse("?elympicsCustomMatchmakingData=a%253Bb%3Dc%252Cd%3Be%3D1%2B1%2525"));
+            parameter.ValidateAndParseRawValue();
+
+            Assert.That(parameter.GetValue(), Is.EquivalentTo(new Dictionary<string, string> { ["a;b"] = "c,d", ["e"] = "1+1%" }));
+        }
+
+        [Test]
+        public void FormattedCustomMatchmakingDataParsesBack()
+        {
+            var pairs = new Dictionary<string, string> { [":pub:seed"] = "42", ["a;b=c"] = "d=e;f%3B" };
+
+            Assert.That(ParameterList.TryParseKeyValuePairs(ParameterList.FormatKeyValuePairs(pairs), out var parsed), Is.True);
+            Assert.That(parsed, Is.EquivalentTo(pairs));
+            Assert.That(ParameterList.FormatKeyValuePairs(new Dictionary<string, string> { [":pub:seed"] = "42" }), Is.EqualTo(":pub:seed=42"));
+        }
+
+        [Test]
+        public void EmptyCustomMatchmakingDataParameterIsUnset()
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue("");
+
+            parameter.ValidateAndParseRawValue();
+
+            Assert.Null(parameter.GetValue());
+        }
+
+        [TestCase("foo")]
+        [TestCase("=1")]
+        [TestCase("a=1;a=2")]
+        [TestCase("a=1;")]
+        public void InvalidCustomMatchmakingDataParameterFailsValidation(string value)
+        {
+            var parameter = new ParameterList().CustomMatchmakingData;
+            parameter.SetRawValue(value);
+
+            var exception = Assert.Throws<ArgumentException>(parameter.ValidateAndParseRawValue);
+            Assert.That(exception.Message, Does.Contain(parameter.ExpectedFormat));
         }
 
         [TestCase("WebGL", true)]

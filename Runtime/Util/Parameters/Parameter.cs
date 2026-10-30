@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Elympics
@@ -77,6 +78,7 @@ namespace Elympics
             value switch
             {
                 IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                IReadOnlyDictionary<string, string> pairs => ParameterList.FormatKeyValuePairs(pairs),
                 _ => $"{value}",
             };
     }

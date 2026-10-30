@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Elympics.Editor.Launcher;
 using Elympics.Editor.UnityCli;
 using Newtonsoft.Json.Linq;
@@ -73,6 +74,33 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", saveScenes: true), ElympicsCliErrors.LaunchRefused);
             Assert.That(EditorLaunchRecord.Last!.result, Is.EqualTo(EditorLaunchRecord.Failed));
         }
+
+        [Test]
+        public void LaunchCustomDataParsesObject() =>
+            Assert.That(ElympicsPlayCliCommands.ParseCustomMatchmakingData("{\":pub:seed\":\"42\",\"mode\":\"\"}"),
+                Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "42", ["mode"] = "" }));
+
+        [TestCase("{\":pub:seed\":42}")]
+        [TestCase("{\":pub:seed\":null}")]
+        [TestCase("{\"\":\"1\"}")]
+        [TestCase("[\"42\"]")]
+        [TestCase("{}")]
+        [TestCase("{\"a\":\"1\",\"a\":\"2\"}")]
+        [TestCase("{\"a\":\"1\"} {}")]
+        public void LaunchCustomDataRejectsInvalidJson(string json) =>
+            CliAssert.Throws(() => ElympicsPlayCliCommands.ParseCustomMatchmakingData(json), ElympicsCliErrors.InvalidArgument);
+
+        [Test]
+        public void LaunchCustomDataKeepsDateLikeStrings() =>
+            Assert.That(ElympicsPlayCliCommands.ParseCustomMatchmakingData("{\"d\":\"2025-01-31T00:00:00Z\"}")!["d"], Is.EqualTo("2025-01-31T00:00:00Z"));
+
+        [Test]
+        public void LaunchCustomDataRejectsSinglePlayerMode() =>
+            CliAssert.Throws(() => ElympicsPlayCliCommands.Launch("single_player", customMatchmakingData: "{\":pub:seed\":\"42\"}"), ElympicsCliErrors.InvalidArgument);
+
+        [Test]
+        public void LaunchWithoutCustomDataLeavesItNull() =>
+            Assert.That(ElympicsPlayCliCommands.ParseCustomMatchmakingData(""), Is.Null);
 
         [TestCase("{\"2\":[\"Red\"]}")]
         [TestCase("{\"2\":[null]}")]

@@ -27,9 +27,15 @@ namespace Elympics
         public IReadOnlyList<byte>? GameEngineData { get; }
         /// <summary>Of the local player. Null means the value of its <see cref="ElympicsGameConfig.TestPlayers"/> entry.</summary>
         public IReadOnlyList<float>? MatchmakerData { get; }
+        /// <summary>
+        /// Custom matchmaking data in the client's match data; set it to the server's, which the client doesn't receive.
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none (an empty array on the wire means unset).
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 
         public HalfRemoteClientLaunchData(string? serverAddress = null, bool? useTcpUdpInsteadOfWebRtc = null, int? playerIndex = null,
-            string? regionName = null, string? queueName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null)
+            string? regionName = null, string? queueName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null,
+            IReadOnlyDictionary<string, string>? customMatchmakingData = null)
         {
             ServerAddress = serverAddress;
             UseTcpUdpInsteadOfWebRtc = useTcpUdpInsteadOfWebRtc;
@@ -38,13 +44,13 @@ namespace Elympics
             QueueName = queueName;
             GameEngineData = gameEngineData == null ? null : Copy(gameEngineData);
             MatchmakerData = matchmakerData == null ? null : Copy(matchmakerData);
+            CustomMatchmakingData = CopyOrNull(customMatchmakingData);
         }
 
         internal override string ModeName => "HalfRemoteClient";
 
         internal override bool TryValidate(ElympicsGameConfig gameConfig, ElympicsLaunchPlatform platform, out ElympicsLaunchFailure? failure)
         {
-            failure = null;
             if (!platform.HasHalfRemoteClient)
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, $"{ModeName} is not supported: {ElympicsLaunchPlatform.NoHalfRemoteClientMessage}.", out failure);
             if (UseTcpUdpInsteadOfWebRtc == true && !platform.CanUseTcpUdp)
@@ -53,7 +59,7 @@ namespace Elympics
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} must be ip:port, got \"{ServerAddress}\".", out failure);
             if (PlayerIndex is < 0)
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(PlayerIndex)} must not be negative, got {PlayerIndex}.", out failure);
-            return true;
+            return TryValidateCustomMatchmakingData(CustomMatchmakingData, out failure);
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR && !ELYMPICS_WEBGL_HALF_REMOTE

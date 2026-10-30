@@ -115,9 +115,9 @@ namespace Elympics
 
         internal static IReadOnlyDictionary<string, string> Resolve(IReadOnlyDictionary<string, string>? fromLaunchData,
             IReadOnlyDictionary<string, string>? fromParameter, ElympicsGameConfig config) =>
-            fromLaunchData ?? fromParameter ?? FromConfig(config);
+            fromLaunchData ?? fromParameter ?? ReadFromConfig(config);
 
-        private static Dictionary<string, string> FromConfig(ElympicsGameConfig config)
+        private static Dictionary<string, string> ReadFromConfig(ElympicsGameConfig config)
         {
             var result = new Dictionary<string, string>();
             foreach (var entry in config.TestMatchData.customMatchmakingData)

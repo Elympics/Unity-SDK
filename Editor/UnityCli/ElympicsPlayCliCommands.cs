@@ -92,10 +92,10 @@ namespace Elympics.Editor.UnityCli
                 {
                     RequireTestPlayer(game, playerIndex);
                     clientData.playerIndex = playerIndex;
-                    clientData.customMatchmakingData = ToKeyValueDtos(customData);
+                    clientData.customMatchmakingData = CreateKeyValueDtos(customData);
                 }
                 else if (data is HalfRemoteServerLaunchDataDto serverData)
-                    serverData.customMatchmakingData = ToKeyValueDtos(customData);
+                    serverData.customMatchmakingData = CreateKeyValueDtos(customData);
                 var dataJson = JsonUtility.ToJson(data);
                 var optionsJson = JsonUtility.ToJson(new ElympicsLaunchOptionsDto
                 {
@@ -149,7 +149,7 @@ namespace Elympics.Editor.UnityCli
             return parsed;
         }
 
-        private static KeyValueDto[] ToKeyValueDtos(Dictionary<string, string>? data) =>
+        private static KeyValueDto[] CreateKeyValueDtos(Dictionary<string, string>? data) =>
             data?.Select(pair => new KeyValueDto { key = pair.Key, value = pair.Value }).ToArray() ?? Array.Empty<KeyValueDto>();
 
         // Fails fast: a missing Test players entry otherwise surfaces only when the gameplay scene loads.

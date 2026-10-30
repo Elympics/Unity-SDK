@@ -267,8 +267,33 @@ namespace Elympics.Editor.UnityCli
                     MppmReflection.SetActive(number, wanted);
             }
 
-            return new { status = "updated", count, players = MppmReflection.GetPlayers() };
+            var updated = MppmReflection.GetPlayers();
+            var restartRequired = PlayersNeedingRestart(players, updated, count);
+            return new
+            {
+                status = "updated",
+                count,
+                players = updated,
+                restartRequired,
+                hint = restartRequired.Count == 0
+                    ? null
+                    : "Running virtual players apply new tags only after a restart. Deactivate them (a lower --count), wait until elympics_get_virtual_players "
+                    + $"shows them NotLaunched, then call elympics_set_virtual_players --count {count} again.",
+            };
         });
+
+        /// <summary>The numbers of players that stay active (within <paramref name="count"/>) and were already running while their Elympics: tags changed.</summary>
+        /// <remarks>Deactivation is asynchronous, so a player being deactivated may still look running in <paramref name="after"/>.</remarks>
+        internal static List<int> PlayersNeedingRestart(IReadOnlyList<MppmReflection.VirtualPlayer> before, IReadOnlyList<MppmReflection.VirtualPlayer> after, int count) =>
+            after.Where(player => player.number >= 2 && player.number - 1 <= count)
+                .Where(player => before.FirstOrDefault(old => old.number == player.number) is { } old
+                    && old.state != NotLaunched
+                    && !ElympicsTags(old).SequenceEqual(ElympicsTags(player)))
+                .Select(player => player.number)
+                .ToList();
+
+        private static IEnumerable<string> ElympicsTags(MppmReflection.VirtualPlayer player) =>
+            player.tags.Where(tag => tag.StartsWith(PlayModeArguments.TagPrefix, StringComparison.OrdinalIgnoreCase));
 
         private static List<(int number, List<string> tags)> ParseTags(string json)
         {

@@ -81,6 +81,31 @@ namespace Elympics.Editor.Tests.UnityCli
             CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, tags), ElympicsCliErrors.InvalidArgument);
 
         [Test]
+        public void OnlyRunningPlayersThatStayActiveWithChangedTagsNeedARestart()
+        {
+            static MppmReflection.VirtualPlayer Player(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
+            var before = new[]
+            {
+                Player(1, "Launched", "Elympics:halfRemoteServer"),
+                Player(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
+                Player(3, "Launched", "Elympics:PlayerIndex=1"),
+                Player(4, "NotLaunched", "Elympics:PlayerIndex=2"),
+            };
+            var after = new[]
+            {
+                Player(1, "Launched", "Elympics:halfRemoteServer"),
+                Player(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
+                Player(3, "Launched", "Elympics:PlayerIndex=0"),
+                Player(4, "Launching", "Elympics:PlayerIndex=3"),
+            };
+
+            // Player 3 is being deactivated (--count 1), and player 4 has just been activated with its new tags.
+            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 1), Is.EqualTo(new[] { 2 }));
+            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, after, 3), Is.EqualTo(new[] { 2, 3 }));
+            Assert.That(ElympicsPlayCliCommands.PlayersNeedingRestart(before, before, 3), Is.Empty);
+        }
+
+        [Test]
         public void LaunchOutcomesAreRecorded()
         {
             using var record = new LaunchRecordScope();

@@ -171,7 +171,7 @@ namespace Elympics.Tests
         }
 
         private static DefaultElympicsMatchLauncher CreateParameterLauncher() =>
-            new DefaultElympicsMatchLauncher(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
+            new(new NullSceneLoader(), () => null, ElympicsLaunchPlatform.Unrestricted, _ => { }, limitedToParameterMatch: true);
 
         private sealed class NullSceneLoader : IElympicsSceneLoader
         {

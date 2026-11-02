@@ -273,7 +273,7 @@ namespace Elympics.Tests.Runtime.Core
 
             score[1] = 5.0f;
             score.Submit(true);
-            score.SubmitIfStarted();
+            score.SubmitIfEnabled();
 
             Assert.That(emitted, Is.False);
         }

@@ -133,7 +133,7 @@ namespace Elympics
             _previousSnapshot = _currentSnapshot;
 
             SendQueuedRpcMessages();
-            _score?.SubmitIfStarted();
+            _score?.SubmitIfEnabled();
             _serverElympicsUpdate.FinalizeTick(_currentSnapshot);
             if (_endGameRequested)
             {

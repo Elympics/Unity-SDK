@@ -108,24 +108,24 @@ namespace Elympics.Editor.Tests.UnityCli
         public void VirtualPlayerTagsMustBeElympicsTags(string tags) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, tags), ElympicsCliErrors.InvalidArgument);
 
-        private static MppmReflection.VirtualPlayer Player(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
+        private static MppmReflection.VirtualPlayer CreatePlayer(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
 
         [Test]
         public void OnlyRunningPlayersThatStayActiveWithChangedTagsNeedARestart()
         {
             var before = new[]
             {
-                Player(1, "Launched", "Elympics:halfRemoteServer"),
-                Player(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
-                Player(3, "Launched", "Elympics:PlayerIndex=1"),
-                Player(4, "NotLaunched", "Elympics:PlayerIndex=2"),
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=1"),
+                CreatePlayer(4, "NotLaunched", "Elympics:PlayerIndex=2"),
             };
             var after = new[]
             {
-                Player(1, "Launched", "Elympics:halfRemoteServer"),
-                Player(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
-                Player(3, "Launched", "Elympics:PlayerIndex=0"),
-                Player(4, "Launching", "Elympics:PlayerIndex=3"),
+                CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
+                CreatePlayer(2, "Launched", "Elympics:PlayerIndex=1", "Other"),
+                CreatePlayer(3, "Launched", "Elympics:PlayerIndex=0"),
+                CreatePlayer(4, "Launching", "Elympics:PlayerIndex=3"),
             };
 
             // Player 3 is being deactivated (--count 1), and player 4 has just been activated with its new tags.
@@ -137,9 +137,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ReorderedTagsDontNeedARestartButRecasedOnesDo()
         {
-            var before = new[] { Player(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
-            var reordered = new[] { Player(2, "Launched", "Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
-            var recased = new[] { Player(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=red") };
+            var before = new[] { CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
+            var reordered = new[] { CreatePlayer(2, "Launched", "Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
+            var recased = new[] { CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=red") };
 
             Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, reordered, 1), Is.Empty);
             Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, recased, 1), Is.EqualTo(new[] { 2 }));

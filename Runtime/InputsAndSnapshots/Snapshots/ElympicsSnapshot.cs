@@ -19,6 +19,7 @@ namespace Elympics
         [Key(4)] public Dictionary<int, TickToPlayerInput>? TickToPlayersInputData { get; set; }
         /// <summary>The tick the match starts at, or null while the start isn't scheduled.</summary>
         /// <remarks>Keys 5 and 6 are taken by <see cref="ElympicsSnapshotWithMetadata"/>.</remarks>
+        // TODO: extract a key-less superclass of both snapshot types, so that each numbers its keys contiguously ~dsygocki 2026-11-02
         [Key(7)] public long? StartTick { get; set; }
 
         public ElympicsSnapshot(FactoryState factory, Dictionary<int, byte[]>? data) : this(-1, default, factory, data, null) { }

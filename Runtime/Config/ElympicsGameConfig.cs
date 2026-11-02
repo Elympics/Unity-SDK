@@ -110,7 +110,8 @@ namespace Elympics
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
         public float ReadyTimeoutSeconds => readyTimeoutSeconds;
-        public float MatchStartDelaySeconds => matchStartDelaySeconds;
+        /// <summary>The effective start delay: the configured one, rounded up to whole ticks and never shorter than the total prediction limit.</summary>
+        public float MatchStartDelaySeconds => MatchStartDelayTicks * TickDuration;
         public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
         /// <summary>Start delay in ticks: at least the total prediction limit plus a margin, so that no client has predicted past it.</summary>
         internal long MatchStartDelayTicks => Math.Max((long)Math.Ceiling(matchStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + 2);

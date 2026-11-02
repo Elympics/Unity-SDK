@@ -47,9 +47,9 @@ namespace Elympics
         /// Call it on every player client once the game is playable. Bots are ready automatically.
         /// </summary>
         /// <remarks>
-        /// When all players are ready, the server schedules the match start (<see cref="StartTick"/>) shortly ahead.
-        /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/>, the server ends the match with a null result (refunded).
-        /// Inputs for ticks before <see cref="StartTick"/> are ignored.
+        /// When all players are ready, the server schedules the match start (<see cref="StartTick"/>) a few ticks ahead (see <see cref="ElympicsGameConfig.MatchStartDelaySeconds"/>).
+        /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/>, the server ends the match with no result.
+        /// Inputs for ticks before <see cref="StartTick"/>, and player-to-server RPCs sent before it, are ignored.
         /// Calling it again or on a spectator has no effect. On a server, it has an effect only in local modes, where it marks all players ready.
         /// </remarks>
         void MarkReady();
@@ -82,7 +82,7 @@ namespace Elympics
         ElympicsScore Score { get; }
 
         /// <summary>Ends the match.</summary>
-        /// <param name="result">Results for all players. Ignored (a null result is sent) before the match start; if null after it, built from <see cref="Score"/>.</param>
+        /// <param name="result">Results for all players. Ignored before the match start (no result is sent); if null after it, built from <see cref="Score"/>.</param>
         void EndGame(ResultMatchPlayerDatas result = null);
 
         #endregion

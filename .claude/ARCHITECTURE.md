@@ -31,9 +31,9 @@ All of this is in `Runtime/ElympicsSystems/`.
   4. Apply the unpredictable state.
   5. Run RPCs, then `CommitVars`, then predicted input, then `ElympicsUpdate`.
   6. Store the predicted snapshot.
-- **Match start:** the tick loop runs from server init, but the match starts only at `StartTick`. Clients send `ElympicsReadyMessage` (from `IElympics.MarkReady()`) and resend it until they see a `StartTick`. Bots are always ready.
+- **Match start:** the tick loop runs from server init, but the match starts only at `StartTick`. Clients send `ElympicsReadyMessage` (from `IElympics.MarkReady()`) once over the reliable channel, and again after a reconnect if no `StartTick` is known yet. Bots are always ready.
   - When every human player is ready, `ElympicsServer.UpdateMatchStart` schedules `StartTick` at least `TotalPredictionLimitInTicks + 2` ticks ahead. It travels in every snapshot (`ElympicsSnapshot.StartTick`).
-  - Inputs for ticks before `StartTick` are ignored when they are consumed: in the server loop, and in client prediction and resimulation.
+  - Inputs for ticks before `StartTick` are ignored when they are consumed: in the server loop, and in client prediction and resimulation. The server also ignores player RPCs sent before `StartTick` (`ElympicsServer.ShouldIgnorePlayerRpc`): when invoking, or in local mode when capturing, where the RPC direction is known.
   - `ElympicsBase.NotifyMatchStartedIfReached` fires `IMatchStartHandler` once. The server then starts `ElympicsScore` gameplay time.
   - Without readiness, `readyTimeoutSeconds` ends the match with a null result. After the start, `EndGame()` with no result falls back to the score.
 - **Game-facing API:**

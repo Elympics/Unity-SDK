@@ -11,7 +11,7 @@ namespace MatchEvents
 
         private int _totalPlayers;
 
-        // Inputs (including the "end game" one) count only after every player has called MarkReady and the match has started.
+        // Inputs count only once every player has called MarkReady and the match has started.
         public void Initialize()
         {
             if (Elympics.IsClient)

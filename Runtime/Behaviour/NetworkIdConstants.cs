@@ -37,7 +37,7 @@ namespace Elympics
 
         internal const int PhysicsSimulatorNetworkId = 0;
         internal const int ServerLogNetworkId = 1;
-        /// <summary>ID 2 belonged to the removed default server handler and stays reserved, so that the IDs in existing scenes don't shift.</summary>
+        // ID 2 stays reserved (formerly the default server handler), so that the IDs in existing scenes don't shift.
         internal const int PredefinedBehaviourCount = 3;
 
         /// <summary>

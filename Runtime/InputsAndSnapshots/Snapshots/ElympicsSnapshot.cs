@@ -18,7 +18,7 @@ namespace Elympics
         /// <summary>Key is PlayerId as int.</summary>
         [Key(4)] public Dictionary<int, TickToPlayerInput>? TickToPlayersInputData { get; set; }
         /// <summary>The tick the match starts at, or null while the start isn't scheduled.</summary>
-        /// <remarks>Keys 5 and 6 are taken by <see cref="ElympicsSnapshotWithMetadata"/>.</remarks>
+        // Keys 5 and 6 are taken by ElympicsSnapshotWithMetadata.
         // TODO: extract a key-less superclass of both snapshot types, so that each numbers its keys contiguously ~dsygocki 2026-11-02
         [Key(7)] public long? StartTick { get; set; }
 
@@ -26,7 +26,7 @@ namespace Elympics
 
         protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData, snapshot.StartTick) { }
 
-        /// <remarks><see cref="StartTick"/> isn't a parameter, because MessagePack matches parameters to keys by position and keys 5 and 6 are missing here.</remarks>
+        // StartTick isn't a parameter: MessagePack matches parameters to keys by position, and keys 5 and 6 are missing here.
         [SerializationConstructor]
         public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData)
             : this(tick, tickStartUtc, factory, data, tickToPlayersInputData, null) { }

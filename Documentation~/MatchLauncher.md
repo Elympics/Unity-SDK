@@ -257,8 +257,8 @@ Its data comes from the half-remote parameters (`--half-remote-ip`, `--half-remo
 sets the custom matchmaking data of a half-remote server or client, e.g. `--elympics-custom-matchmaking-data=:pub:seed=42;mode=fast`.
 Pairs are separated by `;`, and each key is separated from its value by the first `=`. Percent-encode `;` (`%3B`) in keys and values,
 `=` (`%3D`) in keys and `%` (`%25`); every key and value is percent-decoded. An entry without `=`, an empty key or a repeated key is an error.
-In a URL query, the value is URL-decoded first, so encode it once more (a `;` inside a value becomes `%253B`), e.g.
-`elympicsCustomMatchmakingData=%3Apub%3Aseed%3D42%3Bmode%3Dfast`.
+In a URL query, the value is URL-decoded first, so encode it once more: `%253B`, `%253D`, `%2525`, `%252C` for a `,`
+(a raw one cuts the value), and `%2B` for a `+`. For example, `elympicsCustomMatchmakingData=%3Apub%3Aseed%3D42%3Bmode%3Dfast`.
 
 It limits the process to that one match:
 

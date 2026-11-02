@@ -8,7 +8,9 @@ namespace Elympics
         /// </summary>
         /// <remarks>
         /// The server calls it exactly at <paramref name="startTick"/>. A client that learns about the start late calls it on its first predicted tick after that.
-        /// If it changes synchronized state, it must do so the same way on the server and on clients, so that prediction stays correct.
+        /// Like <see cref="IServerHandlerGuid.OnServerInit"/> and other one-time calls, it isn't called again when a client resimulates across the start,
+        /// so predicted state set here is wrong until a server snapshot from the start on arrives.
+        /// For predicted gameplay, check <see cref="IElympics.IsMatchStarted"/> in <see cref="IUpdatable.ElympicsUpdate"/> instead.
         /// It isn't called for objects spawned after the start, so check <see cref="IElympics.IsMatchStarted"/> there.
         /// Inputs, <see cref="ElympicsMonoBehaviour.ElympicsInstantiate"/> and <see cref="ElympicsMonoBehaviour.ElympicsDestroy"/> aren't available here; use <see cref="IUpdatable.ElympicsUpdate"/> for them.
         /// </remarks>

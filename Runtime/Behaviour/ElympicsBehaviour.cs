@@ -124,7 +124,12 @@ namespace Elympics
                 ExecuteNotBeforeTick = scheduledTick,
             };
             if (ShouldRpcBeCapturedToInvoke(properties))
+            {
+                // In local mode, server-to-player RPCs also carry the player as the sender, so the direction is known only here.
+                if (ElympicsBase.IsLocalMode && properties.Direction == ElympicsRpcDirection.PlayerToServer && ElympicsBase.ShouldIgnorePlayerRpc(rpcMessage))
+                    return;
                 ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
+            }
             else
                 ElympicsBase.QueueRpcMessageToSend(rpcMessage, properties.Reliable);
 

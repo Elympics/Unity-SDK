@@ -146,9 +146,12 @@ namespace Elympics
                     RpcMessagesToInvoke.RemoveAt(i);
                 }
             foreach (var rpcMessage in _rpcMessagesToInvokeInCurrentTick)
-                if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
+                // In local mode, player RPCs are filtered when captured (ElympicsBehaviour.OnRpcCaptured).
+                if ((IsLocalMode || !ShouldIgnorePlayerRpc(rpcMessage)) && TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
                     behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessage.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
+
+        internal virtual bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) => false;
 
         internal void SendQueuedRpcMessages()
         {

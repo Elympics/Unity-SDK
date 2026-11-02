@@ -52,6 +52,7 @@ namespace Elympics
         private readonly HashSet<ElympicsPlayer> _readyPlayers = new();
         private bool _clientsInServerReady;
         private readonly HashSet<ElympicsPlayer> _connectedHumans = new();
+        private bool _preStartRpcIgnored;
 
         internal void InitializeInternal(
             ElympicsGameConfig elympicsGameConfig,
@@ -178,6 +179,18 @@ namespace Elympics
             base.OnMatchStarted(startTick);
         }
 
+        /// <summary>Like inputs, player-to-server RPCs sent before the match start are ignored.</summary>
+        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage)
+        {
+            if (rpcMessage.Sender < 0 || IsMatchStartedAt(rpcMessage.SentOnTick))
+                return false;
+            if (!_preStartRpcIgnored)
+                _logger.LogWarning($"Ignoring player RPCs sent before the match start (first: player {rpcMessage.Sender}, tick {rpcMessage.SentOnTick}). "
+                    + $"Check {nameof(IElympics)}.{nameof(IElympics.IsMatchStarted)} before calling them.");
+            _preStartRpcIgnored = true;
+            return true;
+        }
+
         private ResultMatchPlayerDatas? ResolveMatchResult(ResultMatchPlayerDatas? result)
         {
             if (!MatchStartReached)
@@ -296,7 +309,7 @@ namespace Elympics
 
         public override long? StartTick => _startTick;
 
-        /// <remarks>In local modes, the server simulates the clients, so this marks all players ready, also when called before the server is initialized. Otherwise, it does nothing.</remarks>
+        /// <remarks>Only in local modes, where the server simulates the clients: marks all players ready, even before server init. Otherwise a no-op.</remarks>
         public override void MarkReady()
         {
             if (HandlingClientsInServer)

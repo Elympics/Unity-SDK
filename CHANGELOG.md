@@ -1,3 +1,13 @@
+## [0.29.2](https://github.com/Elympics/Unity-SDK/compare/v0.29.1...v0.29.2) (2026-11-02)
+
+
+### Bug Fixes 🪲
+
+* Fix a bug in ElympicsScore serialization that made fractional-part-less double numbers have their integer-part trailing zeros trimmed ([ef532cd](https://github.com/Elympics/Unity-SDK/commit/ef532cd399555c0e52422d342aa56017cdd9bd41))
+* Request only one clean recompilation per weaving code change on Unity 6.5+ ([e7efca8](https://github.com/Elympics/Unity-SDK/commit/e7efca8d985bdd255a9c3bcc20dbbe2f4e98498f))
+
+
+
 ## [0.29.1](https://github.com/Elympics/Unity-SDK/compare/v0.29.0...v0.29.1) (2026-10-30)
 
 

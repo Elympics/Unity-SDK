@@ -94,8 +94,8 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 
 ### Method names start with a verb
 - **Rule:** name methods, local functions and factory helpers (tests included) with a verb: `CreatePlayer(...)`, not `Player(...)`, even when a noun would read better as data in an initializer.
-- **Reason:** the maintainer asked for it, and the codebase follows it (`CreateStartedScore`, `CreateActivePlayers`, `CreateParameterLauncher`). A noun-named method reads like a type or property.
-- **Example:** a deduplicated test helper in `Tests/Editor/UnityCli/TestPlayCommands.cs` was named `Player(...)` and had to be renamed back to `CreatePlayer(...)` (2026-11-02).
+- **Reason:** the codebase follows it (`CreateStartedScore`, `CreateActivePlayers`, `CreateParameterLauncher`). A noun-named method reads like a type or property.
+- **Example:** the test helper `Player(...)` in `Tests/Editor/UnityCli/TestPlayCommands.cs` was renamed to `CreatePlayer(...)` (2026-11-02).
 - **Time scope:** Permanent, unless the maintainer changes the naming convention.
 
 ## Backend contracts
@@ -137,7 +137,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### dotnet format --include must match files inside the host project
 - **Rule:** pass `--include` as file paths (e.g. the output of `git diff --name-only origin/develop...HEAD -- '*.cs'`, prefixed with the package path, run on the host `.sln`), a folder with a trailing `/`, or a glob. If the package lives outside the host project's directory (a `file:` reference to a sibling dir), no `--include` form matches it: run on the whole csproj and filter the output by file. Prove a new invocation works by adding a known violation and seeing exit 2.
 - **Reason:** an `--include` that matches no files (a folder without a trailing slash, or any path outside the host project dir) checks nothing, and `dotnet format` then exits 0 silently.
-- **Example:** on 2026-10-30, `--include …/Runtime/Util/Parameters` exited 0 while CI's `verify-formatting` failed twice on files in that folder (IDE0059, IDE0005); `…/Parameters/` exited 2. On MR !612 (2026-11-02), with the package in a sibling dir, a file flagged 19 times by the whole-csproj run gave no warnings with `--include` as `Packages/com.daftmobile.elympics/…`, its absolute path (either slash style), a `../` relative path, a `folder/` or a `**/` glob.
+- **Example:** on 2026-10-30, `--include …/Runtime/Util/Parameters` exited 0 while CI's `verify-formatting` failed twice on files in that folder (IDE0059, IDE0005); `…/Parameters/` exited 2. On MR !612 (2026-11-02), with the package in a sibling dir, a file flagged 19 times by the whole-csproj run gave no warnings with any `--include` form (relative, absolute, `folder/`, glob).
 - **Time scope:** If `dotnet format` starts failing on an `--include` that matches nothing, remove this.
 
 ### Compile and test evidence
@@ -252,5 +252,5 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### Ignore git's "LF will be replaced by CRLF" warning
 - **Rule:** ignore the warning at `git add`/`git commit`. Don't check or fix line endings because of it.
 - **Reason:** `.gitattributes` sets `* text=auto` and `*.sh text eol=lf`, so git normalizes line endings in the repo (LF) itself. The warning is only about checkout with the local `core.autocrlf=true`, and it doesn't affect what gets committed.
-- **Example:** after a `sed -i` rename in `TestPlayCommands.cs`, the warning appeared; the commit still changed only the 12 renamed lines (2026-11-02).
+- **Example:** the warning appeared after a `sed -i` on `TestPlayCommands.cs`; the commit held only the intended lines (2026-11-02).
 - **Time scope:** If `.gitattributes` stops normalizing line endings, remove this.

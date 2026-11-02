@@ -17,13 +17,13 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **com.unity.pipeline 0.8 is the floor:** keep it as the minimum; verify commands by listing, never by uploading.
 
 ## Verification
-- **dotnet format --include:** file paths, `folder/` or a glob; never matches outside the host dir (then use the whole csproj); no match exits 0.
+- **dotnet format --include:** file paths, `folder/` or a glob; nothing outside the host dir (use the csproj); no match exits 0.
 - **Compile and test evidence:** redirected `dotnet build`; tests via `unity command`, batchmode, or the open Editor.
 - **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
 - **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
 - **Scratch Editors share the Elympics login:** use the developer's endpoint or a dead one, never another live backend; check the login afterwards.
-- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API only; long work via `run_script`; always `UNITY_PROJECT_PATH`; tests total > 0; EditMode details via `--json`.
+- **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API; long work via `run_script`; set `UNITY_PROJECT_PATH`; check tests > 0.
 
 ## Configuration
 - **Active game is availableGames[0]:** duplicate game IDs resolve to the first entry.

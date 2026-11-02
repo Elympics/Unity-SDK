@@ -11,6 +11,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **com.unity.webrtc threads in every Editor:** `ELYMPICS_LAZY_WEBRTC_CONTEXT`; `EditorWebRtcContext.EnsureInitialized()`.
 - **WebGL size:** optional engine-module components go in their own never-referenced assembly.
 - **com.unity.webrtc disposes all on quit in players:** tolerate `ObjectDisposedException` at shutdown.
+- **Method names start with a verb:** `CreatePlayer(...)`, not `Player(...)`, test helpers included.
 
 ## API and compatibility
 - **com.unity.pipeline 0.8 is the floor:** keep it as the minimum; verify commands by listing, never by uploading.
@@ -30,6 +31,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 ## Git
 - **Baseline via git show, never git stash:** copy files with unstaged changes before editing.
 - **New CI scripts need git's executable bit:** `git update-index --chmod=+x`.
+- **Ignore "LF will be replaced by CRLF":** `.gitattributes` normalizes line endings; don't check them.
 
 ## Situational (see MEMORY.md)
 - StreamingAssets upload rules

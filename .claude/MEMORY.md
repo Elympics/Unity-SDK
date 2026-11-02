@@ -92,6 +92,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** on MR !604, the 6000.5/6000.6 CI jobs failed `RefusedLaunchIsRecordedAsFailed` with `ELYMPICS_COMPILING` until Weaver skipped repeat reports (2026-10-23). The v0.29.1 version bump changed only `Editor/Weaving/AssemblyInfo.cs`; the re-report listed the 12 other weaving scripts, so the 6000.5 job failed again on main until Weaver marked all sources (MR !615). Two "Requested through public api" log lines in one run are the symptom.
 - **Time scope:** If Unity stops re-reporting the scripts, or Weaver no longer requests compiles, remove this.
 
+### Method names start with a verb
+- **Rule:** name methods, local functions and factory helpers (tests included) with a verb: `CreatePlayer(...)`, not `Player(...)`, even when a noun would read better as data in an initializer.
+- **Reason:** the maintainer asked for it, and the codebase follows it (`CreateStartedScore`, `CreateActivePlayers`, `CreateParameterLauncher`). A noun-named method reads like a type or property.
+- **Example:** a deduplicated test helper in `Tests/Editor/UnityCli/TestPlayCommands.cs` was named `Player(...)` and had to be renamed back to `CreatePlayer(...)` (2026-11-02).
+- **Time scope:** Permanent, unless the maintainer changes the naming convention.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract
@@ -242,3 +248,9 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** on Windows `chmod +x` doesn't reach git (`core.filemode` is off), so the file lands as `100644` and the Linux CI job fails with "permission denied".
 - **Example:** `build_sample.sh`, `disable_domain_reload.sh` and PlayPad's copied `check_js.sh` all needed it.
 - **Time scope:** Permanent while CI runs on Linux and development happens on Windows.
+
+### Ignore git's "LF will be replaced by CRLF" warning
+- **Rule:** ignore the warning at `git add`/`git commit`. Don't check or fix line endings because of it.
+- **Reason:** `.gitattributes` sets `* text=auto` and `*.sh text eol=lf`, so git normalizes line endings in the repo (LF) itself. The warning is only about checkout with the local `core.autocrlf=true`, and it doesn't affect what gets committed.
+- **Example:** after a `sed -i` rename in `TestPlayCommands.cs`, the warning appeared; the commit still changed only the 12 renamed lines (2026-11-02).
+- **Time scope:** If `.gitattributes` stops normalizing line endings, remove this.

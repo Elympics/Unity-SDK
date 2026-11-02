@@ -391,6 +391,9 @@ _pkginfo.txt
 ClientBin/
 ~$*
 *~
+# Unity package folders, not backup files
+!/Documentation~/
+!/Samples~/
 *.dbmdl
 *.dbproj.schemaview
 *.jfm

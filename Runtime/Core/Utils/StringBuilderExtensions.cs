@@ -63,7 +63,7 @@ namespace Elympics.Core.Utils
                 _ = sb.Append(',');
             return sb.AppendJsonEscaped(key)
                 .Append(':')
-                .Append(value.ToString(CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.'));
+                .Append(value.ToString("R", CultureInfo.InvariantCulture));
         }
 
         public static StringBuilder AppendJsonProperty(this StringBuilder sb, string key, bool value, bool isFirst = false)

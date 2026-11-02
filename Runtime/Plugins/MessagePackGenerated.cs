@@ -1111,15 +1111,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
-            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__, __TickEndUtc__, __Metadata__);
-            if (length <= 7)
-            {
-                goto MEMBER_ASSIGNMENT_END;
-            }
-
-            ____result.StartTick = __StartTick__;
-
-        MEMBER_ASSIGNMENT_END:
+            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__, __TickEndUtc__, __Metadata__, __StartTick__);
             reader.Depth--;
             return ____result;
         }

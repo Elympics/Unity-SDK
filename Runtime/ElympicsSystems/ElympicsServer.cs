@@ -67,7 +67,6 @@ namespace Elympics
             _serverElympicsUpdate = serverElympicsUpdate;
             _isReplay = _serverElympicsUpdate is SnapshotReplayElympicsUpdateLoop;
             InitializeInternal(elympicsGameConfig, elympicsBehavioursManager);
-            CreateScore(elympicsGameConfig.MaxPlayers);
             SwitchBehaviourToServer();
             HandlingClientsInServer = handlingClientsOverride;
             _gameEngineAdapter = gameEngineAdapter;
@@ -80,13 +79,10 @@ namespace Elympics
                 return;
             _gameEngineAdapter.PlayerConnected += OnPlayerConnected;
             _gameEngineAdapter.PlayerDisconnected += OnPlayerDisconnected;
-            _gameEngineAdapter.PlayerConnected += TrackPlayerConnected;
-            _gameEngineAdapter.PlayerDisconnected += TrackPlayerDisconnected;
             _gameEngineAdapter.PlayerReadyReceived += OnPlayerReadyReceived;
             _gameEngineAdapter.ReceivedInitialMatchPlayerDatas += args => Enqueue(() =>
             {
                 _playerData = args.Data;
-                // Sized from the init data, so that the score fallback result matches the players in the match.
                 CreateScore(args.Data.Count);
                 _humanPlayers.UnionWith(args.Data.Where(data => !data.IsBot).Select(data => data.Player));
                 _initializedUtc = DateTime.UtcNow;
@@ -179,6 +175,7 @@ namespace Elympics
             _logger.LogInfo($"Match started at tick {startTick}.");
             _score?.Start(TickStartUtc);
             TerminateIfPlayersLeft();
+            base.OnMatchStarted(startTick);
         }
 
         private ResultMatchPlayerDatas? ResolveMatchResult(ResultMatchPlayerDatas? result)
@@ -198,22 +195,22 @@ namespace Elympics
             return result;
         }
 
-        private void OnPlayerReadyReceived(ElympicsPlayer player) => Enqueue(() => MarkPlayerReady(player));
-
-        private void MarkPlayerReady(ElympicsPlayer player)
+        private void OnPlayerReadyReceived(ElympicsPlayer player) => Enqueue(() =>
         {
             if (_humanPlayers.Contains(player) && _readyPlayers.Add(player))
                 _logger.LogInfo($"Player {player} is ready.");
-        }
+        });
 
-        private void TrackPlayerConnected(ElympicsPlayer player) => Enqueue(() =>
+        private void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() =>
         {
+            ElympicsBehavioursManager.OnPlayerConnected(player);
             if (_humanPlayers.Contains(player))
                 _ = _connectedHumans.Add(player);
         });
 
-        private void TrackPlayerDisconnected(ElympicsPlayer player) => Enqueue(() =>
+        private void OnPlayerDisconnected(ElympicsPlayer player) => Enqueue(() =>
         {
+            ElympicsBehavioursManager.OnPlayerDisconnected(player);
             _ = _connectedHumans.Remove(player);
             TerminateIfPlayersLeft();
         });
@@ -251,10 +248,8 @@ namespace Elympics
             ElympicsLogger.LogInfo(sb.ToString());
         }
 
-        private void CreateScore(int playerCount)
+        private protected void CreateScore(int playerCount)
         {
-            if (_score != null)
-                _score.PlayerScoreUpdated -= SubmitIntermediateScore;
             _score = new ElympicsScore(playerCount);
             _score.PlayerScoreUpdated += SubmitIntermediateScore;
         }
@@ -320,8 +315,6 @@ namespace Elympics
                 return;
             _gameEngineAdapter.PlayerConnected -= OnPlayerConnected;
             _gameEngineAdapter.PlayerDisconnected -= OnPlayerDisconnected;
-            _gameEngineAdapter.PlayerConnected -= TrackPlayerConnected;
-            _gameEngineAdapter.PlayerDisconnected -= TrackPlayerDisconnected;
             _gameEngineAdapter.PlayerReadyReceived -= OnPlayerReadyReceived;
             _gameEngineAdapter.RpcMessageListReceived -= QueueRpcMessagesToInvoke;
         }

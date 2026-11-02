@@ -42,7 +42,7 @@ namespace Elympics
         [SerializeField] private int predictionLimitInTicks = 25;
 
         [Tooltip("The server ends the match (refunded) if not all players call IElympics.MarkReady() within this time from the server init.")]
-        [Min(180)] // The floor of the start timeout in the former DefaultServerHandler.
+        [Min(180)]
         [SerializeField] private float readyTimeoutSeconds = 180;
         [Tooltip("How far ahead the server schedules the match start once all players are ready. It's never shorter than the total prediction limit.")]
         [Min(0)]

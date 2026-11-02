@@ -50,7 +50,7 @@ namespace Elympics
         /// When all players are ready, the server schedules the match start (<see cref="StartTick"/>) shortly ahead.
         /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/>, the server ends the match with a null result (refunded).
         /// Inputs for ticks before <see cref="StartTick"/> are ignored.
-        /// Calling it again, or on a server or spectator, has no effect.
+        /// Calling it again or on a spectator has no effect. On a server, it has an effect only in local modes, where it marks all players ready.
         /// </remarks>
         void MarkReady();
 

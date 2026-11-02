@@ -69,7 +69,11 @@ namespace Elympics.Tests
 
         private class TickableElympicsServer : ElympicsServer
         {
-            public void MarkInitialized() => SetInitialized();
+            public void MarkInitialized()
+            {
+                CreateScore(MaxPlayers);
+                SetInitialized();
+            }
 
             public void RunTick()
             {

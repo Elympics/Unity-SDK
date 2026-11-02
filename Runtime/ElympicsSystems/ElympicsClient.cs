@@ -46,7 +46,6 @@ namespace Elympics
         private PredictionBuffer _predictionBuffer;
 
         private static readonly object LastReceivedSnapshotLock = new();
-        private static readonly TimeSpan ReadyResendInterval = TimeSpan.FromSeconds(1);
         private ElympicsSnapshot? _lastReceivedSnapshot;
         private long _latestReconciliationBaseSnapshotTick;
         private bool _hasReconciliationBase;
@@ -73,7 +72,7 @@ namespace Elympics
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
         private bool _readyRequested;
-        private DateTime _nextReadySendUtc;
+        private bool _readySent;
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
@@ -285,7 +284,7 @@ namespace Elympics
             _reanchoredCount = 0;
             _replayedCount = 0;
             _serverWorldState.ResetToEmpty();
-            _nextReadySendUtc = DateTime.MinValue;
+            _readySent = false;
             _currentTicksWithoutPrediction = 0;
             _previousTick = 0;
             _lastDelayedInputTick = 0;
@@ -350,11 +349,12 @@ namespace Elympics
                     _snapshotTracker.InitializeNewBehaviours();
 
                     InvokeQueuedRpcMessages();
-                    NotifyMatchStartedIfReached();
-                    ElympicsBehavioursManager.CommitVars();
 
                     using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                         ApplyPredictedInput();
+
+                    NotifyMatchStartedIfReached();
+                    ElympicsBehavioursManager.CommitVars();
 
                     using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
                         ElympicsBehavioursManager.ElympicsUpdate();
@@ -448,22 +448,19 @@ namespace Elympics
 
         public override long? StartTick => _serverWorldState.StartTick;
 
-        /// <remarks>Sent reliably and repeated about once a second (also after a reconnect) until a snapshot carries the start tick.</remarks>
+        /// <remarks>Sent reliably on the next tick, and again after a reconnect until a snapshot carries the start tick.</remarks>
         public override void MarkReady()
         {
             if ((int)Player < 0)
                 return;
             _readyRequested = true;
-            _nextReadySendUtc = DateTime.MinValue;
         }
 
         private void SendReadyIfPending()
         {
-            // Wall-clock time, because the tick doesn't advance while prediction is blocked.
-            var now = DateTime.UtcNow;
-            if (!_readyRequested || StartTick.HasValue || now < _nextReadySendUtc)
+            if (!_readyRequested || _readySent || StartTick.HasValue)
                 return;
-            _nextReadySendUtc = now + ReadyResendInterval;
+            _readySent = true;
             _matchClient.SendReady();
         }
 

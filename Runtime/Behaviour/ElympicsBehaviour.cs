@@ -514,17 +514,15 @@ namespace Elympics
 
         internal void OnMatchStarted(long startTick)
         {
-            using (ElympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.ElympicsUpdate))
-                foreach (var handler in _componentsContainer.MatchStartHandlers)
-                    try
-                    {
-                        handler.OnMatchStarted(startTick);
-                    }
-                    catch (Exception e)
-                    {
-                        // The start is reported only once, so one failing handler mustn't skip the others.
-                        ElympicsLogger.LogException(new ElympicsException($"{handler.GetType().Name}.{nameof(IMatchStartHandler.OnMatchStarted)} failed", e));
-                    }
+            foreach (var handler in _componentsContainer.MatchStartHandlers)
+                try
+                {
+                    handler.OnMatchStarted(startTick);
+                }
+                catch (Exception e)
+                {
+                    ElympicsLogger.LogException(new ElympicsException($"{handler.GetType().Name}.{nameof(IMatchStartHandler.OnMatchStarted)} failed", e));
+                }
         }
 
         #endregion

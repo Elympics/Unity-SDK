@@ -23,16 +23,21 @@ namespace Elympics
 
         public ElympicsSnapshot(FactoryState factory, Dictionary<int, byte[]>? data) : this(-1, default, factory, data, null) { }
 
-        protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData) => StartTick = snapshot.StartTick;
+        protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData, snapshot.StartTick) { }
 
+        /// <remarks><see cref="StartTick"/> isn't a parameter, because MessagePack matches parameters to keys by position and keys 5 and 6 are missing here.</remarks>
         [SerializationConstructor]
         public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData)
+            : this(tick, tickStartUtc, factory, data, tickToPlayersInputData, null) { }
+
+        public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData, long? startTick)
         {
             Tick = tick;
             TickStartUtc = tickStartUtc;
             Factory = factory;
             Data = data;
             TickToPlayersInputData = tickToPlayersInputData;
+            StartTick = startTick;
         }
 
         public static ElympicsSnapshot CreateEmpty() => new(new FactoryState(new Dictionary<int, FactoryPartState>()), new Dictionary<int, byte[]>());
@@ -52,10 +57,7 @@ namespace Elympics
         }
 
         /// <summary>Turns this instance into non-recursive deep copy of <paramref name="other"/>.</summary>
-        internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), new(other.Data), new(other.TickToPlayersInputData))
-        {
-            StartTick = other.StartTick,
-        };
+        internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), new(other.Data), new(other.TickToPlayersInputData), other.StartTick);
 
         /// <summary>Add data for objects not contained in this snapshot that is present in <paramref name="source"/> to this snapshot.</summary>
         /// <remarks>

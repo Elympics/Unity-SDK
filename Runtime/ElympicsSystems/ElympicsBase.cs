@@ -322,13 +322,6 @@ namespace Elympics
 
         #endregion
 
-        #region ServerCallbacks
-
-        protected void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerConnected(player));
-        protected void OnPlayerDisconnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerDisconnected(player));
-
-        #endregion
-
         /// <summary>Called from network threads. Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.</summary>
         protected void Enqueue(Action action) => MainThread.Post(action, MatchToken, this);
 
@@ -386,10 +379,9 @@ namespace Elympics
                 return;
             MatchStartReached = true;
             OnMatchStarted(StartTick.Value);
-            ElympicsBehavioursManager.OnMatchStarted(StartTick.Value);
         }
 
-        private protected virtual void OnMatchStarted(long startTick) { }
+        private protected virtual void OnMatchStarted(long startTick) => ElympicsBehavioursManager.OnMatchStarted(startTick);
 
         #endregion
 

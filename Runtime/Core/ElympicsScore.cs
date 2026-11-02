@@ -16,8 +16,15 @@ namespace Elympics.Core
         internal delegate void PlayerScoreUpdatedDelegate(int playerIndex, float score, string metadataJson, DateTime utcTime, TimeSpan gameplayTime);
         internal event PlayerScoreUpdatedDelegate? PlayerScoreUpdated;
 
-        internal bool IsEnabled { get; private set; }
-        private bool _autoEnabled;
+        private enum EnabledMode
+        {
+            Disabled,
+            AutoEnabled,
+            UserEnabled,
+        }
+
+        internal bool IsEnabled => _isEnabled != EnabledMode.Disabled;
+        private EnabledMode _isEnabled;
         private DateTime? _matchStartUtc;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
@@ -67,9 +74,8 @@ namespace Elympics.Core
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
         {
-            if (IsEnabled && !_autoEnabled)
+            if (_isEnabled == EnabledMode.UserEnabled)
                 throw new InvalidOperationException("Already enabled");
-            _autoEnabled = false;
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
             if (metadataKeys is not null)
@@ -81,7 +87,7 @@ namespace Elympics.Core
                 foreach (var key in _metadataKeys)
                     metadata.Add(key, default);
             }
-            IsEnabled = true;
+            _isEnabled = EnabledMode.UserEnabled;
         }
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
@@ -249,7 +255,7 @@ namespace Elympics.Core
             if (!IsEnabled)
             {
                 Enable();
-                _autoEnabled = true;
+                _isEnabled = EnabledMode.AutoEnabled;
             }
             _matchStartUtc = matchStartUtc;
             SubmitAt(matchStartUtc, true);

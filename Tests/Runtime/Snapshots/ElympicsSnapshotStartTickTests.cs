@@ -29,6 +29,44 @@ namespace Elympics.Tests.Runtime.Snapshots
             Assert.That(deserialized.StartTick, Is.EqualTo(startTick));
         }
 
+        [TestCase(null)]
+        [TestCase(123L)]
+        public void StartTickSurvivesSerializationWithMetadata(long? startTick)
+        {
+            var snapshot = new ElympicsSnapshotWithMetadata(CreateSnapshot(5, startTick), DateTime.UtcNow);
+
+            var bytes = MessagePackSerializer.Serialize(snapshot);
+            var deserialized = MessagePackSerializer.Deserialize<ElympicsSnapshotWithMetadata>(bytes);
+
+            Assert.That(deserialized.StartTick, Is.EqualTo(startTick));
+            Assert.That(deserialized.Tick, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void LegacyFiveElementSnapshotDeserializesWithoutStartTick()
+        {
+            var bytes = MessagePackSerializer.Serialize(CreateSnapshot(5, 123));
+            var reader = new MessagePackReader(bytes);
+            _ = reader.ReadArrayHeader();
+            var start = reader.Position;
+            for (var i = 0; i < 5; i++)
+                reader.Skip();
+            var firstFive = reader.Sequence.Slice(start, reader.Position);
+            var legacyBytes = new byte[1 + firstFive.Length];
+            legacyBytes[0] = 0x95; // fixarray of 5 elements, as written before StartTick existed
+            var offset = 1;
+            foreach (var segment in firstFive)
+            {
+                segment.Span.CopyTo(legacyBytes.AsSpan(offset));
+                offset += segment.Length;
+            }
+
+            var deserialized = MessagePackSerializer.Deserialize<ElympicsSnapshot>(legacyBytes);
+
+            Assert.That(deserialized.Tick, Is.EqualTo(5));
+            Assert.That(deserialized.StartTick, Is.Null);
+        }
+
         [Test]
         public void DeepCopyAndCopyConstructorKeepStartTick()
         {

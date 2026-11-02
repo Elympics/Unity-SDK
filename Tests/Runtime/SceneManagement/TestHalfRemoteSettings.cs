@@ -178,6 +178,19 @@ namespace Elympics.Tests
 
         [TestCase(true)]
         [TestCase(false)]
+        public void SettingsWithoutLaunchDataFallBackToConfigCustomData(bool server)
+        {
+            AddConfigSeed();
+
+            var resolved = server
+                ? HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(), _config).CustomMatchmakingData
+                : HalfRemoteClientSettings.Resolve(new HalfRemoteClientLaunchData(), _config).CustomMatchmakingData;
+
+            Assert.That(resolved, Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
         public void LaunchDataOverridesConfig(bool server)
         {
             AddConfigSeed();

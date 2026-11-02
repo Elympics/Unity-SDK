@@ -41,10 +41,10 @@ namespace Elympics
         [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private int predictionLimitInTicks = 25;
 
-        [Tooltip("The server ends the match (refunded) if not all players call IElympics.MarkReady() within this time from the server init.")]
+        [Tooltip("The server ends the match with no result if not all players call IElympics.MarkReady() within this time from the server init.")]
         [Min(180)]
         [SerializeField] private float readyTimeoutSeconds = 180;
-        [Tooltip("How far ahead the server schedules the match start once all players are ready. It's never shorter than the total prediction limit.")]
+        [Tooltip("How far ahead the server schedules the match start once all players are ready. It's at least the total prediction limit plus 2 ticks.")]
         [Min(0)]
         [SerializeField] private float matchStartDelaySeconds = 1;
         [Tooltip("After the match start, the server ends the match if any or all (human) players leave.")]
@@ -110,11 +110,12 @@ namespace Elympics
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
         public float ReadyTimeoutSeconds => readyTimeoutSeconds;
-        /// <summary>The effective start delay: the configured one, rounded up to whole ticks and never shorter than the total prediction limit.</summary>
+        /// <summary>The effective start delay: the configured one, rounded up to whole ticks and at least the total prediction limit plus <see cref="MatchStartDelayMarginTicks"/>.</summary>
         public float MatchStartDelaySeconds => MatchStartDelayTicks * TickDuration;
         public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
-        /// <summary>Start delay in ticks: at least the total prediction limit plus a margin, so that no client has predicted past it.</summary>
-        internal long MatchStartDelayTicks => Math.Max((long)Math.Ceiling(matchStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + 2);
+        /// <summary>Added to the total prediction limit, so that no client has predicted past the start.</summary>
+        internal const int MatchStartDelayMarginTicks = 2;
+        internal long MatchStartDelayTicks => Math.Max((long)Math.Ceiling(matchStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + MatchStartDelayMarginTicks);
         public int PlayerIndexForHalfRemoteMode
         {
             get => ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode);

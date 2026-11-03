@@ -4,6 +4,8 @@ using Elympics.Cysharp.Threading.Tasks;
 using Elympics;
 using JetBrains.Annotations;
 using MatchTcpClients.Synchronizer;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace MatchEvents
 {
@@ -11,6 +13,10 @@ namespace MatchEvents
     {
         public event Action ConnectingStarted;
         public event Action<bool> ConnectingFinished;
+
+        [SerializeField] private Text endGameButtonText;
+
+        private bool _markedReady;
 
         // Before the start, the button marks this player ready, because inputs count only from the game start on.
         [UsedImplicitly]
@@ -22,7 +28,17 @@ namespace MatchEvents
                 return;
             }
             Elympics.MarkReady();
-            UnityEngine.Debug.Log("Marked ready. Click again after the game start to end the game.");
+            _markedReady = true;
+            Debug.Log("Marked ready. Click again after the game start to end the game.");
+        }
+
+        private void Update()
+        {
+            if (endGameButtonText == null)
+                return;
+            endGameButtonText.text = Elympics is { IsGameStarted: true } ? "End game"
+                : _markedReady ? "Waiting for the other players..."
+                : "Ready";
         }
 
         [UsedImplicitly]

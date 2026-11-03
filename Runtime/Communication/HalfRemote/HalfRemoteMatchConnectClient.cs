@@ -23,9 +23,6 @@ namespace Elympics
         private const int ConnectMaxRetries = 50;
         private const int WaitTimeToRetryConnectInSeconds = 1;
         private static readonly TimeSpan ServerReachingTimeout = TimeSpan.FromSeconds(1);
-
-        private static readonly TimeSpan OfferWaitingInterval = TimeSpan.FromSeconds(1);
-        private const int MaxOfferWaitingIntervals = 5;
         private static readonly TimeSpan ChannelsOpeningTimeout = TimeSpan.FromSeconds(10);
 
         public event Action<TimeSynchronizationData> ConnectedWithSynchronizationData;
@@ -147,12 +144,30 @@ namespace Elympics
         {
             var webRtcConfig = WebRtcConfig.Default;
             webRtcConfig.OfferAnnounceDelay = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferAnnounceDelay);
-            _webRtcClient = WebRtcFactory.CreateClient(webRtcConfig);
+            var offerTimeout = TimeSpan.FromSeconds(_connectionConfig.webRtcOfferTimeout);
+            var offerAttempts = Math.Max(1, _connectionConfig.sessionConnectRetries);
 
-            var reliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
-            var unreliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
+            IDataChannel reliableChannel;
+            IDataChannel unreliableChannel;
+            string offer;
+            for (var attempt = 1; ; attempt++)
+            {
+                _webRtcClient?.Dispose();
+                _webRtcClient = WebRtcFactory.CreateClient(webRtcConfig);
+                reliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.ReliableLabel, true);
+                unreliableChannel = _webRtcClient.CreateDataChannel(INetworkClient.UnreliableLabel, false);
 
-            var offer = await _webRtcClient.CreateOffer(false).WithTimeout(MaxOfferWaitingIntervals * OfferWaitingInterval, ct);
+                // The timeout runs on wall-clock time, so a busy Editor (an asset refresh in an MPPM clone) can use it all up.
+                try
+                {
+                    offer = await _webRtcClient.CreateOffer(false).WithTimeout(offerTimeout, ct);
+                    break;
+                }
+                catch (TimeoutException) when (attempt < offerAttempts)
+                {
+                    ElympicsLogger.LogWarning($"Creating the WebRTC offer timed out on attempt {attempt}/{offerAttempts}. Retrying...");
+                }
+            }
 
             if (string.IsNullOrEmpty(offer))
                 throw new ElympicsException("Offer not received from WebRTC client.");
@@ -172,7 +187,7 @@ namespace Elympics
 
                 try
                 {
-                    var signalingResponse = await _signalingClient.PostOfferAsync(new OfferWithCandidates { offer = offer }, ServerReachingTimeout, ct);
+                    var signalingResponse = await _signalingClient.PostOfferAsync(new OfferWithCandidates { offer = offer }, offerTimeout, ct);
                     answer = signalingResponse.answer;
                     break;
                 }

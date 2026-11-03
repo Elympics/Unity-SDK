@@ -353,7 +353,7 @@ namespace Elympics
                     using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                         ApplyPredictedInput();
 
-                    NotifyMatchStartedIfReached();
+                    NotifyGameStartedIfReached();
                     ElympicsBehavioursManager.CommitVars();
 
                     using (ElympicsMarkers.Elympics_ElympicsUpdateMarker.Auto())
@@ -446,7 +446,7 @@ namespace Elympics
             input.Player = Player;
         }
 
-        public override long? StartTick => _serverWorldState.StartTick;
+        public override long? GameStartTick => _serverWorldState.GameStartTick;
 
         /// <remarks>Sent reliably on the next tick, and again after a reconnect until a snapshot carries the start tick.</remarks>
         public override void MarkReady()
@@ -458,7 +458,7 @@ namespace Elympics
 
         private void SendReadyIfPending()
         {
-            if (!_readyRequested || _readySent || StartTick.HasValue)
+            if (!_readyRequested || _readySent || GameStartTick.HasValue)
                 return;
             _readySent = true;
             _matchClient.SendReady();
@@ -475,7 +475,7 @@ namespace Elympics
         {
             _inputList.Clear();
             var currentTick = _clientTickCalculator.Results.CurrentTick;
-            if (IsMatchStartedAt(currentTick) && _predictionBuffer.TryGetInputFromBuffer(currentTick, out var predictedInput))
+            if (IsGameStartedAt(currentTick) && _predictionBuffer.TryGetInputFromBuffer(currentTick, out var predictedInput))
                 _inputList.Add(predictedInput);
             ElympicsBehavioursManager.SetCurrentInputs(_inputList);
         }
@@ -547,7 +547,7 @@ namespace Elympics
                     ElympicsBehavioursManager.CommitVars();
 
                     _inputList.Clear();
-                    if (IsMatchStartedAt(resimulationTick) && _predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
+                    if (IsGameStartedAt(resimulationTick) && _predictionBuffer.TryGetInputFromBuffer(resimulationTick, out var resimulatedInput))
                         _inputList.Add(resimulatedInput);
                     ElympicsBehavioursManager.SetCurrentInputs(_inputList);
 

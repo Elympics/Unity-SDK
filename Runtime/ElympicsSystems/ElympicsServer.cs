@@ -46,7 +46,7 @@ namespace Elympics
         private ElympicsScore? _score;
         private LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsServer));
 
-        private long? _startTick;
+        private long? _gameStartTick;
         private DateTime _initializedUtc;
         private readonly HashSet<ElympicsPlayer> _humanPlayers = new();
         private readonly HashSet<ElympicsPlayer> _readyPlayers = new();
@@ -114,11 +114,11 @@ namespace Elympics
                 _serverPlayerHandler.RetrieveInput(Tick);
 
             if (!_isReplay)
-                UpdateMatchStart();
+                UpdateGameStart();
 
             var snapshot = _serverElympicsUpdate.GenerateSnapshot();
             if (_isReplay)
-                _startTick = snapshot.StartTick;
+                _gameStartTick = snapshot.GameStartTick;
             _currentSnapshot = ElympicsBehavioursManager.AddMetadataToSnapshot(snapshot);
         }
 
@@ -151,15 +151,15 @@ namespace Elympics
                 inputBuffer.UpdateMinTick(Tick);
         }
 
-        private void UpdateMatchStart()
+        private void UpdateGameStart()
         {
-            if (_startTick.HasValue || _endGameRequested || _gameEnded)
+            if (_gameStartTick.HasValue || _endGameRequested || _gameEnded)
                 return;
 
             if (_clientsInServerReady || _readyPlayers.Count == _humanPlayers.Count)
             {
-                _startTick = Tick + Config.MatchStartDelayTicks;
-                _logger.LogInfo($"All players are ready. The match starts at tick {_startTick} (current tick: {Tick}).");
+                _gameStartTick = Tick + Config.GameStartDelayTicks;
+                _logger.LogInfo($"All players are ready. The game starts at tick {_gameStartTick} (current tick: {Tick}).");
                 return;
             }
 
@@ -171,29 +171,29 @@ namespace Elympics
             EndGame();
         }
 
-        private protected override void OnMatchStarted(long startTick)
+        private protected override void OnGameStarted(long startTick)
         {
-            _logger.LogInfo($"Match started at tick {startTick}.");
+            _logger.LogInfo($"Game started at tick {startTick}.");
             _score?.Start(TickStartUtc);
             TerminateIfPlayersLeft();
-            base.OnMatchStarted(startTick);
+            base.OnGameStarted(startTick);
         }
 
-        /// <summary>Like inputs, player-to-server RPCs sent before the match start are ignored.</summary>
+        /// <summary>Like inputs, player-to-server RPCs sent before the game start are ignored.</summary>
         internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage)
         {
-            if (rpcMessage.Sender < 0 || IsMatchStartedAt(rpcMessage.SentOnTick))
+            if (rpcMessage.Sender < 0 || IsGameStartedAt(rpcMessage.SentOnTick))
                 return false;
             if (!_preStartRpcIgnored)
-                _logger.LogWarning($"Ignoring player RPCs sent before the match start (first: player {rpcMessage.Sender}, tick {rpcMessage.SentOnTick}). "
-                    + $"Check {nameof(IElympics)}.{nameof(IElympics.IsMatchStarted)} before calling them.");
+                _logger.LogWarning($"Ignoring player RPCs sent before the game start (first: player {rpcMessage.Sender}, tick {rpcMessage.SentOnTick}). "
+                    + $"Check {nameof(IElympics)}.{nameof(IElympics.IsGameStarted)} before calling them.");
             _preStartRpcIgnored = true;
             return true;
         }
 
         private ResultMatchPlayerDatas? ResolveMatchResult(ResultMatchPlayerDatas? result)
         {
-            if (!MatchStartReached)
+            if (!GameStartReached)
             {
                 if (result != null)
                     _logger.LogWarning("The match result was ignored, because the match ended before it started. Sending no result.");
@@ -230,7 +230,7 @@ namespace Elympics
 
         private void TerminateIfPlayersLeft()
         {
-            if (HandlingClientsInServer || _isReplay || !MatchStartReached || _endGameRequested || _gameEnded || _humanPlayers.Count == 0)
+            if (HandlingClientsInServer || _isReplay || !GameStartReached || _endGameRequested || _gameEnded || _humanPlayers.Count == 0)
                 return;
             var shouldTerminate = Config.TerminateWhenPlayersLeave switch
             {
@@ -307,7 +307,7 @@ namespace Elympics
 
         public override ElympicsScore Score => Initialized ? _score! : throw new InvalidOperationException("Not initialized");
 
-        public override long? StartTick => _startTick;
+        public override long? GameStartTick => _gameStartTick;
 
         /// <remarks>Only in local modes, where the server simulates the clients: marks all players ready, even before server init. Otherwise a no-op.</remarks>
         public override void MarkReady()

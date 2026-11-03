@@ -7,38 +7,38 @@ namespace Elympics.Tests.Runtime.Snapshots
 {
     [TestFixture]
     [Category("ElympicsSnapshot")]
-    public class ElympicsSnapshotStartTickTests
+    public class ElympicsSnapshotGameStartTickTests
     {
         private static ElympicsSnapshot CreateSnapshot(long tick, long? startTick)
         {
             var snapshot = ElympicsSnapshot.CreateEmpty();
             snapshot.Tick = tick;
             snapshot.TickToPlayersInputData = new Dictionary<int, TickToPlayerInput>();
-            snapshot.StartTick = startTick;
+            snapshot.GameStartTick = startTick;
             return snapshot;
         }
 
         [TestCase(null)]
         [TestCase(123L)]
-        public void StartTickSurvivesSerialization(long? startTick)
+        public void GameStartTickSurvivesSerialization(long? startTick)
         {
             var bytes = MessagePackSerializer.Serialize<IFromServer>(CreateSnapshot(5, startTick));
 
             var deserialized = (ElympicsSnapshot)MessagePackSerializer.Deserialize<IFromServer>(bytes);
 
-            Assert.That(deserialized.StartTick, Is.EqualTo(startTick));
+            Assert.That(deserialized.GameStartTick, Is.EqualTo(startTick));
         }
 
         [TestCase(null)]
         [TestCase(123L)]
-        public void StartTickSurvivesSerializationWithMetadata(long? startTick)
+        public void GameStartTickSurvivesSerializationWithMetadata(long? startTick)
         {
             var snapshot = new ElympicsSnapshotWithMetadata(CreateSnapshot(5, startTick), DateTime.UtcNow);
 
             var bytes = MessagePackSerializer.Serialize(snapshot);
             var deserialized = MessagePackSerializer.Deserialize<ElympicsSnapshotWithMetadata>(bytes);
 
-            Assert.That(deserialized.StartTick, Is.EqualTo(startTick));
+            Assert.That(deserialized.GameStartTick, Is.EqualTo(startTick));
             Assert.That(deserialized.Tick, Is.EqualTo(5));
         }
 
@@ -53,7 +53,7 @@ namespace Elympics.Tests.Runtime.Snapshots
                 reader.Skip();
             var firstFive = reader.Sequence.Slice(start, reader.Position);
             var legacyBytes = new byte[1 + firstFive.Length];
-            legacyBytes[0] = 0x95; // fixarray of 5 elements, as written before StartTick existed
+            legacyBytes[0] = 0x95; // fixarray of 5 elements, as written before GameStartTick existed
             var offset = 1;
             foreach (var segment in firstFive)
             {
@@ -64,7 +64,7 @@ namespace Elympics.Tests.Runtime.Snapshots
             var deserialized = MessagePackSerializer.Deserialize<ElympicsSnapshot>(legacyBytes);
 
             Assert.That(deserialized.Tick, Is.EqualTo(5));
-            Assert.That(deserialized.StartTick, Is.Null);
+            Assert.That(deserialized.GameStartTick, Is.Null);
         }
 
         [Test]
@@ -72,8 +72,8 @@ namespace Elympics.Tests.Runtime.Snapshots
         {
             var snapshot = CreateSnapshot(5, 40);
 
-            Assert.That(ElympicsSnapshot.CreateDeepCopy(snapshot).StartTick, Is.EqualTo(40));
-            Assert.That(new ElympicsSnapshotWithMetadata(snapshot, DateTime.UtcNow).StartTick, Is.EqualTo(40));
+            Assert.That(ElympicsSnapshot.CreateDeepCopy(snapshot).GameStartTick, Is.EqualTo(40));
+            Assert.That(new ElympicsSnapshotWithMetadata(snapshot, DateTime.UtcNow).GameStartTick, Is.EqualTo(40));
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace Elympics.Tests.Runtime.Snapshots
 
             snapshot.ResetToEmpty();
 
-            Assert.That(snapshot.StartTick, Is.Null);
+            Assert.That(snapshot.GameStartTick, Is.Null);
         }
 
         [Test]
@@ -92,10 +92,10 @@ namespace Elympics.Tests.Runtime.Snapshots
             var state = CreateSnapshot(1, null);
 
             state.MergeWithSnapshot(CreateSnapshot(2, 40));
-            Assert.That(state.StartTick, Is.EqualTo(40));
+            Assert.That(state.GameStartTick, Is.EqualTo(40));
 
             state.MergeWithSnapshot(CreateSnapshot(3, null));
-            Assert.That(state.StartTick, Is.EqualTo(40));
+            Assert.That(state.GameStartTick, Is.EqualTo(40));
         }
     }
 }

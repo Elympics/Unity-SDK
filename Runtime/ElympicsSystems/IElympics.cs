@@ -40,26 +40,26 @@ namespace Elympics
 
         bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour);
 
-        #region Match start
+        #region Game start
 
         /// <summary>
         /// Confirms that the game launched successfully for this player.
         /// Call it on every player client once the game is playable. Bots are ready automatically.
         /// </summary>
         /// <remarks>
-        /// When all players are ready, the server schedules the match start (<see cref="StartTick"/>) a few ticks ahead (see <see cref="ElympicsGameConfig.MatchStartDelaySeconds"/>).
+        /// When all players are ready, the server schedules the game start (<see cref="GameStartTick"/>) a few ticks ahead (see <see cref="ElympicsGameConfig.GameStartDelaySeconds"/>).
         /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/>, the server ends the match with no result.
-        /// Inputs for ticks before <see cref="StartTick"/>, and player-to-server RPCs sent before it, are ignored.
+        /// Inputs for ticks before <see cref="GameStartTick"/>, and player-to-server RPCs sent before it, are ignored.
         /// Calling it again or on a spectator has no effect. On a server, it has an effect only in local modes, where it marks all players ready.
         /// </remarks>
         void MarkReady();
 
-        /// <value>The tick the match starts at, or null while the start isn't scheduled (or not yet known to this client).</value>
-        long? StartTick { get; }
+        /// <value>The tick the game starts at, or null while the start isn't scheduled (or not yet known to this client).</value>
+        long? GameStartTick { get; }
 
-        /// <value>True from <see cref="StartTick"/> on.</value>
-        /// <remarks>Objects spawned after the start should check it, because <see cref="IMatchStartHandler.OnMatchStarted"/> has already been called.</remarks>
-        bool IsMatchStarted { get; }
+        /// <value>True from <see cref="GameStartTick"/> on.</value>
+        /// <remarks>Objects spawned after the start should check it, because <see cref="IGameStartHandler.OnGameStarted"/> has already been called.</remarks>
+        bool IsGameStarted { get; }
 
         #endregion
 
@@ -82,7 +82,7 @@ namespace Elympics
         ElympicsScore Score { get; }
 
         /// <summary>Ends the match.</summary>
-        /// <param name="result">Results for all players. Ignored before the match start (no result is sent); if null after it, built from <see cref="Score"/>.</param>
+        /// <param name="result">Results for all players. Ignored before the game start (no result is sent); if null after it, built from <see cref="Score"/>.</param>
         void EndGame(ResultMatchPlayerDatas result = null);
 
         #endregion

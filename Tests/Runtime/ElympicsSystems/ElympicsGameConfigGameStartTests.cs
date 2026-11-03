@@ -7,7 +7,7 @@ namespace Elympics.Tests
 {
     [TestFixture]
     [Category("Core")]
-    public class ElympicsGameConfigMatchStartTests
+    public class ElympicsGameConfigGameStartTests
     {
         private ElympicsGameConfig _config;
 
@@ -24,24 +24,24 @@ namespace Elympics.Tests
         [TestCase(0.5f, 30, 30L, Description = "A too short delay is raised to the minimum.")]
         [TestCase(1.01f, 30, 31L, Description = "Seconds are rounded up to whole ticks.")]
         [TestCase(2f, 60, 120L, Description = "Ticks per second scale the delay.")]
-        public void MatchStartDelayTicksIsTheLongerOfConfiguredDelayAndPredictionLimit(float seconds, int ticksPerSecond, long expectedTicks)
+        public void GameStartDelayTicksIsTheLongerOfConfiguredDelayAndPredictionLimit(float seconds, int ticksPerSecond, long expectedTicks)
         {
-            SetField("matchStartDelaySeconds", seconds);
+            SetField("gameStartDelaySeconds", seconds);
             SetField("ticksPerSecond", ticksPerSecond);
 
-            Assert.That(_config.TotalPredictionLimitInTicks + ElympicsGameConfig.MatchStartDelayMarginTicks, Is.EqualTo(30));
-            Assert.That(_config.MatchStartDelayTicks, Is.EqualTo(expectedTicks));
-            Assert.That(_config.MatchStartDelaySeconds, Is.EqualTo(expectedTicks * _config.TickDuration).Within(1e-5f));
+            Assert.That(_config.TotalPredictionLimitInTicks + ElympicsGameConfig.GameStartDelayMarginTicks, Is.EqualTo(30));
+            Assert.That(_config.GameStartDelayTicks, Is.EqualTo(expectedTicks));
+            Assert.That(_config.GameStartDelaySeconds, Is.EqualTo(expectedTicks * _config.TickDuration).Within(1e-5f));
         }
 
         [Test]
-        public void MatchStartDelayTicksFollowsThePredictionLimit()
+        public void GameStartDelayTicksFollowsThePredictionLimit()
         {
-            SetField("matchStartDelaySeconds", 0f);
+            SetField("gameStartDelaySeconds", 0f);
             SetField("predictionLimitInTicks", 50);
 
-            Assert.That(_config.MatchStartDelayTicks, Is.EqualTo(_config.TotalPredictionLimitInTicks + ElympicsGameConfig.MatchStartDelayMarginTicks));
-            Assert.That(_config.MatchStartDelayTicks, Is.EqualTo(55L));
+            Assert.That(_config.GameStartDelayTicks, Is.EqualTo(_config.TotalPredictionLimitInTicks + ElympicsGameConfig.GameStartDelayMarginTicks));
+            Assert.That(_config.GameStartDelayTicks, Is.EqualTo(55L));
         }
 
         private void SetField(string name, object value) =>

@@ -927,7 +927,7 @@ namespace MessagePack.Formatters.Elympics
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Serialize(ref writer, value.TickToPlayersInputData, options);
             writer.WriteNil();
             writer.WriteNil();
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Serialize(ref writer, value.StartTick, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Serialize(ref writer, value.GameStartTick, options);
         }
 
         public global::Elympics.ElympicsSnapshot Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -944,7 +944,7 @@ namespace MessagePack.Formatters.Elympics
             var __Factory__ = default(global::Elympics.FactoryState);
             var __Data__ = default(global::System.Collections.Generic.Dictionary<int, byte[]>);
             var __TickToPlayersInputData__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>);
-            var __StartTick__ = default(long?);
+            var __GameStartTick__ = default(long?);
             var __Tick__ = default(long);
 
             for (int i = 0; i < length; i++)
@@ -967,7 +967,7 @@ namespace MessagePack.Formatters.Elympics
                         __TickToPlayersInputData__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 7:
-                        __StartTick__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Deserialize(ref reader, options);
+                        __GameStartTick__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -981,7 +981,7 @@ namespace MessagePack.Formatters.Elympics
                 goto MEMBER_ASSIGNMENT_END;
             }
 
-            ____result.StartTick = __StartTick__;
+            ____result.GameStartTick = __GameStartTick__;
 
         MEMBER_ASSIGNMENT_END:
             reader.Depth--;
@@ -1055,7 +1055,7 @@ namespace MessagePack.Formatters.Elympics
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>>(formatterResolver).Serialize(ref writer, value.TickToPlayersInputData, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.DateTime>(formatterResolver).Serialize(ref writer, value.TickEndUtc, options);
             global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Serialize(ref writer, value.Metadata, options);
-            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Serialize(ref writer, value.StartTick, options);
+            global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Serialize(ref writer, value.GameStartTick, options);
         }
 
         public global::Elympics.ElympicsSnapshotWithMetadata Deserialize(ref global::MessagePack.MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
@@ -1074,7 +1074,7 @@ namespace MessagePack.Formatters.Elympics
             var __Factory__ = default(global::Elympics.FactoryState);
             var __Data__ = default(global::System.Collections.Generic.Dictionary<int, byte[]>);
             var __TickToPlayersInputData__ = default(global::System.Collections.Generic.Dictionary<int, global::Elympics.TickToPlayerInput>);
-            var __StartTick__ = default(long?);
+            var __GameStartTick__ = default(long?);
             var __Tick__ = default(long);
 
             for (int i = 0; i < length; i++)
@@ -1103,7 +1103,7 @@ namespace MessagePack.Formatters.Elympics
                         __Metadata__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<global::System.Collections.Generic.List<global::Elympics.ElympicsBehaviourMetadata>>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     case 7:
-                        __StartTick__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Deserialize(ref reader, options);
+                        __GameStartTick__ = global::MessagePack.FormatterResolverExtensions.GetFormatterWithVerify<long?>(formatterResolver).Deserialize(ref reader, options);
                         break;
                     default:
                         reader.Skip();
@@ -1111,7 +1111,7 @@ namespace MessagePack.Formatters.Elympics
                 }
             }
 
-            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__, __TickEndUtc__, __Metadata__, __StartTick__);
+            var ____result = new global::Elympics.ElympicsSnapshotWithMetadata(__Tick__, __TickStartUtc__, __Factory__, __Data__, __TickToPlayersInputData__, __TickEndUtc__, __Metadata__, __GameStartTick__);
             reader.Depth--;
             return ____result;
         }

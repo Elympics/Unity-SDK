@@ -25,7 +25,7 @@ namespace Elympics.Core
 
         internal bool IsEnabled => _enabledMode != EnabledMode.Disabled;
         private EnabledMode _enabledMode;
-        private DateTime? _matchStartUtc;
+        private DateTime? _gameStartUtc;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
 
@@ -59,7 +59,7 @@ namespace Elympics.Core
         /// </summary>
         /// <remarks>
         /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
-        /// If it hasn't been called by the match start, it's called with defaults then. A later call replaces those defaults once.
+        /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
         /// </remarks>
         /// <param name="getGameplayTime">
         /// Function for calculating the gameplay time of each score.
@@ -245,12 +245,12 @@ namespace Elympics.Core
         }
 
         private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime) =>
-            currentTime - (_matchStartUtc ?? throw new InvalidOperationException("The match has not started yet"));
+            currentTime - (_gameStartUtc ?? throw new InvalidOperationException("The game has not started yet"));
 
         /// <summary>Starts the gameplay time (enabling the score if needed) and submits all scores.</summary>
-        internal void Start(DateTime matchStartUtc)
+        internal void Start(DateTime gameStartUtc)
         {
-            if (_matchStartUtc.HasValue)
+            if (_gameStartUtc.HasValue)
                 return;
             if (!IsEnabled)
             {
@@ -258,8 +258,8 @@ namespace Elympics.Core
                 // Not UserEnabled, so that the game can still call Enable() itself.
                 _enabledMode = EnabledMode.AutoEnabled;
             }
-            _matchStartUtc = matchStartUtc;
-            SubmitAt(matchStartUtc, true);
+            _gameStartUtc = gameStartUtc;
+            SubmitAt(gameStartUtc, true);
         }
 
         internal void SubmitIfEnabled()
@@ -275,7 +275,7 @@ namespace Elympics.Core
         /// <remarks>
         /// <see cref="Enable"/> must be called first.
         /// Automatic sending is done at the end of each tick.
-        /// Before the match start (see <see cref="IElympics.IsMatchStarted"/>), nothing is sent. The scores of all players are sent at the start.
+        /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start.
         /// </remarks>
         /// <param name="forceSend">Force sending the data for all players even if there were no changes.</param>
         [PublicAPI]
@@ -283,7 +283,7 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            if (!_matchStartUtc.HasValue)
+            if (!_gameStartUtc.HasValue)
                 return;
             SubmitAt(DateTime.UtcNow, forceSend);
         }

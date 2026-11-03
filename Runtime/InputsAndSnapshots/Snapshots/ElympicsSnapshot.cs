@@ -17,28 +17,28 @@ namespace Elympics
         [Key(3)] public Dictionary<int, byte[]>? Data { get; set; }
         /// <summary>Key is PlayerId as int.</summary>
         [Key(4)] public Dictionary<int, TickToPlayerInput>? TickToPlayersInputData { get; set; }
-        /// <summary>The tick the match starts at, or null while the start isn't scheduled.</summary>
+        /// <summary>The tick the game starts at, or null while the start isn't scheduled.</summary>
         // Keys 5 and 6 are taken by ElympicsSnapshotWithMetadata.
         // TODO: extract a key-less superclass of both snapshot types, so that each numbers its keys contiguously ~dsygocki 2026-11-02
-        [Key(7)] public long? StartTick { get; set; }
+        [Key(7)] public long? GameStartTick { get; set; }
 
         public ElympicsSnapshot(FactoryState factory, Dictionary<int, byte[]>? data) : this(-1, default, factory, data, null) { }
 
-        protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData, snapshot.StartTick) { }
+        protected ElympicsSnapshot(ElympicsSnapshot snapshot) : this(snapshot.Tick, snapshot.TickStartUtc, snapshot.Factory, snapshot.Data, snapshot.TickToPlayersInputData, snapshot.GameStartTick) { }
 
-        // StartTick isn't a parameter: MessagePack matches parameters to keys by position, and keys 5 and 6 are missing here.
+        // GameStartTick isn't a parameter: MessagePack matches parameters to keys by position, and keys 5 and 6 are missing here.
         [SerializationConstructor]
         public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData)
             : this(tick, tickStartUtc, factory, data, tickToPlayersInputData, null) { }
 
-        public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData, long? startTick)
+        public ElympicsSnapshot(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]>? data, Dictionary<int, TickToPlayerInput>? tickToPlayersInputData, long? gameStartTick)
         {
             Tick = tick;
             TickStartUtc = tickStartUtc;
             Factory = factory;
             Data = data;
             TickToPlayersInputData = tickToPlayersInputData;
-            StartTick = startTick;
+            GameStartTick = gameStartTick;
         }
 
         public static ElympicsSnapshot CreateEmpty() => new(new FactoryState(new Dictionary<int, FactoryPartState>()), new Dictionary<int, byte[]>());
@@ -54,11 +54,11 @@ namespace Elympics
             Factory.Parts.Clear();
             Data?.Clear();
             TickToPlayersInputData?.Clear();
-            StartTick = null;
+            GameStartTick = null;
         }
 
         /// <summary>Turns this instance into non-recursive deep copy of <paramref name="other"/>.</summary>
-        internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), new(other.Data), new(other.TickToPlayersInputData), other.StartTick);
+        internal static ElympicsSnapshot CreateDeepCopy(ElympicsSnapshot other) => new(other.Tick, other.TickStartUtc, new(new(other.Factory.Parts)), new(other.Data), new(other.TickToPlayersInputData), other.GameStartTick);
 
         /// <summary>Add data for objects not contained in this snapshot that is present in <paramref name="source"/> to this snapshot.</summary>
         /// <remarks>
@@ -94,7 +94,7 @@ namespace Elympics
 
             Tick = receivedSnapshot.Tick;
             TickStartUtc = receivedSnapshot.TickStartUtc;
-            StartTick = receivedSnapshot.StartTick ?? StartTick;
+            GameStartTick = receivedSnapshot.GameStartTick ?? GameStartTick;
 
             if (Data != null)
             {

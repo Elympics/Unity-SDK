@@ -219,7 +219,7 @@ namespace Elympics
             var snapshot = new ElympicsSnapshot(factory.GetState(), new Dictionary<int, byte[]>(_elympicsBehaviours.Behaviours.Count))
             {
                 TickStartUtc = _elympics.TickStartUtc,
-                StartTick = _elympics.StartTick,
+                GameStartTick = _elympics.GameStartTick,
             };
 
             //Behaviours should always be added to snapshot in that order, so they remain ordered by ID and other code can use that for optimization
@@ -417,10 +417,10 @@ namespace Elympics
             LifecycleSink?.MatchEnded(matchId);
         }
 
-        internal void OnMatchStarted(long startTick)
+        internal void OnGameStarted(long startTick)
         {
             foreach (var (_, elympicsBehaviour) in _elympicsBehaviours.Behaviours)
-                elympicsBehaviour.OnMatchStarted(startTick);
+                elympicsBehaviour.OnGameStarted(startTick);
         }
 
         internal void OnAuthenticatedFailed(string errorMessage)

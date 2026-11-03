@@ -69,7 +69,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
 
     public void ElympicsUpdate()
     {
-        if (!_initialized || !Elympics.IsMatchStarted)
+        if (!_initialized || !Elympics.IsGameStarted)
             return;
         _ticksLeft.Value--;
         if (_ticksLeft.Value <= 0)

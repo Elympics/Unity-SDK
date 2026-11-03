@@ -517,16 +517,16 @@ namespace Elympics
                 handler.OnMatchEnded(matchId);
         }
 
-        internal void OnMatchStarted(long startTick)
+        internal void OnGameStarted(long startTick)
         {
-            foreach (var handler in _componentsContainer.MatchStartHandlers)
+            foreach (var handler in _componentsContainer.GameStartHandlers)
                 try
                 {
-                    handler.OnMatchStarted(startTick);
+                    handler.OnGameStarted(startTick);
                 }
                 catch (Exception e)
                 {
-                    ElympicsLogger.LogException(new ElympicsException($"{handler.GetType().Name}.{nameof(IMatchStartHandler.OnMatchStarted)} failed", e));
+                    ElympicsLogger.LogException(new ElympicsException($"{handler.GetType().Name}.{nameof(IGameStartHandler.OnGameStarted)} failed", e));
                 }
         }
 

@@ -26,8 +26,8 @@ namespace Elympics.ElympicsSystems
         private void SetBoundaryConditions()
         {
             _inputList.Clear();
-            // Inputs for ticks before the match start are ignored, and must not become the fallback input either.
-            if (_elympicsBase.IsMatchStartedAt(Tick))
+            // Inputs for ticks before the game start are ignored, and must not become the fallback input either.
+            if (_elympicsBase.IsGameStartedAt(Tick))
                 foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
                 {
                     var currentTick = Tick;
@@ -42,7 +42,7 @@ namespace Elympics.ElympicsSystems
                 _behavioursManager.SetCurrentInputs(_inputList);
 
             _elympicsBase.InvokeQueuedRpcMessages();
-            _elympicsBase.NotifyMatchStartedIfReached();
+            _elympicsBase.NotifyGameStartedIfReached();
             _behavioursManager.CommitVars();
         }
         public ElympicsSnapshot GenerateSnapshot()

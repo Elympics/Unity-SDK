@@ -362,29 +362,29 @@ namespace Elympics
 
         public abstract long Tick { get; }
 
-        #region Match start
+        #region Game start
 
         public virtual void MarkReady() { }
 
-        public virtual long? StartTick => null;
+        public virtual long? GameStartTick => null;
 
-        public bool IsMatchStarted => IsMatchStartedAt(Tick);
+        public bool IsGameStarted => IsGameStartedAt(Tick);
 
-        internal bool IsMatchStartedAt(long tick) => StartTick is { } startTick && tick >= startTick;
+        internal bool IsGameStartedAt(long tick) => GameStartTick is { } startTick && tick >= startTick;
 
-        /// <summary>Latched once the start tick has run, unlike <see cref="IsMatchStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
-        internal bool MatchStartReached { get; private set; }
+        /// <summary>Latched once the start tick has run, unlike <see cref="IsGameStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
+        internal bool GameStartReached { get; private set; }
 
-        /// <summary>Calls <see cref="IMatchStartHandler.OnMatchStarted"/> once per instance, on the first tick from <see cref="StartTick"/> on.</summary>
-        internal void NotifyMatchStartedIfReached()
+        /// <summary>Calls <see cref="IGameStartHandler.OnGameStarted"/> once per instance, on the first tick from <see cref="GameStartTick"/> on.</summary>
+        internal void NotifyGameStartedIfReached()
         {
-            if (MatchStartReached || !IsMatchStarted)
+            if (GameStartReached || !IsGameStarted)
                 return;
-            MatchStartReached = true;
-            OnMatchStarted(StartTick.Value);
+            GameStartReached = true;
+            OnGameStarted(GameStartTick.Value);
         }
 
-        private protected virtual void OnMatchStarted(long startTick) => ElympicsBehavioursManager.OnMatchStarted(startTick);
+        private protected virtual void OnGameStarted(long startTick) => ElympicsBehavioursManager.OnGameStarted(startTick);
 
         #endregion
 

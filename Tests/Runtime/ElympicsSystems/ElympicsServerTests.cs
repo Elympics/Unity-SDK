@@ -66,45 +66,45 @@ namespace Elympics.Tests
             _server.RunTick();
             Assert.That(_submittedPlayers, Is.Empty);
 
-            for (var i = 0; i < 100 && !_server.IsMatchStarted; i++)
+            for (var i = 0; i < 100 && !_server.IsGameStarted; i++)
                 _server.RunTick();
             _server.RunTick();
 
-            Assert.That(_server.IsMatchStarted, Is.True);
+            Assert.That(_server.IsGameStarted, Is.True);
             Assert.That(_submittedPlayers, Is.EqualTo(new[] { 0, 1 }));
         }
 
         [Test]
-        public void MatchStartIsScheduledOnlyOnceAllHumanPlayersAreReady()
+        public void GameStartIsScheduledOnlyOnceAllHumanPlayersAreReady()
         {
             SetHumanPlayers(0, 1);
 
             _server.RunTick();
-            Assert.That(_server.StartTick, Is.Null);
+            Assert.That(_server.GameStartTick, Is.Null);
 
             MarkPlayerReady(0);
             _server.RunTick();
-            Assert.That(_server.StartTick, Is.Null, "One of two players is ready.");
+            Assert.That(_server.GameStartTick, Is.Null, "One of two players is ready.");
 
             MarkPlayerReady(1);
             var tickOfScheduling = _server.Tick;
             _server.RunTick();
 
-            Assert.That(_server.StartTick, Is.EqualTo(tickOfScheduling + _server.Config.MatchStartDelayTicks));
+            Assert.That(_server.GameStartTick, Is.EqualTo(tickOfScheduling + _server.Config.GameStartDelayTicks));
         }
 
         [Test]
-        public void MatchStartIsNotRescheduledOnceSet()
+        public void GameStartIsNotRescheduledOnceSet()
         {
             SetHumanPlayers(0);
             MarkPlayerReady(0);
             _server.RunTick();
-            var startTick = _server.StartTick;
+            var startTick = _server.GameStartTick;
 
             _server.RunTick();
             _server.RunTick();
 
-            Assert.That(_server.StartTick, Is.EqualTo(startTick));
+            Assert.That(_server.GameStartTick, Is.EqualTo(startTick));
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace Elympics.Tests
 
             _server.RunTick();
 
-            Assert.That(_server.StartTick, Is.Null);
+            Assert.That(_server.GameStartTick, Is.Null);
             Assert.That(_server.Initialized, Is.False, "The match should have ended.");
             Assert.That(InvokeResolveMatchResult(new ResultMatchPlayerDatas()), Is.Null, "A match that never started has no result.");
         }
@@ -132,22 +132,22 @@ namespace Elympics.Tests
             _server.RunTick();
 
             Assert.That(_server.Initialized, Is.True);
-            Assert.That(_server.StartTick, Is.Null);
+            Assert.That(_server.GameStartTick, Is.Null);
         }
 
         [Test]
-        public void MatchStartHandlerThrowingDoesNotStopOtherHandlers()
+        public void GameStartHandlerThrowingDoesNotStopOtherHandlers()
         {
             LogAssert.ignoreFailingMessages = true;
             var handlerObject = new GameObject("Handlers", typeof(ElympicsBehaviour));
             handlerObject.transform.SetParent(_serverObject.transform);
-            var before = handlerObject.AddComponent<RecordingMatchStartHandler>();
-            _ = handlerObject.AddComponent<ThrowingMatchStartHandler>();
-            var after = handlerObject.AddComponent<RecordingMatchStartHandler>();
+            var before = handlerObject.AddComponent<RecordingGameStartHandler>();
+            _ = handlerObject.AddComponent<ThrowingGameStartHandler>();
+            var after = handlerObject.AddComponent<RecordingGameStartHandler>();
             var behaviour = handlerObject.GetComponent<ElympicsBehaviour>();
             behaviour.InitializeInternal(_server);
 
-            Assert.DoesNotThrow(() => behaviour.OnMatchStarted(7));
+            Assert.DoesNotThrow(() => behaviour.OnGameStarted(7));
 
             Assert.That(before.StartTicks, Is.EqualTo(new[] { 7L }));
             Assert.That(after.StartTicks, Is.EqualTo(new[] { 7L }));
@@ -157,7 +157,7 @@ namespace Elympics.Tests
         public void PlayerRpcSentBeforeStartTickIsIgnoredAndLaterOnesAreNot()
         {
             _server.RunTick();
-            var startTick = _server.StartTick!.Value;
+            var startTick = _server.GameStartTick!.Value;
 
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 0, sentOnTick: startTick - 1)), Is.True);
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 0, sentOnTick: startTick)), Is.False);
@@ -168,7 +168,7 @@ namespace Elympics.Tests
         public void WorldRpcIsNeverIgnored()
         {
             _server.RunTick();
-            var startTick = _server.StartTick!.Value;
+            var startTick = _server.GameStartTick!.Value;
 
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: -1, sentOnTick: startTick - 1)), Is.False);
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: -1, sentOnTick: 0)), Is.False);
@@ -180,7 +180,7 @@ namespace Elympics.Tests
             SetHumanPlayers(0);
             _server.RunTick();
 
-            Assert.That(_server.StartTick, Is.Null);
+            Assert.That(_server.GameStartTick, Is.Null);
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 0, sentOnTick: 100)), Is.True);
         }
 
@@ -208,15 +208,15 @@ namespace Elympics.Tests
 
         private static FieldInfo GetServerField(string name) => typeof(ElympicsServer).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-        private class RecordingMatchStartHandler : MonoBehaviour, IMatchStartHandler
+        private class RecordingGameStartHandler : MonoBehaviour, IGameStartHandler
         {
             public List<long> StartTicks { get; } = new();
-            public void OnMatchStarted(long startTick) => StartTicks.Add(startTick);
+            public void OnGameStarted(long startTick) => StartTicks.Add(startTick);
         }
 
-        private class ThrowingMatchStartHandler : MonoBehaviour, IMatchStartHandler
+        private class ThrowingGameStartHandler : MonoBehaviour, IGameStartHandler
         {
-            public void OnMatchStarted(long startTick) => throw new InvalidOperationException("Handler failure expected by the test");
+            public void OnGameStarted(long startTick) => throw new InvalidOperationException("Handler failure expected by the test");
         }
 
         private class TickableElympicsServer : ElympicsServer
@@ -231,7 +231,7 @@ namespace Elympics.Tests
             {
                 ElympicsFixedUpdate();
                 // Done by DefaultServerElympicsUpdateLoop in a real match.
-                NotifyMatchStartedIfReached();
+                NotifyGameStartedIfReached();
                 ElympicsLateFixedUpdate();
             }
         }

@@ -25,7 +25,8 @@ namespace Elympics.Core
 
         internal bool IsEnabled => _enabledMode != EnabledMode.Disabled;
         private EnabledMode _enabledMode;
-        private DateTime? _gameStartUtc;
+        private readonly Func<DateTime?> _getGameStartUtc;
+        private bool _started;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
 
@@ -40,9 +41,10 @@ namespace Elympics.Core
 
         private readonly StringBuilder _sb = new();
 
-        internal ElympicsScore(int playerCount)
+        internal ElympicsScore(int playerCount, Func<DateTime?> getGameStartUtc)
         {
             _playerCount = playerCount;
+            _getGameStartUtc = getGameStartUtc;
             _score = new float[playerCount];
             _metadata = Enumerable.Range(0, playerCount).Select(_ => new Dictionary<string, JsonValue>()).ToArray();
             _metadataWrappers = Enumerable.Range(0, playerCount).Select(i => new MetadataWrapper(this, i)).ToArray();
@@ -245,20 +247,19 @@ namespace Elympics.Core
         }
 
         private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime) =>
-            currentTime - (_gameStartUtc ?? throw new InvalidOperationException("The game has not started yet"));
+            currentTime - (_getGameStartUtc() ?? throw new InvalidOperationException("The game has not started yet"));
 
-        /// <summary>Starts the gameplay time (enabling the score if needed) and submits all scores.</summary>
-        internal void Start(DateTime gameStartUtc)
+        /// <summary>Enables the score if needed and submits all scores at the game start time.</summary>
+        internal void Start()
         {
-            if (_gameStartUtc.HasValue)
+            if (_started || _getGameStartUtc() is not { } gameStartUtc)
                 return;
+            _started = true;
             if (!IsEnabled)
             {
                 Enable();
-                // Not UserEnabled, so that the game can still call Enable() itself.
                 _enabledMode = EnabledMode.AutoEnabled;
             }
-            _gameStartUtc = gameStartUtc;
             SubmitAt(gameStartUtc, true);
         }
 
@@ -283,7 +284,7 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            if (!_gameStartUtc.HasValue)
+            if (!_started)
                 return;
             SubmitAt(DateTime.UtcNow, forceSend);
         }

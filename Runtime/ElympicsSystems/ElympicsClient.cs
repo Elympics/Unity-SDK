@@ -460,8 +460,8 @@ namespace Elympics
         {
             if (!_readyRequested || _readySent || GameStartTick.HasValue)
                 return;
-            _readySent = true;
             _matchClient.SendReady();
+            _readySent = true;
         }
 
         private void AddInputToSendBuffer(ElympicsInput input) => _matchClient.AddInputToSendBuffer(input);

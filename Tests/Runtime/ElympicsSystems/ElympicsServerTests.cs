@@ -107,32 +107,142 @@ namespace Elympics.Tests
             Assert.That(_server.GameStartTick, Is.EqualTo(startTick));
         }
 
+        // The timeouts are wall-clock based (min. 30 s), so the reference times are moved back instead of waiting.
         [Test]
-        public void ReadyTimeoutEndsTheMatchWithoutResult()
+        public void ReadyTimeoutFromTheFirstConnectionEndsTheMatchWithoutResult()
         {
-            // The ready timeout is wall-clock based (min. 180 s), so the server init time is moved back instead of waiting.
             LogAssert.ignoreFailingMessages = true;
             SetHumanPlayers(0, 1);
             MarkPlayerReady(0);
-            SetInitializedUtc(DateTime.UtcNow.AddSeconds(-(_server.Config.ReadyTimeoutSeconds + 1)));
+            _server.FirstHumanConnectedUtc = DateTime.UtcNow.AddSeconds(-(_server.Config.ReadyTimeoutSeconds + 1));
 
             _server.RunTick();
 
             Assert.That(_server.GameStartTick, Is.Null);
             Assert.That(_server.Initialized, Is.False, "The match should have ended.");
-            Assert.That(InvokeResolveMatchResult(new ResultMatchPlayerDatas()), Is.Null, "A match that never started has no result.");
+            Assert.That(_server.ResolveMatchResult(new ResultMatchPlayerDatas()), Is.Null, "A match that never started has no result.");
         }
 
         [Test]
-        public void ReadyTimeoutDoesNotEndTheMatchEarly()
+        public void ReadyTimeoutIsCountedFromTheFirstConnectionNotFromServerInit()
         {
             SetHumanPlayers(0, 1);
-            SetInitializedUtc(DateTime.UtcNow.AddSeconds(-(_server.Config.ReadyTimeoutSeconds - 60)));
+            _server.InitializedUtc = DateTime.UtcNow.AddSeconds(-(_server.Config.ReadyTimeoutSeconds + 1));
+            _server.FirstHumanConnectedUtc = DateTime.UtcNow;
 
             _server.RunTick();
 
             Assert.That(_server.Initialized, Is.True);
             Assert.That(_server.GameStartTick, Is.Null);
+        }
+
+        [Test]
+        public void NoPlayerTimeoutEndsTheMatchWhenNoPlayerConnects()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            SetHumanPlayers(0, 1);
+            _server.InitializedUtc = DateTime.UtcNow.AddSeconds(-(_server.Config.NoPlayerTimeoutSeconds + 1));
+
+            _server.RunTick();
+
+            Assert.That(_server.Initialized, Is.False, "The match should have ended.");
+        }
+
+        [Test]
+        public void ReadyTimeoutDoesNotApplyBeforeTheFirstConnection()
+        {
+            SetHumanPlayers(0, 1);
+            _server.InitializedUtc = DateTime.UtcNow.AddSeconds(-(_server.Config.ReadyTimeoutSeconds + 1));
+            Assume.That(_server.Config.ReadyTimeoutSeconds + 1, Is.LessThan(_server.Config.NoPlayerTimeoutSeconds));
+
+            _server.RunTick();
+
+            Assert.That(_server.Initialized, Is.True);
+        }
+
+        [Test]
+        public void GameStartUtcIsTheStartTimeOfTheStartTick()
+        {
+            var startUtc = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            _server.RunTick();
+            var startTick = _server.GameStartTick!.Value;
+            while (_server.Tick < startTick)
+            {
+                Assert.That(_server.GameStartUtc, Is.Null);
+                _server.RunTick();
+            }
+
+            _server.TickStartUtc = startUtc;
+            _server.RunTick();
+
+            Assert.That(_server.GameStartUtc, Is.EqualTo(startUtc));
+        }
+
+        [TestCase(TerminationOption.Any, new[] { 1 })]
+        [TestCase(TerminationOption.All, new[] { 0, 1 })]
+        public void LeavingPlayersEndTheMatchImmediatelyWithoutRejoinTimeout(TerminationOption option, int[] leaving)
+        {
+            StartGameWithConnectedPlayers(option, rejoinTimeoutSeconds: 0f);
+
+            Disconnect(leaving);
+            _server.RunTick();
+
+            Assert.That(_server.Initialized, Is.False, "The match should have ended.");
+        }
+
+        [Test]
+        public void AllOptionKeepsTheMatchWhileOnePlayerIsConnected()
+        {
+            StartGameWithConnectedPlayers(TerminationOption.All, rejoinTimeoutSeconds: 0f);
+
+            Disconnect(1);
+            RunTicks(5);
+
+            Assert.That(_server.Initialized, Is.True, "One player is still connected.");
+        }
+
+        [Test]
+        public void NoneOptionNeverEndsTheMatchWhenPlayersLeave()
+        {
+            StartGameWithConnectedPlayers(TerminationOption.None, rejoinTimeoutSeconds: 0f);
+
+            Disconnect(0, 1);
+            RunTicks(5);
+
+            Assert.That(_server.Initialized, Is.True);
+        }
+
+        [Test]
+        public void RejoinTimeoutEndsTheMatchAtItsDeadline()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            StartGameWithConnectedPlayers(TerminationOption.Any, rejoinTimeoutSeconds: 1f);
+            var timeoutTicks = _server.Config.RejoinTimeoutTicks;
+
+            Disconnect(1);
+            RunTicks((int)timeoutTicks);
+            Assert.That(_server.Initialized, Is.True, "The rejoin timeout hasn't passed yet.");
+
+            _server.RunTick();
+            Assert.That(_server.Initialized, Is.False, "The match should have ended.");
+        }
+
+        [Test]
+        public void RejoiningBeforeTheDeadlineKeepsTheMatchAndResetsTheTimeout()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            StartGameWithConnectedPlayers(TerminationOption.Any, rejoinTimeoutSeconds: 1f);
+            var timeoutTicks = (int)_server.Config.RejoinTimeoutTicks;
+
+            Disconnect(1);
+            RunTicks(timeoutTicks - 1);
+            Connect(1);
+            RunTicks(timeoutTicks + 5);
+            Assert.That(_server.Initialized, Is.True, "The player rejoined in time.");
+
+            Disconnect(1);
+            RunTicks(timeoutTicks);
+            Assert.That(_server.Initialized, Is.True, "The timeout restarts when players leave again.");
         }
 
         [Test]
@@ -153,25 +263,16 @@ namespace Elympics.Tests
             Assert.That(after.StartTicks, Is.EqualTo(new[] { 7L }));
         }
 
-        [Test]
-        public void PlayerRpcSentBeforeStartTickIsIgnoredAndLaterOnesAreNot()
+        [TestCase(0, -1, true, Description = "A player RPC sent before the start tick")]
+        [TestCase(0, 0, false, Description = "A player RPC sent at the start tick")]
+        [TestCase(1, 5, false, Description = "A player RPC sent after the start tick")]
+        [TestCase(-1, -1, false, Description = "A world RPC sent before the start tick")]
+        public void PlayerRpcIsIgnoredOnlyWhenSentBeforeTheStartTick(int sender, long ticksAfterStart, bool expectedIgnored)
         {
             _server.RunTick();
             var startTick = _server.GameStartTick!.Value;
 
-            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 0, sentOnTick: startTick - 1)), Is.True);
-            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 0, sentOnTick: startTick)), Is.False);
-            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: 1, sentOnTick: startTick + 5)), Is.False);
-        }
-
-        [Test]
-        public void WorldRpcIsNeverIgnored()
-        {
-            _server.RunTick();
-            var startTick = _server.GameStartTick!.Value;
-
-            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: -1, sentOnTick: startTick - 1)), Is.False);
-            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender: -1, sentOnTick: 0)), Is.False);
+            Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender, startTick + ticksAfterStart)), Is.EqualTo(expectedIgnored));
         }
 
         [Test]
@@ -188,25 +289,48 @@ namespace Elympics.Tests
 
         private void SetHumanPlayers(params int[] playerIndices)
         {
-            var humans = (HashSet<ElympicsPlayer>)GetServerField("_humanPlayers").GetValue(_server)!;
             foreach (var index in playerIndices)
-                _ = humans.Add(ElympicsPlayer.FromIndex(index));
-            SetInitializedUtc(DateTime.UtcNow);
+                _ = _server.HumanPlayers.Add(ElympicsPlayer.FromIndex(index));
+            _server.InitializedUtc = DateTime.UtcNow;
         }
 
-        // The ready callback is queued to the main thread, so its effect is applied directly.
-        private void MarkPlayerReady(int playerIndex)
+        // The connection and ready callbacks are queued to the main thread, so their effects are applied directly.
+        private void MarkPlayerReady(int playerIndex) => _ = _server.ReadyPlayers.Add(ElympicsPlayer.FromIndex(playerIndex));
+
+        private void Connect(params int[] playerIndices)
         {
-            var ready = (HashSet<ElympicsPlayer>)GetServerField("_readyPlayers").GetValue(_server)!;
-            _ = ready.Add(ElympicsPlayer.FromIndex(playerIndex));
+            foreach (var index in playerIndices)
+                _ = _server.ConnectedHumans.Add(ElympicsPlayer.FromIndex(index));
+            _server.FirstHumanConnectedUtc ??= DateTime.UtcNow;
         }
 
-        private void SetInitializedUtc(DateTime utc) => GetServerField("_initializedUtc").SetValue(_server, utc);
+        private void Disconnect(params int[] playerIndices)
+        {
+            foreach (var index in playerIndices)
+                _ = _server.ConnectedHumans.Remove(ElympicsPlayer.FromIndex(index));
+        }
 
-        private ResultMatchPlayerDatas? InvokeResolveMatchResult(ResultMatchPlayerDatas result) =>
-            (ResultMatchPlayerDatas?)typeof(ElympicsServer).GetMethod("ResolveMatchResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(_server, new object[] { result });
+        private void RunTicks(int count)
+        {
+            for (var i = 0; i < count; i++)
+                _server.RunTick();
+        }
 
-        private static FieldInfo GetServerField(string name) => typeof(ElympicsServer).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!;
+        private void StartGameWithConnectedPlayers(TerminationOption option, float rejoinTimeoutSeconds)
+        {
+            SetConfigField("terminateWhenPlayersLeave", option);
+            SetConfigField("rejoinTimeoutSeconds", rejoinTimeoutSeconds);
+            SetHumanPlayers(0, 1);
+            Connect(0, 1);
+            MarkPlayerReady(0);
+            MarkPlayerReady(1);
+            for (var i = 0; i < 100 && !_server.GameStartReached; i++)
+                _server.RunTick();
+            Assert.That(_server.GameStartReached, Is.True);
+        }
+
+        private void SetConfigField(string name, object value) =>
+            typeof(ElympicsGameConfig).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(_server.Config, value);
 
         private class RecordingGameStartHandler : MonoBehaviour, IGameStartHandler
         {

@@ -17,9 +17,9 @@ namespace Elympics
         [Key(3)] public Dictionary<int, byte[]>? Data { get; set; }
         /// <summary>Key is PlayerId as int.</summary>
         [Key(4)] public Dictionary<int, TickToPlayerInput>? TickToPlayersInputData { get; set; }
-        /// <summary>The tick the game starts at, or null while the start isn't scheduled.</summary>
         // Keys 5 and 6 are taken by ElympicsSnapshotWithMetadata.
         // TODO: extract a key-less superclass of both snapshot types, so that each numbers its keys contiguously ~dsygocki 2026-11-02
+        /// <summary>The tick the game starts at, or null while the start isn't scheduled.</summary>
         [Key(7)] public long? GameStartTick { get; set; }
 
         public ElympicsSnapshot(FactoryState factory, Dictionary<int, byte[]>? data) : this(-1, default, factory, data, null) { }

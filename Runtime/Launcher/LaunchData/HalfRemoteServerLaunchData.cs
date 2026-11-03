@@ -31,7 +31,7 @@ namespace Elympics
         public int? MaxPlayers { get; }
         /// <summary>
         /// Custom matchmaking data of the match, e.g. <c>:pub:seed</c> (see <see cref="InitialMatchPlayerDatasGuid.Seed"/>).
-        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none.
+        /// Null means the <c>ELYMPICS_CUSTOM_MATCHMAKING_DATA</c> parameter, else <see cref="ElympicsGameConfig.TestMatchData"/>. Empty means none (an empty array on the wire means unset).
         /// </summary>
         public IReadOnlyDictionary<string, string>? CustomMatchmakingData { get; }
 

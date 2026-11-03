@@ -375,13 +375,17 @@ namespace Elympics
         /// <summary>Latched once the start tick has run, unlike <see cref="IsGameStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
         internal bool GameStartReached { get; private set; }
 
+        public DateTime? GameStartUtc { get; private set; }
+
         /// <summary>Calls <see cref="IGameStartHandler.OnGameStarted"/> once per instance, on the first tick from <see cref="GameStartTick"/> on.</summary>
         internal void NotifyGameStartedIfReached()
         {
             if (GameStartReached || !IsGameStarted)
                 return;
+            var startTick = GameStartTick!.Value;
             GameStartReached = true;
-            OnGameStarted(GameStartTick.Value);
+            GameStartUtc = TickStartUtc - TimeSpan.FromSeconds((Tick - startTick) * (double)TickDuration);
+            OnGameStarted(startTick);
         }
 
         private protected virtual void OnGameStarted(long startTick) => ElympicsBehavioursManager.OnGameStarted(startTick);

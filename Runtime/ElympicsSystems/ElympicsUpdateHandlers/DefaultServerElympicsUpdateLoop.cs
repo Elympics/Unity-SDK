@@ -41,8 +41,8 @@ namespace Elympics.ElympicsSystems
             using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                 _behavioursManager.SetCurrentInputs(_inputList);
 
-            _elympicsBase.InvokeQueuedRpcMessages();
             _elympicsBase.NotifyGameStartedIfReached();
+            _elympicsBase.InvokeQueuedRpcMessages();
             _behavioursManager.CommitVars();
         }
         public ElympicsSnapshot GenerateSnapshot()

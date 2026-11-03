@@ -47,11 +47,13 @@ namespace Elympics
         private LoggerConfig _logger = ElympicsLogger.WithClass(typeof(ElympicsServer));
 
         private long? _gameStartTick;
-        private DateTime _initializedUtc;
-        private readonly HashSet<ElympicsPlayer> _humanPlayers = new();
-        private readonly HashSet<ElympicsPlayer> _readyPlayers = new();
+        internal DateTime InitializedUtc { get; set; }
+        internal DateTime? FirstHumanConnectedUtc { get; set; }
+        internal HashSet<ElympicsPlayer> HumanPlayers { get; } = new();
+        internal HashSet<ElympicsPlayer> ReadyPlayers { get; } = new();
         private bool _clientsInServerReady;
-        private readonly HashSet<ElympicsPlayer> _connectedHumans = new();
+        internal HashSet<ElympicsPlayer> ConnectedHumans { get; } = new();
+        private long? _rejoinDeadlineTick;
         private bool _preStartRpcIgnored;
 
         internal void InitializeInternal(
@@ -85,8 +87,8 @@ namespace Elympics
             {
                 _playerData = args.Data;
                 CreateScore(args.Data.Count);
-                _humanPlayers.UnionWith(args.Data.Where(data => !data.IsBot).Select(data => data.Player));
-                _initializedUtc = DateTime.UtcNow;
+                HumanPlayers.UnionWith(args.Data.Where(data => !data.IsBot).Select(data => data.Player));
+                InitializedUtc = DateTime.UtcNow;
                 if (!_isReplay)
                     LogMatchData(args.Data);
                 _snapshotCollector?.Initialize(
@@ -119,6 +121,8 @@ namespace Elympics
             var snapshot = _serverElympicsUpdate.GenerateSnapshot();
             if (_isReplay)
                 _gameStartTick = snapshot.GameStartTick;
+            else
+                TerminateIfPlayersLeft();
             _currentSnapshot = ElympicsBehavioursManager.AddMetadataToSnapshot(snapshot);
         }
 
@@ -156,30 +160,38 @@ namespace Elympics
             if (_gameStartTick.HasValue || _endGameRequested || _gameEnded)
                 return;
 
-            if (_clientsInServerReady || _readyPlayers.Count == _humanPlayers.Count)
+            if (_clientsInServerReady || ReadyPlayers.Count == HumanPlayers.Count)
             {
                 _gameStartTick = Tick + Config.GameStartDelayTicks;
                 _logger.LogInfo($"All players are ready. The game starts at tick {_gameStartTick} (current tick: {Tick}).");
                 return;
             }
 
-            if ((DateTime.UtcNow - _initializedUtc).TotalSeconds < Config.ReadyTimeoutSeconds)
+            if (FirstHumanConnectedUtc is not { } firstConnectedUtc)
+            {
+                if ((DateTime.UtcNow - InitializedUtc).TotalSeconds < Config.NoPlayerTimeoutSeconds)
+                    return;
+                _logger.LogError($"Ending the match without a result, because no player connected within {Config.NoPlayerTimeoutSeconds} s "
+                    + $"(see {nameof(ElympicsGameConfig)}.{nameof(ElympicsGameConfig.NoPlayerTimeoutSeconds)}).");
+                EndGame();
                 return;
-            var notReady = string.Join(", ", _humanPlayers.Where(player => !_readyPlayers.Contains(player)));
-            _logger.LogError($"Ending the match without a result, because not all players were ready within {Config.ReadyTimeoutSeconds} s. "
-                + $"Not ready: {notReady}. Fix: call {nameof(IElympics)}.{nameof(MarkReady)}() on every player client once the game is playable.");
+            }
+
+            if ((DateTime.UtcNow - firstConnectedUtc).TotalSeconds < Config.ReadyTimeoutSeconds)
+                return;
+            var notReady = string.Join(", ", HumanPlayers.Where(player => !ReadyPlayers.Contains(player)));
+            _logger.LogError($"Ending the match without a result, because not all players were ready within {Config.ReadyTimeoutSeconds} s from the first connection. "
+                + $"Not ready: {notReady}. Fix: call {nameof(IElympics)}.{nameof(MarkReady)}() on every player client from a player action.");
             EndGame();
         }
 
         private protected override void OnGameStarted(long startTick)
         {
             _logger.LogInfo($"Game started at tick {startTick}.");
-            _score?.Start(TickStartUtc);
-            TerminateIfPlayersLeft();
+            _score?.Start();
             base.OnGameStarted(startTick);
         }
 
-        /// <summary>Like inputs, player-to-server RPCs sent before the game start are ignored.</summary>
         internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage)
         {
             if (rpcMessage.Sender < 0 || IsGameStartedAt(rpcMessage.SentOnTick))
@@ -191,7 +203,7 @@ namespace Elympics
             return true;
         }
 
-        private ResultMatchPlayerDatas? ResolveMatchResult(ResultMatchPlayerDatas? result)
+        internal ResultMatchPlayerDatas? ResolveMatchResult(ResultMatchPlayerDatas? result)
         {
             if (!GameStartReached)
             {
@@ -210,35 +222,50 @@ namespace Elympics
 
         private void OnPlayerReadyReceived(ElympicsPlayer player) => Enqueue(() =>
         {
-            if (_humanPlayers.Contains(player) && _readyPlayers.Add(player))
+            if (HumanPlayers.Contains(player) && ReadyPlayers.Add(player))
                 _logger.LogInfo($"Player {player} is ready.");
         });
 
         private void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() =>
         {
             ElympicsBehavioursManager.OnPlayerConnected(player);
-            if (_humanPlayers.Contains(player))
-                _ = _connectedHumans.Add(player);
+            if (!HumanPlayers.Contains(player))
+                return;
+            _ = ConnectedHumans.Add(player);
+            FirstHumanConnectedUtc ??= DateTime.UtcNow;
         });
 
         private void OnPlayerDisconnected(ElympicsPlayer player) => Enqueue(() =>
         {
             ElympicsBehavioursManager.OnPlayerDisconnected(player);
-            _ = _connectedHumans.Remove(player);
-            TerminateIfPlayersLeft();
+            _ = ConnectedHumans.Remove(player);
         });
 
-        private void TerminateIfPlayersLeft()
+        /// <summary>Ends the match once players have left (see <see cref="ElympicsGameConfig.TerminateWhenPlayersLeave"/>) and haven't rejoined in time.</summary>
+        internal void TerminateIfPlayersLeft()
         {
-            if (HandlingClientsInServer || _isReplay || !GameStartReached || _endGameRequested || _gameEnded || _humanPlayers.Count == 0)
+            if (HandlingClientsInServer || _isReplay || !GameStartReached || _endGameRequested || _gameEnded || HumanPlayers.Count == 0)
                 return;
-            var shouldTerminate = Config.TerminateWhenPlayersLeave switch
+            var playersLeft = Config.TerminateWhenPlayersLeave switch
             {
-                TerminationOption.Any => _connectedHumans.Count < _humanPlayers.Count,
-                TerminationOption.All => _connectedHumans.Count == 0,
+                TerminationOption.Any => ConnectedHumans.Count < HumanPlayers.Count,
+                TerminationOption.All => ConnectedHumans.Count == 0,
                 _ => false,
             };
-            if (!shouldTerminate)
+            if (!playersLeft)
+            {
+                if (_rejoinDeadlineTick.HasValue)
+                    _logger.LogInfo("Players rejoined, so the match goes on.");
+                _rejoinDeadlineTick = null;
+                return;
+            }
+            if (!_rejoinDeadlineTick.HasValue)
+            {
+                _rejoinDeadlineTick = Tick + Config.RejoinTimeoutTicks;
+                if (Config.RejoinTimeoutTicks > 0)
+                    _logger.LogWarning($"{Config.TerminateWhenPlayersLeave} players left. The match ends in {Config.RejoinTimeoutSeconds} s unless they rejoin.");
+            }
+            if (Tick < _rejoinDeadlineTick)
                 return;
             _logger.LogWarning($"Ending the match, because {Config.TerminateWhenPlayersLeave} players left "
                 + $"(see {nameof(ElympicsGameConfig)}.{nameof(ElympicsGameConfig.TerminateWhenPlayersLeave)}).");
@@ -249,13 +276,7 @@ namespace Elympics
         {
             var humans = data.Count(x => !x.IsBot);
             var sb = new StringBuilder()
-                .AppendLine($"Game initialized for {data.Count} players (including {data.Count - humans} bots).")
-                .AppendLine($"MatchId: {data.MatchId}")
-                .AppendLine($"QueueName: {data.QueueName}")
-                .AppendLine($"RegionName: {data.RegionName}")
-                .AppendLine($"CustomMatchmakingData: {data.CustomMatchmakingData?.Count.ToString() ?? "null"}")
-                .AppendLine($"CustomRoomData: {(data.CustomRoomData != null ? string.Join(", ", data.CustomRoomData.Select(x => x.Key)) : "null")}")
-                .AppendLine($"ExternalGameData: {data.ExternalGameData?.Length.ToString() ?? "null"}");
+                .AppendLine($"Game initialized for {data.Count} players (including {data.Count - humans} bots).");
             foreach (var playerData in data)
                 _ = sb.AppendLine($"Player {playerData.UserId} {(playerData.IsBot ? "Bot" : "Human")} room {playerData.RoomId} teamIndex {playerData.TeamIndex}");
             ElympicsLogger.LogInfo(sb.ToString());
@@ -263,7 +284,7 @@ namespace Elympics
 
         private protected void CreateScore(int playerCount)
         {
-            _score = new ElympicsScore(playerCount);
+            _score = new ElympicsScore(playerCount, () => GameStartUtc);
             _score.PlayerScoreUpdated += SubmitIntermediateScore;
         }
 

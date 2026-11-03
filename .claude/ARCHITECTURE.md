@@ -34,8 +34,9 @@ All of this is in `Runtime/ElympicsSystems/`.
 - **Game start:** the tick loop runs from server init, but the game starts only at `GameStartTick`. Clients send `ElympicsReadyMessage` (from `IElympics.MarkReady()`) once over the reliable channel, and again after a reconnect if no `GameStartTick` is known yet. Bots are always ready.
   - When every human player is ready, `ElympicsServer.UpdateGameStart` schedules `GameStartTick` at least `TotalPredictionLimitInTicks + 2` ticks ahead. It travels in every snapshot (`ElympicsSnapshot.GameStartTick`).
   - Inputs for ticks before `GameStartTick` are ignored when they are consumed: in the server loop, and in client prediction and resimulation. The server also ignores player RPCs sent before `GameStartTick` (`ElympicsServer.ShouldIgnorePlayerRpc`): when invoking, or in local mode when capturing, where the RPC direction is known.
-  - `ElympicsBase.NotifyGameStartedIfReached` fires `IGameStartHandler` once. The server then starts `ElympicsScore` gameplay time.
-  - Without readiness, `readyTimeoutSeconds` ends the match with a null result. After the start, `EndGame()` with no result falls back to the score.
+  - `ElympicsBase.NotifyGameStartedIfReached` sets `GameStartUtc` and fires `IGameStartHandler` once. On the server, it runs after inputs and before RPCs, and starts `ElympicsScore`, which reads `GameStartUtc`.
+  - `noPlayerTimeoutSeconds` (from server init, until a human connects) and `readyTimeoutSeconds` (from the first human connection) end the match with a null result. After the start, `EndGame()` with no result falls back to the score.
+  - After the start, `ElympicsServer.TerminateIfPlayersLeft` runs every tick. Once `terminateWhenPlayersLeave` holds, it ends the match after `rejoinTimeoutSeconds` (counted in ticks), unless players rejoin first.
 - **Game-facing API:**
   - `ElympicsMonoBehaviour` and `ElympicsBehaviour` (`Runtime/Behaviour/`).
   - Synced state: `ElympicsVar<T>`, `ElympicsList`, `ElympicsArray`, `ElympicsRandom`.

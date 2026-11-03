@@ -41,14 +41,20 @@ namespace Elympics
         [SerializeField] private int forceJumpThresholdInTicks = 6;
         [SerializeField] private int predictionLimitInTicks = 25;
 
-        [Tooltip("The server ends the match with no result if not all players call IElympics.MarkReady() within this time from the server init.")]
-        [Min(180)]
-        [SerializeField] private float readyTimeoutSeconds = 180;
+        [Tooltip("The server ends the match with no result if not all players call IElympics.MarkReady() within this time from the first player connection.")]
+        [Min(30)]
+        [SerializeField] private float readyTimeoutSeconds = 60;
+        [Tooltip("The server ends the match with no result if no player connects within this time from the server init.")]
+        [Min(30)]
+        [SerializeField] private float noPlayerTimeoutSeconds = 180;
         [Tooltip("How far ahead the server schedules the game start once all players are ready. It's at least the total prediction limit plus 2 ticks.")]
         [Min(0)]
         [SerializeField] private float gameStartDelaySeconds = 1;
         [Tooltip("After the game start, the server ends the match if any or all (human) players leave.")]
         [SerializeField] private TerminationOption terminateWhenPlayersLeave = TerminationOption.All;
+        [Tooltip("How long the server waits for players to rejoin before ending the match because they left. 0 ends it at once.")]
+        [Min(0)]
+        [SerializeField] private float rejoinTimeoutSeconds;
 
         [SerializeField] private bool detailedNetworkLog;
 
@@ -110,12 +116,15 @@ namespace Elympics
         public int PredictionBufferSize => inputLagTicks + snapshotSendingPeriodInTicks + maxAllowedLagInTicks;
         public int TotalPredictionLimitInTicks => inputLagTicks + snapshotSendingPeriodInTicks + predictionLimitInTicks;
         public float ReadyTimeoutSeconds => readyTimeoutSeconds;
-        /// <summary>The effective start delay: the configured one, rounded up to whole ticks and at least the total prediction limit plus <see cref="GameStartDelayMarginTicks"/>.</summary>
-        public float GameStartDelaySeconds => GameStartDelayTicks * TickDuration;
-        public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
+        public float NoPlayerTimeoutSeconds => noPlayerTimeoutSeconds;
         /// <summary>Added to the total prediction limit, so that no client has predicted past the start.</summary>
         internal const int GameStartDelayMarginTicks = 2;
         internal long GameStartDelayTicks => Math.Max((long)Math.Ceiling(gameStartDelaySeconds * ticksPerSecond), TotalPredictionLimitInTicks + GameStartDelayMarginTicks);
+        /// <summary>The effective start delay: the configured one, rounded up to whole ticks and at least the total prediction limit plus <see cref="GameStartDelayMarginTicks"/>.</summary>
+        public float GameStartDelaySeconds => GameStartDelayTicks * TickDuration;
+        public TerminationOption TerminateWhenPlayersLeave => terminateWhenPlayersLeave;
+        public float RejoinTimeoutSeconds => rejoinTimeoutSeconds;
+        internal long RejoinTimeoutTicks => (long)Math.Ceiling(rejoinTimeoutSeconds * ticksPerSecond);
         public int PlayerIndexForHalfRemoteMode
         {
             get => ApplicationParameters.Parameters.HalfRemotePlayerIndex.GetValue(playerIndexForHalfRemoteMode);

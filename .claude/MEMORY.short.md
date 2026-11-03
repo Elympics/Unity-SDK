@@ -20,6 +20,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **dotnet format --include:** file paths, `folder/` or a glob; nothing outside the host dir (use the csproj); no match exits 0.
 - **Compile and test evidence:** redirected `dotnet build`; tests via `unity command`, batchmode, or the open Editor.
 - **Generated csprojs follow the build target:** also compile the other side of each platform `#if`.
+- **Stale host csprojs:** after adding files, regenerate them (Rider `SyncSolution` via `eval`) before mpc or `dotnet build`.
 - **Host Editor may be on the Server sub-target:** check `standaloneBuildSubtarget` before setting defines.
 - **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
 - **Scratch Editors share the Elympics login:** use the developer's endpoint or a dead one, never another live backend; check the login afterwards.
@@ -45,3 +46,4 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - Domain reload + ValueSource
 - HttpListener no WebSockets
 - New Editor rewrites sources
+- Host sample copies on rename

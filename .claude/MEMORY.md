@@ -158,6 +158,18 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** a `#if UNITY_WEBGL` TCP/UDP guard made two validation tests fail in the Editor, whose build target was WebGL. A global `DefineConstants` override then broke UniTask's `UnityWebRequest` extensions (CS8209/CS0246 in `GoogleCloudPingResultFactory.cs`).
 - **Time scope:** If CI or the host project stops generating csprojs per build target, rewrite this.
 
+### Regenerate stale host csprojs before running mpc or a redirected build
+- **Rule:** after adding, renaming or moving source files, regenerate the host's csprojs before running `mpc -i Elympics.csproj` or a redirected `dotnet build`, then check that the new file is listed in the csproj. When the host's external code editor isn't Rider or Visual Studio, `CodeEditor.CurrentEditor.SyncAll()` does nothing; call `Packages.Rider.Editor.RiderScriptEditor.SyncSolution` through reflection in a pipeline `eval` instead (the Rider package is installed in the host).
+- **Reason:** both tools read the file list from the generated csproj, which Unity rewrites only when a supported IDE asks. A stale csproj makes mpc silently skip the new `[MessagePackObject]` types, so the generated code looks valid but misses formatters.
+- **Example (2026-11-03):** with `DefaultExternalCodeEditor` set, mpc missed `ElympicsReadyMessage` until `RiderScriptEditor.SyncSolution` ran.
+- **Time scope:** If the host stops using generated csprojs, or Unity syncs them regardless of the external editor, remove this.
+
+### Imported sample copies in the host break the compile after an API rename
+- **Rule:** after renaming public API used by `Samples~`, grep the host's `Assets/Samples/` (SDK) and `Assets/PlayPadSamples/` (PlayPad) for the old names. Before overwriting a copy with the new sample, make sure it is an unmodified copy of the old sample, and tell the developer.
+- **Reason:** Package Manager imports samples as plain copies under `Assets/`, which never update. The repo builds cleanly, but the host Editor reports compile errors from a copy outside the repo.
+- **Example (2026-11-03):** after the match start → game start rename, the host's `Assets/Samples/ButtonClicker/Scripts/HelloWorldController.cs` still used `IsMatchStarted` and blocked the Editor compile.
+- **Time scope:** Permanent while samples ship in `Samples~`.
+
 ### The host Editor may be on the Dedicated Server sub-target
 - **Rule:** before changing scripting defines in an Editor, check `EditorUserBuildSettings.standaloneBuildSubtarget`. With `Server`, set them on `NamedBuildTarget.Server`; `NamedBuildTarget.Standalone` has no effect on the compile. Check what the compiler gets with `CompilationPipeline.GetAssemblies(...).defines`.
 - **Reason:** the Editor compiles with the defines of its active (sub)target. A define set on the wrong target is stored and returned by `GetScriptingDefineSymbols`, so it looks applied.

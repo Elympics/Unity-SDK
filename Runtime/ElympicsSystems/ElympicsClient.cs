@@ -456,7 +456,7 @@ namespace Elympics
             _readyRequested = true;
         }
 
-        private void SendReadyIfPending()
+        internal void SendReadyIfPending()
         {
             if (!_readyRequested || _readySent || GameStartTick.HasValue)
                 return;

@@ -12,8 +12,18 @@ namespace MatchEvents
         public event Action ConnectingStarted;
         public event Action<bool> ConnectingFinished;
 
+        // Before the start, the button marks this player ready, because inputs count only from the game start on.
         [UsedImplicitly]
-        public void OnEndGameClicked() => EndGameInputHandler.ShouldGameEnd = true;
+        public void OnEndGameClicked()
+        {
+            if (Elympics.IsGameStarted)
+            {
+                EndGameInputHandler.ShouldGameEnd = true;
+                return;
+            }
+            Elympics.MarkReady();
+            UnityEngine.Debug.Log("Marked ready. Click again after the game start to end the game.");
+        }
 
         [UsedImplicitly]
         public async UniTaskVoid OnConnectAndJoinAsPlayerClicked()

@@ -5,18 +5,11 @@ using UnityEngine;
 
 namespace MatchEvents
 {
-    public class EndGameInputHandler : ElympicsMonoBehaviour, IInputHandler, IServerHandlerGuid, IUpdatable, IInitializable
+    public class EndGameInputHandler : ElympicsMonoBehaviour, IInputHandler, IServerHandlerGuid, IUpdatable
     {
         public static bool ShouldGameEnd { get; set; }
 
         private int _totalPlayers;
-
-        // Inputs count only once every player has called MarkReady and the match has started.
-        public void Initialize()
-        {
-            if (Elympics.IsClient)
-                Elympics.MarkReady();
-        }
 
         public void OnInputForClient(IInputWriter inputSerializer)
         {

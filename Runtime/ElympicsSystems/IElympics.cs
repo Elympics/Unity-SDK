@@ -63,10 +63,6 @@ namespace Elympics
         /// <remarks>Objects spawned after the start should check it, because <see cref="IGameStartHandler.OnGameStarted"/> has already been called.</remarks>
         bool IsGameStarted { get; }
 
-        /// <value>The UTC time of the start tick, or null before this instance has run it.</value>
-        /// <remarks>On a client, it's estimated from the client's own tick timing.</remarks>
-        DateTime? GameStartUtc { get; }
-
         #endregion
 
         #region Client
@@ -86,6 +82,13 @@ namespace Elympics
         /// It's enabled automatically at the game start. Call <see cref="ElympicsScore.Enable"/> to customize it, or to set scores before the start.
         /// </remarks>
         ElympicsScore Score { get; }
+
+        /// <value>The server's UTC time of the start tick, or null before the server has run it.</value>
+        /// <remarks>
+        /// Server-only. Clients and bots run ahead of the server and on their own clocks, so for the time since the start
+        /// use ticks there: <c>(Tick - GameStartTick) * TickDuration</c>.
+        /// </remarks>
+        DateTime? GameStartUtc { get; }
 
         /// <param name="result">Results for all players. Ignored before the game start (no result is sent); if null after it, built from <see cref="Score"/>.</param>
         void EndGame(ResultMatchPlayerDatas result = null);

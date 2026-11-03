@@ -188,6 +188,7 @@ namespace Elympics
         private protected override void OnGameStarted(long startTick)
         {
             _logger.LogInfo($"Game started at tick {startTick}.");
+            _gameStartUtc = TickStartUtc - TimeSpan.FromSeconds((Tick - startTick) * (double)TickDuration);
             _score?.Start();
             base.OnGameStarted(startTick);
         }
@@ -327,6 +328,9 @@ namespace Elympics
         }
 
         public override ElympicsScore Score => Initialized ? _score! : throw new InvalidOperationException("Not initialized");
+
+        private DateTime? _gameStartUtc;
+        public override DateTime? GameStartUtc => _gameStartUtc;
 
         public override long? GameStartTick => _gameStartTick;
 

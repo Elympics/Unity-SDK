@@ -70,6 +70,9 @@ namespace Elympics.Tests
             Assert.That(_matchClient.SendReadyCalls, Is.EqualTo(2));
         }
 
+        [Test]
+        public void GameStartUtcIsServerOnly() => _ = Assert.Throws<SupportedOnlyByServerException>(() => _ = _client.GameStartUtc);
+
         private class FakeMatchClient : IMatchClient
         {
             public int SendReadyCalls { get; private set; }

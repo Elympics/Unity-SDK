@@ -25,7 +25,8 @@ Before the start:
 - Inputs for ticks before `IElympics.GameStartTick` are ignored.
 - Player-to-server RPCs sent before the start are ignored by the server.
 - `ElympicsScore` doesn't send anything. At the start, it's enabled (unless the game enabled it itself), it sends
-  the scores of all players, and gameplay time counts from `IElympics.GameStartUtc`.
+  the scores of all players, and gameplay time counts from `IElympics.GameStartUtc`. That property is server-only;
+  on clients, measure the time since the start in ticks: `(Tick - GameStartTick) * TickDuration`.
 
 ## Ending a match
 

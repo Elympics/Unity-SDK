@@ -375,8 +375,6 @@ namespace Elympics
         /// <summary>Latched once the start tick has run, unlike <see cref="IsGameStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
         internal bool GameStartReached { get; private set; }
 
-        public DateTime? GameStartUtc { get; private set; }
-
         /// <summary>Calls <see cref="IGameStartHandler.OnGameStarted"/> once per instance, on the first tick from <see cref="GameStartTick"/> on.</summary>
         internal void NotifyGameStartedIfReached()
         {
@@ -384,7 +382,6 @@ namespace Elympics
                 return;
             var startTick = GameStartTick!.Value;
             GameStartReached = true;
-            GameStartUtc = TickStartUtc - TimeSpan.FromSeconds((Tick - startTick) * (double)TickDuration);
             OnGameStarted(startTick);
         }
 
@@ -429,6 +426,8 @@ namespace Elympics
         #region Server
 
         public virtual ElympicsScore Score => throw new SupportedOnlyByServerException();
+
+        public virtual DateTime? GameStartUtc => throw new SupportedOnlyByServerException();
 
         public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new SupportedOnlyByServerException();
 

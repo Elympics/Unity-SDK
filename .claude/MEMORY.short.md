@@ -25,6 +25,7 @@ Generated from `MEMORY.md`; don't edit by hand. Details, reasons, examples and t
 - **Editor API tests need EditorApiScope:** fakes for any code that may hit the backend; real transport deadlocks blocking tests.
 - **Scratch Editors share the Elympics login:** use the developer's endpoint or a dead one, never another live backend; check the login afterwards.
 - **Pipeline CLI:** flags after `command`; `eval` ~5 s, public API; long work via `run_script`; set `UNITY_PROJECT_PATH`; check tests > 0; compile errors leave PlayMode `test_status` stuck at `running`.
+- **MPPM virtual players:** own pipeline via `UNITY_PROJECT_PATH=<host>/Library/VP/<id>`; save Run In Background on in the host first.
 
 ## Configuration
 - **Active game is availableGames[0]:** duplicate game IDs resolve to the first entry.

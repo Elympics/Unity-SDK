@@ -35,7 +35,7 @@ Before the start:
 | No player connects within `noPlayerTimeoutSeconds` (game config, default 180 s) from the server init | none |
 | Not all players ready within `readyTimeoutSeconds` (default 60 s) from the first player connection | none |
 | `EndGame(...)` before the start | none (the result is ignored) |
-| A player marks ready, then leaves before the start | the game still starts, then the leave rule below applies: with `Any` or `All`, the initial score, or the score when the rejoin timeout ends (no refund) |
+| A player marks ready, then leaves before the start | the game still starts, then the leave rule below applies: with `Any`, or with `All` once every player has left, the initial score, or the score when the rejoin timeout ends (no refund) |
 | `EndGame()` without a result after the start | the latest `ElympicsScore` |
 | `Any` (one) or `All` players leave after the start (`terminateWhenPlayersLeave`) and don't rejoin within `rejoinTimeoutSeconds` (default 0, ending at once) | as `EndGame()` |
 | Players leave with `terminateWhenPlayersLeave` set to `None` | nothing: the game must call `EndGame()` |

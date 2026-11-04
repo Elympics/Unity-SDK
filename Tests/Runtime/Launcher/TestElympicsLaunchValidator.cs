@@ -57,6 +57,8 @@ namespace Elympics.Tests
             return failure!;
         }
 
+        private static ElympicsHostLaunchKind ParseKind(string name) => (ElympicsHostLaunchKind)Enum.Parse(typeof(ElympicsHostLaunchKind), name);
+
         private static LaunchData ParseData(ElympicsHostLaunchKind kind, string json)
         {
             var ok = ElympicsLaunchValidator.TryParseData(kind, json, out var data, out var failure);
@@ -414,15 +416,16 @@ namespace Elympics.Tests
         private const string SeedWireData = "{\"customMatchmakingData\":[{\"key\":\":pub:seed\",\"value\":\"42\"},{\"key\":\"mode\",\"value\":\"\"}]}";
         private static readonly Dictionary<string, string> SeedData = new() { [":pub:seed"] = "42", ["mode"] = "" };
 
-        [Test]
-        public void HalfRemoteServerWireCustomMatchmakingDataMapsToLaunchData() =>
-            Assert.That(((HalfRemoteServerLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteServer, SeedWireData)).CustomMatchmakingData,
-                Is.EquivalentTo(SeedData));
-
-        [Test]
-        public void HalfRemoteClientWireCustomMatchmakingDataMapsToLaunchData() =>
-            Assert.That(((HalfRemoteClientLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteClient, SeedWireData)).CustomMatchmakingData,
-                Is.EquivalentTo(SeedData));
+        // Kind by name: the test method is public, the enum internal.
+        [TestCase("HalfRemoteServer")]
+        [TestCase("HalfRemoteClient")]
+        public void CustomMatchmakingDataWireMapsToLaunchData(string kind) =>
+            Assert.That(ParseData(ParseKind(kind), SeedWireData) switch
+            {
+                HalfRemoteServerLaunchData server => server.CustomMatchmakingData,
+                HalfRemoteClientLaunchData client => client.CustomMatchmakingData,
+                var other => throw new AssertionException($"Unexpected launch data type {other.GetType()}"),
+            }, Is.EquivalentTo(SeedData));
 
         [TestCase("{}")]
         [TestCase("{\"customMatchmakingData\":[]}")]
@@ -432,10 +435,11 @@ namespace Elympics.Tests
             Assert.That(((HalfRemoteClientLaunchData)ParseData(ElympicsHostLaunchKind.HalfRemoteClient, json)).CustomMatchmakingData, Is.Null);
         }
 
-        [Test]
-        public void DuplicateCustomMatchmakingKeyIsInvalidPayload()
+        [TestCase("HalfRemoteServer")]
+        [TestCase("HalfRemoteClient")]
+        public void DuplicateCustomMatchmakingKeyIsInvalidPayload(string kind)
         {
-            var failure = GetParseDataFailure(ElympicsHostLaunchKind.HalfRemoteServer,
+            var failure = GetParseDataFailure(ParseKind(kind),
                 "{\"customMatchmakingData\":[{\"key\":\":pub:seed\",\"value\":\"1\"},{\"key\":\":pub:seed\",\"value\":\"2\"}]}");
 
             Assert.That(failure.Code, Is.EqualTo(ElympicsLaunchErrorCode.InvalidPayload));

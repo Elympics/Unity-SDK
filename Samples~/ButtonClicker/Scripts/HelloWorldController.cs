@@ -19,6 +19,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     // A match can have fewer players than the config allows, and its result needs one entry per player.
     private int _matchPlayerCount;
     private bool _clicked;
+    private bool _markedReady;
     private int _lastClickedCached;
     private bool _initialized;
     private bool _ended;
@@ -34,13 +35,22 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
         }
 
         _clickCount = new ElympicsArray<ElympicsInt>(_playerCount, () => new ElympicsInt());
-        mainLabel.text = $"Game started for {_playerCount} players";
         _ticksLeft = new ElympicsInt((int)Mathf.Ceil(secondsLimit * Elympics.TicksPerSecond));
         _initialized = true;
     }
 
     [UsedImplicitly]
-    public void OnClick() => _clicked = true;
+    public void OnClick()
+    {
+        // The first click marks this player ready. The game starts once every player is ready.
+        if (!Elympics.IsGameStarted)
+        {
+            Elympics.MarkReady();
+            _markedReady = true;
+            return;
+        }
+        _clicked = true;
+    }
 
     public void OnInputForClient(IInputWriter inputSerializer)
     { }
@@ -66,7 +76,7 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
 
     public void ElympicsUpdate()
     {
-        if (!_initialized)
+        if (!_initialized || !Elympics.IsGameStarted)
             return;
         _ticksLeft.Value--;
         if (_ticksLeft.Value <= 0)
@@ -88,7 +98,9 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
     {
         if (!_initialized)
             return;
-        if (!_ended)
+        if (!Elympics.IsGameStarted)
+            mainLabel.text = _markedReady ? "Ready. Waiting for the other players..." : "Click to get ready";
+        else if (!_ended)
         {
             var secondsLeft = _ticksLeft.Value / (float)Elympics.TicksPerSecond;
             mainLabel.text = $"Game started for {_playerCount} players (time left: {secondsLeft:n1}s)";

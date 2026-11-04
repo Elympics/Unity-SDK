@@ -60,6 +60,7 @@ namespace Elympics.Tests
             _elympicsBase.SetElympicsStatus(new ElympicsStatus(false, false, false));
             _elympicsBase.SetPermanentCallContext(ElympicsBase.CallContext.None);
             _elympicsBase.ClearRpcQueues();
+            _elympicsBase.IgnoresPlayerRpcs = false;
             _elympicsBehaviour.OnPostReconcile();
             _rpcHolder.Reset();
         }
@@ -508,6 +509,28 @@ namespace Elympics.Tests
             Assert.IsFalse(_rpcHolder.PongServerToPlayersCalled);
             Assert.AreEqual(1, _elympicsBase.RpcMessagesToSend.Count);
             Assert.Zero(_elympicsBase.RpcMessagesToInvoke.Count);
+        }
+
+        [TestCase(false, 0, false, Description = "Online, a player sender: checked and ignored")]
+        [TestCase(false, -2, true, Description = "Online, the World sender: not a player RPC, so not checked")]
+        [TestCase(true, 0, true, Description = "Local mode: checked when captured instead")]
+        public void InvokingChecksOnlyOnlineRpcsFromPlayersForBeingIgnored(bool isLocalMode, int sender, bool expectedInvoked)
+        {
+            using var tmpContext = _elympicsBase.SetTemporaryCallContext(ElympicsBase.CallContext.RpcInvoking);
+            _elympicsBase.SetElympicsStatus(isLocalMode ? ElympicsStatus.SinglePlayer : ElympicsStatus.StandaloneServer);
+            _elympicsBase.IgnoresPlayerRpcs = true;
+            var calledRpcMethod = new RpcMethod(typeof(RpcHolderComplex).GetMethod(nameof(RpcHolderComplex.PingPlayerToServer)), _rpcHolder);
+            _elympicsBase.RpcMessagesToInvoke.Add(new ElympicsRpcMessage
+            {
+                NetworkId = _elympicsBehaviour.NetworkId,
+                MethodId = _elympicsBehaviour.RpcMethods.GetIdOf(calledRpcMethod),
+                Arguments = Array.Empty<object>(),
+                Sender = sender,
+            });
+
+            _elympicsBase.InvokeQueuedRpcMessages();
+
+            Assert.That(_rpcHolder.PingPlayerToServerCalled, Is.EqualTo(expectedInvoked));
         }
 
         public record ChainingInLocalModeTestCase(string MethodName, Func<RpcHolderComplex, bool> WasPingCalled, Func<RpcHolderComplex, bool> WasPongCalled);

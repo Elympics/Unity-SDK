@@ -80,6 +80,8 @@ namespace Elympics
         public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             SendDataToServer(rpcMessageList, reliable);
 
+        public void SendReady() => SendDataToServer(new ElympicsReadyMessage(), true);
+
         private void SendDataToServer(IToServer data, bool reliable)
         {
             var dataSerialized = MessagePackSerializer.Serialize(data);

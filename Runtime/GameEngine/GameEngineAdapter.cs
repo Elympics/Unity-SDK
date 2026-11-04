@@ -35,6 +35,8 @@ namespace Elympics
         internal event Action<(InitialMatchPlayerDatasGuid Data, Action OnInitialized)>? ReceivedInitialMatchPlayerDatas;
 
         public event Action<ElympicsRpcMessageList>? RpcMessageListReceived;
+        /// <summary>Raised on the network thread.</summary>
+        internal event Action<ElympicsPlayer>? PlayerReadyReceived;
 
         private InitialMatchData _initialMatchData = null!;
         private int UserCount => _initialMatchData.UserData.Count;
@@ -105,6 +107,8 @@ namespace Elympics
                 if (rpcMessageList.Count > 0)
                     RpcMessageListReceived?.Invoke(rpcMessageList);
             }
+            else if (deserializedData is ElympicsReadyMessage)
+                PlayerReadyReceived?.Invoke(player);
         }
 
         private void ProcessReceivedInputList(ElympicsInputList inputList, ElympicsPlayer player)

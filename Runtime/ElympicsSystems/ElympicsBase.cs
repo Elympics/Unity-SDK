@@ -146,9 +146,13 @@ namespace Elympics
                     RpcMessagesToInvoke.RemoveAt(i);
                 }
             foreach (var rpcMessage in _rpcMessagesToInvokeInCurrentTick)
-                if (TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
+                // Online, only player RPCs have a player as their sender.
+                // In local mode, the sender doesn't show the direction, so player RPCs are filtered when captured (ElympicsBehaviour.OnRpcCaptured).
+                if ((IsLocalMode || rpcMessage.Sender < 0 || !ShouldIgnorePlayerRpc(rpcMessage)) && TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
                     behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessage.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
+
+        internal virtual bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) => false;
 
         internal void SendQueuedRpcMessages()
         {
@@ -322,13 +326,6 @@ namespace Elympics
 
         #endregion
 
-        #region ServerCallbacks
-
-        protected void OnPlayerConnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerConnected(player));
-        protected void OnPlayerDisconnected(ElympicsPlayer player) => Enqueue(() => ElympicsBehavioursManager.OnPlayerDisconnected(player));
-
-        #endregion
-
         /// <summary>Called from network threads. Runs <paramref name="action"/> on the main thread in the next Update, before any script's Update.</summary>
         protected void Enqueue(Action action) => MainThread.Post(action, MatchToken, this);
 
@@ -365,6 +362,32 @@ namespace Elympics
         public int TicksPerSecond => Config.TicksPerSecond;
 
         public abstract long Tick { get; }
+
+        #region Game start
+
+        public virtual void MarkReady() { }
+
+        public virtual long? GameStartTick => null;
+
+        public bool IsGameStarted => IsGameStartedAt(Tick);
+
+        internal bool IsGameStartedAt(long tick) => GameStartTick is { } startTick && tick >= startTick;
+
+        /// <summary>Latched once the start tick has run, unlike <see cref="IsGameStarted"/>, which compares against the already advanced <see cref="Tick"/>.</summary>
+        internal bool GameStartReached { get; private set; }
+
+        /// <summary>Calls <see cref="IGameStartHandler.OnGameStarted"/> once per instance, on the first tick from <see cref="GameStartTick"/> on.</summary>
+        internal void NotifyGameStartedIfReached()
+        {
+            if (GameStartReached || !IsGameStarted)
+                return;
+            GameStartReached = true;
+            OnGameStarted(GameStartTick!.Value);
+        }
+
+        private protected virtual void OnGameStarted(long startTick) => ElympicsBehavioursManager.OnGameStarted(startTick);
+
+        #endregion
 
         #region Client
 
@@ -403,6 +426,8 @@ namespace Elympics
         #region Server
 
         public virtual ElympicsScore Score => throw new SupportedOnlyByServerException();
+
+        public virtual DateTime? GameStartUtc => throw new SupportedOnlyByServerException();
 
         public virtual void EndGame(ResultMatchPlayerDatas result = null) => throw new SupportedOnlyByServerException();
 

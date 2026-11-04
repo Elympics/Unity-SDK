@@ -108,10 +108,11 @@ namespace Elympics.Editor.Tests.UnityCli
         public void VirtualPlayerTagsMustBeElympicsTags(string tags) =>
             CliAssert.Throws(() => ElympicsPlayCliCommands.SetVirtualPlayers(0, tags), ElympicsCliErrors.InvalidArgument);
 
+        private static MppmReflection.VirtualPlayer CreatePlayer(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
+
         [Test]
         public void OnlyRunningPlayersThatStayActiveWithChangedTagsNeedARestart()
         {
-            static MppmReflection.VirtualPlayer CreatePlayer(int number, string state, params string[] tags) => new() { number = number, state = state, tags = tags };
             var before = new[]
             {
                 CreatePlayer(1, "Launched", "Elympics:halfRemoteServer"),
@@ -136,10 +137,9 @@ namespace Elympics.Editor.Tests.UnityCli
         [Test]
         public void ReorderedTagsDontNeedARestartButRecasedOnesDo()
         {
-            static MppmReflection.VirtualPlayer CreatePlayer(params string[] tags) => new() { number = 2, state = "Launched", tags = tags };
-            var before = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
-            var reordered = new[] { CreatePlayer("Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
-            var recased = new[] { CreatePlayer("Elympics:PlayerIndex=0", "Elympics:Seed=red") };
+            var before = new[] { CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=Red") };
+            var reordered = new[] { CreatePlayer(2, "Launched", "Elympics:Seed=Red", "Elympics:PlayerIndex=0") };
+            var recased = new[] { CreatePlayer(2, "Launched", "Elympics:PlayerIndex=0", "Elympics:Seed=red") };
 
             Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, reordered, 1), Is.Empty);
             Assert.That(ElympicsPlayCliCommands.FindPlayersNeedingRestart(before, recased, 1), Is.EqualTo(new[] { 2 }));

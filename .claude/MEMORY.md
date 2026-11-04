@@ -45,7 +45,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If Unity stops throwing there, drop the catch. If Elympics starts depending on the package, drop the define.
 
 ### Multiplayer Play Mode virtual players run the main Editor's scenes
-- **Rule:** don't assume a virtual player starts in the scene its role needs. Code that must run in a particular scene loads it itself (as `ElympicsMatchLauncherBootstrap` does for the gameplay scene whenever the launch mode parameter is set, in virtual players and builds alike). To check MPPM end to end, read the virtual players' `Library/VP/<id>/Logs/Editor.log`; the active players and tags are in `Library/VP/SystemData.json`.
+- **Rule:** don't assume a virtual player starts in the scene its role needs. Code that must run in a particular scene loads it itself (as `ElympicsMatchLauncherBootstrap` does for the gameplay scene whenever the launch mode parameter is set, in virtual players and builds alike). To check MPPM end to end, read the virtual players' logs (where: see "Driving Multiplayer Play Mode virtual players"); the active players and tags are in `Library/VP/SystemData.json`.
 - **Reason:** MPPM opens in each virtual player the scenes open in the main Editor when play mode starts, and scenes loaded during play mode aren't mirrored. A Match Launcher launch first switches the main Editor to the boot scene, so virtual players got the lobby and their launch mode parameter, which starts a match only in the gameplay scene, never fired.
 - **Example:** on 2026-10-14, both virtual players logged `LaunchMode: halfRemoteClient` with indices 0/1 and then sat in the AsyncGame lobby. After the fix, both joined. The fix was later generalized to any process started with the launch mode parameter in a non-gameplay scene (a build whose first scene is a boot scene). The server waits for as many players as the game config's test players, so a 2-client check needs at least 2.
 - **Time scope:** If MPPM gets per-player scene setup, revisit.
@@ -92,6 +92,12 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** on MR !604, the 6000.5/6000.6 CI jobs failed `RefusedLaunchIsRecordedAsFailed` with `ELYMPICS_COMPILING` until Weaver skipped repeat reports (2026-10-23). The v0.29.1 version bump changed only `Editor/Weaving/AssemblyInfo.cs`; the re-report listed the 12 other weaving scripts, so the 6000.5 job failed again on main until Weaver marked all sources (MR !615). Two "Requested through public api" log lines in one run are the symptom.
 - **Time scope:** If Unity stops re-reporting the scripts, or Weaver no longer requests compiles, remove this.
 
+### Method names start with a verb
+- **Rule:** name methods, local functions and factory helpers (tests included) with a verb: `CreatePlayer(...)`, not `Player(...)`, even when a noun would read better as data in an initializer.
+- **Reason:** the codebase follows it (`CreateStartedScore`, `CreateActivePlayers`, `CreateParameterLauncher`). A noun-named method reads like a type or property.
+- **Example:** the test helper `Player(...)` in `Tests/Editor/UnityCli/TestPlayCommands.cs` was renamed to `CreatePlayer(...)` (2026-11-02).
+- **Time scope:** Permanent, unless the maintainer changes the naming convention.
+
 ## Backend contracts
 
 ### StreamingAssets upload contract
@@ -128,11 +134,11 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Example:** it exited 0 on a `WebGLUploader.cs` that the compiler rejected with six errors (CS0201, CS0019, CS0029).
 - **Time scope:** If the CI style check stops using `dotnet format`, remove this.
 
-### dotnet format --include needs file paths or a trailing slash
-- **Rule:** pass `--include` as file paths (e.g. the output of `git diff --name-only origin/develop...HEAD -- '*.cs'`, prefixed with the package path, run on the host `.sln`), a folder with a trailing `/`, or a glob. Prove a new invocation works by adding a known violation and seeing exit 2.
-- **Reason:** a folder without a trailing slash matches no files, and `dotnet format` then exits 0 silently.
-- **Example:** on 2026-10-30, `--include …/Runtime/Util/Parameters` exited 0 while CI's `verify-formatting` failed twice on files in that folder (IDE0059, IDE0005); `…/Parameters/` exited 2.
-- **Time scope:** If `dotnet format` starts matching bare folder paths, remove this.
+### dotnet format --include must match files inside the host project
+- **Rule:** pass `--include` as file paths (e.g. the output of `git diff --name-only origin/develop...HEAD -- '*.cs'`, prefixed with the package path, run on the host `.sln`), a folder with a trailing `/`, or a glob. If the package lives outside the host project's directory (a `file:` reference to a sibling dir), no `--include` form matches it: run on the whole csproj and filter the output by file. Prove a new invocation works by adding a known violation and seeing exit 2.
+- **Reason:** an `--include` that matches no files (a folder without a trailing slash, or any path outside the host project dir) checks nothing, and `dotnet format` then exits 0 silently.
+- **Example:** on 2026-10-30, `--include …/Runtime/Util/Parameters` exited 0 while CI's `verify-formatting` failed twice on files in that folder (IDE0059, IDE0005); `…/Parameters/` exited 2. On MR !612 (2026-11-02), with the package in a sibling dir, a file flagged 19 times by the whole-csproj run gave no warnings with any `--include` form (relative, absolute, `folder/`, glob).
+- **Time scope:** If `dotnet format` starts failing on an `--include` that matches nothing, remove this.
 
 ### Compile and test evidence
 - **Rule:** compile with the redirected `dotnet build` from the host project dir (see CLAUDE.md), never a plain one. For tests:
@@ -151,6 +157,18 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** Unity generates the csprojs, and runs Editor tests, with the active build target's defines. With WebGL selected, `UNITY_WEBGL` is defined in the Editor, so the `#else` branches are never compiled by a plain redirected build, and Editor tests take the WebGL paths.
 - **Example:** a `#if UNITY_WEBGL` TCP/UDP guard made two validation tests fail in the Editor, whose build target was WebGL. A global `DefineConstants` override then broke UniTask's `UnityWebRequest` extensions (CS8209/CS0246 in `GoogleCloudPingResultFactory.cs`).
 - **Time scope:** If CI or the host project stops generating csprojs per build target, rewrite this.
+
+### Regenerate stale host csprojs before running mpc or a redirected build
+- **Rule:** after adding, renaming or moving source files, regenerate the host's csprojs before running `mpc -i Elympics.csproj` or a redirected `dotnet build`, then check that the new file is listed in the csproj. When the host's external code editor isn't Rider or Visual Studio, `CodeEditor.CurrentEditor.SyncAll()` does nothing; call `Packages.Rider.Editor.RiderScriptEditor.SyncSolution` through reflection in a pipeline `eval` instead (the Rider package is installed in the host).
+- **Reason:** both tools read the file list from the generated csproj, which Unity rewrites only when a supported IDE asks. A stale csproj makes mpc silently skip the new `[MessagePackObject]` types, so the generated code looks valid but misses formatters.
+- **Example (2026-11-03):** with `DefaultExternalCodeEditor` set, mpc missed `ElympicsReadyMessage` until `RiderScriptEditor.SyncSolution` ran.
+- **Time scope:** If the host stops using generated csprojs, or Unity syncs them regardless of the external editor, remove this.
+
+### Imported sample copies in the host break the compile after an API rename
+- **Rule:** after renaming public API used by `Samples~`, grep the host's `Assets/Samples/` (SDK) and `Assets/PlayPadSamples/` (PlayPad) for the old names. Before overwriting a copy with the new sample, make sure it is an unmodified copy of the old sample, and tell the developer.
+- **Reason:** Package Manager imports samples as plain copies under `Assets/`, which never update. The repo builds cleanly, but the host Editor reports compile errors from a copy outside the repo.
+- **Example (2026-11-03):** after the match start → game start rename, the host's `Assets/Samples/ButtonClicker/Scripts/HelloWorldController.cs` still used `IsMatchStarted` and blocked the Editor compile.
+- **Time scope:** Permanent while samples ship in `Samples~`.
 
 ### The host Editor may be on the Dedicated Server sub-target
 - **Rule:** before changing scripting defines in an Editor, check `EditorUserBuildSettings.standaloneBuildSubtarget`. With `Server`, set them on `NamedBuildTarget.Server`; `NamedBuildTarget.Standalone` has no effect on the compile. Check what the compiler gets with `CompilationPipeline.GetAssemblies(...).defines`.
@@ -207,13 +225,21 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Time scope:** If login state stops being machine-global, or a rejected refresh stops clearing it, remove this.
 
 ### Driving the Editor through the pipeline CLI
-- **Rule:** put `command`'s own flags (`--result-only`, `--timeout <s>`) right after `command` and before the subcommand (`unity command --result-only --timeout 300 run_tests …`); `unity --json` goes before `command`. New files only appear after `eval --code 'UnityEditor.AssetDatabase.Refresh(); return "ok";'` (then poll `recompile_status`). `run_tests --filter_type` takes `testName` (namespace/class prefix), `assembly` or `category`, not regex. PlayMode tests need `--async_tests true` and polling `test_status` (its result uses lowercase `summary`/`results`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`). Always set `UNITY_PROJECT_PATH` (or `--project-path`) on every call: discovery fails with more than one Editor open, and also when Unity Hub started the Editor (`-projectpath` in lowercase), even though the server is running. Treat a test run as evidence only when its summary total is above 0.
+- **Rule:** put `command`'s own flags (`--result-only`, `--timeout <s>`) right after `command` and before the subcommand (`unity command --result-only --timeout 300 run_tests …`); `unity --json` goes before `command`. New files only appear after `eval --code 'UnityEditor.AssetDatabase.Refresh(); return "ok";'` (then poll `recompile_status`). `run_tests --filter_type` takes `testName` (namespace/class prefix), `assembly` or `category`, not regex. PlayMode tests need `--async_tests true` and polling `test_status` (its result uses lowercase `summary`/`results`). Use `recompile` + `recompile_status`, or, when compile errors already exist (it then refuses), `CompilationPipeline.RequestScriptCompilation` via `eval` or a window minimize/restore. Keep `eval` work under ~5 s and reach internal types through reflection. For anything longer (a Project Auditor scan, a build step), have a `run_script` entry point schedule the work with `EditorApplication.delayCall`, return at once, and write its result to a file to poll. Before `build --target X`, run `switch_build_target --target X --confirm true` (poll `switch_build_target_status`). Array arguments take JSON (`--scenes '["Assets/A.unity"]'`). Always set `UNITY_PROJECT_PATH` (or `--project-path`) on every call: discovery fails with more than one Editor open, and also when Unity Hub started the Editor (`-projectpath` in lowercase), even though the server is running. Treat a test run as evidence only when its summary total is above 0. Before a PlayMode `run_tests`, make sure the compile succeeded: run `recompile` and read `console` for `error CS`, or check that `Library/ScriptAssemblies/<assembly>.dll` is newer than your edit. A `recompile_status` of `completed` without errors can be left over from an earlier compile. If `test_status` stays `running` while `EditorApplication.isPlaying` is false (check with `eval`), the run never started: read `console`, fix the errors and start it again.
 - **Reason:** flags after `command` are passed to the command as parameters. `eval` runs on the main thread with a 5000 ms limit and compiles against public API only. Synchronous pipeline commands (`run_script` included) are cut off after 30 s regardless of `--timeout_ms`, and the work then never completes.
 - **Example:** `unity command run_tests --mode EditMode --no-banner --json` echoed `no-banner` and `json` back among the command's parameters. A `build --target WebGL` from a Linux-active Editor compiled without `UnityEngine.WebGLModule` and failed with CS0103 `WebGLInput` in PlayPad, which builds fine after a switch.
 - **Example (2026-10-19):** `unity --result-only command …` and `unity --timeout 120 command …` failed with "unknown option"; a synchronous PlayMode `run_tests` returned "entering play mode triggers a domain reload that drops the request".
 - **Example (2026-10-23):** with a second project's Editor open, every call failed with a list of candidate projects. A wrapper script still exited 0, with null compile and test results, so a run that tested nothing looked like a pass.
 - **Example (2026-10-27):** with one Hub-launched Editor (CLI 1.0.0-beta.13, pipeline 0.8.0-exp.1), `unity status` and `unity pipeline list` listed nothing, although `Library/Pipeline/.unity-pipeline-port` was fresh and the server was listening on 7800. With `UNITY_PROJECT_PATH` set, `run_tests` worked.
+- **Example (2026-11-03):** a new test file failed to compile (CS0103). The Editor refused to enter play mode ("All compiler errors have to be fixed before you can enter playmode!"), yet `run_tests` reported "started" and `test_status` said `running` for over 25 minutes, while `recompile_status` still showed the earlier clean compile. These are `com.unity.pipeline` commands, so the SDK can't fix this.
+- **Example (2026-10-30):** an EditMode `run_tests` left `test_status` showing the earlier PlayMode run. `unity --json command --timeout 120 run_tests …` printed the per-test results.
 - **Time scope:** If the pipeline CLI changes its argument handling or limits, update this.
+
+### Driving Multiplayer Play Mode virtual players
+- **Rule:** each virtual player runs its own pipeline server. Reach it with `UNITY_PROJECT_PATH=<host>/Library/VP/<id>` (ids in `Library/VP/SystemData.json`); `eval` works there, e.g. to call a sample's click handler or set `EditorApplication.isPlaying = false` so a client leaves. Find a virtual player's log with `eval` returning `Application.consoleLogPath`: `Library/VP/<id>/Logs/Editor.log` by default, `<path>-<id>.txt` when the main Editor was started with `-logFile <path>`. Half-remote servers and clients turn Run In Background on themselves (with a warning), so nothing needs saving in the host first. If `elympics_set_virtual_players` just started them, relaunch once they have booted.
+- **Reason:** an unfocused virtual player with Run In Background off stops updating, and its client times out ("Could not connect to the game server"). The SDK first turned the setting on only for half-remote servers, and MPPM copies the host's saved project settings to the virtual players on every play, so setting it inside a virtual player is lost on the next launch. Virtual players started cold finish booting after the main Editor has entered play mode and miss that session. An unfocused main Editor can also hold a launch's domain reload ("Reloading" popups) until it gets focus.
+- **Example (2026-11-03):** a ButtonClicker half-remote launch had Player 2 at frame 2 with `runInBackground=False` and Player 3 not playing. Setting it in Player 2 alone was reverted on relaunch; after saving it in the host, Player 2 joined, its `OnClick` via `eval` marked it ready, and the game started 30 ticks later. Two later launches still timed out creating the WebRTC offer; retrying the offer (!619) fixed that. With clients turning the setting on too and the host's setting off, Player 2 joined after one offer retry, and the leave → 10 s grace → end run passed.
+- **Time scope:** If MPPM keeps virtual players running unfocused, or the SDK stops changing Run In Background, update this.
 
 ### A newer Unity Editor rewrites package sources
 - **Rule:** after opening the host in a newer Unity version, check `git status` inside both packages before committing anything, and review what the Script Updater changed.
@@ -241,3 +267,9 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 - **Reason:** on Windows `chmod +x` doesn't reach git (`core.filemode` is off), so the file lands as `100644` and the Linux CI job fails with "permission denied".
 - **Example:** `build_sample.sh`, `disable_domain_reload.sh` and PlayPad's copied `check_js.sh` all needed it.
 - **Time scope:** Permanent while CI runs on Linux and development happens on Windows.
+
+### Ignore git's "LF will be replaced by CRLF" warning
+- **Rule:** ignore the warning at `git add`/`git commit`. Don't check or fix line endings because of it.
+- **Reason:** `.gitattributes` sets `* text=auto` and `*.sh text eol=lf`, so git normalizes line endings in the repo (LF) itself. The warning is only about checkout with the local `core.autocrlf=true`, and it doesn't affect what gets committed.
+- **Example:** the warning appeared after a `sed -i` on `TestPlayCommands.cs`; the commit held only the intended lines (2026-11-02).
+- **Time scope:** If `.gitattributes` stops normalizing line endings, remove this.

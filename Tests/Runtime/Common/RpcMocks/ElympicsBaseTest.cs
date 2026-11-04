@@ -36,6 +36,10 @@ namespace Elympics.Tests.RpcMocks
         internal override void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             RpcMessagesToInvoke.AddRange(rpcMessageList);
 
+        public bool IgnoresPlayerRpcs { get; set; }
+
+        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) => IgnoresPlayerRpcs;
+
         public void SetElympicsStatus(ElympicsStatus status) => (_isClient, _isServer, _isBot, _playerIndex) = status;
 
         public void ClearRpcQueues()

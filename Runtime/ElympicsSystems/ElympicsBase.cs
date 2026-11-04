@@ -380,9 +380,8 @@ namespace Elympics
         {
             if (GameStartReached || !IsGameStarted)
                 return;
-            var startTick = GameStartTick!.Value;
             GameStartReached = true;
-            OnGameStarted(startTick);
+            OnGameStarted(GameStartTick!.Value);
         }
 
         private protected virtual void OnGameStarted(long startTick) => ElympicsBehavioursManager.OnGameStarted(startTick);

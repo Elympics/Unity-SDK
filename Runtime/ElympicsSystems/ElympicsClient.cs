@@ -71,8 +71,14 @@ namespace Elympics
         }
         private readonly ElympicsSnapshot _serverWorldState = ElympicsSnapshot.CreateEmpty();
 
-        private bool _readyRequested;
-        private bool _readySent;
+        private enum ReadyState
+        {
+            NotRequested,
+            Pending,
+            Sent,
+        }
+
+        private ReadyState _readyState;
 
         private DateTime? _lastClientPrintNetworkConditions;
         private uint _currentTicksWithoutPrediction;
@@ -284,7 +290,8 @@ namespace Elympics
             _reanchoredCount = 0;
             _replayedCount = 0;
             _serverWorldState.ResetToEmpty();
-            _readySent = false;
+            if (_readyState == ReadyState.Sent)
+                _readyState = ReadyState.Pending;
             _currentTicksWithoutPrediction = 0;
             _previousTick = 0;
             _lastDelayedInputTick = 0;
@@ -448,20 +455,19 @@ namespace Elympics
 
         public override long? GameStartTick => _serverWorldState.GameStartTick;
 
-        /// <remarks>Sent reliably on the next tick, and again after a reconnect until a snapshot carries the start tick.</remarks>
+        /// <remarks>Sent reliably on the next tick, and again after each reconnect.</remarks>
         public override void MarkReady()
         {
-            if ((int)Player < 0)
-                return;
-            _readyRequested = true;
+            if ((int)Player >= 0 && _readyState == ReadyState.NotRequested)
+                _readyState = ReadyState.Pending;
         }
 
         internal void SendReadyIfPending()
         {
-            if (!_readyRequested || _readySent || GameStartTick.HasValue)
+            if (_readyState != ReadyState.Pending)
                 return;
             _matchClient.SendReady();
-            _readySent = true;
+            _readyState = ReadyState.Sent;
         }
 
         private void AddInputToSendBuffer(ElympicsInput input) => _matchClient.AddInputToSendBuffer(input);

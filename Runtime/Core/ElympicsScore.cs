@@ -174,12 +174,12 @@ namespace Elympics.Core
         [PublicAPI] public DateTime GetCurrentScoreUtcTime(int playerIndex) => _utcTime[playerIndex];
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
-        /// <returns>Gameplay time (see <see cref="Enable"/>) of the first score registered for a player.</returns>
+        /// <returns>Gameplay time (see <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/>) of the first score registered for a player.</returns>
         [PublicAPI] public TimeSpan GetCurrentScoreGameplayTime(int playerIndex) => _gameplayTime[playerIndex];
 
         /// <summary>
         /// A helper class for accessing metadata.
-        /// Ensures no key outside the ones defined in <see cref="Enable"/> is used.
+        /// Ensures no key outside the ones defined in <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> is used.
         /// </summary>
         public class MetadataWrapper
         {
@@ -302,7 +302,7 @@ namespace Elympics.Core
         /// The first call to the setter saves starting score time which can be accessed using <see cref="GetStartingScoreUtcTime"/>.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable"/> must be called before getting/setting any score values.
+        /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called before getting/setting any score values.
         /// </remarks>
         /// <param name="playerIndex">0-based index of a player for whom the score is accessed.</param>
         [PublicAPI]
@@ -344,7 +344,7 @@ namespace Elympics.Core
         /// By default, only sends data for a player if their score or metadata changed since last submission.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable"/> must be called first.
+        /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called first.
         /// Automatic sending is done at the end of each tick.
         /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start.
         /// </remarks>

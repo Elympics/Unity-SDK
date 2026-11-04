@@ -520,6 +520,16 @@ namespace Elympics.Tests.Runtime.Core
 
             Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
         }
+
+        [Test]
+        public void EnablingWithObsoleteMetadataKeysShouldRejectNullKeyAndStayEnableable()
+        {
+            var score = CreateScore(1);
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new[] { "a", null }));
+
+            score.Enable(metadataKeys: new[] { "a" });
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
+        }
 #pragma warning restore CS0618
 
         [Test]

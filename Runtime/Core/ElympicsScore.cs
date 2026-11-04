@@ -109,8 +109,12 @@ namespace Elympics.Core
             var seen = new HashSet<string>();
             if (metadataKeys is not null)
                 foreach (var key in metadataKeys)
+                {
+                    if (key is null)
+                        throw new ArgumentException("Metadata key cannot be null", nameof(metadataKeys));
                     if (seen.Add(key))
                         keys.Add(new KeyValuePair<string, JsonValue>(key, default));
+                }
             EnableCore(getGameplayTime, keys);
         }
 

@@ -145,6 +145,7 @@ namespace Elympics
             if (_endGameRequested)
             {
                 _endGameRequested = false;
+                _score?.SubmitFinalIfEnabled();
                 _gameEnded = true;
                 SetDeInitialized();
                 _snapshotCollector?.Dispose();

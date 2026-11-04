@@ -449,14 +449,87 @@ namespace Elympics.Tests.Runtime.Core
         }
 
         [Test]
-        public void EnablingWithNullInitialValueShouldThrow()
+        public void EnablingWithNullInitialValueShouldBeAccepted()
         {
             var score = CreateScore(1);
 
-            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, CreateInitial("a", JsonValue.Null)));
-            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new List<(string Key, JsonValue Initial)> { ("a", JsonValue.Null) }));
-            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new List<KeyValuePair<string, JsonValue>> { CreateInitial("a", JsonValue.Null) }));
+            score.Enable(null, CreateInitial("a", JsonValue.Null));
+
+            Assert.That(score.IsEnabled, Is.True);
+            Assert.That(score[0].Metadata["a"], Is.EqualTo(JsonValue.Null));
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
+        }
+
+        [Test]
+        public void EnablingWithNonFiniteInitialValueShouldThrow()
+        {
+            var score = CreateScore(1);
+
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, CreateInitial("a", double.NaN)));
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new List<(string Key, JsonValue Initial)> { ("a", double.PositiveInfinity) }));
             Assert.That(score.IsEnabled, Is.False);
+        }
+
+        [Test]
+        public void SettingMetadataToNullShouldBeAccepted()
+        {
+            var score = CreateStartedScore(1, CreateInitial("a", 1));
+
+            score[0].Metadata["a"] = JsonValue.Null;
+
+            Assert.That(score[0].Metadata["a"], Is.EqualTo(JsonValue.Null));
+        }
+
+        [Test]
+        [TestCase(double.NaN)]
+        [TestCase(double.PositiveInfinity)]
+        [TestCase(double.NegativeInfinity)]
+        public void SettingNonFiniteMetadataShouldThrowAndKeepValue(double value)
+        {
+            var score = CreateStartedScore(1, CreateInitial("a", 1));
+
+            _ = Assert.Throws<ArgumentException>(() => score[0].Metadata["a"] = value);
+
+            Assert.That(score[0].Metadata["a"], Is.EqualTo((JsonValue)1));
+        }
+
+        [Test]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        [TestCase(float.NegativeInfinity)]
+        public void SettingNonFiniteScoreShouldThrow(float value)
+        {
+            var score = CreateStartedScore(1);
+
+            _ = Assert.Throws<ArgumentOutOfRangeException>(() => score.SetScore(0, value));
+        }
+
+        [Test]
+        public void SubmittingFinalScoresShouldSendAllPlayersEvenWithoutChanges()
+        {
+            var score = CreateStartedScore(2);
+            var updated = new List<int>();
+            score.PlayerScoreUpdated += (p, _, _, _, _) => updated.Add(p);
+
+            score.SubmitFinalIfEnabled();
+
+            Assert.That(updated, Is.EqualTo(new[] { 0, 1 }));
+        }
+
+        [Test]
+        public void SubmittingFinalScoresShouldDoNothingWhenNotEnabledOrNotStarted()
+        {
+            var notEnabled = CreateScore(1);
+            var notStarted = CreateScore(1);
+            notStarted.Enable();
+            var count = 0;
+            notEnabled.PlayerScoreUpdated += (_, _, _, _, _) => count++;
+            notStarted.PlayerScoreUpdated += (_, _, _, _, _) => count++;
+
+            notEnabled.SubmitFinalIfEnabled();
+            notStarted.SubmitFinalIfEnabled();
+
+            Assert.That(count, Is.Zero);
         }
 
         [Test]

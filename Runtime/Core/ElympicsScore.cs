@@ -63,8 +63,10 @@ namespace Elympics.Core
         /// <remarks>
         /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
         /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
-        /// Every player starts with the initial values, so the first submission contains no <c>null</c> values.
-        /// Metadata keys are serialized in the order they are declared here.
+        /// Every player starts with the initial values.
+        /// Metadata keys are serialized in the order they are declared here (the server sorts them alphabetically anyway).
+        /// Keys are not validated, but snake_case (e.g. <c>kills_count</c>) is recommended.
+        /// Metadata values can only be JSON primitives: a number, string, boolean or <see cref="JsonValue.Null"/>.
         /// </remarks>
         /// <param name="getGameplayTime">
         /// Function for calculating the gameplay time of each score.
@@ -76,7 +78,7 @@ namespace Elympics.Core
         /// Assigning values to keys outside the list will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
         /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
-        /// <exception cref="ArgumentException">When a key is repeated or an initial value is <see cref="JsonValue.Null"/>.</exception>
+        /// <exception cref="ArgumentException">When a key is repeated, or an initial value is a non-finite number.</exception>
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params KeyValuePair<string, JsonValue>[] initialMetadata) =>
             EnableWithInitialMetadata(getGameplayTime, initialMetadata);
@@ -140,8 +142,7 @@ namespace Elympics.Core
                     throw new ArgumentException("Metadata key cannot be null", nameof(initialMetadata));
                 if (!seen.Add(key))
                     throw new ArgumentException($"Duplicate metadata key '{key}'", nameof(initialMetadata));
-                if (value.Kind == JsonValueKind.Null)
-                    throw new ArgumentException($"Initial value of metadata key '{key}' cannot be null", nameof(initialMetadata));
+                ValidateMetadataValue(key, value, nameof(initialMetadata));
             }
             EnableCore(getGameplayTime, initial);
         }
@@ -274,6 +275,8 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
+            if (float.IsNaN(score) || float.IsInfinity(score))
+                throw new ArgumentOutOfRangeException(nameof(score), score, "Score must be a finite number");
             _score[playerIndex] = score;
             _changed[playerIndex] = true;
         }
@@ -290,6 +293,15 @@ namespace Elympics.Core
                 : throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
         }
 
+        private static void ValidateMetadataValue(string key, JsonValue value, string paramName)
+        {
+            if (value.Kind == JsonValueKind.Number && (double.IsNaN(value.NumberValue) || double.IsInfinity(value.NumberValue)))
+                throw new ArgumentException($"Value of metadata key '{key}' must be a finite number", paramName);
+        }
+
+        /// <remarks>Only JSON primitives are supported: a number (finite), string, boolean or <see cref="JsonValue.Null"/>.</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">When the key was not declared in Enable.</exception>
+        /// <exception cref="ArgumentException">When the value is a non-finite number.</exception>
         [PublicAPI]
         public void SetMetadata(int playerIndex, string key, JsonValue value)
         {
@@ -297,6 +309,7 @@ namespace Elympics.Core
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             if (!_metadataKeys.Contains(key))
                 throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
+            ValidateMetadataValue(key, value, nameof(value));
             _metadata[playerIndex][key] = value;
             _changed[playerIndex] = true;
         }
@@ -335,6 +348,13 @@ namespace Elympics.Core
                 _enabledMode = EnabledMode.AutoEnabled;
             }
             SubmitAt(gameStartUtc, true);
+        }
+
+        /// <summary>Submits the final scores of all players at the current time, if the score is enabled and started. Called before the game ends.</summary>
+        internal void SubmitFinalIfEnabled()
+        {
+            if (IsEnabled && _started)
+                SubmitAt(DateTime.UtcNow, true);
         }
 
         internal void SubmitIfEnabled()

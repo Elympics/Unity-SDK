@@ -77,7 +77,7 @@ Important, non-obvious knowledge about this package. Use this file as your memor
 ### In the Editor, Application.runInBackground is the project's Player setting
 - **Rule:** setting `Application.runInBackground` in the Editor (also during play mode) changes `PlayerSettings.runInBackground`, which can be saved into `ProjectSettings.asset`. Say so wherever runtime code changes it.
 - **Reason:** the two properties mirror each other in the Editor; it isn't a play-mode-only override.
-- **Example:** `eval` setting `Application.runInBackground = false` made `PlayerSettings.runInBackground` read false at once (2026-10-19). The half-remote server enables it and warns (user decision: no restore).
+- **Example:** `eval` setting `Application.runInBackground = false` made `PlayerSettings.runInBackground` read false at once (2026-10-19). Half-remote servers and clients enable it and warn (user decision: no restore). Clients need it too: unfocused Multiplayer Play Mode virtual players otherwise stop updating and time out connecting (2026-11-03).
 - **Time scope:** If Unity separates the two in the Editor, remove this.
 
 ### BuildPlayer with a Server subtarget leaves the Editor's standalone subtarget on Server

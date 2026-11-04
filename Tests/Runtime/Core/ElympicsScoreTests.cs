@@ -17,12 +17,13 @@ namespace Elympics.Tests.Runtime.Core
         [SetUp]
         public void SetUp() => _gameStartUtc = null;
 
-        private ElympicsScore CreateScore(int playerCount) => new(playerCount, () => _gameStartUtc);
+        private ElympicsScore CreateScore(int playerCount) =>
+            new(playerCount, (_, currentTime) => currentTime - (_gameStartUtc ?? throw new InvalidOperationException("The game has not started yet")));
 
         private void StartScore(ElympicsScore score, DateTime gameStartUtc)
         {
             _gameStartUtc = gameStartUtc;
-            score.Start();
+            score.Start(gameStartUtc);
         }
 
         private ElympicsScore CreateStartedScore(int playerCount, IEnumerable<string> metadataKeys = null)
@@ -303,19 +304,6 @@ namespace Elympics.Tests.Runtime.Core
             StartScore(score, DateTime.UtcNow);
 
             Assert.That(updates, Is.EqualTo(new[] { (0, 0f, TimeSpan.Zero), (1, 5f, TimeSpan.Zero) }));
-        }
-
-        [Test]
-        public void StartBeforeTheGameStartTimeIsKnownShouldDoNothing()
-        {
-            var score = CreateScore(1);
-            var emitted = false;
-            score.PlayerScoreUpdated += (_, _, _, _, _) => emitted = true;
-
-            score.Start();
-
-            Assert.That(emitted, Is.False);
-            _ = Assert.Throws<InvalidOperationException>(() => _ = score[0], "The score shouldn't be enabled automatically yet.");
         }
 
         [Test]

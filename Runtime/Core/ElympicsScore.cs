@@ -25,7 +25,6 @@ namespace Elympics.Core
 
         internal bool IsEnabled => _enabledMode != EnabledMode.Disabled;
         private EnabledMode _enabledMode;
-        private readonly Func<DateTime?> _getGameStartUtc;
         private bool _started;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
@@ -41,10 +40,9 @@ namespace Elympics.Core
 
         private readonly StringBuilder _sb = new();
 
-        internal ElympicsScore(int playerCount, Func<DateTime?> getGameStartUtc)
+        internal ElympicsScore(int playerCount, GetGameplayTimeDelegate getGameplayTime)
         {
             _playerCount = playerCount;
-            _getGameStartUtc = getGameStartUtc;
             _score = new float[playerCount];
             _metadata = Enumerable.Range(0, playerCount).Select(_ => new Dictionary<string, JsonValue>()).ToArray();
             _metadataWrappers = Enumerable.Range(0, playerCount).Select(i => new MetadataWrapper(this, i)).ToArray();
@@ -52,7 +50,7 @@ namespace Elympics.Core
             _gameplayTime = new TimeSpan[playerCount];
             _changed = new bool[playerCount];
             _startingScoreUtcTime = new DateTime?[playerCount];
-            _getGameplayTime = GetGameplayTimeDefault;
+            _getGameplayTime = getGameplayTime;
             _metadataKeys = new HashSet<string>();
         }
 
@@ -246,13 +244,10 @@ namespace Elympics.Core
             }
         }
 
-        private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime) =>
-            currentTime - (_getGameStartUtc() ?? throw new InvalidOperationException("The game has not started yet"));
-
         /// <summary>Enables the score if needed and submits all scores at the game start time.</summary>
-        internal void Start()
+        internal void Start(DateTime gameStartUtc)
         {
-            if (_started || _getGameStartUtc() is not { } gameStartUtc)
+            if (_started)
                 return;
             _started = true;
             if (!IsEnabled)

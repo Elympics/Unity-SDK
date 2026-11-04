@@ -188,8 +188,9 @@ namespace Elympics
         private protected override void OnGameStarted(long startTick)
         {
             _logger.LogInfo($"Game started at tick {startTick}.");
-            _gameStartUtc = TickStartUtc - TimeSpan.FromSeconds((Tick - startTick) * (double)TickDuration);
-            _score?.Start();
+            var gameStartUtc = TickStartUtc - TimeSpan.FromSeconds((Tick - startTick) * (double)TickDuration);
+            _gameStartUtc = gameStartUtc;
+            _score?.Start(gameStartUtc);
             base.OnGameStarted(startTick);
         }
 
@@ -285,9 +286,12 @@ namespace Elympics
 
         private protected void CreateScore(int playerCount)
         {
-            _score = new ElympicsScore(playerCount, () => GameStartUtc);
+            _score = new ElympicsScore(playerCount, GetGameplayTime);
             _score.PlayerScoreUpdated += SubmitIntermediateScore;
         }
+
+        private TimeSpan GetGameplayTime(int playerIndex, DateTime currentTime) =>
+            currentTime - (GameStartUtc ?? throw new InvalidOperationException("The game has not started yet"));
 
         private void SubmitIntermediateScore(int playerIndex, float score, string metadata, DateTime utcTime, TimeSpan gameplayTime) =>
             _gameEngineAdapter?.SubmitIntermediateScore(score, ElympicsPlayer.FromIndex(playerIndex), metadata, utcTime, gameplayTime);

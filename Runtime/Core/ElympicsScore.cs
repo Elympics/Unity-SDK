@@ -28,6 +28,7 @@ namespace Elympics.Core
         private bool _started;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
+        private readonly List<string> _orderedMetadataKeys;
 
         private readonly int _playerCount;
         private readonly DateTime?[] _startingScoreUtcTime;
@@ -52,40 +53,104 @@ namespace Elympics.Core
             _startingScoreUtcTime = new DateTime?[playerCount];
             _getGameplayTime = getGameplayTime;
             _metadataKeys = new HashSet<string>();
+            _orderedMetadataKeys = new List<string>();
         }
 
         /// <summary>
-        /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score.
+        /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score
+        /// and the metadata keys with their initial values.
         /// </summary>
         /// <remarks>
         /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
         /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
+        /// Every player starts with the initial values, so the first submission contains no <c>null</c> values.
+        /// Metadata keys are serialized in the order they are declared here.
         /// </remarks>
         /// <param name="getGameplayTime">
         /// Function for calculating the gameplay time of each score.
         /// The gameplay time should start with the beginning of a game or match and then be steadily increased,
         /// possibly except for times when a player was disconnected.
         /// </param>
-        /// <param name="metadataKeys">
-        /// The list of supported metadata keys. Assigning values to keys outside the list
-        /// will result in <see cref="ArgumentOutOfRangeException"/>.
+        /// <param name="initialMetadata">
+        /// The supported metadata keys with their initial values, in the order they should be serialized.
+        /// Assigning values to keys outside the list will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
-        /// <exception cref="InvalidOperationException">When <see cref="Enable"/> has been called before.</exception>
+        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
+        /// <exception cref="ArgumentException">When a key is repeated or an initial value is <see cref="JsonValue.Null"/>.</exception>
         [PublicAPI]
-        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params KeyValuePair<string, JsonValue>[] initialMetadata) =>
+            EnableWithInitialMetadata(getGameplayTime, initialMetadata);
+
+        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, KeyValuePair{string, JsonValue}[])"/>
+        [PublicAPI]
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<(string Key, JsonValue Initial)> initialMetadata)
+        {
+            if (initialMetadata is null)
+                throw new ArgumentNullException(nameof(initialMetadata));
+            EnableWithInitialMetadata(getGameplayTime, initialMetadata.Select(x => new KeyValuePair<string, JsonValue>(x.Key, x.Initial)));
+        }
+
+        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, KeyValuePair{string, JsonValue}[])"/>
+        [PublicAPI]
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata) =>
+            EnableWithInitialMetadata(getGameplayTime, initialMetadata);
+
+        /// <summary>
+        /// Enables the score tracking mechanism. Metadata keys start with <see cref="JsonValue.Null"/> values.
+        /// </summary>
+        /// <param name="getGameplayTime">Function for calculating the gameplay time of each score.</param>
+        /// <param name="metadataKeys">The list of supported metadata keys.</param>
+        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
+        [Obsolete("Pass initial values instead")]
+        [PublicAPI]
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<string>? metadataKeys)
+        {
+            var keys = new List<KeyValuePair<string, JsonValue>>();
+            var seen = new HashSet<string>();
+            if (metadataKeys is not null)
+                foreach (var key in metadataKeys)
+                    if (seen.Add(key))
+                        keys.Add(new KeyValuePair<string, JsonValue>(key, default));
+            EnableCore(getGameplayTime, keys);
+        }
+
+        private void EnableWithInitialMetadata(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata)
+        {
+            if (initialMetadata is null)
+                throw new ArgumentNullException(nameof(initialMetadata));
+            var initial = initialMetadata.ToList();
+            var seen = new HashSet<string>();
+            foreach (var (key, value) in initial)
+            {
+                if (key is null)
+                    throw new ArgumentException("Metadata key cannot be null", nameof(initialMetadata));
+                if (!seen.Add(key))
+                    throw new ArgumentException($"Duplicate metadata key '{key}'", nameof(initialMetadata));
+                if (value.Kind == JsonValueKind.Null)
+                    throw new ArgumentException($"Initial value of metadata key '{key}' cannot be null", nameof(initialMetadata));
+            }
+            EnableCore(getGameplayTime, initial);
+        }
+
+        private void EnableCore(GetGameplayTimeDelegate? getGameplayTime, List<KeyValuePair<string, JsonValue>> initial)
         {
             if (_enabledMode == EnabledMode.UserEnabled)
                 throw new InvalidOperationException("Already enabled");
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
-            if (metadataKeys is not null)
-                _metadataKeys.UnionWith(metadataKeys);
+            _metadataKeys.Clear();
+            _orderedMetadataKeys.Clear();
+            foreach (var (key, _) in initial)
+            {
+                _ = _metadataKeys.Add(key);
+                _orderedMetadataKeys.Add(key);
+            }
             foreach (var metadata in _metadata)
             {
                 metadata.Clear();
-                _ = metadata.EnsureCapacity(_metadataKeys.Count);
-                foreach (var key in _metadataKeys)
-                    metadata.Add(key, default);
+                _ = metadata.EnsureCapacity(initial.Count);
+                foreach (var (key, value) in initial)
+                    metadata.Add(key, value);
             }
             _enabledMode = EnabledMode.UserEnabled;
         }
@@ -113,7 +178,7 @@ namespace Elympics.Core
 
             internal static readonly MetadataWrapper Empty = new();
 
-            internal IReadOnlyCollection<string> Keys => (IReadOnlyCollection<string>?)_parent?._metadataKeys ?? Array.Empty<string>();
+            internal IReadOnlyCollection<string> Keys => (IReadOnlyCollection<string>?)_parent?._orderedMetadataKeys ?? Array.Empty<string>();
 
             private MetadataWrapper() { }
             internal MetadataWrapper(ElympicsScore parent, int playerIndex) => (_parent, _playerIndex) = (parent, playerIndex);
@@ -300,7 +365,7 @@ namespace Elympics.Core
                     _ = _sb.Clear()
                         .Append('{');
                     var isFirst = true;
-                    foreach (var key in _metadataKeys)
+                    foreach (var key in _orderedMetadataKeys)
                     {
                         _ = _metadata[i][key].AppendAsJsonProperty(_sb, key, isFirst);
                         isFirst = false;

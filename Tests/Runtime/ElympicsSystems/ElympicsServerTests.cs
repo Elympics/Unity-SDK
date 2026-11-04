@@ -266,24 +266,13 @@ namespace Elympics.Tests
         [TestCase(0, -1, true, Description = "A player RPC sent before the start tick")]
         [TestCase(0, 0, false, Description = "A player RPC sent at the start tick")]
         [TestCase(1, 5, false, Description = "A player RPC sent after the start tick")]
-        [TestCase(-1, -1, false, Description = "A world RPC sent before the start tick")]
+        [TestCase(-2, -1, true, Description = "A local player RPC sent from outside input gathering before the start tick")]
         public void PlayerRpcIsIgnoredOnlyWhenSentBeforeTheStartTick(int sender, long ticksAfterStart, bool expectedIgnored)
         {
             _server.RunTick();
             var startTick = _server.GameStartTick!.Value;
 
             Assert.That(_server.ShouldIgnorePlayerRpc(CreateRpc(sender, startTick + ticksAfterStart)), Is.EqualTo(expectedIgnored));
-        }
-
-        [TestCase(-2, -1, true, Description = "A local player RPC sent from outside input gathering before the start tick")]
-        [TestCase(-2, 0, false, Description = "A local player RPC sent from outside input gathering at the start tick")]
-        [TestCase(0, -1, true, Description = "A local player RPC sent from input gathering before the start tick")]
-        public void LocalPlayerRpcIsIgnoredWhenSentBeforeTheStartTickWhateverTheSender(int sender, long ticksAfterStart, bool expectedIgnored)
-        {
-            _server.RunTick();
-            var startTick = _server.GameStartTick!.Value;
-
-            Assert.That(_server.ShouldIgnoreLocalPlayerRpc(CreateRpc(sender, startTick + ticksAfterStart)), Is.EqualTo(expectedIgnored));
         }
 
         [Test]

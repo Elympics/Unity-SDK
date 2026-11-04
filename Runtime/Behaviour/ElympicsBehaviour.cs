@@ -125,7 +125,7 @@ namespace Elympics
             };
             if (ShouldRpcBeCapturedToInvoke(properties))
             {
-                if (ElympicsBase.IsLocalMode && properties.Direction == ElympicsRpcDirection.PlayerToServer && ElympicsBase.ShouldIgnoreLocalPlayerRpc(rpcMessage))
+                if (ElympicsBase.IsLocalMode && properties.Direction == ElympicsRpcDirection.PlayerToServer && ElympicsBase.ShouldIgnorePlayerRpc(rpcMessage))
                     return;
                 ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
             }

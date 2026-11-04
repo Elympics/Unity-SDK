@@ -206,13 +206,7 @@ namespace Elympics
             base.OnGameStarted(startTick);
         }
 
-        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) =>
-            rpcMessage.Sender >= 0 && ShouldIgnoreRpcSentBeforeGameStart(rpcMessage);
-
-        // In local mode, player RPCs sent outside input gathering carry the World as their sender.
-        internal override bool ShouldIgnoreLocalPlayerRpc(ElympicsRpcMessage rpcMessage) => ShouldIgnoreRpcSentBeforeGameStart(rpcMessage);
-
-        private bool ShouldIgnoreRpcSentBeforeGameStart(ElympicsRpcMessage rpcMessage)
+        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage)
         {
             if (IsGameStartedAt(rpcMessage.SentOnTick))
                 return false;

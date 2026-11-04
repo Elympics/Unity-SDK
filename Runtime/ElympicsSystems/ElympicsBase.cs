@@ -146,13 +146,13 @@ namespace Elympics
                     RpcMessagesToInvoke.RemoveAt(i);
                 }
             foreach (var rpcMessage in _rpcMessagesToInvokeInCurrentTick)
-                // In local mode, player RPCs are filtered when captured (ElympicsBehaviour.OnRpcCaptured).
-                if ((IsLocalMode || !ShouldIgnorePlayerRpc(rpcMessage)) && TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
+                // Online, only player RPCs have a player as their sender.
+                // In local mode, the sender doesn't show the direction, so player RPCs are filtered when captured (ElympicsBehaviour.OnRpcCaptured).
+                if ((IsLocalMode || rpcMessage.Sender < 0 || !ShouldIgnorePlayerRpc(rpcMessage)) && TryGetBehaviour(rpcMessage.NetworkId, out var behaviour))
                     behaviour.OnRpcInvoked(ElympicsPlayer.FromIndexExtended(rpcMessage.Sender), rpcMessage.MethodId, rpcMessage.Arguments);
         }
 
         internal virtual bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) => false;
-        internal virtual bool ShouldIgnoreLocalPlayerRpc(ElympicsRpcMessage rpcMessage) => false;
 
         internal void SendQueuedRpcMessages()
         {

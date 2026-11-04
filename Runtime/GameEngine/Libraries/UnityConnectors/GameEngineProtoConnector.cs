@@ -63,7 +63,7 @@ namespace UnityConnectors
                 UserId = arg.UserId.ToString(),
                 Metadata = arg.Metadata,
                 Timestamp = arg.UtcTime.ToUnixTimeMilliseconds(),
-                GameplayTime = (long)arg.GameplayTime.TotalMilliseconds,
+                GameplayTime = (long)Math.Round(arg.GameplayTime.TotalMilliseconds, MidpointRounding.AwayFromZero),
             });
 
 

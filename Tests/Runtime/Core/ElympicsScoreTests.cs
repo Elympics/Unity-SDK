@@ -511,6 +511,15 @@ namespace Elympics.Tests.Runtime.Core
 
             Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(expectedGameplayTime));
         }
+
+        [Test]
+        public void EnablingWithObsoleteNamedMetadataKeysArgumentShouldStillWork()
+        {
+            var score = CreateScore(1);
+            score.Enable(metadataKeys: new[] { "a" });
+
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
+        }
 #pragma warning restore CS0618
 
         [Test]

@@ -114,6 +114,16 @@ namespace Elympics.Core
             EnableCore(getGameplayTime, keys);
         }
 
+        /// <summary>
+        /// Enables the score tracking mechanism. Metadata keys start with <see cref="JsonValue.Null"/> values.
+        /// Kept so that <c>Enable(metadataKeys: ...)</c> calls still compile.
+        /// </summary>
+        /// <param name="metadataKeys">The list of supported metadata keys.</param>
+        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
+        [Obsolete("Pass initial values instead")]
+        [PublicAPI]
+        public void Enable(IEnumerable<string>? metadataKeys) => Enable(null, metadataKeys);
+
         private void EnableWithInitialMetadata(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata)
         {
             if (initialMetadata is null)

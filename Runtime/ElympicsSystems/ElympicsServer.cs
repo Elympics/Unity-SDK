@@ -206,14 +206,20 @@ namespace Elympics
             base.OnGameStarted(startTick);
         }
 
-        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage)
+        internal override bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) =>
+            rpcMessage.Sender >= 0 && ShouldIgnoreRpcSentBeforeGameStart(rpcMessage);
+
+        // In local mode, player RPCs sent outside input gathering carry the World as their sender.
+        internal override bool ShouldIgnoreLocalPlayerRpc(ElympicsRpcMessage rpcMessage) => ShouldIgnoreRpcSentBeforeGameStart(rpcMessage);
+
+        private bool ShouldIgnoreRpcSentBeforeGameStart(ElympicsRpcMessage rpcMessage)
         {
-            if (rpcMessage.Sender < 0 || IsGameStartedAt(rpcMessage.SentOnTick))
+            if (IsGameStartedAt(rpcMessage.SentOnTick))
                 return false;
             if (!_preStartRpcIgnored)
             {
                 _preStartRpcIgnored = true;
-                _logger.LogWarning($"Ignoring player RPCs sent before the game start (first: player {rpcMessage.Sender}, tick {rpcMessage.SentOnTick}). "
+                _logger.LogWarning($"Ignoring player RPCs sent before the game start (first: player {ElympicsPlayer.FromIndexExtended(rpcMessage.Sender)}, tick {rpcMessage.SentOnTick}). "
                     + $"Check {nameof(IElympics)}.{nameof(IElympics.IsGameStarted)} before calling them.");
             }
             return true;

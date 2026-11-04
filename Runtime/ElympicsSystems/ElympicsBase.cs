@@ -152,6 +152,7 @@ namespace Elympics
         }
 
         internal virtual bool ShouldIgnorePlayerRpc(ElympicsRpcMessage rpcMessage) => false;
+        internal virtual bool ShouldIgnoreLocalPlayerRpc(ElympicsRpcMessage rpcMessage) => false;
 
         internal void SendQueuedRpcMessages()
         {

@@ -45,8 +45,8 @@ public class HelloWorldController : ElympicsMonoBehaviour, IInitializable, IInpu
         // The first click marks this player ready. The game starts once every player is ready.
         if (!Elympics.IsGameStarted)
         {
-            _markedReady = true;
             Elympics.MarkReady();
+            _markedReady = true;
             return;
         }
         _clicked = true;

@@ -263,18 +263,18 @@ namespace Elympics
             if (HandlingClientsInServer || !GameStartReached || _endGameRequested)
                 return;
 
-            if (HavePlayersLeft())
+            var havePlayersLeft = HumanPlayers.Count > 0 && Config.TerminateWhenPlayersLeave switch
+            {
+                TerminationOption.Any => ConnectedHumans.Count < HumanPlayers.Count,
+                TerminationOption.All => ConnectedHumans.Count == 0,
+                _ => false,
+            };
+
+            if (havePlayersLeft)
                 EndGameIfRejoinTimedOut();
             else
                 CancelRejoinDeadline();
         }
-
-        private bool HavePlayersLeft() => HumanPlayers.Count > 0 && Config.TerminateWhenPlayersLeave switch
-        {
-            TerminationOption.Any => ConnectedHumans.Count < HumanPlayers.Count,
-            TerminationOption.All => ConnectedHumans.Count == 0,
-            _ => false,
-        };
 
         private void EndGameIfRejoinTimedOut()
         {

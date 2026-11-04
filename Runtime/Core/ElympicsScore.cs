@@ -28,7 +28,6 @@ namespace Elympics.Core
         private bool _started;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
-        private readonly List<string> _orderedMetadataKeys;
 
         private readonly int _playerCount;
         private readonly DateTime?[] _startingScoreUtcTime;
@@ -53,7 +52,6 @@ namespace Elympics.Core
             _startingScoreUtcTime = new DateTime?[playerCount];
             _getGameplayTime = getGameplayTime;
             _metadataKeys = new HashSet<string>();
-            _orderedMetadataKeys = new List<string>();
         }
 
         /// <summary>
@@ -64,7 +62,7 @@ namespace Elympics.Core
         /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
         /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
         /// Every player starts with the initial values.
-        /// Metadata keys are serialized in the order they are declared here (the server sorts them alphabetically anyway).
+        /// Metadata key order isn't kept: the server writes the keys sorted alphabetically.
         /// Keys are not validated, but snake_case (e.g. <c>kills_count</c>) is recommended.
         /// Metadata values can only be JSON primitives: a number, string, boolean or <see cref="JsonValue.Null"/>.
         /// </remarks>
@@ -74,7 +72,7 @@ namespace Elympics.Core
         /// possibly except for times when a player was disconnected.
         /// </param>
         /// <param name="initialMetadata">
-        /// The supported metadata keys with their initial values, in the order they should be serialized.
+        /// The supported metadata keys with their initial values.
         /// Assigning values to keys outside the list will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
         /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
@@ -154,12 +152,8 @@ namespace Elympics.Core
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
             _metadataKeys.Clear();
-            _orderedMetadataKeys.Clear();
             foreach (var (key, _) in initial)
-            {
                 _ = _metadataKeys.Add(key);
-                _orderedMetadataKeys.Add(key);
-            }
             foreach (var metadata in _metadata)
             {
                 metadata.Clear();
@@ -193,7 +187,7 @@ namespace Elympics.Core
 
             internal static readonly MetadataWrapper Empty = new();
 
-            internal IReadOnlyCollection<string> Keys => (IReadOnlyCollection<string>?)_parent?._orderedMetadataKeys ?? Array.Empty<string>();
+            internal IReadOnlyCollection<string> Keys => (IReadOnlyCollection<string>?)_parent?._metadataKeys ?? Array.Empty<string>();
 
             private MetadataWrapper() { }
             internal MetadataWrapper(ElympicsScore parent, int playerIndex) => (_parent, _playerIndex) = (parent, playerIndex);
@@ -399,7 +393,7 @@ namespace Elympics.Core
                     _ = _sb.Clear()
                         .Append('{');
                     var isFirst = true;
-                    foreach (var key in _orderedMetadataKeys)
+                    foreach (var key in _metadataKeys)
                     {
                         _ = _metadata[i][key].AppendAsJsonProperty(_sb, key, isFirst);
                         isFirst = false;

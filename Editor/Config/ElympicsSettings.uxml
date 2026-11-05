@@ -1,8 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:VisualElement style="margin-left: 10px;">
-        <ui:Label text="Elympics" name="title" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
-        <ui:Label text="Scripting defines" name="scripting-defines-label" style="-unity-font-style: bold; margin-bottom: 2px;" />
-        <ui:VisualElement name="scripting-defines-container" style="padding-left: 10px;" />
-        <ui:VisualElement class="separator" style="height: 9px;" />
-    </ui:VisualElement>
+    <ui:ScrollView mode="Vertical" style="flex-grow: 1;">
+        <ui:VisualElement style="margin-left: 10px;">
+            <ui:Label text="Elympics" name="title" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
+            <ui:Label text="Scripting defines" name="scripting-defines-label" style="-unity-font-style: bold; margin-bottom: 2px;" />
+            <ui:VisualElement name="scripting-defines-container" style="padding-left: 10px;" />
+            <ui:VisualElement class="separator" style="height: 9px;" />
+        </ui:VisualElement>
+    </ui:ScrollView>
 </ui:UXML>

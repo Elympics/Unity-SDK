@@ -35,22 +35,18 @@ namespace Elympics.Editor.Config
                 {
                     var instance = CreateInstance<ElympicsSettings>();
                     if (instance.settingsUxml != null)
-                    {
-                        var scrollView = new ScrollView(ScrollViewMode.Vertical);
-                        scrollView.style.flexGrow = 1;
-                        scrollView.Add(PrepareInspectorTree(instance.settingsUxml));
-                        root.Add(scrollView);
-                    }
+                        FillInspectorTree(instance.settingsUxml, root);
                 },
                 keywords = new HashSet<string>(new[] { "Elympics", "Define" })
             };
         }
 
-        private static VisualElement PrepareInspectorTree(VisualTreeAsset sourceTree)
+        private static void FillInspectorTree(VisualTreeAsset sourceTree, VisualElement root)
         {
-            VisualElement settingsTree = sourceTree.CloneTree();
+            // Cloned straight into root, without a TemplateContainer, so the UXML's ScrollView can fill the pane.
+            sourceTree.CloneTree(root);
 
-            var scriptingDefinesContainer = settingsTree.Q<VisualElement>("scripting-defines-container");
+            var scriptingDefinesContainer = root.Q<VisualElement>("scripting-defines-container");
             // Lists come from every package (the SDK's first) and from Assets.
             var defineListPaths = AssetDatabase.FindAssets($"t:{nameof(ElympicsDefineList)}", new[] { "Assets", "Packages" })
                 .Select(AssetDatabase.GUIDToAssetPath)
@@ -60,8 +56,6 @@ namespace Elympics.Editor.Config
             foreach (var defineListPath in defineListPaths)
                 foreach (var define in AssetDatabase.LoadAssetAtPath<ElympicsDefineList>(defineListPath))
                     scriptingDefinesContainer.Add(CreateDefineRow(define));
-
-            return settingsTree;
 
             static VisualElement CreateDefineRow(ElympicsDefineList.ElympicsDefineDescription define)
             {

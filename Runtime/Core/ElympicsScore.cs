@@ -63,7 +63,7 @@ namespace Elympics.Core
         /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
         /// Every player starts with the initial values.
         /// Metadata key order isn't kept: the server writes the keys sorted alphabetically.
-        /// Keys are not validated, but snake_case (e.g. <c>kills_count</c>) is recommended.
+        /// Key names aren't restricted, but snake_case (e.g. <c>kills_count</c>) is recommended.
         /// Metadata values can only be JSON primitives: a number, string, boolean or <see cref="JsonValue.Null"/>.
         /// </remarks>
         /// <param name="getGameplayTime">
@@ -95,39 +95,6 @@ namespace Elympics.Core
         public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata) =>
             EnableWithInitialMetadata(getGameplayTime, initialMetadata);
 
-        /// <summary>
-        /// Enables the score tracking mechanism. Metadata keys start with <see cref="JsonValue.Null"/> values.
-        /// </summary>
-        /// <param name="getGameplayTime">Function for calculating the gameplay time of each score.</param>
-        /// <param name="metadataKeys">The list of supported metadata keys.</param>
-        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
-        [Obsolete("Pass initial values instead")]
-        [PublicAPI]
-        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<string>? metadataKeys)
-        {
-            var keys = new List<KeyValuePair<string, JsonValue>>();
-            var seen = new HashSet<string>();
-            if (metadataKeys is not null)
-                foreach (var key in metadataKeys)
-                {
-                    if (key is null)
-                        throw new ArgumentException("Metadata key cannot be null", nameof(metadataKeys));
-                    if (seen.Add(key))
-                        keys.Add(new KeyValuePair<string, JsonValue>(key, default));
-                }
-            EnableCore(getGameplayTime, keys);
-        }
-
-        /// <summary>
-        /// Enables the score tracking mechanism. Metadata keys start with <see cref="JsonValue.Null"/> values.
-        /// Kept so that <c>Enable(metadataKeys: ...)</c> calls still compile.
-        /// </summary>
-        /// <param name="metadataKeys">The list of supported metadata keys.</param>
-        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
-        [Obsolete("Pass initial values instead")]
-        [PublicAPI]
-        public void Enable(IEnumerable<string>? metadataKeys) => Enable(null, metadataKeys);
-
         private void EnableWithInitialMetadata(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata)
         {
             if (initialMetadata is null)
@@ -142,11 +109,6 @@ namespace Elympics.Core
                     throw new ArgumentException($"Duplicate metadata key '{key}'", nameof(initialMetadata));
                 ValidateMetadataValue(key, value, nameof(initialMetadata));
             }
-            EnableCore(getGameplayTime, initial);
-        }
-
-        private void EnableCore(GetGameplayTimeDelegate? getGameplayTime, List<KeyValuePair<string, JsonValue>> initial)
-        {
             if (_enabledMode == EnabledMode.UserEnabled)
                 throw new InvalidOperationException("Already enabled");
             if (getGameplayTime != null)
@@ -269,7 +231,7 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            if (float.IsNaN(score) || float.IsInfinity(score))
+            if (!float.IsFinite(score))
                 throw new ArgumentOutOfRangeException(nameof(score), score, "Score must be a finite number");
             _score[playerIndex] = score;
             _changed[playerIndex] = true;
@@ -289,7 +251,7 @@ namespace Elympics.Core
 
         private static void ValidateMetadataValue(string key, JsonValue value, string paramName)
         {
-            if (value.Kind == JsonValueKind.Number && (double.IsNaN(value.NumberValue) || double.IsInfinity(value.NumberValue)))
+            if (value.Kind == JsonValueKind.Number && !double.IsFinite(value.NumberValue))
                 throw new ArgumentException($"Value of metadata key '{key}' must be a finite number", paramName);
         }
 

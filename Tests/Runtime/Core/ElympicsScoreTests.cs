@@ -567,47 +567,15 @@ namespace Elympics.Tests.Runtime.Core
             Assert.That(score[0].Metadata["a"], Is.EqualTo((JsonValue)3));
         }
 
-#pragma warning disable CS0618 // The obsolete overload must keep working
         [Test]
-        public void EnablingWithObsoleteMetadataKeysShouldStartWithNullsAndSkipDuplicates()
+        public void EnablingWithNullKeyShouldThrowAndStayEnableable()
         {
             var score = CreateScore(1);
-            score.Enable(null, new[] { "b", "a", "b" });
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, CreateInitial("a", 1), CreateInitial(null, 1)));
 
-            Assert.That(score[0].Metadata["a"], Is.EqualTo(JsonValue.Null));
-            Assert.That(SplitProperties(CaptureFirstMetadata(score)), Is.EquivalentTo(new[] { "\"b\":null", "\"a\":null" }));
+            score.Enable(null, CreateInitial("a", 1));
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":1}"));
         }
-
-        [Test]
-        public void EnablingWithObsoleteMetadataKeysShouldAcceptGameplayTimeAndNullKeys()
-        {
-            var score = CreateScore(1);
-            var expectedGameplayTime = TimeSpan.FromSeconds(4);
-            score.Enable((_, _) => expectedGameplayTime, (IEnumerable<string>)null);
-            StartScore(score, DateTime.UtcNow);
-
-            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(expectedGameplayTime));
-        }
-
-        [Test]
-        public void EnablingWithObsoleteNamedMetadataKeysArgumentShouldStillWork()
-        {
-            var score = CreateScore(1);
-            score.Enable(metadataKeys: new[] { "a" });
-
-            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
-        }
-
-        [Test]
-        public void EnablingWithObsoleteMetadataKeysShouldRejectNullKeyAndStayEnableable()
-        {
-            var score = CreateScore(1);
-            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new[] { "a", null }));
-
-            score.Enable(metadataKeys: new[] { "a" });
-            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
-        }
-#pragma warning restore CS0618
 
         [Test]
         public void IntegralNumbersInMetadataShouldBeSerializedWithoutTrailingZeroTrimming()

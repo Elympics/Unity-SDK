@@ -35,7 +35,12 @@ namespace Elympics.Editor.Config
                 {
                     var instance = CreateInstance<ElympicsSettings>();
                     if (instance.settingsUxml != null)
-                        root.Add(PrepareInspectorTree(instance.settingsUxml));
+                    {
+                        var scrollView = new ScrollView(ScrollViewMode.Vertical);
+                        scrollView.style.flexGrow = 1;
+                        scrollView.Add(PrepareInspectorTree(instance.settingsUxml));
+                        root.Add(scrollView);
+                    }
                 },
                 keywords = new HashSet<string>(new[] { "Elympics", "Define" })
             };
@@ -92,6 +97,7 @@ namespace Elympics.Editor.Config
                 targetLabel.style.marginLeft = 4;
                 var header = new VisualElement();
                 header.style.flexDirection = FlexDirection.Row;
+                header.style.flexShrink = 0;
                 header.Add(toggle);
                 header.Add(targetLabel);
 
@@ -102,6 +108,7 @@ namespace Elympics.Editor.Config
                 description.style.opacity = 0.8f;
 
                 var row = new VisualElement();
+                row.style.flexShrink = 0;
                 row.Add(header);
                 row.Add(description);
                 return row;

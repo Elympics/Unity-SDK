@@ -344,17 +344,11 @@ namespace Elympics.Core
             SubmitAt(gameStartUtc, true);
         }
 
-        /// <summary>Submits the final scores of all players at the current time, if the score is enabled and started. Called before the game ends.</summary>
-        internal void SubmitFinalIfEnabled()
-        {
-            if (IsEnabled && _started)
-                SubmitAt(DateTime.UtcNow, true);
-        }
-
-        internal void SubmitIfEnabled()
+        /// <param name="forceSend">Send all players, e.g. for the final scores before the game ends.</param>
+        internal void SubmitIfEnabled(bool forceSend = false)
         {
             if (IsEnabled)
-                Submit();
+                Submit(forceSend);
         }
 
         /// <summary>

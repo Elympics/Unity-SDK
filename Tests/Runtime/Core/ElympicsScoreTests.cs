@@ -515,7 +515,7 @@ namespace Elympics.Tests.Runtime.Core
             var updated = new List<int>();
             score.PlayerScoreUpdated += (p, _, _, _, _) => updated.Add(p);
 
-            score.SubmitFinalIfEnabled();
+            score.SubmitIfEnabled(true);
 
             Assert.That(updated, Is.EqualTo(new[] { 0, 1 }));
         }
@@ -530,8 +530,8 @@ namespace Elympics.Tests.Runtime.Core
             notEnabled.PlayerScoreUpdated += (_, _, _, _, _) => count++;
             notStarted.PlayerScoreUpdated += (_, _, _, _, _) => count++;
 
-            notEnabled.SubmitFinalIfEnabled();
-            notStarted.SubmitFinalIfEnabled();
+            notEnabled.SubmitIfEnabled(true);
+            notStarted.SubmitIfEnabled(true);
 
             Assert.That(count, Is.Zero);
         }

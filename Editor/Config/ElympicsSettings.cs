@@ -35,18 +35,17 @@ namespace Elympics.Editor.Config
                 {
                     var instance = CreateInstance<ElympicsSettings>();
                     if (instance.settingsUxml != null)
-                        FillInspectorTree(instance.settingsUxml, root);
+                        root.Add(PrepareInspectorTree(instance.settingsUxml));
                 },
                 keywords = new HashSet<string>(new[] { "Elympics", "Define" })
             };
         }
 
-        private static void FillInspectorTree(VisualTreeAsset sourceTree, VisualElement root)
+        private static VisualElement PrepareInspectorTree(VisualTreeAsset sourceTree)
         {
-            // Cloned straight into root, without a TemplateContainer, so the UXML's ScrollView can fill the pane.
-            sourceTree.CloneTree(root);
+            VisualElement settingsTree = sourceTree.CloneTree();
 
-            var scriptingDefinesContainer = root.Q<VisualElement>("scripting-defines-container");
+            var scriptingDefinesContainer = settingsTree.Q<VisualElement>("scripting-defines-container");
             // Lists come from every package (the SDK's first) and from Assets.
             var defineListPaths = AssetDatabase.FindAssets($"t:{nameof(ElympicsDefineList)}", new[] { "Assets", "Packages" })
                 .Select(AssetDatabase.GUIDToAssetPath)
@@ -56,6 +55,8 @@ namespace Elympics.Editor.Config
             foreach (var defineListPath in defineListPaths)
                 foreach (var define in AssetDatabase.LoadAssetAtPath<ElympicsDefineList>(defineListPath))
                     scriptingDefinesContainer.Add(CreateDefineRow(define));
+
+            return settingsTree;
 
             static VisualElement CreateDefineRow(ElympicsDefineList.ElympicsDefineDescription define)
             {
@@ -91,7 +92,6 @@ namespace Elympics.Editor.Config
                 targetLabel.style.marginLeft = 4;
                 var header = new VisualElement();
                 header.style.flexDirection = FlexDirection.Row;
-                header.style.flexShrink = 0;
                 header.Add(toggle);
                 header.Add(targetLabel);
 
@@ -102,7 +102,6 @@ namespace Elympics.Editor.Config
                 description.style.opacity = 0.8f;
 
                 var row = new VisualElement();
-                row.style.flexShrink = 0;
                 row.Add(header);
                 row.Add(description);
                 return row;

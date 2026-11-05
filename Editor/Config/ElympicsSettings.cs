@@ -55,8 +55,20 @@ namespace Elympics.Editor.Config
             foreach (var defineListPath in defineListPaths)
                 foreach (var define in AssetDatabase.LoadAssetAtPath<ElympicsDefineList>(defineListPath))
                     scriptingDefinesContainer.Add(CreateDefineRow(define));
+            scriptingDefinesContainer.RegisterCallback<GeometryChangedEvent>(AlignToggleLabels);
 
             return settingsTree;
+
+            // Widens the label column to the longest define name, so all checkboxes line up.
+            static void AlignToggleLabels(GeometryChangedEvent evt)
+            {
+                var container = (VisualElement)evt.target;
+                container.UnregisterCallback<GeometryChangedEvent>(AlignToggleLabels);
+                var labels = container.Query<Label>(className: Toggle.labelUssClassName).ToList();
+                var width = labels.Select(label => label.layout.width).DefaultIfEmpty().Max();
+                foreach (var label in labels)
+                    label.style.minWidth = width;
+            }
 
             static VisualElement CreateDefineRow(ElympicsDefineList.ElympicsDefineDescription define)
             {
@@ -67,6 +79,8 @@ namespace Elympics.Editor.Config
                     : define.BuildTargets.Select(ParseNamedBuildTarget).OfType<NamedBuildTarget>().ToArray();
 
                 var toggle = new Toggle(name);
+                toggle.labelElement.style.minWidth = 250; // Unity's default label width in Project Settings
+                toggle.style.marginLeft = 0;
                 var definedCount = targets.Count(target =>
                 {
                     PlayerSettings.GetScriptingDefineSymbols(target, out var defines);

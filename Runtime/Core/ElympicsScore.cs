@@ -76,7 +76,7 @@ namespace Elympics.Core
         /// Assigning values to keys outside the list will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
         /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
-        /// <exception cref="ArgumentException">When a key is repeated, or an initial value is a non-finite number.</exception>
+        /// <exception cref="ArgumentException">When a key is null or repeated, or an initial value is a non-finite number.</exception>
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params KeyValuePair<string, JsonValue>[] initialMetadata) =>
             EnableWithInitialMetadata(getGameplayTime, initialMetadata);
@@ -278,6 +278,7 @@ namespace Elympics.Core
         /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called before getting/setting any score values.
         /// </remarks>
         /// <param name="playerIndex">0-based index of a player for whom the score is accessed.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the assigned score is a non-finite number.</exception>
         [PublicAPI]
         public ScoreWithMetadata this[int playerIndex]
         {
@@ -320,7 +321,7 @@ namespace Elympics.Core
         /// <remarks>
         /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called first.
         /// Automatic sending is done at the end of each tick.
-        /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start.
+        /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start and before the game ends.
         /// </remarks>
         /// <param name="forceSend">Force sending the data for all players even if there were no changes.</param>
         [PublicAPI]

@@ -78,19 +78,14 @@ namespace Elympics.Core
         /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
         /// <exception cref="ArgumentException">When a key is null or repeated, or an initial value is a non-finite number.</exception>
         [PublicAPI]
-        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params KeyValuePair<string, JsonValue>[] initialMetadata) =>
-            EnableWithInitialMetadata(getGameplayTime, initialMetadata);
-
-        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, KeyValuePair{string, JsonValue}[])"/>
-        [PublicAPI]
-        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<(string Key, JsonValue Initial)> initialMetadata)
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params (string Key, JsonValue Initial)[] initialMetadata)
         {
             if (initialMetadata is null)
                 throw new ArgumentNullException(nameof(initialMetadata));
             EnableWithInitialMetadata(getGameplayTime, initialMetadata.Select(x => new KeyValuePair<string, JsonValue>(x.Key, x.Initial)));
         }
 
-        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, KeyValuePair{string, JsonValue}[])"/>
+        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, ValueTuple{string, JsonValue}[])"/>
         [PublicAPI]
         public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata) =>
             EnableWithInitialMetadata(getGameplayTime, initialMetadata);
@@ -135,12 +130,12 @@ namespace Elympics.Core
         [PublicAPI] public DateTime GetCurrentScoreUtcTime(int playerIndex) => _utcTime[playerIndex];
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
-        /// <returns>Gameplay time (see <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/>) of the first score registered for a player.</returns>
+        /// <returns>Gameplay time (see <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/>) of the first score registered for a player.</returns>
         [PublicAPI] public TimeSpan GetCurrentScoreGameplayTime(int playerIndex) => _gameplayTime[playerIndex];
 
         /// <summary>
         /// A helper class for accessing metadata.
-        /// Ensures no key outside the ones defined in <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> is used.
+        /// Ensures no key outside the ones defined in <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> is used.
         /// </summary>
         public class MetadataWrapper
         {
@@ -275,7 +270,7 @@ namespace Elympics.Core
         /// The first call to the setter saves starting score time which can be accessed using <see cref="GetStartingScoreUtcTime"/>.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called before getting/setting any score values.
+        /// <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> must be called before getting/setting any score values.
         /// </remarks>
         /// <param name="playerIndex">0-based index of a player for whom the score is accessed.</param>
         /// <exception cref="ArgumentOutOfRangeException">When the assigned score is a non-finite number.</exception>
@@ -319,7 +314,7 @@ namespace Elympics.Core
         /// By default, only sends data for a player if their score or metadata changed since last submission.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable(GetGameplayTimeDelegate, KeyValuePair{string, JsonValue}[])"/> must be called first.
+        /// <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> must be called first.
         /// Automatic sending is done at the end of each tick.
         /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start and before the game ends.
         /// </remarks>

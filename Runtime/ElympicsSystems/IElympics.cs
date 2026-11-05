@@ -79,7 +79,7 @@ namespace Elympics
         /// Server-only live tracker of the current score.
         /// </summary>
         /// <remarks>
-        /// It's enabled automatically at the game start. Call <see cref="ElympicsScore.Enable(ElympicsScore.GetGameplayTimeDelegate, System.Collections.Generic.KeyValuePair{string, Elympics.Core.Utils.JsonValue}[])"/> to customize it, or to set scores before the start.
+        /// It's enabled automatically at the game start. Call <see cref="ElympicsScore.Enable(ElympicsScore.GetGameplayTimeDelegate, System.ValueTuple{string, Elympics.Core.Utils.JsonValue}[])"/> to customize it, or to set scores before the start.
         /// </remarks>
         ElympicsScore Score { get; }
 

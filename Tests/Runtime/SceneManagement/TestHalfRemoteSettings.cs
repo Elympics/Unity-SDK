@@ -157,13 +157,13 @@ namespace Elympics.Tests
         }
 
         [Test]
-        public void ServerCustomDataDefaultsToConfig()
+        public void CustomDataDefaultsToConfig()
         {
             AddConfigSeed();
 
-            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(), _config);
+            var resolved = HalfRemoteCustomData.Resolve(null, fromParameter: null, _config);
 
-            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
+            Assert.That(resolved, Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
         }
 
         [Test]
@@ -176,24 +176,30 @@ namespace Elympics.Tests
             Assert.That(exception.Message, Does.Contain("'mode'").And.Contain("Fix: "));
         }
 
-        [Test]
-        public void ServerLaunchDataOverridesConfig()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SettingsWithoutLaunchDataFallBackToConfigCustomData(bool server)
         {
             AddConfigSeed();
 
-            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: LaunchSeed), _config);
+            var resolved = server
+                ? HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(), _config).CustomMatchmakingData
+                : HalfRemoteClientSettings.Resolve(new HalfRemoteClientLaunchData(), _config).CustomMatchmakingData;
 
-            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(LaunchSeed));
+            Assert.That(resolved, Is.EquivalentTo(new Dictionary<string, string> { [":pub:seed"] = "7", ["mode"] = "slow" }));
         }
 
-        [Test]
-        public void ClientLaunchDataOverridesConfig()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void LaunchDataOverridesConfig(bool server)
         {
             AddConfigSeed();
 
-            var settings = HalfRemoteClientSettings.Resolve(new HalfRemoteClientLaunchData(customMatchmakingData: LaunchSeed), _config);
+            var resolved = server
+                ? HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: LaunchSeed), _config).CustomMatchmakingData
+                : HalfRemoteClientSettings.Resolve(new HalfRemoteClientLaunchData(customMatchmakingData: LaunchSeed), _config).CustomMatchmakingData;
 
-            Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(LaunchSeed));
+            Assert.That(resolved, Is.EquivalentTo(LaunchSeed));
         }
 
         [Test]
@@ -206,23 +212,16 @@ namespace Elympics.Tests
             Assert.That(settings.CustomMatchmakingData, Is.Empty);
         }
 
-        [Test]
-        public void NonNumericSeedPassesThroughAndSeedIsNull()
+        [TestCase("42", 42u)]
+        [TestCase("abc", null)]
+        public void SeedIsReadOnlyWhenNumeric(string seed, uint? expectedSeed)
         {
-            var data = new Dictionary<string, string> { [":pub:seed"] = "abc" };
+            var data = new Dictionary<string, string> { [":pub:seed"] = seed };
 
             var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: data), _config);
 
             Assert.That(settings.CustomMatchmakingData, Is.EquivalentTo(data));
-            Assert.That(new InitialMatchPlayerDatasGuid(Array.Empty<InitialMatchPlayerDataGuid>()) { CustomMatchmakingData = settings.CustomMatchmakingData }.Seed, Is.Null);
-        }
-
-        [Test]
-        public void NumericSeedIsReadAsSeed()
-        {
-            var settings = HalfRemoteServerSettings.Resolve(new HalfRemoteServerLaunchData(customMatchmakingData: LaunchSeed), _config);
-
-            Assert.That(new InitialMatchPlayerDatasGuid(Array.Empty<InitialMatchPlayerDataGuid>()) { CustomMatchmakingData = settings.CustomMatchmakingData }.Seed, Is.EqualTo(42u));
+            Assert.That(new InitialMatchPlayerDatasGuid(Array.Empty<InitialMatchPlayerDataGuid>()) { CustomMatchmakingData = settings.CustomMatchmakingData }.Seed, Is.EqualTo(expectedSeed));
         }
 
         [Test]

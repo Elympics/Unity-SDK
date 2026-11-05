@@ -14,7 +14,7 @@ namespace MatchEvents
         [SerializeField] private int startGameTimeout = 30;
 
         private Text _text;
-        private bool _gameStarted;
+        private bool _allPlayersConnected;
         private int _totalPlayers;
         private int _totalBotPlayers;
 
@@ -39,23 +39,23 @@ namespace MatchEvents
             _totalBotPlayers = _totalPlayers - totalHumanPlayers;
             Debug.Log($"Game initialized with {totalHumanPlayers} human players and {_totalBotPlayers} bots");
 
-            _ = StartCoroutine(WaitForGameStartOrEnd());
+            _ = StartCoroutine(WaitForAllPlayersOrEnd());
         }
 
-        private IEnumerator WaitForGameStartOrEnd()
+        private IEnumerator WaitForAllPlayersOrEnd()
         {
             var waitToStartFinishTime = DateTime.Now + TimeSpan.FromSeconds(startGameTimeout);
 
             while (DateTime.Now < waitToStartFinishTime)
             {
-                if (_gameStarted)
+                if (_allPlayersConnected)
                     yield break;
 
-                Debug.Log("Waiting for game to start");
+                Debug.Log("Waiting for all players to connect");
                 yield return new WaitForSeconds(5);
             }
 
-            Debug.Log("Forcing game end because game didn't start");
+            Debug.Log("Forcing game end because not all players connected");
             Elympics.EndGame();
         }
 
@@ -67,7 +67,7 @@ namespace MatchEvents
             if (_isBot[player])
                 _ = _botPlayersConnected.Remove(player);
             UpdateText();
-            if (_playersConnected.Count > _totalBotPlayers || !_gameStarted)
+            if (_playersConnected.Count > _totalBotPlayers || !_allPlayersConnected)
                 return;
 
             Debug.Log("No more players connected, ending the game");
@@ -82,11 +82,11 @@ namespace MatchEvents
             if (_isBot[player])
                 _ = _botPlayersConnected.Add(player);
             UpdateText();
-            if (_playersConnected.Count != _totalPlayers || _gameStarted)
+            if (_playersConnected.Count != _totalPlayers || _allPlayersConnected)
                 return;
 
-            _gameStarted = true;
-            Debug.Log("Game started!");
+            _allPlayersConnected = true;
+            Debug.Log("All players connected");
         }
 
         private void UpdateText()

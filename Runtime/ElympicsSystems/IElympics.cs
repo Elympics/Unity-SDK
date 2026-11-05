@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Elympics.Core;
 using Elympics.Cysharp.Threading.Tasks;
@@ -40,6 +41,30 @@ namespace Elympics
 
         bool TryGetBehaviour(int networkId, out ElympicsBehaviour elympicsBehaviour);
 
+        #region Game start
+
+        /// <summary>
+        /// Confirms that this player is ready to play.
+        /// Call it on every player client from a player action, such as a "Ready" or "Play" button. Bots are ready automatically.
+        /// </summary>
+        /// <remarks>
+        /// When all players are ready, the server schedules the game start (<see cref="GameStartTick"/>) a few ticks ahead (see <see cref="ElympicsGameConfig.GameStartDelaySeconds"/>).
+        /// If not all players are ready within <see cref="ElympicsGameConfig.ReadyTimeoutSeconds"/> from the first player connection,
+        /// or no player connects within <see cref="ElympicsGameConfig.NoPlayerTimeoutSeconds"/>, the server ends the match with no result.
+        /// Inputs for ticks before <see cref="GameStartTick"/>, and player-to-server RPCs sent before it, are ignored.
+        /// Calling it again or on a spectator has no effect. On a server, it has an effect only in local modes, where it marks all players ready.
+        /// </remarks>
+        void MarkReady();
+
+        /// <value>The tick the game starts at, or null while the start isn't scheduled (or not yet known to this client).</value>
+        long? GameStartTick { get; }
+
+        /// <value>True from <see cref="GameStartTick"/> on.</value>
+        /// <remarks>Objects spawned after the start should check it, because <see cref="IGameStartHandler.OnGameStarted"/> has already been called.</remarks>
+        bool IsGameStarted { get; }
+
+        #endregion
+
         #region Client
 
         UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct = default);
@@ -54,10 +79,18 @@ namespace Elympics
         /// Server-only live tracker of the current score.
         /// </summary>
         /// <remarks>
-        /// <see cref="ElympicsScore.Enable"/> must be called before setting/retrieving any score.
+        /// It's enabled automatically at the game start. Call <see cref="ElympicsScore.Enable(ElympicsScore.GetGameplayTimeDelegate, System.ValueTuple{string, Elympics.Core.Utils.JsonValue}[])"/> to customize it, or to set scores before the start.
         /// </remarks>
         ElympicsScore Score { get; }
 
+        /// <value>The server's UTC time of the start tick, or null before the server has run it.</value>
+        /// <remarks>
+        /// Server-only. Clients and bots run ahead of the server and on their own clocks, so for the time since the start
+        /// use ticks there: <c>(Tick - GameStartTick) * TickDuration</c>.
+        /// </remarks>
+        DateTime? GameStartUtc { get; }
+
+        /// <param name="result">Results for all players. Ignored before the game start (no result is sent); if null after it, built from <see cref="Score"/>.</param>
         void EndGame(ResultMatchPlayerDatas result = null);
 
         #endregion

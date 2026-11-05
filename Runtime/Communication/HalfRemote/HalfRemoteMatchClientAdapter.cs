@@ -119,6 +119,9 @@ namespace Elympics
         public void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable) =>
             SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(rpcMessageList), reliable);
 
+        public void SendReady() =>
+            SendRawDataToServer(MessagePackSerializer.Serialize<IToServer>(new ElympicsReadyMessage()), true);
+
         public void SendRawDataToServer(byte[] rawData, bool reliable)
         {
             Action<byte[]> sendDataAsync = reliable ? _client.SendInputReliable : _client.SendInputUnreliable;

@@ -4,9 +4,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Elympics.Core.Logger;
+using UnityEngine;
 
 namespace Elympics
 {
+    /// <summary>
+    /// Half-remote servers and clients have to keep running while out of focus: an Editor window or player that stops updating
+    /// stalls the simulation and drops or times out its connection (e.g. unfocused Multiplayer Play Mode virtual players).
+    /// </summary>
+    internal static class HalfRemoteRunInBackground
+    {
+        /// <param name="role">"server" or "client", for the log message.</param>
+        public static void Ensure(string role)
+        {
+            if (Application.runInBackground)
+                return;
+#if ELYMPICS_DISABLE_RUN_IN_BACKGROUND
+            ElympicsLogger.LogWarning($"\"Run In Background\" is disabled, so a half-remote {role} may stall while out of focus.");
+#else
+            Application.runInBackground = true;
+            ElympicsLogger.LogWarning($"\"Run In Background\" was disabled, but a half-remote {role} has to run while out of focus, so it has been enabled. "
+                + "In the Editor, this changes the project's Player Settings.");
+#endif
+        }
+    }
+
     /// <summary>
     /// What a half-remote client connects with: <see cref="HalfRemoteClientLaunchData"/> where set, otherwise
     /// the application parameters, otherwise <see cref="ElympicsGameConfig"/>.

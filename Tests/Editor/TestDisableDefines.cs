@@ -46,15 +46,17 @@ namespace Elympics.Editor.Tests
 #endif
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void RunInBackgroundIsEnabledForHalfRemoteServerUnlessDisabled(bool initial)
+        [TestCase("server", false)]
+        [TestCase("server", true)]
+        [TestCase("client", false)]
+        [TestCase("client", true)]
+        public void RunInBackgroundIsEnabledForHalfRemoteUnlessDisabled(string role, bool initial)
         {
             Application.runInBackground = initial;
             if (!initial)
-                LogAssert.Expect(LogType.Warning, new Regex("Run In Background"));
+                LogAssert.Expect(LogType.Warning, new Regex($"Run In Background.*half-remote {role}"));
 
-            HalfRemoteGameServerInitializer.EnsureRunInBackground();
+            HalfRemoteRunInBackground.Ensure(role);
 
 #if ELYMPICS_DISABLE_RUN_IN_BACKGROUND
             Assert.That(Application.runInBackground, Is.EqualTo(initial));

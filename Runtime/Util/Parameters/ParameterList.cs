@@ -58,9 +58,7 @@ namespace Elympics
         /// <summary>The replay of <see cref="LaunchMode"/> snapshotReplay: a path or an http(s) URL. Defaults to the game config's snapshot file path.</summary>
         public readonly Parameter<string> ReplayPath = new("ELYMPICS_REPLAY_PATH", "elympicsReplayPath", "elympics-replay-path");
 
-        /// <summary>
-        /// Custom matchmaking data of a half-remote match, e.g. <c>:pub:seed=42;mode=fast</c>. Empty means unset.
-        /// </summary>
+        /// <summary>Custom matchmaking data of a half-remote match, e.g. <c>:pub:seed=42;mode=fast</c>. Empty means unset.</summary>
         public readonly Parameter<IReadOnlyDictionary<string, string>> CustomMatchmakingData = new("ELYMPICS_CUSTOM_MATCHMAKING_DATA",
             "elympicsCustomMatchmakingData", "elympics-custom-matchmaking-data", validate: value => TryParseKeyValuePairs(value, out _),
             parse: value => TryParseKeyValuePairs(value, out var pairs) ? pairs : throw new ArgumentException($"Invalid key=value pairs: {value}"))

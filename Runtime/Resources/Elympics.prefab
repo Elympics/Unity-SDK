@@ -132,74 +132,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   verbosity: 0
   serverLogPrefix: '[Elympics::Server]'
---- !u!1 &2826778636150675420
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4462764667887762435}
-  - component: {fileID: 7761056987631085800}
-  - component: {fileID: 778477889166288857}
-  m_Layer: 0
-  m_Name: DefaultServerHandler
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4462764667887762435
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2826778636150675420}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -7.087185, y: 2.7371008, z: -1885.4054}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7529846740173844775}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7761056987631085800
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2826778636150675420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 334c2a3facb248ac8c1a599797c52dae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  networkId: 2
-  predictableFor:
-    playerIndex: -2
-  isUpdatableForNonOwners: 0
-  visibleFor:
-    playerIndex: -3
-  replicationPriority: 2
-  netUpdateIntervalInTicks: 1
---- !u!114 &778477889166288857
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2826778636150675420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4967bf53bd4b41139812c0f989b90db2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  autoTerminateServer: 1
-  autoTerminationOnLeft: 1
-  startGameTimeoutSeconds: 180
 --- !u!1 &7529846739748366657
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,7 +215,6 @@ Transform:
   - {fileID: 7529846741445686784}
   - {fileID: 1630649002}
   - {fileID: 980766705364734704}
-  - {fileID: 4462764667887762435}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

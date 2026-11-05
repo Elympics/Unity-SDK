@@ -19,7 +19,7 @@ namespace Elympics
         [Tooltip("In seconds")] public float webRtcOfferRetryDelay = 1;
         public int initialSynchronizeMaxRetries = 3;
 
-        public int WebRtcOfferAnnounceDelayMs => (int)Math.Round(webRtcOfferMaxRetries * 1000.0);
+        public int WebRtcOfferAnnounceDelayMs => (int)Math.Round(webRtcOfferAnnounceDelay * 1000.0);
 
         public GameServerClientConfig GameServerClientConfig => new()
         {

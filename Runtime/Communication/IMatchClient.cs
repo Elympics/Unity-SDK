@@ -12,6 +12,7 @@ namespace Elympics
         void AddInputToSendBuffer(ElympicsInput input);
         void SendRpcMessageList(ElympicsRpcMessageList rpcMessageList, bool reliable);
         void SendBufferInput(long tick);
+        void SendReady();
         void SetLastReceivedSnapshot(long tick);
     }
 }

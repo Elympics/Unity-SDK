@@ -17,6 +17,7 @@ namespace Elympics
 
         protected override void InitializeClient(ElympicsClient client, ElympicsGameConfig elympicsGameConfig)
         {
+            HalfRemoteRunInBackground.Ensure("client");
             const string gameModeName = "half remote";
             var settings = HalfRemoteClientSettings.Resolve(_data, elympicsGameConfig);
             var playerIndex = settings.PlayerIndex;

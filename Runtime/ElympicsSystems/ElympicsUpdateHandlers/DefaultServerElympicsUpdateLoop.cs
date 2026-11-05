@@ -26,19 +26,22 @@ namespace Elympics.ElympicsSystems
         private void SetBoundaryConditions()
         {
             _inputList.Clear();
-            foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
-            {
-                var currentTick = Tick;
-                if (elympicDataWithTickBuffer.TryGetDataForTick(currentTick, out var input) || _gameEngineAdapter.LatestSimulatedTickInput.TryGetValue(elympicPlayer, out input))
+            // Inputs for ticks before the game start are ignored, and must not become the fallback input either.
+            if (_elympicsBase.IsGameStartedAt(Tick))
+                foreach (var (elympicPlayer, elympicDataWithTickBuffer) in _gameEngineAdapter.PlayerInputBuffers)
                 {
-                    _inputList.Add(input);
-                    _gameEngineAdapter.SetLatestSimulatedInputTick(input.Player, input);
+                    var currentTick = Tick;
+                    if (elympicDataWithTickBuffer.TryGetDataForTick(currentTick, out var input) || _gameEngineAdapter.LatestSimulatedTickInput.TryGetValue(elympicPlayer, out input))
+                    {
+                        _inputList.Add(input);
+                        _gameEngineAdapter.SetLatestSimulatedInputTick(input.Player, input);
+                    }
                 }
-            }
 
             using (ElympicsMarkers.Elympics_ApplyingInputMarker.Auto())
                 _behavioursManager.SetCurrentInputs(_inputList);
 
+            _elympicsBase.NotifyGameStartedIfReached();
             _elympicsBase.InvokeQueuedRpcMessages();
             _behavioursManager.CommitVars();
         }

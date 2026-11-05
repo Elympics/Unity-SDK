@@ -20,7 +20,7 @@ namespace Elympics
         }
 
         [SerializationConstructor]
-        public ElympicsSnapshotWithMetadata(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]> data, Dictionary<int, TickToPlayerInput> tickToPlayersInputData, DateTime tickEndUtc, List<ElympicsBehaviourMetadata> metadata) : base(tick, tickStartUtc, factory, data, tickToPlayersInputData)
+        public ElympicsSnapshotWithMetadata(long tick, DateTime tickStartUtc, FactoryState factory, Dictionary<int, byte[]> data, Dictionary<int, TickToPlayerInput> tickToPlayersInputData, DateTime tickEndUtc, List<ElympicsBehaviourMetadata> metadata, long? gameStartTick = null) : base(tick, tickStartUtc, factory, data, tickToPlayersInputData, gameStartTick)
         {
             TickEndUtc = tickEndUtc;
             Metadata = metadata;

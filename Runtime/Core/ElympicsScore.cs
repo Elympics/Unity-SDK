@@ -16,7 +16,16 @@ namespace Elympics.Core
         internal delegate void PlayerScoreUpdatedDelegate(int playerIndex, float score, string metadataJson, DateTime utcTime, TimeSpan gameplayTime);
         internal event PlayerScoreUpdatedDelegate? PlayerScoreUpdated;
 
-        internal bool IsEnabled { get; private set; }
+        private enum EnabledMode
+        {
+            Disabled,
+            AutoEnabled,
+            UserEnabled,
+        }
+
+        internal bool IsEnabled => _enabledMode != EnabledMode.Disabled;
+        private EnabledMode _enabledMode;
+        private bool _started;
         private GetGameplayTimeDelegate _getGameplayTime;
         private readonly HashSet<string> _metadataKeys;
 
@@ -31,7 +40,7 @@ namespace Elympics.Core
 
         private readonly StringBuilder _sb = new();
 
-        internal ElympicsScore(int playerCount)
+        internal ElympicsScore(int playerCount, GetGameplayTimeDelegate getGameplayTime)
         {
             _playerCount = playerCount;
             _score = new float[playerCount];
@@ -41,41 +50,75 @@ namespace Elympics.Core
             _gameplayTime = new TimeSpan[playerCount];
             _changed = new bool[playerCount];
             _startingScoreUtcTime = new DateTime?[playerCount];
-            _getGameplayTime = GetGameplayTimeDefault;
+            _getGameplayTime = getGameplayTime;
             _metadataKeys = new HashSet<string>();
         }
 
         /// <summary>
-        /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score.
+        /// Enables the score tracking mechanism by providing a function for calculating the gameplay time of each score
+        /// and the metadata keys with their initial values.
         /// </summary>
-        /// <remarks>Each score update must be registered manually using the <see cref="this[int]"/> setter.</remarks>
+        /// <remarks>
+        /// Each score update must be registered manually using the <see cref="this[int]"/> setter.
+        /// If it hasn't been called by the game start, it's called with defaults then. A later call replaces those defaults once.
+        /// Every player starts with the initial values.
+        /// Metadata key order isn't kept: the server writes the keys sorted alphabetically.
+        /// Key names aren't restricted, but snake_case (e.g. <c>kills_count</c>) is recommended.
+        /// Metadata values can only be JSON primitives: a number, string, boolean or <see cref="JsonValue.Null"/>.
+        /// </remarks>
         /// <param name="getGameplayTime">
         /// Function for calculating the gameplay time of each score.
         /// The gameplay time should start with the beginning of a game or match and then be steadily increased,
         /// possibly except for times when a player was disconnected.
         /// </param>
-        /// <param name="metadataKeys">
-        /// The list of supported metadata keys. Assigning values to keys outside the list
-        /// will result in <see cref="ArgumentOutOfRangeException"/>.
+        /// <param name="initialMetadata">
+        /// The supported metadata keys with their initial values.
+        /// Assigning values to keys outside the list will result in <see cref="ArgumentOutOfRangeException"/>.
         /// </param>
-        /// <exception cref="InvalidOperationException">When <see cref="Enable"/> has been called before.</exception>
+        /// <exception cref="InvalidOperationException">When Enable has been called before.</exception>
+        /// <exception cref="ArgumentException">When a key is null or repeated, or an initial value is a non-finite number.</exception>
         [PublicAPI]
-        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, IEnumerable<string>? metadataKeys = null)
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime = null, params (string Key, JsonValue Initial)[] initialMetadata)
         {
-            if (IsEnabled)
+            if (initialMetadata is null)
+                throw new ArgumentNullException(nameof(initialMetadata));
+            EnableWithInitialMetadata(getGameplayTime, initialMetadata.Select(x => new KeyValuePair<string, JsonValue>(x.Key, x.Initial)));
+        }
+
+        /// <inheritdoc cref="Enable(GetGameplayTimeDelegate?, ValueTuple{string, JsonValue}[])"/>
+        [PublicAPI]
+        public void Enable(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata) =>
+            EnableWithInitialMetadata(getGameplayTime, initialMetadata);
+
+        private void EnableWithInitialMetadata(GetGameplayTimeDelegate? getGameplayTime, IEnumerable<KeyValuePair<string, JsonValue>> initialMetadata)
+        {
+            if (initialMetadata is null)
+                throw new ArgumentNullException(nameof(initialMetadata));
+            var initial = initialMetadata.ToList();
+            var seen = new HashSet<string>();
+            foreach (var (key, value) in initial)
+            {
+                if (key is null)
+                    throw new ArgumentException("Metadata key cannot be null", nameof(initialMetadata));
+                if (!seen.Add(key))
+                    throw new ArgumentException($"Duplicate metadata key '{key}'", nameof(initialMetadata));
+                ValidateMetadataValue(key, value, nameof(initialMetadata));
+            }
+            if (_enabledMode == EnabledMode.UserEnabled)
                 throw new InvalidOperationException("Already enabled");
             if (getGameplayTime != null)
                 _getGameplayTime = getGameplayTime;
-            if (metadataKeys is not null)
-                _metadataKeys.UnionWith(metadataKeys);
+            _metadataKeys.Clear();
+            foreach (var (key, _) in initial)
+                _ = _metadataKeys.Add(key);
             foreach (var metadata in _metadata)
             {
                 metadata.Clear();
-                _ = metadata.EnsureCapacity(_metadataKeys.Count);
-                foreach (var key in _metadataKeys)
-                    metadata.Add(key, default);
+                _ = metadata.EnsureCapacity(initial.Count);
+                foreach (var (key, value) in initial)
+                    metadata.Add(key, value);
             }
-            IsEnabled = true;
+            _enabledMode = EnabledMode.UserEnabled;
         }
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
@@ -87,12 +130,12 @@ namespace Elympics.Core
         [PublicAPI] public DateTime GetCurrentScoreUtcTime(int playerIndex) => _utcTime[playerIndex];
 
         /// <param name="playerIndex">0-based index of a player for whom the time is retrieved.</param>
-        /// <returns>Gameplay time (see <see cref="Enable"/>) of the first score registered for a player.</returns>
+        /// <returns>Gameplay time (see <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/>) of the first score registered for a player.</returns>
         [PublicAPI] public TimeSpan GetCurrentScoreGameplayTime(int playerIndex) => _gameplayTime[playerIndex];
 
         /// <summary>
         /// A helper class for accessing metadata.
-        /// Ensures no key outside the ones defined in <see cref="Enable"/> is used.
+        /// Ensures no key outside the ones defined in <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> is used.
         /// </summary>
         public class MetadataWrapper
         {
@@ -183,6 +226,8 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
+            if (!float.IsFinite(score))
+                throw new ArgumentOutOfRangeException(nameof(score), score, "Score must be a finite number");
             _score[playerIndex] = score;
             _changed[playerIndex] = true;
         }
@@ -199,6 +244,15 @@ namespace Elympics.Core
                 : throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
         }
 
+        private static void ValidateMetadataValue(string key, JsonValue value, string paramName)
+        {
+            if (value.Kind == JsonValueKind.Number && !double.IsFinite(value.NumberValue))
+                throw new ArgumentException($"Value of metadata key '{key}' must be a finite number", paramName);
+        }
+
+        /// <remarks>Only JSON primitives are supported: a number (finite), string, boolean or <see cref="JsonValue.Null"/>.</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">When the key was not declared in Enable.</exception>
+        /// <exception cref="ArgumentException">When the value is a non-finite number.</exception>
         [PublicAPI]
         public void SetMetadata(int playerIndex, string key, JsonValue value)
         {
@@ -206,6 +260,7 @@ namespace Elympics.Core
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
             if (!_metadataKeys.Contains(key))
                 throw new ArgumentOutOfRangeException(nameof(key), key, UnknownKeyMessage);
+            ValidateMetadataValue(key, value, nameof(value));
             _metadata[playerIndex][key] = value;
             _changed[playerIndex] = true;
         }
@@ -215,9 +270,10 @@ namespace Elympics.Core
         /// The first call to the setter saves starting score time which can be accessed using <see cref="GetStartingScoreUtcTime"/>.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable"/> must be called before getting/setting any score values.
+        /// <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> must be called before getting/setting any score values.
         /// </remarks>
         /// <param name="playerIndex">0-based index of a player for whom the score is accessed.</param>
+        /// <exception cref="ArgumentOutOfRangeException">When the assigned score is a non-finite number.</exception>
         [PublicAPI]
         public ScoreWithMetadata this[int playerIndex]
         {
@@ -232,11 +288,25 @@ namespace Elympics.Core
             }
         }
 
-        private TimeSpan GetGameplayTimeDefault(int playerIndex, DateTime currentTime)
+        /// <summary>Enables the score if needed and submits all scores at the game start time.</summary>
+        internal void Start(DateTime gameStartUtc)
         {
-            if (!_startingScoreUtcTime[playerIndex].HasValue)
-                throw new InvalidOperationException($"The score of player {playerIndex} has not been initialized yet");
-            return currentTime - _startingScoreUtcTime[playerIndex]!.Value;
+            if (_started)
+                return;
+            _started = true;
+            if (!IsEnabled)
+            {
+                Enable();
+                _enabledMode = EnabledMode.AutoEnabled;
+            }
+            SubmitAt(gameStartUtc, true);
+        }
+
+        /// <param name="forceSend">Send all players, e.g. for the final scores before the game ends.</param>
+        internal void SubmitIfEnabled(bool forceSend = false)
+        {
+            if (IsEnabled)
+                Submit(forceSend);
         }
 
         /// <summary>
@@ -244,8 +314,9 @@ namespace Elympics.Core
         /// By default, only sends data for a player if their score or metadata changed since last submission.
         /// </summary>
         /// <remarks>
-        /// <see cref="Enable"/> must be called first.
+        /// <see cref="Enable(GetGameplayTimeDelegate, ValueTuple{string, JsonValue}[])"/> must be called first.
         /// Automatic sending is done at the end of each tick.
+        /// Before the game start (see <see cref="IElympics.IsGameStarted"/>), nothing is sent. The scores of all players are sent at the start and before the game ends.
         /// </remarks>
         /// <param name="forceSend">Force sending the data for all players even if there were no changes.</param>
         [PublicAPI]
@@ -253,7 +324,13 @@ namespace Elympics.Core
         {
             if (!IsEnabled)
                 throw new InvalidOperationException($"{nameof(ElympicsScore)} has not been enabled. Use the {nameof(Enable)} method.");
-            var utcTime = DateTime.UtcNow;
+            if (!_started)
+                return;
+            SubmitAt(DateTime.UtcNow, forceSend);
+        }
+
+        private void SubmitAt(DateTime utcTime, bool forceSend)
+        {
             for (var i = 0; i < _playerCount; i++)
             {
                 if (!_changed[i] && !forceSend)

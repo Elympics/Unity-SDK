@@ -124,7 +124,11 @@ namespace Elympics
                 ExecuteNotBeforeTick = scheduledTick,
             };
             if (ShouldRpcBeCapturedToInvoke(properties))
+            {
+                if (ElympicsBase.IsLocalMode && properties.Direction == ElympicsRpcDirection.PlayerToServer && ElympicsBase.ShouldIgnorePlayerRpc(rpcMessage))
+                    return;
                 ElympicsBase.QueueRpcMessageFromServerToInvoke(rpcMessage);
+            }
             else
                 ElympicsBase.QueueRpcMessageToSend(rpcMessage, properties.Reliable);
 
@@ -510,6 +514,19 @@ namespace Elympics
         {
             foreach (var handler in _componentsContainer.ClientHandlersGuid)
                 handler.OnMatchEnded(matchId);
+        }
+
+        internal void OnGameStarted(long startTick)
+        {
+            foreach (var handler in _componentsContainer.GameStartHandlers)
+                try
+                {
+                    handler.OnGameStarted(startTick);
+                }
+                catch (Exception e)
+                {
+                    ElympicsLogger.LogException(new ElympicsException($"{handler.GetType().Name}.{nameof(IGameStartHandler.OnGameStarted)} failed", e));
+                }
         }
 
         #endregion

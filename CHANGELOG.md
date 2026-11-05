@@ -1,3 +1,37 @@
+## [0.30.0](https://github.com/Elympics/Unity-SDK/compare/v0.29.2...v0.30.0) (2026-11-05)
+
+
+### Bug Fixes 🪲
+
+* Compute WebRtcOfferAnnounceDelayMs from the announce delay ([7eac43a](https://github.com/Elympics/Unity-SDK/commit/7eac43ab92387a37d62148b483450d522c3edf7a))
+* Enable Run In Background for half-remote clients too ([375d77b](https://github.com/Elympics/Unity-SDK/commit/375d77b50453466b14e9e5c28e7ceaea28dedc77))
+* Retry creating the half-remote WebRTC offer and use the configured timeouts ([fade1e4](https://github.com/Elympics/Unity-SDK/commit/fade1e4532932fc222dc054190756331ac76ed0a))
+* Round score gameplay time to nearest millisecond instead of truncating ([98a0125](https://github.com/Elympics/Unity-SDK/commit/98a0125c2591c4ca7cdcc9dbd0647a6cc5506917))
+
+
+### Documentation
+
+* Document the match start and the migration from DefaultServerHandler ([8154ebc](https://github.com/Elympics/Unity-SDK/commit/8154ebccabf2f8a089625fadd83c808c6c09f0b1))
+
+
+### Features
+
+* Replace ElympicsScore.Enable(IEnumerable<string>) with overloads taking metadata keys with initial values ([56f5dd4](https://github.com/Elympics/Unity-SDK/commit/56f5dd4e16193275250be66f5987213a09b3c145), [5522b94](https://github.com/Elympics/Unity-SDK/commit/5522b944ef2b6cc0157c9059bc343ce2f9dee434), [ba06b1c](https://github.com/Elympics/Unity-SDK/commit/ba06b1c3a4bfc41d4b9c683d6f89a5d24444aabd))
+* Start matches only after all players mark ready ([c8c5b76](https://github.com/Elympics/Unity-SDK/commit/c8c5b760387b2e690a7c53aedcfa65f6c58328f7))
+* Add the no-player and rejoin timeouts and IElympics.GameStartUtc ([c27c1d9](https://github.com/Elympics/Unity-SDK/commit/c27c1d9415b5f9bea220624bae1ec4da019a85e5))
+* Ignore player RPCs sent before the match start ([e79275a](https://github.com/Elympics/Unity-SDK/commit/e79275a100a8fcc80020038e9b77894b6d28634e))
+* Show the ready state on the MatchEvents End Game button ([7093ef5](https://github.com/Elympics/Unity-SDK/commit/7093ef56891114f7be6b46ccfcfe9bc1a9775e7f))
+* Validate score metadata values and submit final scores before game end ([51e8619](https://github.com/Elympics/Unity-SDK/commit/51e86199b72a1688982c56e772bc83bfc82bf0e1))
+
+
+### BREAKING CHANGES :warning:
+
+* Clients must call IElympics.MarkReady(), or every match times out with a null result. DefaultServerHandler is removed: its start timeout is replaced by readyTimeoutSeconds and its termination option by terminateWhenPlayersLeave (default All) in ElympicsGameConfig. Classes deriving from DefaultServerHandler must implement IServerHandlerGuid directly. Score submits are held until the match starts.
+* terminateWhenPlayersLeave defaults to All, while DefaultServerHandler ended the match when any player left. Set it in every game config. A copied handler that ends the match itself conflicts with it: remove that logic and report points through ElympicsScore, which the SDK sends when players leave.
+* ElympicsScore.Enable(metadataKeys) and Enable(getGameplayTime, metadataKeys) are removed: pass the keys with initial values instead, e.g. Enable(getGameplayTime, ("kills_count", 0)). Enable(getGameplayTime, null) is now ambiguous (CS0121): call Enable(getGameplayTime). Non-finite scores and metadata numbers now throw.
+
+
+
 ## [0.29.2](https://github.com/Elympics/Unity-SDK/compare/v0.29.1...v0.29.2) (2026-11-02)
 
 

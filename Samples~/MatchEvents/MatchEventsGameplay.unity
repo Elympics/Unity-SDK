@@ -674,8 +674,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65960a673efd1834e87bc177a8b3c8d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  endGameButtonText: {fileID: 970553257}
 --- !u!114 &620952419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1497,7 +1498,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: End game
+  m_Text: Ready
 --- !u!222 &970553258
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -19,9 +19,7 @@ namespace Elympics
                 ? NetworkIdConstants.PhysicsSimulatorNetworkId
                 : behaviour.TryGetComponent<ServerLogBehaviour>(out _)
                     ? NetworkIdConstants.ServerLogNetworkId
-                    : behaviour.GetComponent<DefaultServerHandler>()?.GetType() == typeof(DefaultServerHandler)
-                        ? NetworkIdConstants.DefaultServerHandlerNetworkId
-                        : null;
+                    : null;
 
         internal static bool IsPredefinedBehaviour(ElympicsBehaviour behaviour) => TryGetPredefinedIdFor(behaviour) is not null;
 

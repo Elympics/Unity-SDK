@@ -16,6 +16,7 @@ namespace Elympics
         public IServerHandlerGuid[] ServerHandlersGuid { get; }
         public IBotHandlerGuid[] BotHandlersGuid { get; }
         public IRenderer[] Renderers { get; }
+        public IGameStartHandler[] GameStartHandlers { get; }
 
         public ElympicsComponentsContainer(ElympicsBehaviour elympicsBehaviour)
         {
@@ -46,6 +47,7 @@ namespace Elympics
             ServerHandlersGuid = elympicsBehaviour.GetComponents<IServerHandlerGuid>();
             BotHandlersGuid = elympicsBehaviour.GetComponents<IBotHandlerGuid>();
             Renderers = elympicsBehaviour.GetComponents<IRenderer>();
+            GameStartHandlers = elympicsBehaviour.GetComponents<IGameStartHandler>();
         }
     }
 }

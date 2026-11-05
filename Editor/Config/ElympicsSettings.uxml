@@ -3,7 +3,7 @@
     <ui:ScrollView mode="Vertical" style="flex-grow: 1;">
         <ui:VisualElement style="margin-left: 10px; margin-top: 10px;">
             <ui:Label text="Scripting defines" name="scripting-defines-label" style="-unity-font-style: bold; margin-bottom: 2px;" />
-            <ui:VisualElement name="scripting-defines-container" style="padding-left: 10px;" />
+            <ui:VisualElement name="scripting-defines-container" />
             <ui:VisualElement class="separator" style="height: 9px;" />
         </ui:VisualElement>
     </ui:ScrollView>

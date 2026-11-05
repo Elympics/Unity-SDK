@@ -3,18 +3,10 @@
 
 ### Bug Fixes 🪲
 
-* Call the remaining match start handlers when one throws ([712ac9a](https://github.com/Elympics/Unity-SDK/commit/712ac9a286a17d1595a0dc561c925ff5fbe5ac99))
 * Compute WebRtcOfferAnnounceDelayMs from the announce delay ([7eac43a](https://github.com/Elympics/Unity-SDK/commit/7eac43ab92387a37d62148b483450d522c3edf7a))
 * Enable Run In Background for half-remote clients too ([375d77b](https://github.com/Elympics/Unity-SDK/commit/375d77b50453466b14e9e5c28e7ceaea28dedc77))
-* Ignore player RPCs sent from outside input gathering before the game start in local mode ([6cc773f](https://github.com/Elympics/Unity-SDK/commit/6cc773fbfddfa924de56583da51af9fb6961f4a6))
-* Keep a local-mode MarkReady called before server init ([90f56ba](https://github.com/Elympics/Unity-SDK/commit/90f56bab7d2fad13a698ac800d116a9fcedc8c93))
-* Notify match start after predicted input, outside the ElympicsUpdate context ([886f322](https://github.com/Elympics/Unity-SDK/commit/886f322d5780ee186855cba4e9876373f26772c9))
-* Read the start tick from replayed snapshots ([7cea980](https://github.com/Elympics/Unity-SDK/commit/7cea980c209b36003796d31e4e83ebf092e49580))
-* Report the effective match start delay in MatchStartDelaySeconds ([04b3f3f](https://github.com/Elympics/Unity-SDK/commit/04b3f3f2306034a865260a83f3ec1b0a16737493))
-* Resend the ready message on wall-clock time ([02c7d22](https://github.com/Elympics/Unity-SDK/commit/02c7d22f2c9655373d77e4110eccd176153e47a2))
 * Retry creating the half-remote WebRTC offer and use the configured timeouts ([fade1e4](https://github.com/Elympics/Unity-SDK/commit/fade1e4532932fc222dc054190756331ac76ed0a))
 * Round score gameplay time to nearest millisecond instead of truncating ([98a0125](https://github.com/Elympics/Unity-SDK/commit/98a0125c2591c4ca7cdcc9dbd0647a6cc5506917))
-* Send each player's final score once in the game-ending tick ([f9acc51](https://github.com/Elympics/Unity-SDK/commit/f9acc519a05bf4bbba1b24da386e3e306b0cefc5))
 
 
 ### Documentation

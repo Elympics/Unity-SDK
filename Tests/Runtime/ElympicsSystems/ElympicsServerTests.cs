@@ -75,6 +75,22 @@ namespace Elympics.Tests
         }
 
         [Test]
+        public void FinalScoresAreSubmittedOncePerPlayerInTheGameEndingTick()
+        {
+            for (var i = 0; i < 100 && !_server.IsGameStarted; i++)
+                _server.RunTick();
+            _server.RunTick();
+            Assert.That(_submittedPlayers, Is.EqualTo(new[] { 0, 1 }));
+            _submittedPlayers.Clear();
+
+            _server.Score[1] = 5f;
+            _server.EndGame();
+            _server.RunTick();
+
+            Assert.That(_submittedPlayers, Is.EqualTo(new[] { 0, 1 }));
+        }
+
+        [Test]
         public void GameStartIsScheduledOnlyOnceAllHumanPlayersAreReady()
         {
             SetHumanPlayers(0, 1);

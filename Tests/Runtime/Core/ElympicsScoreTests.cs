@@ -26,10 +26,22 @@ namespace Elympics.Tests.Runtime.Core
             score.Start(gameStartUtc);
         }
 
-        private ElympicsScore CreateStartedScore(int playerCount, IEnumerable<string> metadataKeys = null)
+        private string CaptureFirstMetadata(ElympicsScore score, int playerIndex = 0)
+        {
+            string metadata = null;
+            score.PlayerScoreUpdated += (p, _, m, _, _) =>
+            {
+                if (p == playerIndex && metadata == null)
+                    metadata = m;
+            };
+            StartScore(score, DateTime.UtcNow);
+            return metadata;
+        }
+
+        private ElympicsScore CreateStartedScore(int playerCount, params (string Key, JsonValue Initial)[] initialMetadata)
         {
             var score = CreateScore(playerCount);
-            score.Enable(metadataKeys: metadataKeys);
+            score.Enable(null, initialMetadata);
             StartScore(score, DateTime.UtcNow);
             return score;
         }
@@ -95,7 +107,7 @@ namespace Elympics.Tests.Runtime.Core
         public void RetrievingExistingMetadataKeyShouldReturnLastAssignedValue()
         {
             var score = CreateScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
+            score.Enable(null, ("example-key", "initial"));
 
             score[0].Metadata["example-key"] = "example-value";
             score[0].Metadata["example-key"] = "example-value2";
@@ -104,19 +116,19 @@ namespace Elympics.Tests.Runtime.Core
         }
 
         [Test]
-        public void RetrievingExistingMetadataKeyShouldReturnNullIfThereIsNoValueAssigned()
+        public void RetrievingExistingMetadataKeyShouldReturnInitialValueIfThereIsNoValueAssigned()
         {
             var score = CreateScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
+            score.Enable(null, ("example-key", "initial"));
 
-            Assert.That(score[0].Metadata["example-key"], Is.EqualTo(JsonValue.Null));
+            Assert.That(score[0].Metadata["example-key"], Is.EqualTo((JsonValue)"initial"));
         }
 
         [Test]
         public void RetrievingNonExistingMetadataKeyShouldResultInException()
         {
             var score = CreateScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
+            score.Enable(null, ("example-key", "initial"));
 
             score[0].Metadata["example-key"] = "example-value";
 
@@ -127,7 +139,7 @@ namespace Elympics.Tests.Runtime.Core
         public void AssigningToNonExistingMetadataKeyShouldResultInException()
         {
             var score = CreateScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
+            score.Enable(null, ("example-key", "initial"));
 
             _ = Assert.Throws<ArgumentOutOfRangeException>(() => score[0].Metadata["unknown-key"] = "example-value");
         }
@@ -136,7 +148,7 @@ namespace Elympics.Tests.Runtime.Core
         public void SettingScoreOrMetadataShouldNotCauseEventToBeEmitted()
         {
             var score = CreateScore(2);
-            score.Enable(metadataKeys: new[] { "example-key" });
+            score.Enable(null, ("example-key", "initial"));
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -165,7 +177,7 @@ namespace Elympics.Tests.Runtime.Core
         [Test]
         public void SubmittingChangedMetadataShouldCauseEventToBeEmitted()
         {
-            var score = CreateStartedScore(2, metadataKeys: new[] { "example-key" });
+            var score = CreateStartedScore(2, ("example-key", "initial"));
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score.PlayerScoreUpdated += (p, s, m, _, _) => updatedScore = (p, s, m);
 
@@ -181,7 +193,7 @@ namespace Elympics.Tests.Runtime.Core
         [Test]
         public void SubmittingWithoutChangesShouldNotCauseEventToBeEmitted()
         {
-            var score = CreateStartedScore(2, metadataKeys: new[] { "example-key" });
+            var score = CreateStartedScore(2, ("example-key", "initial"));
             (int PlayerIndex, float Score, string Metadata)? updatedScore = null;
             score[1] = 5.0f;
             score[1].Metadata["example-key"] = "example-value";
@@ -345,6 +357,218 @@ namespace Elympics.Tests.Runtime.Core
             score.Submit();
 
             Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(score.GetCurrentScoreUtcTime(0) - start));
+        }
+
+        private static readonly string[] ExpectedInitialProperties = { "\"pegsBroken\":0", "\"bonusPegsBroken\":0", "\"name\":\"x\"", "\"alive\":true" };
+
+        /// <summary>Splits a flat JSON object into its properties; key order isn't kept by the score.</summary>
+        private static string[] SplitProperties(string json) =>
+            json == "{}" ? Array.Empty<string>() : json[1..^1].Split(',');
+
+        [Test]
+        public void EnablingWithParamsInitialValuesShouldPutThemInFirstSubmission()
+        {
+            var score = CreateScore(2);
+            score.Enable(null,
+                ("pegsBroken", 0),
+                ("bonusPegsBroken", 0),
+                ("name", "x"),
+                ("alive", true));
+
+            Assert.That(SplitProperties(CaptureFirstMetadata(score)), Is.EquivalentTo(ExpectedInitialProperties));
+        }
+
+        [Test]
+        public void EnablingWithDictionaryInitialValuesShouldPutThemInFirstSubmission()
+        {
+            var score = CreateScore(2);
+            score.Enable(null, new Dictionary<string, JsonValue>
+            {
+                ["pegsBroken"] = 0, ["bonusPegsBroken"] = 0, ["name"] = "x", ["alive"] = true,
+            });
+
+            Assert.That(SplitProperties(CaptureFirstMetadata(score, 1)), Is.EquivalentTo(ExpectedInitialProperties));
+        }
+
+        [Test]
+        public void EnablingWithGameplayTimeAndInitialValuesShouldUseBoth()
+        {
+            var score = CreateScore(1);
+            var expectedGameplayTime = TimeSpan.FromSeconds(10);
+            score.Enable((_, _) => expectedGameplayTime, ("a", 1));
+            StartScore(score, DateTime.UtcNow);
+
+            Assert.That(score.GetCurrentScoreGameplayTime(0), Is.EqualTo(expectedGameplayTime));
+            Assert.That(score[0].Metadata["a"], Is.EqualTo((JsonValue)1));
+        }
+
+        [Test]
+        public void EnablingWithoutArgumentsOrWithOnlyGameplayTimeShouldProduceEmptyMetadata()
+        {
+            var first = CreateScore(1);
+            first.Enable();
+            var second = CreateScore(1);
+            second.Enable((_, _) => TimeSpan.Zero);
+
+            Assert.That(CaptureFirstMetadata(first), Is.EqualTo("{}"));
+            Assert.That(CaptureFirstMetadata(second), Is.EqualTo("{}"));
+        }
+
+        [Test]
+        public void InitialValuesShouldBeKeptAfterChanges()
+        {
+            var score = CreateStartedScore(1, ("z", 0), ("a", 0), ("m", 0));
+            string metadata = null;
+            score.PlayerScoreUpdated += (_, _, m, _, _) => metadata = m;
+
+            score[0].Metadata["m"] = 5;
+            score.Submit();
+
+            Assert.That(SplitProperties(metadata), Is.EquivalentTo(new[] { "\"z\":0", "\"a\":0", "\"m\":5" }));
+        }
+
+        [Test]
+        public void InitialValuesShouldBeIndependentPerPlayer()
+        {
+            var score = CreateScore(2);
+            score.Enable(null, ("a", 1));
+
+            score[0].Metadata["a"] = 7;
+
+            Assert.That(score[1].Metadata["a"], Is.EqualTo((JsonValue)1));
+        }
+
+        [Test]
+        public void EnablingWithNullInitialValueShouldBeAccepted()
+        {
+            var score = CreateScore(1);
+
+            score.Enable(null, ("a", JsonValue.Null));
+
+            Assert.That(score.IsEnabled, Is.True);
+            Assert.That(score[0].Metadata["a"], Is.EqualTo(JsonValue.Null));
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":null}"));
+        }
+
+        [Test]
+        public void EnablingWithNonFiniteInitialValueShouldThrow()
+        {
+            var score = CreateScore(1);
+
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, ("a", double.NaN)));
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new Dictionary<string, JsonValue> { ["a"] = double.PositiveInfinity }));
+            Assert.That(score.IsEnabled, Is.False);
+        }
+
+        [Test]
+        public void SettingMetadataToNullShouldBeAccepted()
+        {
+            var score = CreateStartedScore(1, ("a", 1));
+
+            score[0].Metadata["a"] = JsonValue.Null;
+
+            Assert.That(score[0].Metadata["a"], Is.EqualTo(JsonValue.Null));
+        }
+
+        [Test]
+        [TestCase(double.NaN)]
+        [TestCase(double.PositiveInfinity)]
+        [TestCase(double.NegativeInfinity)]
+        public void SettingNonFiniteMetadataShouldThrowAndKeepValue(double value)
+        {
+            var score = CreateStartedScore(1, ("a", 1));
+
+            _ = Assert.Throws<ArgumentException>(() => score[0].Metadata["a"] = value);
+
+            Assert.That(score[0].Metadata["a"], Is.EqualTo((JsonValue)1));
+        }
+
+        [Test]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        [TestCase(float.NegativeInfinity)]
+        public void SettingNonFiniteScoreShouldThrow(float value)
+        {
+            var score = CreateStartedScore(1);
+
+            _ = Assert.Throws<ArgumentOutOfRangeException>(() => score.SetScore(0, value));
+        }
+
+        [Test]
+        public void SubmittingFinalScoresShouldSendAllPlayersEvenWithoutChanges()
+        {
+            var score = CreateStartedScore(2);
+            var updated = new List<int>();
+            score.PlayerScoreUpdated += (p, _, _, _, _) => updated.Add(p);
+
+            score.SubmitIfEnabled(true);
+
+            Assert.That(updated, Is.EqualTo(new[] { 0, 1 }));
+        }
+
+        [Test]
+        public void SubmittingFinalScoresShouldDoNothingWhenNotEnabledOrNotStarted()
+        {
+            var notEnabled = CreateScore(1);
+            var notStarted = CreateScore(1);
+            notStarted.Enable();
+            var count = 0;
+            notEnabled.PlayerScoreUpdated += (_, _, _, _, _) => count++;
+            notStarted.PlayerScoreUpdated += (_, _, _, _, _) => count++;
+
+            notEnabled.SubmitIfEnabled(true);
+            notStarted.SubmitIfEnabled(true);
+
+            Assert.That(count, Is.Zero);
+        }
+
+        [Test]
+        public void EnablingWithDuplicateKeyShouldThrow()
+        {
+            var score = CreateScore(1);
+
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, ("a", 1), ("a", 2)));
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, new List<KeyValuePair<string, JsonValue>> { new("a", 1), new("a", 2) }));
+            Assert.That(score.IsEnabled, Is.False);
+        }
+
+        [Test]
+        public void EnablingWithNullInitialValuesCollectionShouldThrow()
+        {
+            var score = CreateScore(1);
+
+            _ = Assert.Throws<ArgumentNullException>(() => score.Enable(null, ((string Key, JsonValue Initial)[])null));
+            _ = Assert.Throws<ArgumentNullException>(() => score.Enable(null, (IEnumerable<KeyValuePair<string, JsonValue>>)null));
+        }
+
+        [Test]
+        public void EnablingWithInitialValuesAfterAutomaticEnableShouldReplaceThem()
+        {
+            var score = CreateScore(1);
+            StartScore(score, DateTime.UtcNow);
+
+            score.Enable(null, ("a", 3));
+
+            Assert.That(score[0].Metadata["a"], Is.EqualTo((JsonValue)3));
+        }
+
+        [Test]
+        public void EnablingWithNullKeyShouldThrowAndStayEnableable()
+        {
+            var score = CreateScore(1);
+            _ = Assert.Throws<ArgumentException>(() => score.Enable(null, ("a", 1), (null, 1)));
+
+            score.Enable(null, ("a", 1));
+            Assert.That(CaptureFirstMetadata(score), Is.EqualTo("{\"a\":1}"));
+        }
+
+        [Test]
+        public void IntegralNumbersInMetadataShouldBeSerializedWithoutTrailingZeroTrimming()
+        {
+            var score = CreateScore(1);
+            score.Enable(null, ("zero", 0), ("ten", 10), ("hundred", 100.0));
+
+            Assert.That(SplitProperties(CaptureFirstMetadata(score)), Is.EquivalentTo(new[] { "\"zero\":0", "\"ten\":10", "\"hundred\":100" }));
         }
     }
 }

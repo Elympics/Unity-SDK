@@ -1,3 +1,60 @@
+## [0.30.0](https://github.com/Elympics/Unity-SDK/compare/v0.29.2...v0.30.0) (2026-11-05)
+
+
+### Bug Fixes 🪲
+
+* Call the remaining match start handlers when one throws ([712ac9a](https://github.com/Elympics/Unity-SDK/commit/712ac9a286a17d1595a0dc561c925ff5fbe5ac99))
+* Compute WebRtcOfferAnnounceDelayMs from the announce delay ([7eac43a](https://github.com/Elympics/Unity-SDK/commit/7eac43ab92387a37d62148b483450d522c3edf7a))
+* Enable Run In Background for half-remote clients too ([375d77b](https://github.com/Elympics/Unity-SDK/commit/375d77b50453466b14e9e5c28e7ceaea28dedc77))
+* Ignore player RPCs sent from outside input gathering before the game start in local mode ([6cc773f](https://github.com/Elympics/Unity-SDK/commit/6cc773fbfddfa924de56583da51af9fb6961f4a6))
+* Keep a local-mode MarkReady called before server init ([90f56ba](https://github.com/Elympics/Unity-SDK/commit/90f56bab7d2fad13a698ac800d116a9fcedc8c93))
+* Notify match start after predicted input, outside the ElympicsUpdate context ([886f322](https://github.com/Elympics/Unity-SDK/commit/886f322d5780ee186855cba4e9876373f26772c9))
+* Read the start tick from replayed snapshots ([7cea980](https://github.com/Elympics/Unity-SDK/commit/7cea980c209b36003796d31e4e83ebf092e49580))
+* Reject null keys in obsolete Enable before changing state ([d588f69](https://github.com/Elympics/Unity-SDK/commit/d588f6930c2d1f8547bbf867ebe3e128f9a2dc98))
+* Report the effective match start delay in MatchStartDelaySeconds ([04b3f3f](https://github.com/Elympics/Unity-SDK/commit/04b3f3f2306034a865260a83f3ec1b0a16737493))
+* Resend the ready message on wall-clock time ([02c7d22](https://github.com/Elympics/Unity-SDK/commit/02c7d22f2c9655373d77e4110eccd176153e47a2))
+* Retry creating the half-remote WebRTC offer and use the configured timeouts ([fade1e4](https://github.com/Elympics/Unity-SDK/commit/fade1e4532932fc222dc054190756331ac76ed0a))
+* Round score gameplay time to nearest millisecond instead of truncating ([98a0125](https://github.com/Elympics/Unity-SDK/commit/98a0125c2591c4ca7cdcc9dbd0647a6cc5506917))
+* Send each player's final score once in the game-ending tick ([f9acc51](https://github.com/Elympics/Unity-SDK/commit/f9acc519a05bf4bbba1b24da386e3e306b0cefc5))
+
+
+### Documentation
+
+* Document the match start and the migration from DefaultServerHandler ([8154ebc](https://github.com/Elympics/Unity-SDK/commit/8154ebccabf2f8a089625fadd83c808c6c09f0b1))
+
+
+* feat!: Remove obsolete ElympicsScore.Enable(IEnumerable<string>) overloads ([5522b94](https://github.com/Elympics/Unity-SDK/commit/5522b944ef2b6cc0157c9059bc343ce2f9dee434))
+* feat!: Start matches only after all players mark ready ([c8c5b76](https://github.com/Elympics/Unity-SDK/commit/c8c5b760387b2e690a7c53aedcfa65f6c58328f7))
+
+
+### Features
+
+* Add ElympicsScore.Enable overloads taking initial metadata values ([56f5dd4](https://github.com/Elympics/Unity-SDK/commit/56f5dd4e16193275250be66f5987213a09b3c145))
+* Add the no-player and rejoin timeouts and IElympics.GameStartUtc ([c27c1d9](https://github.com/Elympics/Unity-SDK/commit/c27c1d9415b5f9bea220624bae1ec4da019a85e5))
+* Ignore player RPCs sent before the match start ([e79275a](https://github.com/Elympics/Unity-SDK/commit/e79275a100a8fcc80020038e9b77894b6d28634e))
+* Keep Enable(metadataKeys: ...) calls compiling with an obsolete single-parameter overload ([3881bb5](https://github.com/Elympics/Unity-SDK/commit/3881bb53f68926c0c86cb477334f11541548c0f8))
+* Show the ready state on the MatchEvents End Game button ([7093ef5](https://github.com/Elympics/Unity-SDK/commit/7093ef56891114f7be6b46ccfcfe9bc1a9775e7f))
+* Take tuples in ElympicsScore.Enable params, drop the tuple IEnumerable overload ([ba06b1c](https://github.com/Elympics/Unity-SDK/commit/ba06b1c3a4bfc41d4b9c683d6f89a5d24444aabd))
+* Validate score metadata values and submit final scores before game end ([51e8619](https://github.com/Elympics/Unity-SDK/commit/51e86199b72a1688982c56e772bc83bfc82bf0e1))
+
+
+### BREAKING CHANGES :warning:
+
+* Enable(metadataKeys) and Enable(getGameplayTime, metadataKeys) are removed; pass the keys with initial values instead. Enable(getGameplayTime, null) is now ambiguous (CS0121); call Enable(getGameplayTime).
+* terminateWhenPlayersLeave defaults to All, while
+DefaultServerHandler ended the match when any player left. Set it in every
+game config. A copied handler that ends the match itself conflicts with it:
+remove that logic and report points through ElympicsScore, which the SDK
+sends when players leave.
+* clients must call IElympics.MarkReady(), or every match
+times out with a null result. DefaultServerHandler is removed: its start
+timeout is replaced by readyTimeoutSeconds and its termination option by
+terminateWhenPlayersLeave (default All) in ElympicsGameConfig. Classes
+deriving from DefaultServerHandler must implement IServerHandlerGuid
+directly. Score submits are held until the match starts.
+
+
+
 ## [0.29.2](https://github.com/Elympics/Unity-SDK/compare/v0.29.1...v0.29.2) (2026-11-02)
 
 

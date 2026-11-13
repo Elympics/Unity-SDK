@@ -51,7 +51,7 @@ namespace Elympics.Tests
         public void ProvidedIceServersAreUsedWithoutAskingTheGameServer()
         {
             // The base address is unreachable on purpose: the provided servers must make the request unnecessary.
-            var client = new HttpSignalingClient(new Uri("http://127.0.0.1:1/v2"), Guid.NewGuid(), null!, new[] { CreateTurnServer() });
+            var client = new HttpSignalingClient(new Uri("http://127.0.0.1:1/v2"), Guid.NewGuid(), default, new[] { CreateTurnServer() });
 
             var servers = client.FetchIceServersAsync(TimeSpan.FromSeconds(1)).GetAwaiter().GetResult();
 

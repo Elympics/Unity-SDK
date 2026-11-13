@@ -29,7 +29,7 @@ namespace Elympics
             {
                 var gsEndpoint = ElympicsConfig.Load().ElympicsGameServersEndpoint;
                 var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, data.ServerAddress, data.RegionName);
-                gameServerClient = new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint, data.MatchId, config));
+                gameServerClient = new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint, data.MatchId, config, data.IceServers));
             }
             var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, data.UserSecret);
             var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);

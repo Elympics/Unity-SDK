@@ -73,8 +73,8 @@ All launch data is immutable and validated at launch.
 |---|---|
 | `ServerAddress` | With WebRTC, the web signaling address (absolute, or relative to the game servers endpoint). With TCP/UDP, `ip:port` |
 | `UseTcpUdpInsteadOfWebRtc` | `null` means `ElympicsGameConfig.UseWeb` decides. TCP/UDP is `UnsupportedMode` on WebGL |
-| `MatchId`, `UserSecret` | From matchmaking. See [the two secrets](#userSecret) |
-| `JoinToken` | Optional signed join token for the game server (`joinToken` in host JSON). When set, it is sent instead of `UserSecret`. See [the two secrets](#userSecret) |
+| `MatchId`, `UserSecret` | From matchmaking. See [the "secrets"](#userSecret) |
+| `JoinToken` | Optional signed join token for the game server (`joinToken` in host JSON). When set, it is sent instead of `UserSecret`. See [the "secrets"](#userSecret) |
 | `UserId`, `MatchedPlayers` | The local player must be one of the players. There must be no duplicates and no more than `MaxPlayers` players. The order defines player indices |
 | `RegionName`, `GameEngineData`, `MatchmakerData` | Optional |
 
@@ -230,7 +230,7 @@ Requests carry no version, so a host that needs one checks it on `ready`.
 | `InternalError` | an unexpected exception |
 
 <a id="userSecret"></a>
-### The two "secrets"
+### The "secrets"
 
 `userSecret` in `OnlineLaunchData` is a **per-match credential for the game server**, handed out by
 matchmaking together with the match ID. It is unrelated to any account-level Elympics client secret or

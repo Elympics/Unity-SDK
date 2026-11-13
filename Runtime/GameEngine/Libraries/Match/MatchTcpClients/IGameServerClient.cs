@@ -25,7 +25,7 @@ namespace MatchTcpClients
         void Disconnect();
         /// <summary>Sends the join token when set, otherwise the user secret.</summary>
         void AuthenticateMatchUserSecretAsync(string? userSecret, string? joinToken = null);
-        /// <summary>The join token must have the spectator role. Game servers that need none ignore it.</summary>
+        /// <summary>The join token must have the spectator role. Only game servers without join token support ignore it; the others verify any token they get.</summary>
         void AuthenticateAsSpectatorAsync(string? joinToken = null);
         void JoinMatchAsync();
         void SendInGameDataReliable(byte[] data);

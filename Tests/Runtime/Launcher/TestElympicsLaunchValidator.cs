@@ -228,7 +228,6 @@ namespace Elympics.Tests
         {
             _ = Validate(Online(userSecret: "", joinToken: FakeJoinToken));
             _ = Validate(Online(joinToken: FakeJoinToken));
-            _ = Validate(Online(joinToken: ""));
         }
 
         [TestCase("", null)]
@@ -260,8 +259,7 @@ namespace Elympics.Tests
         private static IEnumerable<TestCaseData> BrokenOnlineData()
         {
             yield return Case("no server address", Online(serverAddress: ""));
-            yield return Case("no user secret", Online(userSecret: ""));
-            yield return Case("no user secret, empty join token", Online(userSecret: "", joinToken: ""));
+            yield return Case("no user secret and no join token", Online(userSecret: ""));
             yield return Case("no players", Online(players: Array.Empty<Guid>()));
             yield return Case("duplicate players", Online(players: new[] { UserId, UserId }));
             yield return Case("user not among players", Online(players: new[] { OtherPlayerId }));

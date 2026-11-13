@@ -314,7 +314,8 @@ const LibraryWebRtc = {
 
             this.setIceServers = (/** @type {RTCIceServer[]} */ iceServers) => {
                 this.rtcConfig.iceServers = iceServers;
-                logCallback('setIceServers', "Updating rtcConfig: " + JSON.stringify(this.rtcConfig));
+                // URLs only: the entries carry TURN credentials.
+                logCallback('setIceServers', "Updating ICE servers: " + JSON.stringify(iceServers.map(s => s.urls)));
                 this.pc.setConfiguration(this.rtcConfig);
             };
 

@@ -31,7 +31,7 @@ namespace Elympics
                 var webSignalingEndpoint = WebGameServerClient.GetSignalingServerBaseAddress(gsEndpoint, data.ServerAddress, data.RegionName);
                 gameServerClient = new WebGameServerClient(serializer, config, new HttpSignalingClient(webSignalingEndpoint, data.MatchId, config));
             }
-            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, data.UserSecret);
+            var matchConnectClient = new RemoteMatchConnectClient(gameServerClient, data.UserSecret, data.JoinToken);
             var matchClient = new RemoteMatchClient(gameServerClient, elympicsGameConfig);
             client.InitializeInternal(elympicsGameConfig,
                 matchConnectClient,

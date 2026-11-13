@@ -32,6 +32,7 @@ namespace Elympics
         private readonly IGameServerClient _gameServerClient;
 
         private readonly string _userSecret;
+        private readonly string _joinToken;
 
         private UniTaskCompletionSource _connectingTcs;
         private bool _connected;
@@ -42,19 +43,21 @@ namespace Elympics
 
         public RemoteMatchConnectClient(
             IGameServerClient gameServerClient,
-            string userSecret)
+            string userSecret,
+            string joinToken = null)
         {
             _gameServerClient = gameServerClient;
             _userSecret = userSecret;
+            _joinToken = joinToken;
             _gameServerClient.Disconnected += OnDisconnectedByServer;
             _gameServerClient.MatchEnded += OnMatchEnded;
         }
 
         public UniTask ConnectAndJoinAsPlayerAsync(CancellationToken ct)
         {
-            return !string.IsNullOrEmpty(_userSecret)
+            return !string.IsNullOrEmpty(_userSecret) || !string.IsNullOrEmpty(_joinToken)
                 ? ConnectAndJoinAsync(SetupCallbacksForJoiningAsPlayer, UnsetCallbacksForJoiningAsPlayer, ct)
-                : throw new ArgumentNullException(nameof(_userSecret));
+                : throw new ArgumentNullException(nameof(_userSecret), "A user secret or a join token is required.");
         }
 
         public UniTask ConnectAndJoinAsSpectatorAsync(CancellationToken ct) =>
@@ -148,7 +151,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.LogInfo("Connected and synchronized as player.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret);
+            _gameServerClient.AuthenticateMatchUserSecretAsync(_userSecret, _joinToken);
         }
 
         private void OnConnectedAndSynchronizedAsSpectator(TimeSynchronizationData timeSynchronizationData)
@@ -156,7 +159,7 @@ namespace Elympics
             var logger = _logger.WithMethodName();
             logger.LogInfo("Connected and synchronized as spectator.");
             ConnectedWithSynchronizationData?.Invoke(timeSynchronizationData);
-            _gameServerClient.AuthenticateAsSpectatorAsync();
+            _gameServerClient.AuthenticateAsSpectatorAsync(_joinToken);
         }
 
         private void OnAuthenticatedMatchUserSecret(UserMatchAuthenticatedMessage message)

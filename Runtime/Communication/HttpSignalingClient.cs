@@ -80,7 +80,7 @@ namespace Elympics
         {
             var hostAndPort = url.Split('?')[0];
             var portStart = hostAndPort.LastIndexOf(':');
-            return portStart > hostAndPort.IndexOf(':') && hostAndPort.Substring(portStart + 1) == "53";
+            return portStart > hostAndPort.IndexOf(':') && hostAndPort[(portStart + 1)..] == "53";
         }
 
         public async UniTask<SignalingResponse> PostOfferAsync(OfferWithCandidates offer, TimeSpan timeout, CancellationToken ct = default)

@@ -35,6 +35,11 @@ namespace Elympics
         public string? RegionName { get; }
         public IReadOnlyList<byte> GameEngineData { get; }
         public IReadOnlyList<float> MatchmakerData { get; }
+        /// <summary>
+        /// Per-match ICE (TURN/STUN) servers minted by the backend. Set from the launch JSON (<c>iceServers</c>) or by PlayPad.
+        /// When null or empty, the client asks the game server for them, as before.
+        /// </summary>
+        internal IReadOnlyList<IceServer>? IceServers { get; init; }
 
         public OnlineLaunchData(string serverAddress, bool? useTcpUdpInsteadOfWebRtc, Guid matchId, string userSecret, Guid userId,
             IEnumerable<Guid> matchedPlayers, string? regionName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null,

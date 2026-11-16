@@ -155,6 +155,9 @@ window.addEventListener('elympics', (e) => {
 
 - `data` and `options` are objects or JSON strings. `null` or an omitted argument means the defaults.
 - The fields are the launch data's, in camelCase (e.g. `serverAddress`, `matchedPlayers`).
+- `iceServers` (online, WebRTC only) is `[{ urls: string[], username, credential }]`, the per-match TURN/STUN servers.
+  When it is absent, empty, or left without URLs after filtering, the client asks the game server. URLs on port 53 are
+  dropped.
 - JSON has no nullables, so an unset field is `""`, `[]` or `0`, and `-1` for `playerIndex`.
 - The transport is `transport: "" | "webRtc" | "tcpUdp"`, and the protocols are
   `protocols: "" | "tcpUdp" | "webRtc" | "both"`.

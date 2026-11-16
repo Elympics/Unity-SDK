@@ -23,8 +23,10 @@ namespace MatchTcpClients
 
         UniTask ConnectAsync(CancellationToken ct = default);
         void Disconnect();
-        void AuthenticateMatchUserSecretAsync(string userSecret);
-        void AuthenticateAsSpectatorAsync();
+        /// <summary>Sends the join token when set, otherwise the user secret.</summary>
+        void AuthenticateMatchUserSecretAsync(string? userSecret, string? joinToken = null);
+        /// <summary>The join token, if any, must have the spectator role. Game servers in the <c>user_secret</c> mode, and older ones, ignore it.</summary>
+        void AuthenticateAsSpectatorAsync(string? joinToken = null);
         void JoinMatchAsync();
         void SendInGameDataReliable(byte[] data);
         void SendInGameDataUnreliable(byte[] data);

@@ -297,11 +297,17 @@ namespace MatchTcpClients
             return message;
         }
 
-        public void AuthenticateMatchUserSecretAsync(string userSecret) =>
-            SendReliableCommand(new AuthenticateMatchUserSecretCommand { UserSecret = userSecret });
+        public void AuthenticateMatchUserSecretAsync(string? userSecret, string? joinToken = null) =>
+            SendReliableCommand(CreateAuthenticatePlayerCommand(userSecret, joinToken));
 
-        public void AuthenticateAsSpectatorAsync() =>
-            SendReliableCommand(new AuthenticateAsSpectatorCommand());
+        public void AuthenticateAsSpectatorAsync(string? joinToken = null) =>
+            SendReliableCommand(new AuthenticateAsSpectatorCommand { JoinToken = joinToken ?? string.Empty });
+
+        /// <summary>The join token replaces the user secret: only one credential goes on the wire.</summary>
+        internal static AuthenticateMatchUserSecretCommand CreateAuthenticatePlayerCommand(string? userSecret, string? joinToken) =>
+            string.IsNullOrEmpty(joinToken)
+                ? new AuthenticateMatchUserSecretCommand { UserSecret = userSecret ?? string.Empty, JoinToken = string.Empty }
+                : new AuthenticateMatchUserSecretCommand { UserSecret = string.Empty, JoinToken = joinToken };
 
         public void JoinMatchAsync() =>
             SendReliableCommand(new JoinMatchCommand());

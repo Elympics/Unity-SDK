@@ -8,8 +8,8 @@ using JetBrains.Annotations;
 namespace Elympics
 {
     /// <summary>
-    /// <see cref="UserSecret"/> is a per-match game-server credential, unrelated to any account-level Elympics
-    /// client secret. No bearer token is ever part of launch data.
+    /// <see cref="UserSecret"/> and <see cref="JoinToken"/> are per-match game-server credentials, unrelated to any
+    /// account-level Elympics client secret or session token. At least one of them is required.
     /// </summary>
     [PublicAPI]
     public sealed class OnlineLaunchData : LaunchData
@@ -23,6 +23,11 @@ namespace Elympics
         public bool? UseTcpUdpInsteadOfWebRtc { get; }
         public Guid MatchId { get; }
         public string UserSecret { get; }
+        /// <summary>
+        /// Signed join token (JWT) for this match and player. When set, it is presented to the game server instead of
+        /// <see cref="UserSecret"/>. Empty means none.
+        /// </summary>
+        public string JoinToken { get; }
         /// <summary>The local player. Must be one of <see cref="MatchedPlayers"/>.</summary>
         public Guid UserId { get; }
         /// <summary>Their order defines <see cref="ElympicsPlayer"/> indices.</summary>
@@ -37,12 +42,14 @@ namespace Elympics
         internal IReadOnlyList<IceServer>? IceServers { get; init; }
 
         public OnlineLaunchData(string serverAddress, bool? useTcpUdpInsteadOfWebRtc, Guid matchId, string userSecret, Guid userId,
-            IEnumerable<Guid> matchedPlayers, string? regionName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null)
+            IEnumerable<Guid> matchedPlayers, string? regionName = null, IEnumerable<byte>? gameEngineData = null, IEnumerable<float>? matchmakerData = null,
+            string? joinToken = null)
         {
             ServerAddress = serverAddress ?? string.Empty;
             UseTcpUdpInsteadOfWebRtc = useTcpUdpInsteadOfWebRtc;
             MatchId = matchId;
             UserSecret = userSecret ?? string.Empty;
+            JoinToken = joinToken ?? string.Empty;
             UserId = userId;
             MatchedPlayers = Copy(matchedPlayers);
             RegionName = regionName;
@@ -65,8 +72,8 @@ namespace Elympics
                 return Fail(ElympicsLaunchErrorCode.UnsupportedMode, ElympicsLaunchPlatform.NoTcpUdpMessage, out failure);
             if (UsesTcpUdp(gameConfig) && !LaunchDataParsing.TryParseEndPoint(ServerAddress, out _))
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(ServerAddress)} must be ip:port with TCP/UDP, got \"{ServerAddress}\".", out failure);
-            if (string.IsNullOrEmpty(UserSecret))
-                return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(UserSecret)} is required.", out failure);
+            if (string.IsNullOrEmpty(UserSecret) && string.IsNullOrEmpty(JoinToken))
+                return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(UserSecret)} or {nameof(JoinToken)} is required.", out failure);
             if (MatchedPlayers.Count == 0)
                 return Fail(ElympicsLaunchErrorCode.InvalidPayload, $"{nameof(MatchedPlayers)} is required.", out failure);
             if (MatchedPlayers.Distinct().Count() != MatchedPlayers.Count)

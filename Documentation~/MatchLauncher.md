@@ -66,13 +66,15 @@ only stops waiting. It does not cancel the launch: use `ReturnToBootAsync` for t
 
 All launch data is immutable and validated at launch.
 
-**`OnlineLaunchData`**: every field is required, except the region, the transport and the player data.
+**`OnlineLaunchData`**: every field is required, except the region, the transport and the player data. Of
+`UserSecret` and `JoinToken`, one is enough.
 
 | Field | Meaning |
 |---|---|
 | `ServerAddress` | With WebRTC, the web signaling address (absolute, or relative to the game servers endpoint). With TCP/UDP, `ip:port` |
 | `UseTcpUdpInsteadOfWebRtc` | `null` means `ElympicsGameConfig.UseWeb` decides. TCP/UDP is `UnsupportedMode` on WebGL |
-| `MatchId`, `UserSecret` | From matchmaking. See [the two secrets](#userSecret) |
+| `MatchId`, `UserSecret` | From matchmaking. See [the "secrets"](#userSecret) |
+| `JoinToken` | Optional signed join token for the game server (`joinToken` in host JSON). When set, it is sent instead of `UserSecret`. See [the "secrets"](#userSecret) |
 | `UserId`, `MatchedPlayers` | The local player must be one of the players. There must be no duplicates and no more than `MaxPlayers` players. The order defines player indices |
 | `RegionName`, `GameEngineData`, `MatchmakerData` | Optional |
 
@@ -231,11 +233,17 @@ Requests carry no version, so a host that needs one checks it on `ready`.
 | `InternalError` | an unexpected exception |
 
 <a id="userSecret"></a>
-### The two "secrets"
+### The "secrets"
 
 `userSecret` in `OnlineLaunchData` is a **per-match credential for the game server**, handed out by
 matchmaking together with the match ID. It is unrelated to any account-level Elympics client secret or
-bearer token. Those are never part of launch data, and no bearer token ever crosses the host boundary.
+bearer token. Those are never part of launch data, and no account bearer token ever crosses the host boundary.
+
+`joinToken` is the signed successor of `userSecret`: a short-lived JWT for one match and one user,
+issued by the backend. When launch data carries one, the SDK sends it to the game server in place of `userSecret`,
+on every transport and on every reconnect. With a join token, `userSecret` is sent empty, so the launch can join only
+a game server in a join-token mode (`jwt_or_user_secret` or `jwt`). An older game server, or one in the `user_secret`
+mode, can't authenticate it. Like `userSecret`, it is never logged.
 
 ## The boot scene
 

@@ -166,6 +166,7 @@ namespace Elympics
         public string gameEngineData = "";
         public float[] matchmakerData = Array.Empty<float>();
         public IceServer[] iceServers = Array.Empty<IceServer>();
+        public string joinToken = "";
 
         public bool TryToLaunchData(out LaunchData? data, out ElympicsLaunchFailure? failure)
         {
@@ -177,7 +178,7 @@ namespace Elympics
                 || !ElympicsLaunchDtoParsing.TryParseBase64(gameEngineData, nameof(gameEngineData), out var engineData, out failure))
                 return false;
             data = new OnlineLaunchData(serverAddress, useTcpUdp, parsedMatchId!.Value, userSecret, parsedUserId!.Value, players,
-                ElympicsLaunchDtoParsing.NullIfEmpty(regionName), engineData, matchmakerData)
+                ElympicsLaunchDtoParsing.NullIfEmpty(regionName), engineData, matchmakerData, joinToken)
             {
                 IceServers = iceServers,
             };

@@ -34,8 +34,12 @@ namespace Elympics.Tests
         [TearDown]
         public void TearDown() => UnityEngine.Object.DestroyImmediate(_game);
 
-        private static OnlineLaunchData Online(string serverAddress = "gs.example", bool? useTcpUdp = false, string userSecret = "secret", Guid? userId = null, Guid[]? players = null) =>
-            new(serverAddress, useTcpUdp, MatchId, userSecret, userId ?? UserId, players ?? new[] { OtherPlayerId, UserId }, "warsaw", new byte[] { 1, 2, 3 }, new[] { 0.5f });
+        private const string FakeJoinToken = "fake-header.fake-claims.fake-signature";
+
+        private static OnlineLaunchData Online(string serverAddress = "gs.example", bool? useTcpUdp = false, string userSecret = "secret", Guid? userId = null, Guid[]? players = null,
+            string? joinToken = null) =>
+            new(serverAddress, useTcpUdp, MatchId, userSecret, userId ?? UserId, players ?? new[] { OtherPlayerId, UserId }, "warsaw", new byte[] { 1, 2, 3 }, new[] { 0.5f },
+                joinToken);
 
         private static readonly ElympicsLaunchPlatform WebGlPlayer = new(canListen: false, canUseTcpUdp: false, hasLocalFiles: false);
         private static readonly ElympicsLaunchPlatform IosPlayer = new(canListen: false, canUseTcpUdp: true, hasLocalFiles: true);
@@ -202,7 +206,28 @@ namespace Elympics.Tests
             Assert.That(data.RegionName, Is.EqualTo("warsaw"));
             Assert.That(data.GameEngineData, Is.EqualTo(new byte[] { 1, 2, 3 }));
             Assert.That(data.MatchmakerData, Is.EqualTo(new[] { 0.5f }));
+            Assert.That(data.JoinToken, Is.Empty);
             _ = Validate(data);
+        }
+
+        [Test]
+        public void OnlineWireDataCarriesJoinToken()
+        {
+            var json = "{\"serverAddress\":\"gs.example\",\"transport\":\"webRtc\",\"matchId\":\"" + MatchId + "\",\"userId\":\"" + UserId + "\",\"matchedPlayers\":[\"" + UserId
+                + "\"],\"joinToken\":\"" + FakeJoinToken + "\"}";
+
+            var data = (OnlineLaunchData)ParseData(ElympicsHostLaunchKind.Online, json);
+
+            Assert.That(data.JoinToken, Is.EqualTo(FakeJoinToken));
+            Assert.That(data.UserSecret, Is.Empty);
+            _ = Validate(data);
+        }
+
+        [Test]
+        public void OnlineJoinTokenOrUserSecretIsEnough()
+        {
+            _ = Validate(Online(userSecret: "", joinToken: FakeJoinToken));
+            _ = Validate(Online(joinToken: FakeJoinToken));
         }
 
         [TestCase("", null)]
@@ -234,7 +259,7 @@ namespace Elympics.Tests
         private static IEnumerable<TestCaseData> BrokenOnlineData()
         {
             yield return Case("no server address", Online(serverAddress: ""));
-            yield return Case("no user secret", Online(userSecret: ""));
+            yield return Case("no user secret and no join token", Online(userSecret: ""));
             yield return Case("no players", Online(players: Array.Empty<Guid>()));
             yield return Case("duplicate players", Online(players: new[] { UserId, UserId }));
             yield return Case("user not among players", Online(players: new[] { OtherPlayerId }));

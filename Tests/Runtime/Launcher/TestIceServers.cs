@@ -35,6 +35,7 @@ namespace Elympics.Tests
             var data = ParseOnlineJson(CreateJoinJson(",\"iceServers\":[{\"urls\":[\"turn:a.example.test:3478\"],\"username\":\"u\",\"credential\":\"c\"}]"));
 
             Assert.AreEqual(1, data.IceServers!.Count);
+            Assert.AreEqual(new[] { "turn:a.example.test:3478" }, data.IceServers[0].urls);
             Assert.AreEqual("u", data.IceServers[0].username);
             Assert.AreEqual("c", data.IceServers[0].credential);
         }

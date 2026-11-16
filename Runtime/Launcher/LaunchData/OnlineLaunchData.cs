@@ -31,7 +31,7 @@ namespace Elympics
         public IReadOnlyList<byte> GameEngineData { get; }
         public IReadOnlyList<float> MatchmakerData { get; }
         /// <summary>
-        /// Per-match ICE (TURN/STUN) servers minted by the backend. Set only from the join data (<c>iceServers</c>).
+        /// Per-match ICE (TURN/STUN) servers minted by the backend. Set from the launch JSON (<c>iceServers</c>) or by PlayPad.
         /// When null or empty, the client asks the game server for them, as before.
         /// </summary>
         internal IReadOnlyList<IceServer>? IceServers { get; init; }

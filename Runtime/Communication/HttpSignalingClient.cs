@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Elympics.Communication.Models;
@@ -22,9 +24,12 @@ namespace Elympics
         private readonly Uri _iceServersUri;
         private readonly LoggerConfig _logger;
         private readonly GameServerClientConfig _config;
+        private readonly IceServer[] _providedIceServers;
 
-        public HttpSignalingClient(Uri baseUri, Guid matchId, GameServerClientConfig config)
+        /// <param name="providedIceServers">Per-match ICE servers from the join data. When non-empty, they are used and the game server is not asked.</param>
+        public HttpSignalingClient(Uri baseUri, Guid matchId, GameServerClientConfig config, IReadOnlyList<IceServer>? providedIceServers = null)
         {
+            _providedIceServers = RemoveBrowserBlockedUrls(providedIceServers);
             _signalingUri = baseUri.AppendPathSegments(SignalingRoute, matchId.ToString());
             _iceServersUri = baseUri.AppendPathSegments(IceServersRoute, matchId.ToString());
             _logger = ElympicsLogger.WithClass(typeof(HttpSignalingClient));
@@ -33,6 +38,9 @@ namespace Elympics
 
         public async UniTask<IceServer[]> FetchIceServersAsync(TimeSpan timeout, CancellationToken ct = default)
         {
+            if (_providedIceServers.Length > 0)
+                return _providedIceServers;
+
             using var request = UnityWebRequest.Get(_iceServersUri);
             request.SetTestCertificateHandlerIfNeeded();
 
@@ -48,7 +56,31 @@ namespace Elympics
                 Debug.LogWarning($"[Elympics] Failed to fetch ICE servers from {_iceServersUri}: {response.Code} {response.Text ?? "cancelled"}. Proceeding without TURN.");
                 return Array.Empty<IceServer>();
             }
-            return JsonUtility.FromJson<IceServersResponse>(response.Text).iceServers ?? Array.Empty<IceServer>();
+            return RemoveBrowserBlockedUrls(JsonUtility.FromJson<IceServersResponse>(response.Text).iceServers);
+        }
+
+        /// <summary>
+        /// Cloudflare Realtime TURN also lists port 53, which browsers block. The offer is not trickled, so a blocked URL
+        /// would stall gathering until it times out. Servers left without any URL are dropped.
+        /// </summary>
+        internal static IceServer[] RemoveBrowserBlockedUrls(IReadOnlyList<IceServer>? servers)
+        {
+            var result = new List<IceServer>();
+            foreach (var server in servers ?? Array.Empty<IceServer>())
+            {
+                var urls = (server.urls ?? Array.Empty<string>()).Where(url => !UsesBlockedPort(url)).ToArray();
+                if (urls.Length == 0)
+                    continue;
+                result.Add(new IceServer { urls = urls, username = server.username, credential = server.credential });
+            }
+            return result.ToArray();
+        }
+
+        private static bool UsesBlockedPort(string url)
+        {
+            var hostAndPort = url.Split('?')[0];
+            var portStart = hostAndPort.LastIndexOf(':');
+            return portStart > hostAndPort.IndexOf(':') && hostAndPort[(portStart + 1)..] == "53";
         }
 
         public async UniTask<SignalingResponse> PostOfferAsync(OfferWithCandidates offer, TimeSpan timeout, CancellationToken ct = default)

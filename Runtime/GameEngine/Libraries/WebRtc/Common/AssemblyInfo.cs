@@ -8,3 +8,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Elympics.Tests")]
 [assembly: InternalsVisibleTo("Elympics.Tests.Editor")]
 [assembly: InternalsVisibleTo("UnityConnectors")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad")]
+[assembly: InternalsVisibleTo("ElympicsPlayPad.Tests")]
